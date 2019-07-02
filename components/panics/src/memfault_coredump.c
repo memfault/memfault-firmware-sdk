@@ -1,3 +1,11 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! Logic for saving a coredump to backing storage and reading it out
+
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
 

@@ -2,11 +2,18 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! ingress.memfault.com uses (June 2019) a TLS certificate that is
 //! derived from the DST Root CA X3 root certificate. The intention is
 //! to switch to using DigiCert in the near future, because the
 //! expiration date of DigiCert's root is farther in the future.
 //! Therefore, it's recommended to already include the DigiCert roots.
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! DST Root CA X3. SHA-1/RSA-256. Valid until 2021-09-30.
 #define MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3 \
@@ -85,3 +92,7 @@
   MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3 \
   MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA \
   MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
+
+#ifdef __cplusplus
+}
+#endif

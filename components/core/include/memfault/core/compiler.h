@@ -2,8 +2,15 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Wrappers for common macros & compiler specifics
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MEMFAULT_QUOTE(str) #str
 #define MEMFAULT_EXPAND_AND_QUOTE(str) MEMFAULT_QUOTE(str)
@@ -49,4 +56,8 @@
 #  define MEMFAULT_STATIC_ASSERT(COND, MSG) static_assert(COND, MSG)
 #else
 #  define MEMFAULT_STATIC_ASSERT(COND, MSG) _Static_assert(COND, MSG)
+#endif
+
+#ifdef __cplusplus
+}
 #endif

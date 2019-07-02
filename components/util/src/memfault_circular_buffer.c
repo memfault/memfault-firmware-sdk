@@ -1,9 +1,12 @@
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Convenience circular buffer utility
 
-#include "memfault/util/memfault_circular_buffer.h"
+#include "memfault/util/circular_buffer.h"
 
 #include <stdbool.h>
 #include <stddef.h>

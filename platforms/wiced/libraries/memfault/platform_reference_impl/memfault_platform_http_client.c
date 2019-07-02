@@ -1,3 +1,12 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! Reference implementation of platform dependencies for the Memfault HTTP Client when using the
+//! WICED SDK
+
 #include "memfault/http/platform/http_client.h"
 
 #include <stdio.h>

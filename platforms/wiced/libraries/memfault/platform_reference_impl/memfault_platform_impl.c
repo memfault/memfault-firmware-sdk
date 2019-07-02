@@ -1,4 +1,7 @@
 //! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
 //! Reference implementation of the memfault platform header for the WICED platform
 
 #include "platform_assert.h" // import WICED_TRIGGER_BREAKPOINT

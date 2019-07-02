@@ -1,7 +1,13 @@
 #pragma once
 
 //! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! @brief
 //! The error codes used by the Memfault SDK
@@ -16,3 +22,7 @@ typedef enum MemfaultReturnCode {
   MemfaultReturnCode_NotSupported = -7,
   MemfaultReturnCode_Timeout = -8,
 } MemfaultReturnCode;
+
+#ifdef __cplusplus
+}
+#endif

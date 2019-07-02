@@ -2,11 +2,18 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Platform API for CRC APIs
 
 #include <inttypes.h>
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Computes the CRC32 for the provided data.
 //!
@@ -19,3 +26,7 @@
 //!
 //! @return the crc over the provided buffer
 uint32_t memfault_platform_crc32(const void *data, size_t data_len);
+
+#ifdef __cplusplus
+}
+#endif

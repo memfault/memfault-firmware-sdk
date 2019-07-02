@@ -1,5 +1,8 @@
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! An example implementation of the CRC platform APIs for the WICED SDK
 

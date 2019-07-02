@@ -10,11 +10,11 @@ Memfault SDK has a demo application and platform reference implementation.
 At the moment these SDKs / boards are supported:
 
 - WICED SDK / Cypress BCM943364WCD1
-- ESP-IDF / Espressif ESP32
+- nRF5 SDK / Nordic nRF52840 (PCA10056)
 
 Coming soon:
 
-- nRF5 SDK / Nordic nRF52840 (PCA10056)
+- ESP-IDF / Espressif ESP32
 - Apache Mynewt / Nordic nRF52840 (PCA10056)
 
 If you have one of the supported boards and want to jump right in, look at the
@@ -104,9 +104,9 @@ SDK. It will print the list of available tasks, for example:
 $ invoke --list
 Available tasks:
 
-  esp32.app-build        Build the ESP32 test app
-  esp32.app-clean        Clean the ESP32 test app
-  esp32.app-flash        Flash the ESP32 test app
+  nrf.build             Build a demo application that runs on the nrf52
+  nrf.clean             Build a demo application that runs on the nrf52
+  nrf.console           Start a RTT console session
 
 ... etc ...
 ```

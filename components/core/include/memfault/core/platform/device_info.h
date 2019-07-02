@@ -1,6 +1,9 @@
 #pragma once
 
 //! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
 //! @details
 //!
 //! @brief
@@ -12,6 +15,10 @@
 #define MEMFAULT_MAX_SERIAL_NUMBER_LEN 17
 #define MEMFAULT_MAX_HW_REVISION_LEN 17
 #define MEMFAULT_MAX_COMPONENT_VERSION_LEN 17
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct MemfaultDeviceInfo {
   const char *device_serial;
@@ -41,3 +48,7 @@ typedef enum {
 //!
 //! @return true if the version was populated, false otherwise
 bool memfault_platform_get_component_version(eMfltComponentVersionType type, char *buf, size_t buf_len);
+
+#ifdef __cplusplus
+}
+#endif

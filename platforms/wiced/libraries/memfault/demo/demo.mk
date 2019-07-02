@@ -2,6 +2,7 @@ NAME := MemfaultDemo
 
 $(NAME)_SOURCES    := src/memfault_demo_cli.c \
                       src/memfault_demo_cli_aux.c \
+                      src/memfault_demo_cli_print_core.c \
 
 
 $(NAME)_COMPONENTS := libraries/memfault/core \

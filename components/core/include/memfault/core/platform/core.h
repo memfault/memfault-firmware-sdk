@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! APIs the platform must implement for using the SDK. These routines are needed by all
 //! subcomponents of the library one can include
@@ -11,6 +14,10 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/errors.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Initialize your platform code
 //! @return @ref MemfaultReturnCode_Ok if initialization completed
@@ -27,3 +34,7 @@ void memfault_platform_halt_if_debugging(void);
 
 //! @return elapsed time since the device was last restarted (in milliseconds)
 uint64_t memfault_platform_get_time_since_boot_ms(void);
+
+#ifdef __cplusplus
+}
+#endif

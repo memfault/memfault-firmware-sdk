@@ -1,3 +1,11 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! CLI commands used by demo applications to exercise the Memfault SDK
+
 #include "memfault/demo/cli.h"
 
 #include <stdlib.h>
@@ -11,6 +19,7 @@
 
 // Defined in memfault_demo_cli_aux.c
 extern void *g_memfault_unaligned_buffer;
+extern void (*g_bad_func_call)(void);
 
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
   int crash_type = 0;
@@ -22,8 +31,7 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
   if (crash_type == 0) {
     MEMFAULT_ASSERT(0);
   } else if (crash_type == 1) {
-    void (*bad_func_call)(void) = (void *) 0xbadcafe;
-    bad_func_call();
+    g_bad_func_call();
   } else if (crash_type == 5) {
     uint64_t *buf = g_memfault_unaligned_buffer;
     *buf = 0xbadcafe0000;

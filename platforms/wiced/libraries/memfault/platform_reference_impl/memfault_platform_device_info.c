@@ -1,3 +1,11 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! Reference implementation of platform dependencies for Memfault device info APIs
+
 #include "memfault/core/platform/device_info.h"
 
 #include "wiced_result.h"

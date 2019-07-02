@@ -1,6 +1,9 @@
 //! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
 
-#include "memfault/util/memfault_crc16_ccitt.h"
+#include "memfault/util/crc16_ccitt.h"
 
 #include <inttypes.h>
 #include <stddef.h>

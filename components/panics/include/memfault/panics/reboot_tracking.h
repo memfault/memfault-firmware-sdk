@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Memfault OTA has a subsystem used to track the stability of the main application. If the main
 //! app fails to start (no call is made to 'memfault_reboot_tracking_mark_system_started') or
@@ -14,6 +17,10 @@
 #include "memfault/core/errors.h"
 
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 256
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Set's the memory region used for reboot tracking.
 //!
@@ -33,3 +40,7 @@ void memfault_reboot_tracking_mark_system_stable(void);
 //!
 //! The bootloader uses this info to conclude the app is launching successfully.
 void memfault_reboot_tracking_mark_system_started(void);
+
+#ifdef __cplusplus
+}
+#endif

@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Dependency functions required in order to send coredumps directly to Memfault's
 //! servers via HTTPS, using memfault_http_client_post_coredump().
@@ -11,6 +14,10 @@
 
 #include "memfault/http/http_client.h"
 #include "memfault/core/errors.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Creates a new HTTP client. A client can be reused across requests.
 //! This way, the cost of connection set up to the server will be shared with multiple requests.
@@ -60,3 +67,7 @@ MemfaultReturnCode memfault_platform_http_client_wait_until_requests_completed(
 //! @param client The client to destroy. Guaranteed to be non-NULL.
 //! @return MemfaultReturnCode_Ok iff the client was destroyed successfully.
 MemfaultReturnCode memfault_platform_http_client_destroy(sMfltHttpClient *client);
+
+#ifdef __cplusplus
+}
+#endif

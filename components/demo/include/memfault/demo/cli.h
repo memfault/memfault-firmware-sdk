@@ -2,7 +2,17 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief CLI console commands for Memfault demo apps
+//!
+//! The first element in argv is expected to be the command name that was invoked.
+//! The elements following after that are expected to be the arguments to the command.
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Command to crash the device, for example, to trigger a coredump to be captured.
 //! It takes one number argument, which is the crash type:
@@ -19,6 +29,12 @@ int memfault_demo_cli_cmd_get_core(int argc, char *argv[]);
 //! It takes no arguments.
 int memfault_demo_cli_cmd_post_core(int argc, char *argv[]);
 
+//! Command to print out a coredump's contents
+//! It takes zero or one string argument, which can be:
+//! - curl : (default) prints a shell command to post the coredump to Memfault's API (using echo, xxd and curl)
+//! - hex : hexdumps the coredump
+int memfault_demo_cli_cmd_print_core(int argc, char *argv[]);
+
 //! Command to delete a coredump.
 //! It takes no arguments.
 int memfault_demo_cli_cmd_delete_core(int argc, char *argv[]);
@@ -26,3 +42,7 @@ int memfault_demo_cli_cmd_delete_core(int argc, char *argv[]);
 //! Command to print device info, as obtained through memfault_platform_get_device_info().
 //! It takes no arguments.
 int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]);
+
+#ifdef __cplusplus
+}
+#endif

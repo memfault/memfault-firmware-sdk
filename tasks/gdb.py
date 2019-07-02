@@ -1,3 +1,7 @@
+#
+# Copyright (c) 2019-Present Memfault, Inc.
+# See License.txt for details
+#
 try:
     from shutil import which  # Python 3
 except ImportError:

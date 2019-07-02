@@ -1,0 +1,176 @@
+/* Linker script to configure memory regions. */
+
+SEARCH_DIR(.)
+GROUP(-lgcc -lc -lnosys)
+
+MEMORY
+{
+  FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0x7B000
+  MEMFAULT_CORES (rw) : ORIGIN = 0xA1000, LENGTH = 0x40000
+  /* Note: most production apps would have a bootloader somewhere in this range! */
+  RSVD (rwx) : ORIGIN = 0xE1000, LENGTH = 0x1F000
+  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x38048
+  RTT_RAM (rwx) :  ORIGIN = 0x2003D800, LENGTH = 0x2600
+  MEMFAULT_NOINIT (rw) :  ORIGIN = 0x2003FF00, LENGTH = 0x100
+}
+
+SECTIONS
+{
+}
+
+SECTIONS
+{
+  . = ALIGN(4);
+  .mem_section_dummy_ram :
+  {
+  }
+  .cli_sorted_cmd_ptrs :
+  {
+    PROVIDE(__start_cli_sorted_cmd_ptrs = .);
+    KEEP(*(.cli_sorted_cmd_ptrs))
+    PROVIDE(__stop_cli_sorted_cmd_ptrs = .);
+  } > RAM
+  .fs_data :
+  {
+    PROVIDE(__start_fs_data = .);
+    KEEP(*(.fs_data))
+    PROVIDE(__stop_fs_data = .);
+  } > RAM
+  .log_dynamic_data :
+  {
+    PROVIDE(__start_log_dynamic_data = .);
+    KEEP(*(SORT(.log_dynamic_data*)))
+    PROVIDE(__stop_log_dynamic_data = .);
+  } > RAM
+  .log_filter_data :
+  {
+    PROVIDE(__start_log_filter_data = .);
+    KEEP(*(SORT(.log_filter_data*)))
+    PROVIDE(__stop_log_filter_data = .);
+  } > RAM
+} INSERT AFTER .data;
+
+SECTIONS
+{
+  .mem_section_dummy_rom :
+  {
+  }
+  .sdh_soc_observers :
+  {
+    PROVIDE(__start_sdh_soc_observers = .);
+    KEEP(*(SORT(.sdh_soc_observers*)))
+    PROVIDE(__stop_sdh_soc_observers = .);
+  } > FLASH
+  .pwr_mgmt_data :
+  {
+    PROVIDE(__start_pwr_mgmt_data = .);
+    KEEP(*(SORT(.pwr_mgmt_data*)))
+    PROVIDE(__stop_pwr_mgmt_data = .);
+  } > FLASH
+  .sdh_ble_observers :
+  {
+    PROVIDE(__start_sdh_ble_observers = .);
+    KEEP(*(SORT(.sdh_ble_observers*)))
+    PROVIDE(__stop_sdh_ble_observers = .);
+  } > FLASH
+  .sdh_stack_observers :
+  {
+    PROVIDE(__start_sdh_stack_observers = .);
+    KEEP(*(SORT(.sdh_stack_observers*)))
+    PROVIDE(__stop_sdh_stack_observers = .);
+  } > FLASH
+  .sdh_req_observers :
+  {
+    PROVIDE(__start_sdh_req_observers = .);
+    KEEP(*(SORT(.sdh_req_observers*)))
+    PROVIDE(__stop_sdh_req_observers = .);
+  } > FLASH
+  .sdh_state_observers :
+  {
+    PROVIDE(__start_sdh_state_observers = .);
+    KEEP(*(SORT(.sdh_state_observers*)))
+    PROVIDE(__stop_sdh_state_observers = .);
+  } > FLASH
+    .nrf_queue :
+  {
+    PROVIDE(__start_nrf_queue = .);
+    KEEP(*(.nrf_queue))
+    PROVIDE(__stop_nrf_queue = .);
+  } > FLASH
+    .nrf_balloc :
+  {
+    PROVIDE(__start_nrf_balloc = .);
+    KEEP(*(.nrf_balloc))
+    PROVIDE(__stop_nrf_balloc = .);
+  } > FLASH
+    .cli_command :
+  {
+    PROVIDE(__start_cli_command = .);
+    KEEP(*(.cli_command))
+    PROVIDE(__stop_cli_command = .);
+  } > FLASH
+  .crypto_data :
+  {
+    PROVIDE(__start_crypto_data = .);
+    KEEP(*(SORT(.crypto_data*)))
+    PROVIDE(__stop_crypto_data = .);
+  } > FLASH
+  .log_const_data :
+  {
+    PROVIDE(__start_log_const_data = .);
+    KEEP(*(SORT(.log_const_data*)))
+    PROVIDE(__stop_log_const_data = .);
+  } > FLASH
+  .log_backends :
+  {
+    PROVIDE(__start_log_backends = .);
+    KEEP(*(SORT(.log_backends*)))
+    PROVIDE(__stop_log_backends = .);
+  } > FLASH
+
+} INSERT AFTER .text
+
+SECTIONS
+{
+
+  /**
+   * Force the RTT console region to be at a _fixed_ location. If the location changes between
+   * builds it can confuse the SEGGER JLinkRTTClient console.
+   */
+  .rtt (NOLOAD) :
+  {
+    PROVIDE(__rtt_start = .);
+    *SEGGER_RTT.c.o(COMMON)
+    *(.bss._acUpBuffer)
+    PROVIDE(__rtt_end = .);
+  } > RTT_RAM
+
+  /**
+   * A unique identifier for the firmware. A great way to make sure the elf _exactly_ matches
+   * the binary running: https://interrupt.memfault.com/blog/gnu-build-id-for-firmware
+   */
+  .gnu_build_id :
+  {
+    PROVIDE(g_gnu_build_id = .);
+    *(.note.gnu.build-id)
+  } > FLASH
+
+  /** Create some linker symbols describing where to save cores */
+  .core_space :
+  {
+      __CoreStart = ORIGIN(MEMFAULT_CORES);
+      __CoreEnd = ORIGIN(MEMFAULT_CORES) + LENGTH(MEMFAULT_CORES);
+  } > FLASH
+
+  .mflt_coredump_symbols :
+  {
+      __MfltCoredumpRamStart = ORIGIN(RAM);
+      __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
+  } > FLASH
+
+  .noinit (NOLOAD): {
+    KEEP(*(*.mflt_reboot_info))
+  } > MEMFAULT_NOINIT
+} INSERT AFTER .text
+
+INCLUDE "nrf_common.ld"

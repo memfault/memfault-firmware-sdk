@@ -2,11 +2,18 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Internal utilities used for tracking reboot reasons
 
 #include <inttypes.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Note: Must be kept in sync with the python enum at www/database/constants.py
 //! TODO: Autogenerate the python & C header for this enum from a shared json file
@@ -50,3 +57,7 @@ bool memfault_reboot_tracking_is_firmware_unstable(void);
 //! If the app is launched three times in a row without any acknowledgment from the app itself, the
 //! bootloader will enter recovery mode to perform an OTA update
 void memfault_reboot_tracking_mark_app_launch_attempted(void);
+
+#ifdef __cplusplus
+}
+#endif

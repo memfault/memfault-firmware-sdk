@@ -1,3 +1,12 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! Memfault HTTP Client implementation which can be used to send data to the Memfault cloud for
+//! processing
+
 #include "memfault/http/http_client.h"
 
 #include "memfault/panics/coredump.h"

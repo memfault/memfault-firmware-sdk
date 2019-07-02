@@ -1,7 +1,10 @@
-/** @file
- *
- * Memfault WICED Test App
- */
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//!  Memfault WICED Demo App
 
 #include <inttypes.h>
 
@@ -46,7 +49,8 @@ static const command_t commands[] = {
     {"get_core", memfault_demo_cli_cmd_get_core, 0, NULL, NULL, NULL, "Get coredump info"},
     {"delete_core", memfault_demo_cli_cmd_delete_core, 0, NULL, NULL, NULL, "Delete an existing coredump"},
     {"post_core", memfault_demo_cli_cmd_post_core, 0, NULL, NULL, NULL, "Post coredump to Memfault"},
-    {"crash", memfault_demo_cli_cmd_crash, 1, NULL, NULL, "<type>"ESCAPE_SPACE_PROMPT, "trigger a crash"},
+    {"print_core", memfault_demo_cli_cmd_print_core, 0, NULL, NULL, "[curl|hex]", "Print coredump"},
+    {"crash", memfault_demo_cli_cmd_crash, 1, NULL, NULL, "<type>"ESCAPE_SPACE_PROMPT, "Trigger a crash"},
 
     {"get_core_region", prv_get_core_region, 0, NULL, NULL, NULL, "Get coredump SPI region info"},
     {"get_device_info", memfault_demo_cli_cmd_get_device_info, 0, NULL, NULL, NULL, "Get device info"},

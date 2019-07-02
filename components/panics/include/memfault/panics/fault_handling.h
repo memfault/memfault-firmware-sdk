@@ -2,12 +2,19 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Handlers for faults & exceptions that are included in the Memfault SDK.
 
 #include <inttypes.h>
 
 #include "memfault/core/compiler.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __arm__
 //! Hard Fault handler for ARM processors. The handler will capture fault information
@@ -45,3 +52,7 @@ MEMFAULT_NAKED_FUNC void NMI_Handler(void);
 //! @see MEMFAULT_ASSERT
 MEMFAULT_NORETURN
 void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra);
+
+#ifdef __cplusplus
+}
+#endif

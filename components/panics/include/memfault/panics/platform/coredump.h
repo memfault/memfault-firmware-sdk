@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! Dependency functions required in order to use the Memfault coredump API
 //!
@@ -13,6 +16,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum MfltCoredumpRegionType {
   kMfltCoredumpRegionType_Memory,
@@ -79,3 +86,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 //! @note a coredump region can be invalidated by zero'ing out or erasing the first sector
 //! being used for storage
 void memfault_platform_coredump_storage_clear(void);
+
+#ifdef __cplusplus
+}
+#endif

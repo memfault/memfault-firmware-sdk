@@ -1,3 +1,7 @@
+#
+# Copyright (c) 2019-Present Memfault, Inc.
+# See License.txt for details
+#
 from contextlib import contextmanager
 from os import uname
 

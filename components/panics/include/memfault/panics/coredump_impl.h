@@ -1,10 +1,17 @@
 #pragma once
 
 //! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
 
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Coredump block types
 typedef enum MfltCoredumpBlockType  {
@@ -48,3 +55,7 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
 //! @param write_cb The function that will be called to write out the block header and (optionally) the block payload.
 //! @param ctx User data pointer that will be passed to write_cb.
 void memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx);
+
+#ifdef __cplusplus
+}
+#endif

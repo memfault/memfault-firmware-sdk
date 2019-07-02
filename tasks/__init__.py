@@ -1,16 +1,20 @@
+#
+# Copyright (c) 2019-Present Memfault, Inc.
+# See License.txt for details
+#
 from invoke import Collection, task
 
-from .esp32 import ESP32, esp32_app_build, esp32_app_clean
 from .wiced import WICED, wiced_build, wiced_clean
+from .nrf import NRF5, nrf_clean, nrf_build
 
-COLLECTIONS = (ESP32, WICED)
+COLLECTIONS = (WICED, NRF5)
 
 ns = Collection()
 for collection in COLLECTIONS:
     ns.add_collection(collection)
 
 
-@task(pre=[esp32_app_clean, esp32_app_build, wiced_clean, wiced_build])
+@task(pre=[wiced_clean, wiced_build, nrf_clean, nrf_build])
 def build_all_demos(ctx):
     """ Builds all demo apps (for CI purposes) """
     pass

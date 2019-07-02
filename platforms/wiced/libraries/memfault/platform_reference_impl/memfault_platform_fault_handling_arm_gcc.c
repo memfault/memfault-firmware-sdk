@@ -1,3 +1,12 @@
+//! @file
+//!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
+//! @brief
+//! Fault handler shims to link the WICED SDK fault handlers to the Memfault ARM exception handlers
+//! This allows for crash information to be collected when the system hits a fault.
+
 #include "memfault/core/compiler.h"
 #include "memfault/panics/fault_handling.h"
 

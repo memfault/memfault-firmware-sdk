@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
 //! API when using the Memfault HTTP Client
 
@@ -23,6 +26,10 @@
 #define MEMFAULT_HTTP_API_PREFIX "/api/v0/"
 #define MEMFAULT_HTTP_API_COREDUMP_SUBPATH "upload/coredump"
 #define MEMFAULT_HTTP_PROJECT_KEY_HEADER "Memfault-Project-Key"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! Configuration of the Memfault HTTP client.
 typedef struct MfltHttpClientConfig {
@@ -79,3 +86,7 @@ MemfaultReturnCode memfault_http_client_wait_until_requests_completed(
 
 //! Destroys a HTTP client that was previously created using memfault_platform_http_client_create().
 MemfaultReturnCode memfault_http_client_destroy(sMfltHttpClient *client);
+
+#ifdef __cplusplus
+}
+#endif

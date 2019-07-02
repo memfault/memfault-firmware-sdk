@@ -1,5 +1,8 @@
 //! @file
 //!
+//! Copyright (c) 2019-Present Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief A RAM-backed implementation used for tracking state across system reboots.
 //! Assumptions:
 //!  - RAM state survives across resets (this is generally true as long as power is stable)
