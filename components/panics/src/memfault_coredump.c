@@ -195,6 +195,20 @@ static bool prv_coredump_header_is_valid(const sMfltCoredumpHeader *hdr) {
   return (hdr && hdr->magic == MEMFAULT_COREDUMP_MAGIC);
 }
 
+static bool prv_write_regions(uint32_t *curr_offset, const sMfltCoredumpRegion *regions,
+                              size_t num_regions) {
+  for (size_t i = 0; i < num_regions; i++) {
+    prv_insert_padding_if_necessary(curr_offset);
+    const sMfltCoredumpRegion *region = &regions[i];
+    if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
+                                      region->region_start, region->region_size, (uint32_t)(uintptr_t)region->region_start,
+                                      prv_write_storage, curr_offset)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
   sMfltCoredumpStorageInfo info = { 0 };
   sMfltCoredumpHeader hdr = { 0 };
@@ -236,16 +250,15 @@ void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
 
   prv_try_write_trace_reason(&curr_offset, trace_reason);
 
-  for (size_t i = 0; i < num_regions; i++) {
-    prv_insert_padding_if_necessary(&curr_offset);
+  // write out any architecture specific regions
+  size_t num_arch_regions;
+  const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
+  if (!prv_write_regions(&curr_offset, arch_regions, num_arch_regions)) {
+    return;
+  }
 
-    const sMfltCoredumpRegion *region = &regions[i];
-
-    if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
-                                      region->region_start, region->region_size, (uint32_t)(uintptr_t)region->region_start,
-                                      prv_write_storage, &curr_offset)) {
-      return;
-    }
+  if (!prv_write_regions(&curr_offset, regions, num_regions)) {
+    return;
   }
 
   // we are done, mark things as valid

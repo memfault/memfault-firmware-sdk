@@ -250,10 +250,19 @@ echo \
  -H 'Content-Type:application/octet-stream' --data-binary @- -
 ```
 
-You can copy & paste this output to a terminal to send the coredump to the
-Memfault web service. The coredump is now being processed by Memfault's services
-and will show up shortly under Issues. If it does not, take a look at the FAQ in
-the `README.md` in the root of the SDK.
+If you started the console using `invoke nrf.console`, the wrapper will
+automatically detect when this command has been run and prompt you to upload.
+You will see something like:
+
+```
+Invoke CLI wrapper detected 'print_core' call
+Would you like to run the command displayed above? [y/n]
+```
+
+Otherwise, you can copy & paste this output to a terminal to send the coredump
+to the Memfault web service. The coredump is now being processed by Memfault's
+services and will show up shortly under Issues. If it does not, take a look at
+the FAQ in the `README.md` in the root of the SDK.
 
 # Integrating into existing NRF52 projects
 
@@ -301,7 +310,7 @@ void main(void) {
   about the customization options for each component.
 - To save coredumps in internal flash, you will need to budget some space to
   store them. You can find more details in the top of
-  `libraries/memfault/platform_reference_implmemfault_platform_coredump.c` but
+  `libraries/memfault/platform_reference_impl/memfault_platform_coredump.c` but
   basically it just involves adding a new section to your .ld script. You can
   also configure how much of ram you want to capture in this file. The demo app
   is only collecting the active stack using the

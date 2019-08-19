@@ -7,6 +7,7 @@ from glob import glob
 
 from invoke import Collection, task
 from .gdb import gdb_build_cmd
+from .print_coredump_watcher import PrintCoredumpWatcher
 
 
 TASKS_DIR = os.path.dirname(__file__)
@@ -15,7 +16,7 @@ WICED_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "platforms", "wiced")
 WICED_DEMO_APP_ROOT = os.path.join(WICED_ROOT, "memfault_demo_app")
 WICED_DEMO_APP_MAKEFILE = os.path.join(WICED_DEMO_APP_ROOT, "Makefile")
 WICED_SDK_ROOT = os.path.join(WICED_ROOT, "wiced_sdk")
-WICED_SDK_43X_ROOT = os.path.join(WICED_SDK_ROOT, "WICED-SDK-6.2.0", "43xxx_Wi-Fi")
+WICED_SDK_43X_ROOT = os.path.join(WICED_SDK_ROOT, "43xxx_Wi-Fi")
 WICED_MAKE = os.path.join(WICED_SDK_43X_ROOT, "make")
 WICED_MAKEFILE = os.path.join(WICED_SDK_43X_ROOT, "Makefile")
 WICED_GDBINIT = os.path.join(WICED_SDK_43X_ROOT, ".gdbinit")
@@ -47,6 +48,21 @@ def _wiced_make(ctx, *args, **kwargs):
         ctx.run("{make} {args}".format(make=WICED_MAKE, args=" ".join(args)), **kwargs)
 
 
+def _run_openocd_cmd(ctx, openocd_cmd=None):
+    cmd = (
+        "./tools/OpenOCD/OSX/openocd-all-brcm-libftdi"
+        " -s ./tools/OpenOCD/scripts"
+        " -f ./tools/OpenOCD/CYW9WCD1EVAL1.cfg"
+        " -f ./tools/OpenOCD/stm32f4x.cfg"
+        " -f ./tools/OpenOCD/stm32f4x_gdb_jtag.cfg"
+    )
+    if openocd_cmd:
+        cmd = '{} -c "{}"'.format(cmd, openocd_cmd)
+
+    with ctx.cd(WICED_SDK_43X_ROOT):
+        ctx.run(cmd)
+
+
 @task
 def wiced_build(ctx):
     """Build WICED demo app"""
@@ -67,6 +83,12 @@ def wiced_flash(ctx):
     # "* For the BCM943364WCD1, BCM943438WCD1, and BCM9433634WCD1 platforms you must also add "download_apps" to the end of
     #    the target string to download the WLAN firmare to the external flash":
     _wiced_make(ctx, DEMO_APP_TARGET, "download", "download_apps")
+
+    # The WICED SDK flash commands leaves the CoreDebug->DHCSR DEBUGEN bit set when the flash
+    # commands are run. This bit only gets reset on a full POR. When set, if a breakpoint is hit,
+    # the system will HALT. If no debugger is attached, it will look like the chip is just hung. Let's
+    # gracefully tear down openocd so the bit gets cleared!
+    _run_openocd_cmd(ctx, "stm32f4xx.cpu cortex_m disconnect; shutdown")
 
 
 @task
@@ -92,14 +114,7 @@ def wiced_gdb(ctx, elf=DEMO_APP_ELF, gdb=3333):
 @task
 def wiced_openocd(ctx):
     """Runs openocd"""
-    with ctx.cd(WICED_SDK_43X_ROOT):
-        ctx.run(
-            "./tools/OpenOCD/OSX/openocd-all-brcm-libftdi"
-            " -s ./tools/OpenOCD/scripts"
-            " -f ./tools/OpenOCD/CYW9WCD1EVAL1.cfg"
-            " -f ./tools/OpenOCD/stm32f4x.cfg"
-            " -f ./tools/OpenOCD/stm32f4x_gdb_jtag.cfg"
-        )
+    _run_openocd_cmd(ctx)
 
 
 @task
@@ -107,14 +122,18 @@ def wiced_console(ctx, port=None):
     """Attach debug console"""
     if port is None:
         port = _wiced_guess_console_port()
-    ctx.run("miniterm.py --raw {port} 115200".format(port=port), pty=True)
+    ctx.run(
+        "miniterm.py --raw {port} 115200".format(port=port),
+        pty=True,
+        watchers=[PrintCoredumpWatcher(ctx)],
+    )
 
 
-WICED = Collection("wiced")
-WICED.add_task(wiced_console, name="console")
-WICED.add_task(wiced_build, name="build")
-WICED.add_task(wiced_clean, name="clean")
-WICED.add_task(wiced_flash, name="flash")
-WICED.add_task(wiced_debug, name="debug")
-WICED.add_task(wiced_gdb, name="gdb")
-WICED.add_task(wiced_openocd, name="openocd")
+ns = Collection("wiced")
+ns.add_task(wiced_console, name="console")
+ns.add_task(wiced_build, name="build")
+ns.add_task(wiced_clean, name="clean")
+ns.add_task(wiced_flash, name="flash")
+ns.add_task(wiced_debug, name="debug")
+ns.add_task(wiced_gdb, name="gdb")
+ns.add_task(wiced_openocd, name="gdbserver")

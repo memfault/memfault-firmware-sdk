@@ -13,13 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/core/errors.h"
+#include "memfault/core/math.h"
+#include "memfault/panics/assert.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 #include "memfault_platform_wiced.h"
-#include "memfault/panics/assert.h"
-#include "memfault/core/compiler.h"
-#include "memfault/panics/coredump.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/math.h"
 
 #include "http.h"
 #include "http_client.h"
@@ -46,18 +47,18 @@ typedef struct MfltHttpClient {
   void *callback_ctx;
 } sMfltHttpClient;
 
-MemfaultReturnCode memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
+int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
   MEMFAULT_ASSERT(response);
   http_response_t *wiced_response = (http_response_t *)response;
   http_status_line_t status_line = {0};
   if (WICED_SUCCESS != http_get_status_line(
       wiced_response->response_hdr, wiced_response->response_hdr_length, &status_line)) {
-    return MemfaultReturnCode_Error;
+    return -1;
   }
   if (status_out) {
     *status_out = status_line.code;
   }
-  return MemfaultReturnCode_Ok;
+  return 0;
 }
 
 static void prv_finalize_request_and_run_callback(sMfltHttpClient *client, http_response_t *response) {
@@ -254,38 +255,47 @@ error:
   return WICED_ERROR;
 }
 
-MemfaultReturnCode memfault_platform_http_client_post_coredump(sMfltHttpClient *client,
-                                                               MemfaultHttpClientResponseCallback callback, void *ctx) {
+// return different error codes from each exit point so it's easier to determine what went wrong
+typedef enum {
+  kMemfaultPlatformHttpPost_AlreadyPending = -1,
+  kMemfaultPlatformHttpPost_GetSpiAddressFailed = -2,
+  kMemfaultPlatformHttpPost_DnsLookupFailed = -3,
+  kMemfaultPlatformHttpPost_BuildUrlFailed = -4,
+} eMemfaultPlatformHttpPost;
+
+int memfault_platform_http_client_post_coredump(
+    sMfltHttpClient *client, MemfaultHttpClientResponseCallback callback, void *ctx) {
   if (client->is_request_pending) {
     MEMFAULT_LOG_ERROR("Coredump post request already pending!");
-    return MemfaultReturnCode_Error;
+    return kMemfaultPlatformHttpPost_AlreadyPending;
   }
 
   struct MfltCoredumpInfo cd_info = {0};
   if (!memfault_platform_get_spi_start_and_end_addr(&cd_info.flash_start, &cd_info.flash_end)) {
-    return MemfaultReturnCode_Error;
+    return kMemfaultPlatformHttpPost_GetSpiAddressFailed;
   }
   if (!memfault_coredump_has_valid_coredump(&cd_info.total_size)) {
-    return MemfaultReturnCode_DoesNotExist;
+    return kMfltPostCoredumpStatus_NoCoredumpFound;
   }
 
   if (!prv_do_dns_lookup(client)) {
-    return MemfaultReturnCode_Error;
+    return kMemfaultPlatformHttpPost_DnsLookupFailed;
   }
 
   char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE];
-  if (MemfaultReturnCode_Ok != memfault_http_build_url(url_buffer, MEMFAULT_HTTP_API_COREDUMP_SUBPATH)) {
-    return MemfaultReturnCode_Error;
+  if (!memfault_http_build_url(url_buffer, MEMFAULT_HTTP_API_COREDUMP_SUBPATH)) {
+    return kMemfaultPlatformHttpPost_BuildUrlFailed;
   }
 
-  if (WICED_SUCCESS != prv_connect_and_send_coredump_request(client, url_buffer, &cd_info, callback, ctx)) {
-    return MemfaultReturnCode_Error;
+  int rv = prv_connect_and_send_coredump_request(client, url_buffer, &cd_info, callback, ctx);
+  if (rv != WICED_SUCCESS) {
+    return MEMFAULT_PLATFORM_SPECIFIC_ERROR(rv);
   }
 
-  return MemfaultReturnCode_Ok;
+  return 0;
 }
 
-MemfaultReturnCode memfault_platform_http_client_wait_until_requests_completed(
+int memfault_platform_http_client_wait_until_requests_completed(
     sMfltHttpClient *client, uint32_t timeout_ms) {
   uint32_t waited_ms = 0;
   while (client->is_request_pending) {
@@ -293,14 +303,14 @@ MemfaultReturnCode memfault_platform_http_client_wait_until_requests_completed(
     wiced_rtos_delay_milliseconds(100);
     waited_ms += 100;
     if (waited_ms >= timeout_ms) {
-      return MemfaultReturnCode_Timeout;
+      return -1;
     }
   }
-  return MemfaultReturnCode_Ok;
+  return 0;
 }
 
-MemfaultReturnCode memfault_platform_http_client_destroy(sMfltHttpClient *client) {
+int memfault_platform_http_client_destroy(sMfltHttpClient *client) {
   http_client_deinit((http_client_t *)client);
   free(client);
-  return MemfaultReturnCode_Ok;
+  return 0;
 }

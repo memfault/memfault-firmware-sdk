@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/errors.h"
 
 #define MEMFAULT_REBOOT_INFO_MAGIC 0x21544252
 
@@ -60,14 +61,14 @@ static void prv_check_or_init_struct(void) {
   };
 }
 
-MemfaultReturnCode memfault_reboot_tracking_boot(void *start_addr) {
+int memfault_reboot_tracking_boot(void *start_addr) {
   if (start_addr == NULL) {
-    return MemfaultReturnCode_InvalidInput;
+    return MemfaultInternalReturnCode_InvalidInput;
   }
 
   s_mflt_reboot_info = start_addr;
   prv_check_or_init_struct();
-  return MemfaultReturnCode_Ok;
+  return 0;
 }
 
 void memfault_reboot_tracking_mark_app_launch_attempted(void) {

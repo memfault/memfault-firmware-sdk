@@ -4,10 +4,14 @@ Ship Firmware with Confidence.
 
 # Getting Started
 
-The quickest way to get started is by using a development board for which the
-Memfault SDK has a demo application and platform reference implementation.
+The Memfault SDK can be integrated with _any_ ARM Cortex-M based MCU.
 
-At the moment these SDKs / boards are supported:
+If you'd like to see the type of data which can be collected before doing any
+integration, check out https://try.memfault.com
+
+The easiest way to get started integrating is by using a development board for
+which the Memfault SDK already has a reference integration. At the moment,
+examples are available for:
 
 - WICED SDK / Cypress BCM943364WCD1
 - nRF5 SDK / Nordic nRF52840 (PCA10056)
@@ -39,7 +43,6 @@ dependencies. Also see the `platforms` folder.
 
 - `panics` – fault handling, coredump and reboot tracking and reboot loop
   detection API.
-- `metrics` – events & metrics API.
 
 Please refer to the `README.md` in each of these for more details.
 
@@ -135,4 +138,4 @@ Available tasks:
 - I'm getting error XYZ, what to do now?
 
   - Don't hesitate to contact us for help! You can reach us through
-    [team@memfault.com](mailto:team@memfault.com).
+    [support@memfault.com](mailto:support@memfault.com).

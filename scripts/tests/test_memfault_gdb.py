@@ -3,36 +3,154 @@
 # See License.txt for details
 #
 import os
+from json import dumps
+
+import pytest
 import sys
 from unittest import mock
-from unittest.mock import MagicMock
 
-from io import BytesIO
+from tempfile import NamedTemporaryFile
+from unittest.mock import MagicMock, ANY
+
+from io import BufferedIOBase, BytesIO
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(os.path.dirname(script_dir))
 sys.path.append(root_dir)
 
 
-def test_parse_maintenance_info_sections_no_file():
-    with mock.patch.dict("sys.modules", gdb=MagicMock()):
-        from memfault_gdb import parse_maintenance_info_sections
+@pytest.fixture
+def gdb_base_fixture():
+    gdb = MagicMock()
+    gdb.Command = MagicMock
 
-    fn, sections = parse_maintenance_info_sections(
-        """Remote serial target in gdb-specific protocol:
-Debugging a target over a serial line.
-"""
-    )
-    assert fn == None
-    assert sections == None
+    def _lookup_type(name):
+        mock_type = MagicMock()
+
+        sizeof_by_name = {
+            "unsigned char": 1,
+            "unsigned short": 2,
+            "unsigned int": 4,
+            "unsigned long": 4,
+            "unsigned long long": 8,
+        }
+        mock_type.sizeof = sizeof_by_name[name]
+        return mock_type
+
+    gdb.lookup_type.side_effect = _lookup_type
+
+    with mock.patch.dict("sys.modules", {"gdb": gdb}):
+        yield gdb  # Let's yield gdb so we can easily extend the mock
 
 
-def test_parse_maintenance_info_sections_with_file():
-    with mock.patch.dict("sys.modules", gdb=MagicMock()):
-        from memfault_gdb import parse_maintenance_info_sections, Section
+@pytest.fixture
+def gdb_frame_register_read_fixture(gdb_base_fixture):
+    def _read_register(name):
+        register = MagicMock()
+        register.type = MagicMock()
+        if name.lower() == "control":
+            register.type.sizeof = 1
+        else:
+            register.type.sizeof = 4
+        register.name = name
+        return register
 
-    fixture = """Exec file:
-    `/Users/mthe/memfault/memfault/sdk/embedded/platforms/nrf5/memfault_test_app/build/mf_test_app_nrf52840_s140.out', file type elf32-littlearm.
+    def _newest_frame():
+        read_reg_mock = MagicMock()
+        read_reg_mock.read_register = _read_register
+        return read_reg_mock
+
+    gdb_base_fixture.newest_frame = _newest_frame
+    yield gdb_base_fixture
+
+
+@pytest.fixture
+def gdb_with_inferior_fixure(gdb_frame_register_read_fixture):
+    inferior = MagicMock()
+    inferior.threads.return_value = [MagicMock()]
+    gdb_frame_register_read_fixture.selected_inferior.return_value = inferior
+    yield gdb_frame_register_read_fixture  # Let's yield gdb so we can easily extend the mock
+
+
+@pytest.fixture
+def http_expect_request():
+    http = MagicMock()
+    connections = []
+    expected_requests = []
+    actual_request_count = 0
+
+    def _http_expect_request(url, method, req_body, req_headers, resp_status, resp_body):
+        expected_requests.append((url, method, req_body, req_headers, resp_status, resp_body))
+
+    def _create_connection_constructor(scheme):
+        def _connection_constructor(hostname, port=0):
+            connection = MagicMock()
+            try:
+                exp_url, exp_method, exp_req_body, exp_req_headers, resp_status, resp_body = expected_requests[
+                    len(connections)
+                ]
+            except IndexError:
+                raise Exception("Unexpected mock HTTPConnection created!")
+
+            def _request(method, path, body=None, headers=None):
+                nonlocal actual_request_count
+                actual_request_count += 1
+                standard_port = (scheme == "http" and port != 80) or (
+                    scheme == "https" and port != 443
+                )
+                port_str = ":{}".format(port) if standard_port else ""
+                assert "{}://{}{}{}".format(scheme, hostname, port_str, path) == exp_url
+                assert method == exp_method
+                if isinstance(body, BufferedIOBase):
+                    body_bytes = body.read()
+                    assert body_bytes == exp_req_body
+                else:
+                    assert body == exp_req_body
+                assert headers == exp_req_headers
+
+            connection.request = _request
+            response = MagicMock()
+            response.status = resp_status
+            response.reason = ""
+            response.read.return_value = dumps(resp_body).encode("utf8")
+            connection.getresponse.return_value = response
+            connections.append(connections)
+            return connection
+
+        return _connection_constructor
+
+    http.HTTPSConnection = _create_connection_constructor("https")
+    http.HTTPConnection = _create_connection_constructor("http")
+
+    with mock.patch.dict("sys.modules", {"http.client": http}):
+        yield _http_expect_request
+
+    assert actual_request_count == len(expected_requests)
+
+
+TEST_EMAIL = "martijn@memfault.com"
+TEST_PASSWORD = "open_sesame"
+TEST_AUTH_HEADERS = {"Authorization": "Basic bWFydGlqbkBtZW1mYXVsdC5jb206b3Blbl9zZXNhbWU="}
+TEST_ORG = "acme-inc"
+TEST_PROJECT = "smart-sink"
+TEST_HW_VERSION = "DEVBOARD"
+TEST_PROJECT_KEY = "7f083342d30444b2b3bed65357f24a19"
+
+
+@pytest.fixture
+def test_config(gdb_base_fixture):
+    """Updates MEMFAULT_CONFIG to contain TEST_... values"""
+    from memfault_gdb import MEMFAULT_CONFIG
+
+    MEMFAULT_CONFIG.email = TEST_EMAIL
+    MEMFAULT_CONFIG.password = TEST_PASSWORD
+    MEMFAULT_CONFIG.organization = TEST_ORG
+    MEMFAULT_CONFIG.project = TEST_PROJECT
+    return MEMFAULT_CONFIG
+
+
+TEST_MAINTENANCE_INFO_SECTIONS_FIXTURE_FMT = """Exec file:
+    `{}', file type elf32-littlearm.
  [0]     0x26000->0x6b784 at 0x00006000: .text ALLOC LOAD READONLY CODE HAS_CONTENTS
  [1]     0x2003d800->0x2003e878 at 0x0005d800: .rtt ALLOC
  [2]     0x6b784->0x6b7a8 at 0x0004b784: .gnu_build_id ALLOC LOAD READONLY DATA HAS_CONTENTS
@@ -69,19 +187,121 @@ def test_parse_maintenance_info_sections_with_file():
  [33]     0x0000->0x91f0 at 0x00352170: .debug_frame READONLY HAS_CONTENTS
  [34]     0x0000->0x00df at 0x0035b360: .stabstr READONLY HAS_CONTENTS
 """
-    fn, sections = parse_maintenance_info_sections(fixture)
-    assert (
-        fn
-        == "/Users/mthe/memfault/memfault/sdk/embedded/platforms/nrf5/memfault_test_app/build/mf_test_app_nrf52840_s140.out"
+
+
+@pytest.fixture
+def fake_elf():
+    with NamedTemporaryFile() as fake_elf:
+        fake_elf.write(b"ELF")
+        fake_elf.seek(0)
+        yield fake_elf
+
+
+@pytest.fixture
+def maintenance_info_sections_fixture(fake_elf):
+    return TEST_MAINTENANCE_INFO_SECTIONS_FIXTURE_FMT.format(fake_elf.name)
+
+
+# Data from a GDB Server with register names that differ from the final names we use
+@pytest.fixture
+def info_reg_all_fixture(fake_elf):
+    return """
+r0             0x0	0
+r1             0x1	1
+r2             0xe000ed00	-536810240
+r3             0x20003fe8	536887272
+r4             0x20000294	536871572
+r5             0x0	0
+r6             0x0	0
+r7             0x0	0
+r8             0x0	0
+r9             0x0	0
+r10            0x0	0
+r11            0x0	0
+r12            0x0	0
+sp             0x200046c8	0x200046c8 <os_idle_thread_stack+480>
+lr             0x8002649	134227529
+pc             0x8007122	0x8007122 <hal_sleep+18>
+cpsr           0x61000000	1627389952
+PRIMASK        0x0	0
+BASExPRI        0x0	0
+FAULTMASK      0x0	0
+CONTROL        0x0	0
+MSP            0x2001ffc0	537001920
+PSP            0x200046c8	536889032
+"""
+
+
+@pytest.fixture(scope="function")
+def settings_fixture(gdb_for_coredump):
+    from memfault_gdb import MEMFAULT_CONFIG, settings_save
+
+    with NamedTemporaryFile() as f:
+        MEMFAULT_CONFIG.json_path = f.name
+        yield settings_save
+
+
+@pytest.fixture(scope="function")
+def settings_coredump_allowed(settings_fixture):
+    yield settings_fixture({"coredump.allow": True})
+
+
+@pytest.fixture(scope="function")
+def settings_coredump_disallowed(settings_fixture):
+    yield settings_fixture({"coredump.allow": False})
+
+
+# We save the time in the coredump generated so each run of "memfault coredump" looks unique
+# Let's monkeypatch time so we get a reproducible time in out unit tests
+@pytest.fixture(scope="function", autouse=True)
+def patch_datetime_now(monkeypatch):
+    import time
+
+    def overriden_wrapped_time():
+        return float(1565034658.6)
+
+    monkeypatch.setattr(time, "time", overriden_wrapped_time)
+
+
+def test_parse_maintenance_info_sections_no_file(gdb_base_fixture):
+    from memfault_gdb import parse_maintenance_info_sections
+
+    fn, sections = parse_maintenance_info_sections(
+        """Remote serial target in gdb-specific protocol:
+Debugging a target over a serial line.
+"""
     )
+    assert fn == None
+    assert sections == None
+
+
+def test_parse_maintenance_info_sections_with_file(
+    gdb_base_fixture, maintenance_info_sections_fixture, fake_elf
+):
+    from memfault_gdb import parse_maintenance_info_sections, Section
+
+    fn, sections = parse_maintenance_info_sections(maintenance_info_sections_fixture)
+    assert fn == fake_elf.name
     assert len(sections) == 35
     assert sections[0] == Section(0x26000, 0x6B784 - 0x26000, ".text", read_only=True)
     assert sections[20] == Section(0x20005C30, 0x2000B850 - 0x20005C30, ".bss", read_only=False)
 
 
-def test_should_capture_section():
-    with mock.patch.dict("sys.modules", gdb=MagicMock()):
-        from memfault_gdb import Section, should_capture_section
+def test_read_current_registers(gdb_frame_register_read_fixture, info_reg_all_fixture):
+    from memfault_gdb import lookup_registers_from_list, ARM_CORTEX_M_REGISTER_COLLECTION
+
+    dummy_dict = {}
+    register_list = lookup_registers_from_list(info_reg_all_fixture, dummy_dict)
+    print(register_list)
+    for reg in ARM_CORTEX_M_REGISTER_COLLECTION:
+        # A mock read_register should have taken place so the value should be non-zero
+        assert len(register_list[reg]) == 4
+        assert register_list[reg][0] != 0, reg
+
+
+def test_should_capture_section(gdb_base_fixture):
+    from memfault_gdb import Section, should_capture_section
+
     # Never capture .text, even when NOT marked READONLY:
     assert False == should_capture_section(Section(0, 0, ".text", read_only=False))
 
@@ -95,9 +315,52 @@ def test_should_capture_section():
     assert True == should_capture_section(Section(0, 0, ".dram0.data", read_only=True))
 
 
-def test_coredump_writer():
-    with mock.patch.dict("sys.modules", gdb=MagicMock()):
-        from memfault_gdb import Section, MemfaultCoredumpWriter
+def test_armv7_get_used_ram_base_addresses(gdb_base_fixture):
+    from memfault_gdb import Section, armv7_get_used_ram_base_addresses
+
+    sections = (
+        Section(0x30000000, 10, "", read_only=True),
+        Section(0x70000000, 10, "", read_only=True),
+        Section(0x90000000, 10, "", read_only=True),
+        Section(0x00000000, 10, "", read_only=True),
+        Section(0xE0000000, 10, "", read_only=True),
+    )
+    assert {0x20000000, 0x60000000, 0x80000000} == armv7_get_used_ram_base_addresses(sections)
+
+
+def test_read_memory_until_error_no_error(gdb_base_fixture):
+    from memfault_gdb import read_memory_until_error
+
+    read_size = 1024
+    size = 1024 * 1024
+    inferior = MagicMock()
+    inferior.read_memory.return_value = b"A" * read_size
+    data = read_memory_until_error(inferior, 0x20000000, size, read_size=read_size)
+    assert data == b"A" * size
+
+
+def test_read_memory_until_error_after_10k(gdb_base_fixture):
+    from memfault_gdb import read_memory_until_error
+
+    read_size = 1024
+    size = 1024 * 1024
+    inferior = MagicMock()
+    total_size = 0
+
+    def _read_memory_raise_after_10k(_addr, _size):
+        nonlocal total_size
+        total_size += _size
+        if total_size > _size * 10:
+            raise Exception()
+        return b"A" * _size
+
+    inferior.read_memory.side_effect = _read_memory_raise_after_10k
+    data = read_memory_until_error(inferior, 0x20000000, size, read_size=read_size)
+    assert data == b"A" * read_size * 10
+
+
+def test_coredump_writer(gdb_base_fixture):
+    from memfault_gdb import Section, MemfaultCoredumpWriter
 
     cd_writer = MemfaultCoredumpWriter()
     cd_writer.device_serial = "device_serial"
@@ -122,6 +385,10 @@ def test_coredump_writer():
         "lr": 4 * b"\x0E",
         "pc": 4 * b"\x0F",
         "xpsr": 4 * b"\x10",
+        "msp": 4 * b"\x11",
+        "psp": 4 * b"\x12",
+        "primask": 4 * b"\x13",
+        "control": 4 * b"\x14",
     }
     section = Section(4, 32, ".test", "")
     section.data = b"hello world"
@@ -132,3 +399,285 @@ def test_coredump_writer():
     f_out.seek(0)
     fixture_bin = open(os.path.join(script_dir, "fixture.bin"), "rb").read()
     assert f_out.read() == fixture_bin
+
+
+def test_http_basic_auth(gdb_base_fixture):
+    from memfault_gdb import add_basic_auth
+
+    headers = add_basic_auth("martijn@memfault.com", "open_sesame", {"Foo": "Bar"})
+    print(headers)
+    assert headers == {
+        "Foo": "Bar",
+        "Authorization": "Basic bWFydGlqbkBtZW1mYXVsdC5jb206b3Blbl9zZXNhbWU=",
+    }
+
+
+@pytest.fixture
+def gdb_for_coredump(gdb_with_inferior_fixure, maintenance_info_sections_fixture):
+    import gdb
+
+    def _gdb_execute(cmd, to_string):
+        if cmd == "maintenance info sections":
+            return maintenance_info_sections_fixture
+        if cmd == "info reg all":
+            return "r0\t0\n"
+        if cmd.startswith("show arch"):
+            return "The target architecture is set automatically (currently armv7m)"
+        return ""
+
+    gdb.execute = _gdb_execute
+
+    inferior = gdb.selected_inferior()
+
+    def _read_memory(addr, size):
+        return b"A" * size
+
+    inferior.read_memory = _read_memory
+    yield gdb
+
+
+def test_coredump_command_no_target(gdb_base_fixture, capsys, settings_coredump_allowed):
+    """Test coredump command shows error when no target is connected"""
+    from memfault_gdb import MemfaultCoredump, MEMFAULT_CONFIG
+    import gdb
+
+    inferior = gdb.selected_inferior()
+    inferior.threads.return_value = []
+
+    cmd = MemfaultCoredump()
+    cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)
+
+    stdout = capsys.readouterr().out
+    assert "No target" in stdout
+
+
+def test_coredump_command_non_arm(gdb_with_inferior_fixure, capsys, settings_coredump_allowed):
+    """Test coredump command shows error when no ARM target"""
+    from memfault_gdb import MemfaultCoredump, MEMFAULT_CONFIG
+
+    def _gdb_execute(cmd, to_string):
+        if cmd.startswith("show arch"):
+            return "The target architecture is set automatically (currently xtensa)"
+        return ""
+
+    gdb_with_inferior_fixure.execute = _gdb_execute
+
+    cmd = MemfaultCoredump()
+    cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)
+
+    stdout = capsys.readouterr().out
+    assert "This command is currently only supported for ARM targets!" in stdout
+
+
+def test_coredump_command_with_project_key(
+    gdb_for_coredump, http_expect_request, settings_coredump_allowed
+):
+    """Test coredump command project key"""
+    from memfault_gdb import MemfaultCoredump, MEMFAULT_CONFIG
+
+    # Expect to use ingress_uri from config if not provided explicitely to the command invocation
+    MEMFAULT_CONFIG.ingress_uri = "https://custom-ingress.memfault.com"
+
+    http_expect_request(
+        "https://custom-ingress.memfault.com/api/v0/upload/coredump",
+        "POST",
+        ANY,  # Not checking the request body at the moment
+        {"Content-Type": "application/octet-stream", "Memfault-Project-Key": TEST_PROJECT_KEY},
+        200,
+        {},
+    )
+
+    cmd = MemfaultCoredump()
+    cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)
+
+
+def test_coredump_command_not_allowing(
+    gdb_for_coredump, http_expect_request, settings_coredump_disallowed, capsys
+):
+    """Test coredump command and not accepting prompt"""
+    from memfault_gdb import MemfaultCoredump, MEMFAULT_CONFIG
+
+    MEMFAULT_CONFIG.input = lambda prompt: "N"
+
+    cmd = MemfaultCoredump()
+    cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)
+
+    stdout = capsys.readouterr().out
+    assert "Aborting" in stdout
+
+
+@pytest.mark.parametrize(
+    "expected_result,extra_cmd_args,expected_coredump_fn",
+    [(None, "", "fixture2.bin"), (None, "-r 0x600000 8 -r 0x800000 4", "fixture3.bin")],
+)
+def test_coredump_command_with_login_no_existing_release_or_symbols(
+    gdb_for_coredump,
+    http_expect_request,
+    test_config,
+    expected_result,
+    extra_cmd_args,
+    expected_coredump_fn,
+    settings_coredump_allowed,
+    capsys,
+):
+    """Test coredump command without project key, but with logged in user and default org & project"""
+    from memfault_gdb import MemfaultCoredump
+
+    # Check whether Release and symbols exists -- No (404)
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases/1.0.0-md5+b61b2d6c",
+        "GET",
+        ANY,
+        ANY,
+        404,
+        None,
+    )
+
+    # Create Release
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases",
+        "POST",
+        '{"revision": "N/A (Uploaded from GDB)", "version": "1.0.0-md5+b61b2d6c"}',
+        ANY,
+        200,
+        {"data": {}},
+    )
+
+    # Upload Symbols
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases/1.0.0-md5+b61b2d6c/artifacts?type=symbols&hardware_version=DEVBOARD",
+        "POST",
+        ANY,
+        ANY,
+        200,
+        {"data": {}},
+    )
+
+    # Get Project-Key:
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/api_key",
+        "GET",
+        ANY,
+        ANY,
+        200,
+        {"data": {"api_key": TEST_PROJECT_KEY}},
+    )
+
+    # Upload coredump:
+    expected_coredump_data = open(os.path.join(script_dir, expected_coredump_fn), "rb").read()
+    if expected_coredump_fn == "fixture2.bin":
+        # fixture2.bin is truncated in the interest of avoiding bloat. Add 1MB of "A"s:
+        expected_coredump_data += 1024 * 1024 * b"A"
+
+    http_expect_request(
+        "https://ingress.memfault.com/api/v0/upload/coredump",
+        "POST",
+        expected_coredump_data,
+        {"Content-Type": "application/octet-stream", "Memfault-Project-Key": TEST_PROJECT_KEY},
+        200,
+        {},
+    )
+
+    cmd = MemfaultCoredump()
+    cmd.invoke(extra_cmd_args, True)
+
+    stdout = capsys.readouterr().out
+    assert (
+        """Coredump uploaded successfully!
+Once it has been processed, it will appear here:
+https://app.memfault.com/organizations/acme-inc/projects/smart-sink/issues?live"""
+        in stdout
+    )
+
+
+def test_login_command_simple(gdb_base_fixture, http_expect_request):
+    from memfault_gdb import MemfaultLogin, MEMFAULT_CONFIG
+
+    http_expect_request("https://api.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {})
+
+    login = MemfaultLogin()
+    login.invoke("{} {}".format(TEST_EMAIL, TEST_PASSWORD), True)
+
+    assert MEMFAULT_CONFIG.email == TEST_EMAIL
+    assert MEMFAULT_CONFIG.password == TEST_PASSWORD
+    assert MEMFAULT_CONFIG.organization == None
+    assert MEMFAULT_CONFIG.project == None
+
+
+def test_login_command_with_all_options(gdb_base_fixture, http_expect_request):
+    from memfault_gdb import MemfaultLogin, MEMFAULT_CONFIG
+
+    test_api_uri = "http://dev-api.memfault.com:5000"
+    test_ingress_uri = "http://dev-ingress.memfault.com"
+
+    http_expect_request(
+        "http://dev-api.memfault.com:5000/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {}
+    )
+
+    login = MemfaultLogin()
+    login.invoke(
+        "{} {} -o {} -p {} --api-uri {} --ingress-uri {}".format(
+            TEST_EMAIL, TEST_PASSWORD, TEST_ORG, TEST_PROJECT, test_api_uri, test_ingress_uri
+        ),
+        True,
+    )
+
+    assert MEMFAULT_CONFIG.email == TEST_EMAIL
+    assert MEMFAULT_CONFIG.password == TEST_PASSWORD
+    assert MEMFAULT_CONFIG.organization == TEST_ORG
+    assert MEMFAULT_CONFIG.project == TEST_PROJECT
+    assert MEMFAULT_CONFIG.api_uri == test_api_uri
+    assert MEMFAULT_CONFIG.ingress_uri == test_ingress_uri
+
+
+def test_login_command_try(gdb_base_fixture, http_expect_request):
+    from memfault_gdb import MemfaultLogin, MEMFAULT_CONFIG
+
+    http_expect_request(
+        "https://api.try.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {}
+    )
+
+    login = MemfaultLogin()
+    login.invoke("{} {} --try-me".format(TEST_EMAIL, TEST_PASSWORD), True)
+
+    assert MEMFAULT_CONFIG.email == TEST_EMAIL
+    assert MEMFAULT_CONFIG.password == TEST_PASSWORD
+    assert MEMFAULT_CONFIG.organization == None
+    assert MEMFAULT_CONFIG.project == None
+    assert MEMFAULT_CONFIG.api_uri == "https://api.try.memfault.com"
+    assert MEMFAULT_CONFIG.ingress_uri == "https://ingress.try.memfault.com"
+
+
+@pytest.mark.parametrize(
+    "expected_result,resp_status,resp_body",
+    [
+        (
+            (True, True),
+            200,
+            {"data": {"artifacts": [{"type": "symbols", "hardware_version": TEST_HW_VERSION}]}},
+        ),
+        ((True, False), 200, {"data": {"artifacts": []}}),
+        ((False, False), 404, None),
+    ],
+)
+def test_has_release_and_uploaded_symbols(
+    gdb_base_fixture, http_expect_request, expected_result, resp_status, resp_body, test_config
+):
+    from memfault_gdb import has_release_and_uploaded_symbols, MEMFAULT_CONFIG
+
+    test_fw_version = "1.0.0"
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/{}/projects/{}/releases/{}".format(
+            test_config.organization, test_config.project, test_fw_version
+        ),
+        "GET",
+        None,
+        TEST_AUTH_HEADERS,
+        resp_status,
+        resp_body,
+    )
+
+    assert (
+        has_release_and_uploaded_symbols(test_config, test_fw_version, TEST_HW_VERSION)
+        == expected_result
+    )

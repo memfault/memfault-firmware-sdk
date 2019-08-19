@@ -14,8 +14,6 @@
 //!
 //! By leveraging this module, one can prevent a buggy main firmware from bricking the device
 
-#include "memfault/core/errors.h"
-
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 256
 
 #ifdef __cplusplus
@@ -29,7 +27,7 @@ extern "C" {
 //!   - The size of the region should be MEMFAULT_REBOOT_TRACKING_REGION_SIZE
 //!   - This should be called once on bootup of the system prior to making
 //!     any other reboot_tracking calls
-MemfaultReturnCode memfault_reboot_tracking_boot(void *start_addr);
+int memfault_reboot_tracking_boot(void *start_addr);
 
 //! Marks the firmware as stable
 //!

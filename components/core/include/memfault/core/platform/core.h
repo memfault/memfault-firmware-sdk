@@ -13,16 +13,14 @@
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
-#include "memfault/core/errors.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 //! Initialize your platform code
-//! @return @ref MemfaultReturnCode_Ok if initialization completed
-//!         @ref MemfaultReturnCode_Error if not
-MemfaultReturnCode memfault_platform_boot(void);
+//! @return 0 if initialization completed, else error code
+int memfault_platform_boot(void);
 
 //! Invoked after memfault fault handling has run.
 //!

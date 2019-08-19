@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "memfault/core/debug_log.h"
+#include "memfault/core/errors.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/http_client.h"
 #include "memfault/panics/assert.h"
@@ -45,10 +46,10 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
   sMfltHttpClient *http_client = memfault_http_client_create();
   if (!http_client) {
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
-    return -1;
+    return MemfaultInternalReturnCode_Error;
   }
-  const MemfaultReturnCode rv = memfault_http_client_post_coredump(http_client);
-  if (rv == MemfaultReturnCode_DoesNotExist) {
+  const eMfltPostCoredumpStatus rv = memfault_http_client_post_coredump(http_client);
+  if (rv == kMfltPostCoredumpStatus_NoCoredumpFound) {
     MEMFAULT_LOG_INFO("No coredump found");
   } else {
     MEMFAULT_LOG_INFO("Result: %d", rv);

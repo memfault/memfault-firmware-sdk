@@ -8,6 +8,7 @@ import os
 
 from invoke import Collection, task
 from .gdb import gdb_build_cmd
+from .print_coredump_watcher import PrintCoredumpWatcher
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.dirname(TASKS_DIR)
@@ -41,7 +42,10 @@ def run_arm_toolchain_check(ctx):
 @task
 def nrf_console(ctx, telnet=JLINK_TELNET_SERVER_DEFAULT_PORT):
     """Start a RTT console session"""
-    ctx.run("JLinkRTTClient -LocalEcho Off -RTTTelnetPort {telnet_port}".format(telnet_port=telnet))
+    ctx.run(
+        "JLinkRTTClient -LocalEcho Off -RTTTelnetPort {telnet_port}".format(telnet_port=telnet),
+        watchers=[PrintCoredumpWatcher(ctx)],
+    )
 
 
 def _run_demo_app_make_command(ctx, rules=None):
@@ -114,11 +118,11 @@ def nrf_debug(ctx, elf=NRF_DEMO_APP_ELF, gdb=JLINK_GDB_SERVER_DEFAULT_PORT):
     ctx.run(cmd, pty=True)
 
 
-NRF5 = Collection("nrf")
-NRF5.add_task(nrf_build, name="build")
-NRF5.add_task(nrf_clean, name="clean")
-NRF5.add_task(nrf_console, name="console")
-NRF5.add_task(nrf_debug, name="debug")
-NRF5.add_task(nrf_eraseflash, name="eraseflash")
-NRF5.add_task(nrf_flash, name="flash")
-NRF5.add_task(nrf_gdbserver, name="gdbserver")
+ns = Collection("nrf")
+ns.add_task(nrf_build, name="build")
+ns.add_task(nrf_clean, name="clean")
+ns.add_task(nrf_console, name="console")
+ns.add_task(nrf_debug, name="debug")
+ns.add_task(nrf_eraseflash, name="eraseflash")
+ns.add_task(nrf_flash, name="flash")
+ns.add_task(nrf_gdbserver, name="gdbserver")

@@ -3,7 +3,7 @@ NAME := MemfaultPanics
 $(NAME)_SOURCES    := src/memfault_coredump.c \
                       src/memfault_fault_handling_arm.c \
                       src/memfault_ram_reboot_info_tracking.c \
-
+                      src/memfault_coredump_regions_armv7.c \
 
 $(NAME)_COMPONENTS := drivers/spi_flash \
                       libraries/memfault/core \

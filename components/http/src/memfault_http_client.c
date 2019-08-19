@@ -9,10 +9,11 @@
 
 #include "memfault/http/http_client.h"
 
-#include "memfault/panics/coredump.h"
 #include "memfault/core/debug_log.h"
-#include "memfault/panics/platform/coredump.h"
+#include "memfault/core/errors.h"
 #include "memfault/http/platform/http_client.h"
+#include "memfault/panics/coredump.h"
+#include "memfault/panics/platform/coredump.h"
 
 #include <stdio.h>
 
@@ -23,13 +24,10 @@ static const char *prv_get_scheme(void) {
   return g_mflt_http_client_config.api_no_tls ? "http" : "https";
 }
 
-MemfaultReturnCode memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], const char *subpath) {
+bool memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], const char *subpath) {
   const int rv = snprintf(url_buffer, MEMFAULT_HTTP_URL_BUFFER_SIZE, "%s://%s" MEMFAULT_HTTP_API_PREFIX "%s",
                           prv_get_scheme(), MEMFAULT_HTTP_GET_API_HOST(), subpath);
-  if (MEMFAULT_HTTP_URL_BUFFER_SIZE <= rv) {
-    return MemfaultReturnCode_Error;
-  }
-  return MemfaultReturnCode_Ok;
+  return (rv < MEMFAULT_HTTP_URL_BUFFER_SIZE);
 }
 
 sMfltHttpClient *memfault_http_client_create(void) {
@@ -41,8 +39,8 @@ static void prv_handle_post_coredump_response(const sMfltHttpResponse *response,
     return;  // Request failed
   }
   uint32_t http_status = 0;
-  const MemfaultReturnCode rv = memfault_platform_http_response_get_status(response, &http_status);
-  if (rv != MemfaultReturnCode_Ok) {
+  const int rv = memfault_platform_http_response_get_status(response, &http_status);
+  if (rv != 0) {
     MEMFAULT_LOG_ERROR("Request failed. No HTTP status: %d", rv);
     return;
   }
@@ -55,24 +53,23 @@ static void prv_handle_post_coredump_response(const sMfltHttpResponse *response,
   memfault_platform_coredump_storage_clear();
 }
 
-MemfaultReturnCode memfault_http_client_post_coredump(sMfltHttpClient *client) {
+int memfault_http_client_post_coredump(sMfltHttpClient *client) {
   if (!client) {
-    return MemfaultReturnCode_InvalidInput;
+    return MemfaultInternalReturnCode_InvalidInput;
   }
   return memfault_platform_http_client_post_coredump(client, prv_handle_post_coredump_response, NULL);
 }
 
-MemfaultReturnCode memfault_http_client_wait_until_requests_completed(
-    sMfltHttpClient *client, uint32_t timeout_ms) {
+int memfault_http_client_wait_until_requests_completed(sMfltHttpClient *client, uint32_t timeout_ms) {
   if (!client) {
-    return MemfaultReturnCode_InvalidInput;
+    return MemfaultInternalReturnCode_InvalidInput;
   }
   return memfault_platform_http_client_wait_until_requests_completed(client, timeout_ms);
 }
 
-MemfaultReturnCode memfault_http_client_destroy(sMfltHttpClient *client) {
+int memfault_http_client_destroy(sMfltHttpClient *client) {
   if (!client) {
-    return MemfaultReturnCode_InvalidInput;
+    return MemfaultInternalReturnCode_InvalidInput;
   }
   return memfault_platform_http_client_destroy(client);
 }

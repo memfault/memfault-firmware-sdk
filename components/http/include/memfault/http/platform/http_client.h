@@ -13,7 +13,6 @@
 #include <stddef.h>
 
 #include "memfault/http/http_client.h"
-#include "memfault/core/errors.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,8 +37,8 @@ typedef void (*MemfaultHttpClientResponseCallback)(const sMfltHttpResponse *resp
 //! Get the HTTP status code of a response object.
 //! @param response The response object. Guaranteed to be non-NULL.
 //! @param[out] status_out Pointer to variable to which to write the HTTP status code.
-//! @return MemfaultReturnCode_Ok on success.
-MemfaultReturnCode memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out);
+//! @return 0 on success, else error code
+int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out);
 
 //! Posts coredump that is pending transmission to Memfault's services over HTTPS to the API path defined by
 //! MEMFAULT_HTTP_API_COREDUMP_SUBPATH. The implementation is expected to set the project key header (see
@@ -50,23 +49,23 @@ MemfaultReturnCode memfault_platform_http_response_get_status(const sMfltHttpRes
 //!
 //! @param client The client to use to post the request. Guaranteed to be non-NULL.
 //! @param callback The callback to call with the response object. This callback MUST ALWAYS be called when this
-//! function returned MemfaultReturnCode_Ok!
+//! function returned kMfltPostCoredumpStatus_Success!
 //! @param ctx Pointer to user data that is expected to be passed into the callback.
-//! @return MemfaultReturnCode_Ok on success and MemfaultReturnCode_DoesNotExist if no coredump has been found, or
-//! any other error code in case of a (non-HTTP) error.
-MemfaultReturnCode memfault_platform_http_client_post_coredump(sMfltHttpClient *client,
-    MemfaultHttpClientResponseCallback callback, void *ctx);
+//! @return kMfltPostCoredumpStatus_Success on success and kMfltPostCoredumpStatus_NoCoredumpFound
+//! if no coredump has been found, or any other error code in case of a (non-HTTP) error.
+int memfault_platform_http_client_post_coredump(sMfltHttpClient *client,
+                                                MemfaultHttpClientResponseCallback callback, void *ctx);
 
 //! Waits until pending requests have been completed.
 //! @param client The http client. Guaranteed to be non-NULL.
-//! @return MemfaultReturnCode_Ok on success.
-MemfaultReturnCode memfault_platform_http_client_wait_until_requests_completed(
+//! @return 0 on success.
+int memfault_platform_http_client_wait_until_requests_completed(
     sMfltHttpClient *client, uint32_t timeout_ms);
 
 //! Destroys a HTTP client that was previously created using memfault_platform_http_client_create().
 //! @param client The client to destroy. Guaranteed to be non-NULL.
-//! @return MemfaultReturnCode_Ok iff the client was destroyed successfully.
-MemfaultReturnCode memfault_platform_http_client_destroy(sMfltHttpClient *client);
+//! @return 0 iff the client was destroyed successfully.
+int memfault_platform_http_client_destroy(sMfltHttpClient *client);
 
 #ifdef __cplusplus
 }

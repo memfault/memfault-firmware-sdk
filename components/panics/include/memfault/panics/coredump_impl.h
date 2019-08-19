@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/panics/platform/coredump.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +26,7 @@ typedef enum MfltCoredumpBlockType  {
   kMfltCoredumpRegionType_PaddingRegion = 6,
   kMfltCoredumpRegionType_MachineType = 7,
   kMfltCoredumpRegionType_VendorCoredumpEspIdfV2ToV3_1 = 8,
+  kMfltCoredumpRegionType_ArmV6orV7Mpu = 9,
 } eMfltCoredumpBlockType;
 
 //! Callback that will be called to write coredump data.
@@ -55,6 +58,11 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
 //! @param write_cb The function that will be called to write out the block header and (optionally) the block payload.
 //! @param ctx User data pointer that will be passed to write_cb.
 void memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx);
+
+//! @param num_regions The number of regions in the list returned
+//! @return regions to collect based on the active architecture or NULL if there are no extra
+//! regions to collect
+const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions);
 
 #ifdef __cplusplus
 }

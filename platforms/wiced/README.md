@@ -32,18 +32,17 @@ SDK and performed the installation steps that are mentioned there.
    $ ln -s /path/to/memfault_sdk/platforms/wiced/libraries/memfault memfault
    ```
 4. Optionally, to make the make the invoke tasks work, add a symlink inside the
-   folder `memfault_sdk/platforms/wiced/wiced_sdk` called `WICED-SDK-6.2.0`,
+   folder `memfault_sdk/platforms/wiced/wiced_sdk` called `43xxx_Wi-Fi`,
    pointing to where you have installed the SDK. The final folder hierarchy
    should look like:
    ```
    - platforms
      - wiced
        - wiced_sdk
-         - WICED-SDK-6.2.0
-           - 43xxx_Wi-Fi
-             - apps
-             - doc
-             - ... etc ...
+         - 43xxx_Wi-Fi
+           - apps
+           - doc
+           - ... etc ...
    ```
 
 <a name="modifications"></a>
@@ -90,10 +89,11 @@ or
 
 ```bash
 $ cd /path/to/WICED-SDK-6.2.0/43xxx_Wi-Fi/
-$ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug download download_apps
+$ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug download download_apps run
+# You'll also want to clear the DEBUGEN bit ... otherwise a crash will trigger a breakpoint and the
+# system will hang. The easiest way to do this is by cycling power. The invoke command fixes this
+# automagically by executing the "stm32f4xx.cpu cortex_m disconnect" openocd command
 ```
-
-After flashing, press the reset button to start the device.
 
 ### Attaching the debug console (via UART)
 
@@ -154,9 +154,9 @@ Let's walk through this process step by step:
 An API key will need to be baked into the demo app to enable it to communicate
 with Memfault's web services. Go to https://app.memfault.com/, navigate to the
 project you want to use and select 'Settings'. Copy the 'Project API Key' and
-paste it into `apps/memfault_demo_app.c`, replacing `<YOUR API KEY HERE>` with
-your API key. Save the file and rebuild, reflash the project and attach the
-debug console (see instruction above).
+paste it into `apps/memfault_demo_app/memfault_demo_app.c`, replacing
+`<YOUR API KEY HERE>` with your API key. Save the file and rebuild, reflash the
+project and attach the debug console (see instruction above).
 
 ### Checking the device info
 

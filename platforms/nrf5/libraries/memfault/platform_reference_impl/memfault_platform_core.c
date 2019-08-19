@@ -6,10 +6,9 @@
 
 #include "app_util_platform.h"
 #include "memfault/core/compiler.h"
-#include "memfault/core/errors.h"
 
-MemfaultReturnCode memfault_platform_boot(void) {
-  return MemfaultReturnCode_Ok;
+int memfault_platform_boot(void) {
+  return 0;
 }
 
 void memfault_platform_halt_if_debugging(void) {

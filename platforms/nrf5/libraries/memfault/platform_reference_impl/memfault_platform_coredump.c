@@ -44,33 +44,17 @@ extern uint32_t __MfltCoredumpRamEnd;
 #define CORE_REGION_START ((uint32_t)&__CoreStart)
 #define CORE_REGION_LENGTH ((uint32_t)&__CoreEnd - CORE_REGION_START)
 
-// Subset of ARMv7-M "System Control and ID blocks" related to fault status
-typedef struct MEMFAULT_PACKED {
-  uint32_t SHCSR;
-  uint32_t CFSR;
-  uint32_t HFSR;
-  uint32_t DFSR;
-  uint32_t MMFAR;
-  uint32_t BFAR;
-  uint32_t AFSR;
-} sMfltFaultRegs;
-
-const static sMfltFaultRegs *s_fault_regs = (void *)0xE000ED24;
-
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
   // Let's collect the callstack at the time of crash
 
-  static sMfltCoredumpRegion s_coredump_regions[2];
-
-  // armv7 fault registers
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_fault_regs, sizeof(*s_fault_regs));
+  static sMfltCoredumpRegion s_coredump_regions[1];
 
 #if (MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY == 1)
   // Capture only the interrupt stack. Use only if there is not enough storage to capture all of RAM.
-  s_coredump_regions[1] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(STACK_BASE, (uint32_t)STACK_TOP - (uint32_t)STACK_BASE);
+  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(STACK_BASE, (uint32_t)STACK_TOP - (uint32_t)STACK_BASE);
 #else
   // Capture all of RAM. Recommended: it enables broader post-mortem analyses, but has larger storage requirements.
-  s_coredump_regions[1] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&__MfltCoredumpRamStart,
+  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&__MfltCoredumpRamStart,
       (uint32_t)&__MfltCoredumpRamEnd - (uint32_t)&__MfltCoredumpRamStart);
 #endif
 
