@@ -80,7 +80,8 @@ int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]) {
   struct MemfaultDeviceInfo info = {0};
   memfault_platform_get_device_info(&info);
   MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
-  MEMFAULT_LOG_INFO("FW version: %s", info.fw_version ? info.fw_version : "<NULL>");
+  MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");
+  MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
   MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
   return 0;
 }

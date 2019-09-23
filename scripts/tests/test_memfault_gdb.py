@@ -3,16 +3,14 @@
 # See License.txt for details
 #
 import os
+import sys
+from io import BufferedIOBase, BytesIO
 from json import dumps
+from tempfile import NamedTemporaryFile
+from unittest import mock
+from unittest.mock import ANY, MagicMock
 
 import pytest
-import sys
-from unittest import mock
-
-from tempfile import NamedTemporaryFile
-from unittest.mock import MagicMock, ANY
-
-from io import BufferedIOBase, BytesIO
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(os.path.dirname(script_dir))
@@ -79,14 +77,14 @@ def http_expect_request():
     expected_requests = []
     actual_request_count = 0
 
-    def _http_expect_request(url, method, req_body, req_headers, resp_status, resp_body):
-        expected_requests.append((url, method, req_body, req_headers, resp_status, resp_body))
+    def _http_expect_request(url, method, assert_body_fn, req_headers, resp_status, resp_body):
+        expected_requests.append((url, method, assert_body_fn, req_headers, resp_status, resp_body))
 
     def _create_connection_constructor(scheme):
         def _connection_constructor(hostname, port=0):
             connection = MagicMock()
             try:
-                exp_url, exp_method, exp_req_body, exp_req_headers, resp_status, resp_body = expected_requests[
+                exp_url, exp_method, assert_body_fn, exp_req_headers, resp_status, resp_body = expected_requests[
                     len(connections)
                 ]
             except IndexError:
@@ -101,11 +99,9 @@ def http_expect_request():
                 port_str = ":{}".format(port) if standard_port else ""
                 assert "{}://{}{}{}".format(scheme, hostname, port_str, path) == exp_url
                 assert method == exp_method
-                if isinstance(body, BufferedIOBase):
-                    body_bytes = body.read()
-                    assert body_bytes == exp_req_body
-                else:
-                    assert body == exp_req_body
+                if assert_body_fn and assert_body_fn is not ANY:
+                    body_bytes = body.read() if isinstance(body, BufferedIOBase) else body
+                    assert_body_fn(body_bytes)
                 assert headers == exp_req_headers
 
             connection.request = _request
@@ -359,7 +355,7 @@ def test_read_memory_until_error_after_10k(gdb_base_fixture):
     assert data == b"A" * read_size * 10
 
 
-def test_coredump_writer(gdb_base_fixture):
+def test_coredump_writer(gdb_base_fixture, snapshot):
     from memfault_gdb import Section, MemfaultCoredumpWriter
 
     cd_writer = MemfaultCoredumpWriter()
@@ -397,8 +393,7 @@ def test_coredump_writer(gdb_base_fixture):
     f_out = BytesIO()
     cd_writer.write(f_out)
     f_out.seek(0)
-    fixture_bin = open(os.path.join(script_dir, "fixture.bin"), "rb").read()
-    assert f_out.read() == fixture_bin
+    snapshot.assert_match(f_out.read().hex())
 
 
 def test_http_basic_auth(gdb_base_fixture):
@@ -519,13 +514,14 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
     expected_coredump_fn,
     settings_coredump_allowed,
     capsys,
+    snapshot,
 ):
     """Test coredump command without project key, but with logged in user and default org & project"""
     from memfault_gdb import MemfaultCoredump
 
     # Check whether Release and symbols exists -- No (404)
     http_expect_request(
-        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases/1.0.0-md5+b61b2d6c",
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/software_types/main/software_versions/1.0.0-md5+b61b2d6c",
         "GET",
         ANY,
         ANY,
@@ -533,20 +529,10 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
         None,
     )
 
-    # Create Release
-    http_expect_request(
-        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases",
-        "POST",
-        '{"revision": "N/A (Uploaded from GDB)", "version": "1.0.0-md5+b61b2d6c"}',
-        ANY,
-        200,
-        {"data": {}},
-    )
-
     # Upload Symbols
     http_expect_request(
-        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/releases/1.0.0-md5+b61b2d6c/artifacts?type=symbols&hardware_version=DEVBOARD",
-        "POST",
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/software_types/main/software_versions/1.0.0-md5+b61b2d6c/artifacts/symbols",
+        "PUT",
         ANY,
         ANY,
         200,
@@ -564,15 +550,14 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
     )
 
     # Upload coredump:
-    expected_coredump_data = open(os.path.join(script_dir, expected_coredump_fn), "rb").read()
-    if expected_coredump_fn == "fixture2.bin":
-        # fixture2.bin is truncated in the interest of avoiding bloat. Add 1MB of "A"s:
-        expected_coredump_data += 1024 * 1024 * b"A"
+    def _check_request_body(body_bytes):
+        # truncated in the interest of avoiding bloat in snapshot:
+        snapshot.assert_match(body_bytes[:500].hex())
 
     http_expect_request(
         "https://ingress.memfault.com/api/v0/upload/coredump",
         "POST",
-        expected_coredump_data,
+        _check_request_body,
         {"Content-Type": "application/octet-stream", "Memfault-Project-Key": TEST_PROJECT_KEY},
         200,
         {},
@@ -652,23 +637,24 @@ def test_login_command_try(gdb_base_fixture, http_expect_request):
     "expected_result,resp_status,resp_body",
     [
         (
-            (True, True),
+            True,
             200,
             {"data": {"artifacts": [{"type": "symbols", "hardware_version": TEST_HW_VERSION}]}},
         ),
-        ((True, False), 200, {"data": {"artifacts": []}}),
-        ((False, False), 404, None),
+        (False, 200, {"data": {"artifacts": []}}),
+        (False, 404, None),
     ],
 )
-def test_has_release_and_uploaded_symbols(
+def test_has_uploaded_symbols(
     gdb_base_fixture, http_expect_request, expected_result, resp_status, resp_body, test_config
 ):
-    from memfault_gdb import has_release_and_uploaded_symbols, MEMFAULT_CONFIG
+    from memfault_gdb import has_uploaded_symbols, MEMFAULT_CONFIG
 
-    test_fw_version = "1.0.0"
+    test_software_type = "main"
+    test_software_version = "1.0.0"
     http_expect_request(
-        "https://api.memfault.com/api/v0/organizations/{}/projects/{}/releases/{}".format(
-            test_config.organization, test_config.project, test_fw_version
+        "https://api.memfault.com/api/v0/organizations/{}/projects/{}/software_types/{}/software_versions/{}".format(
+            test_config.organization, test_config.project, test_software_type, test_software_version
         ),
         "GET",
         None,
@@ -678,6 +664,6 @@ def test_has_release_and_uploaded_symbols(
     )
 
     assert (
-        has_release_and_uploaded_symbols(test_config, test_fw_version, TEST_HW_VERSION)
+        has_uploaded_symbols(test_config, test_software_type, test_software_version)
         == expected_result
     )

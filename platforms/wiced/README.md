@@ -166,13 +166,15 @@ As a sanity check, let's request the device info from the debug console, enter
 ```
 > get_device_info
 S/N: 00A0507510F0
-FW version: 1.0.0
+SW type: wiced-main
+SW version: 1.0.0
 HW version: wiced-proto
 ```
 
 In the platform reference implementation for WICED, the hardware version is
-hard-coded to `wiced-proto` and the WiFi MAC address is used as serial number.
-You can change this to match your requirements (see
+hard-coded to `wiced-proto`, software type is hard-coded to `wiced-main` and the
+WiFi MAC address is used as serial number. You can change this to match your
+requirements (see
 `libraries/memfault/platform_reference_impl/memfault_platform_device_info.c`).
 
 ### Causing a crash
@@ -214,15 +216,7 @@ When the WICED SDK builds the app, it creates an .elf file at
 `/path/to/WICED-SDK-x.x.x/43xxx_Wi-Fi/build/memfault_demo_app-BCM943364WCD1-SDIO-release/binary/memfault_demo_app-BCM943364WCD1-SDIO-debug.elf`.
 This .elf contains the symbols (debug information) amongst other things.
 
-To upload the symbols, go to https://app.memfault.com/, navigate to the project
-you want to use. Go to Releases > All Releases. Click the version that matches
-the version from the `get_device_info` console command that you've ran earlier,
-or Add a New Release if it does not exist yet. When coredumps are uploaded, the
-symbols are looked up by by firmware version as well as hardware version, so it
-is important that they match up.
-
-You can also use the [HTTP API to upload symbols files], which is useful if you
-want to automatically upload them from a build server.
+[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
 
 #### Connect WiFi
 
@@ -301,11 +295,12 @@ void application_start(void) {
   implementations of platform dependencies that the Memfault SDK relies upon.
   They serve as a good example and starting point, but it's very likely you will
   need to customize some of the files to your use case. For example, by the
-  firmware version defaults to `"1.0.0"` and the hardware version defaults to
-  `"wiced-proto"`. This needs to be changed to use the mechanisms you already
-  have in place in your project to get the firmware version and hardware
-  version. Please refer to the `memfault_sdk/components/*/README.md` files to
-  learn more about the customization options for each component.
+  software type defaults to `"wiced-main"`, the software version defaults to
+  `"1.0.0"` and the hardware version defaults to `"wiced-proto"`. This needs to
+  be changed to use the mechanisms you already have in place in your project to
+  get the software type, software version and hardware version. Please refer to
+  the `memfault_sdk/components/*/README.md` files to learn more about the
+  customization options for each component.
 
 # FAQ
 

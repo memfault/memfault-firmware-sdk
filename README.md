@@ -128,12 +128,11 @@ Available tasks:
 - Why does a coredump not show up under "Issues" after uploading it?
 
   - Make sure to upload the symbols to the same project to which you upload
-    coredumps. Also make sure the firmware ("Release") version and hardware
-    version reported by the device (see "Device information" in
-    `components/core/README.md`) match the "Release" version and hardware
-    version that was entered when creating the Release and symbol artifact
-    online.
-    [More information on creating Releases and uploading symbols can be found here](https://www.notion.so/memfault/Releasing-Firmware-UI-eb9499017e86432fa75e8b78dfc17891).
+    coredumps. Also make sure the software type and software version reported by
+    the device (see "Device information" in `components/core/README.md`) match
+    the software type and software version that was entered when creating the
+    Software Version and symbol artifact online.
+    [More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
 
 - I'm getting error XYZ, what to do now?
 

@@ -32,20 +32,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 
-import uuid
-from binascii import b2a_base64
-from hashlib import md5
-from json import loads, dumps, load, dump
-from os.path import expanduser
-from struct import pack, unpack
-from tempfile import TemporaryFile
 import argparse
 import os
 import platform
 import re
 import traceback
+import uuid
+from binascii import b2a_base64
+from hashlib import md5
+from json import dump, dumps, load, loads
+from os.path import expanduser
+from struct import pack, unpack
+from tempfile import TemporaryFile
 from threading import Thread
-from time import time, sleep
+from time import sleep, time
 
 try:
     import gdb
@@ -388,12 +388,15 @@ class MemfaultCoredumpBlockType(object):  # (IntEnum):  # trying to be python2.7
     MACHINE_TYPE = 7
     VENDOR_COREDUMP_ESP_IDF_V2_TO_V3_1 = 8
     ARM_V7M_MPU = 9
+    SOFTWARE_VERSION = 10
+    SOFTWARE_TYPE = 11
 
 
 class MemfaultCoredumpWriter(object):
     def __init__(self):
         self.device_serial = "DEMOSERIALNUMBER"
-        self.firmware_version = "1.0.0"
+        self.software_version = "1.0.0"
+        self.software_type = "main"
         self.hardware_revision = "DEVBOARD"
         self.trace_reason = 5  # Debugger Halted
         self.machine_type = 40  # ARM
@@ -424,8 +427,9 @@ class MemfaultCoredumpWriter(object):
         )
         _write_block(MemfaultCoredumpBlockType.DEVICE_SERIAL, self.device_serial.encode("utf8"))
         _write_block(
-            MemfaultCoredumpBlockType.FIRMWARE_VERSION, self.firmware_version.encode("utf8")
+            MemfaultCoredumpBlockType.SOFTWARE_VERSION, self.software_version.encode("utf8")
         )
+        _write_block(MemfaultCoredumpBlockType.SOFTWARE_TYPE, self.software_type.encode("utf8"))
         _write_block(
             MemfaultCoredumpBlockType.HARDWARE_REVISION, self.hardware_revision.encode("utf8")
         )
@@ -605,49 +609,18 @@ def http_get_auth_me(api_uri, email, password):
     return _http("GET", api_uri, "/auth/me", headers=headers)
 
 
-def http_get_release(config, release_version):
-    status, reason, body = _http_api(
-        config,
-        "GET",
-        "/api/v0/organizations/{organization}/projects/{project}/releases/{release_version}".format(
-            organization=config.organization,
-            project=config.project,
-            release_version=release_version,
-        ),
-    )
-    if status < 200 or status >= 300:
-        return None
-    return body["data"]
-
-
-def http_post_release(config, release_version):
-    status, reason, body = _http_api(
-        config,
-        "POST",
-        "/api/v0/organizations/{organization}/projects/{project}/releases".format(
-            organization=config.organization, project=config.project
-        ),
-        body=dumps(
-            {"version": release_version, "revision": "N/A (Uploaded from GDB)"}, sort_keys=True
-        ),
-    )
-    if status < 200 or status >= 300:
-        return False, (status, reason)
-    return True, body["data"]
-
-
-def http_post_artifact(
-    config, artifact_readable, release_version, hardware_version, type_name="symbols"
+def http_put_artifact(
+    config, artifact_readable, software_type, software_version, artifact_type="symbols"
 ):
     status, reason, body = _http_api(
         config,
-        "POST",
-        "/api/v0/organizations/{organization}/projects/{project}/releases/{release_version}/artifacts?type={type_name}&hardware_version={hardware_version}".format(
+        "PUT",
+        "/api/v0/organizations/{organization}/projects/{project}/software_types/{software_type}/software_versions/{software_version}/artifacts/{artifact_type}".format(
             organization=config.organization,
             project=config.project,
-            release_version=release_version,
-            type_name=type_name,
-            hardware_version=hardware_version,
+            software_type=software_type,
+            software_version=software_version,
+            artifact_type=artifact_type,
         ),
         headers={"Content-Type": "application/octet-stream"},
         body=artifact_readable,
@@ -655,6 +628,20 @@ def http_post_artifact(
     if status < 200 or status >= 300:
         return False, (status, reason)
     return True, None
+
+
+def http_get_software_version(config, software_type, software_version):
+    SOFTWARE_VERSION_URL = "/api/v0/organizations/{organization}/projects/{project}/software_types/{software_type}/software_versions/{software_version}".format(
+        organization=config.organization,
+        project=config.project,
+        software_type=software_type,
+        software_version=software_version,
+    )
+
+    status, reason, body = _http_api(config, "GET", SOFTWARE_VERSION_URL)
+    if status < 200 or status >= 300:
+        return None
+    return body["data"]
 
 
 def http_get_project_key(config):
@@ -676,43 +663,24 @@ def get_file_hash(fn):
         return md5(f.read()).hexdigest()
 
 
-def has_release_and_uploaded_symbols(config, firmware_version, hardware_revision):
-    release = http_get_release(config, release_version=firmware_version)
-    if not release:
-        return False, False
-    artifacts = release["artifacts"]
-    return (
-        True,
-        any(
-            map(
-                lambda artifact: artifact["type"] == "symbols"
-                and artifact["hardware_version"] == hardware_revision,
-                artifacts,
-            )
-        ),
-    )
+def has_uploaded_symbols(config, software_type, software_version):
+    software_version_obj = http_get_software_version(config, software_type, software_version)
+    if not software_version_obj:
+        return False
+    artifacts = software_version_obj["artifacts"]
+    return any(map(lambda artifact: artifact["type"] == "symbols", artifacts))
 
 
-def upload_symbols_if_needed(config, elf_fn, firmware_version, hardware_revision):
-    has_release, has_symbols = has_release_and_uploaded_symbols(
-        config, firmware_version, hardware_revision
-    )
-    if has_release and has_symbols:
+def upload_symbols_if_needed(config, elf_fn, software_type, software_version):
+    has_symbols = has_uploaded_symbols(config, software_type, software_version)
+    if has_symbols:
         print("Symbols have already been uploaded, skipping!")
         return
-    if not has_release:
-        print("Creating release: {}".format(firmware_version))
-        success, status_and_reason = http_post_release(config, firmware_version)
-        if not success:
-            print("Failed to create release: {}".format(status_and_reason))
-            return
-        else:
-            print("Done!")
     if not has_symbols:
         print("Uploading symbols...")
         with open(elf_fn, "rb") as elf_f:
-            success, status_and_reason = http_post_artifact(
-                config, elf_f, firmware_version, hardware_revision
+            success, status_and_reason = http_put_artifact(
+                config, elf_f, software_type, software_version
             )
             if not success:
                 print("Failed to upload symbols: {}".format(status_and_reason))
@@ -970,14 +938,12 @@ Proceed? [y/n]
 
         # TODO: try calling memfault_platform_get_device_info() and use returned info if present
         # Populate the version based on hash of the .elf for now:
-        firmware_version = "1.0.0-md5+{}".format(elf_hash[:8])
-        cd_writer.firmware_version = firmware_version
+        software_version = "1.0.0-md5+{}".format(elf_hash[:8])
+        cd_writer.software_version = software_version
 
         if not parsed_args.no_symbols:
             if can_make_project_api_request:
-                upload_symbols_if_needed(
-                    config, elf_fn, firmware_version, cd_writer.hardware_revision
-                )
+                upload_symbols_if_needed(config, elf_fn, cd_writer.software_type, software_version)
             else:
                 print("Skipping symbols upload because not logged in. Hint: use `memfault login`")
 

@@ -12,8 +12,12 @@
 #include "memfault/core/platform/device_info.h"
 #include "nrf.h"
 
-#ifndef MEMFAULT_NRF_MAIN_FIRMWARE_VERSION
-#  define MEMFAULT_NRF_MAIN_FIRMWARE_VERSION "1.0.0"
+#ifndef MEMFAULT_NRF_MAIN_SOFTWARE_VERSION
+#  define MEMFAULT_NRF_MAIN_SOFTWARE_VERSION "1.0.0"
+#endif
+
+#ifndef MEMFAULT_NRF_SOFTWARE_TYPE
+#  define MEMFAULT_NRF_SOFTWARE_TYPE "nrf-main"
 #endif
 
 #ifndef MEMFAULT_NRF_HW_REVISION
@@ -44,8 +48,8 @@ void memfault_platform_get_unique_device_id(char *buf, size_t buf_len) {
 }
 
 void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
-  static char s_fw_version[32];
-  strncpy(s_fw_version, MEMFAULT_NRF_MAIN_FIRMWARE_VERSION, sizeof(s_fw_version));
+  static char s_software_version[32];
+  strncpy(s_software_version, MEMFAULT_NRF_MAIN_SOFTWARE_VERSION, sizeof(s_software_version));
 
   static char s_device_serial[MEMFAULT_MAX_SERIAL_NUMBER_LEN];
   memfault_platform_get_unique_device_id(s_device_serial, sizeof(s_device_serial));
@@ -56,6 +60,7 @@ void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
   *info = (struct MemfaultDeviceInfo) {
     .device_serial = s_device_serial,
     .hardware_version = s_hw_rev,
-    .fw_version = s_fw_version,
+    .software_version = s_software_version,
+    .software_type = MEMFAULT_NRF_SOFTWARE_TYPE,
   };
 }

@@ -157,13 +157,15 @@ As a sanity check, let's request the device info from the debug console, enter
 ```
 > get_device_info
 <info> app: MFLT: S/N: C9DB1227DEAE6A52
-<info> app: MFLT: FW version: 1.0.0
+<info> app: MFLT: SW type: nrf-main
+<info> app: MFLT: SW version: 1.0.0
 <info> app: MFLT: HW version: nrf-proto
 ```
 
 In the platform reference implementation for nRF, the hardware version is
-hard-coded to `nrf-proto` and the NRF5`DEVICEID` is used as serial number. You
-can change this to match your requirements (see
+hard-coded to `nrf-proto`, software type is hard-coded to `nrf-main` and the
+NRF5 `DEVICEID` is used as serial number. You can change this to match your
+requirements (see
 `libraries/memfault/platform_reference_impl/memfault_platform_device_info.c`).
 
 ### Causing a crash
@@ -219,15 +221,7 @@ The nRF SDK demo app symbol file can be found at:
 
 This ELF file contains the symbols (debug information) amongst other things.
 
-To upload the symbols, go to https://app.memfault.com/, navigate to the project
-you want to use. Go to Releases > All Releases. Click the version that matches
-the version from the `get_device_info` console command that you've ran earlier,
-or Add a New Release if it does not exist yet. When coredumps are uploaded, the
-symbols are looked up by by firmware version as well as hardware version, so it
-is important that they match up.
-
-You can also use the [HTTP API to upload symbols files], which is useful if you
-want to automatically upload them from a build server.
+[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
 
 #### Post coredump
 
@@ -303,11 +297,12 @@ void main(void) {
   implementations of platform dependencies that the Memfault SDK relies upon.
   They serve as a good example and starting point, but it's very likely you will
   need to customize some of the files to your use case. For example, by the
-  firmware version defaults to `"1.0.0"` and the hardware version defaults to
-  `"nrf-proto"`. This needs to be changed to use the mechanisms you already have
-  in place in your project to get the firmware version and hardware version.
-  Please refer to the `memfault_sdk/components/*/README.md` files to learn more
-  about the customization options for each component.
+  software type defaults to `"nrf-main"`, the software version defaults to
+  `"1.0.0"` and the hardware version defaults to `"nrf-proto"`. This needs to be
+  changed to use the mechanisms you already have in place in your project to get
+  the software type, software version and hardware version. Please refer to the
+  `memfault_sdk/components/*/README.md` files to learn more about the
+  customization options for each component.
 - To save coredumps in internal flash, you will need to budget some space to
   store them. You can find more details in the top of
   `libraries/memfault/platform_reference_impl/memfault_platform_coredump.c` but

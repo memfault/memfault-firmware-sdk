@@ -117,13 +117,18 @@ void memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, vo
         info.device_serial, strlen(info.device_serial), write_cb, ctx);
   }
 
-  if (info.fw_version) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_FirmwareVersion,
-        info.fw_version, strlen(info.fw_version), write_cb, ctx);
+  if (info.software_version) {
+    memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareVersion,
+        info.software_version, strlen(info.software_version), write_cb, ctx);
+  }
+
+  if (info.software_type) {
+    memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareType,
+                                  info.software_type, strlen(info.software_type), write_cb, ctx);
   }
 
   if (info.hardware_version) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_HardwareRevision,
+    memfault_coredump_write_block(kMfltCoredumpRegionType_HardwareVersion,
         info.hardware_version, strlen(info.hardware_version), write_cb, ctx);
   }
 

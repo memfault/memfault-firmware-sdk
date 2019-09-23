@@ -20,13 +20,15 @@ typedef enum MfltCoredumpBlockType  {
   kMfltCoredumpBlockType_CurrentRegisters = 0,
   kMfltCoredumpBlockType_MemoryRegion = 1,
   kMfltCoredumpRegionType_DeviceSerial = 2,
-  kMfltCoredumpRegionType_FirmwareVersion = 3,
-  kMfltCoredumpRegionType_HardwareRevision = 4,
+  // Deprecated: kMfltCoredumpRegionType_FirmwareVersion = 3,
+  kMfltCoredumpRegionType_HardwareVersion = 4,
   kMfltCoredumpRegionType_TraceReason = 5,
   kMfltCoredumpRegionType_PaddingRegion = 6,
   kMfltCoredumpRegionType_MachineType = 7,
   kMfltCoredumpRegionType_VendorCoredumpEspIdfV2ToV3_1 = 8,
   kMfltCoredumpRegionType_ArmV6orV7Mpu = 9,
+  kMfltCoredumpRegionType_SoftwareVersion = 10,
+  kMfltCoredumpRegionType_SoftwareType = 11,
 } eMfltCoredumpBlockType;
 
 //! Callback that will be called to write coredump data.
