@@ -58,7 +58,7 @@ Please refer to the `README.md` in each of these for more details.
 
 The `platforms` folder contains support files for some of the popular platforms.
 The structure of each platform folder varies from platform to platform,
-following the idiosyncracies of each.
+following the idiosyncrasies of each.
 
 Each platform folder contains at least:
 
