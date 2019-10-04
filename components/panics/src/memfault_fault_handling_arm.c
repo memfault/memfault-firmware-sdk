@@ -169,7 +169,7 @@ void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
   //   At that priority level, we can't get interrupted
   //   We can leverage the arm architecture to auto-capture register state for us
   //   If the user is using psp/msp, we start execution from a more predictable stack location
-  const uint32_t nmipendset_mask = 0x1 << 31;
+  const uint32_t nmipendset_mask = 0x1u << 31;
   volatile uint32_t *icsr = (uint32_t *)0xE000ED04;
   *icsr |= nmipendset_mask;
   __asm("isb");

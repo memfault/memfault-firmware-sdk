@@ -182,7 +182,7 @@ static wiced_result_t prv_connect_and_send_coredump_request(
                                    security, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
 
   char content_length[12] = {0};
-  snprintf(content_length, sizeof(content_length), "%d", cd_info->total_size);
+  snprintf(content_length, sizeof(content_length), "%zu", cd_info->total_size);
 
   const http_header_field_t headers[] = {
       [0] = {
