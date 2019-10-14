@@ -24,7 +24,7 @@
 #  define MEMFAULT_NRF_HW_REVISION "nrf-proto"
 #endif
 
-void memfault_platform_get_unique_device_id(char *buf, size_t buf_len) {
+static void prv_get_device_serial(char *buf, size_t buf_len) {
   // We will use the 64bit NRF "Device identifier" as the serial number
   const size_t nrf_uid_num_words = 2;
 
@@ -48,19 +48,13 @@ void memfault_platform_get_unique_device_id(char *buf, size_t buf_len) {
 }
 
 void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
-  static char s_software_version[32];
-  strncpy(s_software_version, MEMFAULT_NRF_MAIN_SOFTWARE_VERSION, sizeof(s_software_version));
-
-  static char s_device_serial[MEMFAULT_MAX_SERIAL_NUMBER_LEN];
-  memfault_platform_get_unique_device_id(s_device_serial, sizeof(s_device_serial));
-
-  static char s_hw_rev[MEMFAULT_MAX_HW_REVISION_LEN];
-  strncpy(s_hw_rev, MEMFAULT_NRF_HW_REVISION, sizeof(s_hw_rev));
+  static char s_device_serial[32];
+  prv_get_device_serial(s_device_serial, sizeof(s_device_serial));
 
   *info = (struct MemfaultDeviceInfo) {
     .device_serial = s_device_serial,
-    .hardware_version = s_hw_rev,
-    .software_version = s_software_version,
+    .hardware_version = MEMFAULT_NRF_HW_REVISION,
+    .software_version = MEMFAULT_NRF_MAIN_SOFTWARE_VERSION,
     .software_type = MEMFAULT_NRF_SOFTWARE_TYPE,
   };
 }

@@ -25,7 +25,7 @@ static eMfltRebootReason s_crash_reason = kMfltRebootReason_Unknown;
       "mrsne r3, psp \n"                         \
       "push {r3-r11, lr} \n"                     \
       "mov r0, sp \n"                            \
-      "mov r1, %0 \n"                            \
+      "ldr r1, =%0 \n"                            \
       "b memfault_exception_handler \n"          \
       :                                          \
       : "i" (_x)                                 \

@@ -48,6 +48,14 @@ Example fix:
   $ mv nrf5_sdk/components/libraries/util/app_error.h nrf5_sdk/components/libraries/util/app_error.h.overriden
 ```
 
+### Update Demo App with your Memfault API
+
+An API key will need to be baked into the demo app to enable it to communicate
+with Memfault's web services. Go to https://app.memfault.com/, navigate to the
+project you want to use and select 'Settings'. Copy the 'Project API Key' and
+paste it into `apps/memfault_demo_app/src/cli.c`, replacing
+`<YOUR API KEY HERE>` with your API key.
+
 ### Building the demo app
 
 You should now be able to compile the demo app with the Memfault components
@@ -140,15 +148,6 @@ way.
 
 Let's walk through the coredump process step by step:
 
-### Memfault API key
-
-An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
-project you want to use and select 'Settings'. Copy the 'Project API Key' and
-paste it into `apps/memfault_demo_app/src/cli.c`, replacing
-`<YOUR API KEY HERE>` with your API key. Save the file and rebuild, reflash the
-project and attach the debug console (see instruction above).
-
 ### Checking the device info
 
 As a sanity check, let's request the device info from the debug console, enter
@@ -204,13 +203,6 @@ rtt_cli:~$ get_core
 This confirms that a coredump of 8448 bytes (the entire space allocated for the
 stack) has been captured to internal flash.
 
-### Deleting a coredump
-
-New coredumps are only written if the coredump storage area is not already
-occupied. Typically coredumps are deleted once they have been posted to the
-memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
-You can invoke this command from the cli by running `delete_core`
-
 ### Posting the coredump to Memfault for analysis
 
 #### Uploading Symbols
@@ -257,6 +249,13 @@ Otherwise, you can copy & paste this output to a terminal to send the coredump
 to the Memfault web service. The coredump is now being processed by Memfault's
 services and will show up shortly under Issues. If it does not, take a look at
 the FAQ in the `README.md` in the root of the SDK.
+
+### Deleting a coredump
+
+New coredumps are only written if the coredump storage area is not already
+occupied. Typically coredumps are deleted once they have been posted to the
+memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
+You can invoke this command from the cli by running `delete_core`
 
 # Integrating into existing NRF52 projects
 

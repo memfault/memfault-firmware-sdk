@@ -24,7 +24,7 @@ typedef struct MEMFAULT_PACKED {
 } sMfltFaultRegs;
 
 // armv7 fault registers
-const static sMfltFaultRegs *s_fault_regs = (void *)0xE000ED24;
+static const sMfltFaultRegs *s_fault_regs = (void *)0xE000ED24;
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[1];

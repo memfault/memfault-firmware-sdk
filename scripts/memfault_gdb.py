@@ -196,7 +196,7 @@ For example,
                 FAULT_START_PROMPT
             )
         )
-        if y.upper() != "Y":
+        if "Y" not in y.upper():
             print(GDB_HOW_TO_FAULT_PROMPT)
             raise Exception("User did not confirm being at beginning of exception")
     else:
@@ -893,8 +893,9 @@ or other proprietary information with other companies or anyone else.
 Proceed? [y/n]
 """  # This last newline is important! If it's not here, the last line is not shown on Windows!
         )
-        if y.upper() != "Y":
+        if "Y" not in y.upper():
             print("Aborting...")
+            analytics_props["user_input"] = y
             analytics_props["permission"] = "rejected"
             return False
         analytics_props["permission"] = "accepted"
