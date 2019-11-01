@@ -13,7 +13,7 @@ PROJ_SRC_DIR := src/
 
 EMBEDDED_MFLT_SDK := $(abspath ../../../..)
 EMBEDDED_NRF5_MFLT_SDK := $(EMBEDDED_MFLT_SDK)/platforms/nrf5
-MEMFAULT_COMPONENTS := core demo panics http
+MEMFAULT_COMPONENTS := core demo panics http util
 MEMFAULT_COMPONENTS_DIR := $(EMBEDDED_MFLT_SDK)/components
 MEMFAULT_COMPONENTS_INC_FOLDERS := $(foreach component, $(MEMFAULT_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
 MEMFAULT_COMPONENTS_SRCS := $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))

@@ -12,8 +12,9 @@
 #include <string.h>
 
 #include "memfault/core/compiler.h"
-#include "memfault/panics/platform/coredump.h"
+#include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/panics/platform/coredump.h"
 
 #define MEMFAULT_COREDUMP_MAGIC 0x45524f43
 #define MEMFAULT_COREDUMP_VERSION 1
@@ -284,3 +285,15 @@ bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {
   }
   return true;
 }
+
+MEMFAULT_WEAK
+bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len) {
+  return memfault_platform_coredump_storage_read(offset, buf, buf_len);
+}
+
+//! Expose a data source for use by the Memfault Packetizer
+const sMemfaultDataSourceImpl g_memfault_coredump_data_source = {
+  .has_more_msgs_cb = memfault_coredump_has_valid_coredump,
+  .read_msg_cb = memfault_coredump_read,
+  .mark_msg_read_cb = memfault_platform_coredump_storage_clear,
+};

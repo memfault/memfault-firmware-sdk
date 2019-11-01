@@ -95,21 +95,49 @@ bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t 
   return true;
 }
 
+bool memfault_circular_buffer_consume_from_end(
+    sMfltCircularBuffer *circular_buf, size_t consume_len) {
+  if (circular_buf == NULL) {
+    return false;
+  }
+
+  if (circular_buf->read_size < consume_len) {
+    return false;
+  }
+
+  circular_buf->read_size -= consume_len;
+  return true;
+}
+
 static size_t prv_get_space_available(sMfltCircularBuffer *circular_buf) {
   return circular_buf->total_space - circular_buf->read_size;
 }
 
-bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf,
-                                    const void *data, size_t data_len) {
+size_t memfault_circular_buffer_get_write_size(sMfltCircularBuffer *circular_buf) {
+  if (circular_buf == NULL) {
+    return 0;
+  }
+
+  return prv_get_space_available(circular_buf);
+}
+
+static bool prv_write_at_offset_from_end(sMfltCircularBuffer *circular_buf, size_t offset_from_end,
+                                         const void *data, size_t data_len) {
   if ((circular_buf == NULL) || (data == NULL)) {
     return false;
   }
 
-  if (prv_get_space_available(circular_buf) < data_len) {
+  if (circular_buf->read_size < offset_from_end) {
+    // we can't write to an offset that doesn't exist
     return false;
   }
 
-  size_t write_idx = (circular_buf->read_offset + circular_buf->read_size) %
+  const size_t new_bytes_to_write = data_len > offset_from_end ? data_len - offset_from_end : 0;
+  if (prv_get_space_available(circular_buf) < new_bytes_to_write) {
+    return false;
+  }
+
+  size_t write_idx = (circular_buf->read_offset + circular_buf->read_size - offset_from_end) %
                      circular_buf->total_space;
   size_t contiguous_space_available = circular_buf->total_space - write_idx;
 
@@ -125,8 +153,18 @@ bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf,
     memcpy(&circular_buf->storage[0], buf, bytes_rem);
   }
 
-  circular_buf->read_size += data_len;
+  circular_buf->read_size += new_bytes_to_write;
   return true;
+}
+
+bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf,
+                                    const void *data, size_t data_len) {
+  return prv_write_at_offset_from_end(circular_buf, 0, data, data_len);
+}
+
+bool memfault_circular_buffer_write_at_offset(
+    sMfltCircularBuffer *circular_buf, size_t offset_from_end, const void *data, size_t data_len) {
+  return prv_write_at_offset_from_end(circular_buf, offset_from_end, data, data_len);
 }
 
 size_t memfault_circular_buffer_get_read_size(sMfltCircularBuffer *circular_buf) {

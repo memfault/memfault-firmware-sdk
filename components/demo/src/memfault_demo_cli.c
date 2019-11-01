@@ -33,12 +33,14 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
     MEMFAULT_ASSERT(0);
   } else if (crash_type == 1) {
     g_bad_func_call();
-  } else if (crash_type == 5) {
+  } else if (crash_type == 2) {
     uint64_t *buf = g_memfault_unaligned_buffer;
     *buf = 0xbadcafe0000;
   }
 
-  return 0;
+  // this should only ever be reached if crash_type is invalid
+  MEMFAULT_LOG_ERROR("Usage: \"crash\" or \"crash <n>\" where n is 0..2");
+  return -1;
 }
 
 int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
@@ -48,9 +50,9 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
     return MemfaultInternalReturnCode_Error;
   }
-  const eMfltPostCoredumpStatus rv = memfault_http_client_post_coredump(http_client);
-  if (rv == kMfltPostCoredumpStatus_NoCoredumpFound) {
-    MEMFAULT_LOG_INFO("No coredump found");
+  const eMfltPostDataStatus rv = memfault_http_client_post_data(http_client);
+  if (rv == kMfltPostDataStatus_NoDataFound) {
+    MEMFAULT_LOG_INFO("No new data found");
   } else {
     MEMFAULT_LOG_INFO("Result: %d", rv);
   }

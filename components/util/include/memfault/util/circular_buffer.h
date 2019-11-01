@@ -75,6 +75,15 @@ bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf
 //!   exist)
 bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t consume_len);
 
+
+//! Same as "memfault_circular_buffer_consume" but flush the requested number of bytes from
+//! the _end_ of the circular buffer
+//!
+//! This can be useful for lazily aborting a write that spans multiple write calls
+//! where the entire size of the write is not known upfront
+bool memfault_circular_buffer_consume_from_end(sMfltCircularBuffer *circular_buf,
+                                               size_t consume_len);
+
 //! Copy data into the circular buffer
 //!
 //! @param circular_buffer The buffer to clear bytes from
@@ -85,8 +94,24 @@ bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t 
 bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf, const void *data,
                                     size_t data_len);
 
+//! Copy data into the circular buffer starting at the provided offset from the end
+//!
+//! @param circular_buffer The buffer to clear bytes from
+//! @param offset_from_end Where to begin the write. For example if 10 bytes were written to the buffer
+//!  and offset_from_end is 1, a write will begin at offset 9 within the buffer. offset_from_end must
+//! be less than or equal to the current amount of bytes currently stored in the buffer
+//! @param data The buffer to copy
+//! @param data_len Length of buffer to copy
+//!
+//! @return true if there was enough space and the _entire_ buffer was copied, false otherwise
+bool memfault_circular_buffer_write_at_offset(
+    sMfltCircularBuffer *circular_buf, size_t offset_from_end, const void *data, size_t data_len);
+
 //! @return Amount of bytes available to read
 size_t memfault_circular_buffer_get_read_size(sMfltCircularBuffer *circular_buf);
+
+//! @return Amount of bytes available for writing
+size_t memfault_circular_buffer_get_write_size(sMfltCircularBuffer *circular_buf);
 
 #ifdef __cplusplus
 }

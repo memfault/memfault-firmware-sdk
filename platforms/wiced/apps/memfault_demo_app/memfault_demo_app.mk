@@ -12,6 +12,7 @@ $(NAME)_COMPONENTS := utilities/command_console \
                       libraries/memfault/demo \
                       libraries/memfault/http \
                       libraries/memfault/panics \
+                      libraries/memfault/util \
                       libraries/memfault/platform_reference_impl \
 
 

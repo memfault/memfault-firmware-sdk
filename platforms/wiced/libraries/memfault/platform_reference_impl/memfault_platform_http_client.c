@@ -14,12 +14,11 @@
 #include <string.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/assert.h"
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/platform/coredump.h"
 #include "memfault_platform_wiced.h"
 
 #include "http.h"
@@ -30,7 +29,7 @@
 
 #define MEMFAULT_DNS_TIMEOUT_MS (10000)
 #define MEMFAULT_HTTP_CONNECT_TIMEOUT_MS (10000)
-#define MEMFAULT_HTTP_POST_COREDUMP_READ_BUFFER_SIZE (256)
+#define MEMFAULT_HTTP_POST_DATA_READ_BUFFER_SIZE (256)
 #define MEMFAULT_HTTP_MIME_TYPE_BINARY "application/octet-stream"
 // API expects colon+space in fieldname :/
 #define MEMFAULT_HTTP_PROJECT_KEY_HEADER_WICED MEMFAULT_HTTP_PROJECT_KEY_HEADER ": "
@@ -42,8 +41,10 @@ typedef struct MfltHttpClient {
   wiced_ip_address_t ip_address;
 
   bool is_request_pending;
+  bool request_error_occurred;
   http_request_t request;
   MemfaultHttpClientResponseCallback callback;
+
   void *callback_ctx;
 } sMfltHttpClient;
 
@@ -68,6 +69,15 @@ static void prv_finalize_request_and_run_callback(sMfltHttpClient *client, http_
   if (client->callback) {
     client->callback((const sMfltHttpResponse *) response, client->callback_ctx);
   }
+
+  uint32_t http_status = 0;
+  const int rv = memfault_platform_http_response_get_status((const sMfltHttpResponse *)response,
+                                                            &http_status);
+  if (rv != 0) {
+    MEMFAULT_LOG_ERROR("Request failed. No HTTP status: %d", rv);
+    return;
+  }
+  client->request_error_occurred = (http_status < 200) || (http_status >= 300);
   client->callback = NULL;
   client->callback_ctx = NULL;
   http_request_deinit(&client->request);
@@ -167,22 +177,29 @@ static bool prv_do_dns_lookup(sMfltHttpClient *client) {
   return true;
 }
 
-struct MfltCoredumpInfo {
-  size_t total_size;
-  uint32_t flash_start;
-  uint32_t flash_end;
-};
-
-static wiced_result_t prv_connect_and_send_coredump_request(
-    sMfltHttpClient *client, const char *url, struct MfltCoredumpInfo *cd_info,
+static wiced_result_t prv_send_chunk_in_http_request(
+    sMfltHttpClient *client, const char *url,
     MemfaultHttpClientResponseCallback callback, void *ctx) {
+  uint8_t *buffer = malloc(MEMFAULT_HTTP_POST_DATA_READ_BUFFER_SIZE);
+  if (!buffer) {
+    MEMFAULT_LOG_ERROR("%s: malloc fail", __func__);
+    return WICED_ERROR;
+  }
 
-  const http_security_t security = g_mflt_http_client_config.api_no_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
-  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address, MEMFAULT_HTTP_GET_API_PORT(),
-                                   security, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
+  sPacketizerMetadata metadata;
+  const sPacketizerConfig cfg = {
+    // We will send an entire memfault data message in a single http request
+    .enable_multi_packet_chunk = true,
+  };
+  bool md = memfault_packetizer_begin(&cfg, &metadata);
+  if (!md) {
+    // we should only be in this function when there _is_ data available
+    goto error;
+  }
 
   char content_length[12] = {0};
-  snprintf(content_length, sizeof(content_length), "%d", cd_info->total_size);
+  snprintf(content_length, sizeof(content_length), "%d",
+           (int)metadata.single_chunk_message_length);
 
   const http_header_field_t headers[] = {
       [0] = {
@@ -208,7 +225,7 @@ static wiced_result_t prv_connect_and_send_coredump_request(
           .field_length = sizeof(HTTP_HEADER_CONTENT_TYPE) - 1,
           .value = MEMFAULT_HTTP_MIME_TYPE_BINARY,
           .value_length = sizeof(MEMFAULT_HTTP_MIME_TYPE_BINARY) - 1,
-      },
+      }
   };
 
   http_request_t *const request = &client->request;
@@ -217,26 +234,23 @@ static wiced_result_t prv_connect_and_send_coredump_request(
   WICED_VERIFY(http_request_write_header(request, headers, MEMFAULT_ARRAY_SIZE(headers)));
   WICED_VERIFY(http_request_write_end_header(request));
 
-  uint8_t *buffer = malloc(MEMFAULT_HTTP_POST_COREDUMP_READ_BUFFER_SIZE);
-  if (!buffer) {
-    MEMFAULT_LOG_ERROR("malloc fail");
-    return WICED_ERROR;
-  }
-  size_t bytes_remaining = cd_info->total_size;
-  while (bytes_remaining) {
-    const size_t offset = cd_info->total_size - bytes_remaining;
-    const size_t read_size = MEMFAULT_MIN(bytes_remaining, MEMFAULT_HTTP_POST_COREDUMP_READ_BUFFER_SIZE);
-    if (!memfault_platform_coredump_storage_read(offset, buffer, read_size)) {
-      MEMFAULT_LOG_ERROR("memfault_platform_coredump_storage_read failed");
-      goto error;
+  eMemfaultPacketizerStatus packetizer_status;
+  do {
+    size_t buffer_len = MEMFAULT_HTTP_POST_DATA_READ_BUFFER_SIZE;
+    packetizer_status =
+        memfault_packetizer_get_next(buffer, &buffer_len);
+    if (packetizer_status == kMemfaultPacketizerStatus_NoMoreData) {
+      break;
     }
-    const wiced_result_t write_rv = http_request_write(request, buffer, read_size);
+
+    const wiced_result_t write_rv = http_request_write(request, buffer, buffer_len);
     if (WICED_SUCCESS != write_rv) {
       MEMFAULT_LOG_ERROR("http_request_write failed: %u", write_rv);
       goto error;
     }
-    bytes_remaining -= read_size;
-  }
+  } while (packetizer_status != kMemfaultPacketizerStatus_EndOfChunk);
+
+  // we have finished assembling one chunk so flush the request
   const wiced_result_t flush_rv = http_request_flush(request);
   if (WICED_SUCCESS != flush_rv) {
     MEMFAULT_LOG_ERROR("http_request_flush failed: %u", flush_rv);
@@ -261,21 +275,19 @@ typedef enum {
   kMemfaultPlatformHttpPost_GetSpiAddressFailed = -2,
   kMemfaultPlatformHttpPost_DnsLookupFailed = -3,
   kMemfaultPlatformHttpPost_BuildUrlFailed = -4,
+  kMemfaultPlatformHttpPost_HttpRequestFailure = -5,
 } eMemfaultPlatformHttpPost;
 
-int memfault_platform_http_client_post_coredump(
+int memfault_platform_http_client_post_data(
     sMfltHttpClient *client, MemfaultHttpClientResponseCallback callback, void *ctx) {
   if (client->is_request_pending) {
-    MEMFAULT_LOG_ERROR("Coredump post request already pending!");
+    MEMFAULT_LOG_ERROR("Data post request already pending!");
     return kMemfaultPlatformHttpPost_AlreadyPending;
   }
 
-  struct MfltCoredumpInfo cd_info = {0};
-  if (!memfault_platform_get_spi_start_and_end_addr(&cd_info.flash_start, &cd_info.flash_end)) {
-    return kMemfaultPlatformHttpPost_GetSpiAddressFailed;
-  }
-  if (!memfault_coredump_has_valid_coredump(&cd_info.total_size)) {
-    return kMfltPostCoredumpStatus_NoCoredumpFound;
+  // Early exit if there is no new data to send
+  if (!memfault_packetizer_data_available()) {
+    return kMfltPostDataStatus_NoDataFound;
   }
 
   if (!prv_do_dns_lookup(client)) {
@@ -283,13 +295,31 @@ int memfault_platform_http_client_post_coredump(
   }
 
   char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE];
-  if (!memfault_http_build_url(url_buffer, MEMFAULT_HTTP_API_COREDUMP_SUBPATH)) {
+  if (!memfault_http_build_url(url_buffer, MEMFAULT_HTTP_API_CHUNKS_SUBPATH)) {
     return kMemfaultPlatformHttpPost_BuildUrlFailed;
   }
+  MEMFAULT_LOG_DEBUG("Posting data to %s", url_buffer);
 
-  int rv = prv_connect_and_send_coredump_request(client, url_buffer, &cd_info, callback, ctx);
-  if (rv != WICED_SUCCESS) {
-    return MEMFAULT_PLATFORM_SPECIFIC_ERROR(rv);
+  const http_security_t security = g_mflt_http_client_config.api_no_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
+  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address, MEMFAULT_HTTP_GET_API_PORT(),
+                                   security, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
+
+  // Drain all the data that is available to be sent
+  while (memfault_packetizer_data_available()) {
+    int rv = prv_send_chunk_in_http_request(client, url_buffer, callback, ctx);
+    if (rv != WICED_SUCCESS) {
+      return MEMFAULT_PLATFORM_SPECIFIC_ERROR(rv);
+    }
+
+    // Wait for the in-flight http request to complete
+    memfault_platform_http_client_wait_until_requests_completed(
+        client, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS);
+
+    if (client->request_error_occurred) {
+      MEMFAULT_LOG_ERROR("Terminating data transfer because error occurred");
+      memfault_packetizer_abort();
+      return kMemfaultPlatformHttpPost_HttpRequestFailure;
+    }
   }
 
   return 0;

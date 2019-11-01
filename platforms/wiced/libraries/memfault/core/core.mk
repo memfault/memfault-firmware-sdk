@@ -1,6 +1,6 @@
 NAME := MemfaultCore
 
-$(NAME)_SOURCES    :=
+$(NAME)_SOURCES    := src/memfault_data_packetizer.c
 
 $(NAME)_COMPONENTS :=
 

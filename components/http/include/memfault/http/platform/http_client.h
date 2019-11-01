@@ -6,8 +6,8 @@
 //! See License.txt for details
 //!
 //! @brief
-//! Dependency functions required in order to send coredumps directly to Memfault's
-//! servers via HTTPS, using memfault_http_client_post_coredump().
+//! Dependency functions required in order to send data directly to Memfault's
+//! servers via HTTPS, using memfault_http_client_post_data().
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -40,8 +40,8 @@ typedef void (*MemfaultHttpClientResponseCallback)(const sMfltHttpResponse *resp
 //! @return 0 on success, else error code
 int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out);
 
-//! Posts coredump that is pending transmission to Memfault's services over HTTPS to the API path defined by
-//! MEMFAULT_HTTP_API_COREDUMP_SUBPATH. The implementation is expected to set the project key header (see
+//! Posts data that is pending transmission to Memfault's services over HTTPS to the API path defined by
+//! MEMFAULT_HTTP_API_CHUNKS_SUBPATH. The implementation is expected to set the project key header (see
 //! MEMFAULT_HTTP_PROJECT_KEY_HEADER) as well as the "Content-Type: application/octet-stream" header.
 //! See https://docs.memfault.com/ for HTTP API documentation.
 //! HTTP redirects are expected to be handled by the implementation -- in other words, when receiving 3xx responses,
@@ -49,12 +49,11 @@ int memfault_platform_http_response_get_status(const sMfltHttpResponse *response
 //!
 //! @param client The client to use to post the request. Guaranteed to be non-NULL.
 //! @param callback The callback to call with the response object. This callback MUST ALWAYS be called when this
-//! function returned kMfltPostCoredumpStatus_Success!
+//! function returned kMfltPostDataStatus_Success!
 //! @param ctx Pointer to user data that is expected to be passed into the callback.
-//! @return kMfltPostCoredumpStatus_Success on success and kMfltPostCoredumpStatus_NoCoredumpFound
-//! if no coredump has been found, or any other error code in case of a (non-HTTP) error.
-int memfault_platform_http_client_post_coredump(sMfltHttpClient *client,
-                                                MemfaultHttpClientResponseCallback callback, void *ctx);
+//! @return 0 on success, otherwise an error code
+int memfault_platform_http_client_post_data(sMfltHttpClient *client,
+                                            MemfaultHttpClientResponseCallback callback, void *ctx);
 
 //! Waits until pending requests have been completed.
 //! @param client The http client. Guaranteed to be non-NULL.

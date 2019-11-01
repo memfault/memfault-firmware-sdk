@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-struct MemfaultDeviceInfo {
+typedef struct MemfaultDeviceInfo {
   //! The device's serial number or unique identifier.
   //! Regular expression defining valid device serials: ^[-a-zA-Z0-9_]+$
   const char *device_serial;
@@ -34,12 +34,12 @@ struct MemfaultDeviceInfo {
   //! Hardware version (sometimes also called "board revision") that the software is currently running on.
   //! Regular expression defining valid hardware versions: ^[-a-zA-Z0-9_\.\+]+$
   const char *hardware_version;
-};
+} sMemfaultDeviceInfo;
 
 //! Invoked by memfault library to query the device information
 //!
 //! It's expected the strings returned will be valid for the lifetime of the application
-void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info);
+void memfault_platform_get_device_info(sMemfaultDeviceInfo *info);
 
 #ifdef __cplusplus
 }

@@ -15,14 +15,14 @@
 #define MEMFAULT_HTTP_URL_BUFFER_SIZE (128)
 
 #ifndef MEMFAULT_HTTP_API_HOST
-#  define MEMFAULT_HTTP_API_HOST "ingress.memfault.com"
+#  define MEMFAULT_HTTP_API_HOST "chunks.memfault.com"
 #endif
 #ifndef MEMFAULT_HTTP_API_PORT
 #  define MEMFAULT_HTTP_API_PORT (443)
 #endif
 
 #define MEMFAULT_HTTP_API_PREFIX "/api/v0/"
-#define MEMFAULT_HTTP_API_COREDUMP_SUBPATH "upload/coredump"
+#define MEMFAULT_HTTP_API_CHUNKS_SUBPATH "chunks"
 #define MEMFAULT_HTTP_PROJECT_KEY_HEADER "Memfault-Project-Key"
 
 #ifdef __cplusplus
@@ -70,15 +70,15 @@ bool memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], con
 sMfltHttpClient *memfault_http_client_create(void);
 
 typedef enum {
-  kMfltPostCoredumpStatus_Success = 0,
-  kMfltPostCoredumpStatus_NoCoredumpFound = 1,
-} eMfltPostCoredumpStatus;
+  kMfltPostDataStatus_Success = 0,
+  kMfltPostDataStatus_NoDataFound = 1,
+} eMfltPostDataStatus;
 
-//! Posts coredump that is pending transmission to Memfault's services over HTTP.
+//! Posts Memfault data that is pending transmission to Memfault's services over HTTP.
 //!
-//! @return kMfltPostCoredumpStatus_Success on success, kMfltPostCoredumpStatus_NoCoredumpFound
-//! if no coredump was found or else an error code.
-int memfault_http_client_post_coredump(sMfltHttpClient *client);
+//! @return kMfltPostDataStatus_Success on success, kMfltPostDataStatus_NoDataFound
+//! if no data was found or else an error code.
+int memfault_http_client_post_data(sMfltHttpClient *client);
 
 //! Waits until pending requests have been completed.
 //! @param client The http client.

@@ -61,7 +61,7 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 //! @param data opaque data to write
 //! @param data_len length of data to write in bytes
 bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                                     size_t data_len);
+                                              size_t data_len);
 
 //! Read from platforms coredump storage region
 //!
@@ -69,7 +69,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
 //! @param data the buffer to read the data into
 //! @param read_len length of data to read in bytes
 bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                                    size_t read_len);
+                                             size_t read_len);
 
 //! Erase a region of the platforms coredump storage
 //!
@@ -86,6 +86,20 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 //! @note a coredump region can be invalidated by zero'ing out or erasing the first sector
 //! being used for storage
 void memfault_platform_coredump_storage_clear(void);
+
+//! Used to read coredumps out of storage when the system is not in a _crashed_ state
+//!
+//! @note A weak version of this API is defined in memfault_coredump.c and it will just use the
+//! implementation defined in memfault_platform_coredump_storage_read(). If the storage read implementation
+//! differs between when a coredump is saved and when it is read (i.e needs mutex locking), you can override the
+//! the function by defining it in your port file.
+//!
+//! @param offset The offset to start reading at
+//! @param buf The buffer to copy data to
+//! @param buf_len The number of bytes to read
+//!
+//! @return true if the read was successful, false otherwise
+extern bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len);
 
 #ifdef __cplusplus
 }
