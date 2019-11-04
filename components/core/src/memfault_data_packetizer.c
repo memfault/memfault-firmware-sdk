@@ -101,7 +101,7 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
   const sMessageMetadata *msg_metadata = &s_mflt_packetizer_state.msg_metadata;
   if (offset < hdr_size) {
     sMfltPacketizerHdr hdr = {
-      .mflt_msg_type = msg_metadata->source->type,
+      .mflt_msg_type = (uint8_t)msg_metadata->source->type,
     };
     uint8_t *hdr_bytes = (uint8_t *)&hdr;
 

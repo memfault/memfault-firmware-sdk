@@ -108,11 +108,33 @@ $ invoke --list
 Available tasks:
 
   nrf.build             Build a demo application that runs on the nrf52
-  nrf.clean             Build a demo application that runs on the nrf52
+  nrf.clean             Clean demo application that runs on the nrf52
   nrf.console           Start a RTT console session
 
 ... etc ...
 ```
+
+#### Running the unit tests
+
+The SDK code is covered extensively by unit tests. They can be found in the
+`tests/` folder. If you'd like to run them yourself, make sure you have
+[CPPUTest](https://cpputest.github.io) installed. When using macOS, you can
+install it from homebrew by running `brew install cpputest`.
+
+To build and run the unit tests, just run
+
+```bash
+$ invoke test
+```
+
+To learn more about unit testing best practices for firmware development, check
+out
+[our blog post on this topic](https://interrupt.memfault.com/blog/unit-testing-basics)!
+
+The unit tests are run by CircleCI upon every commit to this repo. Build & test coverage status of the `master` branch:
+
+[![CircleCI](https://circleci.com/gh/memfault/memfault-firmware-sdk.svg?style=svg)](https://circleci.com/gh/memfault/memfault-firmware-sdk)
+[![Coverage](https://img.shields.io/codecov/c/gh/memfault/memfault-firmware-sdk/master)](https://codecov.io/gh/memfault/memfault-firmware-sdk/)
 
 # FAQ
 

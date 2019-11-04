@@ -2,11 +2,12 @@
 # Copyright (c) 2019-Present Memfault, Inc.
 # See License.txt for details
 #
-import sys
-import shutil
 import os
+import shutil
+import sys
 
 from invoke import Collection, task
+
 from .gdb import gdb_build_cmd
 from .print_coredump_watcher import PrintCoredumpWatcher
 
@@ -63,7 +64,7 @@ def nrf_build(ctx, skip_app_sign=False):
 
 @task(pre=[run_arm_toolchain_check])
 def nrf_clean(ctx):
-    """Build a demo application that runs on the nrf52"""
+    """Clean demo application that runs on the nrf52"""
     _run_demo_app_make_command(ctx, "clean")
 
 

@@ -5,16 +5,15 @@
 from contextlib import contextmanager
 from os import uname
 
-
 APPLE_FTDI_DRIVER_BUNDLE_ID = "com.apple.driver.AppleUSBFTDI"
 
 
-def _is_macos():
+def is_macos():
     return uname()[0] == "Darwin"
 
 
 def _unload_apple_ftdi_driver_if_needed(ctx):
-    if not _is_macos():
+    if not is_macos():
         return
     result = ctx.run("kextstat -b {}".format(APPLE_FTDI_DRIVER_BUNDLE_ID), hide=True)
     loaded = APPLE_FTDI_DRIVER_BUNDLE_ID in result.stdout
@@ -25,7 +24,7 @@ def _unload_apple_ftdi_driver_if_needed(ctx):
 
 
 def _load_apple_ftdi_driver_if_needed(ctx):
-    if not _is_macos():
+    if not is_macos():
         return
     print("Re-loading Apple FTDI driver...")
     ctx.run("sudo kextload -b {}".format(APPLE_FTDI_DRIVER_BUNDLE_ID))

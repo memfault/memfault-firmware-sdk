@@ -11,15 +11,12 @@ PROJ_SRC_DIR := src/
 # Memfault SDK integration
 #
 
-EMBEDDED_MFLT_SDK := $(abspath ../../../..)
-EMBEDDED_NRF5_MFLT_SDK := $(EMBEDDED_MFLT_SDK)/platforms/nrf5
+# Pick up the
 MEMFAULT_COMPONENTS := core demo panics http util
-MEMFAULT_COMPONENTS_DIR := $(EMBEDDED_MFLT_SDK)/components
-MEMFAULT_COMPONENTS_INC_FOLDERS := $(foreach component, $(MEMFAULT_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
-MEMFAULT_COMPONENTS_SRCS := $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
-MEMFAULT_COMPONENTS_SRCS := $(patsubst %memfault_fault_handling_xtensa.c, , $(MEMFAULT_COMPONENTS_SRCS))
+MEMFAULT_SDK_ROOT := $(abspath ../../../..)
+include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
 
-MEMFAULT_PLATFORM_REFERENCE_IMPL = $(EMBEDDED_NRF5_MFLT_SDK)/libraries/memfault/platform_reference_impl
+MEMFAULT_PLATFORM_REFERENCE_IMPL = $(MEMFAULT_SDK_ROOT)/platforms/nrf5/libraries/memfault/platform_reference_impl
 MEMFAULT_PLATFORM_SDK_OVERRIDES = $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/sdk_overrides/
 MEMFAULT_PLATFORM_REFERENCE_SRC += \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_core.c \

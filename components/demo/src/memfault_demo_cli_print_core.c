@@ -32,22 +32,18 @@ static void prv_write_curl_epilogue(void) {
 }
 
 int memfault_demo_cli_cmd_print_core(int argc, char *argv[]) {
-  const sPacketizerConfig cfg = {
-    .enable_multi_packet_chunk = true,
-  };
-  sPacketizerMetadata metadata;
-  if (!memfault_packetizer_begin(&cfg, &metadata)) {
-    MEMFAULT_LOG_ERROR("No data to send!");
-    return -1;
-  }
-
   enum PrintFormat {
     kCurl,
     kHex,
   } fmt = kCurl;
   if (argc > 1) {
-    if (0 == strcmp(argv[1], "hex")) {
+    if (0 == strcmp(argv[1], "curl")) {
+      // fmt is kCurl by default
+    } else if (0 == strcmp(argv[1], "hex")) {
       fmt = kHex;
+    } else {
+      MEMFAULT_LOG_ERROR("Usage: \"print_core\" or \"print_core <curl|hex>\"");
+      return -1;
     }
   }
 
@@ -67,6 +63,15 @@ int memfault_demo_cli_cmd_print_core(int argc, char *argv[]) {
           .write_epilogue = NULL,
       },
   };
+
+  const sPacketizerConfig cfg = {
+    .enable_multi_packet_chunk = true,
+  };
+  sPacketizerMetadata metadata;
+  if (!memfault_packetizer_begin(&cfg, &metadata)) {
+    MEMFAULT_LOG_ERROR("No data to send!");
+    return -1;
+  }
 
   uint8_t buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES / 2];
   char hex_buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES];

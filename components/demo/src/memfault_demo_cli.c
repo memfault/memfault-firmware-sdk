@@ -72,7 +72,7 @@ int memfault_demo_cli_cmd_get_core(int argc, char *argv[]) {
   return 0;
 }
 
-int memfault_demo_cli_cmd_delete_core(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]) {
   MEMFAULT_LOG_INFO("Invalidating coredump");
   memfault_platform_coredump_storage_clear();
   return 0;
