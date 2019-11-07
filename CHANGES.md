@@ -1,4 +1,11 @@
-Changes between Memfault Firmware SDK 0.0.7 and 0.0.6
+Changes between Memfault Firmware SDK 0.0.8 and 0.0.7 - Nov 7, 2019
+
+- Added helper makefile (`makefiles/MemfaultWorker.mk`). A user of the SDK can
+  include this makefile when using a make as their build system to easily
+  collect the sources and include paths needed to build Memfault SDK components
+- Make unit tests public & add CI to external SDK
+
+Changes between Memfault Firmware SDK 0.0.7 and 0.0.6 - Oct 31, 2019
 
 - Added firmware side support for the Memfault Cloud **chunk** endpoint. This is
   a sessionless endpoint that allows chunks of arbitrary size to be sent and

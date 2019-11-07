@@ -1,0 +1,75 @@
+# Python CircleCI 2.1 configuration file
+#
+# Check for more details:
+#
+# - https://circleci.com/docs/2.0/configuration-reference/#section=reference
+# - https://discuss.circleci.com/t/circleci-2-1-config-overview/26057
+#
+# Validate this via:
+#
+# - brew install circleci
+# - circleci config validate
+#
+version: 2.1
+
+executors:
+  memfault-ci:
+    docker:
+      # TODO: create separate docker image + public Dockerfile
+      - image: memfault/ci:2.5.0
+    working_directory: ~/repo
+
+commands:
+  virtualenv_activate:
+    steps:
+      - run:
+          name: Set environment variables and source virtualenv
+          command: |
+            if [ -f /circleci/.bashrc_circleci ]; then
+              touch .nvmrc
+              cat /circleci/.bashrc_circleci >> $BASH_ENV
+            fi
+
+  pip_install:
+    steps:
+      - restore_cache:
+          name: Restore Python Package Cache
+          keys:
+            - v2-pip-dependencies-{{ checksum "requirements.txt" }}
+            - v2-pip-dependencies-
+      - run: pip install -r requirements.txt
+      - save_cache:
+          paths:
+            - ~/venv
+          key: v2-pip-dependencies-{{ checksum "requirements.txt" }}
+
+  # TODO: move into Dockerfile
+  lcov_install:
+    steps:
+      - run:
+          name: Install lcov 1.14
+          command: |
+            wget http://downloads.sourceforge.net/ltp/lcov-1.14.tar.gz -O ~/lcov.tar.gz
+            cd ~ && tar zvxf ~/lcov.tar.gz
+
+  prepare:
+    steps:
+      - checkout
+      - lcov_install
+      - virtualenv_activate
+      - pip_install
+
+jobs:
+  # TODO: also build demo apps in public CI (not just in our private CI)
+  fw-sdk-test:
+    executor: memfault-ci
+    steps:
+      - prepare
+      - run: PATH=~/lcov-1.14/bin:$PATH inv test --coverage
+      - run: curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN} -n ${CIRCLE_BUILD_NUM} -Z || echo 'Codecov upload failed'
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - fw-sdk-test

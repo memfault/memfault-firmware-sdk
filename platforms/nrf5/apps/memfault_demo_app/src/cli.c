@@ -41,8 +41,8 @@ void mflt_cli_try_process(void) {
   nrf_cli_process(&m_cli);
 }
 
-static void prv_delete_core_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
-  memfault_demo_cli_cmd_delete_core(argc, argv);
+static void prv_clear_core_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_clear_core(argc, argv);
 }
 
 static void prv_get_core_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
@@ -62,7 +62,7 @@ static void prv_print_core_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv
 }
 
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
-NRF_CLI_CMD_REGISTER(delete_core, NULL, "delete the core", prv_delete_core_cmd);
+NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
 NRF_CLI_CMD_REGISTER(print_core, NULL, "Print coredump", prv_print_core_cmd);
@@ -71,7 +71,7 @@ NRF_CLI_CMD_REGISTER(print_core, NULL, "Print coredump", prv_print_core_cmd);
 // for better discoverability of memfault added commands
 static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, crash, _raw),
-  &CONCAT_3(nrf_cli_, delete_core, _raw),
+  &CONCAT_3(nrf_cli_, clear_core, _raw),
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
   &CONCAT_3(nrf_cli_, print_core, _raw),

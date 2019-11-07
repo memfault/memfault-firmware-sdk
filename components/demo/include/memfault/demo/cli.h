@@ -35,9 +35,9 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]);
 //! - hex : hexdumps the coredump
 int memfault_demo_cli_cmd_print_core(int argc, char *argv[]);
 
-//! Command to delete a coredump.
+//! Command to clear a coredump.
 //! It takes no arguments.
-int memfault_demo_cli_cmd_delete_core(int argc, char *argv[]);
+int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]);
 
 //! Command to print device info, as obtained through memfault_platform_get_device_info().
 //! It takes no arguments.

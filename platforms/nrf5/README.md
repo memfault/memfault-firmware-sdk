@@ -250,12 +250,12 @@ to the Memfault web service. The coredump is now being processed by Memfault's
 services and will show up shortly under Issues. If it does not, take a look at
 the FAQ in the `README.md` in the root of the SDK.
 
-### Deleting a coredump
+### Clearing a coredump
 
 New coredumps are only written if the coredump storage area is not already
-occupied. Typically coredumps are deleted once they have been posted to the
+occupied. Typically coredumps are cleared once they have been posted to the
 memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
-You can invoke this command from the cli by running `delete_core`
+You can invoke this command from the cli by running `clear_core`.
 
 # Integrating into existing NRF52 projects
 

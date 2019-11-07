@@ -126,8 +126,8 @@ Console Commands:
         - Print return value of last executed command.
     get_core
         - Get coredump info
-    delete_core
-        - Delete an existing coredump
+    clear_core
+        - Clear an existing coredump
     post_core
         - Post coredump to Memfault
 

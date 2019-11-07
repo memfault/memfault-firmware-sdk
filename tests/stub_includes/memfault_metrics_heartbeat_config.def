@@ -1,0 +1,6 @@
+//! @file
+
+//! A fake set of heartbeat metrics we use for unit testing
+MEMFAULT_METRICS_KEY_DEFINE(test_key_unsigned, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(test_key_signed, kMemfaultMetricType_Signed)
+MEMFAULT_METRICS_KEY_DEFINE(test_key_timer, kMemfaultMetricType_Timer)
