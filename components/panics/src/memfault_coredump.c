@@ -109,35 +109,48 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #endif
 }
 
-void memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx) {
+bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx) {
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
 
   if (info.device_serial) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_DeviceSerial,
-        info.device_serial, strlen(info.device_serial), write_cb, ctx);
+    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_DeviceSerial,
+                                       info.device_serial, strlen(info.device_serial),
+                                       write_cb, ctx)) {
+      return false;
+    }
   }
 
   if (info.software_version) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareVersion,
-        info.software_version, strlen(info.software_version), write_cb, ctx);
+    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareVersion,
+                                       info.software_version, strlen(info.software_version),
+                                       write_cb, ctx)) {
+      return false;
+    }
   }
 
   if (info.software_type) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareType,
-                                  info.software_type, strlen(info.software_type), write_cb, ctx);
+    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareType,
+                                       info.software_type, strlen(info.software_type),
+                                       write_cb, ctx)) {
+      return false;
+    }
   }
 
   if (info.hardware_version) {
-    memfault_coredump_write_block(kMfltCoredumpRegionType_HardwareVersion,
-        info.hardware_version, strlen(info.hardware_version), write_cb, ctx);
+    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_HardwareVersion,
+                                       info.hardware_version, strlen(info.hardware_version),
+                                       write_cb, ctx)) {
+      return false;
+    }
   }
 
   const sMfltMachineTypeBlock machine_block = {
       .machine_type = prv_get_machine_type(),
   };
-  memfault_coredump_write_block(kMfltCoredumpRegionType_MachineType,
-      &machine_block, sizeof(machine_block), write_cb, ctx);
+  return memfault_coredump_write_block(kMfltCoredumpRegionType_MachineType,
+                                       &machine_block, sizeof(machine_block),
+                                       write_cb, ctx);
 }
 
 bool memfault_coredump_write_header(size_t total_coredump_size,
@@ -150,13 +163,14 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
   return write_cb(&hdr, sizeof(hdr), ctx);
 }
 
-static void prv_try_write_trace_reason(uint32_t *offset, uint32_t trace_reason) {
+static bool prv_write_trace_reason(uint32_t *offset, uint32_t trace_reason) {
   sMfltTraceReasonBlock trace_info = {
     .reason = trace_reason,
   };
 
-  memfault_coredump_write_block(kMfltCoredumpRegionType_TraceReason,
-      &trace_info, sizeof(trace_info), prv_write_storage, offset);
+  return memfault_coredump_write_block(kMfltCoredumpRegionType_TraceReason,
+                                       &trace_info, sizeof(trace_info),
+                                       prv_write_storage, offset);
 }
 
 // When copying out some regions (for example, memory or register banks)
@@ -215,15 +229,16 @@ static bool prv_write_regions(uint32_t *curr_offset, const sMfltCoredumpRegion *
   return true;
 }
 
-void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
+bool memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
   sMfltCoredumpStorageInfo info = { 0 };
   sMfltCoredumpHeader hdr = { 0 };
+
   if (!prv_get_info_and_header(&hdr, &info)) {
-    return;
+    return false;
   }
 
   if (prv_coredump_header_is_valid(&hdr)) {
-    return; // don't overwrite what we got!
+    return false; // don't overwrite what we got!
   }
 
   // are there some regions for us to write?
@@ -231,7 +246,7 @@ void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
   const sMfltCoredumpRegion *regions = memfault_platform_coredump_get_regions(&num_regions);
   if ((regions == NULL) || (num_regions == 0)) {
     // sanity check that we got something valid from the caller
-    return;
+    return false;
   }
 
   // MAYBE: We could have an additional check here to ensure that the platform has
@@ -239,7 +254,7 @@ void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
 
   // Erase whatever we got
   if (!memfault_platform_coredump_storage_erase(0, info.size)) {
-    return;
+    return false;
   }
 
   // We will write the header last as a way to mark validity
@@ -248,28 +263,32 @@ void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
   if (regs != NULL) {
     if (!memfault_coredump_write_block(kMfltCoredumpBlockType_CurrentRegisters,
         regs, size, prv_write_storage, &curr_offset)) {
-      return;
+      return false;
     }
   }
 
-  memfault_coredump_write_device_info_blocks(prv_write_storage, &curr_offset);
+  if (!memfault_coredump_write_device_info_blocks(prv_write_storage, &curr_offset)) {
+    return false;
+  }
 
-  prv_try_write_trace_reason(&curr_offset, trace_reason);
+  if (!prv_write_trace_reason(&curr_offset, trace_reason)) {
+    return false;
+  }
 
   // write out any architecture specific regions
   size_t num_arch_regions;
   const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
   if (!prv_write_regions(&curr_offset, arch_regions, num_arch_regions)) {
-    return;
+    return false;
   }
 
   if (!prv_write_regions(&curr_offset, regions, num_regions)) {
-    return;
+    return false;
   }
 
   // we are done, mark things as valid
   size_t header_offset = 0;
-  memfault_coredump_write_header(curr_offset, prv_write_storage, &header_offset);
+  return memfault_coredump_write_header(curr_offset, prv_write_storage, &header_offset);
 }
 
 bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {

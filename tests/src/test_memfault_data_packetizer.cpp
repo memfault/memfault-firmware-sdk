@@ -71,7 +71,7 @@ static bool prv_heartbeat_metric_has_event(size_t *total_size_out) {
   return has_coredump;
 }
 
-const sMemfaultDataSourceImpl g_memfault_heartbeat_metrics_data_source = {
+const sMemfaultDataSourceImpl g_memfault_event_data_source = {
   .has_more_msgs_cb = prv_heartbeat_metric_has_event,
   .read_msg_cb = prv_heartbeat_metric_read_event,
   .mark_msg_read_cb = prv_heartbeat_metric_mark_read,

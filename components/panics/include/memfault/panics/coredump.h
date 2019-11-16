@@ -21,7 +21,8 @@ extern "C" {
 //! @param regs Capture of all the registers at the time of capture
 //! @param size The size of register collection
 //! @param trace_reason The reason for collecting the coredump
-void memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason);
+//! @return true if the coredump was saved and false if the save failed
+bool memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason);
 
 //! Queries whether a valid coredump is present in the coredump storage.
 //!

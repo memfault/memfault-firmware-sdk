@@ -3,29 +3,29 @@
 //! Copyright (c) 2019-Present Memfault, Inc.
 //! See License.txt for details
 //!
-//! @brief A RAM-backed implementation used for tracking state across system reboots.
+//! @brief
+//! A RAM-backed implementation used for tracking state across system reboots. More details about
+//! how to use the API can be found in reboot_tracking.h
 //! Assumptions:
 //!  - RAM state survives across resets (this is generally true as long as power is stable)
-//!    Otherwise, this implementation will behave as a no-op
-//!  - The memory which needs to persist in RAM must not be initialized by any of the firmwares
-//!    upon reboot & the memory must be placed in the same region for the firmwares running on
-//!    the system (i.e bootloader & main image). In GCC LD this can be pretty easily
-//!    achieved by defining the region in MEMORY and placing the tracking struct in SECTIONS:
-//!       NOINIT (rw) :  ORIGIN = <addr>, LENGTH = 0x100
-//!      .noinit (NOLOAD): { KEEP(*(*.mflt_reboot_info)) } > NOINIT
+//!    If power is lost, nothing will fail but the reboot will not be recorded
+//!  - The memory which needs to persist in RAM must _not_ be initialized by any of the firmwares
+//!    upon reboot & the memory must be placed in the same region for the firmwares running on the
+//!    system (i.e bootloader & main image).
 
 #include "memfault/panics/reboot_tracking.h"
 #include "memfault_reboot_tracking_private.h"
 
-#include <stddef.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/errors.h"
 
 #define MEMFAULT_REBOOT_INFO_MAGIC 0x21544252
 
-#define MEMFAULT_REBOOT_INFO_VERSION 1
+#define MEMFAULT_REBOOT_INFO_VERSION 2
 
 typedef struct MEMFAULT_PACKED MfltRebootInfo {
   //! A cheap way to check if the data within the struct is valid
@@ -33,25 +33,36 @@ typedef struct MEMFAULT_PACKED MfltRebootInfo {
   //! Version of the struct. If a new field is added it should be appended right before rsvd. This
   //! way we can remain backwards compatible but know what fields are valid.
   uint8_t version;
-  //! These fields are used by the bootloader & normal application
+  //! The number of times the system has reset due to an error
+  //! without any crash data being read out via the Memfault packetizer
   uint8_t crash_count;
-  uint8_t app_launch_attempts;
-  uint8_t padding;
-  //! Only the normal application uses these fields
-  uint32_t last_reboot_reason; // eMfltRebootReason
+  uint8_t rsvd1[1];
+  uint8_t coredump_saved;
+  uint32_t last_reboot_reason; // eMfltResetReason
   uint32_t pc;
   uint32_t lr;
-  uint8_t rsvd[236];
+  //! Most MCUs have a register which reveals why a device rebooted.
+  //!
+  //! This can be particularly useful for debugging reasons for unexpected reboots
+  //! (where no coredump was saved or no user initiated reset took place). Examples
+  //! of this include brown out resets (BORs) & hardware watchdog resets.
+  uint32_t reset_reason_reg0;
+  // Reserved for future additions
+  uint32_t rsvd2[10];
 } sMfltRebootInfo;
 
 MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) == MEMFAULT_REBOOT_TRACKING_REGION_SIZE,
-                   "struct doesn't match expected size");
+                       "struct doesn't match expected size");
 
 static sMfltRebootInfo *s_mflt_reboot_info;
 
-static void prv_check_or_init_struct(void) {
+static bool prv_check_or_init_struct(void) {
+  if (s_mflt_reboot_info == NULL) {
+    return false;
+  }
+
   if (s_mflt_reboot_info->magic == MEMFAULT_REBOOT_INFO_MAGIC) {
-    return;
+    return true;
   }
 
   // structure doesn't match what we expect, reset it
@@ -59,97 +70,116 @@ static void prv_check_or_init_struct(void) {
     .magic = MEMFAULT_REBOOT_INFO_MAGIC,
     .version = MEMFAULT_REBOOT_INFO_VERSION,
   };
+  return true;
 }
 
-int memfault_reboot_tracking_boot(void *start_addr) {
-  if (start_addr == NULL) {
-    return MemfaultInternalReturnCode_InvalidInput;
-  }
-
-  s_mflt_reboot_info = start_addr;
-  prv_check_or_init_struct();
-  return 0;
-}
-
-void memfault_reboot_tracking_mark_app_launch_attempted(void) {
-  if (s_mflt_reboot_info == NULL) {
-    return;
-  }
-
-  prv_check_or_init_struct();
-  s_mflt_reboot_info->app_launch_attempts++;
-}
-
-void memfault_reboot_tracking_mark_crash(const sMfltCrashInfo *info) {
-  if ((s_mflt_reboot_info == NULL) || (info == NULL)) {
-    return;
-  }
-
-  prv_check_or_init_struct();
-  s_mflt_reboot_info->crash_count++;
-
-  // Store the first crash observed ... where bad things started!
-  if (s_mflt_reboot_info->last_reboot_reason == 0) {
-    s_mflt_reboot_info->last_reboot_reason = info->reason;
-    s_mflt_reboot_info->pc = info->pc;
-    s_mflt_reboot_info->lr = info->lr;
-  }
-}
-
-void memfault_reboot_tracking_mark_system_stable(void) {
-  if (s_mflt_reboot_info == NULL) {
-    return;
-  }
-
-  prv_check_or_init_struct();
-  s_mflt_reboot_info->crash_count = 0;
-}
-
-void memfault_reboot_tracking_mark_system_started(void) {
-  if (s_mflt_reboot_info == NULL) {
-    return;
-  }
-
-  prv_check_or_init_struct();
-  s_mflt_reboot_info->app_launch_attempts = 0;
-}
-
-bool memfault_reboot_tracking_is_firmware_unstable(void) {
-  if (s_mflt_reboot_info == NULL) {
-    return false;
-  }
-
-  prv_check_or_init_struct();
-
-  const size_t num_resets_for_unstable = 3;
-  return ((s_mflt_reboot_info->crash_count >= num_resets_for_unstable) ||
-          (s_mflt_reboot_info->app_launch_attempts >= num_resets_for_unstable));
-}
-
-bool memfault_reboot_tracking_get_crash_info(sMfltCrashInfo *info) {
-  if ((s_mflt_reboot_info == NULL) || (info == NULL)) {
-    return false;
-  }
-
-  prv_check_or_init_struct();
-  if (s_mflt_reboot_info->last_reboot_reason == 0) {
+static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
+  if ((s_mflt_reboot_info->last_reboot_reason == 0) &&
+      (s_mflt_reboot_info->reset_reason_reg0 == 0)) {
     return false; // no reset crashes!
   }
-  *info = (sMfltCrashInfo) {
+
+  *info = (sMfltResetReasonInfo) {
     .reason = s_mflt_reboot_info->last_reboot_reason,
     .pc = s_mflt_reboot_info->pc,
     .lr = s_mflt_reboot_info->lr,
+    .reset_reason_reg0 = s_mflt_reboot_info->reset_reason_reg0,
+    .coredump_saved = s_mflt_reboot_info->coredump_saved == 1,
   };
 
   return true;
 }
 
-void memfault_reboot_tracking_clear_crash_info(void) {
-  if (s_mflt_reboot_info == NULL) {
+void memfault_reboot_tracking_boot(
+    void *start_addr, const sResetBootupInfo *bootup_info) {
+  s_mflt_reboot_info = start_addr;
+
+  if (start_addr == NULL) {
+    return;
+  }
+
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  // If the device rebooted, a reason _should_ already be set
+  if (s_mflt_reboot_info->last_reboot_reason == 0) {
+    s_mflt_reboot_info->crash_count++;
+  }
+
+  if (bootup_info != NULL) {
+    s_mflt_reboot_info->reset_reason_reg0 = bootup_info->reset_reason_reg;
+  }
+}
+
+void memfault_reboot_tracking_mark_reset_imminent(eMfltResetReason reboot_reason,
+                                                  const sMfltRebootTrackingRegInfo *reg) {
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  if (reboot_reason >= kMfltRebootReason_UnknownError) {
+    s_mflt_reboot_info->crash_count++;
+  }
+
+  if (s_mflt_reboot_info->last_reboot_reason != 0) {
+    // we are already tracking a reboot. We don't overwrite this because generally the first reboot
+    // in a loop reveals what started the crash loop
+    return;
+  }
+  s_mflt_reboot_info->last_reboot_reason = reboot_reason;
+  if (reg == NULL) { // we don't have any extra metadata
+    return;
+  }
+
+  s_mflt_reboot_info->pc = reg->pc;
+  s_mflt_reboot_info->lr = reg->lr;
+}
+
+bool memfault_reboot_tracking_read_reset_info(sMfltResetReasonInfo *info) {
+  if (info == NULL) {
+    return false;
+  }
+
+  if (!prv_check_or_init_struct()) {
+    return false;
+  }
+
+  return prv_read_reset_info(info);
+}
+
+void memfault_reboot_tracking_reset_crash_count(void) {
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  s_mflt_reboot_info->crash_count = 0;
+}
+
+size_t memfault_reboot_tracking_get_crash_count(void) {
+  if (!prv_check_or_init_struct()) {
+    return 0;
+  }
+
+  return s_mflt_reboot_info->crash_count;
+}
+
+void memfault_reboot_tracking_clear_reset_info(void) {
+  if (!prv_check_or_init_struct()) {
     return;
   }
 
   s_mflt_reboot_info->last_reboot_reason = 0;
+  s_mflt_reboot_info->coredump_saved = 0;
   s_mflt_reboot_info->pc = 0;
   s_mflt_reboot_info->lr = 0;
+  s_mflt_reboot_info->reset_reason_reg0 = 0;
+}
+
+void memfault_reboot_tracking_mark_coredump_saved(void) {
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  s_mflt_reboot_info->coredump_saved = 1;
 }

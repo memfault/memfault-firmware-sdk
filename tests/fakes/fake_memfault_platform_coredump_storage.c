@@ -14,17 +14,26 @@
 typedef struct FakeMfltStorage {
   uint8_t *buf;
   size_t size;
+  size_t sector_size;
 } sFakeMfltStorage;
 
 static sFakeMfltStorage s_fake_mflt_storage_ctx;
 
-void fake_memfault_platform_coredump_storage_setup(void *storage_buf, size_t storage_size) {
+void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
+  *info = (sMfltCoredumpStorageInfo) {
+    .size = s_fake_mflt_storage_ctx.size,
+    .sector_size = s_fake_mflt_storage_ctx.sector_size,
+  };
+}
+
+
+void fake_memfault_platform_coredump_storage_setup(
+  void *storage_buf, size_t storage_size, size_t sector_size) {
   s_fake_mflt_storage_ctx = (sFakeMfltStorage) {
     .buf = storage_buf,
     .size =  storage_size,
+    .sector_size = sector_size,
   };
-
-  memset(storage_buf, 0x0, storage_size);
 }
 
 bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
@@ -53,9 +62,20 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
 }
 
 bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size) {
-  uint8_t buf[erase_size];
-  memset(buf, 0xff, sizeof(buf));
-  return memfault_platform_coredump_storage_write(offset, buf, sizeof(buf));
+  const size_t sector_size = s_fake_mflt_storage_ctx.sector_size;
+  assert((erase_size % sector_size) == 0);
+  assert((offset % sector_size) == 0);
+
+  for (size_t i = offset; i < erase_size; i += sector_size) {
+    uint8_t erase_pattern[sector_size];
+    memset(erase_pattern, 0xff, sizeof(erase_pattern));
+    if (!memfault_platform_coredump_storage_write(
+            i + offset, erase_pattern, sizeof(erase_pattern))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void memfault_platform_coredump_storage_clear(void) {

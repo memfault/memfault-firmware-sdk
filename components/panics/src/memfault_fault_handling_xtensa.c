@@ -15,7 +15,7 @@
 #  error "The current assert handler assumes the esp-idf is in use!"
 #endif
 
-static eMfltRebootReason s_crash_reason = kMfltRebootReason_Unknown;
+static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
 
 void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
   // Note: At the moment we assume the esp-idf is in use when Xtensa is being used. The SDK

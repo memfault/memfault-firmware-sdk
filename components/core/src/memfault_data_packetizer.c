@@ -17,7 +17,6 @@
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_PACKETIZER_MIN_BUF_LEN == MEMFAULT_MIN_CHUNK_BUF_LEN,
                        "Minimum packetizer payload size must match underlying transport");
-
 //
 // Weak definitions which get overriden when the component that implements that data source is
 // included and compiled in a project
@@ -40,7 +39,7 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_coredump_data_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
-MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_heartbeat_metrics_data_source = {
+MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_event_data_source = {
   .has_more_msgs_cb = prv_data_source_has_event_stub,
   .read_msg_cb = prv_data_source_read_stub,
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
@@ -50,7 +49,7 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_heartbeat_metrics_data_so
 typedef enum {
   kMfltMessageType_None = 0,
   kMfltMessageType_Coredump = 1,
-  kMfltMessageType_HeartbeatMetric = 2,
+  kMfltMessageType_Event = 2,
 } eMfltMessageType;
 
 typedef struct MemfaultDataSource {
@@ -64,9 +63,9 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
     .impl = &g_memfault_coredump_data_source,
   },
   {
-    .type = kMfltMessageType_HeartbeatMetric,
-    .impl = &g_memfault_heartbeat_metrics_data_source,
-  },
+    .type = kMfltMessageType_Event,
+    .impl = &g_memfault_event_data_source,
+  }
 };
 
 typedef struct {
@@ -124,8 +123,8 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
     // transient or not. If we aborted the transaction and the failure was persistent, we could get
     // stuck trying to flush out the same data. Instead, just scrub the region with a pattern and
     // continue on
-    MEMFAULT_LOG_ERROR("Read at offset 0x%" PRIx32 " (%d bytes) failed", offset,
-                       (int)buf_len);
+    MEMFAULT_LOG_ERROR("Read at offset 0x%" PRIx32 " (%d bytes) for source type %d failed", offset,
+                       (int)msg_metadata->source->type, (int)buf_len);
     memset(bufp, 0xEF, buf_len);
   }
 }

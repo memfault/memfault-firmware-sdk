@@ -59,7 +59,8 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
 //! information is missing, the block in question is skipped.
 //! @param write_cb The function that will be called to write out the block header and (optionally) the block payload.
 //! @param ctx User data pointer that will be passed to write_cb.
-void memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx);
+//! @return true of the write was successful, false otherwise
+bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx);
 
 //! @param num_regions The number of regions in the list returned
 //! @return regions to collect based on the active architecture or NULL if there are no extra

@@ -13,7 +13,7 @@
 #include "memfault/core/platform/core.h"
 #include "memfault_reboot_tracking_private.h"
 
-static eMfltRebootReason s_crash_reason = kMfltRebootReason_Unknown;
+static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
 
 // Figure out what stack was being used leading up to the exception Then call
 // memfault_exception_handler with the stack used & reboot reason
@@ -78,15 +78,14 @@ typedef struct MEMFAULT_PACKED MfltCortexMRegs {
   uint32_t psr;
 } sMfltCortexMRegs;
 
-void memfault_exception_handler(sMfltRegState *regs, eMfltRebootReason reason) {
+void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
-    sMfltCrashInfo info = {
-      .reason = reason,
+    sMfltRebootTrackingRegInfo info = {
       .pc = regs->exception_frame->pc,
       .lr = regs->exception_frame->lr,
     };
-    memfault_reboot_tracking_mark_crash(&info);
-    s_crash_reason = info.reason;
+    memfault_reboot_tracking_mark_reset_imminent(reason, &info);
+    s_crash_reason = reason;
   }
 
   bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
@@ -119,7 +118,11 @@ void memfault_exception_handler(sMfltRegState *regs, eMfltRebootReason reason) {
     .psr = regs->exception_frame->xpsr,
   };
 
-  memfault_coredump_save(&core_regs, sizeof(core_regs), s_crash_reason);
+  const bool coredump_saved = memfault_coredump_save(
+      &core_regs, sizeof(core_regs), s_crash_reason);
+  if (coredump_saved) {
+    memfault_reboot_tracking_mark_coredump_saved();
+  }
 
   memfault_platform_reboot();
   MEMFAULT_UNREACHABLE;
@@ -151,13 +154,13 @@ void NMI_Handler(void) {
 }
 
 void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
-  sMfltCrashInfo info = {
-    .reason = kMfltRebootReason_Assert,
+  sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)pc,
     .lr = (uint32_t)lr,
   };
-  memfault_reboot_tracking_mark_crash(&info);
-  s_crash_reason = info.reason;
+  s_crash_reason = kMfltRebootReason_Assert;
+  memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+
 
   memfault_platform_halt_if_debugging();
 

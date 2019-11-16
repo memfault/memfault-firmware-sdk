@@ -16,7 +16,6 @@ extern "C" {
 
   static uint8_t s_storage_buf[4 * 1024] MEMFAULT_ALIGNED(0x8);
 
-  static sMfltCoredumpStorageInfo s_fake_storage_info;
   static sMfltCoredumpRegion s_fake_memory_region[2];
   static size_t s_num_fake_regions;
 
@@ -33,10 +32,6 @@ extern "C" {
   }
 }
 
-void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info = s_fake_storage_info;
-}
-
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
   *num_regions = s_num_fake_regions;
   return &s_fake_memory_region[0];
@@ -49,10 +44,8 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 
 TEST_GROUP(MfltCoredumpTestGroup) {
   void setup() {
-    fake_memfault_platform_coredump_storage_setup(s_storage_buf, sizeof(s_storage_buf));
+    fake_memfault_platform_coredump_storage_setup(s_storage_buf, sizeof(s_storage_buf), 1024);
     memfault_platform_coredump_storage_erase(0, sizeof(s_storage_buf));
-    s_fake_storage_info.size = sizeof(s_storage_buf);
-    s_fake_storage_info.sector_size = 256; // Not really used yet
 
     static uint8_t s_fake_core_region0[] = { 'h', 'e', 'l', 'l', 'o','!','!','!' };
     static uint8_t s_fake_core_region1[] = { 'a', 'b', 'c', 'd' };
@@ -96,6 +89,64 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
   memfault_coredump_save(NULL, 0, 0);
 
   prv_assert_storage_empty();
+}
+
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
+  const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
+  const uint32_t trace_reason = 0xdeadbeef;
+
+  const size_t coredump_size = 212;
+  for (size_t i = 1; i <= coredump_size; i++) {
+    uint8_t storage[i];
+    memset(storage, 0x0, sizeof(storage));
+    fake_memfault_platform_coredump_storage_setup(storage, i, i);
+    memfault_platform_coredump_storage_clear();
+    bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+    CHECK(success == (i == coredump_size));
+  }
+}
+
+TEST(MfltCoredumpTestGroup, Test_BadMagic) {
+  const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
+  const uint32_t trace_reason = 0xdeadbeef;
+
+  const bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(success);
+
+  size_t coredump_size;
+  bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  CHECK(has_coredump);
+
+  // now corrupt the magic
+  memset(&s_storage_buf[1], 0xAB, 8);
+  has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  CHECK(!has_coredump);
+}
+
+TEST(MfltCoredumpTestGroup, Test_InvalidHeader) {
+  const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
+  const uint32_t trace_reason = 0xdeadbeef;
+
+  const bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(success);
+
+  size_t coredump_size;
+  bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  CHECK(has_coredump);
+
+  memfault_platform_coredump_storage_clear();
+  has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  CHECK(!has_coredump);
+}
+
+TEST(MfltCoredumpTestGroup, Test_ShortHeaderRead) {
+  uint8_t storage;
+  fake_memfault_platform_coredump_storage_setup(&storage, sizeof(storage), sizeof(storage));
+
+  // A misconfiguration where coredump storage isn't even large enough to hold a header
+  size_t coredump_size;
+  const bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  CHECK(!has_coredump);
 }
 
 // Test the basics ... make sure the coredump is flushed out in the order we expect

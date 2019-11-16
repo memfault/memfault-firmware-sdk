@@ -11,52 +11,27 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "memfault/panics/reboot_tracking.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//! Note: Must be kept in sync with the python enum at www/database/constants.py
-//! TODO: Autogenerate the python & C header for this enum from a shared json file
-typedef enum MfltRebootReason {
-  kMfltRebootReason_Unknown = 0x0,
-  kMfltRebootReason_Assert = 0x8001,
-  kMfltRebootReason_Watchdog = 0x8002,
-  kMfltRebootReason_UsageFault = 0x8002,
-  kMfltRebootReason_BusFault = 0x9100,
-  kMfltRebootReason_MemFault = 0x9200,
-  kMfltRebootReason_HardFault = 0x9400,
-} eMfltRebootReason;
-
-typedef struct MfltCrashInfo {
-  eMfltRebootReason reason;
+typedef struct MfltResetReasonInfo {
+  eMfltResetReason reason;
   uint32_t pc;
   uint32_t lr;
-} sMfltCrashInfo;
-
-//! Flag that a reboot is about to take place due to a crash
-//!
-//! It's expected this is called right before issuing a reboot due to a crash
-//! such as a Hardfault or Assert
-//!
-//! If three reboots of this type happen in a row, the bootloader will enter recovery
-//! mode, ready to perform a OTA update to recover the device
-void memfault_reboot_tracking_mark_crash(const sMfltCrashInfo *info);
-
-//! Retrieves any saved crash information
-bool memfault_reboot_tracking_get_crash_info(sMfltCrashInfo *info);
+  uint32_t reset_reason_reg0;
+  bool coredump_saved;
+} sMfltResetReasonInfo;
 
 //! Clears any crash information which was stored
-void memfault_reboot_tracking_clear_crash_info(void);
+void memfault_reboot_tracking_clear_reset_info(void);
 
-//! Return true if the firmware has crashed three times without a call to
-//! 'memfault_mark_system_stable'
-bool memfault_reboot_tracking_is_firmware_unstable(void);
+//! Flag that there is also a coredump associated with this reset
+void memfault_reboot_tracking_mark_coredump_saved(void);
 
-//! Invoked by the bootloader when it is about to launch an App
-//!
-//! If the app is launched three times in a row without any acknowledgment from the app itself, the
-//! bootloader will enter recovery mode to perform an OTA update
-void memfault_reboot_tracking_mark_app_launch_attempted(void);
+bool memfault_reboot_tracking_read_reset_info(sMfltResetReasonInfo *info);
 
 #ifdef __cplusplus
 }

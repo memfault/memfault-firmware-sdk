@@ -17,11 +17,11 @@ typedef struct {
 
 static sMetricLockStats s_metric_lock_stats;
 
-void memfault_metrics_lock(void) {
+void memfault_lock(void) {
   s_metric_lock_stats.lock_count++;
 }
 
-void memfault_metrics_unlock(void) {
+void memfault_unlock(void) {
   s_metric_lock_stats.unlock_count++;
 }
 

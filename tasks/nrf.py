@@ -115,6 +115,7 @@ def nrf_eraseflash(ctx):
 
 @task
 def nrf_debug(ctx, elf=NRF_DEMO_APP_ELF, gdb=JLINK_GDB_SERVER_DEFAULT_PORT):
+    """Run GDB, load the demo app ELF, and attach to the target via a running GDBServer"""
     cmd = gdb_build_cmd(None, elf, gdb, reset=False)
     ctx.run(cmd, pty=True)
 

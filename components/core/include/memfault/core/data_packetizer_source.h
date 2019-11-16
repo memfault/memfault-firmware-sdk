@@ -61,8 +61,9 @@ typedef struct MemfaultDataSourceImpl {
 //! "Coredump" data source provided as part of "panics" component
 extern const sMemfaultDataSourceImpl g_memfault_coredump_data_source;
 
-//! "Heartbeat Metrics" provided as part of "metrics" component
-extern const sMemfaultDataSourceImpl g_memfault_heartbeat_metrics_data_source;
+//! Events (i.e "Heartbeat Metrics" & "Reset Reasons") provided as part of "metrics" and "panics"
+//! component, respectively
+extern const sMemfaultDataSourceImpl g_memfault_event_data_source;
 
 #ifdef __cplusplus
 }

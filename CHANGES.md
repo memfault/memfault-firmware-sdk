@@ -1,3 +1,16 @@
+Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
+
+- Enhanced Reboot Tracking module within the **panics** component. Reboots that
+  don't result in coredumps can now be easily tracked (i.e brown outs, system
+  watchdogs, user initiated resets, resets due to firmware updates, etc). See
+  `memfault/panics/reboot_tracking.h` for more details and
+  https://mflt.io/2QlOlgH for a step-by-step setup tutorial.
+- Added Event Storage module within the **core** component. This is a small RAM
+  backed data store that queues up traces to be published to the Memfault Cloud.
+  To minimize the space needed and transport overhead, all events collected
+  within the SDK are stored using the Concise Binary Object Representation
+  (CBOR)
+
 Changes between Memfault Firmware SDK 0.0.8 and 0.0.7 - Nov 7, 2019
 
 - Added helper makefile (`makefiles/MemfaultWorker.mk`). A user of the SDK can
@@ -9,7 +22,8 @@ Changes between Memfault Firmware SDK 0.0.7 and 0.0.6 - Oct 31, 2019
 
 - Added firmware side support for the Memfault Cloud **chunk** endpoint. This is
   a sessionless endpoint that allows chunks of arbitrary size to be sent and
-  reassembled in the Memfault Cloud. The data is read out on the SDK side by
+  reassembled in the Memfault Cloud. This transport can be used to publish _any_
+  data collected by the Memfault SDK. The data is read out on the SDK side by
   calling the `memfault_packetizer_get_next()` API in `data_packetizer.h`. More
   details [here](https://mflt.io/2MGMoIl)
 - Updated demo apps to use the new **chunk** endpoint
