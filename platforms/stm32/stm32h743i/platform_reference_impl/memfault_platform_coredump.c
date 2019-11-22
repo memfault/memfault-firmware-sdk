@@ -41,7 +41,8 @@ struct { //
   .sector_size = 128 * 1024,
 };
 
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
+                                                                  size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[2];
   // NOTE: This is just an example of regions which could be collected
   // Typically sizes are derived from variables added to the .ld script of the port

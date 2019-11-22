@@ -20,7 +20,7 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_pwr_mgmt.h"
 
-#include "memfault/core/debug_log.h"
+#include "memfault/core/platform/core.h"
 #include "mflt_cli.h"
 
 static void timers_init(void) {
@@ -71,7 +71,8 @@ int main(void) {
   log_init();
   timers_init();
   mflt_cli_init();
-  MEMFAULT_LOG_INFO("Memfault demo app starting!");
+  memfault_platform_boot();
+
   prv_dump_build_id();
 
   while (1) {

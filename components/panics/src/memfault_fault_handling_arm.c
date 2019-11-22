@@ -8,9 +8,9 @@
 
 #include "memfault/panics/fault_handling.h"
 
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/reboot_tracking.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/coredump.h"
+#include "memfault/panics/coredump_impl.h"
 #include "memfault_reboot_tracking_private.h"
 
 static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
@@ -78,6 +78,25 @@ typedef struct MEMFAULT_PACKED MfltCortexMRegs {
   uint32_t psr;
 } sMfltCortexMRegs;
 
+size_t memfault_coredump_storage_compute_size_required(void) {
+  // actual values don't matter since we are just computing the size
+  sMfltCortexMRegs core_regs = { 0 };
+  sMemfaultCoredumpSaveInfo save_info = {
+    .regs = &core_regs,
+    .regs_size = sizeof(core_regs),
+    .trace_reason = kMfltRebootReason_UnknownError,
+  };
+
+  sCoredumpCrashInfo info = {
+    // we'll just pass the current stack pointer, value shouldn't matter
+    .stack_address = (void *)&core_regs,
+    .trace_reason = save_info.trace_reason,
+  };
+  save_info.regions = memfault_platform_coredump_get_regions(&info, &save_info.num_regions);
+
+  return memfault_coredump_get_save_size(&save_info);
+}
+
 void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
@@ -118,8 +137,19 @@ void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
     .psr = regs->exception_frame->xpsr,
   };
 
-  const bool coredump_saved = memfault_coredump_save(
-      &core_regs, sizeof(core_regs), s_crash_reason);
+  sMemfaultCoredumpSaveInfo save_info = {
+    .regs = &core_regs,
+    .regs_size = sizeof(core_regs),
+    .trace_reason = s_crash_reason,
+  };
+
+  sCoredumpCrashInfo info = {
+    .stack_address = (void *)sp_prior_to_exception,
+    .trace_reason = save_info.trace_reason,
+  };
+  save_info.regions = memfault_platform_coredump_get_regions(&info, &save_info.num_regions);
+
+  const bool coredump_saved = memfault_coredump_save(&save_info);
   if (coredump_saved) {
     memfault_reboot_tracking_mark_coredump_saved();
   }

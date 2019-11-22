@@ -4,11 +4,16 @@
 //!
 //! Copyright (c) 2019-Present Memfault, Inc.
 //! See License.txt for details
+//!
+//! @brief
+//! Internals used by the "coredump" subsystem in the "panics" component
+//! An end user should _never_ call any of these APIs directly.
 
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
 #ifdef __cplusplus
@@ -61,6 +66,12 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
 //! @param ctx User data pointer that will be passed to write_cb.
 //! @return true of the write was successful, false otherwise
 bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx);
+
+//! Computes the amount of space that will be required to save a coredump
+//!
+//! @param save_info The platform specific information to save as part of the coredump
+//! @return The space required to save the coredump or 0 on error
+size_t memfault_coredump_get_save_size(const sMemfaultCoredumpSaveInfo *save_info);
 
 //! @param num_regions The number of regions in the list returned
 //! @return regions to collect based on the active architecture or NULL if there are no extra

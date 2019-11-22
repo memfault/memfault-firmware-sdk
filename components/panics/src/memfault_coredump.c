@@ -50,15 +50,6 @@ typedef union MEMFAULT_PACKED MfltMachineTypeBlock {
   uint32_t u32;
 } sMfltMachineTypeBlock;
 
-static bool prv_write_storage(const void *data, size_t len, void *ctx) {
-  uint32_t *offset = ctx;
-  if (!memfault_platform_coredump_storage_write(*offset, data, len)) {
-    return false;
-  }
-  *offset += len;
-  return true;
-}
-
 static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
     const void *block_payload, size_t block_payload_size, uint32_t address,
     MfltCoredumpWriteCb write_cb, void *ctx) {
@@ -163,19 +154,20 @@ bool memfault_coredump_write_header(size_t total_coredump_size,
   return write_cb(&hdr, sizeof(hdr), ctx);
 }
 
-static bool prv_write_trace_reason(uint32_t *offset, uint32_t trace_reason) {
+static bool prv_write_trace_reason(MfltCoredumpWriteCb write_cb, uint32_t *offset,
+                                   uint32_t trace_reason) {
   sMfltTraceReasonBlock trace_info = {
     .reason = trace_reason,
   };
 
   return memfault_coredump_write_block(kMfltCoredumpRegionType_TraceReason,
                                        &trace_info, sizeof(trace_info),
-                                       prv_write_storage, offset);
+                                       write_cb, offset);
 }
 
 // When copying out some regions (for example, memory or register banks)
 // we want to make sure we can do word-aligned accesses.
-static void prv_insert_padding_if_necessary(uint32_t *offset) {
+static void prv_insert_padding_if_necessary(MfltCoredumpWriteCb write_cb, uint32_t *offset) {
   const size_t word_size = 4;
   const size_t remainder = *offset % word_size;
   if (remainder == 0) {
@@ -187,7 +179,7 @@ static void prv_insert_padding_if_necessary(uint32_t *offset) {
   memset(pad_bytes, 0x0, sizeof(pad_bytes));
 
   memfault_coredump_write_block(kMfltCoredumpRegionType_PaddingRegion,
-      &pad_bytes, sizeof(pad_bytes), prv_write_storage, offset);
+      &pad_bytes, sizeof(pad_bytes), write_cb, offset);
 }
 
 static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out, sMfltCoredumpStorageInfo *info_out) {
@@ -215,80 +207,124 @@ static bool prv_coredump_header_is_valid(const sMfltCoredumpHeader *hdr) {
   return (hdr && hdr->magic == MEMFAULT_COREDUMP_MAGIC);
 }
 
-static bool prv_write_regions(uint32_t *curr_offset, const sMfltCoredumpRegion *regions,
-                              size_t num_regions) {
+static bool prv_write_regions(MfltCoredumpWriteCb write_cb, uint32_t *curr_offset,
+                              const sMfltCoredumpRegion *regions, size_t num_regions) {
   for (size_t i = 0; i < num_regions; i++) {
-    prv_insert_padding_if_necessary(curr_offset);
+    prv_insert_padding_if_necessary(write_cb, curr_offset);
     const sMfltCoredumpRegion *region = &regions[i];
     if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
-                                      region->region_start, region->region_size, (uint32_t)(uintptr_t)region->region_start,
-                                      prv_write_storage, curr_offset)) {
+                                      region->region_start, region->region_size,
+                                      (uint32_t)(uintptr_t)region->region_start,
+                                      write_cb, curr_offset)) {
       return false;
     }
   }
   return true;
 }
 
-bool memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason) {
+static bool prv_write_storage(const void *data, size_t len, void *ctx) {
+  uint32_t *offset = ctx;
+  if (!memfault_platform_coredump_storage_write(*offset, data, len)) {
+    return false;
+  }
+  *offset += len;
+  return true;
+}
+
+static bool prv_write_storage_compute_space_only(const void *data, size_t len, void *ctx) {
+  // don't write any data but keep count of how many bytes would be written. This is used to
+  // compute the total amount of space needed to store a coredump
+  uint32_t *offset = ctx;
+  *offset += len;
+  return true;
+}
+
+static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_info,
+                                        bool compute_size_only, size_t *total_size) {
   sMfltCoredumpStorageInfo info = { 0 };
   sMfltCoredumpHeader hdr = { 0 };
 
-  if (!prv_get_info_and_header(&hdr, &info)) {
-    return false;
-  }
-
-  if (prv_coredump_header_is_valid(&hdr)) {
-    return false; // don't overwrite what we got!
-  }
-
-  // are there some regions for us to write?
-  size_t num_regions;
-  const sMfltCoredumpRegion *regions = memfault_platform_coredump_get_regions(&num_regions);
+  // are there some regions for us to save?
+  size_t num_regions = save_info->num_regions;
+  const sMfltCoredumpRegion *regions = save_info->regions;
   if ((regions == NULL) || (num_regions == 0)) {
     // sanity check that we got something valid from the caller
     return false;
   }
 
-  // MAYBE: We could have an additional check here to ensure that the platform has
-  // given us enough storage space to save the number of regions requested
+  if (!compute_size_only) {
+    // If we are saving a new coredump but one is already stored, don't overwrite it. This way an
+    // the first issue which started the crash loop can be determined
+    if (!prv_get_info_and_header(&hdr, &info)) {
+      return false;
+    }
 
-  // Erase whatever we got
-  if (!memfault_platform_coredump_storage_erase(0, info.size)) {
+    if (prv_coredump_header_is_valid(&hdr)) {
+      return false; // don't overwrite what we got!
+    }
+  }
+
+  // erase storage provided we aren't just computing the size
+  if (!compute_size_only && !memfault_platform_coredump_storage_erase(0, info.size)) {
     return false;
   }
+
+  const MfltCoredumpWriteCb storage_write_cb =
+      compute_size_only ? prv_write_storage_compute_space_only : prv_write_storage;
 
   // We will write the header last as a way to mark validity
   uint32_t curr_offset = sizeof(hdr);
 
+  const void *regs = save_info->regs;
+  const size_t regs_size = save_info->regs_size;
   if (regs != NULL) {
     if (!memfault_coredump_write_block(kMfltCoredumpBlockType_CurrentRegisters,
-        regs, size, prv_write_storage, &curr_offset)) {
+        regs, regs_size, storage_write_cb, &curr_offset)) {
       return false;
     }
   }
 
-  if (!memfault_coredump_write_device_info_blocks(prv_write_storage, &curr_offset)) {
+  if (!memfault_coredump_write_device_info_blocks(storage_write_cb, &curr_offset)) {
     return false;
   }
 
-  if (!prv_write_trace_reason(&curr_offset, trace_reason)) {
+  const uint32_t trace_reason = save_info->trace_reason;
+  if (!prv_write_trace_reason(storage_write_cb, &curr_offset, trace_reason)) {
     return false;
   }
 
   // write out any architecture specific regions
   size_t num_arch_regions;
   const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
-  if (!prv_write_regions(&curr_offset, arch_regions, num_arch_regions)) {
+  if (!prv_write_regions(storage_write_cb, &curr_offset, arch_regions, num_arch_regions)) {
     return false;
   }
 
-  if (!prv_write_regions(&curr_offset, regions, num_regions)) {
+  if (!prv_write_regions(storage_write_cb, &curr_offset, regions, num_regions)) {
     return false;
   }
 
   // we are done, mark things as valid
   size_t header_offset = 0;
-  return memfault_coredump_write_header(curr_offset, prv_write_storage, &header_offset);
+  const bool success = memfault_coredump_write_header(curr_offset, storage_write_cb,
+                                                      &header_offset);
+  if (success) {
+    *total_size = curr_offset;
+  }
+  return success;
+}
+
+size_t memfault_coredump_get_save_size(const sMemfaultCoredumpSaveInfo *save_info) {
+  const bool compute_size_only = true;
+  size_t total_size = 0;
+  prv_write_coredump_sections(save_info, compute_size_only, &total_size);
+  return total_size;
+}
+
+bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info) {
+  const bool compute_size_only = false;
+  size_t total_size = 0;
+  return prv_write_coredump_sections(save_info, compute_size_only, &total_size);
 }
 
 bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {

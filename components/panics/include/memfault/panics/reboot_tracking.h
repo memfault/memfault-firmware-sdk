@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include "memfault/core/event_storage.h"
+#include "memfault/panics/trace_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,25 +64,6 @@ typedef struct BootupInfo {
 //! @param bootup_info See struct for more details. Can be NULL if there is no info
 //!  to provide
 void memfault_reboot_tracking_boot(void *start_addr, const sResetBootupInfo *bootup_info);
-
-typedef enum MfltResetReason {
-  kMfltRebootReason_Unknown = 0x0000,
-
-  // Normal Resets
-  kMfltRebootReason_UserShutdown = 0x0001,
-  kMfltRebootReason_UserReset = 0x0002,
-  kMfltRebootReason_FirmwareUpdate = 0x0003,
-  kMfltRebootReason_LowPower = 0x0004,
-
-  // Error Resets
-  kMfltRebootReason_UnknownError = 0x8000,
-  kMfltRebootReason_Assert = 0x8001,
-  kMfltRebootReason_Watchdog = 0x8002,
-  kMfltRebootReason_UsageFault = 0x8002,
-  kMfltRebootReason_BusFault = 0x9100,
-  kMfltRebootReason_MemFault = 0x9200,
-  kMfltRebootReason_HardFault = 0x9400,
-} eMfltResetReason;
 
 typedef struct MfltRebootTrackingRegInfo {
   uint32_t pc;

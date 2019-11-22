@@ -67,7 +67,8 @@ typedef struct sMemfaultPlatformCoredumpCtx {
 
 static sMemfaultPlatformCoredumpCtx *s_memfault_platform_coredump_ctx;
 
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
+                                                                  size_t *num_regions) {
   // Let's collect the callstack at the time of crash
 
   static sMfltCoredumpRegion s_coredump_regions[1];

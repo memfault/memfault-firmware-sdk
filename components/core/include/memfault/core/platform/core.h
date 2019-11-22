@@ -18,7 +18,15 @@
 extern "C" {
 #endif
 
-//! Initialize your platform code
+//! Initialize Memfault SDK modules used in the port
+//!
+//! @note The expectation is a user of the SDK will implement this function and call it once on
+//! boot. It should be used to setup anything needed by the SDK (such as event & coredump
+//! storage) and then start up any of the memfault subsystems being used
+//! @note This is also a good time to run any runtime assertion checks (such as checking
+//! that coredump storage is large enough to hold the coredump regions being collected)
+//! @note A reference usage can be found in nrf5/libraries/memfault/memfault_platform_core.c
+//!
 //! @return 0 if initialization completed, else error code
 int memfault_platform_boot(void);
 

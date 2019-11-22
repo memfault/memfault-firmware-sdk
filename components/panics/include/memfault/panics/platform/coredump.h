@@ -17,6 +17,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/panics/trace_reason_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,9 +42,22 @@ typedef struct MfltCoredumpRegion {
   uint32_t region_size;
 } sMfltCoredumpRegion;
 
+typedef struct CoredumpCrashInfo {
+  //! The address of the stack at the time of the error. This makes it easy to generate
+  //! special regions such as "just the top of the stack"
+  void *stack_address;
+  //! The reason the reset is taking place. Sometimes you may want to collect different memory
+  //! regions based on the reset type (i.e assert vs HardFault)
+  eMfltResetReason trace_reason;
+} sCoredumpCrashInfo;
+
 //! Returns an array of the regions to capture when the system crashes
+//! @param crash_info Information pertaining to the crash. The user of the SDK can decide
+//!   whether or not to use this info when generating coredump regions to collect. Some
+//!   example ideas can be found in the comments for the struct above
 //! @param num_regions The number of regions in the list returned
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions);
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+    const sCoredumpCrashInfo *crash_info, size_t *num_regions);
 
 typedef struct MfltCoredumpStorageInfo {
   //! The size of the coredump storage region (must be greater than the space needed to capture all

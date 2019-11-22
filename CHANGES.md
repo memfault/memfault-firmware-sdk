@@ -1,3 +1,32 @@
+Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
+
+- Updated `memfault_platform_coredump_get_regions()` to take an additional
+  argument, `crash_info` which conveys information about the crash taking place
+  (trace reason & stack pointer at time of crash). This allows platform ports to
+  dynamically change the regions collected based on the crash if so desired.
+  This will require an update that looks like the following to your port:
+
+```diff
+-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
++const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
++    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+```
+
+- Added a new API, `memfault_coredump_storage_compute_size_required()` which can
+  be called on boot to sanity check that platform coredump storage is large
+  enough to hold a coredump. For example:
+
+```
+  sMfltCoredumpStorageInfo storage_info = { 0 };
+  memfault_platform_coredump_storage_get_info(&storage_info);
+  const size_t size_needed = memfault_coredump_storage_compute_size_required();
+  if (size_needed > storage_info.size) {
+    MEMFAULT_LOG_ERROR("Coredump storage too small. Got %d B, need %d B",
+                       storage_info.size, size_needed);
+  }
+  MEMFAULT_ASSERT(size_needed <= storage_info.size);
+```
+
 Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
 
 - Enhanced Reboot Tracking module within the **panics** component. Reboots that

@@ -8,21 +8,40 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "memfault/panics/platform/coredump.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct MemfaultCoredumpSaveInfo {
+  const void *regs;
+  size_t regs_size;
+  uint32_t trace_reason;
+  const sMfltCoredumpRegion *regions;
+  size_t num_regions;
+} sMemfaultCoredumpSaveInfo;
+
 //! Invoked by assert handler to capture coredump.
 //!
-//! @param regs Capture of all the registers at the time of capture
-//! @param size The size of register collection
-//! @param trace_reason The reason for collecting the coredump
+//! @note A user of the SDK shouldn't need to invoke this directly
+//!
+//! @param sMemfaultCoredumpSaveInfo Architecture specific information to save with the coredump
 //! @return true if the coredump was saved and false if the save failed
-bool memfault_coredump_save(void *regs, size_t size, uint32_t trace_reason);
+bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
+
+//! Computes the size required to save a coredump on the system
+//!
+//! @note A user of the SDK can call this on boot to assert that
+//! coredump storage is large enough to capture the regions specified
+//!
+//! @return The space required to save the coredump or 0 on error
+//! (i.e no coredump regions defined, coredump storage of 0 size)
+size_t memfault_coredump_storage_compute_size_required(void);
 
 //! Queries whether a valid coredump is present in the coredump storage.
 //!

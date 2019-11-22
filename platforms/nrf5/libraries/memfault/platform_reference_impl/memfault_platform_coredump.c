@@ -44,9 +44,9 @@ extern uint32_t __MfltCoredumpRamEnd;
 #define CORE_REGION_START ((uint32_t)&__CoreStart)
 #define CORE_REGION_LENGTH ((uint32_t)&__CoreEnd - CORE_REGION_START)
 
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
+                                                                  size_t *num_regions) {
   // Let's collect the callstack at the time of crash
-
   static sMfltCoredumpRegion s_coredump_regions[1];
 
 #if (MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY == 1)

@@ -19,11 +19,6 @@ examples are available for:
 - WICED SDK / Cypress BCM943364WCD1
 - nRF5 SDK / Nordic nRF52840 (PCA10056)
 
-Coming soon:
-
-- ESP-IDF / Espressif ESP32
-- Apache Mynewt / Nordic nRF52840 (PCA10056)
-
 If you have one of the supported boards and want to jump right in, look at the
 "Getting Started" section in `platforms/**/README.md`.
 
@@ -39,8 +34,14 @@ Each component contains a `README.md`, source code, header files and "platform"
 header files.
 
 The platform header files describe the interfaces which the component relies on.
-For some of the popular platforms, we have already implemented platform
-dependencies. Also see the `platforms` folder.
+
+For some of the platform dependencies we have provided ports that can be linked
+into your system without modification. You can find them in the `ports` folder.
+
+For some of the popular MCUs & vendor SDKs, we have already provided a reference
+implementation for platform dependencies which can be found in the `platforms`
+folder. These can also serve as a good example when initially setting up the SDK
+on your platform.
 
 ### Main components
 
@@ -56,6 +57,26 @@ Please refer to the `README.md` in each of these for more details.
 - `http` – http client API, to post coredumps and events directly to the
   Memfault service from devices.
 - `util` – various utilities.
+
+# Integrating the Memfault SDK
+
+If you are using `make`, `makefiles/MemfaultWorker.mk` can be used to very
+easily collect the source files and include paths required by the SDK.
+
+```c
+MEMFAULT_SDK_ROOT := <The to the root of this repo from your project>
+MEMFAULT_COMPONENTS := <The SDK components to be used, i.e "core panics util">
+include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
+<YOUR_SRC_FILES> += $(MEMFAULT_COMPONENTS_SRCS)
+<YOUR_INCLUDE_PATHS> += $(MEMFAULT_COMPONENTS_INC_FOLDERS)
+```
+
+If you are not using make, to include the SDK you need to do is:
+
+- Add the `.c` files located at `components/<component>/src/*.c` to your build
+  system
+- Add `components/<component>/include` to the include paths you pass to the
+  compiler
 
 # Platforms
 

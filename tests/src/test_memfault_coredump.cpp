@@ -32,7 +32,8 @@ extern "C" {
   }
 }
 
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   *num_regions = s_num_fake_regions;
   return &s_fake_memory_region[0];
 }
@@ -83,10 +84,42 @@ static void prv_assert_storage_empty(void) {
   MEMCMP_EQUAL(empty_storage, s_storage_buf, sizeof(s_storage_buf));
 }
 
+static bool prv_collect_regions_and_save(void *regs, size_t size,
+                                         uint32_t trace_reason) {
+  size_t num_regions = 0;
+  const sMfltCoredumpRegion *regions =
+      memfault_platform_coredump_get_regions(NULL, &num_regions);
+  sMemfaultCoredumpSaveInfo info = {
+    .regs = regs,
+    .regs_size = size,
+    .trace_reason = trace_reason,
+    .regions = regions,
+    .num_regions = num_regions,
+  };
+  return memfault_coredump_save(&info);
+}
+
+static size_t prv_compute_space_needed(void *regs, size_t size, uint32_t trace_reason) {
+  size_t num_regions = 0;
+  const sMfltCoredumpRegion *regions =
+      memfault_platform_coredump_get_regions(NULL, &num_regions);
+  sMemfaultCoredumpSaveInfo info = {
+    .regs = regs,
+    .regs_size = size,
+    .trace_reason = trace_reason,
+    .regions = regions,
+    .num_regions = num_regions,
+  };
+  return memfault_coredump_get_save_size(&info);
+}
+
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
   s_num_fake_regions = 0;
   s_num_fake_arch_regions = 0;
-  memfault_coredump_save(NULL, 0, 0);
+
+  prv_collect_regions_and_save(NULL, 0, 0);
+  size_t size = prv_compute_space_needed(NULL, 0, 0);
+  LONGS_EQUAL(0, size);
 
   prv_assert_storage_empty();
 }
@@ -101,16 +134,34 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
     memset(storage, 0x0, sizeof(storage));
     fake_memfault_platform_coredump_storage_setup(storage, i, i);
     memfault_platform_coredump_storage_clear();
-    bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+    bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+
+    // even if storage itself is too small we should always be able to compute the amount of space
+    // needed!
+    const size_t space_needed = prv_compute_space_needed((void *)&regs, sizeof(regs), trace_reason);
+    LONGS_EQUAL(coredump_size, space_needed);
+
     CHECK(success == (i == coredump_size));
   }
+}
+
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoOverwrite) {
+  const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
+  const uint32_t trace_reason = 0xdeadbeef;
+
+  bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(success);
+
+  // since we already have an unread core, it shouldn't be over
+  success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(!success);
 }
 
 TEST(MfltCoredumpTestGroup, Test_BadMagic) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+  const bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
   CHECK(success);
 
   size_t coredump_size;
@@ -127,7 +178,7 @@ TEST(MfltCoredumpTestGroup, Test_InvalidHeader) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const bool success = memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+  const bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
   CHECK(success);
 
   size_t coredump_size;
@@ -149,12 +200,24 @@ TEST(MfltCoredumpTestGroup, Test_ShortHeaderRead) {
   CHECK(!has_coredump);
 }
 
+TEST(MfltCoredumpTestGroup, Test_CoredumpReadHeaderMagic) {
+  const uint32_t regs[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
+  const uint32_t trace_reason = 0xdead;
+
+  prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+
+  uint32_t word = 0;
+  const bool success = memfault_coredump_read(0, &word, sizeof(word));
+  CHECK(success);
+  LONGS_EQUAL(0x45524f43, word);
+}
+
 // Test the basics ... make sure the coredump is flushed out in the order we expect
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   const uint32_t regs[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
   const uint32_t trace_reason = 0xdead;
 
-  memfault_coredump_save((void *)&regs, sizeof(regs), trace_reason);
+  prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
 
   uint8_t *coredump_buf = &s_storage_buf[0];
   const uint32_t expected_header_magic = 0x45524f43;

@@ -14,6 +14,7 @@ export BUILD_DIR=build
 export PROJECT_DIR := $(abspath $(CURRENT_DIR)/..)
 export MFLT_TEST_ROOT := $(CURRENT_DIR)
 export PROJECT_ROOT_DIR := $(PROJECT_DIR)
+export MFLT_PORTS_DIR := $(PROJECT_DIR)/ports
 export MFLT_COMPONENTS_DIR := $(PROJECT_DIR)/components
 export MFLT_UTILS_SRC_DIR := $(MFLT_COMPONENTS_DIR)/util/src
 

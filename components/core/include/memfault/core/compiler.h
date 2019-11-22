@@ -49,7 +49,7 @@ extern "C" {
 // Unit tests run on native desktop and don't accept special section placements
 #  define MEMFAULT_PUT_IN_SECTION(x)
 #else
-#  define MEMFAULT_PUT_IN_SECTION(x) __attribute__((section(x)));
+#  define MEMFAULT_PUT_IN_SECTION(x) __attribute__((section(x)))
 #endif
 
 #if defined(__cplusplus)
