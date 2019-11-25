@@ -1,3 +1,11 @@
+Changes between Memfault SDK 0.0.11 and SDK 0.0.10
+
+- Release of **metrics** component. This API can easily be used to monitor
+  device health over time (i.e connectivity, battery life, MCU resource
+  utilization, hardware degredation, etc) and configure Alerts with the Memfault
+  backend when things go astray. To get started, see this
+  [document](https://mflt.io/2D8TRLX)
+
 Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
 
 - Updated `memfault_platform_coredump_get_regions()` to take an additional
@@ -26,6 +34,11 @@ Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
   }
   MEMFAULT_ASSERT(size_needed <= storage_info.size);
 ```
+
+- Added a convenience RAM backed
+  [reference port](https://github.com/memfault/memfault-firmware-sdk/blob/master/ports/panics/src/memfault_platform_ram_backed_coredump.c)
+  for coredump platform APIs. This can be used for persisting a coredump in RAM
+  across a reset.
 
 Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
 

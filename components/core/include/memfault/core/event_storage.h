@@ -10,7 +10,7 @@
 //! (i.e Heartbeat Metrics & Reboot Reasons). Must be initialized on system boot.
 //!
 //! @note If calls to data_packetizer.c are made on a different task than the one
-//! MemfaultPlatformTimerCb is invoked on, memfault_lock() & memfault_unlock() should also
+//! MemfaultPlatformTimerCallback is invoked on, memfault_lock() & memfault_unlock() should also
 //! be implemented by the platform
 
 #include <stdbool.h>
