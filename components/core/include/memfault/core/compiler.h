@@ -27,6 +27,10 @@ extern "C" {
 #define MEMFAULT_FUNC_ALIAS(new_func_decl, old_name) \
   new_func_decl __attribute__((alias (MEMFAULT_EXPAND_AND_QUOTE(old_name))))
 
+// Given a static string definition, compute the strlen equivalent
+// (i.e MEMFAULT_STATIC_STRLEN("abcd") == 4)
+#define MEMFAULT_STATIC_STRLEN(s) (sizeof(s) - 1)
+
 #if defined(__GNUC__) && defined(__arm__)
 #  define MEMFAULT_GET_LR() __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))

@@ -5,8 +5,8 @@
 # If you are using a Make build system, to pick up the Memfault include paths & source
 # files needed for a project, you can just add the following lines:
 #
-# MEMFAULT_COMPONENTS := <The SDK components to be used, i.e "core panics util">
 # MEMFAULT_SDK_ROOT := <The path to the root of the memfault-firmware-sdk repo>
+# MEMFAULT_COMPONENTS := <The SDK components to be used, i.e "core panics util">
 # include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
 # <YOUR_SRC_FILES> += $(MEMFAULT_COMPONENTS_SRCS)
 # <YOUR_INCLUDE_PATHS> += $(MEMFAULT_COMPONENTS_INC_FOLDERS)

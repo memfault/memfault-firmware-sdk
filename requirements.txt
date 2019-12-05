@@ -1,3 +1,4 @@
 git+git://github.com/memfault/pyserial.git@master-memfault
 invoke==1.2.0
 pyftdi==0.29.4
+west==0.6.2

@@ -1,4 +1,17 @@
-Changes between Memfault SDK 0.0.11 and SDK 0.0.10
+Changes between Memfault SDK 0.0.12 and SDK 0.0.11 - Dec 4, 2019
+
+- Expose root certificates used by Memfault CI in DER format for easier
+  integration with TLS libraries which do not parse PEM formatted certificates.
+- Add utilities to the http component for constructing Memfault Cloud **chunk**
+  endpoint POST requests to facilitate easier integration in environments with
+  no pre-existing http stack.
+- Add port for Cortex-M based targets in the Zephyr RTOS. Ports are available
+  for the 1.14 Long Term Support Release as well as the 2.0 Release. See
+  [ports/zephyr/README.md](ports/zephyr/README.md) for more details
+- Add Zephyr demo application (tested on the STM32L4). See
+  [zephyr demo app directly](platforms/zephyr/README.md) for more details
+
+Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
 
 - Release of **metrics** component. This API can easily be used to monitor
   device health over time (i.e connectivity, battery life, MCU resource

@@ -75,7 +75,7 @@ memfault_platform_halt_if_debugging () at ./memfault-firmware-sdk/platforms/stm3
 (gdb) bt
 #0  memfault_platform_halt_if_debugging () at ./memfault-firmware-sdk/platforms/stm32/stm32h743i/platform_reference_impl/memfault_platform_core.c:17
 #1  memfault_platform_reboot () at ./memfault-firmware-sdk/platforms/stm32/stm32h743i/platform_reference_impl/memfault_platform_core.c:22
-#2  0x08009a24 in memfault_exception_handler (regs=<optimized out>, reason=<optimized out>) at ./memfault-firmware-sdk/components/panics/src/memfault_fault_handling_arm.c:124
+#2  0x08009a24 in memfault_fault_handler (regs=<optimized out>, reason=<optimized out>) at ./memfault-firmware-sdk/components/panics/src/memfault_fault_handling_arm.c:124
 #3  <signal handler called>
 #4  0x00000000 in ?? ()
 Backtrace stopped: previous frame identical to this frame (corrupt stack?)

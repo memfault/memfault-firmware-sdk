@@ -48,7 +48,7 @@
 #endif /* MEMFAULT_RAM_BACKED_COREDUMP_SIZE */
 
 static uint8_t s_ram_backed_coredump_region[MEMFAULT_RAM_BACKED_COREDUMP_SIZE]
-MEMFAULT_PUT_IN_SECTION(".mflt_coredump") MEMFAULT_ALIGNED(8);
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8);
 
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {

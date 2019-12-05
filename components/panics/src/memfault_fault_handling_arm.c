@@ -9,54 +9,12 @@
 #include "memfault/panics/fault_handling.h"
 
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
 #include "memfault_reboot_tracking_private.h"
 
 static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
-
-// Figure out what stack was being used leading up to the exception Then call
-// memfault_exception_handler with the stack used & reboot reason
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "tst lr, #4 \n"                            \
-      "ite eq \n"                                \
-      "mrseq r3, msp \n"                         \
-      "mrsne r3, psp \n"                         \
-      "push {r3-r11, lr} \n"                     \
-      "mov r0, sp \n"                            \
-      "ldr r1, =%0 \n"                            \
-      "b memfault_exception_handler \n"          \
-      :                                          \
-      : "i" (_x)                                 \
-                  )
-
-// Cortex M stack on exception entry
-typedef struct MEMFAULT_PACKED MfltExceptionFrame {
-  uint32_t r0;
-  uint32_t r1;
-  uint32_t r2;
-  uint32_t r3;
-  uint32_t r12;
-  uint32_t lr;
-  uint32_t pc;
-  uint32_t xpsr;
-} sMfltExceptionFrame;
-
-// The state of registers at exception entry
-typedef struct MEMFAULT_PACKED MfltRegState {
-  sMfltExceptionFrame *exception_frame;
-  // callee saved registers
-  uint32_t r4;
-  uint32_t r5;
-  uint32_t r6;
-  uint32_t r7;
-  uint32_t r8;
-  uint32_t r9;
-  uint32_t r10;
-  uint32_t r11;
-  uint32_t exc_return; // on exception entry, this value is in the LR
-} sMfltRegState;
 
 typedef struct MEMFAULT_PACKED MfltCortexMRegs {
   uint32_t r0;
@@ -97,7 +55,7 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
-void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
+void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
       .pc = regs->exception_frame->pc,
@@ -110,8 +68,8 @@ void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
   bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
   bool stack_alignement_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
 
-  uint32_t sp_prior_to_exception = (uint32_t)regs->exception_frame +
-      (fpu_stack_space_rsvd ? 0x68 : 0x20);
+  uint32_t sp_prior_to_exception =
+      (uint32_t)regs->exception_frame + (fpu_stack_space_rsvd ? 0x68 : 0x20);
 
   if (stack_alignement_forced) {
     sp_prior_to_exception += 0x4;
@@ -157,6 +115,22 @@ void memfault_exception_handler(sMfltRegState *regs, eMfltResetReason reason) {
   memfault_platform_reboot();
   MEMFAULT_UNREACHABLE;
 }
+
+// Figure out what stack was being used leading up to the exception Then call
+// memfault_fault_handler with the stack used & reboot reason
+#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+  __asm volatile(                                \
+      "tst lr, #4 \n"                            \
+      "ite eq \n"                                \
+      "mrseq r3, msp \n"                         \
+      "mrsne r3, psp \n"                         \
+      "push {r3-r11, lr} \n"                     \
+      "mov r0, sp \n"                            \
+      "ldr r1, =%0 \n"                           \
+      "b memfault_fault_handler \n"              \
+      :                                          \
+      : "i" (_x)                                 \
+                  )
 
 MEMFAULT_NAKED_FUNC
 void HardFault_Handler(void) {

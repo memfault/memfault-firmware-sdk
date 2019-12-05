@@ -1,0 +1,12 @@
+{
+    "v2_0": {
+        "branch": "v2.0-branch",
+        "commit": "7c0ec4358a205f83d2c6cc91d6dfc0a3106989a4",
+        "notes:": "v2.0.0 tag"
+    },
+    "v1_14": {
+        "branch": "v1.14-branch",
+        "commit": "9591025942af9d8334901cc281d2b41a1747836d",
+        "notes": "v1.1.14 tag"
+    }
+}

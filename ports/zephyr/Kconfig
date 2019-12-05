@@ -1,0 +1,29 @@
+config MEMFAULT
+        bool "MEMFAULT Support"
+        default y
+        depends on CPU_CORTEX_M
+        select EXTENDED_ESF
+        select PERSIST_CFSR_STATE
+        select RUNTIME_NMI
+        help
+          Enable Zephyr Integration with the Memfault SDK
+          At the moment a port is only provided for Cortex-M based targets
+
+
+
+config MEMFAULT_SHELL
+        bool "MEMFAULT Shell"
+        default y if MEMFAULT
+        select SHELL
+        help
+          CLI Utilities for interfacing with the Memfault SDK
+
+
+config MEMFAULT_HTTP_SUPPORT
+        bool "MEMFAULT HTTP Support"
+        default y if MEMFAULT
+        select NET_SOCKETS_SOCKOPT_TLS
+        select DNS_RESOLVER
+        select MBEDTLS
+        help
+          Enable posting of Memfault Data directly from device over HTTPS

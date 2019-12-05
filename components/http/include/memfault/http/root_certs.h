@@ -5,11 +5,19 @@
 //! Copyright (c) 2019-Present Memfault, Inc.
 //! See License.txt for details
 //!
-//! ingress.memfault.com uses (June 2019) a TLS certificate that is
-//! derived from the DST Root CA X3 root certificate. The intention is
-//! to switch to using DigiCert in the near future, because the
-//! expiration date of DigiCert's root is farther in the future.
+
+//! ingress.memfault.com & chunks.memfault.com use (as of June 2019) a TLS certificate that is
+//! derived from the DST Root CA X3 root certificate. The intention is to switch to using DigiCert
+//! in the near future, because the expiration date of DigiCert's root is farther in the future.
 //! Therefore, it's recommended to already include the DigiCert roots.
+//!
+//! All the Root Certs are provided below in the PEM & DER formats. Depending on the TLS stack
+//! being used a cert in one format or the other may be more favorable. For example, when using
+//! Mbed TLS, parsing certificates in DER format is _always_ enabled whereas PEM parsing is only
+//! available when MBEDTLS_PEM_PARSE_C has been added to the config.
+
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,6 +100,15 @@ extern "C" {
   MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3 \
   MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA \
   MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
+
+
+// The certs are also available in their binary DER format via
+extern const uint8_t g_memfault_cert_dst_ca_x3[];
+extern const size_t g_memfault_cert_dst_ca_x3_len;
+extern const uint8_t g_memfault_cert_digicert_global_root_ca[];
+extern const size_t g_memfault_cert_digicert_global_root_ca_len;
+extern const uint8_t g_memfault_cert_digicert_global_root_g2[];
+extern const size_t g_memfault_cert_digicert_global_root_g2_len;
 
 #ifdef __cplusplus
 }

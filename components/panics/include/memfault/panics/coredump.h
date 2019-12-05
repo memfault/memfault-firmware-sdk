@@ -1,3 +1,5 @@
+#pragma once
+
 //! @file
 //!
 //! Copyright (c) 2019-Present Memfault, Inc.
@@ -6,13 +8,12 @@
 //! @brief
 //! Infra for collecting backtraces which can be parsed by memfault!
 
-#pragma once
-
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/panics/trace_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +22,7 @@ extern "C" {
 typedef struct MemfaultCoredumpSaveInfo {
   const void *regs;
   size_t regs_size;
-  uint32_t trace_reason;
+  eMfltResetReason trace_reason;
   const sMfltCoredumpRegion *regions;
   size_t num_regions;
 } sMemfaultCoredumpSaveInfo;
@@ -33,6 +34,18 @@ typedef struct MemfaultCoredumpSaveInfo {
 //! @param sMemfaultCoredumpSaveInfo Architecture specific information to save with the coredump
 //! @return true if the coredump was saved and false if the save failed
 bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
+
+//! Architecture specific register state
+typedef struct MfltRegState sMfltRegState;
+
+//! Handler to be invoked from fault handlers
+//!
+//! By default, the Memfault SDK will automatically call this function as part of
+//! exception handling for the target architecture.
+//!
+//! @param regs The register state at the time of the fault occurred
+//! @param reason The reason the fault occurred
+void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason);
 
 //! Computes the size required to save a coredump on the system
 //!
