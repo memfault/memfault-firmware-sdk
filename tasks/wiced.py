@@ -6,9 +6,9 @@ import os
 from glob import glob
 
 from invoke import Collection, task
-from .gdb import gdb_build_cmd
-from .print_coredump_watcher import PrintCoredumpWatcher
 
+from .gdb import gdb_build_cmd
+from .print_chunk_watcher import PrintChunkWatcher
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.join(TASKS_DIR, "..")
@@ -125,7 +125,7 @@ def wiced_console(ctx, port=None):
     ctx.run(
         "miniterm.py --raw {port} 115200".format(port=port),
         pty=True,
-        watchers=[PrintCoredumpWatcher(ctx)],
+        watchers=[PrintChunkWatcher(ctx)],
     )
 
 

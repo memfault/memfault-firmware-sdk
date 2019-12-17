@@ -1,7 +1,7 @@
 COMPONENT_NAME=memfault_demo_cli
 
 SRC_FILES = \
-  $(MFLT_COMPONENTS_DIR)/demo/src/memfault_demo_cli_print_core.c \
+  $(MFLT_COMPONENTS_DIR)/demo/src/memfault_demo_cli_print_chunk.c \
   $(MFLT_COMPONENTS_DIR)/http/src/memfault_http_client.c
 
 MOCK_AND_FAKE_SRC_FILES += \

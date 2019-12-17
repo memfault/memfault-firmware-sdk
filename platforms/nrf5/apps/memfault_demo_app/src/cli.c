@@ -17,9 +17,9 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/http/platform/http_client.h"
 
-// The nRF board is not capable of doing HTTP requests directly, but the 'print_core' command
+// The nRF board is not capable of doing HTTP requests directly, but the 'print_chunk' command
 // will use this information to print out a cURL command that you can copy & paste into a shell
-// to post the coredump to Memfault:
+// to post the chunk data to Memfault:
 
 // Find your key on https://app.memfault.com/ under 'Settings':
 sMfltHttpClientConfig g_mflt_http_client_config = {
@@ -57,15 +57,15 @@ static void prv_get_device_info(nrf_cli_t const * p_cli, size_t argc, char **arg
   memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
 
-static void prv_print_core_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
-  memfault_demo_cli_cmd_print_core(argc, argv);
+static void prv_print_chunk_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_print_chunk(argc, argv);
 }
 
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
-NRF_CLI_CMD_REGISTER(print_core, NULL, "Print coredump", prv_print_core_cmd);
+NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send and print as a curl command", prv_print_chunk_cmd);
 
 // nrf_cli_help_print() doesn't work from the top level CLI so add a little shim 'help' function
 // for better discoverability of memfault added commands
@@ -74,7 +74,7 @@ static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, clear_core, _raw),
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
-  &CONCAT_3(nrf_cli_, print_core, _raw),
+  &CONCAT_3(nrf_cli_, print_chunk, _raw),
 };
 
 static void prv_help_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {

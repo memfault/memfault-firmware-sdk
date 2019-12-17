@@ -29,11 +29,11 @@ int memfault_demo_cli_cmd_get_core(int argc, char *argv[]);
 //! It takes no arguments.
 int memfault_demo_cli_cmd_post_core(int argc, char *argv[]);
 
-//! Command to print out a coredump's contents
+//! Command to print out the next Memfault data to send and print as a curl command.
 //! It takes zero or one string argument, which can be:
-//! - curl : (default) prints a shell command to post the coredump to Memfault's API (using echo, xxd and curl)
-//! - hex : hexdumps the coredump
-int memfault_demo_cli_cmd_print_core(int argc, char *argv[]);
+//! - curl : (default) prints a shell command to post the next data chunk to Memfault's API (using echo, xxd and curl)
+//! - hex : hexdumps the data
+int memfault_demo_cli_cmd_print_chunk(int argc, char *argv[]);
 
 //! Command to clear a coredump.
 //! It takes no arguments.

@@ -35,7 +35,7 @@ TEST_GROUP(MfltDemoCliTestGroup) {
    }
 };
 
-static void prv_setup_test_print_core_expectations(const char *const lines[], size_t num_lines) {
+static void prv_setup_test_print_chunk_expectations(const char *const lines[], size_t num_lines) {
   mock().expectOneCall("memfault_coredump_has_valid_coredump")
         .andReturnValue(true)
         .ignoreOtherParameters();
@@ -47,7 +47,7 @@ static void prv_setup_test_print_core_expectations(const char *const lines[], si
   mock().expectOneCall("memfault_platform_coredump_storage_clear");
 }
 
-static void prv_test_print_core_curl(int argc, char *argv[]) {
+static void prv_test_print_chunk_curl(int argc, char *argv[]) {
   const char *lines[] = {
       "echo \\",
       "00fc2c01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
@@ -57,44 +57,44 @@ static void prv_test_print_core_curl(int argc, char *argv[]) {
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
-      "\nprint_core done",
+      "\nprint_chunk done",
   };
-  prv_setup_test_print_core_expectations(lines, MEMFAULT_ARRAY_SIZE(lines));
+  prv_setup_test_print_chunk_expectations(lines, MEMFAULT_ARRAY_SIZE(lines));
 
-  int retval = memfault_demo_cli_cmd_print_core(argc, (char **)argv);
+  int retval = memfault_demo_cli_cmd_print_chunk(argc, (char **)argv);
   LONGS_EQUAL(0, retval);
 }
 
-TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCoreNoFormatUsesCurl) {
-  char *argv[] = {"print_core"};
-  prv_test_print_core_curl(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
+TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdNoFormatUsesCurl) {
+  char *argv[] = {"print_chunk"};
+  prv_test_print_chunk_curl(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
 }
 
-TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCoreCurl) {
-  char *argv[] = {"print_core", "curl"};
-  prv_test_print_core_curl(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
+TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdCurl) {
+  char *argv[] = {"print_chunk", "curl"};
+  prv_test_print_chunk_curl(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
 }
 
-TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCoreHex) {
+TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdHex) {
   const char *const lines[] = {
       "00fc2c01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
   };
-  prv_setup_test_print_core_expectations(lines, MEMFAULT_ARRAY_SIZE(lines));
+  prv_setup_test_print_chunk_expectations(lines, MEMFAULT_ARRAY_SIZE(lines));
 
-  char *argv[] = {"print_core", "hex"};
-  int retval = memfault_demo_cli_cmd_print_core(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
+  char *argv[] = {"print_chunk", "hex"};
+  int retval = memfault_demo_cli_cmd_print_chunk(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
   LONGS_EQUAL(0, retval);
 }
 
-TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCoreInvalidFormat) {
+TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdInvalidFormat) {
   mock().expectOneCall("memfault_platform_log").
          withIntParameter("level", kMemfaultPlatformLogLevel_Error).
-         withStringParameter("output", "Usage: \"print_core\" or \"print_core <curl|hex>\"");
+         withStringParameter("output", "Usage: \"print_chunk\" or \"print_chunk <curl|hex>\"");
 
-  char *argv[] = {"print_core", "invalid"};
-  int retval = memfault_demo_cli_cmd_print_core(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
+  char *argv[] = {"print_chunk", "invalid"};
+  int retval = memfault_demo_cli_cmd_print_chunk(MEMFAULT_ARRAY_SIZE(argv), (char **)argv);
   LONGS_EQUAL(-1, retval);
 }

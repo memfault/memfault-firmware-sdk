@@ -49,7 +49,7 @@ static const command_t commands[] = {
     {"get_core", memfault_demo_cli_cmd_get_core, 0, NULL, NULL, NULL, "Get coredump info"},
     {"clear_core", memfault_demo_cli_cmd_clear_core, 0, NULL, NULL, NULL, "Clear an existing coredump"},
     {"post_core", memfault_demo_cli_cmd_post_core, 0, NULL, NULL, NULL, "Post coredump to Memfault"},
-    {"print_core", memfault_demo_cli_cmd_print_core, 0, NULL, NULL, "[curl|hex]", "Print coredump"},
+    {"print_chunk", memfault_demo_cli_cmd_print_chunk, 0, NULL, NULL, "[curl|hex]", "Get next Memfault data chunk to send and print as a curl command"},
     {"crash", memfault_demo_cli_cmd_crash, 1, NULL, NULL, "<type>"ESCAPE_SPACE_PROMPT, "Trigger a crash"},
 
     {"get_core_region", prv_get_core_region, 0, NULL, NULL, NULL, "Get coredump SPI region info"},

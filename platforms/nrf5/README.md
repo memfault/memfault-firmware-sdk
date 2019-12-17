@@ -225,7 +225,7 @@ re-assemble data sent over a BLE link and post. If you are interested in these
 implementations, please don't hesitate to reach out!
 
 For the purposes of this demo, we will just grab the core information from the
-cli using the `print_core` command. It should look something like:
+cli using the `print_chunk` command. It should look something like:
 
 ```
 echo \
@@ -241,7 +241,7 @@ automatically detect when this command has been run and prompt you to upload.
 You will see something like:
 
 ```
-Invoke CLI wrapper detected 'print_core' call
+Invoke CLI wrapper detected 'print_chunk' call
 Would you like to run the command displayed above? [y/n]
 ```
 

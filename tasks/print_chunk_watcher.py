@@ -2,22 +2,23 @@
 # Copyright (c) 2019-Present Memfault, Inc.
 # See License.txt for details
 #
-from invoke.watchers import StreamWatcher
 import sys
 from tempfile import NamedTemporaryFile
 
+from invoke.watchers import StreamWatcher
 
-class PrintCoredumpWatcher(StreamWatcher):
-    """Automagically detects and executes CLI command dumped to console via 'print_core' cmd
 
-    The 'print_core' command can be used to dump the contents of the coredump to the console.
+class PrintChunkWatcher(StreamWatcher):
+    """Automagically detects and executes CLI command dumped to console via 'print_chunk' cmd
+
+    The 'print_chunk' command can be used to dump the contents of the next Memfault data chunk to the console.
     This watcher can be installed to look for the output of this command. If the output is found
     the user will be prompted about whether or not they would like to upload the file. This way a
     user doesn't have to copy & paste the large block manually
     """
 
     def __init__(self, ctx):
-        super(PrintCoredumpWatcher, self).__init__()
+        super(PrintChunkWatcher, self).__init__()
         self.search_start_idx = 0
         self.ctx = ctx
 
@@ -27,19 +28,19 @@ class PrintCoredumpWatcher(StreamWatcher):
 
         search_stream = stream[self.search_start_idx :]
         start_idx = search_stream.find("echo \\")
-        end_idx = search_stream.find("print_core done")
+        end_idx = search_stream.find("print_chunk done")
 
         if start_idx == -1 or end_idx == -1:
-            # We haven't found a full print_core
+            # We haven't found a full print_chunk
             return []
 
-        # Forward search index so we don't keep detecting the same 'print_core' call
+        # Forward search index so we don't keep detecting the same 'print_chunk' call
         self.search_start_idx = len(stream)
 
         cmd = search_stream[start_idx:end_idx]
         if "<YOUR API KEY HERE>" in cmd:
             info = (
-                "\n\nInvoke CLI wrapper detected 'print_core' call but a valid\n"
+                "\n\nInvoke CLI wrapper detected 'print_chunk' call but a valid\n"
                 + "'Memfault-Project-Key' was not specified. Please consult README for target\n"
                 "platform for more info on how to set the value."
             )
@@ -58,7 +59,7 @@ class PrintCoredumpWatcher(StreamWatcher):
             cmd_f.flush()
             cmd_f.seek(0)
 
-            print("\n\nInvoke CLI wrapper detected 'print_core' call")
+            print("\n\nInvoke CLI wrapper detected 'print_chunk' call")
             print("Would you like to run the command displayed above? [y/n]", end=None)
             val = sys.stdin.read(1)
             if val.lower() == "y":

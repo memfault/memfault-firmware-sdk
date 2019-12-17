@@ -29,3 +29,18 @@ likely need to be customized to your application:
 
 Please change the reference implementations in ways that makes sense for your
 project.
+
+### Exception Handlers
+
+This component includes exception handlers that automatically capture a coredump
+and reboot tracking information. The handlers are strongly defined and use
+symbol names following common naming conventions for the architecture. For
+example, for ARM, the ARM CMSIS naming conventions are followed and the handlers
+are called `HardFault_Handler`, `BusFault_Handler`, etc.
+
+Often, RTOSes and BSPs come with weakly defined fault handlers. In those cases,
+Memfault's handlers will just override the weak ones seamlessly.
+
+Occasionally, you may need to rename the handlers. You can do so by defining the
+appropriate `MEMFAULT_EXC_HANDLER_...` preprocessor defines. See
+`memfault_fault_handling_*.c` for more details.

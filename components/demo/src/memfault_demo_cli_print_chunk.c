@@ -28,10 +28,10 @@ static void prv_write_curl_epilogue(void) {
   MEMFAULT_LOG_RAW("| xxd -p -r | curl -X POST %s\\", url);
   MEMFAULT_LOG_RAW(" -H 'Memfault-Project-Key:%s'\\", g_mflt_http_client_config.api_key);
   MEMFAULT_LOG_RAW(" -H 'Content-Type:application/octet-stream' --data-binary @- -i");
-  MEMFAULT_LOG_RAW("\nprint_core done");
+  MEMFAULT_LOG_RAW("\nprint_chunk done");
 }
 
-int memfault_demo_cli_cmd_print_core(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_print_chunk(int argc, char *argv[]) {
   enum PrintFormat {
     kCurl,
     kHex,
@@ -42,7 +42,7 @@ int memfault_demo_cli_cmd_print_core(int argc, char *argv[]) {
     } else if (0 == strcmp(argv[1], "hex")) {
       fmt = kHex;
     } else {
-      MEMFAULT_LOG_ERROR("Usage: \"print_core\" or \"print_core <curl|hex>\"");
+      MEMFAULT_LOG_ERROR("Usage: \"print_chunk\" or \"print_chunk <curl|hex>\"");
       return -1;
     }
   }

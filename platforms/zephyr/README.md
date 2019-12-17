@@ -79,8 +79,8 @@ Subcommands:
   clear_core       :clear the core
   get_core         :gets the core
   get_device_info  :display device information
-  print_msg        :get next Memfault data to send and print as a curl command
-  post_msg         :get next Memfault data to send and POST it to the Memfault
+  print_chunk      :get next Memfault data chunk to send and print as a curl command
+  post_chunk       :get next Memfault data chunk to send and POST it to the Memfault
                     Cloud
 uart:~$ mflt get_device_info
 <inf> <mflt>: S/N: DEMOSERIAL
@@ -157,10 +157,10 @@ The network stack dependencies can also be disabled completely by using the
 
 When using a board that does not have a network stack enabled or for debug
 purposes, the messages to push to the Memfault Cloud can also be dumped from the
-CLI using the `mflt print_msg` command:
+CLI using the `mflt print_chunk` command:
 
 ```
-uart:~$ mflt print_msg
+uart:~$ mflt print_chunk
 echo \
 [...]
 | xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DEMOSERIAL\
@@ -168,4 +168,5 @@ echo \
  -H 'Content-Type:application/octet-stream' --data-binary @- -i
 ```
 
-You can copy and paste the output into a terminal
+You can copy and paste the output into a terminal to upload the captured data to
+Memfault.

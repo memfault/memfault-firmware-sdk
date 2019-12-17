@@ -5,7 +5,7 @@
 This directory contains an implementation of the dependency functions needed to
 integrate the Memfault SDK into the Zephyr RTOS.
 
-The instructions below assume you have a environment already setup for building
+The instructions below assume you have an environment already setup for building
 and flashing a Zephyr application. If you do not, see the official
 [getting started guide](https://docs.zephyrproject.org/2.0.0/getting_started/index.html#build-hello-world).
 

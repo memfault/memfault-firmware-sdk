@@ -16,8 +16,12 @@ The easiest way to get started integrating is by using a development board for
 which the Memfault SDK already has a reference integration. At the moment,
 examples are available for:
 
-- WICED SDK / Cypress BCM943364WCD1
+- Arm Mbed OS 5 / STMicroelectronics STM32F4 series (STM32F429I-DISC1)
 - nRF5 SDK / Nordic nRF52840 (PCA10056)
+- Quantum Leap Quantum Platform in C / STMicroelectronics STM32F4 series
+  (STM32F407G-DISC1)
+- WICED SDK / Cypress BCM943364WCD1
+- Zephyr / STMicroelectronics STM32L4 series (B-L475E-IOT01A Discovery kit)
 
 If you have one of the supported boards and want to jump right in, look at the
 "Getting Started" section in `platforms/**/README.md`.

@@ -28,11 +28,11 @@ static int prv_get_device_info(const struct shell *shell, size_t argc, char **ar
   return memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
 
-static int prv_print_core_cmd(const struct shell *shell, size_t argc, char **argv) {
-  return memfault_demo_cli_cmd_print_core(argc, argv);
+static int prv_print_chunk_cmd(const struct shell *shell, size_t argc, char **argv) {
+  return memfault_demo_cli_cmd_print_chunk(argc, argv);
 }
 
-static int prv_post_data_cmd(const struct shell *shell, size_t argc, char **argv) {
+static int prv_post_chunk_cmd(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_HTTP_SUPPORT)
   return memfault_zephyr_port_post_data();
 #else
@@ -47,10 +47,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(clear_core, NULL, "clear the core", prv_clear_core_cmd),
     SHELL_CMD(get_core, NULL, "gets the core", prv_get_core_cmd),
     SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
-    SHELL_CMD(print_msg, NULL, "get next Memfault data to send and print as a curl command",
-              prv_print_core_cmd),
-    SHELL_CMD(post_msg, NULL, "get next Memfault data to send and POST it to the Memfault Cloud",
-              prv_post_data_cmd),
+    SHELL_CMD(print_chunk, NULL, "get next Memfault data chunk to send and print as a curl command",
+              prv_print_chunk_cmd),
+    SHELL_CMD(post_chunk, NULL, "get next Memfault data chunk to send and POST it to the Memfault Cloud",
+              prv_post_chunk_cmd),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

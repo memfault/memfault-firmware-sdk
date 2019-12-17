@@ -1,3 +1,23 @@
+Changes between Memfault SDK 0.0.13 and SDK 0.0.12 - Dec 16, 2019
+
+- Updated Cortex-M fault handler in **panics** component to also collect `psp`
+  and `msp` registers when the system crashes. This allows for the running
+  thread backtrace to be more reliably recovered when a crash occurs from an
+  ISR.
+- Added optional `MEMFAULT_EXC_HANDLER_...` preprocessor defines to enable
+  custom naming of exception handlers in the **panics** component.
+- Add port for Cortex-M based targets using Quantum Leaps' QP™/C & QP™/C++
+  real-time embedded framework. See [ports/qp/README.md](ports/qp/README.md) for
+  more details.
+- Add demo application running Quantum Leaps' QP™/C running on the
+  [STM32F407 discovery board](https://www.st.com/en/evaluation-tools/stm32f4discovery.html).
+  See [platforms/qp/README.md](platforms/qp/README.md) for more details.
+- Added demo application and port for Arm Mbed OS 5 running on the
+  [STM32F429I-DISC1 evaluation board](https://www.st.com/en/evaluation-tools/32f429idiscovery.html).
+  See [platforms/mbed/README.md](platforms/mbed/README.md) for more details.
+- Changed `print_core` to `print_chunk` in demo applications to better align
+  with the Memfault nomenclature for [data transfer](https://mflt.io/2MGMoIl).
+
 Changes between Memfault SDK 0.0.12 and SDK 0.0.11 - Dec 4, 2019
 
 - Expose root certificates used by Memfault CI in DER format for easier

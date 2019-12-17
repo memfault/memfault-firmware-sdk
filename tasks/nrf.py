@@ -9,7 +9,7 @@ import sys
 from invoke import Collection, task
 
 from .gdb import gdb_build_cmd
-from .print_coredump_watcher import PrintCoredumpWatcher
+from .print_chunk_watcher import PrintChunkWatcher
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.dirname(TASKS_DIR)
@@ -45,7 +45,7 @@ def nrf_console(ctx, telnet=JLINK_TELNET_SERVER_DEFAULT_PORT):
     """Start a RTT console session"""
     ctx.run(
         "JLinkRTTClient -LocalEcho Off -RTTTelnetPort {telnet_port}".format(telnet_port=telnet),
-        watchers=[PrintCoredumpWatcher(ctx)],
+        watchers=[PrintChunkWatcher(ctx)],
     )
 
 

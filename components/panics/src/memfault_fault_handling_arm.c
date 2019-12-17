@@ -34,6 +34,8 @@ typedef struct MEMFAULT_PACKED MfltCortexMRegs {
   uint32_t lr;
   uint32_t pc;
   uint32_t psr;
+  uint32_t msp;
+  uint32_t psp;
 } sMfltCortexMRegs;
 
 size_t memfault_coredump_storage_compute_size_required(void) {
@@ -55,6 +57,18 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
+static uint32_t prv_read_psp_reg(void) {
+  uint32_t reg_val;
+  __asm volatile ("mrs %0, psp"  : "=r" (reg_val));
+  return reg_val;
+}
+
+static uint32_t prv_read_msp_reg(void) {
+  uint32_t reg_val;
+  __asm volatile ("mrs %0, msp"  : "=r" (reg_val));
+  return reg_val;
+}
+
 void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
@@ -65,15 +79,17 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
     s_crash_reason = reason;
   }
 
-  bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
-  bool stack_alignement_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
+  const bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
+  const bool stack_alignment_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
 
   uint32_t sp_prior_to_exception =
       (uint32_t)regs->exception_frame + (fpu_stack_space_rsvd ? 0x68 : 0x20);
 
-  if (stack_alignement_forced) {
+  if (stack_alignment_forced) {
     sp_prior_to_exception += 0x4;
   }
+
+  const bool msp_was_active = (regs->exc_return & (1 << 3)) == 0;
 
   sMfltCortexMRegs core_regs = {
     .r0 = regs->exception_frame->r0,
@@ -93,6 +109,8 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
     .lr = regs->exception_frame->lr,
     .pc = regs->exception_frame->pc,
     .psr = regs->exception_frame->xpsr,
+    .msp = msp_was_active ? sp_prior_to_exception : prv_read_msp_reg(),
+    .psp = !msp_was_active ? sp_prior_to_exception : prv_read_psp_reg(),
   };
 
   sMemfaultCoredumpSaveInfo save_info = {
@@ -130,30 +148,54 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
       "b memfault_fault_handler \n"              \
       :                                          \
       : "i" (_x)                                 \
-                  )
+   )
+
+// By default, exception handlers use CMSIS naming conventions.
+// However, if needed, each handler can be renamed using the following
+// preprocessor defines:
+
+#ifndef MEMFAULT_EXC_HANDLER_HARD_FAULT
+#  define MEMFAULT_EXC_HANDLER_HARD_FAULT HardFault_Handler
+#endif
+
+#ifndef MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT
+#  define MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT MemoryManagement_Handler
+#endif
+
+#ifndef MEMFAULT_EXC_HANDLER_BUS_FAULT
+#  define MEMFAULT_EXC_HANDLER_BUS_FAULT BusFault_Handler
+#endif
+
+#ifndef MEMFAULT_EXC_HANDLER_USAGE_FAULT
+#  define MEMFAULT_EXC_HANDLER_USAGE_FAULT UsageFault_Handler
+#endif
+
+#ifndef MEMFAULT_EXC_HANDLER_NMI
+#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
+#endif
 
 MEMFAULT_NAKED_FUNC
-void HardFault_Handler(void) {
+void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_HardFault);
 }
 
 MEMFAULT_NAKED_FUNC
-void MemoryManagement_Handler(void) {
+void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
 }
 
 MEMFAULT_NAKED_FUNC
-void BusFault_Handler(void) {
+void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);
 }
 
 MEMFAULT_NAKED_FUNC
-void UsageFault_Handler(void) {
+void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_UsageFault);
 }
 
 MEMFAULT_NAKED_FUNC
-void NMI_Handler(void) {
+void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
 }
 

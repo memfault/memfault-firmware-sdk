@@ -1,0 +1,9 @@
+mbed-os/features/cellular/
+mbed-os/features/lorawan/
+mbed-os/features/netsocket/
+mbed-os/features/lwipstack/
+mbed-os/features/nanostack/
+mbed-os/features/frameworks/mbed-client-cli/
+
+memfault/components/*xtensa*
+memfault/components/_*
