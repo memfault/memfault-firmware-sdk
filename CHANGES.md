@@ -1,3 +1,8 @@
+Changes between Memfault SDK 0.0.15 and SDK 0.0.14 - Dec 19, 2019
+
+- Add ARMv6-M fault handling port to **panics** component for MCUs such as the
+  ARM Cortex-M0 and Cortex-M0+.
+
 Changes between Memfault SDK 0.0.14 and SDK 0.0.13 - Dec 18, 2019
 
 - Update **panics** component to support compilation with Arm Compiler 5.

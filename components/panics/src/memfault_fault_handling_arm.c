@@ -176,8 +176,20 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
 #  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
 #endif
 
+
+// The fault handling shims below figure out what stack was being used leading up to the exception,
+// build the sMfltRegState argument and pass that as well as the reboot reason to memfault_fault_handler
+
+
 #if defined(__CC_ARM)
 
+// armcc emits a define for the CPU target. Use that information to decide whether or not to pick
+// up the ARMV6M port by default
+#if defined(__TARGET_CPU_CORTEX_M0)
+#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+#endif
+
+#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
 __asm __forceinline void memfault_fault_handling_shim(int reason) {
   extern memfault_fault_handler;
   tst lr, #4
@@ -188,41 +200,82 @@ __asm __forceinline void memfault_fault_handling_shim(int reason) {
   mov r1, r0
   mov r0, sp
   b memfault_fault_handler
+  ALIGN
 }
+#else
+
+__asm __forceinline void memfault_fault_handling_shim(int reason) {
+  extern memfault_fault_handler;
+  PRESERVE8
+  mov r1, lr
+  movs r2, #4
+  tst  r1,r2
+  mrs r12, msp
+  beq msp_active_at_crash
+  mrs r12, psp
+msp_active_at_crash mov r3, r11
+  mov r2, r10
+  mov r1, r9
+  mov r9, r0
+  mov r0, r8
+  push {r0-r3, lr}
+  mov r3, r12
+  push {r3-r7}
+  mov r0, sp
+  mov r1, r9
+  ldr r2, =memfault_fault_handler
+  bx r2
+  ALIGN
+}
+#endif
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
   ldr r0, =0x9400 // kMfltRebootReason_HardFault
-  b memfault_fault_handling_shim
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
 }
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   ldr r0, =0x9200 // kMfltRebootReason_MemFault
-  b memfault_fault_handling_shim
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
 }
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   ldr r0, =0x9100 // kMfltRebootReason_BusFault
-  b memfault_fault_handling_shim
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
 }
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
   ldr r0, =0x8002 // kMfltRebootReason_UsageFault
-  b memfault_fault_handling_shim
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
 }
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
   ldr r0, =0x8001 // kMfltRebootReason_Assert
-  b memfault_fault_handling_shim
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
 }
 
 #elif defined(__GNUC__) || defined(__clang__)
-// Figure out what stack was being used leading up to the exception Then call
-// memfault_fault_handler with the stack used & reboot reason
+
+#if defined(__ARM_ARCH) && (__ARM_ARCH == 6)
+#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+#endif
+
+#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
 #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
   __asm volatile(                                \
       "tst lr, #4 \n"                            \
@@ -236,6 +289,30 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
       :                                          \
       : "i" (_x)                                 \
    )
+#else
+#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+  __asm volatile(                                \
+      "mov r0, lr \n"                            \
+      "movs r1, #4 \n"                           \
+      "tst  r0,r1 \n"                            \
+      "mrs r12, msp \n"                          \
+      "beq msp_active_at_crash_%= \n"            \
+      "mrs r12, psp \n"                          \
+      "msp_active_at_crash_%=: \n"               \
+      "mov r0, r8 \n"                            \
+      "mov r1, r9 \n"                            \
+      "mov r2, r10 \n"                           \
+      "mov r3, r11 \n"                           \
+      "push {r0-r3, lr} \n"                      \
+      "mov r3, r12 \n"                           \
+      "push {r3-r7} \n"                          \
+      "mov r0, sp \n"                            \
+      "ldr r1, =%0 \n"                           \
+      "b memfault_fault_handler \n"              \
+      :                                          \
+      : "i" (_x)                                 \
+   )
+#endif
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
