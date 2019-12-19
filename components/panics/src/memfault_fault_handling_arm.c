@@ -16,7 +16,7 @@
 
 static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
 
-typedef struct MEMFAULT_PACKED MfltCortexMRegs {
+typedef MEMFAULT_PACKED_STRUCT MfltCortexMRegs {
   uint32_t r0;
   uint32_t r1;
   uint32_t r2;
@@ -57,6 +57,20 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
+#if defined(__CC_ARM)
+
+static uint32_t prv_read_psp_reg(void) {
+  register uint32_t reg_val  __asm("psp");
+  return reg_val;
+}
+
+static uint32_t prv_read_msp_reg(void) {
+  register uint32_t reg_val __asm("msp");
+  return reg_val;
+}
+
+#elif defined(__GNUC__) || defined(__clang__)
+
 static uint32_t prv_read_psp_reg(void) {
   uint32_t reg_val;
   __asm volatile ("mrs %0, psp"  : "=r" (reg_val));
@@ -68,6 +82,10 @@ static uint32_t prv_read_msp_reg(void) {
   __asm volatile ("mrs %0, msp"  : "=r" (reg_val));
   return reg_val;
 }
+
+#else
+#  error "New compiler to add support for!"
+#endif
 
 void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
@@ -134,22 +152,6 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
   MEMFAULT_UNREACHABLE;
 }
 
-// Figure out what stack was being used leading up to the exception Then call
-// memfault_fault_handler with the stack used & reboot reason
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "tst lr, #4 \n"                            \
-      "ite eq \n"                                \
-      "mrseq r3, msp \n"                         \
-      "mrsne r3, psp \n"                         \
-      "push {r3-r11, lr} \n"                     \
-      "mov r0, sp \n"                            \
-      "ldr r1, =%0 \n"                           \
-      "b memfault_fault_handler \n"              \
-      :                                          \
-      : "i" (_x)                                 \
-   )
-
 // By default, exception handlers use CMSIS naming conventions.
 // However, if needed, each handler can be renamed using the following
 // preprocessor defines:
@@ -173,6 +175,67 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
 #ifndef MEMFAULT_EXC_HANDLER_NMI
 #  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
 #endif
+
+#if defined(__CC_ARM)
+
+__asm __forceinline void memfault_fault_handling_shim(int reason) {
+  extern memfault_fault_handler;
+  tst lr, #4
+  ite eq
+  mrseq r3, msp
+  mrsne r3, psp
+  push {r3-r11, lr}
+  mov r1, r0
+  mov r0, sp
+  b memfault_fault_handler
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+  ldr r0, =0x9400 // kMfltRebootReason_HardFault
+  b memfault_fault_handling_shim
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+  ldr r0, =0x9200 // kMfltRebootReason_MemFault
+  b memfault_fault_handling_shim
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+  ldr r0, =0x9100 // kMfltRebootReason_BusFault
+  b memfault_fault_handling_shim
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+  ldr r0, =0x8002 // kMfltRebootReason_UsageFault
+  b memfault_fault_handling_shim
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_NMI(void) {
+  ldr r0, =0x8001 // kMfltRebootReason_Assert
+  b memfault_fault_handling_shim
+}
+
+#elif defined(__GNUC__) || defined(__clang__)
+// Figure out what stack was being used leading up to the exception Then call
+// memfault_fault_handler with the stack used & reboot reason
+#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+  __asm volatile(                                \
+      "tst lr, #4 \n"                            \
+      "ite eq \n"                                \
+      "mrseq r3, msp \n"                         \
+      "mrsne r3, psp \n"                         \
+      "push {r3-r11, lr} \n"                     \
+      "mov r0, sp \n"                            \
+      "ldr r1, =%0 \n"                           \
+      "b memfault_fault_handler \n"              \
+      :                                          \
+      : "i" (_x)                                 \
+   )
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
@@ -199,6 +262,11 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
 }
 
+#else
+#  error "New compiler to add support for!"
+#endif
+
+
 void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
   sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)pc,
@@ -218,7 +286,7 @@ void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
   //   At that priority level, we can't get interrupted
   //   We can leverage the arm architecture to auto-capture register state for us
   //   If the user is using psp/msp, we start execution from a more predictable stack location
-  const uint32_t nmipendset_mask = 0x1 << 31;
+  const uint32_t nmipendset_mask = 0x1u << 31;
   volatile uint32_t *icsr = (uint32_t *)0xE000ED04;
   *icsr |= nmipendset_mask;
   __asm("isb");

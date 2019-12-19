@@ -1,3 +1,7 @@
+Changes between Memfault SDK 0.0.14 and SDK 0.0.13 - Dec 18, 2019
+
+- Update **panics** component to support compilation with Arm Compiler 5.
+
 Changes between Memfault SDK 0.0.13 and SDK 0.0.12 - Dec 16, 2019
 
 - Updated Cortex-M fault handler in **panics** component to also collect `psp`

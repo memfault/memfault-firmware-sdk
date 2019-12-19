@@ -8,12 +8,13 @@
 
 #include <stdint.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
 // Subset of ARMv7-M "System Control and ID blocks" related to fault status
-typedef struct MEMFAULT_PACKED {
+typedef MEMFAULT_PACKED_STRUCT {
   uint32_t SHCSR;
   uint32_t CFSR;
   uint32_t HFSR;

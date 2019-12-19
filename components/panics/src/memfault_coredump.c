@@ -19,21 +19,21 @@
 #define MEMFAULT_COREDUMP_MAGIC 0x45524f43
 #define MEMFAULT_COREDUMP_VERSION 1
 
-typedef struct MEMFAULT_PACKED MfltCoredumpHeader {
+typedef MEMFAULT_PACKED_STRUCT MfltCoredumpHeader {
   uint32_t magic;
   uint32_t version;
   uint32_t total_size;
   uint8_t data[];
 } sMfltCoredumpHeader;
 
-typedef struct MEMFAULT_PACKED MfltCoredumpBlock {
+typedef MEMFAULT_PACKED_STRUCT MfltCoredumpBlock {
   eMfltCoredumpBlockType block_type:8;
   uint8_t rsvd[3];
   uint32_t address;
   uint32_t length;
 } sMfltCoredumpBlock;
 
-typedef struct MEMFAULT_PACKED MfltTraceReasonBlock {
+typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
   uint32_t reason;
 } sMfltTraceReasonBlock;
 
@@ -45,9 +45,8 @@ typedef enum MfltCoredumpMachineType  {
   kMfltCoredumpMachineType_Xtensa = 94,
 } eMfltCoredumpMachineType;
 
-typedef union MEMFAULT_PACKED MfltMachineTypeBlock {
-  eMfltCoredumpMachineType machine_type;
-  uint32_t u32;
+typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
+  uint32_t machine_type;
 } sMfltMachineTypeBlock;
 
 static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
@@ -137,7 +136,7 @@ bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, vo
   }
 
   const sMfltMachineTypeBlock machine_block = {
-      .machine_type = prv_get_machine_type(),
+    .machine_type = (uint32_t)prv_get_machine_type(),
   };
   return memfault_coredump_write_block(kMfltCoredumpRegionType_MachineType,
                                        &machine_block, sizeof(machine_block),

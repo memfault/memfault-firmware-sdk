@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 // Registers auto-stacked as part of Cortex-M exception entry
-typedef struct MEMFAULT_PACKED MfltExceptionFrame {
+typedef MEMFAULT_PACKED_STRUCT MfltExceptionFrame {
   uint32_t r0;
   uint32_t r1;
   uint32_t r2;
@@ -29,7 +29,7 @@ typedef struct MEMFAULT_PACKED MfltExceptionFrame {
 } sMfltExceptionFrame;
 
 // Register State collected for Cortex-M at exception entry
-struct MEMFAULT_PACKED MfltRegState {
+MEMFAULT_PACKED_STRUCT MfltRegState {
   // Exception-entry value of the stack pointer that was active when the fault occurred (i.e msp or
   // psp). This is where the hardware will automatically stack caller-saved register state
   // (https://mflt.io/2rejx7A) as part of the exception entry flow. This address is guaranteed to

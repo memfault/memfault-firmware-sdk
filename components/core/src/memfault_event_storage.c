@@ -39,7 +39,7 @@ typedef struct {
 
 #define MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS 0xffff
 
-typedef struct MEMFAULT_PACKED {
+typedef MEMFAULT_PACKED_STRUCT {
   uint16_t total_size;
 } sHeartbeatStorageHeader;
 

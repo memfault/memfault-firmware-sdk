@@ -27,7 +27,7 @@
 
 #define MEMFAULT_REBOOT_INFO_VERSION 2
 
-typedef struct MEMFAULT_PACKED MfltRebootInfo {
+typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   //! A cheap way to check if the data within the struct is valid
   uint32_t magic;
   //! Version of the struct. If a new field is added it should be appended right before rsvd. This
@@ -80,7 +80,7 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   }
 
   *info = (sMfltResetReasonInfo) {
-    .reason = s_mflt_reboot_info->last_reboot_reason,
+    .reason = (eMfltResetReason)s_mflt_reboot_info->last_reboot_reason,
     .pc = s_mflt_reboot_info->pc,
     .lr = s_mflt_reboot_info->lr,
     .reset_reason_reg0 = s_mflt_reboot_info->reset_reason_reg0,
