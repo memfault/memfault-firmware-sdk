@@ -30,6 +30,18 @@ extern "C" {
       .hardware_version = "333",
     };
   }
+
+  bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len) {
+    mock().actualCall(__func__);
+    return fake_memfault_platform_coredump_storage_read(offset, buf, buf_len);
+  }
+
+  bool memfault_platform_coredump_storage_read(uint32_t offset, void *buf,
+                                               size_t buf_len) {
+    mock().actualCall(__func__);
+    return fake_memfault_platform_coredump_storage_read(offset, buf, buf_len);
+  }
+
 }
 
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
@@ -74,9 +86,19 @@ TEST_GROUP(MfltCoredumpTestGroup) {
   }
 };
 
+static bool prv_check_coredump_validity_and_get_size(size_t *total_coredump_size) {
+  // NB: This should only be called while the system is running so memfault_coredump_read
+  // should always be used. Let's use a mock to verify that.
+  mock().expectOneCall("memfault_coredump_read");
+  const bool has_coredump = memfault_coredump_has_valid_coredump(total_coredump_size);
+  mock().checkExpectations();
+  return has_coredump;
+}
+
 static void prv_assert_storage_empty(void) {
   size_t total_coredump_size;
-  bool has_coredump = memfault_coredump_has_valid_coredump(&total_coredump_size);
+
+  bool has_coredump = prv_check_coredump_validity_and_get_size(&total_coredump_size);
   CHECK(!has_coredump);
 
   uint8_t empty_storage[sizeof(s_storage_buf)];
@@ -89,6 +111,12 @@ static bool prv_collect_regions_and_save(void *regs, size_t size,
   size_t num_regions = 0;
   const sMfltCoredumpRegion *regions =
       memfault_platform_coredump_get_regions(NULL, &num_regions);
+
+  if (num_regions != 0) {
+    // we are going to try and write a coredump so this should trigger a header read
+    mock().expectOneCall("memfault_platform_coredump_storage_read");
+  }
+
   sMemfaultCoredumpSaveInfo info = {
     .regs = regs,
     .regs_size = size,
@@ -96,10 +124,17 @@ static bool prv_collect_regions_and_save(void *regs, size_t size,
     .regions = regions,
     .num_regions = num_regions,
   };
-  return memfault_coredump_save(&info);
+  const bool success = memfault_coredump_save(&info);
+  mock().checkExpectations();
+  return success;
 }
 
 static size_t prv_compute_space_needed(void *regs, size_t size, uint32_t trace_reason) {
+  mock().checkExpectations();
+  // computing the space needed to save a coredump shouldn't require any access to the storage
+  // medium itself
+  mock().expectNCalls(0, "memfault_coredump_read");
+  mock().expectNCalls(0, "memfault_platform_coredump_storage_read");
   size_t num_regions = 0;
   const sMfltCoredumpRegion *regions =
       memfault_platform_coredump_get_regions(NULL, &num_regions);
@@ -110,7 +145,9 @@ static size_t prv_compute_space_needed(void *regs, size_t size, uint32_t trace_r
     .regions = regions,
     .num_regions = num_regions,
   };
-  return memfault_coredump_get_save_size(&info);
+  const size_t size_needed = memfault_coredump_get_save_size(&info);
+  mock().checkExpectations();
+  return size_needed;
 }
 
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
@@ -121,6 +158,10 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
   size_t size = prv_compute_space_needed(NULL, 0, 0);
   LONGS_EQUAL(0, size);
 
+  prv_assert_storage_empty();
+}
+
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNothinWritten) {
   prv_assert_storage_empty();
 }
 
@@ -165,12 +206,12 @@ TEST(MfltCoredumpTestGroup, Test_BadMagic) {
   CHECK(success);
 
   size_t coredump_size;
-  bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  bool has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
   CHECK(has_coredump);
 
   // now corrupt the magic
   memset(&s_storage_buf[1], 0xAB, 8);
-  has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
   CHECK(!has_coredump);
 }
 
@@ -182,11 +223,11 @@ TEST(MfltCoredumpTestGroup, Test_InvalidHeader) {
   CHECK(success);
 
   size_t coredump_size;
-  bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  bool has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
   CHECK(has_coredump);
 
   memfault_platform_coredump_storage_clear();
-  has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
   CHECK(!has_coredump);
 }
 
@@ -196,7 +237,7 @@ TEST(MfltCoredumpTestGroup, Test_ShortHeaderRead) {
 
   // A misconfiguration where coredump storage isn't even large enough to hold a header
   size_t coredump_size;
-  const bool has_coredump = memfault_coredump_has_valid_coredump(&coredump_size);
+  const bool has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
   CHECK(!has_coredump);
 }
 
@@ -207,7 +248,7 @@ TEST(MfltCoredumpTestGroup, Test_CoredumpReadHeaderMagic) {
   prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
 
   uint32_t word = 0;
-  const bool success = memfault_coredump_read(0, &word, sizeof(word));
+  const bool success = fake_memfault_platform_coredump_storage_read(0, &word, sizeof(word));
   CHECK(success);
   LONGS_EQUAL(0x45524f43, word);
 }
@@ -320,10 +361,12 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
     MEMCMP_EQUAL(s_fake_memory_region[i].region_start, coredump_buf, segment_size);
     coredump_buf += segment_size;
   }
+  // should have been no calls to memfault_coredump_read
+  mock().checkExpectations();
 
   // we should see that a coredump is saved!
   size_t total_coredump_size = 0;
-  bool has_coredump = memfault_coredump_has_valid_coredump(&total_coredump_size);
+  bool has_coredump = prv_check_coredump_validity_and_get_size(&total_coredump_size);
   CHECK(has_coredump);
   LONGS_EQUAL(total_length, total_coredump_size);
 }

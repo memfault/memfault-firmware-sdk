@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.0.17 and SDK 0.0.16 - Jan 7, 2019
+
+- Guarantee that all accesses to the platform coredump storage region route
+  through `memfault_coredump_read` while the system is running.
+- Scrub unused portion of out buffer provided to packetizer with a known pattern
+  for easier debugging
+
 ### Changes between Memfault SDK 0.0.16 and SDK 0.0.15 - Jan 6, 2019
 
 - Add convenience API, `memfault_packetizer_get_chunk()`, to

@@ -199,14 +199,20 @@ static void prv_insert_padding_if_necessary(MfltCoredumpWriteCb write_cb, uint32
       &pad_bytes, sizeof(pad_bytes), write_cb, offset);
 }
 
-static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out, sMfltCoredumpStorageInfo *info_out) {
+//! Callback that will be called to write coredump data.
+typedef bool(*MfltCoredumpReadCb)(uint32_t offset, void *data, size_t read_len);
+
+
+static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out,
+                                    sMfltCoredumpStorageInfo *info_out,
+                                    MfltCoredumpReadCb coredump_read_cb) {
   sMfltCoredumpStorageInfo info = { 0 };
   memfault_platform_coredump_storage_get_info(&info);
   if (info.size == 0) {
     return false; // no space for core files!
   }
 
-  if (!memfault_platform_coredump_storage_read(0, hdr_out, sizeof(*hdr_out))) {
+  if (!coredump_read_cb(0, hdr_out, sizeof(*hdr_out))) {
     return false; // read failure, abort!
   }
 
@@ -216,8 +222,9 @@ static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out, sMfltCoredumpS
   return true;
 }
 
-static bool prv_coredump_get_header(sMfltCoredumpHeader *hdr_out) {
-  return prv_get_info_and_header(hdr_out, NULL);
+static bool prv_coredump_get_header(sMfltCoredumpHeader *hdr_out,
+                                    MfltCoredumpReadCb coredump_read_cb) {
+  return prv_get_info_and_header(hdr_out, NULL, coredump_read_cb);
 }
 
 static bool prv_coredump_header_is_valid(const sMfltCoredumpHeader *hdr) {
@@ -275,7 +282,8 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   if (!compute_size_only) {
     // If we are saving a new coredump but one is already stored, don't overwrite it. This way an
     // the first issue which started the crash loop can be determined
-    if (!prv_get_info_and_header(&hdr, &info)) {
+    MfltCoredumpReadCb coredump_read_cb = memfault_platform_coredump_storage_read;
+    if (!prv_get_info_and_header(&hdr, &info, coredump_read_cb)) {
       return false;
     }
 
@@ -349,7 +357,10 @@ bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info) {
 
 bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {
   sMfltCoredumpHeader hdr = { 0 };
-  if (!prv_coredump_get_header(&hdr)) {
+  // This routine is only called while the system is running so _always_ use the
+  // memfault_coredump_read, which is safe to call while the system is running
+  MfltCoredumpReadCb coredump_read_cb = memfault_coredump_read;
+  if (!prv_coredump_get_header(&hdr, coredump_read_cb)) {
     return false;
   }
   if (!prv_coredump_header_is_valid(&hdr)) {

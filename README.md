@@ -92,9 +92,10 @@ $ git submodule add git@github.com:memfault/memfault-firmware-sdk.git $YOUR_PROJ
 ```
 
 This makes it easy to track the history of the Memfault SDK. You should not need
-to make modifications to the Memfault SDK itself so an just involve pulling the
-latest upstream, checking [CHANGES.md](CHANGES.md) to see if any modifications
-are needed, and updating to the new submodule commit to your repo.
+to make modifications to the Memfault SDK itself so an update usually just
+involves pulling the latest upstream, checking [CHANGES.md](CHANGES.md) to see
+if any modifications are needed, and updating to the new submodule commit to
+your repo.
 
 Alternatively, the Memfault SDK may be added to a project as a git subtree or by
 copying the source into a project.

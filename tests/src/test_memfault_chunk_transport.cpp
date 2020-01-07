@@ -8,13 +8,13 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <string.h>
   #include <stddef.h>
-  #include <stdio.h>
   #include <stdint.h>
+  #include <stdio.h>
+  #include <string.h>
 
-  #include "memfault/util/chunk_transport.h"
   #include "memfault/core/math.h"
+  #include "memfault/util/chunk_transport.h"
 
   static const uint8_t s_test_msg[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
   static const uint8_t *s_active_msg = NULL;
@@ -86,6 +86,31 @@ TEST(MemfaultChunkTransport, Test_ChunkerSingleMsg) {
 
   const uint8_t expected_msg_all[] = { 0x00, 0x1b, 0x13, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
   prv_check_chunk(&ctx, !md, sizeof(expected_msg_all), &expected_msg_all, sizeof(expected_msg_all));
+}
+
+TEST(MemfaultChunkTransport, Test_ChunkerSingleMsgOversizeBuffer) {
+  sMfltChunkTransportCtx ctx = {
+    .total_size = MEMFAULT_ARRAY_SIZE(s_test_msg),
+    .read_msg = &prv_chunk_msg,
+  };
+
+  const uint8_t expected_msg_all[] = { 0x00, 0x1b, 0x13, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
+  const size_t expected_chunk_len = sizeof(expected_msg_all);
+  const size_t known_pattern_len = 10;
+  uint8_t actual_chunk[expected_chunk_len + known_pattern_len];
+  memset(actual_chunk, 0x0, sizeof(actual_chunk));
+
+  size_t buf_len = sizeof(actual_chunk);
+  const bool md = memfault_chunk_transport_get_next_chunk(&ctx, &actual_chunk[0], &buf_len);
+  CHECK(!md);
+  LONGS_EQUAL(ctx.total_size + 1 + 2, ctx.single_chunk_message_length);
+  LONGS_EQUAL(expected_chunk_len, buf_len);
+  MEMCMP_EQUAL(expected_msg_all, actual_chunk, expected_chunk_len);
+
+  // the remainder of the buffer should have been scrubbed with a known pattern
+  uint8_t pattern[known_pattern_len];
+  memset(pattern, 0xBA, sizeof(pattern));
+  MEMCMP_EQUAL(&actual_chunk[expected_chunk_len], pattern, sizeof(pattern));
 }
 
 

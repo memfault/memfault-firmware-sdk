@@ -97,7 +97,7 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 // bits are also in NOR flash, this means 32 byte hunks can only be written once since an updated
 // in the future would likely cause the ECC to go bad.
 //
-// In practice this means, writes must be issues 32 bytes at a time. The code below accomplishes this
+// In practice this means, writes must be issued 32 bytes at a time. The code below accomplishes this
 // by only issuing writes when 32 bytes have been collected. The Memfault coredump writer is guaranteed
 // to issue writes sequentially with the exception of the header which is at the beginning of the coredump
 // region and written last. A future update of the Memfault SDK will incorporate this logic inside the SDK

@@ -36,8 +36,8 @@ void fake_memfault_platform_coredump_storage_setup(
   };
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool fake_memfault_platform_coredump_storage_read(uint32_t offset, void *data,
+                                                  size_t read_len) {
   assert(s_fake_mflt_storage_ctx.buf != NULL);
   if ((offset + read_len) > s_fake_mflt_storage_ctx.size) {
     return false;
