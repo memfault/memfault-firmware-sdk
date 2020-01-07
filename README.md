@@ -37,7 +37,8 @@ components of the SDK.
 Each component contains a `README.md`, source code, header files and "platform"
 header files.
 
-The platform header files describe the interfaces which the component relies on.
+The platform header files describe the interfaces which the component relies on
+that you must implement.
 
 For some of the platform dependencies we have provided ports that can be linked
 into your system without modification. You can find them in the `ports` folder.
@@ -64,6 +65,44 @@ Please refer to the `README.md` in each of these for more details.
 
 # Integrating the Memfault SDK
 
+## Add Memfault SDK to Your Repository
+
+The Memfault SDK can be added directly into your repository. The structure
+typically looks like:
+
+```
+<YOUR_PROJECT>
+├── memfault
+│   └── sdk
+│       # Contents of _this_ repo
+│       # (https://github.com/memfault/memfault-firmware-sdk)
+│   └── platform_port
+│       # Implementations for the Memfault SDK dependencies
+│       # specified in the platform include directory for each component in the SDK
+│       ├── memfault_platform_core.c
+│       ├── memfault_platform_coredump.c
+│       ├── [...]
+```
+
+If you are using `git`, the Memfault SDK is typically added to a project as a
+submodule:
+
+```
+$ git submodule add git@github.com:memfault/memfault-firmware-sdk.git $YOUR_PROJECT/memfault/sdk
+```
+
+This makes it easy to track the history of the Memfault SDK. You should not need
+to make modifications to the Memfault SDK itself so an just involve pulling the
+latest upstream, checking [CHANGES.md](CHANGES.md) to see if any modifications
+are needed, and updating to the new submodule commit to your repo.
+
+Alternatively, the Memfault SDK may be added to a project as a git subtree or by
+copying the source into a project.
+
+## Add sources to Build System
+
+### Make
+
 If you are using `make`, `makefiles/MemfaultWorker.mk` can be used to very
 easily collect the source files and include paths required by the SDK.
 
@@ -75,7 +114,26 @@ include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
 <YOUR_INCLUDE_PATHS> += $(MEMFAULT_COMPONENTS_INC_FOLDERS)
 ```
 
-If you are not using make, to include the SDK you need to do is:
+### Cmake
+
+If you are using `cmake`, `cmake/Memfault.cmake` in a similar fashion to
+collection source files and include paths:
+
+```
+MEMFAULT_SDK_ROOT := <The to the root of this repo from your project>
+MEMFAULT_COMPONENTS := <The SDK components to be used, i.e "core panics util">
+include(${MEMFAULT_SDK_ROOT}/cmake/Memfault.cmake)
+memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
+MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS)
+
+# ${MEMFAULT_COMPONENTS_SRCS} contains the sources
+# needed for the library and ${MEMFAULT_COMPONENTS_INC_FOLDERS} contains the include paths
+```
+
+### Other Build Systems
+
+If you are not using one of the above build systems, to include the SDK you need
+to do is:
 
 - Add the `.c` files located at `components/<component>/src/*.c` to your build
   system

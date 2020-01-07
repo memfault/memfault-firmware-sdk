@@ -38,12 +38,13 @@ CPPUTEST_WARNINGFLAGS = \
   -Wno-packed \
   -Wno-switch-enum \
   -Wno-unused-parameter \
-  -Wno-vla
+  -Wno-vla \
 
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"
 CLANG_STR = clang
 ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
 COMPILER_SPECIFIC_WARNINGS += \
+  -Wno-bad-function-cast \
   -Wno-c++11-extensions		\
   -Wno-c11-extensions \
   -Wno-c99-extensions \

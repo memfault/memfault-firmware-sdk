@@ -271,6 +271,38 @@ TEST(MemfaultDataPacketizer, Test_OneChunkMultiplePackets) {
   prv_test_msg_fits_in_multiple_packets();
 }
 
+TEST(MemfaultDataPacketizer, Test_SimpleGetChunkApi) {
+  uint8_t packet[2];
+  bool got_data;
+  const size_t num_calls = (sizeof(s_fake_coredump) + sizeof(packet)) / sizeof(packet);
+
+  mock().expectOneCall("prv_coredump_has_core");
+  mock().expectNCalls(num_calls, "prv_coredump_read_core");
+  mock().expectOneCall("prv_mark_core_read");
+
+  // the fake chunker has 0 overhead
+  size_t total_packet_length = sizeof(s_fake_coredump) + 1 /* hdr */;
+  for (size_t i = 0; i < num_calls; i++) {
+    size_t buf_len = sizeof(packet);
+    got_data = memfault_packetizer_get_chunk(packet, &buf_len);
+    CHECK(got_data);
+    const size_t expected_buf_len = MEMFAULT_MIN(total_packet_length, sizeof(packet));
+    LONGS_EQUAL(expected_buf_len, buf_len);
+    total_packet_length -= buf_len;
+    if (i == 0) {
+      // packet should be a coredump type
+      LONGS_EQUAL(1, packet[0]);
+    }
+  }
+  mock().checkExpectations();
+
+  mock().expectOneCall("prv_coredump_has_core").andReturnValue(false);
+  mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
+  size_t buf_len = sizeof(packet);
+  got_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!got_data);
+}
+
 TEST(MemfaultDataPacketizer, Test_MessageSendAbort) {
   uint8_t packet[5];
 

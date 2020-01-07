@@ -49,9 +49,9 @@ typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
   uint32_t machine_type;
 } sMfltMachineTypeBlock;
 
-static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
-    const void *block_payload, size_t block_payload_size, uint32_t address,
-    MfltCoredumpWriteCb write_cb, void *ctx) {
+static bool prv_write_block_with_address(
+    eMfltCoredumpBlockType block_type, const void *block_payload, size_t block_payload_size,
+    uint32_t address, MfltCoredumpWriteCb write_cb, void *ctx, bool word_aligned_reads_only) {
   const sMfltCoredumpBlock blk = {
       .block_type = block_type,
       .address = address,
@@ -62,24 +62,42 @@ static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
   }
   // When NULL is passed as block_payload, only the header is written, even if the payload size is non-zero, this
   // is a feature that allows one to write the block payload piece-meal.
-  if (block_payload_size && block_payload) {
-    if (!write_cb(block_payload, block_payload_size, ctx)) {
+  if (block_payload_size == 0 || (block_payload == NULL)) {
+    return true;
+  }
+
+  if (!word_aligned_reads_only || ((block_payload_size % 4) != 0)) {
+    // no requirements on how the 'address' is read so whatever the user implementation does is fine
+    return write_cb(block_payload, block_payload_size, ctx);
+  }
+
+  // We have a region that needs to be read 32 bits at a time.
+  //
+  // Typically these are very small regions such as a memory mapped register address
+  const uint32_t *word_data = block_payload;
+  for (uint32_t i = 0; i < block_payload_size / 4; i++) {
+    const uint32_t data = word_data[i];
+    if (!write_cb(&data, sizeof(data), ctx)) {
       return false;
     }
   }
+
   return true;
 }
 
 bool memfault_coredump_write_block(eMfltCoredumpBlockType block_type,
                                    const void *block_payload, size_t block_payload_size,
                                    MfltCoredumpWriteCb write_cb, void *ctx) {
-  return prv_write_block_with_address(block_type, block_payload, block_payload_size, 0, write_cb, ctx);
+  const bool word_aligned_reads_only = false;
+  return prv_write_block_with_address(block_type, block_payload, block_payload_size,
+                                      0, write_cb, ctx, word_aligned_reads_only);
 }
 
 static eMfltCoredumpBlockType prv_region_type_to_storage_type(eMfltCoredumpRegionType type) {
   switch (type) {
     case kMfltCoredumpRegionType_ImageIdentifier:
     case kMfltCoredumpRegionType_Memory:
+    case kMfltCoredumpRegionType_MemoryWordAccessOnly:
     default:
       return kMfltCoredumpBlockType_MemoryRegion;
   }
@@ -211,10 +229,13 @@ static bool prv_write_regions(MfltCoredumpWriteCb write_cb, uint32_t *curr_offse
   for (size_t i = 0; i < num_regions; i++) {
     prv_insert_padding_if_necessary(write_cb, curr_offset);
     const sMfltCoredumpRegion *region = &regions[i];
+    const bool word_aligned_reads_only =
+        (region->type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
+
     if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
                                       region->region_start, region->region_size,
                                       (uint32_t)(uintptr_t)region->region_start,
-                                      write_cb, curr_offset)) {
+                                      write_cb, curr_offset, word_aligned_reads_only)) {
       return false;
     }
   }

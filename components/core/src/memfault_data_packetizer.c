@@ -251,3 +251,29 @@ bool memfault_packetizer_data_available(void) {
 
   return prv_more_messages_to_send(NULL);
 }
+
+bool memfault_packetizer_get_chunk(void *buf, size_t *buf_len) {
+  const sPacketizerConfig cfg = {
+    // By setting this to false, every call to "memfault_packetizer_get_next()" will return one
+    // "chunk" that you must send from the device
+    .enable_multi_packet_chunk = false,
+  };
+
+  sPacketizerMetadata metadata;
+  bool data_available = memfault_packetizer_begin(&cfg, &metadata);
+  if (!data_available) {
+    // there are no more chunks to send
+    return false;
+  }
+
+  eMemfaultPacketizerStatus packetizer_status = memfault_packetizer_get_next(buf, buf_len);
+
+  // We know data is available from the memfault_packetizer_begin() call above
+  // so anything but kMemfaultPacketizerStatus_EndOfChunk is unexpected
+  if (packetizer_status != kMemfaultPacketizerStatus_EndOfChunk) {
+    MEMFAULT_LOG_ERROR("Unexpected packetizer status: %d", (int)packetizer_status);
+    return false;
+  }
+
+  return true;
+}

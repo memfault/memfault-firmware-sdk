@@ -31,77 +31,109 @@ static void prv_write_curl_epilogue(void) {
   MEMFAULT_LOG_RAW("\nprint_chunk done");
 }
 
-int memfault_demo_cli_cmd_print_chunk(int argc, char *argv[]) {
-  enum PrintFormat {
-    kCurl,
-    kHex,
-  } fmt = kCurl;
-  if (argc > 1) {
-    if (0 == strcmp(argv[1], "curl")) {
-      // fmt is kCurl by default
-    } else if (0 == strcmp(argv[1], "hex")) {
-      fmt = kHex;
-    } else {
-      MEMFAULT_LOG_ERROR("Usage: \"print_chunk\" or \"print_chunk <curl|hex>\"");
-      return -1;
-    }
+typedef struct MemfaultPrintImpl {
+  const char *prologue;
+  const char *line_end;
+  void (*write_epilogue)(void);
+} sMemfaultPrintImpl;
+
+static void prv_write_chunk_data(const sMemfaultPrintImpl *print_impl, uint8_t *packet_buffer,
+                                 size_t packet_size) {
+  char hex_buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES];
+  for (uint32_t j = 0; j < packet_size; ++j) {
+    sprintf(&hex_buffer[j * 2], "%02x", packet_buffer[j]);
   }
+  strncpy(&hex_buffer[packet_size * 2], print_impl->line_end,
+          MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES - (packet_size * 2));
+  MEMFAULT_LOG_RAW("%s", hex_buffer);
+}
 
-  struct PrintImpls {
-    const char *prologue;
-    const char *line_end;
-    void (*write_epilogue)(void);
-  } print_impl[] = {
-      [kCurl] = {
-          .prologue = "echo \\",
-          .line_end = "\\",
-          .write_epilogue = prv_write_curl_epilogue,
-      },
-      [kHex] = {
-          .prologue = NULL,
-          .line_end = "",
-          .write_epilogue = NULL,
-      },
-  };
-
+static int prv_send_memfault_data_multi_packet_chunk(
+    const sMemfaultPrintImpl *print_impl, void *packet_buffer, size_t packet_buffer_max_size) {
   const sPacketizerConfig cfg = {
+    // Enable multi packet chunking. This means a chunk may span multiple calls to
+    // memfault_packetizer_get_next().
     .enable_multi_packet_chunk = true,
   };
+
   sPacketizerMetadata metadata;
-  if (!memfault_packetizer_begin(&cfg, &metadata)) {
-    MEMFAULT_LOG_ERROR("No data to send!");
+  bool data_available = memfault_packetizer_begin(&cfg, &metadata);
+  if (!data_available) {
+    return 0;
+  }
+
+  while (1) {
+    size_t read_size = packet_buffer_max_size;
+    eMemfaultPacketizerStatus packetizer_status =
+        memfault_packetizer_get_next(packet_buffer, &read_size);
+    if (packetizer_status == kMemfaultPacketizerStatus_NoMoreData) {
+      // We know data is available from the memfault_packetizer_begin() call above
+      // so _NoMoreData is an unexpected result
+      MEMFAULT_LOG_ERROR("Unexpected packetizer status: %d", (int)packetizer_status);
+      return -1;
+    }
+
+    prv_write_chunk_data(print_impl, packet_buffer, read_size);
+    if (packetizer_status == kMemfaultPacketizerStatus_EndOfChunk) {
+      break;
+    }
+  }
+  return 0;
+}
+
+static int prv_send_memfault_data_single_packet_chunk(
+    const sMemfaultPrintImpl *print_impl, void *packet_buffer, size_t packet_buffer_size) {
+  bool data_available = memfault_packetizer_get_chunk(packet_buffer, &packet_buffer_size);
+  if (!data_available) {
+    return 0;
+  }
+
+  prv_write_chunk_data(print_impl, packet_buffer, packet_buffer_size);
+  return 0;
+}
+
+int memfault_demo_cli_cmd_print_chunk(int argc, char *argv[]) {
+  // by default, we will use curl
+  bool use_curl = (argc <= 1) || (strcmp(argv[1], "curl") == 0);
+  bool use_hex = !use_curl && (strcmp(argv[1], "hex") == 0);
+  if (!use_curl && !use_hex) {
+    MEMFAULT_LOG_ERROR("Usage: \"print_chunk\" or \"print_chunk <curl|hex> <chunk_size>\"");
     return -1;
   }
 
-  uint8_t buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES / 2];
-  char hex_buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES];
+  // by default, we will dump the entire message in a single chunk
+  size_t chunk_size = (argc <= 2) ? 0 : (size_t)atoi(argv[2]);
 
-  const size_t max_read_size = (MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES / 2) - strlen(print_impl[fmt].line_end) - 1;
-  if (print_impl[fmt].prologue) {
-    MEMFAULT_LOG_RAW("%s", print_impl[fmt].prologue);
+  char packet_buffer[MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES / 2];
+  if (chunk_size > sizeof(packet_buffer)) {
+    MEMFAULT_LOG_ERROR("Usage: chunk_size must be <= %d bytes", (int)sizeof(packet_buffer));
+    return -1;
   }
 
-  eMemfaultPacketizerStatus packetizer_status;
-  do {
-    size_t read_size = max_read_size;
-    packetizer_status = memfault_packetizer_get_next(buffer, &read_size);
-    if (packetizer_status == kMemfaultPacketizerStatus_NoMoreData) {
-      // we checked above if data is available so we should be able to read up to the end
-      // of a chunk
-      MEMFAULT_LOG_ERROR("Unable to read entire chunk");
-      break;
-    }
-
-    for (uint32_t j = 0; j < read_size; ++j) {
-      sprintf(&hex_buffer[j * 2], "%02x", buffer[j]);
-    }
-    strncpy(&hex_buffer[read_size * 2], print_impl[fmt].line_end,
-            MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES - (read_size * 2));
-    MEMFAULT_LOG_RAW("%s", hex_buffer);
-  } while (packetizer_status != kMemfaultPacketizerStatus_EndOfChunk);
-
-  if (print_impl[fmt].write_epilogue) {
-    print_impl[fmt].write_epilogue();
+  bool more_data = memfault_packetizer_data_available();
+  if (!more_data) { // there are no more chunks to send
+    MEMFAULT_LOG_INFO("All data has been sent!");
+    return 0;
   }
-  return 0;
+
+  const sMemfaultPrintImpl print_impl = {
+    .prologue = use_curl ? "echo \\" : NULL,
+    .line_end = use_curl ? "\\" : "",
+    .write_epilogue = use_curl ? prv_write_curl_epilogue: NULL,
+  };
+
+  if (print_impl.prologue) {
+    MEMFAULT_LOG_RAW("%s", print_impl.prologue);
+  }
+
+  const size_t max_read_size = sizeof(packet_buffer) - strlen(print_impl.line_end) - 1;
+
+  int rv = (chunk_size == 0) ?
+      prv_send_memfault_data_multi_packet_chunk(&print_impl, packet_buffer, max_read_size) :
+      prv_send_memfault_data_single_packet_chunk(&print_impl, packet_buffer, max_read_size);
+
+  if (print_impl.write_epilogue) {
+    print_impl.write_epilogue();
+  }
+  return rv;
 }

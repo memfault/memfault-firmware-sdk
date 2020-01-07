@@ -685,6 +685,10 @@ def upload_symbols_if_needed(config, elf_fn, software_type, software_version):
             if not success:
                 print("Failed to upload symbols: {}".format(status_and_reason))
             else:
+                # NOTE: upload is processed asynchronously. Give the symbol file
+                # a little time to be processed. In the future, we could poll here
+                # for completion
+                sleep(0.3)
                 print("Done!")
 
 
@@ -1087,16 +1091,25 @@ This command requires that you use the 'load' command to load a binary/symbol (.
         cd_writer = MemfaultCoredumpWriter()
         cd_writer.regs = get_current_registers(thread, analytics_props)
 
-        try:
-            scb_base = 0xE000ED00
-            scb_top = 0xE000ED8F
-            section = Section(scb_base, scb_top - scb_base, "ARMv7-M System Control and ID blocks")
-            section.data = inferior.read_memory(section.addr, section.size)
-            cd_writer.add_section(section)
-            analytics_props["scb_ok"] = True
-        except:
-            analytics_props["scb_collection_error"] = {"traceback": traceback.format_exc()}
-            pass
+        mem_mapped_regs = [
+            ("ictr", "Interrupt Controller Type Register", 0xE000E004, 0xE000E008),
+            ("systick", "ARMv7-M System Timer", 0xE000E010, 0xE000E020),
+            ("scb", "ARMv7-M System Control Block", 0xE000ED00, 0xE000ED8F),
+            ("scs_debug", "ARMv7-M SCS Debug Registers", 0xE000EDFC, 0xE000EE00),
+            ("nvic", "ARMv7-M External Interrupt Controller", 0xE000E100, 0xE000E600),
+        ]
+
+        for mem_mapped_reg in mem_mapped_regs:
+            try:
+                short_name, desc, base, top = mem_mapped_reg
+                section = Section(base, top - base, desc)
+                section.data = inferior.read_memory(section.addr, section.size)
+                cd_writer.add_section(section)
+                analytics_props["{}_ok".format(short_name)] = True
+            except:
+                analytics_props["{}_collection_error".format(short_name)] = {
+                    "traceback": traceback.format_exc()
+                }
 
         try:
             cd_writer.armv67_mpu = _try_collect_mpu_settings()

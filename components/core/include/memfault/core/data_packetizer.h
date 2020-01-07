@@ -9,11 +9,8 @@
 //! API for packetizing the data stored by the Memfault SDK (such as coredumps)
 //! so that the data can be transported up to the Memfault Cloud
 //!
-//! A consumer should call memfault_packetizer_begin() followed by calls to
-//! memfault_packetizer_get_next() and for each "Chunk" returned send the data to the Memfault
-//! chunks/<device_serial> web endpoint.
-//!
-//! To learn more, check out the documentation: https://mflt.io/2MGMoIl
+//! For a step-by-step walkthrough of the API, check out the documentation:
+//!   https://mflt.io/data-to-cloud
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,6 +19,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! Fills buffer with a chunk when there is data available
+//!
+//! NOTE: This is the simplest way to interact with the packetizer. The API call returns a single
+//! "chunk" to be forwarded out over the transport topology to the Memfault Cloud. For more
+//! advanced control over chunking, the lower level APIs exposed below in this module can be used.
+//!
+//! @param[out] buf The buffer to copy data to be sent into
+//! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated
+//! with the amount of data, in bytes, that was copied into the buffer. If a buffer with a length
+//! less than MEMFAULT_PACKETIZER_MIN_BUF_LEN is passed, no data will be copied and the size returned
+//! will be 0.
+//!
+//! @return true if the buffer was filled, false otherwise
+bool memfault_packetizer_get_chunk(void *buf, size_t *buf_len);
 
 typedef enum {
   //! Indicates there is no more data to be sent at this time

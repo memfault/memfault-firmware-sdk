@@ -25,6 +25,7 @@ extern "C" {
 
 typedef enum MfltCoredumpRegionType {
   kMfltCoredumpRegionType_Memory,
+  kMfltCoredumpRegionType_MemoryWordAccessOnly,
   kMfltCoredumpRegionType_ImageIdentifier,
 } eMfltCoredumpRegionType;
 

@@ -84,9 +84,14 @@ def http_expect_request():
         def _connection_constructor(hostname, port=0):
             connection = MagicMock()
             try:
-                exp_url, exp_method, assert_body_fn, exp_req_headers, resp_status, resp_body = expected_requests[
-                    len(connections)
-                ]
+                (
+                    exp_url,
+                    exp_method,
+                    assert_body_fn,
+                    exp_req_headers,
+                    resp_status,
+                    resp_body,
+                ) = expected_requests[len(connections)]
             except IndexError:
                 raise Exception("Unexpected mock HTTPConnection created!")
 
@@ -288,7 +293,6 @@ def test_read_current_registers(gdb_frame_register_read_fixture, info_reg_all_fi
 
     dummy_dict = {}
     register_list = lookup_registers_from_list(info_reg_all_fixture, dummy_dict)
-    print(register_list)
     for reg in ARM_CORTEX_M_REGISTER_COLLECTION:
         # A mock read_register should have taken place so the value should be non-zero
         assert len(register_list[reg]) == 4
@@ -400,7 +404,6 @@ def test_http_basic_auth(gdb_base_fixture):
     from memfault_gdb import add_basic_auth
 
     headers = add_basic_auth("martijn@memfault.com", "open_sesame", {"Foo": "Bar"})
-    print(headers)
     assert headers == {
         "Foo": "Bar",
         "Authorization": "Basic bWFydGlqbkBtZW1mYXVsdC5jb206b3Blbl9zZXNhbWU=",
@@ -425,7 +428,7 @@ def gdb_for_coredump(gdb_with_inferior_fixure, maintenance_info_sections_fixture
     inferior = gdb.selected_inferior()
 
     def _read_memory(addr, size):
-        return b"A" * size
+        return b"A" * size  # Write 41 'A' for reads to memory regions
 
     inferior.read_memory = _read_memory
     yield gdb

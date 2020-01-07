@@ -49,12 +49,12 @@ TEST_GROUP(MfltCoredumpTestGroup) {
     memfault_platform_coredump_storage_erase(0, sizeof(s_storage_buf));
 
     static uint8_t s_fake_core_region0[] = { 'h', 'e', 'l', 'l', 'o','!','!','!' };
-    static uint8_t s_fake_core_region1[] = { 'a', 'b', 'c', 'd' };
+    static uint32_t s_fake_core_region1 = 0x61626364;
     s_fake_memory_region[0].type = kMfltCoredumpRegionType_Memory;
     s_fake_memory_region[0].region_start = &s_fake_core_region0;
     s_fake_memory_region[0].region_size = sizeof(s_fake_core_region0);
 
-    s_fake_memory_region[1].type = kMfltCoredumpRegionType_Memory;
+    s_fake_memory_region[1].type = kMfltCoredumpRegionType_MemoryWordAccessOnly;
     s_fake_memory_region[1].region_start = &s_fake_core_region1;
     s_fake_memory_region[1].region_size = sizeof(s_fake_core_region1);
 

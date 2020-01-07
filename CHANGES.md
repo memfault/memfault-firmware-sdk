@@ -1,13 +1,32 @@
-Changes between Memfault SDK 0.0.15 and SDK 0.0.14 - Dec 19, 2019
+### Changes between Memfault SDK 0.0.16 and SDK 0.0.15 - Jan 6, 2019
+
+- Add convenience API, `memfault_packetizer_get_chunk()`, to
+  [data_packetizer](components/core/include/memfault/core/data_packetizer.h)
+  module.
+- Add a new eMfltCoredumpRegionType, `MemoryWordAccessOnly` which can be used to
+  force the region to be read 32 bits at a time. This can be useful for
+  accessing certain peripheral register ranges which are not byte addressable.
+- Automatically collect Exception / ISR state for Cortex-M based targets. NOTE
+  that the default config requires an additional ~150 bytes of coredump storage.
+  The feature can be disabled completely by adding
+  `-DMEMFAULT_COLLECT_INTERRUPT_STATE=0` to your compiler flags. More
+  configuration options can be found in
+  [memfault_coredump_regions_armv7.m](components/panics/src/memfault_coredump_regions_armv7.c).
+- Improve documentation about integrating the SDK within a project in README
+- Update Release note summary to use markdown headings for easier referencing.
+- Update try script used to collect coredumps via GDB to also collect
+  Exception/ISR register information.
+
+### Changes between Memfault SDK 0.0.15 and SDK 0.0.14 - Dec 19, 2019
 
 - Add ARMv6-M fault handling port to **panics** component for MCUs such as the
   ARM Cortex-M0 and Cortex-M0+.
 
-Changes between Memfault SDK 0.0.14 and SDK 0.0.13 - Dec 18, 2019
+### Changes between Memfault SDK 0.0.14 and SDK 0.0.13 - Dec 18, 2019
 
 - Update **panics** component to support compilation with Arm Compiler 5.
 
-Changes between Memfault SDK 0.0.13 and SDK 0.0.12 - Dec 16, 2019
+### Changes between Memfault SDK 0.0.13 and SDK 0.0.12 - Dec 16, 2019
 
 - Updated Cortex-M fault handler in **panics** component to also collect `psp`
   and `msp` registers when the system crashes. This allows for the running
@@ -25,9 +44,10 @@ Changes between Memfault SDK 0.0.13 and SDK 0.0.12 - Dec 16, 2019
   [STM32F429I-DISC1 evaluation board](https://www.st.com/en/evaluation-tools/32f429idiscovery.html).
   See [platforms/mbed/README.md](platforms/mbed/README.md) for more details.
 - Changed `print_core` to `print_chunk` in demo applications to better align
-  with the Memfault nomenclature for [data transfer](https://mflt.io/2MGMoIl).
+  with the Memfault nomenclature for
+  [data transfer](https://mflt.io/data-to-cloud).
 
-Changes between Memfault SDK 0.0.12 and SDK 0.0.11 - Dec 4, 2019
+### Changes between Memfault SDK 0.0.12 and SDK 0.0.11 - Dec 4, 2019
 
 - Expose root certificates used by Memfault CI in DER format for easier
   integration with TLS libraries which do not parse PEM formatted certificates.
@@ -40,7 +60,7 @@ Changes between Memfault SDK 0.0.12 and SDK 0.0.11 - Dec 4, 2019
 - Add Zephyr demo application (tested on the STM32L4). See
   [zephyr demo app directly](platforms/zephyr/README.md) for more details
 
-Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
+### Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
 
 - Release of **metrics** component. This API can easily be used to monitor
   device health over time (i.e connectivity, battery life, MCU resource
@@ -48,7 +68,7 @@ Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
   backend when things go astray. To get started, see this
   [document](https://mflt.io/2D8TRLX)
 
-Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
+### Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
 
 - Updated `memfault_platform_coredump_get_regions()` to take an additional
   argument, `crash_info` which conveys information about the crash taking place
@@ -82,7 +102,7 @@ Changes between Memfault SDK 0.0.10 and SDK 0.0.9 - Nov 22, 2019
   for coredump platform APIs. This can be used for persisting a coredump in RAM
   across a reset.
 
-Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
+### Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
 
 - Enhanced Reboot Tracking module within the **panics** component. Reboots that
   don't result in coredumps can now be easily tracked (i.e brown outs, system
@@ -95,28 +115,28 @@ Changes between Memfault Firmware SDK 0.0.9 and 0.0.8 - Nov 15, 2019
   within the SDK are stored using the Concise Binary Object Representation
   (CBOR)
 
-Changes between Memfault Firmware SDK 0.0.8 and 0.0.7 - Nov 7, 2019
+### Changes between Memfault Firmware SDK 0.0.8 and 0.0.7 - Nov 7, 2019
 
 - Added helper makefile (`makefiles/MemfaultWorker.mk`). A user of the SDK can
   include this makefile when using a make as their build system to easily
   collect the sources and include paths needed to build Memfault SDK components
 - Make unit tests public & add CI to external SDK
 
-Changes between Memfault Firmware SDK 0.0.7 and 0.0.6 - Oct 31, 2019
+### Changes between Memfault Firmware SDK 0.0.7 and 0.0.6 - Oct 31, 2019
 
 - Added firmware side support for the Memfault Cloud **chunk** endpoint. This is
   a sessionless endpoint that allows chunks of arbitrary size to be sent and
   reassembled in the Memfault Cloud. This transport can be used to publish _any_
   data collected by the Memfault SDK. The data is read out on the SDK side by
   calling the `memfault_packetizer_get_next()` API in `data_packetizer.h`. More
-  details [here](https://mflt.io/2MGMoIl)
+  details [here](https://mflt.io/data-to-cloud)
 - Updated demo apps to use the new **chunk** endpoint
 - Added a new _weak_ function, `memfault_coredump_read()` so platform ports can
   easily add locking on reads to coredump storage if necessary for transmission.
 - Updates to this version of the sdk will require the **util** component get
   compiled when using the **panics** API
 
-Changes between Memfault Firmware SDK 0.0.6 and 0.0.5 - Oct 14, 2019
+### Changes between Memfault Firmware SDK 0.0.6 and 0.0.5 - Oct 14, 2019
 
 - Added example port and demo for the STM32H743I-NUCLEO144 evaluation board
   running ChibiOS. See `platforms/stm32/stm32h743i/README.md` for more details.
@@ -124,7 +144,7 @@ Changes between Memfault Firmware SDK 0.0.6 and 0.0.5 - Oct 14, 2019
 - Fixed compilation error that could arise in `memfault_fault_handling_arm.c`
   when using old versions of GCC
 
-Changes between Memfault Firmware SDK 0.0.5 and 0.0.4 - September 23, 2019
+### Changes between Memfault Firmware SDK 0.0.5 and 0.0.4 - September 23, 2019
 
 - Updated **panics** SDK to support complex hardware toplogies such as systems
   with multiple MCUs or systems running multiple binaries on a single MCU. More
@@ -132,7 +152,7 @@ Changes between Memfault Firmware SDK 0.0.5 and 0.0.4 - September 23, 2019
   the implementation for `memfault_platform_get_device_info()`
 - Updated all ports to be in sync with SDK updates
 
-Changes between Memfault Firmware SDK 0.0.4 and 0.0.3 - August 19, 2019
+### Changes between Memfault Firmware SDK 0.0.4 and 0.0.3 - August 19, 2019
 
 - Updated **panics** core code to _always_ collect fault registers for ARMv6-M &
   ARMv7-M architectures. The Memfault Cloud will auto-analyze these and present
@@ -143,7 +163,7 @@ Changes between Memfault Firmware SDK 0.0.4 and 0.0.3 - August 19, 2019
 - improved error reporting strategy and documentation in
   `memfault/core/errors.h`
 
-Changes between Memfault Firmware SDK 0.0.3 and 0.0.2 - July 2, 2019
+### Changes between Memfault Firmware SDK 0.0.3 and 0.0.2 - July 2, 2019
 
 - added example port and demo of **panics** SDK for the Nordic nRF52840
   (PCA10056) development kit. See `platforms/nrf5/README.md` for more details.
