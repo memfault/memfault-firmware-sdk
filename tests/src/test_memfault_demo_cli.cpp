@@ -39,7 +39,7 @@ static void prv_setup_test_print_chunk_expectations(const char *const lines[], s
   mock().expectNCalls(2, "memfault_coredump_has_valid_coredump")
         .andReturnValue(true)
         .ignoreOtherParameters();
-  mock().expectNCalls(9, "memfault_platform_coredump_storage_read").ignoreOtherParameters();
+  mock().expectNCalls(4, "memfault_platform_coredump_storage_read").ignoreOtherParameters();
   for (unsigned int i = 0; i < num_lines; ++i) {
     mock().expectOneCall("memfault_platform_log_raw").withStringParameter("output", lines[i]);
   }
@@ -51,7 +51,7 @@ static void prv_setup_test_print_chunk_single_packet_expectations(const char *co
   mock().expectNCalls(2, "memfault_coredump_has_valid_coredump")
         .andReturnValue(true)
         .ignoreOtherParameters();
-  mock().expectNCalls(9, "memfault_platform_coredump_storage_read").ignoreOtherParameters();
+  mock().expectNCalls(4, "memfault_platform_coredump_storage_read").ignoreOtherParameters();
   for (unsigned int i = 0; i < num_lines; ++i) {
     mock().expectOneCall("memfault_platform_log_raw").withStringParameter("output", lines[i]);
   }
@@ -62,10 +62,10 @@ static void prv_setup_test_print_chunk_single_packet_expectations(const char *co
 static void prv_test_print_chunk_curl(int argc, char *argv[]) {
   const char *lines[] = {
       "echo \\",
-      "00fc2c01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "0801ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
-      "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffc2c\\",
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
@@ -92,25 +92,25 @@ TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdCurlSinglePacketChunk) {
 
   const char *lines[] = {
       "echo \\",
-      "408d01fc2c01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "488d0101ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
       "\nprint_chunk done",
       "echo \\",
-      "c021ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "c023ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
       "\nprint_chunk done",
       "echo \\",
-      "c045ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "c047ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
       "\nprint_chunk done",
       "echo \\",
-      "8069ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\\",
+      "806bfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc2c\\",
       "| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DAABBCCDD\\",
       " -H 'Memfault-Project-Key:a1e284881e60450c957a5fbaae4e11de'\\",
       " -H 'Content-Type:application/octet-stream' --data-binary @- -i",
@@ -127,10 +127,10 @@ TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdCurlSinglePacketChunk) {
 
 TEST(MfltDemoCliTestGroup, Test_MfltDemoCliPrintCmdHex) {
   const char *const lines[] = {
-      "00fc2c01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "0801ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-      "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "fffffffffffffffffffffffffffffffffffffffffffffffffffc2c",
   };
   prv_setup_test_print_chunk_expectations(lines, MEMFAULT_ARRAY_SIZE(lines));
 

@@ -315,5 +315,4 @@ If you run into any issues, please do not hesitate to reach out for help.
 
 [bcm943364wcd1]:
   https://www.cypress.com/documentation/development-kitsboards/bcm943364wcd1evb-evaluation-and-development-kit
-[http api to upload symbols files]:
-  https://www.notion.so/memfault/Uploading-Artifacts-API-82735421c07a48afab4c8618ee453c60
+[http api to upload symbols files]: https://mflt.io/uploading-artifacts-api

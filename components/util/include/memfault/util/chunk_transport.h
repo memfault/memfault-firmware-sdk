@@ -55,6 +55,9 @@ typedef struct {
   uint32_t single_chunk_message_length;
   //! The offset the chunker has read to within the message to send
   uint32_t read_offset;
+  //! A CRC computed over the data (up to read_offset). The CRC for the entire message is written
+  //! at the end of the last chunk that makes up a message.
+  uint16_t crc16_incremental;
 } sMfltChunkTransportCtx;
 
 //! Takes a message and chunks it up into smaller messages

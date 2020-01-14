@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.0.18 and SDK 0.0.17 - Jan 14, 2019
+
+- Update the chunk protocol to encode CRC in last chunk of message instead of
+  first. This allows the CRC to be computed incrementally and the underlying
+  message to be read once (instead of twice). It also makes it easier to use the
+  data packetizer in environments where reads from data sources need to be
+  performed asynchronously. More details can be found at
+  https://mflt.io/data-to-cloud
+- Fixed a couple documentation links
+
 ### Changes between Memfault SDK 0.0.17 and SDK 0.0.16 - Jan 7, 2019
 
 - Guarantee that all accesses to the platform coredump storage region route
@@ -65,7 +75,7 @@
   for the 1.14 Long Term Support Release as well as the 2.0 Release. See
   [ports/zephyr/README.md](ports/zephyr/README.md) for more details
 - Add Zephyr demo application (tested on the STM32L4). See
-  [zephyr demo app directly](platforms/zephyr/README.md) for more details
+  [zephyr demo app directory](platforms/zephyr/README.md) for more details
 
 ### Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
 
