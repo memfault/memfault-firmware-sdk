@@ -14,7 +14,7 @@ extern "C" {
   #include "memfault/panics/coredump_impl.h"
   #include "memfault/panics/platform/coredump.h"
 
-  static uint8_t s_storage_buf[4 * 1024] MEMFAULT_ALIGNED(0x8);
+  MEMFAULT_ALIGNED(0x8) static uint8_t s_storage_buf[4 * 1024];
 
   static sMfltCoredumpRegion s_fake_memory_region[2];
   static size_t s_num_fake_regions;

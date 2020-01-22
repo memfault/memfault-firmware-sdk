@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -107,12 +107,12 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #if defined(MEMFAULT_UNITTEST)
   return kMfltCoredumpMachineType_None;
 #else
-#  if defined(__arm__)
+#  if defined(__arm__) || defined(__ICCARM__)
   return kMfltCoredumpMachineType_ARM;
 #  elif defined(__XTENSA__)
   return kMfltCoredumpMachineType_Xtensa;
 #  else
-  return kMfltCoredumpMachineType_None;
+#    error "Coredumps are not supported for target architecture"
 #  endif
 #endif
 }
@@ -185,18 +185,20 @@ static bool prv_write_trace_reason(MfltCoredumpWriteCb write_cb, uint32_t *offse
 // When copying out some regions (for example, memory or register banks)
 // we want to make sure we can do word-aligned accesses.
 static void prv_insert_padding_if_necessary(MfltCoredumpWriteCb write_cb, uint32_t *offset) {
-  const size_t word_size = 4;
-  const size_t remainder = *offset % word_size;
+  #define MEMFAULT_WORD_SIZE 4
+  const size_t remainder = *offset % MEMFAULT_WORD_SIZE;
   if (remainder == 0) {
     return;
   }
 
-  size_t padding_needed = word_size - remainder;
-  uint8_t pad_bytes[padding_needed];
-  memset(pad_bytes, 0x0, sizeof(pad_bytes));
+  #define MEMFAULT_MAX_PADDING_BYTES_NEEDED (MEMFAULT_WORD_SIZE - 1)
+  uint8_t pad_bytes[MEMFAULT_MAX_PADDING_BYTES_NEEDED];
+
+  size_t padding_needed = MEMFAULT_WORD_SIZE - remainder;
+  memset(pad_bytes, 0x0, padding_needed);
 
   memfault_coredump_write_block(kMfltCoredumpRegionType_PaddingRegion,
-      &pad_bytes, sizeof(pad_bytes), write_cb, offset);
+      &pad_bytes, padding_needed, write_cb, offset);
 }
 
 //! Callback that will be called to write coredump data.

@@ -1,7 +1,8 @@
 #
-# Copyright (c) 2019-Present Memfault, Inc.
+# Copyright (c) Memfault, Inc.
 # See License.txt for details
 #
+
 # -*- coding: utf-8 -*-
 # snapshottest: v1 - https://goo.gl/zC4yUc
 from __future__ import unicode_literals

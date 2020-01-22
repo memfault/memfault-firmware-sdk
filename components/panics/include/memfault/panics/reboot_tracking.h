@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -50,8 +50,8 @@ typedef struct BootupInfo {
 //!
 //!    // In a C File
 //!    #include "memfault/core/compiler.h"
-//!    static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE]
-//!        MEMFAULT_PUT_IN_SECTION(".mflt_reboot_info");
+//!    MEMFAULT_PUT_IN_SECTION(".mflt_reboot_info")
+//!    static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 //!
 //!    // In device LD file
 //!    NOINIT (rw) :  ORIGIN = <addr>, LENGTH = 0x20

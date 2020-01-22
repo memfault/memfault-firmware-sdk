@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! Reference implementation of platform dependency functions which could be used
@@ -110,8 +110,8 @@ typedef struct {
   uint32_t bytes_written;
 } sCoredumpWorkingBuffer;
 
-static sCoredumpWorkingBuffer s_working_buffer_header MEMFAULT_ALIGNED(8);
-static sCoredumpWorkingBuffer s_working_buffer MEMFAULT_ALIGNED(8);
+MEMFAULT_ALIGNED(8) static sCoredumpWorkingBuffer s_working_buffer_header;
+MEMFAULT_ALIGNED(8) static sCoredumpWorkingBuffer s_working_buffer;
 
 static sCoredumpWorkingBuffer *prv_get_working_buf(uint32_t offset) {
   return (offset == 0) ? &s_working_buffer_header : &s_working_buffer;

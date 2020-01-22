@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! Some IOT topologies have an MTU sizes that are less than the size of a Memfault Event or

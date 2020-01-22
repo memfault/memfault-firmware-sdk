@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -69,7 +69,7 @@ static uint32_t prv_read_msp_reg(void) {
   return reg_val;
 }
 
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__) || defined(__clang__) || defined(__ICCARM__)
 
 static uint32_t prv_read_psp_reg(void) {
   uint32_t reg_val;
@@ -312,6 +312,84 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
       :                                          \
       : "i" (_x)                                 \
    )
+#endif
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_HardFault);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_UsageFault);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_NMI(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
+}
+
+#elif defined(__ICCARM__)
+
+#if __ARM_ARCH == 6
+#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+#endif
+
+#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
+#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+  __asm volatile(                                \
+      "tst lr, #4 \n"                            \
+      "ite eq \n"                                \
+      "mrseq r3, msp \n"                         \
+      "mrsne r3, psp \n"                         \
+      "push {r3-r11, lr} \n"                     \
+      "mov r0, sp \n"                            \
+      "mov r1, %0 \n"                            \
+      "b memfault_fault_handler \n"              \
+      :                                          \
+      : "i" (_x)                                 \
+   )
+
+#else
+
+// Note: Below IAR will build the enum value
+// as part of the prologue to the asm statement and
+// place the value in r0
+#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+  __asm volatile(                                \
+      "mov r1, lr \n"                            \
+      "movs r2, #4 \n"                           \
+      "tst  r1,r2 \n"                            \
+      "mrs r12, msp \n"                          \
+      "beq msp_active_at_crash \n"               \
+      "mrs r12, psp \n"                          \
+      "msp_active_at_crash: \n"                  \
+      "mov r3, r11 \n"                           \
+      "mov r2, r10 \n"                           \
+      "mov r1, r9 \n"                            \
+      "mov r9, r0 \n"                            \
+      "mov r0, r8 \n"                            \
+      "push {r0-r3, lr} \n"                      \
+      "mov r3, r12 \n"                           \
+      "push {r3-r7} \n"                          \
+      "mov r0, sp \n"                            \
+      "mov r1, r9 \n"                            \
+      "ldr r2, =memfault_fault_handler \n"       \
+      "bx r2 \n"                                 \
+      :                                          \
+      : "r" (_x)                                 \
+   )
+
 #endif
 
 MEMFAULT_NAKED_FUNC

@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
 #include "memfault/core/data_packetizer.h"

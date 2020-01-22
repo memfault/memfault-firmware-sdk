@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //! @brief
 //! An example implementation of the logging Memfault API for the Mbed platform

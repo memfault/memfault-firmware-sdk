@@ -1,3 +1,11 @@
+### Changes between Memfault SDK 0.1.0 and SDK 0.0.18 - Jan 22, 2019
+
+- Update **panics** component to support compilation with IAR ARM C/C++
+  Compiler. More details about integrating IAR can be found at
+  https://mflt.io/iar-tutorial. As part of the change `MEMFAULT_GET_LR()` now
+  takes an argument which is the location to store the LR to
+  (`void *lr = MEMFAULT_GET_LR()` -> `void *lr;` `MEMFAULT_GET_LR(lr)`)
+
 ### Changes between Memfault SDK 0.0.18 and SDK 0.0.17 - Jan 14, 2019
 
 - Update the chunk protocol to encode CRC in last chunk of message instead of

@@ -1,4 +1,4 @@
-Copyright (c) 2019, Memfault
+Copyright (c) 2019 - Present, Memfault
 All rights reserved.
  
 Redistribution and use in source and binary forms, with or without 

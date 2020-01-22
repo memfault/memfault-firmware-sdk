@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -47,8 +47,8 @@
   (500 + MEMFAULT_RAM_BACK_COREDUMP_STACK_COLLECTION_SIZE)
 #endif /* MEMFAULT_RAM_BACKED_COREDUMP_SIZE */
 
-static uint8_t s_ram_backed_coredump_region[MEMFAULT_RAM_BACKED_COREDUMP_SIZE]
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8);
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8)
+static uint8_t s_ram_backed_coredump_region[MEMFAULT_RAM_BACKED_COREDUMP_SIZE];
 
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {

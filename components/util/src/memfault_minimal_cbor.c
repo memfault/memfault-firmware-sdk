@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! A minimal implementation of a CBOR encoder. See header for more details
@@ -87,7 +87,7 @@ static bool prv_encode_unsigned_integer(
       *p++ = mt + 25;
       *p++ = (val >> 8) & 0xff;
       *p++ = val & 0xff;
-    } else if (val <= UINT32_MAX) {
+    } else {
       *p++ = mt + 26;
       *p++ = (val >> 24) & 0xff;
       *p++ = (val >> 16) & 0xff;

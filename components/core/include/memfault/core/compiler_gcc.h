@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -28,13 +28,13 @@ extern "C" {
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b) __attribute__ ((format (printf, a, b)))
 
 #if defined(__arm__)
-#  define MEMFAULT_GET_LR() __builtin_return_address(0)
+#  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))
 #elif defined(__XTENSA__)
-#  define MEMFAULT_GET_LR() __builtin_return_address(0)
+#  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) _a = ({ __label__ _l; _l: &&_l;});
 #elif defined(MEMFAULT_UNITTEST) || defined(__APPLE__)  // Memfault iOS SDK also #includes this header
-#  define MEMFAULT_GET_LR() 0
+#  define MEMFAULT_GET_LR(_a) _a = 0
 #  define MEMFAULT_GET_PC(_a) _a = 0
 #else
 #  error "New architecture to add support for!"
@@ -48,9 +48,9 @@ extern "C" {
 #endif
 
 #if defined(__cplusplus)
-#  define MEMFAULT_STATIC_ASSERT(COND, MSG) static_assert(COND, MSG)
+#  define MEMFAULT_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
 #else
-#  define MEMFAULT_STATIC_ASSERT(COND, MSG) _Static_assert(COND, MSG)
+#  define MEMFAULT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
 #endif
 
 #ifdef __cplusplus

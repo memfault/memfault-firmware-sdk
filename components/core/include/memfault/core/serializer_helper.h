@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -12,11 +12,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "memfault/util/cbor.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct MemfaultCborEncoder sMemfaultCborEncoder;
 
 bool memfault_serializer_helper_encode_version_info(sMemfaultCborEncoder *encoder);
 

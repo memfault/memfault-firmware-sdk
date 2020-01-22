@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -29,6 +29,8 @@ extern "C" {
 #include "compiler_armcc.h"
 #elif defined(__GNUC__) || defined(__clang__)
 #include "compiler_gcc.h"
+#elif defined(__ICCARM__)
+#include "compiler_iar.h"
 #else
 #  error "New compiler to add support for!"
 #endif

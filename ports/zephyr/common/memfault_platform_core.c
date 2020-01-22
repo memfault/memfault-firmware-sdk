@@ -1,6 +1,6 @@
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
 #include "memfault/core/platform/core.h"
@@ -43,8 +43,8 @@ SYS_INIT(prv_install_nmi_handler, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAU
 // On boot-up, log out any information collected as to why the
 // reset took place
 
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE]
-  MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info");
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
+static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 static int prv_init_and_log_reboot(struct device *dev) {
   memfault_reboot_tracking_boot(s_reboot_tracking, NULL);

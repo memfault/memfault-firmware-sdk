@@ -2,7 +2,7 @@
 
 //! @file
 //!
-//! Copyright (c) 2019-Present Memfault, Inc.
+//! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
 //! @brief
@@ -25,7 +25,8 @@ extern "C" {
   do {                                                             \
     void *pc;                                                      \
     MEMFAULT_GET_PC(pc);                                           \
-    void *lr = MEMFAULT_GET_LR();                                  \
+    void *lr;                                                      \
+    MEMFAULT_GET_LR(lr);                                           \
     memfault_fault_handling_assert(pc, lr, _extra);                \
   } while (0)
 
