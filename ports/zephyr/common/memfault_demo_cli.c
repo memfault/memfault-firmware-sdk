@@ -49,7 +49,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
     SHELL_CMD(print_chunk, NULL, "get next Memfault data chunk to send and print as a curl command",
               prv_print_chunk_cmd),
-    SHELL_CMD(post_chunk, NULL, "get next Memfault data chunk to send and POST it to the Memfault Cloud",
+    SHELL_CMD(post_chunk, NULL, "get next Memfault data chunk to send and POST it to the Memfault cloud",
               prv_post_chunk_cmd),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );

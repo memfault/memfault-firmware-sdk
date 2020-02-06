@@ -5,7 +5,7 @@
 //!
 //! @brief
 //! CLI command that dumps the coredump saved out over the console in such a way that the output
-//! can be copy & pasted to a terminal and posted to the Memfault Cloud Service
+//! can be copy & pasted to a terminal and posted to the Memfault cloud Service
 
 #include "memfault/demo/cli.h"
 

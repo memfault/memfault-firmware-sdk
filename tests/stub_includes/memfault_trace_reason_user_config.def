@@ -1,0 +1,6 @@
+//! @file
+
+//! A fake set of user-defined trace reasons we use for unit testing
+MEMFAULT_TRACE_REASON_DEFINE(bluetooth_cmd_buffer_full)
+MEMFAULT_TRACE_REASON_DEFINE(sensor_ack_timeout)
+MEMFAULT_TRACE_REASON_DEFINE(test)

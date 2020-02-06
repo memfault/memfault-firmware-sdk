@@ -18,7 +18,7 @@ extern "C" {
 #define MEMFAULT_PACKED __packed
 #define MEMFAULT_PACKED_STRUCT MEMFAULT_PACKED struct
 #define MEMFAULT_NORETURN __noreturn
-#define MEMFAULT_NAKED_FUNC __task
+#define MEMFAULT_NAKED_FUNC
 #define MEMFAULT_UNREACHABLE while (1)
 #define MEMFAULT_NO_OPT _Pragma("optimize=none")
 #define MEMFAULT_STRINGIZE(x) #x

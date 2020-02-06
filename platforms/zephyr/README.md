@@ -156,7 +156,7 @@ The network stack dependencies can also be disabled completely by using the
 `CONFIG_MEMFAULT_HTTP_SUPPORT` Kconfig option.
 
 When using a board that does not have a network stack enabled or for debug
-purposes, the messages to push to the Memfault Cloud can also be dumped from the
+purposes, the messages to push to the Memfault cloud can also be dumped from the
 CLI using the `mflt print_chunk` command:
 
 ```

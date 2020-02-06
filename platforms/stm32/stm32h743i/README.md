@@ -16,12 +16,12 @@ variables to be defined prior to including the makefile
 
 Download the following items:
 
-- `git clone git@github.com:ChibiOS/ChibiOS.git`
+- `git clone https://github.com/ChibiOS/ChibiOS.git`
 - `cd ChibiOS/demos/STM32/RT-STM32H743I-NUCLEO144` and
   - Move the downloaded contents of `STM32Cube_FW_H7_V1.5.0` (link above) to
     stm32_cube
   - clone the memfault firmware sdk:
-    `git clone git@github.com:memfault/memfault-firmware-sdk.git`
+    `git clone https://github.com/memfault/memfault-firmware-sdk.git`
 
 Integrate Memfault into the ChibiOS build system. This can be achieved by
 running:

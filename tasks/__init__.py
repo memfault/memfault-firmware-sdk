@@ -19,7 +19,9 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
     """Runs unit tests"""
     env_dict = {}
     if is_macos():
-        env_dict["CPPUTEST_HOME"] = "/usr/local/Cellar/cpputest/3.8"
+        env_dict["CPPUTEST_HOME"] = os.environ.get(
+            "CPPUTEST_HOME", "/usr/local/Cellar/cpputest/3.8"
+        )
         env_dict["TARGET_PLATFORM"] = ""
 
     if coverage:

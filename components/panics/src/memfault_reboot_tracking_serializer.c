@@ -5,7 +5,7 @@
 //!
 //! @brief
 //! Reads the current reboot tracking information and converts it into an "trace" event which can
-//! be sent to the Memfault Cloud
+//! be sent to the Memfault cloud
 
 #include "memfault_reboot_tracking_private.h"
 
@@ -23,49 +23,18 @@
 #define MEMFAULT_REBOOT_TRACKING_BAD_PARAM (-1)
 #define MEMFAULT_REBOOT_TRACKING_STORAGE_TOO_SMALL (-2)
 
-static bool prv_encode_event_key_uint32_pair(
-    sMemfaultCborEncoder *encoder, eMemfaultEventKey key, uint32_t value) {
-  return memfault_cbor_encode_unsigned_integer(encoder, key) &&
-      memfault_cbor_encode_unsigned_integer(encoder, value);
-}
-
 static bool prv_serialize_reboot_info(sMemfaultCborEncoder *e,
                                       const sMfltResetReasonInfo *info) {
-  const size_t top_level_num_pairs = 1 /* type */ + 4 /* device info */ +
-      1 /* cbor schema version */ + 1 /* event_info */;
-  memfault_cbor_encode_dictionary_begin(e, top_level_num_pairs);
-
-  if (!prv_encode_event_key_uint32_pair(e, kMemfaultEventKey_Type, kMemfaultEventType_Trace)) {
-    return false;
-  }
-
-  memfault_serializer_helper_encode_version_info(e);
-
-  const size_t num_entries = 1 /* reason */ + 1 /* coredump_saved */ +
-      ((info->pc != 0) ? 1 : 0) +
-      ((info->lr != 0) ? 1 : 0) +
-      ((info->reset_reason_reg0 != 0) ? 1 : 0);
-
-  if (!memfault_cbor_encode_unsigned_integer(e, kMemfaultEventKey_EventInfo) ||
-      !memfault_cbor_encode_dictionary_begin(e, num_entries)) {
-    return false;
-  }
-
-  if (!memfault_serializer_helper_encode_uint32_kv_pair(
-          e, kMemfaultTraceInfoEventKey_Reason, info->reason)) {
-    return false;
-  }
-
-  bool success = true;
-  if (info->pc) {
-    success = memfault_serializer_helper_encode_uint32_kv_pair(e,
-        kMemfaultTraceInfoEventKey_ProgramCounter, info->pc);
-  }
-
-  if (success && info->lr) {
-    success = memfault_serializer_helper_encode_uint32_kv_pair(e,
-        kMemfaultTraceInfoEventKey_LinkRegister, info->lr);
-  }
+  const size_t extra_event_info_pairs = 1 /* coredump_saved */ +
+                                        ((info->reset_reason_reg0 != 0) ? 1 : 0);
+  const sMemfaultTraceEventHelperInfo helper_info = {
+      .reason_key = kMemfaultTraceInfoEventKey_Reason,
+      .reason_value = info->reason,
+      .pc = info->pc,
+      .lr = info->lr,
+      .extra_event_info_pairs = extra_event_info_pairs,
+  };
+  bool success = memfault_serializer_helper_encode_trace_event(e, &helper_info);
 
   if (success && info->reset_reason_reg0) {
     success = memfault_serializer_helper_encode_uint32_kv_pair(e,
@@ -80,13 +49,9 @@ static bool prv_serialize_reboot_info(sMemfaultCborEncoder *e,
   return success;
 }
 
-typedef struct {
-  const sMemfaultEventStorageImpl *storage_impl;
-} sMemfaultResetReasonEncoderCtx;
-
-static void prv_encoder_write_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-  sMemfaultResetReasonEncoderCtx *encoder = (sMemfaultResetReasonEncoderCtx *)ctx;
-  encoder->storage_impl->append_data_cb(buf, buf_len);
+static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
+  const sMfltResetReasonInfo *info = (const sMfltResetReasonInfo *)ctx;
+  return prv_serialize_reboot_info(encoder, info);
 }
 
 size_t memfault_reboot_tracking_compute_worst_case_storage_size(void) {
@@ -100,9 +65,7 @@ size_t memfault_reboot_tracking_compute_worst_case_storage_size(void) {
   };
 
   sMemfaultCborEncoder encoder = { 0 };
-  memfault_cbor_encoder_size_only_init(&encoder);
-  prv_serialize_reboot_info(&encoder, &reset_reason);
-  return memfault_cbor_encoder_deinit(&encoder);
+  return memfault_serializer_helper_compute_size(&encoder, prv_encode_cb, &reset_reason);
 }
 
 int  memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl *impl) {
@@ -110,37 +73,25 @@ int  memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl
     return MEMFAULT_REBOOT_TRACKING_BAD_PARAM;
   }
 
-  const size_t worst_case_size_needed =
-      memfault_reboot_tracking_compute_worst_case_storage_size();
-  const size_t storage_max_size = impl->get_storage_size_cb();
-  if (worst_case_size_needed > storage_max_size) {
-    MEMFAULT_LOG_WARN("Event storage (%d) smaller than largest reset reason (%d)",
-                      (int)storage_max_size, (int)worst_case_size_needed);
-    // we'll fall through and try to encode anyway and later return a failure
-    // code if the event could not be stored. This line is here to give the user
-    // an idea of how they should size things
-  }
+  memfault_serializer_helper_check_storage_size(
+      impl, memfault_reboot_tracking_compute_worst_case_storage_size, "reboot");
+  // we'll fall through and try to encode anyway and later return a failure
+  // code if the event could not be stored. This line is here to give the user
+  // an idea of how they should size things
 
   sMfltResetReasonInfo info;
   if (!memfault_reboot_tracking_read_reset_info(&info)) {
     return 0;
   }
 
-  size_t space_available = impl->begin_write_cb();
-  bool success;
-  {
-    sMemfaultCborEncoder encoder = { 0 };
-    sMemfaultResetReasonEncoderCtx ctx = {
-      .storage_impl = impl,
-    };
-    memfault_cbor_encoder_init(&encoder, prv_encoder_write_cb, &ctx, space_available);
-    success = prv_serialize_reboot_info(&encoder, &info);
-    memfault_cbor_encoder_deinit(&encoder);
-  }
-  const bool rollback = !success;
-  impl->finish_write_cb(rollback);
+  sMemfaultCborEncoder encoder = { 0 };
+  const bool success = memfault_serializer_helper_encode_to_storage(
+      &encoder, impl, prv_encode_cb, &info);
 
   if (!success) {
+    const size_t storage_max_size = impl->get_storage_size_cb();
+    const size_t worst_case_size_needed =
+        memfault_reboot_tracking_compute_worst_case_storage_size();
     MEMFAULT_LOG_WARN("Event storage (%d) smaller than largest reset reason (%d)",
                       (int)storage_max_size, (int)worst_case_size_needed);
     return MEMFAULT_REBOOT_TRACKING_STORAGE_TOO_SMALL;

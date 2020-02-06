@@ -43,4 +43,5 @@ typedef enum {
   kMemfaultTraceInfoEventKey_LinkRegister = 3,
   kMemfaultTraceInfoEventKey_McuReasonRegister = 4,
   kMemfaultTraceInfoEventKey_CoredumpSaved = 5,
+  kMemfaultTraceInfoEventKey_UserReason = 6,
 } eMemfaultTraceInfoEventKey;

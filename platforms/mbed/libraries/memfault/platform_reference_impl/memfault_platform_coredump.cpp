@@ -70,7 +70,7 @@ void prv_mpu_protect_flash(void) {
 }
 
 // Note: This API is the only one which is called while the system is running.  It's typically
-// invoked once a coredump has been successfully flushed to the Memfault Cloud. Therefore, we use
+// invoked once a coredump has been successfully flushed to the Memfault cloud. Therefore, we use
 // the higher level mBed flash API so safely lock around the operation. All the other platform flash
 // APIs are called while nothing else is running so we use the lower level flash hal.
 void memfault_platform_coredump_storage_clear(void) {

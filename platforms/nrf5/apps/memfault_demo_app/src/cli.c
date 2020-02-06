@@ -53,6 +53,10 @@ static void prv_crash_example(nrf_cli_t const * p_cli, size_t argc, char **argv)
   memfault_demo_cli_cmd_crash(argc, argv);
 }
 
+static void prv_trace_example(nrf_cli_t const * p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_trace_event_capture(argc, argv);
+}
+
 static void prv_get_device_info(nrf_cli_t const * p_cli, size_t argc, char **argv) {
   memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
@@ -62,6 +66,7 @@ static void prv_print_chunk_cmd(nrf_cli_t const * p_cli, size_t argc, char **arg
 }
 
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
+NRF_CLI_CMD_REGISTER(trace, NULL, "capture trace event", prv_trace_example);
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
@@ -71,6 +76,7 @@ NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send an
 // for better discoverability of memfault added commands
 static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, crash, _raw),
+  &CONCAT_3(nrf_cli_, trace, _raw),
   &CONCAT_3(nrf_cli_, clear_core, _raw),
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),

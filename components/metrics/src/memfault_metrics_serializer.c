@@ -59,7 +59,7 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
   return state->encode_success;
 }
 
-static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *state, size_t *total_bytes) {
+static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *state) {
   bool success = false;
 
   sMemfaultCborEncoder *encoder = &state->encoder;
@@ -90,25 +90,17 @@ static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *
   success = state->encode_success;
 
 cleanup:
-  *total_bytes = memfault_cbor_encoder_deinit(encoder);
   return success;
+}
+
+static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
+  sMemfaultSerializerState *state = (sMemfaultSerializerState *)ctx;
+  return prv_serialize_latest_heartbeat_and_deinit(state);
 }
 
 size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void) {
   sMemfaultSerializerState state = { .compute_worst_case_size = true };
-  memfault_cbor_encoder_size_only_init(&state.encoder);
-  size_t bytes_encoded = 0;
-  prv_serialize_latest_heartbeat_and_deinit(&state, &bytes_encoded);
-  return bytes_encoded;
-}
-
-typedef struct {
-  const sMemfaultEventStorageImpl *storage_impl;
-} sMemfaultMetricEncoderCtx;
-
-static void prv_encoder_write_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-  sMemfaultMetricEncoderCtx *encoder = (sMemfaultMetricEncoderCtx *)ctx;
-  encoder->storage_impl->append_data_cb(buf, buf_len);
+  return memfault_serializer_helper_compute_size(&state.encoder, prv_encode_cb, &state);
 }
 
 bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *storage_impl) {
@@ -128,19 +120,9 @@ bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *stora
 
   // NOTE: We'll always attempt to serialize the heartbeat and rollback if we are out of space
   // avoiding the need to serialize the data twice
-  size_t space_available = storage_impl->begin_write_cb();
-  size_t bytes_encoded = 0;
-  bool success;
-  {
-    sMemfaultMetricEncoderCtx ctx = {
-      .storage_impl = storage_impl,
-    };
-    sMemfaultSerializerState state = { 0 };
-    memfault_cbor_encoder_init(&state.encoder, prv_encoder_write_cb, &ctx, space_available);
-    success = prv_serialize_latest_heartbeat_and_deinit(&state, &bytes_encoded);
-  }
-  const bool rollback = !success;
-  storage_impl->finish_write_cb(rollback);
+  sMemfaultSerializerState state = { 0 };
+  const bool success = memfault_serializer_helper_encode_to_storage(
+      &state.encoder, storage_impl, prv_encode_cb, &state);
 
   if (!success) {
     MEMFAULT_LOG_ERROR("%s storage out of space", __func__);

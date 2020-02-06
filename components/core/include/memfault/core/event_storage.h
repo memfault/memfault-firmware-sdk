@@ -6,7 +6,7 @@
 //! See License.txt for details
 //!
 //! @brief
-//! Stores serialized event information that is ready to be sent up to the Memfault Cloud
+//! Stores serialized event information that is ready to be sent up to the Memfault cloud
 //! (i.e Heartbeat Metrics & Reboot Reasons). Must be initialized on system boot.
 //!
 //! @note If calls to data_packetizer.c are made on a different task than the one

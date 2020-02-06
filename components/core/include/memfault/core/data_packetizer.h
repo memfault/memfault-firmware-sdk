@@ -7,7 +7,7 @@
 //!
 //! @brief
 //! API for packetizing the data stored by the Memfault SDK (such as coredumps)
-//! so that the data can be transported up to the Memfault Cloud
+//! so that the data can be transported up to the Memfault cloud
 //!
 //! For a step-by-step walkthrough of the API, check out the documentation:
 //!   https://mflt.io/data-to-cloud
@@ -23,7 +23,7 @@ extern "C" {
 //! Fills buffer with a chunk when there is data available
 //!
 //! NOTE: This is the simplest way to interact with the packetizer. The API call returns a single
-//! "chunk" to be forwarded out over the transport topology to the Memfault Cloud. For more
+//! "chunk" to be forwarded out over the transport topology to the Memfault cloud. For more
 //! advanced control over chunking, the lower level APIs exposed below in this module can be used.
 //!
 //! @param[out] buf The buffer to copy data to be sent into
@@ -62,7 +62,7 @@ bool memfault_packetizer_data_available(void);
 
 typedef struct {
   //! When false, memfault_packetizer_get_next() will always return a single "chunk"
-  //! when data is available that can be pushed directly to the Memfault Cloud
+  //! when data is available that can be pushed directly to the Memfault cloud
   //!
   //! When true, memfault_packetizer_get_next() may have to be called multiple times to return a
   //! single chunk. This can be used as an optimization for system which support sending or

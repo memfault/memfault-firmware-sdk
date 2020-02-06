@@ -92,6 +92,7 @@ class MemfaultConfig(object):
     password = None
     organization = None
     project = None
+    user_id = None
 
     # Added `json_path` and `input` as attributes on the config to aid unit testing:
     json_path = expanduser("~/.memfault/gdb.json")
@@ -219,46 +220,277 @@ For example,
     register_list["sp"] = pack("<I", sp + orig_sp_offset)
 
 
-# The order in which we collect ARM registers in a crash
-ARM_CORTEX_M_REGISTER_COLLECTION = (
-    "r0",
-    "r1",
-    "r2",
-    "r3",
-    "r4",
-    "r5",
-    "r6",
-    "r7",
-    "r8",
-    "r9",
-    "r10",
-    "r11",
-    "r12",
-    "sp",
-    "lr",
-    "pc",  # 15
-    "xpsr",
-    "msp",
-    "psp",
-    "primask",
-    "control",
-)
+def is_debug_info_section(section):
+    return section.name.startswith(".debug_")
 
-# GDB allows the remote server to provide register names via the target description which can
-# be exchanged between client and server:
-#   https://sourceware.org/gdb/onlinedocs/gdb/Target-Description-Format.html#Target-Description-Format
-#
-# Different implementations of the gdb server use different names for these custom register sets
-# This dictionary holds known mappings between the names we will use and the ones in different GDBDebugContextFacade
-# server implementations
-#
-# NOTE: If the only difference is capitalization, that will be automagically resolved below
-ARM_CORTEX_M_ALT_NAMES = {"xpsr": ("cpsr",)}
+
+def should_capture_section(section):
+    if section.size == 0:
+        return False
+    # Assuming we never want to grab .text:
+    if section.name == ".text":
+        return False
+    # Assuming we never want to grab debug info:
+    if is_debug_info_section(section):
+        return False
+    # Sometimes these get flagged incorrectly as READONLY:
+    if filter(lambda n: n in section.name, (".heap", ".bss", ".data", ".stack")):
+        return True
+    # Only grab non-readonly stuff:
+    return not section.read_only
+
+
+class CoredumpArch(object):
+    pass
+
+
+class XtensaCoredumpArch(CoredumpArch):
+    MACHINE_TYPE = 94  # XTENSA
+
+    @property
+    def num_cores(self):
+        return 2
+
+    @property
+    def register_collection_list(self):
+        # The order in which we collect XTENSA registers in a crash
+        # fmt: off
+        return (
+            "pc", "ps", "ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7", "ar8", "ar9",
+            "ar10", "ar11", "ar12", "ar13", "ar14", "ar15", "ar16", "ar17", "ar18", "ar19", "ar20",
+            "ar21", "ar22", "ar23", "ar24", "ar25", "ar26", "ar27", "ar28", "ar29", "ar30", "ar31",
+            "ar32", "ar33", "ar34", "ar35", "ar36", "ar37", "ar38", "ar39", "ar40", "ar41", "ar42",
+            "ar43", "ar44", "ar45", "ar46", "ar47", "ar48", "ar49", "ar50", "ar51", "ar52", "ar53",
+            "ar54", "ar55", "ar56", "ar57", "ar58", "ar59", "ar60", "ar61", "ar62", "ar63", "sar",
+            # Note: Only enabled for xtensa targets which define XCHAL_HAVE_LOOPS
+            "lbeg",
+            "lend",
+            "lcount",
+            # Special registers to collect
+            "windowbase",
+            "windowstart",
+        )
+        # fmt: on
+
+    @property
+    def alternative_register_name_dict(self):
+        return {}
+
+    def add_platform_specific_sections(self, cd_writer, inferior, analytics_props):
+        pass
+
+    def guess_ram_regions(self, elf_sections):
+        # TODO: support esp32-s2 & esp8266
+        # For now we just use the memory map from the esp32 for xtensa
+
+        # Memory map:
+        # https://github.com/espressif/esp-idf/blob/v3.3.1/components/soc/esp32/include/soc/soc.h#L286-L304
+        regions = (
+            # SOC_DRAM
+            (0x3FFAE000, 0x52000),
+            # SOC_RTC_DATA
+            (0x50000000, 0x2000),
+            # SOC_RTC_DRAM
+            (0x3FF80000, 0x2000),
+        )
+        return regions
+
+    def _read_registers(self, core, gdb_thread, analytics_props):
+        # NOTE: The only way I could figure out to read raw registers for CPU1 was
+        # to send the raw gdb command,"g" after explicitly setting the active core
+        gdb.execute("mon set_core {}".format(core))
+        registers = gdb.execute("maintenance packet g", to_string=True)
+        registers = registers.split("received: ")[1].replace('"', "")
+
+        # The order GDB sends xtensa registers (for esp32) in:
+        #  https://github.com/espressif/xtensa-overlays/blob/master/xtensa_esp32/gdb/gdb/regformats/reg-xtensa.dat#L3-L107
+
+        # fmt: off
+        xtensa_gdb_idx_regs = (
+            "pc", "ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7",
+            "ar8", "ar9", "ar10", "ar11", "ar12", "ar13", "ar14", "ar15", "ar16", "ar17", "ar18",
+            "ar19", "ar20", "ar21", "ar22", "ar23", "ar24", "ar25", "ar26", "ar27", "ar28", "ar29",
+            "ar30", "ar31", "ar32", "ar33", "ar34", "ar35", "ar36", "ar37", "ar38", "ar39", "ar40",
+            "ar41", "ar42", "ar43", "ar44", "ar45", "ar46", "ar47", "ar48", "ar49", "ar50", "ar51",
+            "ar52", "ar53", "ar54", "ar55", "ar56", "ar57", "ar58", "ar59", "ar60", "ar61", "ar62",
+            "ar63", "lbeg", "lend", "lcount", "sar", "windowbase", "windowstart", "configid0",
+            "configid1", "ps", "threadptr", "br", "scompare1", "acclo", "acchi", "m0", "m1", "m2",
+            "m3", "expstate", "f64r_lo", "f64r_hi", "f64s", "f0", "f1", "f2", "f3", "f4", "f5",
+            "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15", "fcr", "fsr",
+        )
+        # fmt: on
+
+        # Scoop up all register values
+        vals = []
+        for i in range(0, len(xtensa_gdb_idx_regs)):
+            start_idx = i * 8
+            hexstr = registers[start_idx : start_idx + 8]
+            vals.append(bytearray.fromhex(hexstr))
+
+        register_list = {}
+        for register_name in self.register_collection_list:
+            idx = xtensa_gdb_idx_regs.index(register_name)
+            register_list[register_name] = vals[idx]
+
+        return register_list
+
+    def get_current_registers(self, gdb_thread, analytics_props):
+        result = []
+        try:
+            for core_id in range(0, self.num_cores):
+                result.append(self._read_registers(core_id, gdb_thread, analytics_props))
+        except:
+            analytics_props["core_reg_collection_error"] = {"traceback": traceback.format_exc()}
+
+        return result
+
+
+class ArmCortexMCoredumpArch(CoredumpArch):
+    MACHINE_TYPE = 40  # ARM
+
+    @property
+    def num_cores(self):
+        return 1
+
+    @property
+    def register_collection_list(self):
+        # The order in which we collect ARM registers in a crash
+        return (
+            "r0",
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8",
+            "r9",
+            "r10",
+            "r11",
+            "r12",
+            "sp",
+            "lr",
+            "pc",  # 15
+            "xpsr",
+            "msp",
+            "psp",
+            "primask",
+            "control",
+        )
+
+    @property
+    def alternative_register_name_dict(self):
+        # GDB allows the remote server to provide register names via the target description which can
+        # be exchanged between client and server:
+        #   https://sourceware.org/gdb/onlinedocs/gdb/Target-Description-Format.html#Target-Description-Format
+        #
+        # Different implementations of the gdb server use different names for these custom register sets
+        # This dictionary holds known mappings between the names we will use and the ones in different GDBDebugContextFacade
+        # server implementations
+        #
+        # NOTE: If the only difference is capitalization, that will be automagically resolved below
+        return {"xpsr": ("cpsr",)}
+
+    @staticmethod
+    def _try_collect_mpu_settings():
+        cpuid = 0xE000ED00
+        reg_val, _ = _read_register(cpuid)
+        partno = (reg_val >> 4) & 0xFFF
+
+        CORTEX_M_CPUIDS = {
+            0xC20: "M0",
+            0xC21: "M1",
+            0xC23: "M3",
+            0xC24: "M4",
+            0xC27: "M7",
+            0xC60: "M0+",
+        }
+
+        if partno not in CORTEX_M_CPUIDS:
+            return None
+
+        print("Cortex-{} detected".format(CORTEX_M_CPUIDS[partno]))
+        mpu_type = 0xE000ED90
+        mpu_ctrl = 0xE000ED94
+        mpu_rnr = 0xE000ED98
+        mpu_rbar = 0xE000ED9C
+        mpu_rasr = 0xE000EDA0
+
+        result = b""
+        mpu_type, mpu_type_data = _read_register(mpu_type)
+        result += mpu_type_data
+
+        mpu_ctrl, mpu_ctrl_data = _read_register(mpu_ctrl)
+        result += mpu_ctrl_data
+
+        num_regions = (mpu_type >> 8) & 0xFF
+        for i in range(0, num_regions):
+            _write_register(mpu_rnr, i)
+            _, data = _read_register(mpu_rbar)
+            result += data
+            _, data = _read_register(mpu_rasr)
+            result += data
+
+        return result
+
+    def add_platform_specific_sections(self, cd_writer, inferior, analytics_props):
+        mem_mapped_regs = [
+            ("ictr", "Interrupt Controller Type Register", 0xE000E004, 0xE000E008),
+            ("systick", "ARMv7-M System Timer", 0xE000E010, 0xE000E020),
+            ("scb", "ARMv7-M System Control Block", 0xE000ED00, 0xE000ED8F),
+            ("scs_debug", "ARMv7-M SCS Debug Registers", 0xE000EDFC, 0xE000EE00),
+            ("nvic", "ARMv7-M External Interrupt Controller", 0xE000E100, 0xE000E600),
+        ]
+
+        for mem_mapped_reg in mem_mapped_regs:
+            try:
+                short_name, desc, base, top = mem_mapped_reg
+                section = Section(base, top - base, desc)
+                section.data = inferior.read_memory(section.addr, section.size)
+                cd_writer.add_section(section)
+                analytics_props["{}_ok".format(short_name)] = True
+            except:
+                analytics_props["{}_collection_error".format(short_name)] = {
+                    "traceback": traceback.format_exc()
+                }
+
+        try:
+            cd_writer.armv67_mpu = self._try_collect_mpu_settings()
+            print("Collected MPU config")
+        except:
+            analytics_props["mpu_collection_error"] = {"traceback": traceback.format_exc()}
+
+    def guess_ram_regions(self, elf_sections):
+        capturable_elf_sections = list(filter(should_capture_section, elf_sections))
+
+        def _is_ram(base_addr):
+            # See Table B3-1 ARMv7-M address map in "ARMv7-M Architecture Reference Manual"
+            return base_addr in (0x20000000, 0x60000000, 0x80000000)
+
+        capture_size = 1024 * 1024  # Capture up to 1MB
+        base_addrs = map(lambda section: section.addr & 0xE0000000, capturable_elf_sections)
+        filtered_addrs = set(filter(_is_ram, base_addrs))
+        # Capture up to 1MB for each region
+        return [(addr, 1024 * 1024,) for addr in filtered_addrs]
+
+    def get_current_registers(self, gdb_thread, analytics_props):
+        gdb_thread.switch()
+
+        # GDB Doesn't have a convenient way to know all of the registers in Python, so this is the
+        # best way. Call this, rip out the first element in each row...that's the register name
+
+        #
+        # NOTE: We use the "all" argument below because on some versions of gdb "msp, psp, etc" are not considered part of them
+        # core set. This will also dump all the fpu registers which we don't collect but thats fine
+        info_reg_all_list = gdb.execute("info reg all", to_string=True)
+        return (lookup_registers_from_list(self, info_reg_all_list, analytics_props),)
+
 
 # FIXME: De-duplicate with code from rtos_register_stacking.py
-def concat_registers_dict_to_bytes(regs):
+def concat_registers_dict_to_bytes(arch, regs):
     result = b""
-    for reg_name in ARM_CORTEX_M_REGISTER_COLLECTION:
+    for reg_name in arch.register_collection_list:
         assert reg_name.lower() == reg_name
         if reg_name not in regs:
             result += b"\x00\x00\x00\x00"
@@ -267,12 +499,12 @@ def concat_registers_dict_to_bytes(regs):
     return result
 
 
-def _is_expected_reg(reg_name):
-    return reg_name in ARM_CORTEX_M_REGISTER_COLLECTION
+def _is_expected_reg(arch, reg_name):
+    return reg_name in arch.register_collection_list
 
 
-def _add_reg_collection_error_analytic(analytics_props, reg_name, error):
-    if not _is_expected_reg(reg_name):
+def _add_reg_collection_error_analytic(arch, analytics_props, reg_name, error):
+    if not _is_expected_reg(arch, reg_name):
         return
 
     REG_COLLECTION_ERROR = "reg_collection_error"
@@ -282,7 +514,7 @@ def _add_reg_collection_error_analytic(analytics_props, reg_name, error):
     analytics_props[REG_COLLECTION_ERROR][reg_name] = error
 
 
-def _try_read_register(frame, lookup_name, register_list, analytics_props, result_name=None):
+def _try_read_register(arch, frame, lookup_name, register_list, analytics_props, result_name=None):
     # `info reg` will print all registers, even though they are not part of the core.
     # If that's the case, doing frame.read_register() will raise a gdb.error.
     try:
@@ -292,13 +524,17 @@ def _try_read_register(frame, lookup_name, register_list, analytics_props, resul
             name_to_use = lookup_name if result_name is None else result_name
             register_list[name_to_use] = register_value_to_bytes(value)
         else:
-            _add_reg_collection_error_analytic(analytics_props, lookup_name, "<unavailable> value")
+            _add_reg_collection_error_analytic(
+                arch, analytics_props, lookup_name, "<unavailable> value"
+            )
     except:
-        _add_reg_collection_error_analytic(analytics_props, lookup_name, traceback.format_exc())
+        _add_reg_collection_error_analytic(
+            arch, analytics_props, lookup_name, traceback.format_exc()
+        )
         pass
 
 
-def lookup_registers_from_list(info_reg_all_list, analytics_props):
+def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
     frame = gdb.newest_frame()
     frame.select()
 
@@ -314,7 +550,7 @@ def lookup_registers_from_list(info_reg_all_list, analytics_props):
             if found_reg.lower() == reg:
                 return found_reg
 
-        alt_reg_names = ARM_CORTEX_M_ALT_NAMES.get(reg, [])
+        alt_reg_names = arch.alternative_register_name_dict.get(reg, [])
         for alt_reg_name in alt_reg_names:
             if alt_reg_name in found_registers:
                 return alt_reg_name
@@ -322,7 +558,7 @@ def lookup_registers_from_list(info_reg_all_list, analytics_props):
         return None
 
     alt_reg_names = []
-    for expected_reg in ARM_CORTEX_M_REGISTER_COLLECTION:
+    for expected_reg in arch.register_collection_list:
         if expected_reg in register_names:
             continue
 
@@ -332,20 +568,22 @@ def lookup_registers_from_list(info_reg_all_list, analytics_props):
             continue
 
         _add_reg_collection_error_analytic(
-            analytics_props, expected_reg, "Not found in register set"
+            arch, analytics_props, expected_reg, "Not found in register set"
         )
 
     # Iterate over all register names and pull the value out of the frame
     register_list = {}
 
     # Remove register_names we don't care about before actually looking up values
-    register_names = filter(_is_expected_reg, register_names)
+    register_names = filter(lambda n: _is_expected_reg(arch, n), register_names)
 
     for reg_name in register_names:
-        _try_read_register(frame, reg_name, register_list, analytics_props)
+        _try_read_register(arch, frame, reg_name, register_list, analytics_props)
 
     for lookup_reg_name, result_reg_name in alt_reg_names:
-        _try_read_register(frame, lookup_reg_name, register_list, analytics_props, result_reg_name)
+        _try_read_register(
+            arch, frame, lookup_reg_name, register_list, analytics_props, result_reg_name
+        )
 
     # if we can't patch the registers, we'll just fallback to the active state
     try:
@@ -355,19 +593,6 @@ def lookup_registers_from_list(info_reg_all_list, analytics_props):
         pass
 
     return register_list
-
-
-# FIXME: De-duplicate with code from trace_builder_coredump.py
-def get_current_registers(gdb_thread, analytics_props):
-    gdb_thread.switch()
-
-    # GDB Doesn't have a convenient way to know all of the registers in Python, so this is the
-    # best way. Call this, rip out the first element in each row...that's the register name
-    #
-    # NOTE: We use the "all" argument below because on some versions of gdb "msp, psp, etc" are not considered part of them
-    # core set. This will also dump all the fpu registers which we don't collect but thats fine
-    info_reg_all_list = gdb.execute("info reg all", to_string=True)
-    return lookup_registers_from_list(info_reg_all_list, analytics_props)
 
 
 # FIXME: De-duplicate with code from core_convert.py
@@ -393,16 +618,16 @@ class MemfaultCoredumpBlockType(object):  # (IntEnum):  # trying to be python2.7
 
 
 class MemfaultCoredumpWriter(object):
-    def __init__(self):
+    def __init__(self, arch):
         self.device_serial = "DEMOSERIALNUMBER"
         self.software_version = "1.0.0"
         self.software_type = "main"
         self.hardware_revision = "DEVBOARD"
         self.trace_reason = 5  # Debugger Halted
-        self.machine_type = 40  # ARM
         self.regs = {}
         self.sections = []
         self.armv67_mpu = None
+        self.arch = arch
 
     def add_section(self, section):
         self.sections.append(section)
@@ -422,9 +647,12 @@ class MemfaultCoredumpWriter(object):
             write(pack(MEMFAULT_COREDUMP_BLOCK_HEADER_FMT, type, address, len(payload)))
             write(payload)
 
-        _write_block(
-            MemfaultCoredumpBlockType.CURRENT_REGISTERS, concat_registers_dict_to_bytes(self.regs)
-        )
+        for core_regs in self.regs:
+            _write_block(
+                MemfaultCoredumpBlockType.CURRENT_REGISTERS,
+                concat_registers_dict_to_bytes(self.arch, core_regs),
+            )
+
         _write_block(MemfaultCoredumpBlockType.DEVICE_SERIAL, self.device_serial.encode("utf8"))
         _write_block(
             MemfaultCoredumpBlockType.SOFTWARE_VERSION, self.software_version.encode("utf8")
@@ -433,7 +661,7 @@ class MemfaultCoredumpWriter(object):
         _write_block(
             MemfaultCoredumpBlockType.HARDWARE_REVISION, self.hardware_revision.encode("utf8")
         )
-        _write_block(MemfaultCoredumpBlockType.MACHINE_TYPE, pack("<I", self.machine_type))
+        _write_block(MemfaultCoredumpBlockType.MACHINE_TYPE, pack("<I", self.arch.MACHINE_TYPE))
         _write_block(MemfaultCoredumpBlockType.TRACE_REASON, pack("<I", self.trace_reason))
 
         # Record the time in a fake memory region. By doing this we guarantee a unique coredump
@@ -503,36 +731,6 @@ def parse_maintenance_info_sections(output):
 
     sections = map(_tuple_to_section, section_matches)
     return fn, list(sections)
-
-
-def is_debug_info_section(section):
-    return section.name.startswith(".debug_")
-
-
-def should_capture_section(section):
-    # Assuming we never want to grab .text:
-    if section.name == ".text":
-        return False
-    # Assuming we never want to grab debug info:
-    if is_debug_info_section(section):
-        return False
-    # Sometimes these get flagged incorrectly as READONLY:
-    if filter(lambda n: n in section.name, (".heap", ".bss", ".data", ".stack")):
-        return True
-    # Only grab non-readonly stuff:
-    return not section.read_only
-
-
-def armv7_get_used_ram_base_addresses(elf_sections):
-    capturable_elf_sections = list(filter(should_capture_section, elf_sections))
-
-    def _is_ram(base_addr):
-        # See Table B3-1 ARMv7-M address map in "ARMv7-M Architecture Reference Manual"
-        return base_addr in (0x20000000, 0x60000000, 0x80000000)
-
-    return set(
-        filter(_is_ram, map(lambda section: section.addr & 0xE0000000, capturable_elf_sections))
-    )
 
 
 def read_memory_until_error(inferior, start, size, read_size=4 * 1024):
@@ -705,7 +903,7 @@ class MemfaultGdbArgumentParser(argparse.ArgumentParser):
         raise MemfaultGdbArgumentParseError()
 
 
-def add_config_args_and_parse_args(parser, unicode_args):
+def populate_config_args_and_parse_args(parser, unicode_args, config):
     parser.add_argument(
         "--email",
         help="The username (email address) of the user to use",
@@ -738,7 +936,6 @@ def add_config_args_and_parse_args(parser, unicode_args):
     args = list(filter(None, unicode_args.split(" ")))
     parsed_args = parser.parse_args(args)
 
-    config = MemfaultConfig()
     config.ingress_uri = parsed_args.ingress_uri
     config.api_uri = parsed_args.api_uri
     config.email = parsed_args.email
@@ -746,7 +943,14 @@ def add_config_args_and_parse_args(parser, unicode_args):
     config.organization = parsed_args.organization
     config.project = parsed_args.project
 
-    return parsed_args, config
+    # If the user overrides the email, we need to re-auth to get the new user ID
+    if parsed_args.email == MEMFAULT_CONFIG.email:
+        config.user_id = MEMFAULT_CONFIG.user_id
+    else:
+        status, reason, json_body = http_get_auth_me(api_uri, config.email, config.password)
+        config.user_id = json_body["id"]
+
+    return parsed_args
 
 
 class MemfaultGdbCommand(gdb.Command):
@@ -759,16 +963,17 @@ class MemfaultGdbCommand(gdb.Command):
         # Work-around for GDB-py not printing out the backtrace upon exceptions
         analytics_props = {}
         start_time = time()
+        config = MemfaultConfig()
         try:
-            self._invoke(arg, from_tty, analytics_props)
+            self._invoke(arg, from_tty, analytics_props, config)
         except Exception as e:
             print(traceback.format_exc())
             ANALYTICS.track("Exception", {"traceback": traceback.format_exc(), "args": arg})
             raise e  # Important, otherwise unit test failures may go undetected!
         analytics_props["duration_ms"] = int((time() - start_time) * 1000)
-        ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props)
+        ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props, config.user_id)
 
-    def _invoke(self, arg, from_tty, analytics_props):
+    def _invoke(self, arg, from_tty, analytics_props, config):
         pass
 
 
@@ -780,7 +985,7 @@ class Memfault(MemfaultGdbCommand):
     def __init__(self):
         super(Memfault, self).__init__(gdb.COMPLETE_NONE, prefix=True)
 
-    def _invoke(self, arg, from_tty, analytics_props):
+    def _invoke(self, arg, from_tty, analytics_props, config):
         gdb.execute("help memfault")
 
 
@@ -827,48 +1032,6 @@ def _write_register(address, value):
     gdb.selected_inferior().write_memory(address, reg_val)
 
 
-def _try_collect_mpu_settings():
-    cpuid = 0xE000ED00
-    reg_val, _ = _read_register(cpuid)
-    partno = (reg_val >> 4) & 0xFFF
-
-    CORTEX_M_CPUIDS = {
-        0xC20: "M0",
-        0xC21: "M1",
-        0xC23: "M3",
-        0xC24: "M4",
-        0xC27: "M7",
-        0xC60: "M0+",
-    }
-
-    if partno not in CORTEX_M_CPUIDS:
-        return None
-
-    print("Cortex-{} detected".format(CORTEX_M_CPUIDS[partno]))
-    mpu_type = 0xE000ED90
-    mpu_ctrl = 0xE000ED94
-    mpu_rnr = 0xE000ED98
-    mpu_rbar = 0xE000ED9C
-    mpu_rasr = 0xE000EDA0
-
-    result = b""
-    mpu_type, mpu_type_data = _read_register(mpu_type)
-    result += mpu_type_data
-
-    mpu_ctrl, mpu_ctrl_data = _read_register(mpu_ctrl)
-    result += mpu_ctrl_data
-
-    num_regions = (mpu_type >> 8) & 0xFF
-    for i in range(0, num_regions):
-        _write_register(mpu_rnr, i)
-        _, data = _read_register(mpu_rbar)
-        result += data
-        _, data = _read_register(mpu_rasr)
-        result += data
-
-    return result
-
-
 class MemfaultCoredump(MemfaultGdbCommand):
     """Captures a coredump from the target and uploads it to Memfault for analysis"""
 
@@ -908,12 +1071,12 @@ Proceed? [y/n]
         settings_save(settings)
         return True
 
-    def _invoke(self, unicode_args, from_tty, analytics_props):
+    def _invoke(self, unicode_args, from_tty, analytics_props, config):
         if not self._check_permission(analytics_props):
             return
 
         try:
-            parsed_args, config = self.parse_args(unicode_args)
+            parsed_args = self.parse_args(unicode_args, config)
         except MemfaultGdbArgumentParseError:
             return
 
@@ -982,7 +1145,7 @@ Proceed? [y/n]
         else:
             print("Error occurred... HTTP Status {} {}".format(status, reason))
 
-    def parse_args(self, unicode_args):
+    def parse_args(self, unicode_args, config):
         parser = MemfaultGdbArgumentParser(description=MemfaultCoredump.__doc__)
         parser.add_argument(
             "source",
@@ -1014,9 +1177,39 @@ Proceed? [y/n]
             nargs=2,
             action="append",
         )
-        return add_config_args_and_parse_args(parser, unicode_args)
+        return populate_config_args_and_parse_args(parser, unicode_args, config)
+
+    @staticmethod
+    def _get_arch(current_arch, analytics_props):
+        if "arm" in current_arch:
+            return ArmCortexMCoredumpArch()
+        if "xtensa" in current_arch:
+            target = gdb.execute("monitor target current", to_string=True)
+            if "esp32" in target:
+                return XtensaCoredumpArch()
+            analytics_props["xtensa_target"] = target
+        return None
 
     def build_coredump_writer(self, regions, analytics_props):
+        # inferior.architecture() is a relatively new API, so let's use "show arch" instead:
+        show_arch_output = gdb.execute("show arch", to_string=True).lower()
+        current_arch_matches = re.search("currently ([^)]+)", show_arch_output)
+        if current_arch_matches:
+            # Using groups() here instead of fn_match[1] for python2.x compatibility
+            current_arch = current_arch_matches.groups()[0]
+            # Should tell us about different arm flavors:
+            analytics_props["arch"] = current_arch
+            arch = self._get_arch(current_arch, analytics_props)
+            if arch is None:
+                print("This command is currently only supported for ARM and XTENSA targets!")
+                analytics_props["error"] = "Unsupported architecture"
+                return None, None
+        else:
+            error = "show arch has unexpected output"
+            analytics_props["error"] = error
+            ANALYTICS.error(error, info=show_arch_output)
+            return None, None
+
         inferior = gdb.selected_inferior()
 
         # Make sure thread info has been requested before doing anything else:
@@ -1050,24 +1243,6 @@ Proceed? [y/n]
                 analytics_props["error"] = "Failed to activate thread"
                 return None, None
 
-        # inferior.architecture() is a relatively new API, so let's use "show arch" instead:
-        show_arch_output = gdb.execute("show arch", to_string=True).lower()
-        current_arch_matches = re.search("currently ([^)]+)", show_arch_output)
-        if current_arch_matches:
-            # Using groups() here instead of fn_match[1] for python2.x compatibility
-            current_arch = current_arch_matches.groups()[0]
-            # Should tell us about different arm flavors:
-            analytics_props["arch"] = current_arch
-            if "arm" not in current_arch:
-                print("This command is currently only supported for ARM targets!")
-                analytics_props["error"] = "Unsupported architecture"
-                return None, None
-        else:
-            error = "show arch has unexpected output"
-            analytics_props["error"] = error
-            ANALYTICS.error(error, info=show_arch_output)
-            return None, None
-
         info_sections_output = gdb.execute("maintenance info sections", to_string=True)
         elf_fn, sections = parse_maintenance_info_sections(info_sections_output)
         if elf_fn is None or sections is None:
@@ -1088,50 +1263,20 @@ This command requires that you use the 'load' command to load a binary/symbol (.
                 "Hints: did you compile with -g or similar flags? did you inadvertently strip the binary?"
             )
 
-        cd_writer = MemfaultCoredumpWriter()
-        cd_writer.regs = get_current_registers(thread, analytics_props)
+        cd_writer = MemfaultCoredumpWriter(arch)
+        cd_writer.regs = arch.get_current_registers(thread, analytics_props)
 
-        mem_mapped_regs = [
-            ("ictr", "Interrupt Controller Type Register", 0xE000E004, 0xE000E008),
-            ("systick", "ARMv7-M System Timer", 0xE000E010, 0xE000E020),
-            ("scb", "ARMv7-M System Control Block", 0xE000ED00, 0xE000ED8F),
-            ("scs_debug", "ARMv7-M SCS Debug Registers", 0xE000EDFC, 0xE000EE00),
-            ("nvic", "ARMv7-M External Interrupt Controller", 0xE000E100, 0xE000E600),
-        ]
-
-        for mem_mapped_reg in mem_mapped_regs:
-            try:
-                short_name, desc, base, top = mem_mapped_reg
-                section = Section(base, top - base, desc)
-                section.data = inferior.read_memory(section.addr, section.size)
-                cd_writer.add_section(section)
-                analytics_props["{}_ok".format(short_name)] = True
-            except:
-                analytics_props["{}_collection_error".format(short_name)] = {
-                    "traceback": traceback.format_exc()
-                }
-
-        try:
-            cd_writer.armv67_mpu = _try_collect_mpu_settings()
-            print("Collected MPU config")
-        except:
-            analytics_props["mpu_collection_error"] = {"traceback": traceback.format_exc()}
-            pass
+        arch.add_platform_specific_sections(cd_writer, inferior, analytics_props)
 
         if regions is None:
-
-            def _guessed_ram_regions():
-                base_addresses = armv7_get_used_ram_base_addresses(sections)
-                for base in base_addresses:
-                    yield base, 1024 * 1024  # Capture up to 1MB
-
-            regions = _guessed_ram_regions()
             print(
                 "No capturing regions were specified; will default to capturing the first 1MB for each used RAM address range."
             )
             print(
                 "Tip: optionally, you can use `--region <addr> <size>` to manually specify capturing regions and increase capturing speed."
             )
+
+            regions = arch.guess_ram_regions(sections)
 
         for addr, size in regions:
             print("Capturing RAM @ 0x{:x} ({} bytes)...".format(addr, size))
@@ -1149,7 +1294,7 @@ class MemfaultLogin(MemfaultGdbCommand):
 
     GDB_CMD = "memfault login"
 
-    def _invoke(self, unicode_args, from_tty, analytics_props):
+    def _invoke(self, unicode_args, from_tty, analytics_props, config):
         try:
             parsed_args = self.parse_args(unicode_args)
         except MemfaultGdbArgumentParseError:
@@ -1177,6 +1322,7 @@ class MemfaultLogin(MemfaultGdbCommand):
             MEMFAULT_CONFIG.organization = parsed_args.organization
             MEMFAULT_CONFIG.password = parsed_args.password
             MEMFAULT_CONFIG.project = parsed_args.project
+            MEMFAULT_CONFIG.user_id = json_body["id"]
             print("Authenticated successfully!")
         elif status == 404:
             print("Login failed. Make sure you have entered the email and password/key correctly.")
@@ -1224,9 +1370,9 @@ class AnalyticsTracker(Thread):
         super(AnalyticsTracker, self).__init__()
         self._queue = Queue()
 
-    def track(self, event_name, event_properties=None):
+    def track(self, event_name, event_properties=None, user_id=None):
         # Put in queue to offload to background thread, to avoid slowing down the GDB commands
-        self._queue.put((event_name, event_properties))
+        self._queue.put((event_name, event_properties, user_id))
 
     def log(self, level, type, **kwargs):
         props = dict(**kwargs)
@@ -1244,15 +1390,18 @@ class AnalyticsTracker(Thread):
 
     def _is_unittest(self):
         # Pretty gross, but because importing this script has side effects (hitting the analytics endpoint),
-        # mocking gets pretty tricky. Copping out...:
-        return "PYTEST_CURRENT_TEST" in os.environ
+        # mocking gets pretty tricky. Use this check to disable analytics for unit and integration tests
+        return (
+            hasattr(gdb, "MEMFAULT_MOCK_IMPLEMENTATION")
+            or os.environ.get("MEMFAULT_DISABLE_ANALYTICS", None) is not None
+        )
 
     def run(self):
         # uuid.getnode() is based on the mac address, so should be stable across multiple sessions on the same machine:
         anonymousId = md5(uuid.UUID(int=uuid.getnode()).bytes).hexdigest()
         while True:
             try:
-                event_name, event_properties = self._queue.get()
+                event_name, event_properties, user_id = self._queue.get()
 
                 if self._is_analytics_disabled() or self._is_unittest():
                     continue
@@ -1265,6 +1414,8 @@ class AnalyticsTracker(Thread):
                     "event": event_name,
                     "properties": event_properties,
                 }
+                if user_id is not None:
+                    body["userId"] = "user{}".format(user_id)
                 headers = {
                     "Content-Type": "application/json",
                     "Authorization": "Basic RFl3Q0E1TENRTW5Uek95ajk5MTJKRjFORTkzMU5yb0o6",

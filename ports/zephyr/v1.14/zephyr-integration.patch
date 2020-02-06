@@ -5,7 +5,7 @@ Subject: [PATCH] Integrate Memfault Firmware SDK into Zephyr RTOS
 
 * Add 'memfault' module to 'ext/lib/memfault'. To add the SDK, create
   a 'memfault-firmware-sdk' directory to the folder & copy or
-  symlink a clone of git@github.com:memfault/memfault-firmware-sdk.git
+  symlink a clone of https://github.com/memfault/memfault-firmware-sdk.git
 * Extend Zephyr Fault Handler to store extra register as the exception
   stack frame (using the CONFIG_EXTENDED_ESF option)
 * Add an option to skip clearing of fault status register information
@@ -27,9 +27,9 @@ index de38b72f35..9d14681cce 100644
 --- a/arch/arm/core/cortex_m/Kconfig
 +++ b/arch/arm/core/cortex_m/Kconfig
 @@ -75,6 +75,21 @@ config CPU_CORTEX_M7
- 
+
  if CPU_CORTEX_M
- 
+
 +config EXTENDED_ESF
 +	bool
 +	help
@@ -112,7 +112,7 @@ index 5734ef4911..d0d946097c 100644
 +#endif
  	return reason;
  }
- 
+
 @@ -783,11 +787,19 @@ static void SecureStackDump(const NANO_ESF *secure_esf)
   * Note: exc_return argument shall only be used by the Fault handler if we are
   * running a Secure Firmware.
@@ -122,7 +122,7 @@ index 5734ef4911..d0d946097c 100644
  {
  	u32_t reason = _NANO_ERR_HW_EXCEPTION;
  	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
- 
+
 +#if defined(CONFIG_EXTENDED_ESF)
 +	NANO_ESF esf_copy = { 0 };
 +	memcpy(&esf_copy, esfp, sizeof(*esfp));
@@ -132,7 +132,7 @@ index 5734ef4911..d0d946097c 100644
 +#endif /* CONFIG_EXTENDED_ESF */
 +
  	LOG_PANIC();
- 
+
  #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 diff --git a/arch/arm/core/fault_s.S b/arch/arm/core/fault_s.S
 index 472fd01da7..6a8c28c712 100644
@@ -143,7 +143,7 @@ index 472fd01da7..6a8c28c712 100644
  #endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
  	push {r0, lr}
 -	bl _Fault
- 
+
 +#if defined(CONFIG_EXTENDED_ESF)
 +        /* push the callee-saved registers on the stack and pass them to _Fault
 +         * as part of argument 2
@@ -156,16 +156,16 @@ index 472fd01da7..6a8c28c712 100644
 +        pop {r4-r11, lr}
 +#endif
  	pop {r0, pc}
- 
+
  	.end
 diff --git a/ext/Kconfig b/ext/Kconfig
 index 73144dcebf..62c6180e19 100644
 --- a/ext/Kconfig
 +++ b/ext/Kconfig
 @@ -18,4 +18,6 @@ source "ext/lib/ipc/open-amp/Kconfig"
- 
+
  source "ext/lib/mgmt/Kconfig"
- 
+
 +source "ext/lib/memfault/memfault-firmware-sdk/ports/zephyr/Kconfig"
 +
  endmenu
@@ -193,7 +193,7 @@ index 87ce5489b1..f9ae1da0db 100644
 @@ -44,23 +44,53 @@ GTEXT(z_ExcExit);
  #else
  #include <zephyr/types.h>
- 
+
 -struct __esf {
 -	sys_define_gpr_with_alias(a1, r0);
 -	sys_define_gpr_with_alias(a2, r1);
@@ -226,7 +226,7 @@ index 87ce5489b1..f9ae1da0db 100644
 +        CALLER_SAVED_FLOAT_REGS
  #endif
  };
- 
+
 +#if defined(CONFIG_EXTENDED_ESF)
 +struct __callee_saved_esf {
 +	uint32_t r4;
@@ -252,9 +252,9 @@ index 87ce5489b1..f9ae1da0db 100644
 +#else
  typedef struct __esf NANO_ESF;
 +#endif
- 
+
  extern void z_ExcExit(void);
- 
--- 
+
+--
 2.21.0
 

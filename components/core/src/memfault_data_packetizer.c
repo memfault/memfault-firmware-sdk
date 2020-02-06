@@ -18,7 +18,7 @@
 MEMFAULT_STATIC_ASSERT(MEMFAULT_PACKETIZER_MIN_BUF_LEN == MEMFAULT_MIN_CHUNK_BUF_LEN,
                        "Minimum packetizer payload size must match underlying transport");
 //
-// Weak definitions which get overriden when the component that implements that data source is
+// Weak definitions which get overridden when the component that implements that data source is
 // included and compiled in a project
 //
 
@@ -45,7 +45,7 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_event_data_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
-// NOTE: These values are used by the Memfault Cloud chunks API
+// NOTE: These values are used by the Memfault cloud chunks API
 typedef enum {
   kMfltMessageType_None = 0,
   kMfltMessageType_Coredump = 1,
@@ -79,7 +79,7 @@ typedef struct {
   sMfltChunkTransportCtx curr_msg_ctx;
 } sMfltTransportState;
 
-typedef struct MFLT_PACKED {
+typedef MEMFAULT_PACKED_STRUCT {
   uint8_t mflt_msg_type; // eMfltMessageType
 } sMfltPacketizerHdr;
 

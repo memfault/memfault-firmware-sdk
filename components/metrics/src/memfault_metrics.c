@@ -15,6 +15,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/serializer_helper.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/overrides.h"
 #include "memfault/metrics/platform/timer.h"
@@ -30,6 +31,10 @@
 #define MEMFAULT_METRICS_STORAGE_TOO_SMALL (-5)
 #define MEMFAULT_METRICS_TIMER_BOOT_FAILED (-6)
 
+#if !defined(MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
+#  define MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE "memfault_metrics_heartbeat_config.def"
+#endif
+
 typedef struct MemfaultMetricKVPair {
   MemfaultMetricId key;
   eMemfaultMetricType type;
@@ -38,7 +43,7 @@ typedef struct MemfaultMetricKVPair {
 // Generate global ID constants (ROM):
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   const char * const g_memfault_metrics_id_##key_name = MEMFAULT_EXPAND_AND_QUOTE(key_name);
-#include "memfault_metrics_heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
 
 // Generate heartbeat keys table (ROM):
@@ -46,12 +51,12 @@ typedef struct MemfaultMetricKVPair {
   { .key = _MEMFAULT_METRICS_ID_CREATE(key_name), .type = value_type },
 
 static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
-  #include "memfault_metrics_heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
 };
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_keys) != 0,
-                       "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined in memfault_metrics_heartbeat_config.def");
+                       "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE);
 
 
 #define MEMFAULT_METRICS_TIMER_VAL_MAX 0x80000000
@@ -72,7 +77,7 @@ typedef struct MemfaultMetricValueInfo {
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   (union MemfaultMetricValue){ 0 },
 static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
-  #include "memfault_metrics_heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
 };
 
@@ -83,12 +88,15 @@ static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
 #define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) \
   MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
 static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[] = {
-  #include "memfault_metrics_heartbeat_config.def"
-  #undef MEMFAULT_METRICS_KEY_DEFINE
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   // allocate at least one entry so we don't have an empty array in the situation
-  // where no Timer metrics are defined
-  { 0 },
+  // where no Timer metrics are defined:
+  MEMFAULT_METRICS_KEY_DEFINE(_, kMemfaultMetricType_Timer)
+  #undef MEMFAULT_METRICS_KEY_DEFINE
 };
+// Work-around for unused-macros error in case not all types are used in the .def file:
+MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned()
+MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed()
 
 static struct {
   const sMemfaultEventStorageImpl *storage_impl;
@@ -513,14 +521,8 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl) {
     return MEMFAULT_METRICS_TIMER_BOOT_FAILED;
   }
 
-  // Finally check to see if the backing storage can hold at least one heartbeat metric Log a line
-  // and return an error code in this situation so it's easier for an end user to catch it
-  const size_t worst_case_size_needed =
-      memfault_metrics_heartbeat_compute_worst_case_storage_size();
-  const size_t storage_max_size = storage_impl->get_storage_size_cb();
-  if (worst_case_size_needed > storage_max_size) {
-    MEMFAULT_LOG_WARN("Event storage (%d) smaller than largest event (%d)",
-                      (int)storage_max_size, (int)worst_case_size_needed);
+  if (!memfault_serializer_helper_check_storage_size(
+      storage_impl, memfault_metrics_heartbeat_compute_worst_case_storage_size, "metrics")) {
     return MEMFAULT_METRICS_STORAGE_TOO_SMALL;
   }
   return 0;

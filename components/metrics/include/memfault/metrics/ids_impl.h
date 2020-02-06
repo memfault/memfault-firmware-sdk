@@ -12,14 +12,19 @@
 extern "C" {
 #endif
 
+#if !defined(MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
+#  define MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE "memfault_metrics_heartbeat_config.def"
+#endif
+
 //! Generate extern const char * declarations for all IDs (used in key names):
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
 extern const char * const g_memfault_metrics_id_##key_name;
-#include "memfault_metrics_heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
 
 #define _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  MEMFAULT_STATIC_ASSERT(false, "MEMFAULT_METRICS_KEY_DEFINE should only be used in memfault_metrics_heartbeat_config.def!")
+  MEMFAULT_STATIC_ASSERT(false, \
+    "MEMFAULT_METRICS_KEY_DEFINE should only be used in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
 
 //! NOTE: Currently, there's only an implementation that uses constant C strings for keys.
 //!

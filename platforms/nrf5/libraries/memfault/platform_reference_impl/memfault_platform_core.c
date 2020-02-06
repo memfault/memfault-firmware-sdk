@@ -7,8 +7,14 @@
 #include "app_util_platform.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/event_storage.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/panics/trace_event.h"
+
+#if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
+#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 100
+#endif
 
 //! Sanity check that coredump storage is large enough to capture the regions we want to collect
 static void prv_assert_coredump_storage_appropriately_sized(void) {
@@ -25,6 +31,12 @@ static void prv_assert_coredump_storage_appropriately_sized(void) {
 int memfault_platform_boot(void) {
   MEMFAULT_LOG_INFO("Memfault demo app starting!");
   prv_assert_coredump_storage_appropriately_sized();
+
+  static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
+  const sMemfaultEventStorageImpl *evt_storage =
+      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+
+  memfault_trace_event_boot(evt_storage);
   return 0;
 }
 

@@ -5,7 +5,7 @@ Subject: [PATCH] Integrate Memfault Firmware SDK into Zephyr RTOS
 
 * Add 'memfault' module to 'ext/lib/memfault'. To add the SDK, create
   a 'memfault-firmware-sdk' directory to the folder & copy or
-  symlink a clone of git@github.com:memfault/memfault-firmware-sdk.git
+  symlink a clone of https://github.com/memfault/memfault-firmware-sdk.git
 * Extend Zephyr Fault Handler to store extra register as the exception
   stack frame (using the CONFIG_EXTENDED_ESF option)
 * Add an option to skip clearing of fault status register information
@@ -27,9 +27,9 @@ index bd3516ecd0..410bda5fcc 100644
 --- a/arch/arm/core/cortex_m/Kconfig
 +++ b/arch/arm/core/cortex_m/Kconfig
 @@ -75,6 +75,21 @@ config CPU_CORTEX_M7
- 
+
  if CPU_CORTEX_M
- 
+
 +config EXTENDED_ESF
 +	bool
 +	help
@@ -49,13 +49,13 @@ index bd3516ecd0..410bda5fcc 100644
  	bool
  	# Omit prompt to signify "hidden" option
 @@ -122,7 +137,7 @@ config CPU_CORTEX_M_HAS_SPLIM
- 
+
  	  In an ARMv8-M Mainline implementation with the Security Extension
  	  the MSPLIM, PSPLIM registers have additional Secure instances.
 -  	  In an ARMv8-M Baseline implementation with the Security Extension
 +	  In an ARMv8-M Baseline implementation with the Security Extension
  	  the MSPLIM, PSPLIM registers have only Secure instances.
- 
+
  config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 diff --git a/arch/arm/core/cortex_m/fault.c b/arch/arm/core/cortex_m/fault.c
 index 7943248368..74d8d433eb 100644
@@ -84,7 +84,7 @@ index 7943248368..74d8d433eb 100644
 +#endif
  	/* Assess whether system shall ignore/recover from this MPU fault. */
  	*recoverable = memory_fault_recoverable(esf);
- 
+
 @@ -361,7 +363,9 @@ static int BusFault(z_arch_esf_t *esf, int fromHardFault, bool *recoverable)
  			PR_EXC("  BFAR Address: 0x%x", bfar);
  			if (fromHardFault) {
@@ -106,7 +106,7 @@ index 7943248368..74d8d433eb 100644
 -
 +#endif
  	*recoverable = memory_fault_recoverable(esf);
- 
+
  	return reason;
 @@ -527,10 +531,10 @@ static u32_t UsageFault(const z_arch_esf_t *esf)
  	if ((SCB->CFSR & SCB_CFSR_UNDEFINSTR_Msk) != 0) {
@@ -120,7 +120,7 @@ index 7943248368..74d8d433eb 100644
 +#endif
  	return reason;
  }
- 
+
 @@ -804,12 +808,20 @@ static void SecureStackDump(const z_arch_esf_t *secure_esf)
   * Note: exc_return argument shall only be used by the Fault handler if we are
   * running a Secure Firmware.
@@ -131,7 +131,7 @@ index 7943248368..74d8d433eb 100644
  	u32_t reason = K_ERR_CPU_EXCEPTION;
  	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
  	bool recoverable;
- 
+
 +#if defined(CONFIG_EXTENDED_ESF)
 +	z_arch_esf_t esf_copy = { 0 };
 +	memcpy(&esf_copy, esfp, sizeof(*esfp));
@@ -164,7 +164,7 @@ index 785f49d01a..607b3c27d2 100644
 +#if defined(CONFIG_EXTENDED_ESF)
 +        pop {r4-r11, lr}
 +#endif
- 
+
  #if defined(CONFIG_CPU_CORTEX_M)
  	pop {r0, pc}
 diff --git a/ext/Kconfig b/ext/Kconfig
@@ -172,9 +172,9 @@ index fa9eaea3b1..f6ffa3993f 100644
 --- a/ext/Kconfig
 +++ b/ext/Kconfig
 @@ -14,4 +14,6 @@ source "ext/lib/crypto/Kconfig"
- 
+
  source "ext/lib/fnmatch/Kconfig"
- 
+
 +source "ext/lib/memfault/memfault-firmware-sdk/ports/zephyr/Kconfig"
 +
  endmenu
@@ -201,7 +201,7 @@ index dfa1ad8e4a..79da2b2f0f 100644
 @@ -44,17 +44,19 @@ GTEXT(z_ExcExit);
  extern "C" {
  #endif
- 
+
 +struct __basic_sf {
 +	sys_define_gpr_with_alias(a1, r0);
 +	sys_define_gpr_with_alias(a2, r1);
@@ -231,7 +231,7 @@ index dfa1ad8e4a..79da2b2f0f 100644
 @@ -62,7 +64,34 @@ struct __esf {
  #endif
  };
- 
+
 +#if defined(CONFIG_EXTENDED_ESF)
 +struct __callee_saved_esf {
 +	uint32_t r4;
@@ -260,9 +260,9 @@ index dfa1ad8e4a..79da2b2f0f 100644
 +#else
  typedef struct __esf z_arch_esf_t;
 +#endif
- 
+
  extern void z_ExcExit(void);
- 
--- 
+
+--
 2.21.0
 

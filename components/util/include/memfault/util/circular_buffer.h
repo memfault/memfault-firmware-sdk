@@ -9,7 +9,7 @@
 //! A simple circular buffer implementation.
 //!
 //! Note: the implementation does not have any locking. If the user is accessing the buffer
-//! from multiple contexts, it is there responsiblity to lock things
+//! from multiple contexts, it is their responsibility to lock things
 
 #include <stddef.h>
 #include <stdint.h>

@@ -31,7 +31,7 @@ $ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v1.14|v2.0]/zephyr-integration.patc
 
 ```
 $ cd $ZEPHYR_ROOT_DIR/ext/lib/memfault
-$ git clone git@github.com:memfault/memfault-firmware-sdk.git
+$ git clone https://github.com/memfault/memfault-firmware-sdk.git
 ```
 
 3. Implement device-specific dependencies.

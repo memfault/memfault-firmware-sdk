@@ -1,4 +1,17 @@
-### Changes between Memfault SDK 0.1.0 and SDK 0.0.18 - Jan 22, 2019
+### Changes between Memfault SDK 0.2.0 and SDK 0.1.0 - Feb 5, 2020
+
+- Add a new API ("Trace Event") for tracking errors. This allows for tracing
+  issues that are unexpected but are non-fatal (don't result in a device
+  reboot). A step-by-step guide detailing how to use the feature can be found
+  at: https://mflt.io/error-tracing
+- Update GDB coredump collection script to work with the ESP32 (Tensilica Xtensa
+  LX6 Architecture)
+- Remove `__task` from IAR Cortex-M function handler declarations since it's not
+  explicitly required and can lead to a compiler issue if the function prototype
+  does not also use it.
+- Misc documentation and comment tweaks to make nomenclature more consistent
+
+### Changes between Memfault SDK 0.1.0 and SDK 0.0.18 - Jan 22, 2020
 
 - Update **panics** component to support compilation with IAR ARM C/C++
   Compiler. More details about integrating IAR can be found at
@@ -6,7 +19,7 @@
   takes an argument which is the location to store the LR to
   (`void *lr = MEMFAULT_GET_LR()` -> `void *lr;` `MEMFAULT_GET_LR(lr)`)
 
-### Changes between Memfault SDK 0.0.18 and SDK 0.0.17 - Jan 14, 2019
+### Changes between Memfault SDK 0.0.18 and SDK 0.0.17 - Jan 14, 2020
 
 - Update the chunk protocol to encode CRC in last chunk of message instead of
   first. This allows the CRC to be computed incrementally and the underlying
@@ -16,14 +29,14 @@
   https://mflt.io/data-to-cloud
 - Fixed a couple documentation links
 
-### Changes between Memfault SDK 0.0.17 and SDK 0.0.16 - Jan 7, 2019
+### Changes between Memfault SDK 0.0.17 and SDK 0.0.16 - Jan 7, 2020
 
 - Guarantee that all accesses to the platform coredump storage region route
   through `memfault_coredump_read` while the system is running.
 - Scrub unused portion of out buffer provided to packetizer with a known pattern
   for easier debugging
 
-### Changes between Memfault SDK 0.0.16 and SDK 0.0.15 - Jan 6, 2019
+### Changes between Memfault SDK 0.0.16 and SDK 0.0.15 - Jan 6, 2020
 
 - Add convenience API, `memfault_packetizer_get_chunk()`, to
   [data_packetizer](components/core/include/memfault/core/data_packetizer.h)
@@ -76,7 +89,7 @@
 
 - Expose root certificates used by Memfault CI in DER format for easier
   integration with TLS libraries which do not parse PEM formatted certificates.
-- Add utilities to the http component for constructing Memfault Cloud **chunk**
+- Add utilities to the http component for constructing Memfault cloud **chunk**
   endpoint POST requests to facilitate easier integration in environments with
   no pre-existing http stack.
 - Add port for Cortex-M based targets in the Zephyr RTOS. Ports are available
@@ -89,7 +102,7 @@
 
 - Release of **metrics** component. This API can easily be used to monitor
   device health over time (i.e connectivity, battery life, MCU resource
-  utilization, hardware degredation, etc) and configure Alerts with the Memfault
+  utilization, hardware degradation, etc) and configure Alerts with the Memfault
   backend when things go astray. To get started, see this
   [document](https://mflt.io/2D8TRLX)
 
@@ -135,7 +148,7 @@
   `memfault/panics/reboot_tracking.h` for more details and
   https://mflt.io/2QlOlgH for a step-by-step setup tutorial.
 - Added Event Storage module within the **core** component. This is a small RAM
-  backed data store that queues up traces to be published to the Memfault Cloud.
+  backed data store that queues up traces to be published to the Memfault cloud.
   To minimize the space needed and transport overhead, all events collected
   within the SDK are stored using the Concise Binary Object Representation
   (CBOR)
@@ -149,9 +162,9 @@
 
 ### Changes between Memfault Firmware SDK 0.0.7 and 0.0.6 - Oct 31, 2019
 
-- Added firmware side support for the Memfault Cloud **chunk** endpoint. This is
+- Added firmware side support for the Memfault cloud **chunk** endpoint. This is
   a sessionless endpoint that allows chunks of arbitrary size to be sent and
-  reassembled in the Memfault Cloud. This transport can be used to publish _any_
+  reassembled in the Memfault cloud. This transport can be used to publish _any_
   data collected by the Memfault SDK. The data is read out on the SDK side by
   calling the `memfault_packetizer_get_next()` API in `data_packetizer.h`. More
   details [here](https://mflt.io/data-to-cloud)
@@ -180,7 +193,7 @@
 ### Changes between Memfault Firmware SDK 0.0.4 and 0.0.3 - August 19, 2019
 
 - Updated **panics** core code to _always_ collect fault registers for ARMv6-M &
-  ARMv7-M architectures. The Memfault Cloud will auto-analyze these and present
+  ARMv7-M architectures. The Memfault cloud will auto-analyze these and present
   an analysis.
 - Updated https://try.memfault.com gdb script to collect Cortex-M MPU region
   information for auto-analysis

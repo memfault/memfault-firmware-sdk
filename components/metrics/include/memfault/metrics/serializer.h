@@ -8,7 +8,7 @@
 //! @brief
 //! Heartbeat metrics are collected at a periodic interval
 //! (MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS). Each time they are collected, the data is
-//! serialized out into a compressed format to be sent up to the Memfault Cloud via the "Data
+//! serialized out into a compressed format to be sent up to the Memfault cloud via the "Data
 //! Packetizer" (see data_packetizer.h). The utilities in this module deal with this serialization
 //! process
 

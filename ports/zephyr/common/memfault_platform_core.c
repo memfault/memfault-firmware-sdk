@@ -12,6 +12,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/panics/reboot_tracking.h"
+#include "memfault/panics/trace_event.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 100
@@ -53,6 +54,7 @@ static int prv_init_and_log_reboot(struct device *dev) {
   const sMemfaultEventStorageImpl *evt_storage =
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_reboot_tracking_collect_reset_info(evt_storage);
+  memfault_trace_event_boot(evt_storage);
   return 0;
 }
 

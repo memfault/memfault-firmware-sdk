@@ -4,7 +4,7 @@
 //! See License.txt for details
 //!
 //! Architecture-specific registers collected collected by Memfault SDK Extra decoding and analysis
-//! of these registers is provided from the Memfault Cloud
+//! of these registers is provided from the Memfault cloud
 
 #include <stdint.h>
 

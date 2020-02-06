@@ -72,7 +72,7 @@ typedef enum MemfaultMetricValueType {
   _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
 //! Uses a metric key. Before you can use a key, it should defined using MEMFAULT_METRICS_KEY_DEFINE
-//! in memfault_metrics_heartbeat_config.h.
+//! in memfault_metrics_heartbeat_config.def.
 //! @param key_name The name of the key, without quotes, as defined using MEMFAULT_METRICS_KEY_DEFINE.
 #define MEMFAULT_METRICS_KEY(key_name) \
   _MEMFAULT_METRICS_ID(key_name)

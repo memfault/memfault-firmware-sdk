@@ -22,6 +22,7 @@ sys.path.append(root_dir)
 def gdb_base_fixture():
     gdb = MagicMock()
     gdb.Command = MagicMock
+    gdb.MEMFAULT_MOCK_IMPLEMENTATION = True
 
     def _lookup_type(name):
         mock_type = MagicMock()
@@ -290,11 +291,12 @@ def test_parse_maintenance_info_sections_with_file(
 
 
 def test_read_current_registers(gdb_frame_register_read_fixture, info_reg_all_fixture):
-    from memfault_gdb import lookup_registers_from_list, ARM_CORTEX_M_REGISTER_COLLECTION
+    from memfault_gdb import lookup_registers_from_list, ArmCortexMCoredumpArch
 
     dummy_dict = {}
-    register_list = lookup_registers_from_list(info_reg_all_fixture, dummy_dict)
-    for reg in ARM_CORTEX_M_REGISTER_COLLECTION:
+    arch = ArmCortexMCoredumpArch()
+    register_list = lookup_registers_from_list(arch, info_reg_all_fixture, dummy_dict)
+    for reg in arch.register_collection_list:
         # A mock read_register should have taken place so the value should be non-zero
         assert len(register_list[reg]) == 4
         assert register_list[reg][0] != 0, reg
@@ -304,20 +306,23 @@ def test_should_capture_section(gdb_base_fixture):
     from memfault_gdb import Section, should_capture_section
 
     # Never capture .text, even when NOT marked READONLY:
-    assert False == should_capture_section(Section(0, 0, ".text", read_only=False))
+    assert False == should_capture_section(Section(0, 10, ".text", read_only=False))
 
     # Never capture .debug_...
-    assert False == should_capture_section(Section(0, 0, ".debug_info", read_only=True))
+    assert False == should_capture_section(Section(0, 10, ".debug_info", read_only=True))
+
+    # Never capture 0 length sections
+    assert False == should_capture_section(Section(0, 0, ".dram0.data", read_only=False))
 
     # Always capture sections with .bss, .heap, .data or .stack in the name, even when marked READONLY:
-    assert True == should_capture_section(Section(0, 0, ".foo.bss", read_only=True))
-    assert True == should_capture_section(Section(0, 0, ".stack_dummy", read_only=True))
-    assert True == should_capture_section(Section(0, 0, ".heap_psram", read_only=True))
-    assert True == should_capture_section(Section(0, 0, ".dram0.data", read_only=True))
+    assert True == should_capture_section(Section(0, 10, ".foo.bss", read_only=True))
+    assert True == should_capture_section(Section(0, 10, ".stack_dummy", read_only=True))
+    assert True == should_capture_section(Section(0, 10, ".heap_psram", read_only=True))
+    assert True == should_capture_section(Section(0, 10, ".dram0.data", read_only=True))
 
 
 def test_armv7_get_used_ram_base_addresses(gdb_base_fixture):
-    from memfault_gdb import Section, armv7_get_used_ram_base_addresses
+    from memfault_gdb import Section, ArmCortexMCoredumpArch
 
     sections = (
         Section(0x30000000, 10, "", read_only=True),
@@ -326,7 +331,13 @@ def test_armv7_get_used_ram_base_addresses(gdb_base_fixture):
         Section(0x00000000, 10, "", read_only=True),
         Section(0xE0000000, 10, "", read_only=True),
     )
-    assert {0x20000000, 0x60000000, 0x80000000} == armv7_get_used_ram_base_addresses(sections)
+
+    COLLECTION_SIZE_ARM = 1 * 1024 * 1024  # 1MB
+    assert [
+        (0x20000000, COLLECTION_SIZE_ARM),
+        (0x60000000, COLLECTION_SIZE_ARM),
+        (0x80000000, COLLECTION_SIZE_ARM),
+    ] == ArmCortexMCoredumpArch().guess_ram_regions(sections)
 
 
 def test_read_memory_until_error_no_error(gdb_base_fixture):
@@ -361,36 +372,39 @@ def test_read_memory_until_error_after_10k(gdb_base_fixture):
 
 
 def test_coredump_writer(gdb_base_fixture, snapshot):
-    from memfault_gdb import Section, MemfaultCoredumpWriter
+    from memfault_gdb import Section, MemfaultCoredumpWriter, ArmCortexMCoredumpArch
 
-    cd_writer = MemfaultCoredumpWriter()
+    arch = ArmCortexMCoredumpArch()
+    cd_writer = MemfaultCoredumpWriter(arch)
     cd_writer.device_serial = "device_serial"
     cd_writer.firmware_version = "1.2.3"
     cd_writer.hardware_revision = "gdb-proto"
     cd_writer.trace_reason = 5
-    cd_writer.regs = {
-        "r0": 4 * b"\x00",
-        "r1": 4 * b"\x01",
-        "r2": 4 * b"\x02",
-        "r3": 4 * b"\x03",
-        "r4": 4 * b"\x04",
-        "r5": 4 * b"\x05",
-        "r6": 4 * b"\x06",
-        "r7": 4 * b"\x07",
-        "r8": 4 * b"\x08",
-        "r9": 4 * b"\x09",
-        "r10": 4 * b"\x0A",
-        "r11": 4 * b"\x0B",
-        "r12": 4 * b"\x0C",
-        "sp": 4 * b"\x0D",
-        "lr": 4 * b"\x0E",
-        "pc": 4 * b"\x0F",
-        "xpsr": 4 * b"\x10",
-        "msp": 4 * b"\x11",
-        "psp": 4 * b"\x12",
-        "primask": 4 * b"\x13",
-        "control": 4 * b"\x14",
-    }
+    cd_writer.regs = [
+        {
+            "r0": 4 * b"\x00",
+            "r1": 4 * b"\x01",
+            "r2": 4 * b"\x02",
+            "r3": 4 * b"\x03",
+            "r4": 4 * b"\x04",
+            "r5": 4 * b"\x05",
+            "r6": 4 * b"\x06",
+            "r7": 4 * b"\x07",
+            "r8": 4 * b"\x08",
+            "r9": 4 * b"\x09",
+            "r10": 4 * b"\x0A",
+            "r11": 4 * b"\x0B",
+            "r12": 4 * b"\x0C",
+            "sp": 4 * b"\x0D",
+            "lr": 4 * b"\x0E",
+            "pc": 4 * b"\x0F",
+            "xpsr": 4 * b"\x10",
+            "msp": 4 * b"\x11",
+            "psp": 4 * b"\x12",
+            "primask": 4 * b"\x13",
+            "control": 4 * b"\x14",
+        },
+    ]
     section = Section(4, 32, ".test", "")
     section.data = b"hello world"
     cd_writer.add_section(section)
@@ -451,12 +465,12 @@ def test_coredump_command_no_target(gdb_base_fixture, capsys, settings_coredump_
 
 
 def test_coredump_command_non_arm(gdb_with_inferior_fixure, capsys, settings_coredump_allowed):
-    """Test coredump command shows error when no ARM target"""
+    """Test coredump command shows error when no ARM or XTENSA target"""
     from memfault_gdb import MemfaultCoredump, MEMFAULT_CONFIG
 
     def _gdb_execute(cmd, to_string):
         if cmd.startswith("show arch"):
-            return "The target architecture is set automatically (currently xtensa)"
+            return "The target architecture is set automatically (currently riscv)"
         return ""
 
     gdb_with_inferior_fixure.execute = _gdb_execute
@@ -465,7 +479,7 @@ def test_coredump_command_non_arm(gdb_with_inferior_fixure, capsys, settings_cor
     cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)
 
     stdout = capsys.readouterr().out
-    assert "This command is currently only supported for ARM targets!" in stdout
+    assert "This command is currently only supported for ARM and XTENSA targets!" in stdout
 
 
 def test_coredump_command_with_project_key(
@@ -582,7 +596,9 @@ https://app.memfault.com/organizations/acme-inc/projects/smart-sink/issues?live"
 def test_login_command_simple(gdb_base_fixture, http_expect_request):
     from memfault_gdb import MemfaultLogin, MEMFAULT_CONFIG
 
-    http_expect_request("https://api.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {})
+    http_expect_request(
+        "https://api.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
+    )
 
     login = MemfaultLogin()
     login.invoke("{} {}".format(TEST_EMAIL, TEST_PASSWORD), True)
@@ -591,6 +607,7 @@ def test_login_command_simple(gdb_base_fixture, http_expect_request):
     assert MEMFAULT_CONFIG.password == TEST_PASSWORD
     assert MEMFAULT_CONFIG.organization == None
     assert MEMFAULT_CONFIG.project == None
+    assert MEMFAULT_CONFIG.user_id == 123
 
 
 def test_login_command_with_all_options(gdb_base_fixture, http_expect_request):
@@ -600,7 +617,7 @@ def test_login_command_with_all_options(gdb_base_fixture, http_expect_request):
     test_ingress_uri = "http://dev-ingress.memfault.com"
 
     http_expect_request(
-        "http://dev-api.memfault.com:5000/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {}
+        "http://dev-api.memfault.com:5000/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
     )
 
     login = MemfaultLogin()
@@ -623,7 +640,7 @@ def test_login_command_try(gdb_base_fixture, http_expect_request):
     from memfault_gdb import MemfaultLogin, MEMFAULT_CONFIG
 
     http_expect_request(
-        "https://api.try.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {}
+        "https://api.try.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
     )
 
     login = MemfaultLogin()

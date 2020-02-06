@@ -5,6 +5,7 @@
 
 import os
 import shlex
+import shutil
 
 from invoke import Collection, task
 
@@ -28,10 +29,10 @@ MBED_DEMO_APP_ELF = os.path.join(MBED_DEMO_APP_BUILD_ROOT, "memfault_demo_app.el
 
 @task
 def mbed_clean(ctx):
-    """Clean (and update) demo app that runs on Mbed OS 5"""
+    """Clean demo app that runs on Mbed OS 5"""
     print("Mbed CLI does not have a separate 'clean' action; approximating it...")
-    pat = os.path.join(MBED_DEMO_APP_BUILD_ROOT, "*")
-    ctx.run("rm -rf {}".format(shlex.quote(pat)))
+    if os.path.exists(MBED_DEMO_APP_BUILD_ROOT):
+        shutil.rmtree(MBED_DEMO_APP_BUILD_ROOT)
     print("Clean finished.")
 
 

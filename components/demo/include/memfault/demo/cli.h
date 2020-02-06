@@ -21,6 +21,10 @@ extern "C" {
 //! - 2: crash by unaligned memory store
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]);
 
+//! Command to exercise the MEMFAULT_TRACE_EVENT API, capturing a
+//! Trace Event with the error reason set to "MemfaultDemoCli_Error".
+int memfault_demo_cli_cmd_trace_event_capture(int argc, char *argv[]);
+
 //! Command to get whether a coredump is currently stored and how large it is.
 //! It takes no arguments.
 int memfault_demo_cli_cmd_get_core(int argc, char *argv[]);
