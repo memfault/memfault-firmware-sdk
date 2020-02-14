@@ -2,7 +2,7 @@
 
 - Add support for compressing coredumps as they are sent using Run Length
   Encoding (RLE). More details can be found in
-  [memfault/core/data_source_rle.h](sdk/embedded/components/core/include/memfault/core/data_source_rle.h).
+  [memfault/core/data_source_rle.h](components/core/include/memfault/core/data_source_rle.h).
 - Update **metrics** component to support compilation with the IAR ARM C/C++
   Compiler.
 - Update Mbed OS 5 port to use `memfault_demo_shell` instead `mbed-client-cli`,
