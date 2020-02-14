@@ -38,8 +38,7 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   const char *level_name = prv_level_to_str(level);
 
   char log_buf[MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES];
-  char *write_ptr = &log_buf[0];
-  vsnprintf(write_ptr, sizeof(log_buf) - strlen(log_buf), fmt, args);
+  vsnprintf(log_buf, sizeof(log_buf), fmt, args);
 
   printf("%s [%s] %s\n", s_log_prefix, level_name, log_buf);
   fflush(stdout);

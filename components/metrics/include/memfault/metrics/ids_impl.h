@@ -42,7 +42,7 @@ typedef struct {
 } MemfaultMetricId;
 
 #define _MEMFAULT_METRICS_ID_CREATE(id) \
-  ((MemfaultMetricId) { MEMFAULT_EXPAND_AND_QUOTE(id) })
+  { MEMFAULT_EXPAND_AND_QUOTE(id) }
 
 #define _MEMFAULT_METRICS_ID(id) \
   ((MemfaultMetricId) { ._impl = g_memfault_metrics_id_##id })

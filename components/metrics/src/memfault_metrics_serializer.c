@@ -77,11 +77,10 @@ static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *
   }
 
   // Encode up to "metrics:" section
-  const size_t num_metrics = memfault_metrics_heartbeat_get_num_metrics();
   if (!memfault_cbor_encode_unsigned_integer(encoder, kMemfaultEventKey_EventInfo) ||
       !memfault_cbor_encode_dictionary_begin(encoder, 1) ||
       !memfault_cbor_encode_unsigned_integer(encoder, kMemfaultHeartbeatInfoKey_Metrics) ||
-      !memfault_cbor_encode_dictionary_begin(encoder, num_metrics)) {
+      !memfault_cbor_encode_dictionary_begin(encoder, memfault_metrics_heartbeat_get_num_metrics())) {
     goto cleanup;
   }
 

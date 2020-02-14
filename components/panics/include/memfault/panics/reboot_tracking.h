@@ -96,14 +96,18 @@ int memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl 
 //! @return the worst case amount of space needed to serialize an event
 size_t memfault_reboot_tracking_compute_worst_case_storage_size(void);
 
-//! Every time the device resets due to an Unknown or Error Reason, the crash count is
-//! incremented. The count can be reset at any time by calling "memfault_reboot_tracking_reset_crash_count"
+//! Get the current crash count
 //!
-//! The current crash count can be recovered by calling memfault_reboot_tracking_get_crash_count()
-//! A user of the SDK may (optionally) use this information to determine if the device is crash
-//! looping and if so take recovery action
-void memfault_reboot_tracking_reset_crash_count(void);
+//! Every time the device resets due to a Reason of Unknown or Error, the crash count
+//! is incremented.  A user of the SDK may (optionally) use this information to determine
+//! if the device is crash looping and if so take recovery action.
+//!
+//! @return crash count
 size_t memfault_reboot_tracking_get_crash_count(void);
+
+//! Reset the crash count to 0
+void memfault_reboot_tracking_reset_crash_count(void);
+
 
 #ifdef __cplusplus
 }

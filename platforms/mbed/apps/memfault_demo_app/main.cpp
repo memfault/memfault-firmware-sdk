@@ -19,6 +19,9 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 };
 
 int main(void) {
+  // show a boot message to make it obvious when we reboot
+  MEMFAULT_LOG_INFO("Memfault Mbed OS 5 demo app started...");
+
   // start an led blink thread to make coredumps more interesting
   blinky_init();
 

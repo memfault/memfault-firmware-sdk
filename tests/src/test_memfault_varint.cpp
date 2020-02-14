@@ -83,3 +83,38 @@ TEST(MemfaultVarint, Test_5byteEncoding) {
   LONGS_EQUAL(sizeof(expected_encoding_max), len);
   MEMCMP_EQUAL(expected_encoding_max, s_varint_test_buf, sizeof(expected_encoding_max));
 }
+
+TEST(MemfaultVarint, Test_Si32_Zero) {
+  const uint8_t zero[] = { 0x0 };
+  const size_t len = memfault_encode_varint_si32(0x0, s_varint_test_buf);
+  LONGS_EQUAL(sizeof(zero), len);
+  MEMCMP_EQUAL(zero, s_varint_test_buf, sizeof(zero));
+}
+
+TEST(MemfaultVarint, Test_Si32_MinusOne) {
+  const uint8_t minus_one[] = { 0x1 };
+  const size_t len = memfault_encode_varint_si32(-1, s_varint_test_buf);
+  LONGS_EQUAL(sizeof(minus_one), len);
+  MEMCMP_EQUAL(minus_one, s_varint_test_buf, sizeof(minus_one));
+}
+
+TEST(MemfaultVarint, Test_Si32_One) {
+  const uint8_t one[] = { 0x2 };
+  const size_t len = memfault_encode_varint_si32(1, s_varint_test_buf);
+  LONGS_EQUAL(sizeof(one), len);
+  MEMCMP_EQUAL(one, s_varint_test_buf, sizeof(one));
+}
+
+TEST(MemfaultVarint, Test_Si32_Si32Max) {
+  const uint8_t si32_max[] = { 254, 255, 255, 255, 15 };
+  const size_t len = memfault_encode_varint_si32(2147483647, s_varint_test_buf);
+  LONGS_EQUAL(sizeof(si32_max), len);
+  MEMCMP_EQUAL(si32_max, s_varint_test_buf, sizeof(si32_max));
+}
+
+TEST(MemfaultVarint, Test_Si32_Si32Min) {
+  const uint8_t si32_min[] = { 255, 255, 255, 255, 15 };
+  const size_t len = memfault_encode_varint_si32(-2147483648, s_varint_test_buf);
+  LONGS_EQUAL(sizeof(si32_min), len);
+  MEMCMP_EQUAL(si32_min, s_varint_test_buf, sizeof(si32_min));
+}

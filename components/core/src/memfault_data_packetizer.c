@@ -10,6 +10,7 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
+#include "memfault/core/data_source_rle.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
@@ -33,6 +34,12 @@ static bool prv_data_source_read_stub(uint32_t offset, void *buf, size_t buf_len
 
 static void prv_data_source_mark_event_read_stub(void) { }
 
+MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_data_rle_source = {
+  .has_more_msgs_cb = prv_data_source_has_event_stub,
+  .read_msg_cb = prv_data_source_read_stub,
+  .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
+};
+
 MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_coredump_data_source = {
   .has_more_msgs_cb = prv_data_source_has_event_stub,
   .read_msg_cb = prv_data_source_read_stub,
@@ -45,6 +52,11 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_event_data_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
+MEMFAULT_WEAK
+bool memfault_data_source_rle_encoder_set_active(const sMemfaultDataSourceImpl *active_source) {
+  return false;
+}
+
 // NOTE: These values are used by the Memfault cloud chunks API
 typedef enum {
   kMfltMessageType_None = 0,
@@ -54,23 +66,26 @@ typedef enum {
 
 typedef struct MemfaultDataSource {
   eMfltMessageType type;
+  bool use_rle;
   const sMemfaultDataSourceImpl *impl;
 } sMemfaultDataSource;
 
 static const sMemfaultDataSource s_memfault_data_source[] = {
   {
     .type = kMfltMessageType_Coredump,
+    .use_rle = true,
     .impl = &g_memfault_coredump_data_source,
   },
   {
     .type = kMfltMessageType_Event,
+    .use_rle = false,
     .impl = &g_memfault_event_data_source,
   }
 };
 
 typedef struct {
   size_t total_size;
-  const sMemfaultDataSource *source;
+  sMemfaultDataSource source;
 } sMessageMetadata;
 
 typedef struct {
@@ -99,8 +114,11 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
 
   const sMessageMetadata *msg_metadata = &s_mflt_packetizer_state.msg_metadata;
   if (offset < hdr_size) {
+    const uint8_t rle_enable_mask = 0x80;
+    const uint8_t msg_type = (uint8_t)msg_metadata->source.type;
+
     sMfltPacketizerHdr hdr = {
-      .mflt_msg_type = (uint8_t)msg_metadata->source->type,
+      .mflt_msg_type = msg_metadata->source.use_rle ? msg_type | rle_enable_mask : msg_type,
     };
     uint8_t *hdr_bytes = (uint8_t *)&hdr;
 
@@ -117,32 +135,41 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
     return;
   }
 
-  const bool success = msg_metadata->source->impl->read_msg_cb(read_offset, bufp, buf_len);
+  const bool success = msg_metadata->source.impl->read_msg_cb(read_offset, bufp, buf_len);
   if (!success) {
     // Read failures really should never happen. We have no way of knowing if the issue is
     // transient or not. If we aborted the transaction and the failure was persistent, we could get
     // stuck trying to flush out the same data. Instead, just scrub the region with a pattern and
     // continue on
     MEMFAULT_LOG_ERROR("Read at offset 0x%" PRIx32 " (%d bytes) for source type %d failed", offset,
-                       (int)msg_metadata->source->type, (int)buf_len);
+                       (int)msg_metadata->source.type, (int)buf_len);
     memset(bufp, 0xEF, buf_len);
   }
 }
 
-static const sMemfaultDataSource *prv_get_source_with_data(size_t *total_size) {
+static bool prv_get_source_with_data(size_t *total_size, sMemfaultDataSource *active_source) {
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_memfault_data_source); i++) {
     const sMemfaultDataSource *data_source = &s_memfault_data_source[i];
-    if (data_source->impl->has_more_msgs_cb(total_size)) {
-      return data_source;
+    const bool rle_enabled = data_source->use_rle &&
+        memfault_data_source_rle_encoder_set_active(data_source->impl);
+
+    *active_source = (sMemfaultDataSource) {
+      .type = data_source->type,
+      .use_rle = rle_enabled,
+      .impl = rle_enabled ? &g_memfault_data_rle_source : data_source->impl,
+    };
+
+    if (active_source->impl->has_more_msgs_cb(total_size)) {
+      return true;
     }
   }
-  return NULL;
+  return false;
 }
 
 static bool prv_more_messages_to_send(sMessageMetadata *msg_metadata) {
   size_t total_size;
-  const sMemfaultDataSource *active_source = prv_get_source_with_data(&total_size);
-  if (active_source == NULL) {
+  sMemfaultDataSource active_source;
+  if (!prv_get_source_with_data(&total_size, &active_source)) {
     return NULL;
   }
 
@@ -178,7 +205,7 @@ static bool prv_load_next_message_to_send(bool enable_multi_packet_chunks,
 
 static void prv_mark_message_send_complete_and_cleanup(void) {
   // we've finished sending the data so delete it
-  s_mflt_packetizer_state.msg_metadata.source->impl->mark_msg_read_cb();
+  s_mflt_packetizer_state.msg_metadata.source.impl->mark_msg_read_cb();
 
   prv_reset_packetizer_state();
 }

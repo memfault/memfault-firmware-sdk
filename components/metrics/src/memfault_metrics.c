@@ -74,8 +74,7 @@ typedef struct MemfaultMetricValueInfo {
 } sMemfaultMetricValueInfo;
 
 // Generate heartbeat values table (RAM):
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  (union MemfaultMetricValue){ 0 },
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) { 0 },
 static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
@@ -84,7 +83,7 @@ static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
 
 #define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_name)
 #define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_name)
-#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(_name) (sMemfaultMetricValueMetadata) { 0 },
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(_name) { 0 },
 #define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) \
   MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
 static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[] = {
@@ -95,8 +94,8 @@ static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[]
   #undef MEMFAULT_METRICS_KEY_DEFINE
 };
 // Work-around for unused-macros error in case not all types are used in the .def file:
-MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned()
-MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed()
+MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_)
+MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_)
 
 static struct {
   const sMemfaultEventStorageImpl *storage_impl;

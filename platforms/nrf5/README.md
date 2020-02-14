@@ -4,7 +4,8 @@ This folder contains support files to make it easy to integrate Memfault into a
 nRF5 SDK based project.
 
 The demo app is tested on the [nRF52840 DK] -- PCA10056 evaluation board. The
-instructions below assume this development board is being used.
+instructions below assume this development board is being used and that the
+[nRF Command Line Tools] have been installed.
 
 The demo app is tested with v15.2.0 of the [nRF52 SDK], but should integrate in
 a similar manner with other versions as well.
@@ -319,3 +320,5 @@ void main(void) {
 [nrf52 sdk]: https://developer.nordicsemi.com/nRF5_SDK/
 [http api to upload symbols files]:
   https://docs.memfault.com/?version=latest#ca2a72d2-69ef-4703-98bf-60621738091a
+[nrf command line tools]:
+  https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools

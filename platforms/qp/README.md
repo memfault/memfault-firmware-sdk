@@ -45,7 +45,11 @@ paste it into
 
 ### Building the App
 
-```
+After performing the steps above, run `make` from the demo app directory:
+
+```bash
+$ cd $MEMFAULT_SDK_ROOT/platforms/qp/apps/memfault_demo_app
+
 $ EMBEDDED_MFLT_SDK_ROOT=$MEMFAULT_SDK_ROOT QPC_DIR=qpc make
 ```
 
@@ -78,7 +82,7 @@ The USART2 peripheral of the board is used as a console/shell.
 
 Follow the instructions in the
 [user manual](https://www.st.com/content/ccc/resource/technical/document/user_manual/70/fe/4a/3f/e7/e1/4f/7d/DM00039084.pdf/files/DM00039084.pdf/jcr:content/translations/en.DM00039084.pdf)
-(see section 6.1.3 "ST-LINK/V2-A VCP configuration") to connect the RX/TX to the
+(see section 6.1.3 "ST-LINK/V2-A VCP configuration") to connect the RX/TX to
 either the on-board or an external USB-to-serial adapter.
 
 Then use any serial terminal program to connect to it:
@@ -106,7 +110,7 @@ Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`:
 
 ```
-$ mflt crash 1
+mflt> mflt crash 1
 Memfault QP demo app started...
 
 mflt>
@@ -139,7 +143,7 @@ symbols (debug information) amongst other things.
 
 The STM32F407 board does not have the capability to connect to the internet
 directly. Therefore, for debug purposes, the messages to push to the Memfault
-Cloud can also be dumped from the CLI using the `print_chunk` command:
+cloud can also be dumped from the CLI using the `print_chunk` command:
 
 ```
 mflt> print_chunk

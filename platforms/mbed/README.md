@@ -90,8 +90,8 @@ target, you can open a serial console interact with it:
 $ invoke mbed.console
 ```
 
-Press enter and you should see the `/>` prompt. Type `help` and press enter to
-see a list of commands.
+Press enter and you should see the `mflt>` prompt. Type `help` and press enter
+to see a list of commands.
 
 The demo app can cause the target to crash in several ways. Upon crashing, the
 `memfault/panics` component of the Memfault SDK will capture a coredump and save
@@ -107,13 +107,12 @@ As a sanity check, let's request the device info from the debug console, enter
 `get_device_info` and press enter:
 
 ```
-/> get_device_info
-
+mflt> get_device_info
 MFLT: [INFO] S/N: 1E00230001234567890ABCDE
 MFLT: [INFO] SW type: mbed-main
 MFLT: [INFO] SW version: 1.0.0
 MFLT: [INFO] HW version: mbed-proto
-/>
+mflt>
 ```
 
 In this reference implementation, the hardware version is hard-coded to
@@ -127,7 +126,7 @@ Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`.
 
 ```
-/> crash 1
+mflt> crash 1
 ... etc ...
 ```
 
@@ -139,9 +138,9 @@ When the system comes back up, you'll see the startup banner. You can then use
 the `get_core` command to check if a coredump was stored:
 
 ```
-Memfault Demo for Mbed OS 5
+MFLT: [INFO] Memfault Mbed OS 5 demo app started...
 
-/> get_core
+mflt> get_core
 MFLT: [INFO] Has coredump with size: 21632
 ```
 
@@ -172,7 +171,7 @@ For the purposes of this demo, we will just grab the core information from the
 CLI. Enter the `print_chunk` command:
 
 ```
-/> print_chunk
+mflt> print_chunk
 
 echo \
 434f5245010000004881030000000000000000004400000001000000025b002000000000feca\

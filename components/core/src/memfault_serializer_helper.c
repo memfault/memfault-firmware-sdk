@@ -82,7 +82,9 @@ bool memfault_serializer_helper_encode_trace_event(sMemfaultCborEncoder *e, cons
     return false;
   }
 
-  memfault_serializer_helper_encode_version_info(e);
+  if (!memfault_serializer_helper_encode_version_info(e)) {
+    return false;
+  }
 
   const size_t num_entries = 1 /* reason */ +
                              ((info->pc != 0) ? 1 : 0) +

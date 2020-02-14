@@ -16,3 +16,14 @@ size_t memfault_encode_varint_u32(uint32_t value, void *buf) {
   *res++ = value & 0xff;
   return (size_t)(res - (uint8_t *)buf);
 }
+
+size_t memfault_encode_varint_si32(int32_t value, void *buf) {
+  // A representation that maps negative numbers onto odd positive numbers and
+  // postive numbers onto positive even numbers. Some example conversions follow:
+  //  0 -> 0
+  // -1 -> 1
+  //  1 -> 2
+  // -2 -> 3
+  uint32_t u32_repr = (uint32_t)(value << 1) ^ (uint32_t)(value >> 31);
+  return memfault_encode_varint_u32(u32_repr, buf);
+}

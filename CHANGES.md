@@ -1,3 +1,15 @@
+### Changes between Memfault SDK 0.2.0 and SDK 0.2.1 - Feb 14, 2020
+
+- Add support for compressing coredumps as they are sent using Run Length
+  Encoding (RLE). More details can be found in
+  [memfault/core/data_source_rle.h](sdk/embedded/components/core/include/memfault/core/data_source_rle.h).
+- Update **metrics** component to support compilation with the IAR ARM C/C++
+  Compiler.
+- Update Mbed OS 5 port to use `memfault_demo_shell` instead `mbed-client-cli`,
+  since `mbed-client-cli` is not part of the main Mbed OS 5 distribution.
+- Update nrf52 example application to only collect the active parts of the stack
+  to reduce the overall size of the example coredump.
+
 ### Changes between Memfault SDK 0.2.0 and SDK 0.1.0 - Feb 5, 2020
 
 - Add a new API ("Trace Event") for tracking errors. This allows for tracing

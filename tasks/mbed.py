@@ -102,7 +102,7 @@ def mbed_flash(ctx, target=MBED_TARGET):
 )
 def mbed_console(ctx, baudrate=MBED_BAUD_RATE, target=MBED_TARGET):
     """Start an Mbed serial console to interact with the demo app"""
-    cmd = "mbed sterm --baudrate {:d} --target {}".format(baudrate, shlex.quote(target))
+    cmd = "mbed sterm --baudrate {:d} --echo off --target {}".format(baudrate, shlex.quote(target))
     with ctx.cd(MBED_DEMO_APP_ROOT):
         ctx.run(cmd, pty=True, watchers=[PrintChunkWatcher(ctx)])
 

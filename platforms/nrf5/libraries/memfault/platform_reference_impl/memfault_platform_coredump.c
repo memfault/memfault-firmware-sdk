@@ -50,8 +50,9 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredum
   static sMfltCoredumpRegion s_coredump_regions[1];
 
 #if (MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY == 1)
+  const void *stack_start_addr = crash_info->stack_address;
   // Capture only the interrupt stack. Use only if there is not enough storage to capture all of RAM.
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(STACK_BASE, (uint32_t)STACK_TOP - (uint32_t)STACK_BASE);
+  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(stack_start_addr, (uint32_t)STACK_TOP - (uint32_t)stack_start_addr);
 #else
   // Capture all of RAM. Recommended: it enables broader post-mortem analyses, but has larger storage requirements.
   s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&__MfltCoredumpRamStart,

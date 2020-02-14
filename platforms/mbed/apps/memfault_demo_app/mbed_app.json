@@ -10,8 +10,6 @@
             "platform.thread-stats-enabled": true,
             "platform.sys-stats-enabled": true,
 
-            "cmdline.boot_message": "\"Memfault Demo for Mbed OS 5\\n\"",
-
             "memfault.project_api_key": "\"<YOUR API KEY HERE>\""
         }
     }
