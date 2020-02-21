@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.2.1 and SDK 0.2.2 - Feb 20, 2020
+
+- Add support for calling `MEMFAULT_TRACE_EVENT()` from interrupts. Note: If you
+  are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), this change
+  requires that you add
+  `$(MEMFAULT_SDK_ROOT)/components/core/src/arch_arm_cortex_m.c` to your
+  project.
+- Misc documentation improvements.
+
 ### Changes between Memfault SDK 0.2.0 and SDK 0.2.1 - Feb 14, 2020
 
 - Add support for compressing coredumps as they are sent using Run Length

@@ -67,7 +67,15 @@ do {                                                                    \
 //! @see MEMFAULT_TRACE_EVENT
 //! @see MEMFAULT_TRACE_REASON_DEFINE
 //! @note Ensure memfault_trace_event_boot() has been called before using this API!
+//! @note This function is also safe to call from an ISR.
 int memfault_trace_event_capture(void *pc_addr, void *return_addr, eMfltTraceReasonUser reason);
+
+//! Flushes an ISR trace event capture out to event storage
+//!
+//! @note If a user is logging events from ISRs, it's recommended this API is called
+//! prior to draining data from the packetizer.
+//! @note This API is automatically called when a new trace event is recorded.
+int memfault_trace_event_try_flush_isr_event(void);
 
 //! Compute the worst case number of bytes required to serialize a Trace Event.
 //!

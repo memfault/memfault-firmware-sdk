@@ -36,10 +36,10 @@ $ patch src/qf_pkg.h $MEMFAULT_SDK_ROOT/ports/qp/qf_pkg.h.patch
 
 ### Memfault API key
 
-An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
-project you want to use and select 'Settings'. Copy the 'Project API Key' and
-paste it into
+An API key will need to be baked into the [demo app](https://mflt.io/demo-cli)
+to enable it to communicate with Memfault's web services. Go to
+https://app.memfault.com/, navigate to the project you want to use and select
+'Settings'. Copy the 'Project API Key' and paste it into
 `$MEMFAULT_SDK_ROOT/platforms/qp/apps/memfault_demo_app/src/main.c`, replacing
 `<YOUR API KEY HERE>` with your API key.
 
@@ -103,8 +103,9 @@ help: Lists all commands
 
 ### Causing a crash
 
-Detach the debugger now and hard-reset the board. Otherwise, if the debugger is still attached while crashing, the demo
-application will pause at a breakpoint instruction.
+Detach the debugger now and hard-reset the board. Otherwise, if the debugger is
+still attached while crashing, the demo application will pause at a breakpoint
+instruction.
 
 Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`:

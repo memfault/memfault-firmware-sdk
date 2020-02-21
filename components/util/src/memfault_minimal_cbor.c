@@ -7,7 +7,6 @@
 
 #include "memfault/util/cbor.h"
 
-#include <stdio.h>
 #include <string.h>
 
 // https://tools.ietf.org/html/rfc7049#section-2.1

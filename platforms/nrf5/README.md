@@ -4,8 +4,8 @@ This folder contains support files to make it easy to integrate Memfault into a
 nRF5 SDK based project.
 
 The demo app is tested on the [nRF52840 DK] -- PCA10056 evaluation board. The
-instructions below assume this development board is being used and that the
-[nRF Command Line Tools] have been installed.
+instructions below assume this development board is being used and that the [nRF
+Command Line Tools] have been installed.
 
 The demo app is tested with v15.2.0 of the [nRF52 SDK], but should integrate in
 a similar manner with other versions as well.
@@ -51,11 +51,12 @@ Example fix:
 
 ### Update Demo App with your Memfault API
 
-An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
-project you want to use and select 'Settings'. Copy the 'Project API Key' and
-paste it into `apps/memfault_demo_app/src/cli.c`, replacing
-`<YOUR API KEY HERE>` with your API key.
+An API key will need to be baked into the [demo app](https://mflt.io/demo-cli)
+to enable it to communicate with Memfault's web services. Go to
+https://app.memfault.com/, navigate to the project you want to use and select
+'Settings'. Copy the 'Project API Key' and paste it into
+`apps/memfault_demo_app/src/cli.c`, replacing `<YOUR API KEY HERE>` with your
+API key.
 
 ### Building the demo app
 

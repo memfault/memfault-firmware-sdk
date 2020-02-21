@@ -48,10 +48,10 @@ $ ln -s  ../../../../../.. memfault-firmware-sdk
 
 ### Memfault API key
 
-An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
-project you want to use and select 'Settings'. Copy the 'Project API Key' and
-paste it into
+An API key will need to be baked into the [demo app](https://mflt.io/demo-cli)
+to enable it to communicate with Memfault's web services. Go to
+https://app.memfault.com/, navigate to the project you want to use and select
+'Settings'. Copy the 'Project API Key' and paste it into
 `$MEMFAULT_SDK/platforms/zephyr/apps/memfault_demo_app/src/main.c`, replacing
 `<YOUR API KEY HERE>` with your API key.
 

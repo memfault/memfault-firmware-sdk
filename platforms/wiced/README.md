@@ -60,7 +60,7 @@ with error "multiple definition of `HardFaultException'".
 ### Building the demo app
 
 The SDK should now be able to automatically find the Memfault components and
-build the demo app. Now you can build the demo app:
+build the [demo app](https://mflt.io/demo-cli). Now you can build the demo app:
 
 using pyinvoke:
 

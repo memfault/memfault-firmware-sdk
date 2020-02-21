@@ -17,9 +17,9 @@ extern "C" {
 
 //! Locking APIs used within the Memfault SDK
 //!
-//! The APIs can (optionally) be overriden by the application to enable locking around
-//! accesses to Memfault APIs. This is required if calls are made to Memfault APIs from
-//! multiple tasks
+//! The APIs can (optionally) be overriden by the application to enable locking around accesses to
+//! Memfault APIs. This is required if calls are made to Memfault APIs from multiple tasks _and_
+//! tasks do _not_ run to completion (can be interrupted by other tasks).
 //!
 //! @note It's expected that the mutexes implemented are recursive mutexes.
 void memfault_lock(void);

@@ -18,13 +18,18 @@ typedef struct FakeEventStorageState {
   size_t total_size;
   size_t space_available;
   size_t curr_offset;
+  size_t start_offset;
 } sFakeEventStorageState;
 
 static sFakeEventStorageState s_event_storage_state;
 
 static size_t prv_begin_write(void) {
   mock().actualCall(__func__);
-  memset(s_event_storage_state.buf, 0x0, s_event_storage_state.total_size);
+  s_event_storage_state.start_offset = s_event_storage_state.curr_offset;
+  uint8_t *startp = &s_event_storage_state.buf[s_event_storage_state.curr_offset];
+  const size_t total_size = s_event_storage_state.total_size - s_event_storage_state.curr_offset;
+
+  memset(startp, 0x0, total_size);
   return s_event_storage_state.space_available;
 }
 
@@ -40,6 +45,9 @@ static bool prv_append_data(const void *bytes, size_t num_bytes) {
 }
 
 static void prv_finish_write(bool rollback) {
+  if (rollback) {
+    s_event_storage_state.curr_offset = s_event_storage_state.start_offset;
+  }
   mock().actualCall(__func__).withParameter("rollback", rollback);
 }
 

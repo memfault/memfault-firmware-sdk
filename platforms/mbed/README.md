@@ -63,8 +63,8 @@ replace the text `<YOUR API KEY HERE>` with your API key.
 
 ### Building and flashing the demo app
 
-You should now be able to compile the demo app with the Memfault components
-included and run it!
+You should now be able to compile the [demo app](https://mflt.io/demo-cli) with
+the Memfault components included and run it!
 
 Connect the target, then run this command to build and flash:
 

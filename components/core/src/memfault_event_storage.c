@@ -48,21 +48,15 @@ static sHeartbeatStorageWriteState s_event_storage_write_state;
 static sHeartbeatStorageReadState s_event_storage_read_state;
 
 static bool prv_has_event(size_t *total_size) {
-  const size_t active_event_read_size = memfault_circular_buffer_get_read_size(&s_event_storage);
-  if (active_event_read_size < sizeof(sHeartbeatStorageHeader)) {
-    // the size should be 0 or we should have an event
-    *total_size = 0;
-    return false;
-  }
-
   sHeartbeatStorageHeader hdr = { 0 };
+  bool success;
   memfault_lock();
   {
-    memfault_circular_buffer_read(&s_event_storage, 0, &hdr, sizeof(hdr));
+    success = memfault_circular_buffer_read(&s_event_storage, 0, &hdr, sizeof(hdr));
   }
   memfault_unlock();
 
-  if (hdr.total_size == MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS) {
+  if (!success || hdr.total_size == MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS) {
     *total_size = 0;
     return false;
   }
