@@ -17,25 +17,60 @@ extern "C" {
 #endif
 
 #ifdef __arm__
-//! Hard Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-MEMFAULT_NAKED_FUNC void HardFault_Handler(void);
 
-//! Memory Management handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void);
-
-//! Bus Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-MEMFAULT_NAKED_FUNC void BusFault_Handler(void);
-
-//! Usage Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-MEMFAULT_NAKED_FUNC void UsageFault_Handler(void);
+// By default, exception handlers use CMSIS naming conventions.
+// However, if needed, each handler can be renamed using the following
+// preprocessor defines:
 
 //! Non-Maskable Interrupt handler for ARM processors. The handler will capture fault
 //! information and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-MEMFAULT_NAKED_FUNC void NMI_Handler(void);
+#ifndef MEMFAULT_EXC_HANDLER_NMI
+#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
+#endif
+
+//! Hard Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+#ifndef MEMFAULT_EXC_HANDLER_HARD_FAULT
+#  define MEMFAULT_EXC_HANDLER_HARD_FAULT HardFault_Handler
+#endif
+
+//! Memory Management handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+#ifndef MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT
+#  define MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT MemoryManagement_Handler
+#endif
+
+//! Bus Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+#ifndef MEMFAULT_EXC_HANDLER_BUS_FAULT
+#  define MEMFAULT_EXC_HANDLER_BUS_FAULT BusFault_Handler
+#endif
+
+//! Usage Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+#ifndef MEMFAULT_EXC_HANDLER_USAGE_FAULT
+#  define MEMFAULT_EXC_HANDLER_USAGE_FAULT UsageFault_Handler
+#endif
+
+//! (Optional) interrupt handler which can be installed for a watchdog
+//!
+//! If a Watchdog Peripheral supports an early wakeup interrupt or a timer peripheral
+//! has been configured as a "software" watchdog, this function should be used as
+//! the interrupt handler.
+//!
+//! For more ideas about configuring watchdogs in general check out:
+//!   https://mflt.io/root-cause-watchdogs
+#ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
+#  define MEMFAULT_EXC_HANDLER_WATCHDOG MemfaultWatchdog_Handler
+#endif
+
+//! Function prototypes for fault handlers
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void);
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void);
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void);
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void);
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void);
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
 #endif
 
 //! Runs the Memfault assert handler.

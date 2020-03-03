@@ -128,3 +128,8 @@ bool memfault_cbor_encode_dictionary_begin(
     sMemfaultCborEncoder *encoder, size_t num_elements) {
   return prv_encode_unsigned_integer(encoder, kCborMajorType_Map, num_elements);
 }
+
+bool memfault_cbor_encode_array_begin(
+    sMemfaultCborEncoder *encoder, size_t num_elements) {
+  return prv_encode_unsigned_integer(encoder, kCborMajorType_Array, num_elements);
+}

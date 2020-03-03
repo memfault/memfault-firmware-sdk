@@ -32,12 +32,6 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
   sMemfaultSerializerState *state = (sMemfaultSerializerState *)ctx;
   sMemfaultCborEncoder *encoder = &state->encoder;
 
-  // encode the key
-  state->encode_success = memfault_cbor_encode_string(encoder, metric_info->key._impl);
-  if (!state->encode_success) {
-    return false;
-  }
-
   // encode the value
   switch (metric_info->type) {
     case kMemfaultMetricType_Timer:
@@ -80,10 +74,9 @@ static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *
   if (!memfault_cbor_encode_unsigned_integer(encoder, kMemfaultEventKey_EventInfo) ||
       !memfault_cbor_encode_dictionary_begin(encoder, 1) ||
       !memfault_cbor_encode_unsigned_integer(encoder, kMemfaultHeartbeatInfoKey_Metrics) ||
-      !memfault_cbor_encode_dictionary_begin(encoder, memfault_metrics_heartbeat_get_num_metrics())) {
+      !memfault_cbor_encode_array_begin(encoder, memfault_metrics_heartbeat_get_num_metrics())) {
     goto cleanup;
   }
-
 
   memfault_metrics_heartbeat_iterate(prv_metric_heartbeat_writer, state);
   success = state->encode_success;

@@ -67,6 +67,15 @@ size_t memfault_cbor_encoder_deinit(sMemfaultCborEncoder *encoder);
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_dictionary_begin(sMemfaultCborEncoder *encoder, size_t num_elements);
 
+
+//! Called to begin the encoding of an array (also referred to as a list, sequence, or tuple)
+//!
+//! @param encoder The encoder context to use
+//! @param num_elements The number of data items that will be in the array
+//!
+//! @return true on success, false otherwise
+bool memfault_cbor_encode_array_begin(sMemfaultCborEncoder *encoder, size_t num_elements);
+
 //! Called to encode an unsigned 32-bit integer data item
 //!
 //! @param encoder The encoder context to use

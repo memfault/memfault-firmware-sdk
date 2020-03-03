@@ -25,9 +25,11 @@ typedef enum MfltResetReason {
   kMfltRebootReason_UnknownError = 0x8000,
   kMfltRebootReason_Assert = 0x8001,
   kMfltRebootReason_Watchdog = 0x8002,
-  kMfltRebootReason_UsageFault = 0x8002,
+
+  // Arm Faults
   kMfltRebootReason_BusFault = 0x9100,
   kMfltRebootReason_MemFault = 0x9200,
+  kMfltRebootReason_UsageFault = 0x9300,
   kMfltRebootReason_HardFault = 0x9400,
 } eMfltResetReason;
 

@@ -9,12 +9,23 @@ Ship Firmware with Confidence.
 
 The Memfault SDK can be integrated with _any_ ARM Cortex-M based MCU.
 
-If you'd like to see the type of data which can be collected before doing any
-integration, check out https://try.memfault.com
+If you'd like to see the type of data which can be collected before writing
+_any_ code, check out https://try.memfault.com
 
-The easiest way to get started integrating is by using a development board for
-which the Memfault SDK already has a reference integration. At the moment,
-examples are available for:
+## Quick Start Guides
+
+We have Cortex-M step-by-step integration guides available for the following
+compilers:
+
+- [GNU GCC Guide](https://mflt.io/gcc-tutorial)
+- [ARM MDK Guide](https://mflt.io/mdk-tutorial)
+- [IAR Guide](https://mflt.io/iar-tutorial)
+
+## Example Applications
+
+We also have example integrations available for a number of development boards
+which can be used as a reference while working on your integration or to explore
+the Memfault SDK:
 
 - Arm Mbed OS 5 / STMicroelectronics STM32F4 series (STM32F429I-DISC1)
 - nRF5 SDK / Nordic nRF52840 (PCA10056)

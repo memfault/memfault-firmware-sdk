@@ -1,3 +1,16 @@
+### Changes between Memfault SDK 0.2.3 and SDK 0.2.2 - March 3, 2020
+
+- If a [software watchdog](https://mflt.io/root-cause-watchdogs) has been
+  implemented on a Cortex-M device, `MemfaultWatchdog_Handler` can now be
+  registered as the Exception Handler to automatically collect a coredump.
+- For heartbeat metrics, instead of serializing the name of each metric, we now
+  recover it from the debug information in the symbol file in the Memfault
+  cloud. For a typical heartbeat this reduces the serialization size by more
+  than 50% and results in a smaller footprint than other structured
+  serialization alternatives such as Protobuf.
+- Remove usage of `__has_include` macro for IAR compiler since not all versions
+  fully support it.
+
 ### Changes between Memfault SDK 0.2.1 and SDK 0.2.2 - Feb 20, 2020
 
 - Add support for calling `MEMFAULT_TRACE_EVENT()` from interrupts. Note: If you

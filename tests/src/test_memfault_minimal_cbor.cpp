@@ -83,6 +83,60 @@ TEST(MemfaultMinimalCbor, Test_EncodeUnsignedInt) {
                                  sizeof(expected_enc_uint32_max));
 }
 
+static void prv_run_array_encoder_check(
+    const uint32_t *values, size_t num_values, const uint8_t *expected_seq, size_t expected_seq_len) {
+
+  sMemfaultCborEncoder encoder;
+  uint8_t result[expected_seq_len];
+  memset(result, 0x0, sizeof(result));
+
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, sizeof(result));
+
+  bool success = memfault_cbor_encode_array_begin(&encoder, num_values);
+  CHECK(success);
+
+  for (size_t i = 0; i < num_values; i++) {
+    success = memfault_cbor_encode_unsigned_integer(&encoder, values[i]);
+    CHECK(success);
+  }
+
+  const size_t encoded_length = memfault_cbor_encoder_deinit(&encoder);
+  LONGS_EQUAL(expected_seq_len, encoded_length);
+
+  MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
+}
+
+TEST(MemfaultMinimalCbor, Test_EncodeArray) {
+  // RFC Appendix A. Examples
+
+  // []
+  const uint8_t empty_array_expected_encode[] = { 0x80 };
+  prv_run_array_encoder_check(NULL, 0, empty_array_expected_encode,
+                              sizeof(empty_array_expected_encode));
+
+  // [ 1, 2, 3 ]
+  const uint32_t values123[] = { 0x1, 0x2, 0x3 };
+  const uint8_t three_num_array_expected_encode[] = { 0x83, 0x01, 0x02, 0x03 };
+  prv_run_array_encoder_check(values123, MEMFAULT_ARRAY_SIZE(values123),
+                              three_num_array_expected_encode,
+                              sizeof(three_num_array_expected_encode));
+
+  // [ 1, 2, 3 .. 25 ]
+  const uint32_t longer_array[] = {
+    1,  2,  3,  4,  5,  6,  7,  8,  9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18,
+    19, 20, 21, 22, 23, 24, 25
+  };
+  const uint8_t longer_array_expected_encode[] = {
+      0x98, 0x19, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+      0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
+      0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x18, 0x18, 0x19
+  };
+  prv_run_array_encoder_check(longer_array, MEMFAULT_ARRAY_SIZE(longer_array),
+                              longer_array_expected_encode,
+                              sizeof(longer_array_expected_encode));
+}
+
 static void prv_run_signed_integer_encoder_check(
     int32_t value, const uint8_t *expected_seq, size_t expected_seq_len) {
 

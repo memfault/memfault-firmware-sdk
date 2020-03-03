@@ -49,7 +49,8 @@ extern "C" {
 //! For compilers which support the __has_include macro display a more friendly error message
 //! when the user defined header is not found on the include path
 #if defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-# if !defined(__CC_ARM) // ARMCC defines __has_include but it doesn't work as expected
+//! NB: ARMCC and IAR define __has_include but they don't work as expected
+# if !defined(__CC_ARM) && !defined(__ICCARM__)
 #  if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
 #    pragma message("ERROR: " MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_TRACE_REASON_USER_DEFS_FILE) " must be in header search path")
 #    error "See trace_reason_user.h for more details"

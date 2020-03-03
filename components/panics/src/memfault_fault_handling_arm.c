@@ -152,29 +152,6 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
   MEMFAULT_UNREACHABLE;
 }
 
-// By default, exception handlers use CMSIS naming conventions.
-// However, if needed, each handler can be renamed using the following
-// preprocessor defines:
-
-#ifndef MEMFAULT_EXC_HANDLER_HARD_FAULT
-#  define MEMFAULT_EXC_HANDLER_HARD_FAULT HardFault_Handler
-#endif
-
-#ifndef MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT
-#  define MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT MemoryManagement_Handler
-#endif
-
-#ifndef MEMFAULT_EXC_HANDLER_BUS_FAULT
-#  define MEMFAULT_EXC_HANDLER_BUS_FAULT BusFault_Handler
-#endif
-
-#ifndef MEMFAULT_EXC_HANDLER_USAGE_FAULT
-#  define MEMFAULT_EXC_HANDLER_USAGE_FAULT UsageFault_Handler
-#endif
-
-#ifndef MEMFAULT_EXC_HANDLER_NMI
-#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
-#endif
 
 
 // The fault handling shims below figure out what stack was being used leading up to the exception,
@@ -255,7 +232,7 @@ void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
-  ldr r0, =0x8002 // kMfltRebootReason_UsageFault
+  ldr r0, =0x9300 // kMfltRebootReason_UsageFault
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
@@ -264,6 +241,14 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
   ldr r0, =0x8001 // kMfltRebootReason_Assert
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+  ldr r0, =0x8002 // kMfltRebootReason_Watchdog
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
@@ -337,6 +322,11 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Watchdog);
 }
 
 #elif defined(__ICCARM__)
@@ -415,6 +405,11 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Watchdog);
 }
 
 #else
