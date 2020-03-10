@@ -7,7 +7,7 @@ Ship Firmware with Confidence.
 
 # Getting Started
 
-The Memfault SDK can be integrated with _any_ ARM Cortex-M based MCU.
+The Memfault SDK can be integrated with _any_ ARM Cortex-M or Xtensa ESP32 MCU.
 
 If you'd like to see the type of data which can be collected before writing
 _any_ code, check out https://try.memfault.com
@@ -20,6 +20,10 @@ compilers:
 - [GNU GCC Guide](https://mflt.io/gcc-tutorial)
 - [ARM MDK Guide](https://mflt.io/mdk-tutorial)
 - [IAR Guide](https://mflt.io/iar-tutorial)
+
+We also have a ESP32 step-by-step integration guide available at:
+
+- [ESP32 Guide](https://mflt.io/esp-tutorial)
 
 ## Example Applications
 

@@ -117,6 +117,15 @@ void memfault_platform_coredump_storage_clear(void);
 //! @return true if the read was successful, false otherwise
 extern bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len);
 
+//! Called prior to invoking any platform_storage_[read/write/erase] calls upon crash
+//!
+//! @note a weak no-op version of this API is defined in memfault_coredump.c because many platforms will
+//! not need to implement this at all. Some potential use cases:
+//!   - re-configured platform storage driver to be poll instead of interrupt based
+//!   - give watchdog one last feed prior to storage code getting called it
+//! @return true if to continue saving the coredump, false to abort
+extern bool memfault_platform_coredump_save_begin(void);
+
 #ifdef __cplusplus
 }
 #endif

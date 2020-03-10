@@ -7,7 +7,7 @@ import os
 
 from invoke import Collection, task
 
-from . import mbed, nrf, wiced, zephyr
+from . import esp32, mbed, nrf, wiced, zephyr
 from .macos_ftdi import is_macos
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,8 +38,8 @@ ns = Collection()
 ns.add_collection(mbed)
 ns.add_collection(nrf)
 ns.add_collection(wiced)
+ns.add_collection(esp32)
 ns.add_task(fw_sdk_unit_test, name="test")
-# When adding esp32 here, remove it from /tasks/sdk.py
 
 
 @task(
@@ -50,6 +50,8 @@ ns.add_task(fw_sdk_unit_test, name="test")
         nrf.nrf_build,
         wiced.wiced_clean,
         wiced.wiced_build,
+        esp32.esp32_app_clean,
+        esp32.esp32_app_build,
     ]
 )
 def build_all_demos(ctx):

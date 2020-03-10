@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.2.4 and SDK 0.2.3 - March 10, 2020
+
+- Add support for ESP32 (Tensilica Xtensa LX6 MCU) to the **panics** component.
+  - A step-by-step integration guide can be found
+    [here](https://mflt.io/esp-tutorial).
+  - A drop-in port for an existing v3.x or v4.x based ESP-IDF project can be
+    found at [ports/esp_idf](ports/esp_idf).
+  - An example application exercising the memfault-firmware-sdk can be found
+    [here](platforms/esp32/README.md).
+
 ### Changes between Memfault SDK 0.2.3 and SDK 0.2.2 - March 3, 2020
 
 - If a [software watchdog](https://mflt.io/root-cause-watchdogs) has been

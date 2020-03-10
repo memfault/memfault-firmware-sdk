@@ -282,6 +282,10 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   }
 
   if (!compute_size_only) {
+    if (!memfault_platform_coredump_save_begin()) {
+      return false;
+    }
+
     // If we are saving a new coredump but one is already stored, don't overwrite it. This way an
     // the first issue which started the crash loop can be determined
     MfltCoredumpReadCb coredump_read_cb = memfault_platform_coredump_storage_read;
@@ -342,6 +346,11 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
     *total_size = curr_offset;
   }
   return success;
+}
+
+MEMFAULT_WEAK
+bool memfault_platform_coredump_save_begin(void) {
+  return true;
 }
 
 size_t memfault_coredump_get_save_size(const sMemfaultCoredumpSaveInfo *save_info) {

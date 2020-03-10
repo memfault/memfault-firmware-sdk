@@ -256,6 +256,9 @@ class XtensaCoredumpArch(CoredumpArch):
         # The order in which we collect XTENSA registers in a crash
         # fmt: off
         return (
+            # We use the first word to convey what registers are collected in the coredump
+            "collection_type",
+            # Actual registers
             "pc", "ps", "ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7", "ar8", "ar9",
             "ar10", "ar11", "ar12", "ar13", "ar14", "ar15", "ar16", "ar17", "ar18", "ar19", "ar20",
             "ar21", "ar22", "ar23", "ar24", "ar25", "ar26", "ar27", "ar28", "ar29", "ar30", "ar31",
@@ -329,6 +332,13 @@ class XtensaCoredumpArch(CoredumpArch):
 
         register_list = {}
         for register_name in self.register_collection_list:
+            # A "special" value we use to convey what ESP32 registers were collected
+            if register_name == "collection_type":
+                # A value of 0 means we collected the full set of windows. When a debugger is
+                # active, some register windows may not have been spilled to the stack so we need
+                # all the windows.
+                register_list[register_name] = bytearray.fromhex("00000000")
+                continue
             idx = xtensa_gdb_idx_regs.index(register_name)
             register_list[register_name] = vals[idx]
 
@@ -1316,13 +1326,13 @@ class MemfaultLogin(MemfaultGdbCommand):
         analytics_props["ingress_uri"] = ingress_uri
 
         if status >= 200 and status < 300:
-            MEMFAULT_CONFIG.api_uri = api_uri
-            MEMFAULT_CONFIG.email = parsed_args.email
-            MEMFAULT_CONFIG.ingress_uri = ingress_uri
-            MEMFAULT_CONFIG.organization = parsed_args.organization
-            MEMFAULT_CONFIG.password = parsed_args.password
-            MEMFAULT_CONFIG.project = parsed_args.project
-            MEMFAULT_CONFIG.user_id = json_body["id"]
+            config.api_uri = MEMFAULT_CONFIG.api_uri = api_uri
+            config.email = MEMFAULT_CONFIG.email = parsed_args.email
+            config.ingress_uri = MEMFAULT_CONFIG.ingress_uri = ingress_uri
+            config.organization = MEMFAULT_CONFIG.organization = parsed_args.organization
+            config.password = MEMFAULT_CONFIG.password = parsed_args.password
+            config.project = MEMFAULT_CONFIG.project = parsed_args.project
+            config.user_id = MEMFAULT_CONFIG.user_id = json_body["id"]
             print("Authenticated successfully!")
         elif status == 404:
             print("Login failed. Make sure you have entered the email and password/key correctly.")

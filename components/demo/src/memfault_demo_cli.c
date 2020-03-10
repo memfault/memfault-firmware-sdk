@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/device_info.h"
@@ -21,6 +22,39 @@
 // Defined in memfault_demo_cli_aux.c
 extern void *g_memfault_unaligned_buffer;
 extern void (*g_bad_func_call)(void);
+
+MEMFAULT_NO_OPT
+void do_some_work_base(char *argv[]) {
+  // An assert that is guaranteed to fail. We perform
+  // the check against argv so that the compiler can't
+  // perform any optimizations
+  MEMFAULT_ASSERT((uint32_t)argv == 0xdeadbeef);
+}
+
+MEMFAULT_NO_OPT
+void do_some_work1(char *argv[]) {
+  do_some_work_base(argv);
+}
+
+MEMFAULT_NO_OPT
+void do_some_work2(char *argv[]) {
+  do_some_work1(argv);
+}
+
+MEMFAULT_NO_OPT
+void do_some_work3(char *argv[]) {
+  do_some_work2(argv);
+}
+
+MEMFAULT_NO_OPT
+void do_some_work4(char *argv[]) {
+  do_some_work3(argv);
+}
+
+MEMFAULT_NO_OPT
+void do_some_work5(char *argv[]) {
+  do_some_work4(argv);
+}
 
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
   int crash_type = 0;
@@ -36,15 +70,22 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
   } else if (crash_type == 2) {
     uint64_t *buf = g_memfault_unaligned_buffer;
     *buf = 0xbadcafe0000;
+  } else if (crash_type == 3) {
+    do_some_work5(argv);
+  } else {
+    // this should only ever be reached if crash_type is invalid
+    MEMFAULT_LOG_ERROR("Usage: \"crash\" or \"crash <n>\" where n is 0..3");
+    return -1;
   }
 
-  // this should only ever be reached if crash_type is invalid
-  MEMFAULT_LOG_ERROR("Usage: \"crash\" or \"crash <n>\" where n is 0..2");
+  // Should be unreachable. If we get here, trigger an assert and record the crash_type which
+  // failed to trigger a crash
+  MEMFAULT_ASSERT_RECORD(crash_type);
   return -1;
 }
 
 int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
-  MEMFAULT_LOG_INFO("Posting coredump...");
+  MEMFAULT_LOG_INFO("Posting Memfault Data...");
   sMfltHttpClient *http_client = memfault_http_client_create();
   if (!http_client) {
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
