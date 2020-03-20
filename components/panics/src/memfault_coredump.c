@@ -215,7 +215,10 @@ static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out,
   }
 
   if (!coredump_read_cb(0, hdr_out, sizeof(*hdr_out))) {
-    return false; // read failure, abort!
+    // NB: This path is sometimes _expected_. For situations where
+    // memfault_platform_coredump_storage_clear() is an asynchronous operation a caller may return
+    // false for from memfault_coredump_read() to prevent any access to the coredump storage area.
+    return false;
   }
 
   if (info_out) {

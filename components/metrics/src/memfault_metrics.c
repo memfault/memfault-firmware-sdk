@@ -108,12 +108,6 @@ static struct {
 MEMFAULT_WEAK
 void memfault_metrics_heartbeat_collect_data(void) { }
 
-MEMFAULT_WEAK
-void memfault_lock(void) { }
-
-MEMFAULT_WEAK
-void memfault_unlock(void) { }
-
 typedef bool (*MemfaultMetricKvIteratorCb)(void *ctx,
                                            const sMemfaultMetricKVPair *kv_pair,
                                            const sMemfaultMetricValueInfo *value_info);

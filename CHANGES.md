@@ -1,3 +1,12 @@
+### Changes between Memfault SDK 0.2.5 and SDK 0.2.4
+
+- Improve the `memfault_platform_coredump_storage_clear()` NRF52 reference
+  implementation for situations where the SoftDevice is enabled and there is a
+  lot of Bluetooth activity. (In this scenario, NRF52 flash operations may need
+  retries or take a while to complete).
+- Fixed compiler error that could arise with the metrics component when using
+  Arm Compiler 5 due to multiply defined weak symbols.
+
 ### Changes between Memfault SDK 0.2.4 and SDK 0.2.3 - March 10, 2020
 
 - Add support for ESP32 (Tensilica Xtensa LX6 MCU) to the **panics** component.
