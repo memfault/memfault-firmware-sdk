@@ -142,7 +142,7 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
     // stuck trying to flush out the same data. Instead, just scrub the region with a pattern and
     // continue on
     MEMFAULT_LOG_ERROR("Read at offset 0x%" PRIx32 " (%d bytes) for source type %d failed", offset,
-                       (int)msg_metadata->source.type, (int)buf_len);
+                       (int)buf_len, (int)msg_metadata->source.type);
     memset(bufp, 0xEF, buf_len);
   }
 }
@@ -170,7 +170,7 @@ static bool prv_more_messages_to_send(sMessageMetadata *msg_metadata) {
   size_t total_size;
   sMemfaultDataSource active_source;
   if (!prv_get_source_with_data(&total_size, &active_source)) {
-    return NULL;
+    return false;
   }
 
   if (msg_metadata != NULL) {

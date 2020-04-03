@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memfault/core/log.h"
+
 static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
   switch (level) {
     case kMemfaultPlatformLogLevel_Debug:
@@ -26,6 +28,9 @@ static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
       return "U";
   }
 }
+
+// stub
+void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) { }
 
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_list args;

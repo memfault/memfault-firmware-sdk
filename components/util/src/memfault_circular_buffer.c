@@ -109,11 +109,11 @@ bool memfault_circular_buffer_consume_from_end(
   return true;
 }
 
-static size_t prv_get_space_available(sMfltCircularBuffer *circular_buf) {
+static size_t prv_get_space_available(const sMfltCircularBuffer *circular_buf) {
   return circular_buf->total_space - circular_buf->read_size;
 }
 
-size_t memfault_circular_buffer_get_write_size(sMfltCircularBuffer *circular_buf) {
+size_t memfault_circular_buffer_get_write_size(const sMfltCircularBuffer *circular_buf) {
   if (circular_buf == NULL) {
     return 0;
   }
@@ -167,7 +167,7 @@ bool memfault_circular_buffer_write_at_offset(
   return prv_write_at_offset_from_end(circular_buf, offset_from_end, data, data_len);
 }
 
-size_t memfault_circular_buffer_get_read_size(sMfltCircularBuffer *circular_buf) {
+size_t memfault_circular_buffer_get_read_size(const sMfltCircularBuffer *circular_buf) {
   if (circular_buf == NULL) {
     return 0;
   }

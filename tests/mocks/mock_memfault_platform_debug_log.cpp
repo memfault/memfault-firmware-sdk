@@ -1,13 +1,21 @@
+//! @file
+//!
+//! Mock implementation of memfault logging subsystem which can be used
+//! when asserting that logs of certain formats are generated from unit tests
+
+#include "memfault/core/platform/debug_log.h"
+
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <stdbool.h>
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <string.h>
+#include "memfault/core/log.h"
 
-  #include "memfault/core/platform/debug_log.h"
-}
+// stub
+void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) { }
 
 #define LOG_BUFFER_SIZE (512)
 

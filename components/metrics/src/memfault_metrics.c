@@ -31,10 +31,6 @@
 #define MEMFAULT_METRICS_STORAGE_TOO_SMALL (-5)
 #define MEMFAULT_METRICS_TIMER_BOOT_FAILED (-6)
 
-#if !defined(MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
-#  define MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE "memfault_metrics_heartbeat_config.def"
-#endif
-
 typedef struct MemfaultMetricKVPair {
   MemfaultMetricId key;
   eMemfaultMetricType type;
@@ -43,7 +39,8 @@ typedef struct MemfaultMetricKVPair {
 // Generate global ID constants (ROM):
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   const char * const g_memfault_metrics_id_##key_name = MEMFAULT_EXPAND_AND_QUOTE(key_name);
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  #include "memfault/metrics/heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
 
 // Generate heartbeat keys table (ROM):
@@ -51,13 +48,13 @@ typedef struct MemfaultMetricKVPair {
   { .key = _MEMFAULT_METRICS_ID_CREATE(key_name), .type = value_type },
 
 static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
+  #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
 };
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_keys) != 0,
-                       "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE);
-
+                       "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined");
 
 #define MEMFAULT_METRICS_TIMER_VAL_MAX 0x80000000
 typedef struct MemfaultMetricValueMetadata {
@@ -76,6 +73,7 @@ typedef struct MemfaultMetricValueInfo {
 // Generate heartbeat values table (RAM):
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) { 0 },
 static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
+  #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
 };
@@ -87,6 +85,7 @@ static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
 #define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) \
   MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
 static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[] = {
+  #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   // allocate at least one entry so we don't have an empty array in the situation
   // where no Timer metrics are defined:
@@ -500,8 +499,9 @@ void memfault_metrics_heartbeat_debug_trigger(void) {
   MEMFAULT_LOG_DEBUG("Heartbeat triggered!");
 }
 
-int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl) {
-  if (storage_impl == NULL) {
+int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
+                          const sMemfaultMetricBootInfo *info) {
+  if (storage_impl == NULL || info == NULL) {
     return MEMFAULT_METRICS_TYPE_BAD_PARAM;
   }
 
@@ -518,5 +518,18 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl) {
       storage_impl, memfault_metrics_heartbeat_compute_worst_case_storage_size, "metrics")) {
     return MEMFAULT_METRICS_STORAGE_TOO_SMALL;
   }
+
+  int rv = memfault_metrics_heartbeat_timer_start(
+      MEMFAULT_METRICS_KEY(MemfaultSdkMetric_IntervalMs));
+  if (rv != 0) {
+    return rv;
+  }
+
+  rv = memfault_metrics_heartbeat_set_unsigned(
+      MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootCount), info->unexpected_reboot_count);
+  if (rv != 0) {
+    return rv;
+  }
+
   return 0;
 }

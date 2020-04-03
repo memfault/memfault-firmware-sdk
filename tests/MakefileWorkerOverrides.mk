@@ -23,6 +23,12 @@ MEMFAULT_EXTRA_INC_PATHS += \
 CPPUTEST_CPPFLAGS += $(MEMFAULT_EXTRA_INC_PATHS) \
   -DMEMFAULT_UNITTEST
 
+# Clang defaults to c++98 but all modern cpp compilers implement most of the features (such as
+# variadic macros) introduced in c99 that were later added as part of the c++11 specification
+# so we pin the unit tests cpp standard to c++11.
+CPPUTEST_CXXFLAGS += \
+  -std=c++11
+
 export SILENCE ?= @
 
 export CPPUTEST_USE_EXTENSIONS=Y
@@ -45,7 +51,9 @@ CLANG_STR = clang
 ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
 COMPILER_SPECIFIC_WARNINGS += \
   -Wno-bad-function-cast \
-  -Wno-c++11-extensions		\
+  -Wno-c++11-extensions \
+  -Wno-c++98-compat \
+  -Wno-c++98-compat-pedantic \
   -Wno-c11-extensions \
   -Wno-c99-extensions \
   -Wno-covered-switch-default \
@@ -53,10 +61,12 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-documentation-unknown-command \
   -Wno-flexible-array-extensions \
   -Wno-gnu-variable-sized-type-not-at-end \
+  -Wno-inconsistent-missing-destructor-override \
   -Wno-keyword-macro \
   -Wno-reserved-id-macro \
   -Wno-shorten-64-to-32 \
-  -Wno-vla-extension
+  -Wno-vla-extension \
+  -Wno-zero-as-null-pointer-constant
 endif
 
 CPPUTEST_WARNINGFLAGS += $(COMPILER_SPECIFIC_WARNINGS)

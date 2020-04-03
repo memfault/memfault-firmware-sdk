@@ -90,7 +90,8 @@ bool memfault_circular_buffer_consume_from_end(sMfltCircularBuffer *circular_buf
 //! @param data The buffer to copy
 //! @param data_len Length of buffer to copy
 //!
-//! @return true if there was enough space and the _entire_ buffer was copied, false otherwise
+//! @return true if there was enough space and the _entire_ buffer was copied, false otherwise.
+//! Note if there is not enough space, _no_ data will be written.
 bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf, const void *data,
                                     size_t data_len);
 
@@ -108,10 +109,10 @@ bool memfault_circular_buffer_write_at_offset(
     sMfltCircularBuffer *circular_buf, size_t offset_from_end, const void *data, size_t data_len);
 
 //! @return Amount of bytes available to read
-size_t memfault_circular_buffer_get_read_size(sMfltCircularBuffer *circular_buf);
+size_t memfault_circular_buffer_get_read_size(const sMfltCircularBuffer *circular_buf);
 
 //! @return Amount of bytes available for writing
-size_t memfault_circular_buffer_get_write_size(sMfltCircularBuffer *circular_buf);
+size_t memfault_circular_buffer_get_write_size(const sMfltCircularBuffer *circular_buf);
 
 #ifdef __cplusplus
 }

@@ -13,7 +13,8 @@
 //! fleet.
 //!
 //! Typically, two types of information are collected:
-//! 1) values taken at the end of the interval (i.e battery life, heap high water mark, stack high water mark)
+//! 1) values taken at the end of the interval (i.e battery life, heap high water mark, stack high
+//! water mark)
 //! 2) changes over the hour (i.e the percent battery drop, the number of bytes sent out over
 //!    bluetooth, the time the mcu was running or in stop mode)
 //!
@@ -22,6 +23,9 @@
 //!
 //! For a step-by-step walk-through about how to integrate the Metrics component into your system,
 //! check out https://mflt.io/2D8TRLX
+//!
+//! For more details of the overall design and how serialization compression works check out:
+//!  https://mflt.io/fw-event-serialization
 
 #include <inttypes.h>
 
@@ -77,11 +81,30 @@ typedef enum MemfaultMetricValueType {
 #define MEMFAULT_METRICS_KEY(key_name) \
   _MEMFAULT_METRICS_ID(key_name)
 
+typedef struct MemfaultMetricsBootInfo {
+  //! The number of times the system has rebooted unexpectedly since reporting the last heartbeat
+  //!
+  //! If you do not already have a system in place to track this, consider using the memfault
+  //! reboot_tracking module (https://mflt.io/2QlOlgH). This info can be collected by
+  //! passing the value returned from memfault_reboot_tracking_get_crash_count().
+  //! When using this API we recommend clearing the crash when the first heartbeat since boot
+  //! is serialized by implementing memfault_metrics_heartbeat_collect_data() and calling
+  //! memfault_reboot_tracking_reset_crash_count().
+  //!
+  //! If any reboot is unexpected, initialization can also reduce to:
+  //!   sMemfaultMetricBootInfo info = { .unexpected_reboot_count = 1 };
+  uint32_t unexpected_reboot_count;
+} sMemfaultMetricBootInfo;
+
 //! Initializes the metric events API.
 //! All heartbeat values will be initialized to 0.
+//! @param storage_impl The storage location to serialize metrics out to
+//! @param boot_info Info added to metrics to facilitate computing aggregate statistics in
+//!  the Memfault cloud
 //! @note Memfault will start collecting metrics once this function returns.
 //! @return 0 on success, else error code
-int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl);
+int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
+                          const sMemfaultMetricBootInfo *boot_info);
 
 //! Set the value of a signed integer metric.
 //! @param key The key of the metric. @see MEMFAULT_METRICS_KEY

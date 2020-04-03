@@ -1,4 +1,41 @@
-### Changes between Memfault SDK 0.2.5 and SDK 0.2.4
+### Changes between Memfault SDK 0.3.0 and SDK 0.2.5 - April 3, 2020
+
+#### :rocket: New Features
+
+- Introduced a lightweight logging module. When used, the logs leading up to a
+  crash will now be decoded and displayed from the Memfault Issue Details Web
+  UI. For instructions about how to use the module in your project, check out
+  [log.h](components/core/include/memfault/core/log.h).
+- The metrics component will now automatically collect the elapsed time and the
+  number of unexpected reboots during a heartbeat interval. The Memfault cloud
+  now uses this information to automatically compute and display the overall
+  uptime of your fleet.
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a [new document](https://mflt.io/fw-event-serialization) walking through
+  the design of Memfault event serialization.
+- Cleaned up `test_memfault_root_cert.cpp` and moved the `base64` implementation
+  within the unit test to the `util` component so it is easier to share the code
+  elsewhere in the future.
+- Added `const` to a few circular_buffer.h API signatures.
+- Misc code comment improvements.
+
+#### :boom: Breaking Changes
+
+- The function signature for `memfault_metrics_boot()` changed as part of this
+  update. If you are already using the `metrics` component, you will need to
+  update the call accordingly. See the notes in
+  [metrics.h](components/metrics/include/memfault/metrics/metrics.h) for more
+  details.
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), you will need
+  to add `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_log.c` to your
+  project. (Note that until
+  [`memfault_log_boot()`](https://github.com/memfault/memfault/blob/ccoleman/stg/sdk/embedded/components/core/include/memfault/core/log.h#L30-L38)
+  is called, all calls made to the logging module will be a no-op).
+
+### Changes between Memfault SDK 0.2.5 and SDK 0.2.4 - March 20, 2020
 
 - Improve the `memfault_platform_coredump_storage_clear()` NRF52 reference
   implementation for situations where the SoftDevice is enabled and there is a

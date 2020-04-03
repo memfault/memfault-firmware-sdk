@@ -68,7 +68,7 @@ size_t memfault_reboot_tracking_compute_worst_case_storage_size(void) {
   return memfault_serializer_helper_compute_size(&encoder, prv_encode_cb, &reset_reason);
 }
 
-int  memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl *impl) {
+int memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl *impl) {
   if (impl == NULL) {
     return MEMFAULT_REBOOT_TRACKING_BAD_PARAM;
   }
@@ -81,6 +81,13 @@ int  memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl
 
   sMfltResetReasonInfo info;
   if (!memfault_reboot_tracking_read_reset_info(&info)) {
+    // Two ways we get here:
+    //  1. memfault_reboot_tracking_boot() has not yet been called
+    //  2. memfault_reboot_tracking_boot() was called but there's no info
+    //     about the last reboot reason. To fix this, pass bootup_info when
+    //     calling memfault_reboot_tracking_boot()
+    // For more details about reboot tracking in general see https://mflt.io//2QlOlgH
+    MEMFAULT_LOG_WARN("%s: No reset info collected", __func__);
     return 0;
   }
 
