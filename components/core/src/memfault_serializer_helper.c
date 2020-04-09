@@ -52,15 +52,6 @@ static bool prv_encode_device_version_info(sMemfaultCborEncoder *e) {
   return true;
 }
 
-bool memfault_serializer_helper_encode_version_info(sMemfaultCborEncoder *encoder) {
-  if (!memfault_serializer_helper_encode_uint32_kv_pair(
-          encoder, kMemfaultEventKey_CborSchemaVersion, MEMFAULT_CBOR_SCHEMA_VERSION_V1)) {
-    return false;
-  }
-
-  return prv_encode_device_version_info(encoder);
-}
-
 bool memfault_serializer_helper_encode_uint32_kv_pair(
     sMemfaultCborEncoder *encoder, uint32_t key, uint32_t value) {
   return memfault_cbor_encode_unsigned_integer(encoder, key) &&
@@ -73,23 +64,39 @@ static bool prv_encode_event_key_uint32_pair(
          memfault_cbor_encode_unsigned_integer(encoder, value);
 }
 
-bool memfault_serializer_helper_encode_trace_event(sMemfaultCborEncoder *e, const sMemfaultTraceEventHelperInfo *info) {
-  const size_t top_level_num_pairs = 1 /* type */ + 4 /* device info */ +
-                                     1 /* cbor schema version */ + 1 /* event_info */;
-  memfault_cbor_encode_dictionary_begin(e, top_level_num_pairs);
+bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder,
+                                                eMemfaultEventType type) {
+  const size_t top_level_num_pairs =
+      1 /* type */ +
+      4 /* device info */ +
+      1 /* cbor schema version */ +
+      1 /* event_info */;
 
-  if (!prv_encode_event_key_uint32_pair(e, kMemfaultEventKey_Type, kMemfaultEventType_Trace)) {
+  memfault_cbor_encode_dictionary_begin(encoder, top_level_num_pairs);
+
+
+  if (!prv_encode_event_key_uint32_pair(encoder, kMemfaultEventKey_Type, type)) {
     return false;
   }
 
-  if (!memfault_serializer_helper_encode_version_info(e)) {
+  if (!memfault_serializer_helper_encode_uint32_kv_pair(
+          encoder, kMemfaultEventKey_CborSchemaVersion, MEMFAULT_CBOR_SCHEMA_VERSION_V1)) {
+    return false;
+  }
+
+  return prv_encode_device_version_info(encoder);
+}
+
+bool memfault_serializer_helper_encode_trace_event(sMemfaultCborEncoder *e,
+                                                   const sMemfaultTraceEventHelperInfo *info) {
+  if (!memfault_serializer_helper_encode_metadata(e, kMemfaultEventType_Trace)) {
     return false;
   }
 
   const size_t num_entries = 1 /* reason */ +
-                             ((info->pc != 0) ? 1 : 0) +
-                             ((info->lr != 0) ? 1 : 0) +
-                             info->extra_event_info_pairs;
+      ((info->pc != 0) ? 1 : 0) +
+      ((info->lr != 0) ? 1 : 0) +
+      info->extra_event_info_pairs;
 
   if (!memfault_cbor_encode_unsigned_integer(e, kMemfaultEventKey_EventInfo) ||
       !memfault_cbor_encode_dictionary_begin(e, num_entries)) {

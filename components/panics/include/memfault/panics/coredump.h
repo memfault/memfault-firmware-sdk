@@ -35,9 +35,6 @@ typedef struct MemfaultCoredumpSaveInfo {
 //! @return true if the coredump was saved and false if the save failed
 bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
 
-//! Architecture specific register state
-typedef struct MfltRegState sMfltRegState;
-
 //! Handler to be invoked from fault handlers
 //!
 //! By default, the Memfault SDK will automatically call this function as part of

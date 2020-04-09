@@ -1,3 +1,28 @@
+### Changes between Memfault SDK 0.3.1 and SDK 0.3.0 - April 9, 2020
+
+#### :rocket: New Features
+
+- Added
+  [`memfault_log_read()`](components/core/include/memfault/core/log.h#L95-L121)
+  API to make it possible to use the module to cache logs in RAM and then flush
+  them out to slower mediums, such as a UART console or Flash, from a background
+  task.
+
+#### :chart_with_upwards_trend: Improvements
+
+- A pointer to the stack frame upon exception entry is now included in
+  `sCoredumpCrashInfo` when
+  [memfault_platform_coredump_get_regions](components/panics/include/memfault/panics/platform/coredump.h#L56)
+  is invoked. This can (optionally) be used to configure regions collected based
+  on the state or run platform specific cleanup based on the state.
+- Added Root Certificates needed for release downloads to
+  [`MEMFAULT_ROOT_CERTS_PEM`](components/http/include/memfault/http/root_certs.h#L146).
+
+#### :house: Internal
+
+- All sources that generate events now use the same utility function,
+  `memfault_serializer_helper_encode_metadata()` to encode common event data.
+
 ### Changes between Memfault SDK 0.3.0 and SDK 0.2.5 - April 3, 2020
 
 #### :rocket: New Features

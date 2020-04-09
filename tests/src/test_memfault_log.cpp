@@ -20,6 +20,9 @@
 TEST_GROUP(MemfaultEventStorage) {
   void setup() {
     fake_memfault_metrics_platorm_locking_reboot();
+
+    // we selectively enable memfault_log_handle_saved_callback() for certain tests
+    mock().disable();
   }
   void teardown() {
     CHECK(fake_memfault_platform_metrics_lock_calls_balanced());
@@ -40,6 +43,18 @@ static void prv_run_header_check(uint8_t *log_entry,
   MEMCMP_EQUAL(expected_log, &log_entry[2],expected_log_len);
 }
 
+static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
+                                   const char *expected_log, size_t expected_log_len) {
+  sMemfaultLog log;
+  // scribble a bad pattern to make sure memfault_log_read inits things
+  memset(&log, 0xa5, sizeof(log));
+  const bool found_log = memfault_log_read(&log);
+  CHECK(found_log);
+  STRCMP_EQUAL(expected_log, log.msg);
+  LONGS_EQUAL(expected_log_len, log.msg_len);
+  LONGS_EQUAL(expected_level, log.level);
+}
+
 TEST(MemfaultEventStorage, Test_BadInit) {
   // should be no-ops
   memfault_log_boot(NULL, 10);
@@ -48,6 +63,10 @@ TEST(MemfaultEventStorage, Test_BadInit) {
   // calling any API while not enabled should have no effect
   memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Error, "1", 1);
   MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Error, "%d", 11223344);
+
+  sMemfaultLog log;
+  const bool log_found = memfault_log_read(&log);
+  CHECK(!log_found);
 }
 
 TEST(MemfaultEventStorage, Test_MemfaultLogBasic) {
@@ -60,6 +79,38 @@ TEST(MemfaultEventStorage, Test_MemfaultLogBasic) {
   memfault_log_save_preformatted(level, my_log, my_log_len);
 
   prv_run_header_check(s_ram_log_store, level, my_log, my_log_len);
+  prv_read_log_and_check(level, my_log, my_log_len);
+
+  // should be no more logs
+  sMemfaultLog log;
+  const bool log_found = memfault_log_read(&log);
+  CHECK(!log_found);
+}
+
+void memfault_log_handle_saved_callback(void) {
+  mock().actualCall(__func__);
+}
+
+TEST(MemfaultEventStorage, Test_MemfaultHandleSaveCallback) {
+  uint8_t s_ram_log_store[10];
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+
+  mock().enable();
+  const char *log0 = "log0";
+  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Debug,
+                                 log0, strlen(log0));
+  // should have been filtered so nothing should be called
+  mock().checkExpectations();
+
+  mock().expectOneCall("memfault_log_handle_saved_callback");
+  MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "log2");
+  mock().checkExpectations();
+
+  mock().expectOneCall("memfault_log_handle_saved_callback");
+  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Warning,
+                                 log0, strlen(log0));
+  mock().checkExpectations();
 }
 
 TEST(MemfaultEventStorage, Test_MemfaultLogTruncation) {
@@ -136,4 +187,26 @@ TEST(MemfaultEventStorage, Test_LevelFiltering) {
 
   prv_run_header_check(s_ram_log_store, level, unfiltered_log, unfiltered_log_len);
   prv_run_header_check(&s_ram_log_store[5], level, unfiltered_log, unfiltered_log_len);
+}
+
+TEST(MemfaultEventStorage, Test_DroppedLogs) {
+  uint8_t s_ram_log_store[13] = { 0 };
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  const char *initial_log = "hi world!";
+  const size_t initial_log_len = strlen(initial_log);
+  memfault_log_save_preformatted(level, initial_log, initial_log_len);
+  prv_read_log_and_check(level, initial_log, initial_log_len);
+
+  for (int i = 0; i < 6; i++) {
+    MEMFAULT_LOG_SAVE(level, "MSG %d", i);
+  }
+
+  const char *expected_string = "... 5 messages dropped ...";
+  prv_read_log_and_check(kMemfaultPlatformLogLevel_Warning, expected_string,
+                         strlen(expected_string));
+
+  const char *expected_msg5 = "MSG 5";
+  prv_read_log_and_check(level, expected_msg5, strlen(expected_msg5));
 }

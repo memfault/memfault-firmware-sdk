@@ -29,7 +29,14 @@
 typedef struct {
   uint8_t version;
   bool enabled;
+  // the minimum log level level that will be saved
+  // Can be changed with memfault_log_set_min_save_level()
   eMemfaultPlatformLogLevel min_log_level;
+  uint32_t log_read_offset;
+  // The number of messages that were flushed without ever being read. If memfault_log_read() is
+  // not used by a platform, this will be equivalent to the number of messages logged since boot
+  // that are no longer in the log buffer.
+  uint32_t dropped_msg_count;
   sMfltCircularBuffer circ_buffer;
 } sMfltRamLogger;
 
@@ -57,9 +64,10 @@ typedef MEMFAULT_PACKED_STRUCT {
 // standard.
 //
 // Header Layout:
-// 0brrrr.tlll
+// 0brxxx.tlll
 // where
-//  r = rsvd
+//  r = read (1 if the message has been read, 0 otherwise)
+//  x = rsvd
 //  t = type (0 = formatted log)
 //  l = log level (eMemfaultPlatformLogLevel)
 
@@ -67,6 +75,11 @@ typedef MEMFAULT_PACKED_STRUCT {
 #define MEMFAULT_LOG_HDR_LEVEL_MASK 0x07u
 #define MEMFAULT_LOG_HDR_TYPE_POS   3u
 #define MEMFAULT_LOG_HDR_TYPE_MASK  0x08u
+#define MEMFAULT_LOG_HDR_READ_MASK  0x80u
+
+static eMemfaultPlatformLogLevel prv_get_level_from_hdr(uint8_t hdr) {
+  return (eMemfaultPlatformLogLevel)((hdr & MEMFAULT_LOG_HDR_LEVEL_MASK) >> MEMFAULT_LOG_HDR_LEVEL_POS);
+}
 
 static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRecordType type) {
   MEMFAULT_STATIC_ASSERT(kMemfaultPlatformLogLevel_NumLevels <= 8,
@@ -103,6 +116,14 @@ static bool prv_try_free_space(sMfltCircularBuffer *circ_bufp, int bytes_needed)
     sMfltRamLogEntry curr_entry = { 0 };
     memfault_circular_buffer_read(circ_bufp, 0, &curr_entry, sizeof(curr_entry));
     const size_t space_to_free = curr_entry.len + sizeof(curr_entry);
+
+    if ((curr_entry.hdr & MEMFAULT_LOG_HDR_READ_MASK) != 0) {
+      s_memfault_ram_logger.log_read_offset -= space_to_free;
+    } else {
+      // We are removing a message that was not read via memfault_log_read().
+      s_memfault_ram_logger.dropped_msg_count++;
+    }
+
     memfault_circular_buffer_consume(circ_bufp, space_to_free);
     bytes_needed -= space_to_free;
     if (bytes_needed <= 0) {
@@ -112,6 +133,61 @@ static bool prv_try_free_space(sMfltCircularBuffer *circ_bufp, int bytes_needed)
   }
 
   return false; // should be unreachable
+}
+
+static bool prv_read_log(sMemfaultLog *log) {
+  if (s_memfault_ram_logger.dropped_msg_count) {
+    log->level = kMemfaultPlatformLogLevel_Warning;
+    const int rv = snprintf(log->msg, sizeof(log->msg), "... %d messages dropped ...",
+                                 (int)s_memfault_ram_logger.dropped_msg_count);
+    log->msg_len = (rv <= 0)  ? 0 : MEMFAULT_MIN((uint32_t)rv, sizeof(log->msg) - 1);
+    s_memfault_ram_logger.dropped_msg_count = 0;
+    return true;
+  }
+
+  sMfltCircularBuffer *circ_bufp = &s_memfault_ram_logger.circ_buffer;
+  sMfltRamLogEntry curr_entry = { 0 };
+  uint32_t read_offset = s_memfault_ram_logger.log_read_offset;
+  if (!memfault_circular_buffer_read(circ_bufp, read_offset, &curr_entry, sizeof(curr_entry))) {
+    return false;
+  }
+
+  // Note: At this point, the memfault_circular_buffer_* return calls below should never fail. A
+  // failure is indicative of memory corruption (e.g calls taking place from multiple tasks without
+  // having implemented memfault_lock() / memfault_unlock())
+
+  // mark the message as read
+  curr_entry.hdr |= MEMFAULT_LOG_HDR_READ_MASK;
+
+  const size_t offset_from_end = memfault_circular_buffer_get_read_size(circ_bufp) - read_offset;
+  if (!memfault_circular_buffer_write_at_offset(
+          circ_bufp, offset_from_end, &curr_entry, sizeof(curr_entry))) {
+    return false;
+  }
+
+
+  read_offset += sizeof(curr_entry);
+  if (!memfault_circular_buffer_read(circ_bufp, read_offset, log->msg, curr_entry.len)) {
+    return false;
+  }
+
+  log->msg[curr_entry.len] = '\0';
+  log->level = prv_get_level_from_hdr(curr_entry.hdr);
+  log->msg_len = curr_entry.len;
+  s_memfault_ram_logger.log_read_offset = read_offset + curr_entry.len;
+  return true;
+}
+
+bool memfault_log_read(sMemfaultLog *log) {
+  if (!s_memfault_ram_logger.enabled || (log == NULL)) {
+    return false;
+  }
+
+  memfault_lock();
+  const bool found_unread_log = prv_read_log(log);
+  memfault_unlock();
+
+  return found_unread_log;
 }
 
 static bool prv_should_log(eMemfaultPlatformLogLevel level) {
@@ -124,6 +200,11 @@ static bool prv_should_log(eMemfaultPlatformLogLevel level) {
   }
 
   return true;
+}
+
+//! Stub implementation that a user of the SDK can override. See header for more details.
+MEMFAULT_WEAK void memfault_log_handle_saved_callback(void) {
+  return;
 }
 
 void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
@@ -156,6 +237,7 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
     return;
   }
 
+  bool log_written = false;
   const size_t bytes_needed = sizeof(sMfltRamLogEntry) + log_len;
   memfault_lock();
   {
@@ -168,9 +250,14 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
         };
         memfault_circular_buffer_write(circ_bufp, &entry, sizeof(entry));
         memfault_circular_buffer_write(circ_bufp, log, log_len);
+        log_written = true;
     }
   }
   memfault_unlock();
+
+  if (log_written) {
+    memfault_log_handle_saved_callback();
+  }
 }
 
 bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {

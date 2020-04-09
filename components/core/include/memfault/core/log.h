@@ -16,10 +16,12 @@
 //! the debug_log.h module for that!
 //!
 //! @note The thread-safety of the module depends on memfault_lock/unlock() API. If calls can be
-//! made from multiple tasks, these APIs must be implemented.
+//! made from multiple tasks, these APIs must be implemented. Locks are _only_ held while copying
+//! data into the backing circular buffer so durations will be very quick.
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/debug_log.h" // For eMemfaultPlatformLogLevel
@@ -45,7 +47,7 @@ bool memfault_log_boot(void *buffer, size_t buf_len);
 //! By default, any logs >= kMemfaultPlatformLogLevel_Info can be saved
 void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 
-//! Macro which can be called from a platforms pre-existing logging macro
+//! Macro which can be called from a platforms pre-existing logging macro.
 //!
 //! For example, if your platform already has something like this
 //!
@@ -80,6 +82,50 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level, const char 
 
 //! Maximum length a log record can occupy
 #define MEMFAULT_LOG_MAX_LINE_SAVE_LEN 128
+
+typedef struct {
+  // the level of the message
+  eMemfaultPlatformLogLevel level;
+  // the length of the msg (not including NUL character)
+  uint32_t msg_len;
+  // the message to print which will always be NUL terminated
+  char msg[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1 /* '\0' */];
+} sMemfaultLog;
+
+//! Returns the oldest unread log in memfault log storage
+//!
+//! @param log[out] When a new log is available, populated with its info
+//! @return true if a log was found, false if there were no logs to read.
+//!
+//! @note For some timing sensitive applications, logs may be written into RAM and later dumped out
+//! over UART and/or saved to flash on a lower priority background task. The memfault_log_read()
+//! API is designed to be easy to utilize in these situations. For example:
+//!
+//! Any task:
+//!   Call MEMFAULT_SAVE_LOG() to quickly write a log into RAM.
+//!
+//!   Optional: Anytime a new log is saved, memfault_log_handle_saved_callback is called by the
+//!   memfault log module. A platform can choose to implement something like:
+//!
+//!   void memfault_log_handle_saved_callback(void) {
+//!       my_rtos_schedule_log_read()
+//!   }
+//!
+//! Task responsible for flushing logs out to slower mediums (UART, NOR/EMMC Flash, etc):
+//!   // .. RTOS code to wait for log read event ..
+//!   sMemfaultLog log = { 0 };
+//!   const bool log_found = memfault_log_read(&log);
+//!   if (log_found) {
+//!       my_platform_uart_println(log.level, log, log.msg_len);
+//!   }
+bool memfault_log_read(sMemfaultLog *log);
+
+//! Invoked every time a new log has been saved
+//!
+//! @note By default this is a weak function which behaves as a no-op. Platforms which dispatch
+//! console logging to a low priority thread can implement this callback to have a "hook" from
+//! where a job to drain new logs can easily be scheduled
+extern void memfault_log_handle_saved_callback(void);
 
 //! Formats the provided string and saves it to backing storage
 //!

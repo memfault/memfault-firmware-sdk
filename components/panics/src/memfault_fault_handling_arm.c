@@ -51,6 +51,7 @@ size_t memfault_coredump_storage_compute_size_required(void) {
     // we'll just pass the current stack pointer, value shouldn't matter
     .stack_address = (void *)&core_regs,
     .trace_reason = save_info.trace_reason,
+    .exception_reg_state = NULL,
   };
   save_info.regions = memfault_platform_coredump_get_regions(&info, &save_info.num_regions);
 
@@ -140,6 +141,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) 
   sCoredumpCrashInfo info = {
     .stack_address = (void *)sp_prior_to_exception,
     .trace_reason = save_info.trace_reason,
+    .exception_reg_state = regs,
   };
   save_info.regions = memfault_platform_coredump_get_regions(&info, &save_info.num_regions);
 

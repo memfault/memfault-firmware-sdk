@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-bool memfault_serializer_helper_encode_version_info(sMemfaultCborEncoder *encoder);
+bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder, eMemfaultEventType type);
 
 bool memfault_serializer_helper_encode_uint32_kv_pair(
     sMemfaultCborEncoder *encoder, uint32_t key, uint32_t value);

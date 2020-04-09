@@ -23,6 +23,9 @@
 extern "C" {
 #endif
 
+//! Architecture specific register state
+typedef struct MfltRegState sMfltRegState;
+
 typedef enum MfltCoredumpRegionType {
   kMfltCoredumpRegionType_Memory,
   kMfltCoredumpRegionType_MemoryWordAccessOnly,
@@ -50,6 +53,16 @@ typedef struct CoredumpCrashInfo {
   //! The reason the reset is taking place. Sometimes you may want to collect different memory
   //! regions based on the reset type (i.e assert vs HardFault)
   eMfltResetReason trace_reason;
+  //! Arch specific exception state or NULL when the device is not in an exception state (i.e
+  //! memfault_platform_coredump_get_regions() invoked from
+  //! memfault_coredump_storage_compute_size_required())
+  //!
+  //! Definitions for "struct MfltRegstate" are architecture dependent and
+  //! can be found at:
+  //!   memfault/panics/arch/arm/cortex_m.h
+  //!   memfault/panics/arch/xtensa/esp32.h
+  //!   etc
+  const sMfltRegState *exception_reg_state;
 } sCoredumpCrashInfo;
 
 //! Returns an array of the regions to capture when the system crashes

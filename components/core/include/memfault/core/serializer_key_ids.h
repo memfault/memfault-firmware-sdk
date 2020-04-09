@@ -45,3 +45,7 @@ typedef enum {
   kMemfaultTraceInfoEventKey_CoredumpSaved = 5,
   kMemfaultTraceInfoEventKey_UserReason = 6,
 } eMemfaultTraceInfoEventKey;
+
+#ifdef __cplusplus
+}
+#endif

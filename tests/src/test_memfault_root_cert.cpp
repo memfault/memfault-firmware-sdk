@@ -6,17 +6,15 @@
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <stddef.h>
-  #include <stdint.h>
-  #include <stdlib.h>
-  #include <string.h>
 
-  #include "memfault/http/root_certs.h"
-  #include "memfault/util/base64.h"
-}
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "memfault/http/root_certs.h"
+#include "memfault/util/base64.h"
 
 TEST_GROUP(MemfaultRootCert){
   void setup() { }
@@ -58,5 +56,19 @@ TEST(MemfaultRootCert, Test_cert_digicert_global_root_g2) {
   char *pem = prv_der_to_pem(g_memfault_cert_digicert_global_root_g2,
                              g_memfault_cert_digicert_global_root_g2_len);
   STRCMP_EQUAL(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2, pem);
+  free(pem);
+}
+
+TEST(MemfaultRootCert, Test_cert_baltimore_cybertrust_root) {
+  char *pem = prv_der_to_pem(g_memfault_cert_baltimore_cybertrust_root,
+                             g_memfault_cert_baltimore_cybertrust_root_len);
+  STRCMP_EQUAL(MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT, pem);
+  free(pem);
+}
+
+TEST(MemfaultRootCert, Test_cert_amazon_root_ca1) {
+  char *pem = prv_der_to_pem(g_memfault_cert_amazon_root_ca1,
+                             g_memfault_cert_amazon_root_ca1_len);
+  STRCMP_EQUAL(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1, pem);
   free(pem);
 }

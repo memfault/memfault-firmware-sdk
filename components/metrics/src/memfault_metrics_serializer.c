@@ -57,16 +57,7 @@ static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *
   bool success = false;
 
   sMemfaultCborEncoder *encoder = &state->encoder;
-  const size_t top_level_num_pairs = 1 /* type */ + 4 /* device info */ + 1 /* cbor schema version */ +
-      1 /* event_info */;
-  memfault_cbor_encode_dictionary_begin(encoder, top_level_num_pairs);
-
-  if (!memfault_serializer_helper_encode_uint32_kv_pair(
-          encoder, kMemfaultEventKey_Type, kMemfaultEventType_Heartbeat)) {
-    return false;
-  }
-
-  if (!memfault_serializer_helper_encode_version_info(encoder)) {
+  if (!memfault_serializer_helper_encode_metadata(encoder, kMemfaultEventType_Heartbeat)) {
     goto cleanup;
   }
 
