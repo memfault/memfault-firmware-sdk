@@ -10,10 +10,11 @@
 #include "memfault/core/event_storage.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/panics/reboot_tracking.h"
 #include "memfault/panics/trace_event.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
-#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 100
+#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 256
 #endif
 
 //! Sanity check that coredump storage is large enough to capture the regions we want to collect
@@ -36,7 +37,16 @@ int memfault_platform_boot(void) {
   const sMemfaultEventStorageImpl *evt_storage =
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
 
+  // Minimum storage we need to hold at least 1 reboot event and 1 trace event
+  const size_t bytes_needed = memfault_reboot_tracking_compute_worst_case_storage_size() +
+      memfault_trace_event_compute_worst_case_storage_size();
+  if (bytes_needed > sizeof(s_event_storage)) {
+    MEMFAULT_LOG_ERROR("Storage must be at least %d for events but is %d",
+                       (int)bytes_needed, sizeof(s_event_storage));
+  }
+
   memfault_trace_event_boot(evt_storage);
+  memfault_reboot_tracking_collect_reset_info(evt_storage);
   return 0;
 }
 

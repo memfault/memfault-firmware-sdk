@@ -16,7 +16,7 @@ extern "C" {
 #define MEMFAULT_CBOR_SCHEMA_VERSION_V1 (1) // NOTE: implies "sdk_version": "0.5.0"
 
 typedef enum {
-  kMemfaultEventKey_CapturedDate = 1,
+  kMemfaultEventKey_CapturedDateUnixTimestamp = 1,
   kMemfaultEventKey_Type = 2,
   kMemfaultEventKey_CborSchemaVersion = 3,
   kMemfaultEventKey_EventInfo = 4,

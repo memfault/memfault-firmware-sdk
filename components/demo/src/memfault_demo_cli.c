@@ -13,11 +13,13 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
+#include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/http_client.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/panics/reboot_tracking.h"
 
 // Defined in memfault_demo_cli_aux.c
 extern void *g_memfault_unaligned_buffer;
@@ -126,5 +128,20 @@ int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]) {
   MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");
   MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
   MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
+  return 0;
+}
+
+int memfault_demo_cli_cmd_system_reboot(int argc, char *argv[]) {
+  void *pc;
+  MEMFAULT_GET_PC(pc);
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+  sMfltRebootTrackingRegInfo reg_info = {
+    .pc = (uint32_t)pc,
+    .lr = (uint32_t)lr,
+  };
+
+  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, &reg_info);
+  memfault_platform_reboot();
   return 0;
 }

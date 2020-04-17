@@ -8,6 +8,7 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_minimal_cbor.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_event_storage.cpp \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_debug_log.c \
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_time.c
 
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_metrics_serializer.cpp \

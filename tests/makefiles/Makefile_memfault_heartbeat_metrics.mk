@@ -9,7 +9,8 @@ MOCK_AND_FAKE_SRC_FILES += \
  $(MFLT_TEST_FAKE_DIR)/fake_memfault_event_storage.cpp \
  $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_debug_log.c \
  $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
- $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c
+ $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c \
+ $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_time.c
 
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_heartbeat_metrics.cpp \

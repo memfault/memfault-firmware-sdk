@@ -23,6 +23,10 @@
 #include "memfault/core/platform/core.h"
 #include "mflt_cli.h"
 
+#include "memfault/core/debug_log.h"
+#include "memfault/core/event_storage.h"
+#include "memfault/panics/platform/reboot_tracking.h"
+
 static void timers_init(void) {
   ret_code_t err_code;
 
@@ -31,12 +35,7 @@ static void timers_init(void) {
 }
 
 static void log_init(void) {
-  // Note: We place the RTT buffers in a special section so they don't move around between
-  // builds. This makes it easier for Segger to consistently lock onto them and display them
-  extern uint32_t __rtt_start[];
-  extern uint32_t __rtt_end[];
-  memset(__rtt_start, 0x0, (uint32_t)__rtt_end - (uint32_t)__rtt_start);
-  ret_code_t err_code = NRF_LOG_INIT(NULL);
+  const ret_code_t err_code = NRF_LOG_INIT(NULL);
   APP_ERROR_CHECK(err_code);
 
   NRF_LOG_DEFAULT_BACKENDS_INIT();
@@ -65,6 +64,9 @@ static void prv_dump_build_id(void) {
 }
 
 int main(void) {
+  // initialize reboot tracking and store state from NRF_POWER->RESETREAS
+  memfault_platform_reboot_tracking_boot();
+
   nrf_drv_clock_init();
   nrf_drv_clock_lfclk_request(NULL);
 
@@ -72,7 +74,6 @@ int main(void) {
   timers_init();
   mflt_cli_init();
   memfault_platform_boot();
-
   prv_dump_build_id();
 
   while (1) {

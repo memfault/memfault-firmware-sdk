@@ -27,6 +27,8 @@
 
 #define MEMFAULT_REBOOT_INFO_VERSION 2
 
+#define MEMFAULT_REBOOT_REASON_NOT_SET 0xffffffff
+
 typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   //! A cheap way to check if the data within the struct is valid
   uint32_t magic;
@@ -38,7 +40,7 @@ typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   uint8_t crash_count;
   uint8_t rsvd1[1];
   uint8_t coredump_saved;
-  uint32_t last_reboot_reason; // eMfltResetReason
+  uint32_t last_reboot_reason; // eMfltResetReason or MEMFAULT_REBOOT_REASON_NOT_SET
   uint32_t pc;
   uint32_t lr;
   //! Most MCUs have a register which reveals why a device rebooted.
@@ -69,12 +71,13 @@ static bool prv_check_or_init_struct(void) {
   *s_mflt_reboot_info = (sMfltRebootInfo) {
     .magic = MEMFAULT_REBOOT_INFO_MAGIC,
     .version = MEMFAULT_REBOOT_INFO_VERSION,
+    .last_reboot_reason = MEMFAULT_REBOOT_REASON_NOT_SET,
   };
   return true;
 }
 
 static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
-  if ((s_mflt_reboot_info->last_reboot_reason == 0) &&
+  if ((s_mflt_reboot_info->last_reboot_reason == MEMFAULT_REBOOT_REASON_NOT_SET) &&
       (s_mflt_reboot_info->reset_reason_reg0 == 0)) {
     return false; // no reset crashes!
   }
@@ -90,6 +93,26 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   return true;
 }
 
+static void prv_record_reboot_event(eMfltResetReason reboot_reason,
+                                    const sMfltRebootTrackingRegInfo *reg) {
+  if (reboot_reason >= kMfltRebootReason_UnknownError) {
+    s_mflt_reboot_info->crash_count++;
+  }
+
+  if (s_mflt_reboot_info->last_reboot_reason != MEMFAULT_REBOOT_REASON_NOT_SET) {
+    // we are already tracking a reboot. We don't overwrite this because generally the first reboot
+    // in a loop reveals what started the crash loop
+    return;
+  }
+  s_mflt_reboot_info->last_reboot_reason = reboot_reason;
+  if (reg == NULL) { // we don't have any extra metadata
+    return;
+  }
+
+  s_mflt_reboot_info->pc = reg->pc;
+  s_mflt_reboot_info->lr = reg->lr;
+}
+
 void memfault_reboot_tracking_boot(
     void *start_addr, const sResetBootupInfo *bootup_info) {
   s_mflt_reboot_info = start_addr;
@@ -102,14 +125,13 @@ void memfault_reboot_tracking_boot(
     return;
   }
 
-  // If the device rebooted, a reason _should_ already be set
-  if (s_mflt_reboot_info->last_reboot_reason == 0) {
-    s_mflt_reboot_info->crash_count++;
-  }
-
+  eMfltResetReason reset_reason = kMfltRebootReason_Unknown;
   if (bootup_info != NULL) {
     s_mflt_reboot_info->reset_reason_reg0 = bootup_info->reset_reason_reg;
+    reset_reason = bootup_info->reset_reason;
   }
+
+  prv_record_reboot_event(reset_reason, NULL);
 }
 
 void memfault_reboot_tracking_mark_reset_imminent(eMfltResetReason reboot_reason,
@@ -118,22 +140,7 @@ void memfault_reboot_tracking_mark_reset_imminent(eMfltResetReason reboot_reason
     return;
   }
 
-  if (reboot_reason >= kMfltRebootReason_UnknownError) {
-    s_mflt_reboot_info->crash_count++;
-  }
-
-  if (s_mflt_reboot_info->last_reboot_reason != 0) {
-    // we are already tracking a reboot. We don't overwrite this because generally the first reboot
-    // in a loop reveals what started the crash loop
-    return;
-  }
-  s_mflt_reboot_info->last_reboot_reason = reboot_reason;
-  if (reg == NULL) { // we don't have any extra metadata
-    return;
-  }
-
-  s_mflt_reboot_info->pc = reg->pc;
-  s_mflt_reboot_info->lr = reg->lr;
+  prv_record_reboot_event(reboot_reason, reg);
 }
 
 bool memfault_reboot_tracking_read_reset_info(sMfltResetReasonInfo *info) {
@@ -169,7 +176,7 @@ void memfault_reboot_tracking_clear_reset_info(void) {
     return;
   }
 
-  s_mflt_reboot_info->last_reboot_reason = 0;
+  s_mflt_reboot_info->last_reboot_reason = MEMFAULT_REBOOT_REASON_NOT_SET;
   s_mflt_reboot_info->coredump_saved = 0;
   s_mflt_reboot_info->pc = 0;
   s_mflt_reboot_info->lr = 0;

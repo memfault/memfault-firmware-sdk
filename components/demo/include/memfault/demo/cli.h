@@ -47,6 +47,13 @@ int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]);
 //! It takes no arguments.
 int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]);
 
+//! Reboots the system
+//!
+//! This command takes no arguments and demonstrates how to use the reboot tracking module to
+//! track the occurrence of intentional reboots.
+int memfault_demo_cli_cmd_system_reboot(int argc, char *argv[]);
+
+
 #ifdef __cplusplus
 }
 #endif

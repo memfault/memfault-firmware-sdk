@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "fakes/fake_memfault_platform_time.h"
+#include "memfault/core/math.h"
 #include "memfault/core/serializer_helper.h"
 #include "memfault/util/cbor.h"
 
@@ -21,6 +23,7 @@ TEST_GROUP(MemfaultMetricsSerializerHelper){
   void teardown() {
     mock().checkExpectations();
     mock().clear();
+    fake_memfault_platform_time_enable(false);
   }
 };
 
@@ -44,31 +47,99 @@ static void prv_encode_metadata_and_check(sMemfaultCborEncoder *e, void *result,
   LONGS_EQUAL(expected_size, bytes_encoded);
 }
 
-TEST(MemfaultMetricsSerializerHelper, Test_MemfaultMetricSerializeEventMetadata) {
-  uint8_t result[37];
-  sMemfaultCborEncoder encoder;
-  prv_encode_metadata_and_check(&encoder, result, sizeof(result));
-
-
-  const uint8_t expected_result[] = {
-    0xa7,
-    // Type
-    0x02, 0x01,
-    // CborSchemaVersion
-    0x03, 0x01,
-    // DeviceSerial
-    0x07,
-    0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
-    // SoftwareType
-    0x0a,
-    0x64, 'm', 'a', 'i', 'n',
-    // SoftwareVersion
-    0x09,
-    0x65, '1' ,'.', '2', '.', '3',
-    // HardwareVersion
-    0x06,
-    0x66, 'e', 'v', 't', '_', '2','4',
+static void prv_enable_captured_date(void) {
+  fake_memfault_platform_time_enable(true);
+  const sMemfaultCurrentTime time = {
+    .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
+    .info = {
+      .unix_timestamp_secs = 1586353908,
+    }
   };
+  fake_memfault_platform_time_set(&time);
+}
 
-  MEMCMP_EQUAL(expected_result, result, sizeof(result));
+typedef struct MemfaultSerializerHelperTestVector {
+  const uint8_t *expected_encoding;
+  const size_t expected_encoding_len;
+  bool encode_captured_date;
+} sMemfaultSerializerHelperTestVector;
+
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
+// Optional Items: Device Serial
+const uint8_t test_vector[] = {
+  0xa7,
+  0x02, 0x01,
+  0x03, 0x01,
+  0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+  0x0a, 0x64, 'm', 'a', 'i', 'n',
+  0x09, 0x65, '1' ,'.', '2', '.', '3',
+  0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+};
+
+// Optional Items: Device Serial & Unix Epoch Timestamp
+const uint8_t test_vector_with_timestamp[] = {
+  0xa8,
+  0x02, 0x01,
+  0x03, 0x01,
+  0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+  0x0a, 0x64, 'm', 'a', 'i', 'n',
+  0x09, 0x65, '1' ,'.', '2', '.', '3',
+  0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+  0x01, 0x1a, 0x5e, 0x8d, 0xd6, 0xf4,
+};
+
+#else
+
+// Optional Items: None
+const uint8_t test_vector[] = {
+    0xa6,
+    0x02, 0x01,
+    0x03, 0x01,
+    0x0a, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1' ,'.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+};
+
+// Optional Items: Unix Epoch Timestamp
+const uint8_t test_vector_with_timestamp[] = {
+    0xa7,
+    0x02, 0x01,
+    0x03, 0x01,
+    0x0a, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1' ,'.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+    0x01, 0x1a, 0x5e, 0x8d, 0xd6, 0xf4,
+};
+#endif /* MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL */
+
+// NB: Device Serial encoding is enabled/disabled at compile time based on the
+// MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL. Encoding timestamp is optional based on whether or not
+// memfault_platform_time_get_current is implemented. Let's run through all possible encoding combos.
+const static sMemfaultSerializerHelperTestVector s_test_vectors[] = {
+  {
+    .expected_encoding = test_vector,
+    .expected_encoding_len = sizeof(test_vector),
+    .encode_captured_date = false,
+  },
+  {
+    .expected_encoding = test_vector_with_timestamp,
+    .expected_encoding_len = sizeof(test_vector_with_timestamp),
+    .encode_captured_date = true,
+  },
+};
+
+TEST(MemfaultMetricsSerializerHelper, Test_MemfaultMetricSerializeEventMetadata) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_test_vectors); i++) {
+    const sMemfaultSerializerHelperTestVector *vec = &s_test_vectors[i];
+    uint8_t result[vec->expected_encoding_len];
+    memset(result, 0xa5, sizeof(result));
+
+    if (vec->encode_captured_date) {
+      prv_enable_captured_date();
+    }
+
+    sMemfaultCborEncoder encoder;
+    prv_encode_metadata_and_check(&encoder, result, sizeof(result));
+    MEMCMP_EQUAL(vec->expected_encoding, result, sizeof(result));
+  }
 }

@@ -16,11 +16,19 @@
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/platform/system_time.h"
 #include "memfault/util/circular_buffer.h"
 
 //
-// Routines which can be overriden by customers
+// Routines which can optionally me implemented.
+// For more details see:
+//  memfault/core/platform/system_time.h
+//  memfault/core/platform/overrides.h
 //
+
+MEMFAULT_WEAK bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
+  return false;
+}
 
 MEMFAULT_WEAK
 void memfault_lock(void) { }

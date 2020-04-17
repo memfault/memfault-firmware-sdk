@@ -18,7 +18,7 @@
 #include "memfault/metrics/utils.h"
 
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
-#define FAKE_EVENT_STORAGE_SIZE 50
+#define FAKE_EVENT_STORAGE_SIZE 39
 
 TEST_GROUP(MemfaultMetricsSerializer){
   void setup() {
@@ -71,7 +71,6 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
   // {
   // "2": 1,
   // "3": 1,
-  // "7": "DAABBCCDD",
   // "10": "main",
   // "9": "1.2.3",
   // "6": "evt_24",
@@ -80,11 +79,13 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
   //  }
   // }
   const uint8_t expected_serialization[] = {
-      0xa7, 0x02, 0x01, 0x03, 0x01, 0x07, 0x69, 0x44, 0x41, 0x41,
-      0x42, 0x42, 0x43, 0x43, 0x44, 0x44, 0x0a, 0x64, 0x6d, 0x61,
-      0x69, 0x6e, 0x09, 0x65, 0x31, 0x2e, 0x32, 0x2e, 0x33, 0x06,
-      0x66, 0x65, 0x76, 0x74, 0x5f, 0x32, 0x34, 0x04, 0xa1, 0x01,
-      0x83, 0x19, 0x03, 0xe8, 0x39, 0x03, 0xe7, 0x19, 0x04, 0xd2,
+    0xa6,
+    0x02, 0x01,
+    0x03, 0x01,
+    0x0a, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1', '.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
+    0x04, 0xa1, 0x01, 0x83, 0x19, 0x03, 0xe8, 0x39, 0x03, 0xe7, 0x19, 0x04, 0xd2,
   };
 
   fake_event_storage_assert_contents_match(expected_serialization, sizeof(expected_serialization));
@@ -92,7 +93,7 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerializeWorstCaseSize) {
   const size_t worst_case_storage = memfault_metrics_heartbeat_compute_worst_case_storage_size();
-  LONGS_EQUAL(56, worst_case_storage);
+  LONGS_EQUAL(45, worst_case_storage);
 }
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerializeOutOfSpace) {

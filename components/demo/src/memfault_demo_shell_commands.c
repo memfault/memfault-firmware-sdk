@@ -20,7 +20,7 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"crash", memfault_demo_cli_cmd_crash, "Trigger a crash"},
 
   {"get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info"},
-
+  {"reboot", memfault_demo_cli_cmd_system_reboot, "Reboot system and tracks it with a trace event"},
   {"help", memfault_shell_help_handler, "Lists all commands"},
 };
 

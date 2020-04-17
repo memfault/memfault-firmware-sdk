@@ -9,9 +9,7 @@ MEMORY
   MEMFAULT_CORES (rw) : ORIGIN = 0xA1000, LENGTH = 0x40000
   /* Note: most production apps would have a bootloader somewhere in this range! */
   RSVD (rwx) : ORIGIN = 0xE1000, LENGTH = 0x1F000
-  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x38048
-  RTT_RAM (rwx) :  ORIGIN = 0x2003D800, LENGTH = 0x2600
-  MEMFAULT_NOINIT (rw) :  ORIGIN = 0x2003FF00, LENGTH = 0x100
+  RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a848
 }
 
 SECTIONS
@@ -132,19 +130,6 @@ SECTIONS
 
 SECTIONS
 {
-
-  /**
-   * Force the RTT console region to be at a _fixed_ location. If the location changes between
-   * builds it can confuse the SEGGER JLinkRTTClient console.
-   */
-  .rtt (NOLOAD) :
-  {
-    PROVIDE(__rtt_start = .);
-    *SEGGER_RTT.c.o(COMMON)
-    *(.bss._acUpBuffer)
-    PROVIDE(__rtt_end = .);
-  } > RTT_RAM
-
   /**
    * A unique identifier for the firmware. A great way to make sure the elf _exactly_ matches
    * the binary running: https://interrupt.memfault.com/blog/gnu-build-id-for-firmware
@@ -167,10 +152,6 @@ SECTIONS
       __MfltCoredumpRamStart = ORIGIN(RAM);
       __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
   } > FLASH
-
-  .noinit (NOLOAD): {
-    KEEP(*(*.mflt_reboot_info))
-  } > MEMFAULT_NOINIT
 } INSERT AFTER .text
 
 INCLUDE "nrf_common.ld"

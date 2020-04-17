@@ -1,3 +1,44 @@
+### Changes between Memfault SDK 0.3.2 and SDK 0.3.1 - April 16, 2020
+
+#### :rocket: New Features
+
+- The `captured_date` for an event can now be set by implementing
+  [`memfault_platform_time_get_current()`](components/core/include/memfault/core/platform/system_time.h#L33).
+  If the API is not implemented, the `captured_date` will continue to be set
+  based on the time the event was received by the memfault cloud.
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a reference implementation of
+  [reboot reason tracking](https://mflt.io/2QlOlgH) to the
+  [NRF52 demo app](platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
+  and a new `reboot` CLI command to easily exercise it.
+- A `reset_reason` can now optionally be provided as part of
+  [`sResetBootupInfo`](components/panics/include/memfault/panics/reboot_tracking.h#L40).
+  This can be useful for scenarios where the reboot reason is known on bootup
+  but could not be set prior to the device crashing.
+- A reboot reason event will now _always_ be generated when
+  `memfault_reboot_tracking_boot()` is called even if no information about the
+  reboot has been provided. In this scenario, the reset reason will be
+  [`kMfltRebootReason_Unknown`](components/panics/include/memfault/panics/trace_reason_types.h#L16)
+
+#### :house: Internal
+
+- Updated a few Kconfig options in the Zephyr demo app to improve the ability to
+  compute stack high water marks (`CONFIG_INIT_STACKS=y`) and determine if
+  stacks has overflowed (`CONFIG_MPU_STACK_GUARD=y`).
+
+#### :boom: Breaking Changes
+
+- `device_serial` is no longer encoded by default as part of events. Instead,
+  the `device_serial` in an event is populated from the the unique device
+  identifier used when posting the data to the
+  [chunks REST endpoint](https://mflt.io/chunks-api). This leads to ~20%
+  reduction in the size of a typical event. Encoding `device_serial` as part of
+  the event itself can still be enabled by adding
+  [`-DMEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL=1`](components/core/src/memfault_serializer_helper.c#L23)
+  as a compilation flag but should not be necessary for a typical integration.
+
 ### Changes between Memfault SDK 0.3.1 and SDK 0.3.0 - April 9, 2020
 
 #### :rocket: New Features

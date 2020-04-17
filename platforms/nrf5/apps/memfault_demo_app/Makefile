@@ -23,6 +23,7 @@ MEMFAULT_PLATFORM_REFERENCE_SRC += \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_coredump.c \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_debug_log.c \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_device_info.c \
+  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_reboot_tracking.c \
 
 SRC_FILES += \
    $(MEMFAULT_COMPONENTS_SRCS) \

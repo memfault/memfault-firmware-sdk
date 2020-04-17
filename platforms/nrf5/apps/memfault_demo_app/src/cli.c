@@ -12,9 +12,9 @@
 #include "nrf_log.h"
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/demo/cli.h"
-#include "memfault/core/debug_log.h"
 #include "memfault/http/platform/http_client.h"
 
 // The nRF board is not capable of doing HTTP requests directly, but the 'print_chunk' command
@@ -65,12 +65,17 @@ static void prv_print_chunk_cmd(nrf_cli_t const * p_cli, size_t argc, char **arg
   memfault_demo_cli_cmd_print_chunk(argc, argv);
 }
 
+static void prv_system_reboot_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_system_reboot(argc, argv);
+}
+
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
 NRF_CLI_CMD_REGISTER(trace, NULL, "capture trace event", prv_trace_example);
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
 NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send and print as a curl command", prv_print_chunk_cmd);
+NRF_CLI_CMD_REGISTER(reboot, NULL, "reboots system and tracks it with a trace event", prv_system_reboot_cmd);
 
 // nrf_cli_help_print() doesn't work from the top level CLI so add a little shim 'help' function
 // for better discoverability of memfault added commands
@@ -81,6 +86,7 @@ static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
   &CONCAT_3(nrf_cli_, print_chunk, _raw),
+  &CONCAT_3(nrf_cli_, reboot, _raw),
 };
 
 static void prv_help_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {

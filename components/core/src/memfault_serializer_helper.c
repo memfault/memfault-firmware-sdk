@@ -11,8 +11,28 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage_implementation.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/core/platform/system_time.h"
 #include "memfault/core/serializer_key_ids.h"
 #include "memfault/util/cbor.h"
+
+#ifndef MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
+#  define MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL 0
+#endif
+
+typedef struct MemfaultSerializerOptions {
+  // By default, the device serial number is not encoded in each event to conserve state
+  // and instead is derived from the identifier provided when posting to the chunks endpoint
+  //  (api/v0/chunks/{{device_identifier}})
+  //
+  // To instead always encode the device serial number, compile the Memfault SDK with the following
+  // CFLAG:
+  //   MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL=0
+  bool encode_device_serial;
+} sMemfaultSerializerOptions;
+
+static const sMemfaultSerializerOptions s_memfault_serializer_options = {
+  .encode_device_serial = (MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL != 0),
+};
 
 static bool prv_encode_event_key_string_pair(
     sMemfaultCborEncoder *encoder, eMemfaultEventKey key,  const char *value) {
@@ -23,7 +43,7 @@ static bool prv_encode_event_key_string_pair(
 static bool prv_encode_device_version_info(sMemfaultCborEncoder *e) {
   // Encoding something like:
   //
-  // "device_serial": "ABCD1234",
+  // (Optional) "device_serial": "ABCD1234",
   // "software_type": "main-fw",
   // "software_version": "1.0.0",
   // "hardware_version": "hwrev1",
@@ -33,7 +53,8 @@ static bool prv_encode_device_version_info(sMemfaultCborEncoder *e) {
   sMemfaultDeviceInfo info = { 0 };
   memfault_platform_get_device_info(&info);
 
-  if (!prv_encode_event_key_string_pair(e, kMemfaultEventKey_DeviceSerial, info.device_serial)) {
+  if (s_memfault_serializer_options.encode_device_serial &&
+      !prv_encode_event_key_string_pair(e, kMemfaultEventKey_DeviceSerial, info.device_serial)) {
     return false;
   }
 
@@ -66,9 +87,17 @@ static bool prv_encode_event_key_uint32_pair(
 
 bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder,
                                                 eMemfaultEventType type) {
+  sMemfaultCurrentTime time = {
+    .type = kMemfaultCurrentTimeType_Unknown,
+  };
+  const bool unix_timestamp_available = memfault_platform_time_get_current(&time) &&
+      (time.type == kMemfaultCurrentTimeType_UnixEpochTimeSec);
+
   const size_t top_level_num_pairs =
       1 /* type */ +
-      4 /* device info */ +
+      (unix_timestamp_available ? 1 : 0) +
+      (s_memfault_serializer_options.encode_device_serial ? 1 : 0) +
+      3 /* sw version, sw type, hw version */ +
       1 /* cbor schema version */ +
       1 /* event_info */;
 
@@ -84,7 +113,13 @@ bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder,
     return false;
   }
 
-  return prv_encode_device_version_info(encoder);
+  if (!prv_encode_device_version_info(encoder)) {
+    return false;
+  }
+
+  return !unix_timestamp_available || prv_encode_event_key_uint32_pair(
+          encoder, kMemfaultEventKey_CapturedDateUnixTimestamp,
+          (uint32_t)time.info.unix_timestamp_secs);
 }
 
 bool memfault_serializer_helper_encode_trace_event(sMemfaultCborEncoder *e,

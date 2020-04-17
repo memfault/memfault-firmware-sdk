@@ -37,6 +37,17 @@ typedef struct BootupInfo {
   //! reset, brown out reset, watchdog, etc). This value can be provided here to attach the current
   //! value of the register to the reboot information or be 0 otherwise
   uint32_t reset_reason_reg;
+
+  //! If the reason for the current reboot is not already tracked, this value will be used.
+  //!
+  //! @note This can useful in situations where no code executes from the main application prior to
+  //! reboot (for example, a reset button is pressed or another MCU pulls power to the rail) but
+  //! info is made available to the application after bootup as to why it was reset (i.e bootloader
+  //! passes additional state about reset to main app).
+  //!
+  //! @note If there is not additional info available about the reset, this should be set to 0
+  //! (kMfltRebootReason_Unknown).
+  eMfltResetReason reset_reason;
 } sResetBootupInfo;
 
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 64
