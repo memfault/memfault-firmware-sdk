@@ -10,6 +10,8 @@
 //! The first element in argv is expected to be the command name that was invoked.
 //! The elements following after that are expected to be the arguments to the command.
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +55,15 @@ int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]);
 //! track the occurrence of intentional reboots.
 int memfault_demo_cli_cmd_system_reboot(int argc, char *argv[]);
 
+//! Drains _all_ queued up chunks by calling user_transport_send_chunk_data
+//!
+//! @note user_transport_send_chunk_data is defined as a weak function so it can be overriden.
+//! The default implementation is a no-op.
+//! @note When "memfault install_chunk_handler" has been run, this can be used as a way to post
+//! chunks to the Memfault cloud directly from GDB. See https://mflt.io/posting-chunks-with-gdb
+//! for more details
+int memfault_demo_drain_chunk_data(int argc, char *argv[]);
+void user_transport_send_chunk_data(void *chunk_data, size_t chunk_data_len);
 
 #ifdef __cplusplus
 }

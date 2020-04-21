@@ -69,6 +69,10 @@ static void prv_system_reboot_cmd(nrf_cli_t const *p_cli, size_t argc, char **ar
   memfault_demo_cli_cmd_system_reboot(argc, argv);
 }
 
+static void prv_drain_chunks_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+  memfault_demo_drain_chunk_data(argc, argv);
+}
+
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
 NRF_CLI_CMD_REGISTER(trace, NULL, "capture trace event", prv_trace_example);
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
@@ -76,6 +80,7 @@ NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
 NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send and print as a curl command", prv_print_chunk_cmd);
 NRF_CLI_CMD_REGISTER(reboot, NULL, "reboots system and tracks it with a trace event", prv_system_reboot_cmd);
+NRF_CLI_CMD_REGISTER(drain_chunks, NULL, "Can be used to post chunks via GDB", prv_drain_chunks_cmd);
 
 // nrf_cli_help_print() doesn't work from the top level CLI so add a little shim 'help' function
 // for better discoverability of memfault added commands
@@ -87,6 +92,7 @@ static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
   &CONCAT_3(nrf_cli_, print_chunk, _raw),
   &CONCAT_3(nrf_cli_, reboot, _raw),
+  &CONCAT_3(nrf_cli_, drain_chunks, _raw),
 };
 
 static void prv_help_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {

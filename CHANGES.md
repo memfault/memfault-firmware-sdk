@@ -1,3 +1,12 @@
+### Changes between Memfault SDK 0.3.3 and SDK 0.3.2 - April 21, 2020
+
+#### :rocket: New Features
+
+- Added a new [GDB command](https://mflt.io/posting-chunks-with-gdb) which can
+  be used to post packetized Memfault data directly from GDB to the Memfault
+  cloud. This can be helpful as a way to quickly test data collection
+  functionality while working on an integration of the SDK.
+
 ### Changes between Memfault SDK 0.3.2 and SDK 0.3.1 - April 16, 2020
 
 #### :rocket: New Features
@@ -14,7 +23,7 @@
   [NRF52 demo app](platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
   and a new `reboot` CLI command to easily exercise it.
 - A `reset_reason` can now optionally be provided as part of
-  [`sResetBootupInfo`](components/panics/include/memfault/panics/reboot_tracking.h#L40).
+  [`sResetBootupInfo`](components/panics/include/memfault/panics/reboot_tracking.h#L41).
   This can be useful for scenarios where the reboot reason is known on bootup
   but could not be set prior to the device crashing.
 - A reboot reason event will now _always_ be generated when

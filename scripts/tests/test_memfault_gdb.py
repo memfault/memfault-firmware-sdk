@@ -688,3 +688,27 @@ def test_has_uploaded_symbols(
         has_uploaded_symbols(test_config, test_software_type, test_software_version)
         == expected_result
     )
+
+
+def test_post_chunk_data(gdb_base_fixture, http_expect_request):
+    from memfault_gdb import _post_chunk_data
+
+    BASE_URI = "https://example.chunks.memfault.com"
+    CHUNK_DATA = bytearray([1, 2, 3, 4])
+    DEVICE_SERIAL = "GDB_TESTSERIAL"
+
+    def _check_request_body(body_bytes):
+        assert body_bytes.hex() == CHUNK_DATA.hex(), body_bytes
+
+    http_expect_request(
+        "{}/api/v0/chunks/GDB_TESTSERIAL".format(BASE_URI),
+        "POST",
+        _check_request_body,
+        {"Content-Type": "application/octet-stream", "Memfault-Project-Key": TEST_PROJECT_KEY},
+        202,
+        None,
+    )
+
+    _post_chunk_data(
+        CHUNK_DATA, project_key=TEST_PROJECT_KEY, chunks_uri=BASE_URI, device_serial=DEVICE_SERIAL
+    )

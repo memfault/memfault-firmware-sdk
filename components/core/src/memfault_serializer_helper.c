@@ -20,7 +20,7 @@
 #endif
 
 typedef struct MemfaultSerializerOptions {
-  // By default, the device serial number is not encoded in each event to conserve state
+  // By default, the device serial number is not encoded in each event to conserve space
   // and instead is derived from the identifier provided when posting to the chunks endpoint
   //  (api/v0/chunks/{{device_identifier}})
   //

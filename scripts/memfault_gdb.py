@@ -69,6 +69,7 @@ except ImportError:
 
 
 MEMFAULT_DEFAULT_INGRESS_BASE_URI = "https://ingress.memfault.com"
+MEMFAULT_DEFAULT_CHUNKS_BASE_URI = "https://chunks.memfault.com"
 MEMFAULT_DEFAULT_API_BASE_URI = "https://api.memfault.com"
 
 MEMFAULT_TRY_INGRESS_BASE_URI = "https://ingress.try.memfault.com"
@@ -812,6 +813,18 @@ def http_post_coredump(coredump_file, project_key, ingress_uri):
     return status, reason
 
 
+def http_post_chunk(chunk_data_file, project_key, chunks_uri, device_serial):
+    headers = {"Content-Type": "application/octet-stream", "Memfault-Project-Key": project_key}
+    status, reason, _ = _http(
+        "POST",
+        chunks_uri,
+        "/api/v0/chunks/{}".format(device_serial),
+        headers=headers,
+        body=chunk_data_file,
+    )
+    return status, reason
+
+
 def http_get_auth_me(api_uri, email, password):
     headers = add_basic_auth(email, password)
     return _http("GET", api_uri, "/auth/me", headers=headers)
@@ -983,7 +996,7 @@ class MemfaultGdbCommand(gdb.Command):
         analytics_props["duration_ms"] = int((time() - start_time) * 1000)
         ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props, config.user_id)
 
-    def _invoke(self, arg, from_tty, analytics_props, config):
+    def _invoke(self, unicode_args, from_tty, analytics_props, config):
         pass
 
 
@@ -995,7 +1008,7 @@ class Memfault(MemfaultGdbCommand):
     def __init__(self):
         super(Memfault, self).__init__(gdb.COMPLETE_NONE, prefix=True)
 
-    def _invoke(self, arg, from_tty, analytics_props, config):
+    def _invoke(self, unicode_args, from_tty, analytics_props, config):
         gdb.execute("help memfault")
 
 
@@ -1040,6 +1053,169 @@ def _read_register(address):
 def _write_register(address, value):
     reg_val = pack("<I", value)
     gdb.selected_inferior().write_memory(address, reg_val)
+
+
+def _post_chunk_data(chunk_data, **kwargs):
+    with TemporaryFile() as f_out:
+        f_out.write(chunk_data)
+        f_out.seek(0)
+        return http_post_chunk(f_out, **kwargs)
+
+
+class GdbMemfaultPostChunkBreakpoint(gdb.Breakpoint):
+    def __init__(self, project_key, chunks_uri, verbose, device_serial, *args, **kwargs):
+        gdb.Breakpoint.__init__(self, *args, **kwargs)
+        self.project_key = project_key
+        self.chunks_uri = chunks_uri
+        self.verbose = verbose
+        self.chunk_buf_size_tuple = None
+        self.device_serial = device_serial
+        print("Memfault GDB Chunk Handler Installed")
+
+    def _determine_param_names(self):
+        if self.chunk_buf_size_tuple is not None:
+            return self.chunk_buf_size_tuple
+
+        frame = gdb.newest_frame()
+
+        chunk_buf_param = None
+        chunk_buf_size_param = None
+        for symbol in frame.block():
+            if not symbol.is_argument:
+                continue
+            symbol_type = symbol.type.strip_typedefs().code
+            if symbol_type == gdb.TYPE_CODE_PTR:
+                chunk_buf_param = symbol.name
+            if symbol_type == gdb.TYPE_CODE_INT:
+                chunk_buf_size_param = symbol.name
+
+        if chunk_buf_param is None or chunk_buf_size_param is None:
+            return None
+
+        print(
+            "Params Found! Chunk buffer: '{}' Length: '{}'".format(
+                chunk_buf_param, chunk_buf_size_param
+            )
+        )
+        self.chunk_buf_size_tuple = (chunk_buf_param, chunk_buf_size_param)
+        return self.chunk_buf_size_tuple
+
+    def stop(self):
+        params = self._determine_param_names()
+        if params is None:
+            print(
+                """ERROR: Could not determine names of parameters holding chunk buffer and size
+                Disabling Memfault GDB Chunk Handler & Halting
+                """
+            )
+            self.enabled = False
+            return True
+
+        buf_param, buf_size_param = params
+
+        packet_buffer_addr = int(gdb.parse_and_eval(buf_param))
+        packet_buffer_len = gdb.parse_and_eval(buf_size_param)
+        chunk_data = gdb.selected_inferior().read_memory(packet_buffer_addr, packet_buffer_len)
+
+        status, reason = _post_chunk_data(
+            chunk_data,
+            project_key=self.project_key,
+            chunks_uri=self.chunks_uri,
+            device_serial=self.device_serial,
+        )
+        if status != 202:
+            print("Chunk Post Failed with Http Status Code {}".format(status))
+            print("Reason: {}".format(reason))
+            print("ERROR: Disabling Memfault GDB Chunk Handler and Halting" "")
+            self.enabled = False
+            return True
+
+        if self.verbose:
+            print("Successfully posted {} bytes of chunk data".format(len(chunk_data)))
+
+        return False
+
+
+class MemfaultPostChunk(MemfaultGdbCommand):
+    """Installs a hook which sends chunks to the Memfault cloud chunk endpoint automagically.
+    See https://mflt.io/posting-chunks-with-gdb for more details.
+    """
+
+    GDB_CMD = "memfault install_chunk_handler"
+    USER_TRANSPORT_SEND_CHUNK_HANDLER = "user_transport_send_chunk_data"
+    DEFAULT_CHUNK_DEVICE_SERIAL = "GDB_TESTSERIAL"
+
+    def _invoke(self, unicode_args, from_tty, analytics_props, config):
+        try:
+            parsed_args = self.parse_args(unicode_args)
+        except MemfaultGdbArgumentParseError:
+            return
+
+        chunk_handler_func = parsed_args.chunk_handler_func
+        try:
+            gdb.parse_and_eval(chunk_handler_func)
+        except gdb.error:
+            print(
+                """Chunk handler function '{}' does not exist.
+
+            A custom handler location can be specified with the --chunk-handler-func argument.
+            """.format(
+                    chunk_handler_func
+                )
+            )
+            return
+
+        # We always delete any pre-existing breakpoints on the function. This way
+        # a re-execution of the command can always be used to re-init the setup
+        for breakpoint in gdb.breakpoints():
+            if breakpoint.location == chunk_handler_func:
+                print("Deleting breakpoint for '{}'".format(chunk_handler_func))
+                breakpoint.delete()
+        GdbMemfaultPostChunkBreakpoint(
+            spec=chunk_handler_func,
+            project_key=parsed_args.project_key,
+            chunks_uri=parsed_args.chunks_uri,
+            verbose=parsed_args.verbose,
+            device_serial=parsed_args.device_serial,
+            internal=True,
+        )
+
+    def parse_args(self, unicode_args):
+        parser = MemfaultGdbArgumentParser(description=MemfaultPostChunk.__doc__)
+        parser.add_argument(
+            "--project-key", "-pk", help="Memfault Project Key", required=True, default=None
+        )
+        parser.add_argument(
+            "--chunk-handler-func",
+            "-ch",
+            help="Name of function that handles sending Memfault Chunks (default: {})".format(
+                self.USER_TRANSPORT_SEND_CHUNK_HANDLER
+            ),
+            default=self.USER_TRANSPORT_SEND_CHUNK_HANDLER,
+        )
+        parser.add_argument(
+            "--chunks-uri",
+            help="Default chunks base URI to use (default: {})".format(
+                MEMFAULT_DEFAULT_CHUNKS_BASE_URI
+            ),
+            default=MEMFAULT_DEFAULT_CHUNKS_BASE_URI,
+        )
+        parser.add_argument(
+            "--device-serial",
+            "-ds",
+            help="Device Serial to post chunks as (default: {})".format(
+                self.DEFAULT_CHUNK_DEVICE_SERIAL
+            ),
+            default=self.DEFAULT_CHUNK_DEVICE_SERIAL,
+        )
+        parser.add_argument(
+            "--verbose",
+            help="Prints a summary every time a chunk is posted instead of just on failures",
+            action="store_true",
+        )
+
+        args = list(filter(None, unicode_args.split(" ")))
+        return parser.parse_args(args)
 
 
 class MemfaultCoredump(MemfaultGdbCommand):
@@ -1373,6 +1549,7 @@ class MemfaultLogin(MemfaultGdbCommand):
 Memfault()
 MemfaultCoredump()
 MemfaultLogin()
+MemfaultPostChunk()
 
 
 class AnalyticsTracker(Thread):
