@@ -3,7 +3,7 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/panics/trace_event.h"
+#include "memfault/core/trace_event.h"
 #include "memfault_trace_event_private.h"
 
 #include <stdbool.h>

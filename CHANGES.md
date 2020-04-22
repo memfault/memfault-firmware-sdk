@@ -1,3 +1,26 @@
+### Changes between Memfault SDK 0.3.4 and SDK 0.3.3 - April 22, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Moved `trace_event.h` to `core` component since it has no dependencies on
+  anything from the `panics` component. This allows the trace event feature to
+  be more easily integrated in a standalone fashion.
+
+#### :boom: Breaking Changes
+
+- If you are already using `MEMFAULT_TRACE_EVENT()` in your project, you will
+  need to update the include as follows:
+
+```diff
+-#include "memfault/panics/trace_event.h"
++#include "memfault/core/trace_event.h"
+```
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), you will need
+  to update the source path for `components/panics/src/memfault_trace_event.c`
+  to `components/core/src/memfault_trace_event.c`
+
 ### Changes between Memfault SDK 0.3.3 and SDK 0.3.2 - April 21, 2020
 
 #### :rocket: New Features

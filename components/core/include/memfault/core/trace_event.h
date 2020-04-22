@@ -19,7 +19,7 @@
 //! check out https://mflt.io/error-tracing
 
 #include "memfault/core/event_storage.h"
-#include "memfault/panics/trace_reason_user.h"
+#include "memfault/core/trace_reason_user.h"
 
 #include <stddef.h>
 

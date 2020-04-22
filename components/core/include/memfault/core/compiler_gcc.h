@@ -20,7 +20,12 @@ extern "C" {
 #define MEMFAULT_NORETURN __attribute__((noreturn))
 #define MEMFAULT_NAKED_FUNC __attribute__((naked))
 #define MEMFAULT_UNREACHABLE __builtin_unreachable()
+#if defined(__clang__)
+#define MEMFAULT_NO_OPT __attribute__((optnone))
+#else
 #define MEMFAULT_NO_OPT __attribute__((optimize("O0")))
+#endif
+
 #define MEMFAULT_ALIGNED(x) __attribute__((aligned(x)))
 #define MEMFAULT_UNUSED __attribute__((unused))
 #define MEMFAULT_USED __attribute__((used))

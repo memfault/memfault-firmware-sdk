@@ -7,7 +7,7 @@
 #include "memfault/core/arch.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/event_storage.h"
-#include "memfault/panics/trace_event.h"
+#include "memfault/core/trace_event.h"
 #include "memfault_trace_event_private.h"
 
 bool memfault_arch_is_inside_isr(void) {

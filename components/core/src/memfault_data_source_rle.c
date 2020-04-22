@@ -18,9 +18,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/math.h"
-#include "memfault/panics/assert.h"
 #include "memfault/util/rle.h"
 
 //! Helper function that computes the RLE length of the message being processed

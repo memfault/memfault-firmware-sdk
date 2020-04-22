@@ -11,7 +11,7 @@
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/reboot_tracking.h"
-#include "memfault/panics/trace_event.h"
+#include "memfault/core/trace_event.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 256
