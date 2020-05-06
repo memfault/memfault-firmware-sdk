@@ -31,6 +31,7 @@ extern "C" {
 #define MEMFAULT_GET_LR(_a) _a = ((void *)__return_address())
 #define MEMFAULT_GET_PC(_a) _a = (void *)__current_pc()
 #define MEMFAULT_PUT_IN_SECTION(x) __attribute__((section(x), zero_init))
+#define MEMFAULT_BREAKPOINT(val) __breakpoint(val)
 
 #define MEMFAULT_STATIC_ASSERT(expr, msg) \
     enum {MEMFAULT_CONCAT(MEMFAULT_ASSERTION_AT_, __LINE__) = sizeof(char[(expr) ? 1 : -1])}

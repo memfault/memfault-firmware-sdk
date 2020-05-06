@@ -1,9 +1,11 @@
 NAME := MemfaultCore
 
 $(NAME)_SOURCES := \
+  src/arch_arm_cortex_m.c \
   src/memfault_data_packetizer.c \
   src/memfault_event_storage.c \
-  src/memfault_log.c
+  src/memfault_log.c \
+  src/memfault_sdk_assert.c \
 
 $(NAME)_COMPONENTS :=
 

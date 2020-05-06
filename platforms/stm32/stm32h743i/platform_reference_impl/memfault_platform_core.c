@@ -12,12 +12,6 @@ int memfault_platform_boot(void) {
   return 0;
 }
 
-void memfault_platform_halt_if_debugging(void) {
-  if (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) {
-    __asm("bkpt");
-  }
-}
-
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {
   memfault_platform_halt_if_debugging();
 

@@ -1,3 +1,37 @@
+### Changes between Memfault SDK 0.4.0 and SDK 0.3.4 - May 6, 2020
+
+#### :rocket: New Features
+
+- Added support for (optionally) storing events collected by the SDK to
+  non-volatile storage mediums. This can be useful for devices which experience
+  prolonged periods of no connectivity. To leverage the feature, an end user
+  must implement the
+  [nonvolatile_event_storage platform API](components/core/include/memfault/core/platform/nonvolatile_event_storage.h#L7).
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added an assert used internally by the SDK which makes it easier to debug API
+  misuse during bringup. The assert is enabled by default but can easily be
+  disabled or overriden. For more details see
+  [`memfault/core/sdk_assert.h`](components/core/include/memfault/core/sdk_assert.h#L6).
+- Added a default implementation of
+  [`memfault_platform_halt_if_debugging()`](components/core/src/arch_arm_cortex_m.c#L20-L34)
+  for Cortex-M targets. The function is defined as _weak_ so a user can still
+  define the function to override the default behavior.
+
+#### :house: Internal
+
+- Updated
+  [`memfault install_chunk_handler`](https://mflt.io/posting-chunks-with-gdb) to
+  work with older versions of the GNU Arm Toolchain.
+
+#### :boom: Breaking Changes
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), you will need
+  to add `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_sdk_assert.c` to
+  your project.
+
 ### Changes between Memfault SDK 0.3.4 and SDK 0.3.3 - April 22, 2020
 
 #### :chart_with_upwards_trend: Improvements

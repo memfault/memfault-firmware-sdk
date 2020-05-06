@@ -35,6 +35,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/${MEMFAULT_ESP_IDF_PORT}/Memfault-esp-idf-comp
 set(MEMFAULT_ESP_IDF_PORT_COMMON common)
 list(APPEND MEMFAULT_COMPONENTS_SRCS
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_fault_handler.c
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_core.c
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_debug_log.c
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c

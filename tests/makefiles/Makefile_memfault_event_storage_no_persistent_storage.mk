@@ -1,4 +1,4 @@
-COMPONENT_NAME=memfault_event_storage
+COMPONENT_NAME=memfault_event_storage_no_persistance
 
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_event_storage.c
@@ -13,6 +13,6 @@ TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_event_storage.cpp \
   $(MOCK_AND_FAKE_SRC_FILES)
 
-CPPUTEST_CPPFLAGS += -DMEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE=0
+CPPUTEST_CPPFLAGS += -DMEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE=1
 
 include $(CPPUTEST_MAKFILE_INFRA)

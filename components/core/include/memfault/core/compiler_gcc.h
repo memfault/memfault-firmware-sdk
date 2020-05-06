@@ -35,12 +35,15 @@ extern "C" {
 #if defined(__arm__)
 #  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))
+#  define MEMFAULT_BREAKPOINT(val) __asm volatile ("bkpt "#val)
 #elif defined(__XTENSA__)
 #  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) _a = ({ __label__ _l; _l: &&_l;});
+#  define MEMFAULT_BREAKPOINT(val)  __asm__ ("break 0,0")
 #elif defined(MEMFAULT_UNITTEST) || defined(__APPLE__)  // Memfault iOS SDK also #includes this header
 #  define MEMFAULT_GET_LR(_a) _a = 0
 #  define MEMFAULT_GET_PC(_a) _a = 0
+#  define MEMFAULT_BREAKPOINT(val)  (void)0
 #else
 #  error "New architecture to add support for!"
 #endif /* defined(__GNUC__) && defined(__arm__) */

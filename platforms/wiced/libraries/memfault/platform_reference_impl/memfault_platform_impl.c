@@ -10,6 +10,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
+#include "memfault/core/platform/core.h"
 
 #include "memfault/http/root_certs.h"
 #include "memfault_platform_wiced.h"
@@ -41,13 +42,6 @@ int memfault_platform_boot(void) {
   }
 
   return 0;
-}
-
-void memfault_platform_halt_if_debugging(void) {
-  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0) {
-    return;
-  }
-  WICED_TRIGGER_BREAKPOINT();
 }
 
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {

@@ -18,7 +18,8 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"clear_core", memfault_demo_cli_cmd_clear_core, "Clear an existing coredump"},
   {"print_chunk", memfault_demo_cli_cmd_print_chunk, "Get next Memfault data chunk to send and print as a curl command"},
   {"crash", memfault_demo_cli_cmd_crash, "Trigger a crash"},
-
+  {"drain_chunks",  memfault_demo_drain_chunk_data, "Flushes queued Memfault data. To upload data see https://mflt.io/posting-chunks-with-gdb"},
+  {"trace", memfault_demo_cli_cmd_trace_event_capture, "Capture an example trace event"},
   {"get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info"},
   {"reboot", memfault_demo_cli_cmd_system_reboot, "Reboot system and tracks it with a trace event"},
   {"help", memfault_shell_help_handler, "Lists all commands"},

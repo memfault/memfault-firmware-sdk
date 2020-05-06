@@ -8,10 +8,11 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/platform/core.h"
+#include "memfault/core/trace_event.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/reboot_tracking.h"
-#include "memfault/core/trace_event.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 256
@@ -48,10 +49,6 @@ int memfault_platform_boot(void) {
   memfault_trace_event_boot(evt_storage);
   memfault_reboot_tracking_collect_reset_info(evt_storage);
   return 0;
-}
-
-void memfault_platform_halt_if_debugging(void) {
-  NRF_BREAKPOINT_COND;
 }
 
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {

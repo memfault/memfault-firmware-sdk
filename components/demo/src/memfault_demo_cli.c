@@ -93,7 +93,8 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
     return MemfaultInternalReturnCode_Error;
   }
-  const eMfltPostDataStatus rv = memfault_http_client_post_data(http_client);
+  const eMfltPostDataStatus rv =
+      (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
   if (rv == kMfltPostDataStatus_NoDataFound) {
     MEMFAULT_LOG_INFO("No new data found");
   } else {
