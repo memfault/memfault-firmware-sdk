@@ -1,4 +1,4 @@
-set(MEMFAULT_SDK_ROOT ../../)
+set(MEMFAULT_SDK_ROOT ../..)
 
 # Collect Memfault SDK dependencies
 list(APPEND MEMFAULT_COMPONENTS core util panics demo http)

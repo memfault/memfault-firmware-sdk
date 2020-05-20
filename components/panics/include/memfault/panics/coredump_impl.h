@@ -34,6 +34,7 @@ typedef enum MfltCoredumpBlockType  {
   kMfltCoredumpRegionType_ArmV6orV7Mpu = 9,
   kMfltCoredumpRegionType_SoftwareVersion = 10,
   kMfltCoredumpRegionType_SoftwareType = 11,
+  kMfltCoredumpRegionType_BuildId = 12,
 } eMfltCoredumpBlockType;
 
 //! Callback that will be called to write coredump data.

@@ -1,3 +1,41 @@
+### Changes between Memfault SDK 0.4.1 and SDK 0.4.0 - May 20, 2020
+
+#### :rocket: New Features
+
+- Added native SDK support for tracking and generating a unique firmware build
+  id with any compiler! Quick integration steps can be found in
+  [memfault/core/build_info.h](components/core/include/memfault/core/build_info.h#L8-L42).
+  It is very common, especially during development, to not change the firmware
+  version between editing and compiling the code. This will lead to issues when
+  recovering backtraces or symbol information because the debug information in
+  the symbol file may be out of sync with the actual binary. Tracking a build id
+  enables the Memfault cloud to identify and surface when this happens! You can
+  also make use of two new APIs:
+  - `memfault_build_info_dump()` can be called on boot to display the build that
+    is running. This can be a useful way to sanity check that your debugger
+    succesfully flashed a new image.
+  - `memfault_build_info_read()` can be used to read the build id for your own
+    use cases. For example you could append a portion of it to a debug version
+    to make it unique.
+
+#### :chart_with_upwards_trend: Improvements
+
+- The CMake [build system helper](README.md#add-sources-to-build-system) is now
+  compatible with any 3.x version of CMake (previously required 3.6 or newer).
+- The unique firmware build id is stored automatically as part of coredump
+  collection.
+
+#### :boom: Breaking Changes
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), you will need
+  to add the following files to your build:
+  - `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_build_id.c`
+  - `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_core_utils.c`
+- We also encourage you to add a
+  [unique build id](components/core/include/memfault/core/build_info.h#L8-L42)
+  to your build (several line code change).
+
 ### Changes between Memfault SDK 0.4.0 and SDK 0.3.4 - May 6, 2020
 
 #### :rocket: New Features

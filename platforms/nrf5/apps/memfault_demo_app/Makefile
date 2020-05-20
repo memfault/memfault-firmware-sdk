@@ -131,6 +131,13 @@ LIB_FILES += \
 # Optimization flags
 OPT = -O3 -g3
 
+# Memfault Flags
+
+# MEMFAULT_DATA_SOURCE_RLE_ENABLED can be used to toggle whether or not run-length-encoding is used
+# to compress packetized data
+# CFLAGS += -DMEMFAULT_DATA_SOURCE_RLE_ENABLED=0
+CFLAGS += -DMEMFAULT_USE_GNU_BUILD_ID=1
+
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DBOARD_PCA10056
@@ -148,7 +155,6 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
-#CFLAGS += -DMEMFAULT_DATA_SOURCE_RLE_ENABLED=0
 # C++ flags common to all targets
 CXXFLAGS += $(OPT)
 

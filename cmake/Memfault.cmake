@@ -19,6 +19,10 @@
 # paths
 
 function(memfault_library sdk_root components src_var_name inc_var_name)
+  if(NOT IS_ABSOLUTE ${sdk_root})
+    set(sdk_root "${CMAKE_CURRENT_SOURCE_DIR}/${sdk_root}")
+  endif()
+
   foreach(component IN LISTS ${components})
     file(GLOB MEMFAULT_COMPONENT_${component} ${sdk_root}/components/${component}/src/*.c)
     list(APPEND SDK_SRC ${MEMFAULT_COMPONENT_${component}})
@@ -30,10 +34,10 @@ function(memfault_library sdk_root components src_var_name inc_var_name)
   endif()
 
   if(arch STREQUAL "ARCH_XTENSA")
-    list(FILTER SDK_SRC EXCLUDE REGEX memfault_fault_handling_arm.c)
-    list(FILTER SDK_SRC EXCLUDE REGEX arch_arm_cortex_m.c)
+    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/memfault_fault_handling_arm.c)
+    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/arch_arm_cortex_m.c)
   elseif(arch STREQUAL "ARCH_ARM_CORTEX_M")
-    list(FILTER SDK_SRC EXCLUDE REGEX memfault_fault_handling_xtensa.c)
+    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/memfault_fault_handling_xtensa.c)
   else()
     message(FATAL_ERROR "Unsupported Arch: ${arch}")
   endif()

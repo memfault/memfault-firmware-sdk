@@ -7,6 +7,7 @@
 
 extern "C" {
   #include "fakes/fake_memfault_platform_coredump_storage.h"
+  #include "memfault/core/build_info.h"
   #include "memfault/core/compiler.h"
   #include "memfault/core/platform/core.h"
   #include "memfault/core/platform/device_info.h"
@@ -21,6 +22,11 @@ extern "C" {
 
   static sMfltCoredumpRegion s_fake_arch_region[2];
   static size_t s_num_fake_arch_regions;
+
+  static const uint8_t s_fake_memfault_build_id[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+    0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0f, 0x10, 0x11, 0x12, 0x13
+  };
 
   void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
     *info = (struct MemfaultDeviceInfo) {
@@ -42,6 +48,13 @@ extern "C" {
     return fake_memfault_platform_coredump_storage_read(offset, buf, buf_len);
   }
 
+  bool memfault_build_info_read(sMemfaultBuildInfo *info) {
+    const bool build_info_available = mock().actualCall(__func__).returnBoolValueOrDefault(false);
+    if (build_info_available) {
+      memcpy(info->build_id, s_fake_memfault_build_id, sizeof(s_fake_memfault_build_id));
+    }
+    return build_info_available;
+  }
 }
 
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
@@ -57,6 +70,7 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 
 TEST_GROUP(MfltCoredumpTestGroup) {
   void setup() {
+    mock().enable();
     fake_memfault_platform_coredump_storage_setup(s_storage_buf, sizeof(s_storage_buf), 1024);
     memfault_platform_coredump_storage_erase(0, sizeof(s_storage_buf));
 
@@ -115,6 +129,7 @@ static bool prv_collect_regions_and_save(void *regs, size_t size,
   if (num_regions != 0) {
     // we are going to try and write a coredump so this should trigger a header read
     mock().expectOneCall("memfault_platform_coredump_storage_read");
+    mock().ignoreOtherCalls(); // We will test handling memfault_build_info_read() explicitly
   }
 
   sMemfaultCoredumpSaveInfo info = {
@@ -129,12 +144,18 @@ static bool prv_collect_regions_and_save(void *regs, size_t size,
   return success;
 }
 
-static size_t prv_compute_space_needed(void *regs, size_t size, uint32_t trace_reason) {
+static size_t prv_compute_space_needed_with_build_id(void *regs, size_t size, uint32_t trace_reason,
+                                                     bool include_build_id) {
   mock().checkExpectations();
   // computing the space needed to save a coredump shouldn't require any access to the storage
   // medium itself
   mock().expectNCalls(0, "memfault_coredump_read");
   mock().expectNCalls(0, "memfault_platform_coredump_storage_read");
+
+  // if there are no regions, no coredump will be saved so the build id call will never be invoked
+  if (s_num_fake_regions != 0) {
+    mock().expectOneCall("memfault_build_info_read").andReturnValue(include_build_id);
+  }
   size_t num_regions = 0;
   const sMfltCoredumpRegion *regions =
       memfault_platform_coredump_get_regions(NULL, &num_regions);
@@ -147,7 +168,14 @@ static size_t prv_compute_space_needed(void *regs, size_t size, uint32_t trace_r
   };
   const size_t size_needed = memfault_coredump_get_save_size(&info);
   mock().checkExpectations();
+  mock().clear();
   return size_needed;
+}
+
+static size_t prv_compute_space_needed(void *regs, size_t size,
+                                       uint32_t trace_reason) {
+  const bool include_build_id = false;
+  return prv_compute_space_needed_with_build_id(regs, size, trace_reason, include_build_id);
 }
 
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
@@ -161,6 +189,15 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
   prv_assert_storage_empty();
 }
 
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpEmptyStorage) {
+  fake_memfault_platform_coredump_storage_setup(NULL, 0, 1024);
+
+  size_t total_size;
+  const bool has_coredump = memfault_coredump_has_valid_coredump(&total_size);
+  CHECK(!has_coredump);
+}
+
+
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNothinWritten) {
   prv_assert_storage_empty();
 }
@@ -169,20 +206,35 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const size_t coredump_size = 212;
-  for (size_t i = 1; i <= coredump_size; i++) {
+  const size_t coredump_size_without_build_id = 212;
+  const size_t coredump_size_with_build_id = coredump_size_without_build_id + 20 /* sha1 */ + 12 /* sMfltCoredumpBlock */;
+  for (size_t i = 1; i <= coredump_size_with_build_id; i++) {
     uint8_t storage[i];
     memset(storage, 0x0, sizeof(storage));
     fake_memfault_platform_coredump_storage_setup(storage, i, i);
     memfault_platform_coredump_storage_clear();
+
+    // build id is written after the header and regs
+    const uint32_t segment_hdr_sz = 12;
+
+    const size_t build_id_start_offset = (12 + sizeof(regs) + segment_hdr_sz);
+    const bool do_collect_build_id = (i >= (build_id_start_offset + 3));
+
+    if (i >= build_id_start_offset) {
+      mock().expectOneCall("memfault_build_info_read").andReturnValue(do_collect_build_id);
+    }
     bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
 
     // even if storage itself is too small we should always be able to compute the amount of space
     // needed!
-    const size_t space_needed = prv_compute_space_needed((void *)&regs, sizeof(regs), trace_reason);
-    LONGS_EQUAL(coredump_size, space_needed);
+    const size_t space_needed = prv_compute_space_needed_with_build_id((void *)&regs, sizeof(regs),
+                                                                       trace_reason, do_collect_build_id);
 
-    CHECK(success == (i == coredump_size));
+    const size_t expected_coredump_size = do_collect_build_id ? coredump_size_with_build_id :
+                                                                coredump_size_without_build_id;
+    LONGS_EQUAL(expected_coredump_size, space_needed);
+
+    CHECK(success == (i == coredump_size_with_build_id));
   }
 }
 
@@ -258,6 +310,8 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   const uint32_t regs[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
   const uint32_t trace_reason = 0xdead;
 
+  mock().expectOneCall("memfault_build_info_read").andReturnValue(true);
+
   prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
 
   uint8_t *coredump_buf = &s_storage_buf[0];
@@ -272,7 +326,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
 
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
-  total_length += (5 * segment_hdr_sz) + strlen(info.device_serial) +
+  total_length += (6 * segment_hdr_sz) + sizeof(s_fake_memfault_build_id) + strlen(info.device_serial) +
       strlen(info.hardware_version) + strlen(info.software_version) + strlen(info.software_type) + sizeof(uint32_t);
 
   const uint32_t pad_needed = (4 - (total_length % 4));
@@ -299,6 +353,11 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   coredump_buf += sizeof(regs);
 
   // device info
+  LONGS_EQUAL(12, *((uint32_t*)(uintptr_t)coredump_buf));
+  coredump_buf += segment_hdr_sz;
+  MEMCMP_EQUAL(s_fake_memfault_build_id, coredump_buf, sizeof(s_fake_memfault_build_id));
+  coredump_buf += sizeof(s_fake_memfault_build_id);
+
   LONGS_EQUAL(2, *((uint32_t*)(uintptr_t)coredump_buf));
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.device_serial, coredump_buf, strlen(info.device_serial));

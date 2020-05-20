@@ -130,14 +130,11 @@ SECTIONS
 
 SECTIONS
 {
-  /**
-   * A unique identifier for the firmware. A great way to make sure the elf _exactly_ matches
-   * the binary running: https://interrupt.memfault.com/blog/gnu-build-id-for-firmware
-   */
-  .gnu_build_id :
+  /** Integrate build id as described in memfault/core/build_info.h */
+  .note.gnu.build-id :
   {
-    PROVIDE(g_gnu_build_id = .);
-    *(.note.gnu.build-id)
+     __start_gnu_build_id_start = .;
+     KEEP(*(.note.gnu.build-id))
   } > FLASH
 
   /** Create some linker symbols describing where to save cores */

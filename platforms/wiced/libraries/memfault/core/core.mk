@@ -2,6 +2,8 @@ NAME := MemfaultCore
 
 $(NAME)_SOURCES := \
   src/arch_arm_cortex_m.c \
+  src/memfault_build_id.c \
+  src/memfault_core_utils.c \
   src/memfault_data_packetizer.c \
   src/memfault_event_storage.c \
   src/memfault_log.c \

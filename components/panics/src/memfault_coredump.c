@@ -11,6 +11,7 @@
 
 #include <string.h>
 
+#include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/platform/device_info.h"
@@ -120,6 +121,15 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx) {
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
+
+  sMemfaultBuildInfo build_info;
+  if (memfault_build_info_read(&build_info)) {
+    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_BuildId,
+                                       build_info.build_id, sizeof(build_info.build_id),
+                                       write_cb, ctx)) {
+      return false;
+    }
+  }
 
   if (info.device_serial) {
     if (!memfault_coredump_write_block(kMfltCoredumpRegionType_DeviceSerial,

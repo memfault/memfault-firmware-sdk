@@ -23,6 +23,7 @@
 #include "memfault/core/platform/core.h"
 #include "mflt_cli.h"
 
+#include "memfault/core/build_info.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/panics/platform/reboot_tracking.h"
@@ -41,28 +42,6 @@ static void log_init(void) {
   NRF_LOG_DEFAULT_BACKENDS_INIT();
 }
 
-typedef struct ElfNoteSection {
-  uint32_t namesz;
-  uint32_t descsz;
-  uint32_t type;
-  char  namedata[];
-} sElfNoteSection;
-
-// linker defined symbol
-extern char g_gnu_build_id[];
-
-static void prv_dump_build_id(void) {
-  char build_id_sha[41] = { 0 };
-
-  const sElfNoteSection *elf = (sElfNoteSection *)g_gnu_build_id;
-  const char *data = &elf->namedata[elf->namesz]; // Skip over { 'G', 'N', 'U', '\0' }
-
-  for (int i = 0; i < elf->descsz; i++) {
-    snprintf(&build_id_sha[i*2], 3, "%02x", data[i]);
-  }
-  NRF_LOG_INFO("GNU Build Id: %s", build_id_sha);
-}
-
 int main(void) {
   // initialize reboot tracking and store state from NRF_POWER->RESETREAS
   memfault_platform_reboot_tracking_boot();
@@ -74,7 +53,7 @@ int main(void) {
   timers_init();
   mflt_cli_init();
   memfault_platform_boot();
-  prv_dump_build_id();
+  memfault_build_info_dump();
 
   while (1) {
     mflt_cli_try_process();
