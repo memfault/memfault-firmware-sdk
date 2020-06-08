@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "memfault/panics/trace_reason_types.h"
+#include "memfault/core/reboot_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +52,7 @@ typedef struct CoredumpCrashInfo {
   void *stack_address;
   //! The reason the reset is taking place. Sometimes you may want to collect different memory
   //! regions based on the reset type (i.e assert vs HardFault)
-  eMfltResetReason trace_reason;
+  eMemfaultRebootReason trace_reason;
   //! Arch specific exception state or NULL when the device is not in an exception state (i.e
   //! memfault_platform_coredump_get_regions() invoked from
   //! memfault_coredump_storage_compute_size_required())

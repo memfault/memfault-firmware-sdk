@@ -15,7 +15,7 @@ import pytest
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(os.path.dirname(script_dir))
-sys.path.append(root_dir)
+sys.path.insert(0, root_dir)
 
 
 @pytest.fixture

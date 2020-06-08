@@ -12,8 +12,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/core/reboot_reason_types.h"
 #include "memfault/panics/platform/coredump.h"
-#include "memfault/panics/trace_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
 typedef struct MemfaultCoredumpSaveInfo {
   const void *regs;
   size_t regs_size;
-  eMfltResetReason trace_reason;
+  eMemfaultRebootReason trace_reason;
   const sMfltCoredumpRegion *regions;
   size_t num_regions;
 } sMemfaultCoredumpSaveInfo;
@@ -42,7 +42,7 @@ bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
 //!
 //! @param regs The register state at the time of the fault occurred
 //! @param reason The reason the fault occurred
-void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason);
+void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason);
 
 //! Computes the size required to save a coredump on the system
 //!

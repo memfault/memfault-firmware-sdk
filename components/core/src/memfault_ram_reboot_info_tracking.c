@@ -13,7 +13,7 @@
 //!    upon reboot & the memory must be placed in the same region for the firmwares running on the
 //!    system (i.e bootloader & main image).
 
-#include "memfault/panics/reboot_tracking.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault_reboot_tracking_private.h"
 
 #include <inttypes.h>
@@ -40,7 +40,7 @@ typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   uint8_t crash_count;
   uint8_t rsvd1[1];
   uint8_t coredump_saved;
-  uint32_t last_reboot_reason; // eMfltResetReason or MEMFAULT_REBOOT_REASON_NOT_SET
+  uint32_t last_reboot_reason; // eMemfaultRebootReason or MEMFAULT_REBOOT_REASON_NOT_SET
   uint32_t pc;
   uint32_t lr;
   //! Most MCUs have a register which reveals why a device rebooted.
@@ -83,7 +83,7 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   }
 
   *info = (sMfltResetReasonInfo) {
-    .reason = (eMfltResetReason)s_mflt_reboot_info->last_reboot_reason,
+    .reason = (eMemfaultRebootReason)s_mflt_reboot_info->last_reboot_reason,
     .pc = s_mflt_reboot_info->pc,
     .lr = s_mflt_reboot_info->lr,
     .reset_reason_reg0 = s_mflt_reboot_info->reset_reason_reg0,
@@ -93,7 +93,7 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   return true;
 }
 
-static void prv_record_reboot_event(eMfltResetReason reboot_reason,
+static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
                                     const sMfltRebootTrackingRegInfo *reg) {
   if (reboot_reason >= kMfltRebootReason_UnknownError) {
     s_mflt_reboot_info->crash_count++;
@@ -125,7 +125,7 @@ void memfault_reboot_tracking_boot(
     return;
   }
 
-  eMfltResetReason reset_reason = kMfltRebootReason_Unknown;
+  eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
   if (bootup_info != NULL) {
     s_mflt_reboot_info->reset_reason_reg0 = bootup_info->reset_reason_reg;
     reset_reason = bootup_info->reset_reason;
@@ -134,7 +134,7 @@ void memfault_reboot_tracking_boot(
   prv_record_reboot_event(reset_reason, NULL);
 }
 
-void memfault_reboot_tracking_mark_reset_imminent(eMfltResetReason reboot_reason,
+void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_reason,
                                                   const sMfltRebootTrackingRegInfo *reg) {
   if (!prv_check_or_init_struct()) {
     return;

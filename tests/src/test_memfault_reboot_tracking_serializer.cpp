@@ -6,8 +6,8 @@
 #include "fakes/fake_memfault_event_storage.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/core/serializer_helper.h"
-#include "memfault/panics/reboot_tracking.h"
 #include "memfault_reboot_tracking_private.h"
 
 static sMfltResetReasonInfo s_fake_reset_reason_info;

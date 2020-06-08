@@ -6,7 +6,7 @@
 #include <string.h>
 
 extern "C" {
-  #include "memfault/panics/reboot_tracking.h"
+  #include "memfault/core/reboot_tracking.h"
   #include "memfault_reboot_tracking_private.h"
 
   static uint8_t s_mflt_reboot_tracking_region[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
@@ -40,7 +40,7 @@ TEST(MfltStorageTestGroup, Test_SetAndGetCrashInfo) {
   info.pc = 0x1;
   info.lr = 0x2;
 
-  const eMfltResetReason reason = kMfltRebootReason_Assert;
+  const eMemfaultRebootReason reason = kMfltRebootReason_Assert;
   memfault_reboot_tracking_mark_reset_imminent(reason, &info);
   memfault_reboot_tracking_mark_coredump_saved();
 

@@ -26,7 +26,7 @@
 #include "memfault/core/build_info.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
-#include "memfault/panics/platform/reboot_tracking.h"
+#include "memfault/core/platform/reboot_tracking.h"
 
 static void timers_init(void) {
   ret_code_t err_code;

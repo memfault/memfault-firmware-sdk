@@ -33,7 +33,7 @@ typedef enum MfltResetReason {
   kMfltRebootReason_MemFault = 0x9200,
   kMfltRebootReason_UsageFault = 0x9300,
   kMfltRebootReason_HardFault = 0x9400,
-} eMfltResetReason;
+} eMemfaultRebootReason;
 
 #ifdef __cplusplus
 }

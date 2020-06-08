@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 #include "memfault/core/event_storage.h"
-#include "memfault/panics/trace_reason_types.h"
+#include "memfault/core/reboot_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ typedef struct BootupInfo {
   //!
   //! @note If there is not additional info available about the reset, this should be set to 0
   //! (kMfltRebootReason_Unknown).
-  eMfltResetReason reset_reason;
+  eMemfaultRebootReason reset_reason;
 } sResetBootupInfo;
 
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 64
@@ -89,9 +89,9 @@ typedef struct MfltRebootTrackingRegInfo {
 //! It can also be called for happy-path reboots such as a reboot due to a user clicking
 //! a button or a reboot due to an OTA update taking place. It's up to the user of the SDK
 //! to call the API in these scenarios
-//! @param reboot_reason The reason for the reboot. See eMfltResetReason for options
+//! @param reboot_reason The reason for the reboot. See eMemfaultRebootReason for options
 //! @param reg Register state at the time the reboot was initiated or NULL if no state is available
-void memfault_reboot_tracking_mark_reset_imminent(eMfltResetReason reboot_reason,
+void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_reason,
                                                   const sMfltRebootTrackingRegInfo *reg);
 
 //! Collects recent reset info and pushes it to memfault_event_storage so that the data can
@@ -118,6 +118,12 @@ size_t memfault_reboot_tracking_get_crash_count(void);
 
 //! Reset the crash count to 0
 void memfault_reboot_tracking_reset_crash_count(void);
+
+//! Flags that a coredump has been collected as part of this reboot
+//!
+//! @note This is called by the "panics" component coredump integration automatically and should
+//! never need to be called by an end user directly
+void memfault_reboot_tracking_mark_coredump_saved(void);
 
 
 #ifdef __cplusplus

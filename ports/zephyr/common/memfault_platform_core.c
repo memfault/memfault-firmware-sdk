@@ -11,8 +11,8 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
-#include "memfault/panics/reboot_tracking.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 100

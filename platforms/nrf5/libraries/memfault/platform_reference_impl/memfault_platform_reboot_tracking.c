@@ -11,8 +11,8 @@
 #include "nrf_soc.h"
 #include "nrf_stack_guard.h"
 
-#include "memfault/panics/platform/reboot_tracking.h"
-#include "memfault/panics/reboot_tracking.h"
+#include "memfault/core/platform/reboot_tracking.h"
+#include "memfault/core/reboot_tracking.h"
 
 static uint32_t prv_reset_reason_get(void) {
   if (nrf_sdh_is_enabled()) {

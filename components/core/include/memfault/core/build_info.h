@@ -31,7 +31,9 @@
 //!   1. Pass the "--build-id" argument to GNU LD.
 //!      ("-Wl,--build-id" when invoking the linker via GCC)
 //!
-//!   2. Add the following snippet to your projects linker script (.ld file)
+//!   2. Add the -DMEMFAULT_USE_GNU_BUILD_ID=1 CFLAG to your CC invocation
+//!
+//!   3. Add the following snippet to your projects linker script (.ld file)
 //!      where "FLASH" below will match the name of the MEMORY section
 //!      read-only data and text is placed in.
 //!

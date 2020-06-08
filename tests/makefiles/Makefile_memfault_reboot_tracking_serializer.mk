@@ -2,7 +2,7 @@ COMPONENT_NAME=memfault_reboot_tracking_serializer
 
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_serializer_helper.c \
-  $(MFLT_COMPONENTS_DIR)/panics/src/memfault_reboot_tracking_serializer.c \
+  $(MFLT_COMPONENTS_DIR)/core/src/memfault_reboot_tracking_serializer.c \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_minimal_cbor.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_event_storage.cpp \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_debug_log.c \

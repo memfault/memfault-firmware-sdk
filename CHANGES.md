@@ -1,3 +1,41 @@
+### Changes between Memfault SDK 0.4.2 and SDK 0.4.1 - June 8, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Moved `reboot_tracking.h` to `core` component since it has no dependencies on
+  anything from the `panics` component. This allows the reboot tracking to be
+  more easily integrated in a standalone fashion.
+- [Published a new guide](https://mflt.io/release-mgmt) detailing how to manage
+  firmware updates using Memfault.
+- Disabled optimizations for `memfault_fault_handling_assert()`. This improves
+  the recovery of local variables of frames in the backtrace when certain
+  optimization levels are used.
+- Updated `memfault_sdk_assert.c` to address a GCC warning
+  (`-Wpointer-to-int-cast`) emitted when compiling the file for 64 bit
+  architectures.
+- Misc README improvements.
+
+#### :boom: Breaking Changes
+
+- If you are already using reboot tracking in your system, you will need to
+  update the following includes in your code:
+
+```diff
+-#include "memfault/panics/reboot_tracking.h"
+-#include "memfault/panics/reboot_reason_types.h"
++#include "memfault/core/reboot_tracking.h"
++#include "memfault/panics/reboot_reason_types.h"
+```
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system), you will need
+  to update the path for the following files:
+
+  - `$(MEMFAULT_SDK_ROOT)/components/{panics => core}/src/memfault_ram_reboot_info_tracking.c`
+  - `$(MEMFAULT_SDK_ROOT)/components/{panics => core}/src/memfault_reboot_tracking_serializer.c`
+
+- `eMfltResetReason` was renamed to `eMemfaultRebootReason`.
+
 ### Changes between Memfault SDK 0.4.1 and SDK 0.4.0 - May 20, 2020
 
 #### :rocket: New Features
@@ -118,13 +156,13 @@
   [NRF52 demo app](platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
   and a new `reboot` CLI command to easily exercise it.
 - A `reset_reason` can now optionally be provided as part of
-  [`sResetBootupInfo`](components/panics/include/memfault/panics/reboot_tracking.h#L41).
+  [`sResetBootupInfo`](components/panics/include/memfault/core/reboot_tracking.h#L41).
   This can be useful for scenarios where the reboot reason is known on bootup
   but could not be set prior to the device crashing.
 - A reboot reason event will now _always_ be generated when
   `memfault_reboot_tracking_boot()` is called even if no information about the
   reboot has been provided. In this scenario, the reset reason will be
-  [`kMfltRebootReason_Unknown`](components/panics/include/memfault/panics/trace_reason_types.h#L16)
+  [`kMfltRebootReason_Unknown`](components/panics/include/memfault/core/reboot_reason_types.h#L16)
 
 #### :house: Internal
 
@@ -406,8 +444,8 @@
 - Enhanced Reboot Tracking module within the **panics** component. Reboots that
   don't result in coredumps can now be easily tracked (i.e brown outs, system
   watchdogs, user initiated resets, resets due to firmware updates, etc). See
-  `memfault/panics/reboot_tracking.h` for more details and
-  https://mflt.io/2QlOlgH for a step-by-step setup tutorial.
+  `memfault/core/reboot_tracking.h` for more details and https://mflt.io/2QlOlgH
+  for a step-by-step setup tutorial.
 - Added Event Storage module within the **core** component. This is a small RAM
   backed data store that queues up traces to be published to the Memfault cloud.
   To minimize the space needed and transport overhead, all events collected

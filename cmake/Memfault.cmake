@@ -6,8 +6,8 @@
 # files needed for a project, you can just add the following lines:
 #
 # set(MEMFAULT_SDK_ROOT <The path to the root of the memfault-firmware-sdk repo>)
+# list(APPEND MEMFAULT_COMPONENTS <The SDK components to be used, i.e "core util">)
 # include(${MEMFAULT_SDK_ROOT}/cmake/MemfaultWorker.cmake)
-# set(MEMFAULT_COMPONENTS <The SDK components to be used, i.e "core panics util">)
 # memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
 #   MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS)
 #

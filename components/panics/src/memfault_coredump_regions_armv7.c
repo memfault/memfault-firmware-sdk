@@ -11,6 +11,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/panics/coredump_impl.h"
 #include "memfault/panics/platform/coredump.h"
 
 // By default, enable collection of interrupt state at the time the coredump is collected. User of

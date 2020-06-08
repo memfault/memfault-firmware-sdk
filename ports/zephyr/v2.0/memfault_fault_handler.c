@@ -10,9 +10,9 @@
 #include <zephyr.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/reboot_reason_types.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
-#include "memfault/panics/trace_reason_types.h"
 
 void k_sys_fatal_error_handler(unsigned int reason,
                                const z_arch_esf_t *esf) {

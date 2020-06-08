@@ -6,22 +6,21 @@
 //! @brief
 //! Fault handling for Xtensa based architectures
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/panics/arch/xtensa/esp32.h"
-#include "memfault/panics/reboot_tracking.h"
-#include "memfault_reboot_tracking_private.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
-#include "memfault/core/compiler.h"
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   *num_regions = 0;
   return NULL;
 }
 
-static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
+static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
-void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) {
+void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
       .pc = regs->pc,

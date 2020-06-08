@@ -9,12 +9,12 @@
 #include "memfault/panics/fault_handling.h"
 
 #include "memfault/core/platform/core.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
-#include "memfault_reboot_tracking_private.h"
 
-static eMfltResetReason s_crash_reason = kMfltRebootReason_Unknown;
+static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
 typedef MEMFAULT_PACKED_STRUCT MfltCortexMRegs {
   uint32_t r0;
@@ -88,7 +88,7 @@ static uint32_t prv_read_msp_reg(void) {
 #  error "New compiler to add support for!"
 #endif
 
-void memfault_fault_handler(const sMfltRegState *regs, eMfltResetReason reason) {
+void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
       .pc = regs->exception_frame->pc,
@@ -418,15 +418,13 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
 #  error "New compiler to add support for!"
 #endif
 
-
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
+static void prv_fault_handling_assert(void *pc, void *lr) {
   sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)pc,
     .lr = (uint32_t)lr,
   };
   s_crash_reason = kMfltRebootReason_Assert;
   memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
-
 
   memfault_platform_halt_if_debugging();
 
@@ -442,6 +440,14 @@ void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
   volatile uint32_t *icsr = (uint32_t *)0xE000ED04;
   *icsr |= nmipendset_mask;
   __asm("isb");
+}
+
+// Note: This function is annotated as "noreturn" which can be useful for static analysis.
+// However, this can also lead to compiler optimizations that make recovering local variables
+// difficult (such as ignoring ABI requirements to preserve callee-saved registers)
+MEMFAULT_NO_OPT
+void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
+  prv_fault_handling_assert(pc, lr);
 
   // We just pend'd a NMI interrupt which is higher priority than any other interrupt and so we
   // should not get here unless the this gets called while fault handling is _already_ in progress

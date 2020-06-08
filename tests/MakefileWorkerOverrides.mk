@@ -37,7 +37,7 @@ export CPPUTEST_USE_GCOV=Y
 # Enable branch coverage reporting
 export GCOV_ARGS=-b -c
 
-# These clang  warninsgs  aren't particularly helpful
+# These warnings aren't particularly helpful for our use case so we disable them
 CPPUTEST_WARNINGFLAGS = \
   -Wno-missing-braces \
   -Wno-missing-field-initializers \
@@ -63,6 +63,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-gnu-variable-sized-type-not-at-end \
   -Wno-inconsistent-missing-destructor-override \
   -Wno-keyword-macro \
+  -Wno-missing-noreturn \
   -Wno-reserved-id-macro \
   -Wno-shorten-64-to-32 \
   -Wno-vla-extension \

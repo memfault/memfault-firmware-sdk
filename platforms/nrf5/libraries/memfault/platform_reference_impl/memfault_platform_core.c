@@ -9,10 +9,10 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
-#include "memfault/panics/reboot_tracking.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 256

@@ -9,9 +9,9 @@
 
 #include <zephyr.h>
 
+#include "memfault/core/reboot_reason_types.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
-#include "memfault/panics/trace_reason_types.h"
 
 void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf) {
   sMfltRegState reg = {

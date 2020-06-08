@@ -15,11 +15,11 @@
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/http/http_client.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
-#include "memfault/panics/reboot_tracking.h"
 
 // Defined in memfault_demo_cli_aux.c
 extern void *g_memfault_unaligned_buffer;

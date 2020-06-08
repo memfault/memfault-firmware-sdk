@@ -135,7 +135,7 @@ static bool prv_collect_regions_and_save(void *regs, size_t size,
   sMemfaultCoredumpSaveInfo info = {
     .regs = regs,
     .regs_size = size,
-    .trace_reason = (eMfltResetReason)trace_reason,
+    .trace_reason = (eMemfaultRebootReason)trace_reason,
     .regions = regions,
     .num_regions = num_regions,
   };
@@ -162,7 +162,7 @@ static size_t prv_compute_space_needed_with_build_id(void *regs, size_t size, ui
   sMemfaultCoredumpSaveInfo info = {
     .regs = regs,
     .regs_size = size,
-    .trace_reason = (eMfltResetReason)trace_reason,
+    .trace_reason = (eMemfaultRebootReason)trace_reason,
     .regions = regions,
     .num_regions = num_regions,
   };
