@@ -13,20 +13,34 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
-#include "memfault/http/http_client.h"
+#include "memfault/demo/util.h"
 
 #ifndef MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES
 #  define MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES (80)
 #endif
 
+//
+// Weak function implementations for when the "http" component is not enabled. This way we can
+// still dump a CLI command that shows how to post a chunk using curl.
+//
+
+MEMFAULT_WEAK
+const char *memfault_demo_get_chunks_url(void) {
+  return "https://chunks.memfault.com/api/v0/chunks/DEMOSERIAL";
+}
+
+MEMFAULT_WEAK
+const char *memfault_demo_get_api_project_key(void) {
+  return "<YOUR PROJECT KEY>";
+}
+
 static void prv_write_curl_epilogue(void) {
-  char url[MEMFAULT_HTTP_URL_BUFFER_SIZE];
-  memfault_http_build_url(url, MEMFAULT_HTTP_API_CHUNKS_SUBPATH);
-  MEMFAULT_LOG_RAW("| xxd -p -r | curl -X POST %s\\", url);
-  MEMFAULT_LOG_RAW(" -H 'Memfault-Project-Key:%s'\\", g_mflt_http_client_config.api_key);
+  MEMFAULT_LOG_RAW("| xxd -p -r | curl -X POST %s\\", memfault_demo_get_chunks_url());
+  MEMFAULT_LOG_RAW(" -H 'Memfault-Project-Key:%s'\\", memfault_demo_get_api_project_key());
   MEMFAULT_LOG_RAW(" -H 'Content-Type:application/octet-stream' --data-binary @- -i");
   MEMFAULT_LOG_RAW("\nprint_chunk done");
 }

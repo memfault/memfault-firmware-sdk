@@ -8,6 +8,7 @@ extern "C" {
   #include <stddef.h>
   #include <string.h>
 
+  #include "memfault/core/math.h"
   #include "memfault/core/platform/device_info.h"
   #include "memfault/http/http_client.h"
   #include "memfault/http/utils.h"
@@ -21,16 +22,16 @@ extern "C" {
     };
   }
 
-  sMfltHttpClientConfig g_mflt_http_client_config = {
-    .api_key = "00112233445566778899aabbccddeeff",
-    .api_host = "chunks.memfault.com",
-    .api_no_tls = true,
-    .api_port = 5002,
-  };
+  sMfltHttpClientConfig g_mflt_http_client_config;
+
 }
 
 TEST_GROUP(MfltHttpClientUtils){
   void setup() {
+    g_mflt_http_client_config = (sMfltHttpClientConfig) {
+      .api_key = "00112233445566778899aabbccddeeff",
+    };
+
     mock().strictOrder();
   }
   void teardown() {
@@ -38,6 +39,33 @@ TEST_GROUP(MfltHttpClientUtils){
     mock().clear();
   }
 };
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientOverrides) {
+  STRCMP_EQUAL("chunks.memfault.com", MEMFAULT_HTTP_GET_CHUNKS_API_HOST());
+  STRCMP_EQUAL("device.memfault.com", MEMFAULT_HTTP_GET_DEVICE_API_HOST());
+
+  LONGS_EQUAL(443, MEMFAULT_HTTP_GET_CHUNKS_API_PORT());
+  LONGS_EQUAL(443, MEMFAULT_HTTP_GET_DEVICE_API_PORT());
+
+  g_mflt_http_client_config = (sMfltHttpClientConfig) {
+    .api_key = "00112233445566778899aabbccddeeff",
+    .disable_tls = false,
+    .chunks_api = {
+      .host = "override-chunks.memfault.com",
+      .port = 1,
+    },
+    .device_api = {
+      .host = "override-api.memfault.com",
+      .port = 2,
+    },
+  };
+
+  STRCMP_EQUAL("override-chunks.memfault.com", MEMFAULT_HTTP_GET_CHUNKS_API_HOST());
+  STRCMP_EQUAL("override-api.memfault.com", MEMFAULT_HTTP_GET_DEVICE_API_HOST());
+
+  LONGS_EQUAL(1, MEMFAULT_HTTP_GET_CHUNKS_API_PORT());
+  LONGS_EQUAL(2, MEMFAULT_HTTP_GET_DEVICE_API_PORT());
+}
 
 typedef struct {
   char buf[256];
@@ -57,7 +85,7 @@ static bool prv_http_write_cb(const void *data, size_t data_len, void *ctx) {
 }
 
 TEST(MfltHttpClientUtils, Test_MfltHttpClientPost) {
-  mock().expectNCalls(7, "prv_http_write_cb");
+  mock().expectNCalls(11, "prv_http_write_cb");
   sHttpWriteCtx ctx = { 0 };
   bool success = memfault_http_start_chunk_post(prv_http_write_cb,
                                                             &ctx, 123);
@@ -65,7 +93,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientPost) {
   const char *expected_string =
       "POST /api/v0/chunks/DEMOSERIAL HTTP/1.1\r\n"
       "Host:chunks.memfault.com\r\n"
-      "User-Agent:MemfaultSDK/0.0.11\r\n"
+      "User-Agent:MemfaultSDK/0.4.2\r\n"
       "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
       "Content-Type:application/octet-stream\r\n"
       "Content-Length:123\r\n\r\n";
@@ -74,7 +102,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientPost) {
 }
 
 TEST(MfltHttpClientUtils, Test_MfltHttpClientPostSendWriteFailure) {
-  const size_t num_write_calls = 7;
+  const size_t num_write_calls = 11;
   for (size_t i = 0; i < num_write_calls; i++) {
     if (i > 0) {
       mock().expectNCalls(i, "prv_http_write_cb");
@@ -83,6 +111,100 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientPostSendWriteFailure) {
 
     sHttpWriteCtx ctx = { 0 };
     bool success = memfault_http_start_chunk_post(prv_http_write_cb, &ctx, 10);
+    CHECK(!success);
+    mock().checkExpectations();
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrl) {
+  mock().expectNCalls(26, "prv_http_write_cb");
+  sHttpWriteCtx ctx = { 0 };
+  bool success = memfault_http_get_latest_ota_payload_url(prv_http_write_cb, &ctx);
+  CHECK(success);
+
+  const char *expected_string =
+      "GET /api/v0/releases/latest/url?&device_serial=DEMOSERIAL&hardware_version=main-proto&software_type=main&current_version=1.0.0 HTTP/1.1\r\n"
+      "Host:device.memfault.com\r\n"
+      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
+      "\r\n";
+
+  STRCMP_EQUAL(expected_string, ctx.buf);
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrlWriteFailure) {
+  const size_t num_write_calls = 26;
+  for (size_t i = 0; i < num_write_calls; i++) {
+    if (i > 0) {
+      mock().expectNCalls(i, "prv_http_write_cb");
+    }
+    mock().expectOneCall("prv_http_write_cb").andReturnValue(false);
+
+    sHttpWriteCtx ctx = { 0 };
+    bool success = memfault_http_get_latest_ota_payload_url(prv_http_write_cb, &ctx);
+    CHECK(!success);
+    mock().checkExpectations();
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayload) {
+  mock().expectNCalls(8, "prv_http_write_cb");
+  sHttpWriteCtx ctx = { 0 };
+
+  const char *url = "https://example.ota.payload.com/path/to/ota/payload/yay";
+  bool success = memfault_http_get_ota_payload(prv_http_write_cb, &ctx,
+                                               url, strlen(url));
+  CHECK(success);
+
+  const char *expected_string =
+      "GET /path/to/ota/payload/yay HTTP/1.1\r\n"
+      "Host:example.ota.payload.com\r\n"
+      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "\r\n";
+
+  STRCMP_EQUAL(expected_string, ctx.buf);
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadNoPath) {
+  mock().expectNCalls(8, "prv_http_write_cb");
+  sHttpWriteCtx ctx = { 0 };
+
+  const char *url = "https://example.ota.payload.com";
+  bool success = memfault_http_get_ota_payload(prv_http_write_cb, &ctx,
+                                               url, strlen(url));
+  CHECK(success);
+
+  const char *expected_string =
+      "GET / HTTP/1.1\r\n"
+      "Host:example.ota.payload.com\r\n"
+      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "\r\n";
+
+  STRCMP_EQUAL(expected_string, ctx.buf);
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadBadUrl) {
+  sHttpWriteCtx ctx = { 0 };
+
+  const char *url = "ftp://";
+  bool success = memfault_http_get_ota_payload(prv_http_write_cb, &ctx,
+                                               url, strlen(url));
+  CHECK(!success);
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadFailure) {
+  const size_t num_write_calls = 8;
+  for (size_t i = 0; i < num_write_calls; i++) {
+    if (i > 0) {
+      mock().expectNCalls(i, "prv_http_write_cb");
+    }
+    mock().expectOneCall("prv_http_write_cb").andReturnValue(false);
+
+    sHttpWriteCtx ctx = { 0 };
+
+    const char *url = "https://example.ota.payload.com/path/to/ota/payload/yay";
+    bool success = memfault_http_get_ota_payload(prv_http_write_cb, &ctx,
+                                                 url, strlen(url));
     CHECK(!success);
     mock().checkExpectations();
   }
@@ -108,6 +230,17 @@ static void prv_expect_parse_success(const char *rsp, size_t rsp_len, int expect
       LONGS_EQUAL(expected_http_status, ctx.http_status_code);
     }
   }
+
+  // third we only parse the header.
+  memset(&ctx, 0x0, sizeof(ctx));
+  done = memfault_http_parse_response_header(&ctx, rsp, rsp_len);
+  CHECK(done);
+  CHECK(!ctx.parse_error);
+  LONGS_EQUAL(expected_http_status, ctx.http_status_code);
+  // the message-body should not be included in the data_bytes_processed
+  // so we add the parsed content_length to recover the total size
+  const size_t total_rsp_len = (size_t)(ctx.data_bytes_processed + ctx.content_length);
+  LONGS_EQUAL(rsp_len, total_rsp_len);
 }
 
 TEST(MfltHttpClientUtils, Test_MfltResponseParser202) {
@@ -179,10 +312,17 @@ TEST(MfltHttpClientUtils, Test_VeryLongBody) {
 static void prv_expect_parse_failure(const void *response, size_t response_len,
                                      eMfltHttpParseStatus expected_parse_error) {
   sMemfaultHttpResponseContext ctx = { };
-  const bool done = memfault_http_parse_response(
+  bool done = memfault_http_parse_response(
       &ctx, response, response_len);
   CHECK(done);
-  LONGS_EQUAL(expected_parse_error, ctx.parse_error)
+  LONGS_EQUAL(expected_parse_error, ctx.parse_error);
+
+  // should also fail if we only parse the header
+  memset(&ctx, 0x0, sizeof(ctx));
+  done = memfault_http_parse_response_header(
+      &ctx, response, response_len);
+  CHECK(done);
+  LONGS_EQUAL(expected_parse_error, ctx.parse_error);
 }
 
 TEST(MfltHttpClientUtils, Test_HttpResponseUnexpectedlyLong) {
@@ -263,4 +403,134 @@ TEST(MfltHttpClientUtils, Test_MfltResponseNoColonSeparator) {
       "HTTP/1.1 202 Accepted\r\n"
       "Content-Length&10\r\n\r\n";;
   prv_expect_parse_failure(rsp, strlen(rsp), MfltHttpParseStatus_ParseHeaderError);
+}
+
+static void prv_check_result(const char *uri, const char *host,
+                             const char *path, bool expect_success,
+                             int expected_port) {
+  sMemfaultUriInfo uri_info;
+  bool success = memfault_http_parse_uri(uri, strlen(uri), &uri_info);
+  CHECK(success == expect_success);
+  if (!success) {
+    return;
+  }
+
+  LONGS_EQUAL(uri_info.host_len, strlen(host));
+  MEMCMP_EQUAL(uri_info.host, host, uri_info.host_len);
+
+  LONGS_EQUAL(uri_info.path_len, strlen(path));
+  if (uri_info.path_len == 0) {
+    CHECK(uri_info.path == NULL);
+  } else {
+    MEMCMP_EQUAL(uri_info.path, path, uri_info.path_len);
+  }
+
+  const char *http_scheme = "http://";
+  const bool is_http_scheme = (strncmp(uri, http_scheme, strlen(http_scheme)) == 0);
+
+  if (expected_port == -1) {
+    expected_port = is_http_scheme ? 80 : 443;
+  }
+
+  LONGS_EQUAL(is_http_scheme ? kMemfaultUriScheme_Http : kMemfaultUriScheme_Https,
+              uri_info.scheme);
+  LONGS_EQUAL(expected_port, uri_info.port);
+}
+
+static void prv_uri_parse_check(const char *scheme, const char *host,
+                                const char *path, bool expect_success) {
+  char uri[256];
+  int rv = snprintf(uri, sizeof(uri), "%s%s%s", scheme, host, path);
+  CHECK(rv > 0 && (size_t)rv < sizeof(uri));
+
+  prv_check_result(uri, host, path, expect_success, -1);
+}
+
+static void prv_uri_with_port_parse_check(const char *scheme, const char *host, int port,
+                                          const char *path, bool expect_success) {
+  char uri[256];
+  int rv = snprintf(uri, sizeof(uri), "%s%s:%d%s", scheme, host, port, path);
+  CHECK(rv > 0 && (size_t)rv < sizeof(uri));
+  prv_check_result(uri, host, path, expect_success, port);
+}
+
+TEST(MfltHttpClientUtils, Test_MfltParseHttpAndHttpsUris) {
+  const char *valid_prefixes[] = { "https://", "http://", "http://username:password@" };
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(valid_prefixes); i++) {
+    const bool expect_success = true;
+    const char *p = valid_prefixes[i];
+
+    const char *paths[] = {
+      "/",
+      "/a/b/c/d?param1=1&param2=2",
+      ""
+    };
+
+    for (size_t j = 0; j < MEMFAULT_ARRAY_SIZE(paths); j++) {
+      const char *path = paths[j];
+
+      //! NB: We'll test with the three valid types of hostnames
+      //!   IP-literal: "[::1]"
+      //!   IPv4address: "127.0.0.1"
+      //!   registered-name: "www.mywebsite.com"
+
+      prv_uri_parse_check(p, "www.mysite.com", path, expect_success);
+      prv_uri_with_port_parse_check(p, "www.mysite.com", 80, path, expect_success);
+
+      prv_uri_parse_check(p, "127.0.0.1", path, expect_success);
+      prv_uri_with_port_parse_check(p, "127.0.0.1", 80, path, expect_success);
+
+      prv_uri_parse_check(p, "[::1]", "/", expect_success);
+      prv_uri_with_port_parse_check(p, "[::1]", 443, path, expect_success);
+
+      prv_uri_parse_check(p, "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", path,
+                          expect_success);
+      prv_uri_with_port_parse_check(p, "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]", 832,
+                                    path, expect_success);
+    }
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltParseUriWithUnsupportedScheme) {
+  const char *unsupported_schemes[] = { "https:/", "http//", "http:/", "ftp://" };
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(unsupported_schemes); i++) {
+    const bool expect_success = false;
+    const char *scheme = unsupported_schemes[i];
+    prv_uri_parse_check(scheme, "www.mysite.com", "/api/v0/a/b/c", expect_success);
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltParseUriWithMalformedHost) {
+  const char *malformed_hosts[] = {
+    "[::1",
+    "username:password@",
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(malformed_hosts); i++) {
+    const bool expect_success = false;
+    const char *h = malformed_hosts[i];
+    prv_uri_parse_check("https://", h, "/api/v0/a/b/c", expect_success);
+    prv_uri_with_port_parse_check("http://", h, 8000, "/api/v0/a/b/c", expect_success);
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltParseUriWithBogusPort) {
+  const char *hosts_with_bogus_ports[] = {
+    "[::1]:8abc",
+    "www.example.com:80z",
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(hosts_with_bogus_ports); i++) {
+    const bool expect_success = false;
+    const char *h = hosts_with_bogus_ports[i];
+    prv_uri_parse_check("https://", h, "/api/v0/a/b/c", expect_success);
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltParseUriWithOnlyScheme) {
+  const bool expect_success = false;
+  prv_check_result("http", NULL, NULL, expect_success, 0);
+  prv_check_result("http:/", NULL, NULL, expect_success, 0);
+  prv_check_result("http://", NULL, NULL, expect_success, 0);
+  prv_check_result("http:///", NULL, NULL, expect_success, 0);
 }

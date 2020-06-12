@@ -20,8 +20,8 @@ To start integrating in your platform today,
 # Components
 
 The SDK is designed as a collection of components, so you can include only what
-is needed for your project. The SDK has been designed from the ground up to be
-code-space, bandwidth, and low-power friendly.
+is needed for your project. The SDK has been designed to have minimal impact on
+code-space, bandwidth, and power consumption.
 
 The [`components`](components/) directory folder contains the various components
 of the SDK. Each component contains a`README.md`, source code, header files and

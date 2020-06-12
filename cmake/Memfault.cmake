@@ -28,6 +28,15 @@ function(memfault_library sdk_root components src_var_name inc_var_name)
     list(APPEND SDK_SRC ${MEMFAULT_COMPONENT_${component}})
     list(APPEND SDK_INC ${sdk_root}/components/${component}/include)
   endforeach()
+
+  if ("demo" IN_LIST ${components})
+    # The demo component is enabled so let's pick up component specific cli commands
+    foreach(component IN LISTS ${components})
+      file(GLOB MEMFAULT_COMPONENT_DEMO_${component} ${sdk_root}/components/demo/src/${component}/*.c)
+      list(APPEND SDK_SRC ${MEMFAULT_COMPONENT_DEMO_${component}})
+    endforeach()
+  endif()
+
   set(arch ${ARGN})
   if(NOT arch)
     set(arch ARCH_ARM_CORTEX_M)

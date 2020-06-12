@@ -9,13 +9,14 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_chunk_transport.c \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_crc16_ccitt.c \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_varint.c \
+  $(MFLT_COMPONENTS_DIR)/demo/src/http/memfault_demo_http.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_http_client.c \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_coredump.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_debug_log.cpp \
 
 TEST_SRC_FILES = \
-  $(MFLT_TEST_SRC_DIR)/test_memfault_demo_cli.c \
+  $(MFLT_TEST_SRC_DIR)/test_memfault_demo_cli.cpp \
   $(MOCK_AND_FAKE_SRC_FILES)
 
 # Allow cast from (const char **) to (char **)

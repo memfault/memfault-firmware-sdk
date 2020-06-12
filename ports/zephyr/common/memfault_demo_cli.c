@@ -41,6 +41,62 @@ static int prv_post_chunk_cmd(const struct shell *shell, size_t argc, char **arg
 #endif
 }
 
+#if defined(CONFIG_MEMFAULT_HTTP_SUPPORT)
+typedef struct {
+  const struct shell *shell;
+  size_t total_size;
+} sMemfaultShellOtaDownloadCtx;
+
+static bool prv_handle_update_available(const sMemfaultOtaInfo *info, void *user_ctx) {
+  sMemfaultShellOtaDownloadCtx *ctx = (sMemfaultShellOtaDownloadCtx *)user_ctx;
+  shell_print(ctx->shell, "Downloading OTA payload, size=%d bytes", (int)info->size);
+  return true;
+}
+
+static bool prv_handle_data(void *buf, size_t buf_len, void *user_ctx) {
+  // this is an example cli command so we just drop the data on the floor
+  // a real implementation could save the data in this callback!
+  return true;
+}
+
+static bool prv_handle_download_complete(void *user_ctx) {
+  sMemfaultShellOtaDownloadCtx *ctx = (sMemfaultShellOtaDownloadCtx *)user_ctx;
+  shell_print(ctx->shell, "OTA download complete!");
+  return true;
+}
+#endif /* CONFIG_MEMFAULT_HTTP_SUPPORT */
+
+static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t argc, char **argv) {
+#if defined(CONFIG_MEMFAULT_HTTP_SUPPORT)
+  uint8_t working_buf[256];
+
+  sMemfaultShellOtaDownloadCtx user_ctx = {
+    .shell = shell,
+  };
+
+  sMemfaultOtaUpdateHandler handler = {
+    .buf = working_buf,
+    .buf_len = sizeof(working_buf),
+    .user_ctx = &user_ctx,
+    .handle_update_available = prv_handle_update_available,
+    .handle_data = prv_handle_data,
+    .handle_download_complete = prv_handle_download_complete,
+  };
+
+  shell_print(shell, "Checking for OTA update");
+  int rv = memfault_zephyr_port_ota_update(&handler);
+  if (rv == 0) {
+    shell_print(shell, "Up to date!");
+  } else if (rv < 0) {
+    shell_print(shell, "OTA update failed, rv=%d, errno=%d", rv, errno);
+  }
+  return rv;
+#else
+  shell_print(shell, "CONFIG_MEMFAULT_HTTP_SUPPORT not enabled");
+  return 0;
+#endif
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_memfault_cmds,
     SHELL_CMD(crash, NULL, "trigger a crash", prv_crash_example),
@@ -51,6 +107,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
               prv_print_chunk_cmd),
     SHELL_CMD(post_chunk, NULL, "get next Memfault data chunk to send and POST it to the Memfault cloud",
               prv_post_chunk_cmd),
+    SHELL_CMD(get_latest_release, NULL, "checks to see if new ota payload is available", prv_check_and_fetch_ota_payload_cmd),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

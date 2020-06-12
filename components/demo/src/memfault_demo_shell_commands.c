@@ -8,10 +8,33 @@
 
 #include "memfault_demo_shell_commands.h"
 
+#include <stddef.h>
+
+#include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/demo/cli.h"
+#include "memfault/core/compiler.h"
 
-#include <stddef.h>
+
+static int prv_panics_component_required(void) {
+  MEMFAULT_LOG_RAW("Disabled. panics component integration required");
+  return -1;
+}
+
+MEMFAULT_WEAK
+int memfault_demo_cli_cmd_get_core(int argc, char *argv[]) {
+  return prv_panics_component_required();
+}
+
+MEMFAULT_WEAK
+int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]) {
+  return prv_panics_component_required();
+}
+
+MEMFAULT_WEAK
+int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
+  return prv_panics_component_required();
+}
 
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"get_core", memfault_demo_cli_cmd_get_core, "Get coredump info"},

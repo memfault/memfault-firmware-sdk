@@ -140,7 +140,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     goto error;
   }
 
-  const char *hostname = MEMFAULT_HTTP_GET_API_HOST();
+  const char *hostname = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
   client->config = (http_client_configuration_info_t) {
       .flag = (http_client_configuration_flags_t)(
           HTTP_CLIENT_CONFIG_FLAG_SERVER_NAME | HTTP_CLIENT_CONFIG_FLAG_MAX_FRAGMENT_LEN),
@@ -295,13 +295,13 @@ int memfault_platform_http_client_post_data(
   }
 
   char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE];
-  if (!memfault_http_build_url(url_buffer, MEMFAULT_HTTP_API_CHUNKS_SUBPATH)) {
+  if (!memfault_http_build_url(url_buffer, MEMFAULT_HTTP_CHUNKS_API_SUBPATH)) {
     return kMemfaultPlatformHttpPost_BuildUrlFailed;
   }
   MEMFAULT_LOG_DEBUG("Posting data to %s", url_buffer);
 
-  const http_security_t security = g_mflt_http_client_config.api_no_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
-  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address, MEMFAULT_HTTP_GET_API_PORT(),
+  const http_security_t security = g_mflt_http_client_config.disable_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
+  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address, MEMFAULT_HTTP_GET_CHUNKS_API_PORT(),
                                    security, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
 
   // Drain all the data that is available to be sent

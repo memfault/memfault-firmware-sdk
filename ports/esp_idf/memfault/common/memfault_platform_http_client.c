@@ -96,7 +96,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     .event_handler = prv_http_event_handler,
 #endif
     .url = s_mflt_base_url_buffer,
-    .cert_pem = g_mflt_http_client_config.api_no_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
+    .cert_pem = g_mflt_http_client_config.disable_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
   esp_http_client_set_header(client, MEMFAULT_HTTP_PROJECT_KEY_HEADER, g_mflt_http_client_config.api_key);
@@ -144,7 +144,7 @@ int memfault_platform_http_client_post_data(
 
   esp_http_client_handle_t client = (esp_http_client_handle_t)_client;
   char url[MEMFAULT_HTTP_URL_BUFFER_SIZE];
-  memfault_http_build_url(url, MEMFAULT_HTTP_API_CHUNKS_SUBPATH);
+  memfault_http_build_url(url, MEMFAULT_HTTP_CHUNKS_API_SUBPATH);
   esp_http_client_set_url(client, url);
   esp_http_client_set_method(client, HTTP_METHOD_POST);
 

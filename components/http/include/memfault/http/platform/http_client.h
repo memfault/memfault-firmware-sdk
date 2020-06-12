@@ -41,7 +41,7 @@ typedef void (*MemfaultHttpClientResponseCallback)(const sMfltHttpResponse *resp
 int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out);
 
 //! Posts data that is pending transmission to Memfault's services over HTTPS to the API path defined by
-//! MEMFAULT_HTTP_API_CHUNKS_SUBPATH. The implementation is expected to set the project key header (see
+//! MEMFAULT_HTTP_CHUNKS_API_SUBPATH. The implementation is expected to set the project key header (see
 //! MEMFAULT_HTTP_PROJECT_KEY_HEADER) as well as the "Content-Type: application/octet-stream" header.
 //! See https://docs.memfault.com/ for HTTP API documentation.
 //! HTTP redirects are expected to be handled by the implementation -- in other words, when receiving 3xx responses,

@@ -17,7 +17,7 @@
 #include "memfault/http/platform/http_client.h"
 
 static const char *prv_get_scheme(void) {
-  return g_mflt_http_client_config.api_no_tls ? "http" : "https";
+  return g_mflt_http_client_config.disable_tls ? "http" : "https";
 }
 
 bool memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], const char *subpath) {
@@ -25,8 +25,8 @@ bool memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], con
   memfault_platform_get_device_info(&device_info);
 
 
-  const int rv = snprintf(url_buffer, MEMFAULT_HTTP_URL_BUFFER_SIZE, "%s://%s" MEMFAULT_HTTP_API_PREFIX "%s/%s",
-                          prv_get_scheme(), MEMFAULT_HTTP_GET_API_HOST(), subpath, device_info.device_serial);
+  const int rv = snprintf(url_buffer, MEMFAULT_HTTP_URL_BUFFER_SIZE, "%s://%s" MEMFAULT_HTTP_CHUNKS_API_PREFIX "%s/%s",
+                          prv_get_scheme(), MEMFAULT_HTTP_GET_CHUNKS_API_HOST(), subpath, device_info.device_serial);
   return (rv < MEMFAULT_HTTP_URL_BUFFER_SIZE);
 }
 

@@ -12,47 +12,71 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/core/compiler.h"
+
 #define MEMFAULT_HTTP_URL_BUFFER_SIZE (128)
 
-#ifndef MEMFAULT_HTTP_API_HOST
-#  define MEMFAULT_HTTP_API_HOST "chunks.memfault.com"
+#ifndef MEMFAULT_HTTP_CHUNKS_API_HOST
+#  define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks.memfault.com"
 #endif
-#ifndef MEMFAULT_HTTP_API_PORT
-#  define MEMFAULT_HTTP_API_PORT (443)
+#ifndef MEMFAULT_HTTP_DEVICE_API_HOST
+#  define MEMFAULT_HTTP_DEVICE_API_HOST "device.memfault.com"
 #endif
 
-#define MEMFAULT_HTTP_API_PREFIX "/api/v0/"
-#define MEMFAULT_HTTP_API_CHUNKS_SUBPATH "chunks"
+#ifndef MEMFAULT_HTTP_APIS_DEFAULT_PORT
+#  define MEMFAULT_HTTP_APIS_DEFAULT_PORT (443)
+#endif
+
+#define MEMFAULT_HTTP_CHUNKS_API_PREFIX "/api/v0/"
+#define MEMFAULT_HTTP_CHUNKS_API_SUBPATH "chunks"
 #define MEMFAULT_HTTP_PROJECT_KEY_HEADER "Memfault-Project-Key"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct {
+  //! The API host to use, NULL to use the default host.
+  const char *host;
+  //! The TCP port to use or 0 to use the default port as defined by MEMFAULT_HTTP_CHUNKS_API_PORT.
+  uint16_t port;
+} sMemfaultHttpApi;
+
 //! Configuration of the Memfault HTTP client.
 typedef struct MfltHttpClientConfig {
   //! The project API key. This is a mandatory field.
   //! Go to app.memfault.com, then navigate to "Settings" to find your key.
   const char *api_key;
-  //! The API host to use, NULL to use the default host.
-  const char *api_host;
-  //! Whether to not use TLS. When false, TLS/https will be used, otherwise plain text http will be used.
-  bool api_no_tls;
-  //! The TCP port to use or 0 to use the default port as defined by MEMFAULT_HTTP_API_PORT.
-  uint16_t api_port;
+  //! When false, TLS/https will be used, otherwise plain text http will be used.
+  bool disable_tls;
+  //! Route used to send packetized data ("chunks") to the Memfault cloud for reassembly and
+  //! processing. See https://mflt.io/data-to-cloud for more details.
+  sMemfaultHttpApi chunks_api;
+  //! Route used to get information from the Memfault cloud pertaining to a device in your fleet.
+  //! For example, the latest firmware release available.
+  sMemfaultHttpApi device_api;
 } sMfltHttpClientConfig;
 
 //! Global configuration of the Memfault HTTP client.
 //! See @ref sMfltHttpClientConfig for information about each of the fields.
 extern sMfltHttpClientConfig g_mflt_http_client_config;
 
-//! Convenience macro to get the currently configured API hostname.
-#define MEMFAULT_HTTP_GET_API_HOST() \
-  (g_mflt_http_client_config.api_host ? g_mflt_http_client_config.api_host : MEMFAULT_HTTP_API_HOST)
+//! Convenience macros to get the currently configured Chunks API hostname & Port
+#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST() \
+  (g_mflt_http_client_config.chunks_api.host ? g_mflt_http_client_config.chunks_api.host : \
+                                               MEMFAULT_HTTP_CHUNKS_API_HOST)
+#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT() \
+    (g_mflt_http_client_config.chunks_api.port ? g_mflt_http_client_config.chunks_api.port : \
+                                                 MEMFAULT_HTTP_APIS_DEFAULT_PORT)
 
-//! Convenience macro to get the currently configured API port.
-#define MEMFAULT_HTTP_GET_API_PORT() \
-  (g_mflt_http_client_config.api_port ? g_mflt_http_client_config.api_port : MEMFAULT_HTTP_API_PORT)
+
+//! Convenience macros to get the currently configured Device API hostname & Port
+#define MEMFAULT_HTTP_GET_DEVICE_API_HOST() \
+  (g_mflt_http_client_config.device_api.host ? g_mflt_http_client_config.device_api.host : \
+                                               MEMFAULT_HTTP_DEVICE_API_HOST)
+#define MEMFAULT_HTTP_GET_DEVICE_API_PORT() \
+    (g_mflt_http_client_config.device_api.port ? g_mflt_http_client_config.device_api.port : \
+                                                 MEMFAULT_HTTP_APIS_DEFAULT_PORT)
 
 //! Forward declaration of a HTTP client.
 typedef struct MfltHttpClient sMfltHttpClient;

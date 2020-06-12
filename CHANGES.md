@@ -1,3 +1,41 @@
+### Changes between Memfault SDK 0.5.0 and SDK 0.4.2 - June 11, 2020
+
+#### :rocket: New Features
+
+- Add additional utilities to the http component to facilitate easier
+  [release management](https://mflt.io/release-mgmt) integration in environments
+  with no pre-existing http stack.
+- Add new cli command, `mflt get_latest_release`, to the Zephyr demo application
+  (tested on the STM32L4) to demonstrate querying the Memfault cloud for new
+  firmware updates.
+
+#### :chart_with_upwards_trend: Improvements
+
+- Refactored `demo` component to make it easier to integrate an individual CLI
+  commands into a project since some of the commands can be helpful for
+  validating integrations. More details can be found in the README at
+  [components/demo/README.md](components/demo/README.md).
+
+#### :boom: Breaking Changes
+
+- If you are using the "demo" component _and_ are _not_ making use our CMake or
+  Make [build system helpers](README.md#add-sources-to-build-system), you will
+  need to make the following changes:
+  - Update:
+    `$(MEMFAULT_SDK_ROOT)/components/demo/src/{memfault_demo_cli.c => panics/memfault_demo_panics.c}`
+  - Update:
+    `$(MEMFAULT_SDK_ROOT)/components/demo/src/{ => panics}/memfault_demo_cli_aux.c`
+  - Add: `$(MEMFAULT_SDK_ROOT)/components/demo/src/memfault_demo_core.c`
+  - Add: `$(MEMFAULT_SDK_ROOT)/components/demo/src/http/memfault_demo_http.c`
+- If you are using the `http` component, the following macro names changed:
+
+```diff
+-#define MEMFAULT_HTTP_GET_API_PORT()
+-#define MEMFAULT_HTTP_GET_API_HOST()
++#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT()
++#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST()
+```
+
 ### Changes between Memfault SDK 0.4.2 and SDK 0.4.1 - June 8, 2020
 
 #### :chart_with_upwards_trend: Improvements
@@ -240,7 +278,7 @@
   [build system helpers](README.md#add-sources-to-build-system), you will need
   to add `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_log.c` to your
   project. (Note that until
-  [`memfault_log_boot()`](https://github.com/memfault/memfault/blob/ccoleman/stg/sdk/embedded/components/core/include/memfault/core/log.h#L30-L38)
+  [`memfault_log_boot()`](https://github.com/memfault/memfault-firmware-sdk/blob/master/components/core/include/memfault/core/log.h#L33-L38)
   is called, all calls made to the logging module will be a no-op).
 
 ### Changes between Memfault SDK 0.2.5 and SDK 0.2.4 - March 20, 2020

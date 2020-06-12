@@ -27,5 +27,11 @@ $(call memfault_assert_arg_defined,MEMFAULT_SDK_ROOT,\
 MEMFAULT_COMPONENTS_DIR := $(MEMFAULT_SDK_ROOT)/components
 MEMFAULT_COMPONENTS_INC_FOLDERS := \
   $(foreach component, $(MEMFAULT_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
-MEMFAULT_COMPONENTS_SRCS := $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
+MEMFAULT_COMPONENTS_SRCS = $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
+
+ifneq ($(filter demo,$(MEMFAULT_COMPONENTS)),)
+# The demo component is enabled so let's pick up component specific cli commands
+MEMFAULT_COMPONENTS_SRCS += $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/demo/src/$(component)/*.c))
+endif
+
 MEMFAULT_COMPONENTS_SRCS := $(patsubst %memfault_fault_handling_xtensa.c, , $(MEMFAULT_COMPONENTS_SRCS))
