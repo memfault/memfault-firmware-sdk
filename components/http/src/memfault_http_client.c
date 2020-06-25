@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/device_info.h"
@@ -34,7 +35,7 @@ sMfltHttpClient *memfault_http_client_create(void) {
   return memfault_platform_http_client_create();
 }
 
-static void prv_handle_post_data_response(const sMfltHttpResponse *response, void *ctx) {
+static void prv_handle_post_data_response(const sMfltHttpResponse *response, MEMFAULT_UNUSED void *ctx) {
   if (!response) {
     return;  // Request failed
   }

@@ -320,7 +320,7 @@ static bool prv_parse_status_line(char *line, size_t len, int *http_status) {
   const int bytes_processed = prv_str_to_dec(&line[idx], status_code_end, http_status);
 
   // NB: the remainder line is the "Reason-Phrase" which we don't care about
-  return (bytes_processed == status_code_num_digits);
+  return (bytes_processed == (int)status_code_num_digits);
 }
 
 static bool prv_is_cr_lf(char *buf) {

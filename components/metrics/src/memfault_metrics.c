@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage_implementation.h"
 #include "memfault/core/math.h"
@@ -297,7 +298,8 @@ int memfault_metrics_heartbeat_timer_stop(MemfaultMetricId key) {
   return rv;
 }
 
-static bool prv_tally_and_update_timer_cb(void *ctx, const sMemfaultMetricKVPair *key,
+static bool prv_tally_and_update_timer_cb(MEMFAULT_UNUSED void *ctx,
+                                          const sMemfaultMetricKVPair *key,
                                           const sMemfaultMetricValueInfo *value) {
   if (key->type != kMemfaultMetricType_Timer) {
     return true;
@@ -470,7 +472,8 @@ size_t memfault_metrics_heartbeat_get_num_metrics(void) {
   return MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_values);
 }
 
-static bool prv_heartbeat_debug_print(void *ctx, const sMemfaultMetricInfo *metric_info) {
+static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
+                                      const sMemfaultMetricInfo *metric_info) {
   const MemfaultMetricId *key = &metric_info->key;
   const union MemfaultMetricValue *value = &metric_info->val;
   switch (metric_info->type) {

@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "memfault/core/log.h"
+#include "memfault/core/compiler.h"
 
 static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
   switch (level) {
@@ -30,7 +31,8 @@ static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
 }
 
 // stub
-void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) { }
+void memfault_log_save(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
+                       MEMFAULT_UNUSED const char *fmt, ...) { }
 
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_list args;
@@ -44,6 +46,8 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   printf("[%s] %s\n", prv_severity_level_to_str(level), log_buf);
 }
 
-void memfault_platform_hexdump(eMemfaultPlatformLogLevel level, const void *data, size_t data_len) {
+void memfault_platform_hexdump(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
+                               MEMFAULT_UNUSED const void *data,
+                               MEMFAULT_UNUSED size_t data_len) {
   // No fake impl yet!
 }

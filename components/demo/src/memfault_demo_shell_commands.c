@@ -22,17 +22,17 @@ static int prv_panics_component_required(void) {
 }
 
 MEMFAULT_WEAK
-int memfault_demo_cli_cmd_get_core(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_get_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 
 MEMFAULT_WEAK
-int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 
 MEMFAULT_WEAK
-int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_crash(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 

@@ -27,6 +27,7 @@ extern "C" {
 #define MEMFAULT_USED __root
 #define MEMFAULT_WEAK __weak
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b)
+#define MEMFAULT_CLZ(a) __iar_builtin_CLZ(a)
 
 
 #define MEMFAULT_GET_LR(_a) __asm volatile ("mov %0, lr" : "=r" (_a))

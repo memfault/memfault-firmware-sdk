@@ -8,6 +8,7 @@
 
 #include "memfault/core/serializer_helper.h"
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage_implementation.h"
 #include "memfault/core/platform/device_info.h"
@@ -161,7 +162,7 @@ typedef struct {
   const sMemfaultEventStorageImpl *storage_impl;
 } sMemfaultSerializerHelperEncoderCtx;
 
-static void prv_encoder_write_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
+static void prv_encoder_write_cb(void *ctx, MEMFAULT_UNUSED uint32_t offset, const void *buf, size_t buf_len) {
   const sMemfaultEventStorageImpl *storage_impl = ((sMemfaultSerializerHelperEncoderCtx *) ctx)->storage_impl;
   storage_impl->append_data_cb(buf, buf_len);
 }

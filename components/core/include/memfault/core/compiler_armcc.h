@@ -26,6 +26,7 @@ extern "C" {
 #define MEMFAULT_USED __attribute__((used))
 #define MEMFAULT_WEAK __attribute__((weak))
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b)
+#define MEMFAULT_CLZ(a) __clz(a)
 
 
 #define MEMFAULT_GET_LR(_a) _a = ((void *)__return_address())

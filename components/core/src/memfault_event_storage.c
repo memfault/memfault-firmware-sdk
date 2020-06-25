@@ -30,7 +30,7 @@
 //  memfault/core/platform/event.h
 //
 
-MEMFAULT_WEAK bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
+MEMFAULT_WEAK bool memfault_platform_time_get_current(MEMFAULT_UNUSED sMemfaultCurrentTime *time) {
   return false;
 }
 
@@ -42,7 +42,7 @@ void memfault_unlock(void) { }
 
 MEMFAULT_WEAK
 void memfault_event_storage_request_persist_callback(
-    const sMemfaultEventStoragePersistCbStatus *status) { }
+    MEMFAULT_UNUSED const sMemfaultEventStoragePersistCbStatus *status) { }
 
 static bool prv_nonvolatile_event_storage_enabled(void) {
   return false;

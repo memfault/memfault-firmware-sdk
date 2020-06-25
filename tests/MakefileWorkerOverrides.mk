@@ -37,13 +37,19 @@ export CPPUTEST_USE_GCOV=Y
 # Enable branch coverage reporting
 export GCOV_ARGS=-b -c
 
-# These warnings aren't particularly helpful for our use case so we disable them
 CPPUTEST_WARNINGFLAGS = \
+  -Wall \
+  -Wextra \
+  -Werror \
+  -Wshadow \
+  -Wswitch-default
+
+# These warnings aren't particularly helpful for our use case so we disable them
+CPPUTEST_WARNINGFLAGS += \
   -Wno-missing-braces \
   -Wno-missing-field-initializers \
   -Wno-packed \
   -Wno-switch-enum \
-  -Wno-unused-parameter \
   -Wno-vla \
 
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"
@@ -61,6 +67,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-documentation-unknown-command \
   -Wno-flexible-array-extensions \
   -Wno-gnu-variable-sized-type-not-at-end \
+  -Wno-gnu-zero-variadic-macro-arguments \
   -Wno-inconsistent-missing-destructor-override \
   -Wno-keyword-macro \
   -Wno-missing-noreturn \
@@ -68,6 +75,13 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-shorten-64-to-32 \
   -Wno-vla-extension \
   -Wno-zero-as-null-pointer-constant
+
+else
+
+# GCC-only warnings
+COMPILER_SPECIFIC_WARNINGS += \
+  -Wformat-signedness
+
 endif
 
 CPPUTEST_WARNINGFLAGS += $(COMPILER_SPECIFIC_WARNINGS)

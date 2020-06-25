@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include "memfault_demo_cli_aux_private.h"
+
 #include "memfault/core/compiler.h"
 
 // Jump through some hoops to trick the compiler into doing an unaligned 64 bit access

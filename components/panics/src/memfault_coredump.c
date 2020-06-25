@@ -273,7 +273,7 @@ static bool prv_write_storage(const void *data, size_t len, void *ctx) {
   return true;
 }
 
-static bool prv_write_storage_compute_space_only(const void *data, size_t len, void *ctx) {
+static bool prv_write_storage_compute_space_only(MEMFAULT_UNUSED const void *data, size_t len, void *ctx) {
   // don't write any data but keep count of how many bytes would be written. This is used to
   // compute the total amount of space needed to store a coredump
   uint32_t *offset = ctx;

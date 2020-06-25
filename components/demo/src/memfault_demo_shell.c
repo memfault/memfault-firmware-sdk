@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "memfault/core/compiler.h"
+
 #define MEMFAULT_SHELL_RX_BUFFER_SIZE (256)
 #define MEMFAULT_SHELL_MAX_ARGS (16)
 #define MEMFAULT_SHELL_PROMPT "mflt> "
@@ -148,7 +150,7 @@ void memfault_demo_shell_receive_char(char c) {
   prv_process();
 }
 
-int memfault_shell_help_handler(int argc, char *argv[]) {
+int memfault_shell_help_handler(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   MEMFAULT_SHELL_FOR_EACH_COMMAND(command) {
     prv_echo_str(command->command);
     prv_echo_str(": ");

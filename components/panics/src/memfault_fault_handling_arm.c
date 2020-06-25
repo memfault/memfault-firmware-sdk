@@ -10,6 +10,7 @@
 
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
+#include "memfault/core/compiler.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
@@ -446,7 +447,7 @@ static void prv_fault_handling_assert(void *pc, void *lr) {
 // However, this can also lead to compiler optimizations that make recovering local variables
 // difficult (such as ignoring ABI requirements to preserve callee-saved registers)
 MEMFAULT_NO_OPT
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
+void memfault_fault_handling_assert(void *pc, void *lr, MEMFAULT_UNUSED uint32_t extra) {
   prv_fault_handling_assert(pc, lr);
 
   // We just pend'd a NMI interrupt which is higher priority than any other interrupt and so we

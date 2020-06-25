@@ -6,9 +6,9 @@
 //! See License.txt for details
 //!
 //! A utility that implements a small subset of the CBOR RFC:
-//!  https://tools.ietf.org/html/rfc7049#section-3.7
+//!  https://tools.ietf.org/html/rfc7049
 //!
-
+//!
 //! CONTEXT: The Memfault metric events API serializes data out to CBOR. Since the actual CBOR
 //! serialization feature set needed by the SDK is a tiny subset of the CBOR RFC, a minimal
 //! implementation is implemented here.
@@ -104,6 +104,23 @@ bool memfault_cbor_encode_byte_string(sMemfaultCborEncoder *encoder, const void 
 //!
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_string(sMemfaultCborEncoder *encoder, const char *str);
+
+//! Encodes a IEEE 754 double-precision float that is packed in a uint64_t
+//!
+//! @param encoder The encoder context to use
+//! @param val The value of the float to encode
+//!
+//! @return true on success, false otherwise
+bool memfault_cbor_encode_uint64_as_double(sMemfaultCborEncoder *encoder, uint64_t value);
+
+
+//! Called to encode a signed 64 bit data item
+//!
+//! @param encode The encoder context to use
+//! @param value The value to store
+//!
+//! @return true on success, false otherwise
+bool memfault_cbor_encode_long_signed_integer(sMemfaultCborEncoder *encoder, int64_t value);
 
 
 //! NOTE: For internal use only, included in the header so it's easy for a caller to statically

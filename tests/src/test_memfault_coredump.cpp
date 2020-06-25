@@ -58,7 +58,8 @@ extern "C" {
 }
 
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+    MEMFAULT_UNUSED const sCoredumpCrashInfo *crash_info,
+    size_t *num_regions) {
   *num_regions = s_num_fake_regions;
   return &s_fake_memory_region[0];
 }

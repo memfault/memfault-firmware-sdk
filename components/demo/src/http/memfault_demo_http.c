@@ -8,6 +8,7 @@
 
 #include "memfault/http/http_client.h"
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/demo/cli.h"
@@ -23,7 +24,8 @@ const char *memfault_demo_get_api_project_key(void) {
   return g_mflt_http_client_config.api_key;
 }
 
-int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
+int memfault_demo_cli_cmd_post_core(MEMFAULT_UNUSED int argc,
+                                    MEMFAULT_UNUSED char *argv[]) {
   MEMFAULT_LOG_INFO("Posting Memfault Data...");
   sMfltHttpClient *http_client = memfault_http_client_create();
   if (!http_client) {
@@ -35,10 +37,10 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]) {
   if (rv == kMfltPostDataStatus_NoDataFound) {
     MEMFAULT_LOG_INFO("No new data found");
   } else {
-    MEMFAULT_LOG_INFO("Result: %d", rv);
+    MEMFAULT_LOG_INFO("Result: %d", (int)rv);
   }
   const uint32_t timeout_ms = 30 * 1000;
   memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);
   memfault_http_client_destroy(http_client);
-  return rv;
+  return (int)rv;
 }

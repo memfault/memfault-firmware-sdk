@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "fakes/fake_memfault_event_storage.h"
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/reboot_tracking.h"
@@ -42,8 +43,7 @@ TEST_GROUP(MfltRebootTrackingSerializer) {
 };
 
 static void prv_run_reset_reason_serializer_test(const void *expected_data,
-                                                 size_t expected_data_len,
-                                                 const sMfltResetReasonInfo *info) {
+                                                 size_t expected_data_len) {
   fake_memfault_event_storage_clear();
   fake_memfault_event_storage_set_available_space(expected_data_len);
 
@@ -80,8 +80,7 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
     memfault_reboot_tracking_collect_reset_info(s_fake_event_storage_impl);
   }
 
-  prv_run_reset_reason_serializer_test(expected_data_all, sizeof(expected_data_all),
-                                       &s_fake_reset_reason_info);
+  prv_run_reset_reason_serializer_test(expected_data_all, sizeof(expected_data_all));
 
   s_fake_reset_reason_info.reset_reason_reg0 = 0;
   const uint8_t expected_data_pc_lr[] = {
@@ -97,8 +96,7 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
     0x03, 0x1a, 0xde, 0xad, 0xbe, 0xef,
     0x05, 0x00
   };
-  prv_run_reset_reason_serializer_test(expected_data_pc_lr, sizeof(expected_data_pc_lr),
-                                       &s_fake_reset_reason_info);
+  prv_run_reset_reason_serializer_test(expected_data_pc_lr, sizeof(expected_data_pc_lr));
 
   s_fake_reset_reason_info.lr = 0;
   const uint8_t expected_data_pc[] = {
@@ -113,8 +111,7 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
     0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe,
     0x05, 0x00
   };
-  prv_run_reset_reason_serializer_test(expected_data_pc, sizeof(expected_data_pc),
-                                       &s_fake_reset_reason_info);
+  prv_run_reset_reason_serializer_test(expected_data_pc, sizeof(expected_data_pc));
 
   s_fake_reset_reason_info.pc = 0;
   // indicate that there is a coredump to go along with it
@@ -131,7 +128,7 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
     0x05, 0x01
   };
   prv_run_reset_reason_serializer_test(expected_data_no_optionals,
-                                       sizeof(expected_data_no_optionals), &s_fake_reset_reason_info);
+                                       sizeof(expected_data_no_optionals));
 }
 
 TEST(MfltRebootTrackingSerializer, Test_GetWorstCaseSerializeSize) {

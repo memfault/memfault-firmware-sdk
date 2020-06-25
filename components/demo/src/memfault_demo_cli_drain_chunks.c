@@ -33,9 +33,8 @@
 // and we disable optimizations so the parameters don't get stripped away
 MEMFAULT_NO_OPT
 MEMFAULT_WEAK
-void user_transport_send_chunk_data(void *chunk_data, size_t chunk_data_len) {
-  (void)chunk_data;
-  (void)chunk_data_len;
+void user_transport_send_chunk_data(MEMFAULT_UNUSED void *chunk_data,
+                                    MEMFAULT_UNUSED size_t chunk_data_len) {
 }
 
 static bool prv_try_send_memfault_data(void) {
@@ -51,7 +50,8 @@ static bool prv_try_send_memfault_data(void) {
   return true;
 }
 
-int memfault_demo_drain_chunk_data(int argc, char *argv[]) {
+int memfault_demo_drain_chunk_data(MEMFAULT_UNUSED int argc,
+                                   MEMFAULT_UNUSED char *argv[]) {
   while (prv_try_send_memfault_data()) { }
   return 0;
 }

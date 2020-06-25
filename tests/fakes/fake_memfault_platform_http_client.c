@@ -8,7 +8,10 @@
 
 #include "memfault/http/platform/http_client.h"
 
-int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
+#include "memfault/core/compiler.h"
+
+int memfault_platform_http_response_get_status(
+    MEMFAULT_UNUSED const sMfltHttpResponse *response, uint32_t *status_out) {
   if (status_out) {
     *status_out = 200;
   }
@@ -21,16 +24,19 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   return s_client;
 }
 
-int memfault_platform_http_client_post_data(sMfltHttpClient *client,
-                                            MemfaultHttpClientResponseCallback callback, void *ctx) {
+int memfault_platform_http_client_post_data(
+    MEMFAULT_UNUSED sMfltHttpClient *client,
+    MEMFAULT_UNUSED MemfaultHttpClientResponseCallback callback,
+    MEMFAULT_UNUSED void *ctx) {
   return 0;
 }
 
 int memfault_platform_http_client_wait_until_requests_completed(
-    sMfltHttpClient *client, uint32_t timeout_ms) {
+    MEMFAULT_UNUSED sMfltHttpClient *client,
+    MEMFAULT_UNUSED uint32_t timeout_ms) {
   return 0;
 }
 
-int memfault_platform_http_client_destroy(sMfltHttpClient *client) {
+int memfault_platform_http_client_destroy(MEMFAULT_UNUSED sMfltHttpClient *client) {
   return 0;
 }

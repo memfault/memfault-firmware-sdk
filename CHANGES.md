@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.5.1 and SDK 0.5.0 - June 24, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Updated code to support compilations with `-Wunused-paramater`, GNU GCC's
+  `-Wformat-signedness`, and Clang's `-Wno-missing-prototypes` &
+  `-Wno-missing-variable-declarations`.
+- Updated unit test setup to compile with newly supported warnings treated as
+  errors
+
+#### :house: Internal
+
+- Misc utility additions including support for encoding floats and int64_t's in
+  the cbor utility
+
 ### Changes between Memfault SDK 0.5.0 and SDK 0.4.2 - June 11, 2020
 
 #### :rocket: New Features

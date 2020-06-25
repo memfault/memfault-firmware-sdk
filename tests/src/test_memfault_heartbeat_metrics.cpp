@@ -7,20 +7,20 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
+#include <stddef.h>
+#include <string.h>
+
+#include "fakes/fake_memfault_platform_metrics_locking.h"
+#include "memfault/core/compiler.h"
+#include "memfault/core/event_storage.h"
+#include "memfault/core/platform/core.h"
+#include "memfault/metrics/metrics.h"
+#include "memfault/metrics/platform/overrides.h"
+#include "memfault/metrics/platform/timer.h"
+#include "memfault/metrics/serializer.h"
+#include "memfault/metrics/utils.h"
+
 extern "C" {
-  #include <string.h>
-  #include <stddef.h>
-
-  #include "fakes/fake_memfault_platform_metrics_locking.h"
-  #include "memfault/core/event_storage.h"
-  #include "memfault/core/platform/core.h"
-  #include "memfault/metrics/metrics.h"
-  #include "memfault/metrics/platform/overrides.h"
-  #include "memfault/metrics/platform/timer.h"
-  #include "memfault/metrics/serializer.h"
-  #include "memfault/metrics/utils.h"
-
-
   static void (*s_serializer_check_cb)(void) = NULL;
 
   static uint64_t s_fake_time_ms = 0;
@@ -40,7 +40,7 @@ extern "C" {
 }
 
 bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
-                                          MemfaultPlatformTimerCallback callback) {
+                                          MEMFAULT_UNUSED MemfaultPlatformTimerCallback callback) {
   return mock().actualCall(__func__)
       .withParameter("period_sec", period_sec)
       .returnBoolValueOrDefault(true);
@@ -49,7 +49,8 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
 
 #define FAKE_STORAGE_SIZE 100
 
-bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *storage_impl) {
+bool memfault_metrics_heartbeat_serialize(
+    MEMFAULT_UNUSED const sMemfaultEventStorageImpl *storage_impl) {
   mock().actualCall(__func__);
   if (s_serializer_check_cb != NULL) {
     s_serializer_check_cb();

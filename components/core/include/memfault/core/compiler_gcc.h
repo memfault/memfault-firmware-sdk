@@ -32,6 +32,10 @@ extern "C" {
 #define MEMFAULT_WEAK __attribute__((weak))
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b) __attribute__ ((format (printf, a, b)))
 
+//! From https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html,
+//!  If x is 0, the result is undefined.
+#define MEMFAULT_CLZ(a) ((a == 0) ? 32UL : (uint32_t)__builtin_clz(a))
+
 #if defined(__arm__)
 #  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))
@@ -48,8 +52,15 @@ extern "C" {
 #  error "New architecture to add support for!"
 #endif /* defined(__GNUC__) && defined(__arm__) */
 
-#if defined(MEMFAULT_UNITTEST)
-// Unit tests run on native desktop and don't accept special section placements
+#if defined(__APPLE__) && defined(MEMFAULT_UNITTEST)
+// NB: OSX linker has slightly different placement syntax and requirements
+//
+// Notably,
+// 1. Comma seperated where first item is top level section (i.e __DATA), i.e
+//   __attribute__((section("__DATA," x)))
+// 2. total length of name must be between 1-16 characters
+//
+// For now we just stub it out since unit tests don't make use of section locations.
 #  define MEMFAULT_PUT_IN_SECTION(x)
 #else
 #  define MEMFAULT_PUT_IN_SECTION(x) __attribute__((section(x)))

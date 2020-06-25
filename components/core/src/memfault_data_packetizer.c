@@ -28,7 +28,9 @@ static bool prv_data_source_has_event_stub(size_t *event_size) {
   return false;
 }
 
-static bool prv_data_source_read_stub(uint32_t offset, void *buf, size_t buf_len) {
+static bool prv_data_source_read_stub(MEMFAULT_UNUSED uint32_t offset,
+                                      MEMFAULT_UNUSED void *buf,
+                                      MEMFAULT_UNUSED size_t buf_len) {
   return false;
 }
 
@@ -53,7 +55,8 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_event_data_source = {
 };
 
 MEMFAULT_WEAK
-bool memfault_data_source_rle_encoder_set_active(const sMemfaultDataSourceImpl *active_source) {
+bool memfault_data_source_rle_encoder_set_active(
+    MEMFAULT_UNUSED const sMemfaultDataSourceImpl *active_source) {
   return false;
 }
 

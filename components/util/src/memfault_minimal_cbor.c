@@ -7,6 +7,7 @@
 
 #include "memfault/util/cbor.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 // https://tools.ietf.org/html/rfc7049#section-2.1
@@ -98,13 +99,51 @@ static bool prv_encode_unsigned_integer(
   return prv_add_to_result_buffer(encoder, tmp_buf, tmp_buf_len);
 }
 
+static void prv_encode_uint64(uint8_t buf[8], uint64_t val) {
+  uint8_t *p = &buf[0];
+  for (int shift = 56; shift >= 0; shift -= 8) {
+    *p++ = (val >> shift) & 0xff;
+  }
+}
+
+#define MEMFAULT_CBOR_UINT64_MAX_ITEM_SIZE_BYTES 9
+
+bool memfault_cbor_encode_long_signed_integer(
+    sMemfaultCborEncoder *encoder, int64_t value) {
+  // Logic derived from "Appendix C Pseudocode" of RFC 7049
+  int64_t ui = (value >> 63);
+  // Figure out if we are encoding a Negative or Unsigned Integer by reading the sign extension bit
+  const uint8_t cbor_major_type = ui & 0x1;
+  ui ^= value;
+
+  if (ui <= UINT32_MAX) {
+    return prv_encode_unsigned_integer(encoder, cbor_major_type, (uint32_t)ui);
+  }
+
+  uint8_t tmp_buf[MEMFAULT_CBOR_UINT64_MAX_ITEM_SIZE_BYTES];
+  const uint8_t uint64_type_value = 27;
+  tmp_buf[0] = CBOR_SERIALIZE_MAJOR_TYPE(cbor_major_type) | uint64_type_value;
+  prv_encode_uint64(&tmp_buf[1], (uint64_t)ui);
+  return prv_add_to_result_buffer(encoder, tmp_buf, sizeof(tmp_buf));
+}
+
+bool memfault_cbor_encode_uint64_as_double(
+    sMemfaultCborEncoder *encoder, uint64_t val) {
+  uint8_t tmp_buf[MEMFAULT_CBOR_UINT64_MAX_ITEM_SIZE_BYTES];
+  const uint8_t ieee_754_double_precision_float_type = 27;
+  tmp_buf[0] = CBOR_SERIALIZE_MAJOR_TYPE(kCborMajorType_SimpleType) |
+      ieee_754_double_precision_float_type;
+  prv_encode_uint64(&tmp_buf[1], val);
+  return prv_add_to_result_buffer(encoder, tmp_buf, sizeof(tmp_buf));
+}
+
 bool memfault_cbor_encode_unsigned_integer(
     sMemfaultCborEncoder *encoder, uint32_t value) {
   return prv_encode_unsigned_integer(encoder, kCborMajorType_UnsignedInteger, value);
 }
 
 bool memfault_cbor_encode_signed_integer(sMemfaultCborEncoder *encoder, int32_t value) {
-  // Logic derived from "Appendix C Pseudocode" of RFC
+  // Logic derived from "Appendix C Pseudocode" of RFC 7049
   int32_t ui = (value >> 31);
   // Figure out if we are encoding a Negative or Unsigned Integer by reading a sign extension bit
   const uint8_t cbor_major_type = ui & 0x1;

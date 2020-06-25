@@ -13,9 +13,11 @@
 #include "CppUTestExt/MockSupport.h"
 
 #include "memfault/core/log.h"
+#include "memfault/core/compiler.h"
 
 // stub
-void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) { }
+void memfault_log_save(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
+                       MEMFAULT_UNUSED const char *fmt, ...) { }
 
 #define LOG_BUFFER_SIZE (512)
 

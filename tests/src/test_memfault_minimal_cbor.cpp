@@ -178,6 +178,50 @@ TEST(MemfaultMinimalCbor, Test_EncodeSignedInt) {
                                  sizeof(expected_enc_int32_min));
 }
 
+
+static void prv_run_long_signed_integer_encoder_check(
+    int64_t value, const uint8_t *expected_seq, size_t expected_seq_len) {
+
+  sMemfaultCborEncoder encoder;
+  uint8_t result[expected_seq_len];
+  memset(result, 0x0, sizeof(result));
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, sizeof(result));
+
+  const bool success = memfault_cbor_encode_long_signed_integer(&encoder, value);
+  CHECK(success);
+
+  const size_t encoded_length = memfault_cbor_encoder_deinit(&encoder);
+  LONGS_EQUAL(expected_seq_len, encoded_length);
+
+  MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
+}
+
+
+TEST(MemfaultMinimalCbor, Test_EncodeLongSignedInt) {
+  // We'll re-run a few of the tests for signed ints because the results should be identical
+  const uint8_t expected_enc_neg1[] =  { 0x20 };
+  prv_run_long_signed_integer_encoder_check(-1, expected_enc_neg1, sizeof(expected_enc_neg1));
+
+  // positive values should wind up getting encoded as an unsigned integer
+  const uint8_t expected_enc_1000000[] = { 0x1a, 0x00, 0x0f, 0x42, 0x40 };
+  prv_run_long_signed_integer_encoder_check(1000000, expected_enc_1000000, sizeof(expected_enc_1000000));
+
+  const uint8_t expected_enc_int32_min[] = { 0x3a, 0x7f, 0xff, 0xff, 0xff };
+  prv_run_long_signed_integer_encoder_check(INT32_MIN, expected_enc_int32_min,
+                                            sizeof(expected_enc_int32_min));
+
+  // NB: Anything > INT32_MIN/MAX should wind up being 9 bytes
+
+  // RFC Appendix A.  Examples
+  const uint8_t expected_enc_1000000000000[] = { 0x1b, 0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00 };
+  prv_run_long_signed_integer_encoder_check(1000000000000, expected_enc_1000000000000,
+                                            sizeof(expected_enc_1000000000000));
+
+  const uint8_t expected_enc_neg123456789101112[] = { 0x3b, 0x00, 0x00, 0x70, 0x48, 0x86, 0x0f, 0x3a, 0x37};
+  prv_run_long_signed_integer_encoder_check(-123456789101112, expected_enc_neg123456789101112,
+                                            sizeof(expected_enc_neg123456789101112));
+}
+
 static void prv_run_string_encoder_check(
     const char *str, const uint8_t *expected_seq, size_t expected_seq_len) {
 
@@ -237,6 +281,39 @@ TEST(MemfaultMinimalCbor, Test_EncodeBinaryString) {
   const uint8_t binary_str[] = { 1, 2, 3, 4};
   prv_run_binary_encoder_check(binary_str, sizeof(binary_str),
                                expected_enc_1234, sizeof(expected_enc_1234));
+}
+
+static void prv_run_uint64_as_double_encoder_check(
+    double g, const uint8_t *expected_seq, size_t expected_seq_len) {
+
+  uint64_t value = 0;
+  memcpy(&value, &g, sizeof(g));
+
+  sMemfaultCborEncoder encoder;
+  uint8_t result[expected_seq_len];
+  memset(result, 0x0, sizeof(result));
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, sizeof(result));
+
+  const bool success = memfault_cbor_encode_uint64_as_double(&encoder, value);
+  CHECK(success);
+
+  const size_t encoded_length = memfault_cbor_encoder_deinit(&encoder);
+  LONGS_EQUAL(expected_seq_len, encoded_length);
+
+  MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
+}
+
+
+TEST(MemfaultMinimalCbor, Test_EncodeFLoatString) {
+  // RFC Appendix A.  Examples
+  const uint8_t expected_float_pos[] =  { 0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c };
+
+  const double g_pos = 1.0e+300;
+  prv_run_uint64_as_double_encoder_check(g_pos, expected_float_pos, sizeof(expected_float_pos));
+
+  const uint8_t expected_float_neg[] =  { 0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66 };
+  const double g_neg = -4.1;
+  prv_run_uint64_as_double_encoder_check(g_neg, expected_float_neg, sizeof(expected_float_neg));
 }
 
 static void prv_encode_test_dictionary(sMemfaultCborEncoder *encoder) {

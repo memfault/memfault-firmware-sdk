@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
@@ -76,7 +77,7 @@ cleanup:
   return success;
 }
 
-static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
+static bool prv_encode_cb(MEMFAULT_UNUSED sMemfaultCborEncoder *encoder, void *ctx) {
   sMemfaultSerializerState *state = (sMemfaultSerializerState *)ctx;
   return prv_serialize_latest_heartbeat_and_deinit(state);
 }
