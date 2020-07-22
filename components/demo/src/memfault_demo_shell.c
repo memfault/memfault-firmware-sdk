@@ -138,9 +138,15 @@ void memfault_demo_shell_receive_char(char c) {
   if (c == '\r' || prv_is_rx_buffer_full() || !prv_booted()) {
     return;
   }
+
+  const bool is_backspace = (c == '\b');
+  if (is_backspace && s_mflt_shell.rx_size == 0) {
+    return; // nothing left to delete so don't echo the backspace
+  }
+
   prv_echo(c);
 
-  if (c == '\b') {
+  if (is_backspace) {
     s_mflt_shell.rx_buffer[--s_mflt_shell.rx_size] = '\0';
     return;
   }

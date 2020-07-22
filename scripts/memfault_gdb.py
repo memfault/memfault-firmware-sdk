@@ -1144,7 +1144,10 @@ class MemfaultPostChunk(MemfaultGdbCommand):
     """
 
     GDB_CMD = "memfault install_chunk_handler"
-    USER_TRANSPORT_SEND_CHUNK_HANDLER = "user_transport_send_chunk_data"
+    USER_TRANSPORT_SEND_CHUNK_HANDLER = [
+        "memfault_data_export_chunk",
+        "user_transport_send_chunk_data",
+    ]
     DEFAULT_CHUNK_DEVICE_SERIAL = "GDB_TESTSERIAL"
     FILENAME_FROM_INFO_FUNC_PATTERN = re.compile(r"File\s+([^\s]+):")
 
@@ -1154,11 +1157,17 @@ class MemfaultPostChunk(MemfaultGdbCommand):
         except MemfaultGdbArgumentParseError:
             return
 
-        chunk_handler_func = parsed_args.chunk_handler_func
+        if isinstance(parsed_args.chunk_handler_func, list):
+            chunk_handler_funcs = parsed_args.chunk_handler_func
+        else:
+            chunk_handler_funcs = [parsed_args.chunk_handler_func]
 
-        output = gdb.execute("info functions {}$".format(chunk_handler_func), to_string=True)
-        lines = output.splitlines()[1:]
-        if len(lines) == 0:
+        for chunk_handler_func in chunk_handler_funcs:
+            output = gdb.execute("info functions {}$".format(chunk_handler_func), to_string=True)
+            lines = output.splitlines()[1:]
+            if len(lines) != 0:
+                break
+        else:
             print(
                 """Chunk handler function '{}' does not exist.
 
@@ -1201,6 +1210,7 @@ class MemfaultPostChunk(MemfaultGdbCommand):
                     breakpoint.delete()
         except TypeError:
             pass
+        print("Installing Memfault GDB Chunk Handler for function '{}'".format(chunk_handler_func))
         GdbMemfaultPostChunkBreakpoint(
             spec=spec_prefix + chunk_handler_func,
             project_key=parsed_args.project_key,
@@ -1218,8 +1228,9 @@ class MemfaultPostChunk(MemfaultGdbCommand):
         parser.add_argument(
             "--chunk-handler-func",
             "-ch",
-            help="Name of function that handles sending Memfault Chunks (default: {})".format(
-                self.USER_TRANSPORT_SEND_CHUNK_HANDLER
+            help=(
+                "Name of function that handles sending Memfault Chunks."
+                "(default: search for one of {})".format(self.USER_TRANSPORT_SEND_CHUNK_HANDLER)
             ),
             default=self.USER_TRANSPORT_SEND_CHUNK_HANDLER,
         )

@@ -33,8 +33,13 @@ typedef enum {
 } eMemfaultHeartbeatInfoKey;
 
 typedef enum {
+  kMemfaultLogInfoKey_Log = 1,
+} eMemfaultLogInfoKey;
+
+typedef enum {
   kMemfaultEventType_Heartbeat = 1,
   kMemfaultEventType_Trace = 2,
+  kMemfaultEventType_LogError = 3,
 } eMemfaultEventType;
 
 typedef enum {

@@ -1,3 +1,31 @@
+### Changes between Memfault SDK 0.6.0 and SDK 0.5.1 - July 21, 2020
+
+#### :rocket: New Features
+
+- Added
+  [memfault/core/data_export.h](components/core/include/memfault/core/data_export.h#L5)
+  API to facilitate production and evaluation use cases where Memfault data is
+  extracted over a log interface (i.e shell, uart console, log file, etc). See
+  the header linked above or the
+  [integration guide](https://mflt.io/chunk-data-export) for more details.
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fixed a :bug: that would cause the demo shell to get stuck if backspace
+  chracters were entered while no other characters had been entered.
+- Updated the [GDB chunk test utility](https://mflt.io/send-chunks-via-gdb) to
+  automatically detect when the data export API is integrated and post-chunks to
+  the cloud directly from GDB when the function is invoked.
+
+#### :boom: Breaking Changes
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system) and want to make
+  use of the new data export API, you will need to manually add the following
+  files to your build system:
+  - Add: `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_data_export.c`
+  - Add: `$(MEMFAULT_SDK_ROOT)/components/util/src/memfault_base64.c`
+
 ### Changes between Memfault SDK 0.5.1 and SDK 0.5.0 - June 24, 2020
 
 #### :chart_with_upwards_trend: Improvements

@@ -126,3 +126,24 @@ TEST(MfltDemoShell, Test_MfltDemoShellRxBufferFull) {
                "mflt> ",
       s_chars_sent_buffer);
 }
+
+TEST(MfltDemoShell, Test_MfltDemoShellBackspaces) {
+  mock().expectOneCall("prv_test_handler")
+      .withParameter("0", "test")
+      .withParameter("1", "1");
+  prv_receive_str("\b\bnop\b\b\btest 1\n");
+  mock().checkExpectations();
+
+  // use a memcmp so we can "see" the backspaces
+  MEMCMP_EQUAL("nop\b \b\b \b\b \btest 1\r\nmflt> ", s_chars_sent_buffer, s_num_chars_sent);
+}
+
+TEST(MfltDemoShell, Test_MfltDemoShellNotBooted) {
+   const sMemfaultShellImpl impl = {
+     .send_char = NULL,
+   };
+   memfault_demo_shell_boot(&impl);
+
+  prv_receive_str("test 1\n");
+  LONGS_EQUAL(0, s_num_chars_sent);
+}
