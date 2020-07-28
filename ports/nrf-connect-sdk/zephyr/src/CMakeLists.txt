@@ -1,0 +1,4 @@
+zephyr_library_sources(memfault_fault_handler.c)
+zephyr_library_sources(memfault_platform_debug_log.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
+zephyr_library_sources(memfault_platform_core.c)

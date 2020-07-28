@@ -1,3 +1,14 @@
+### Changes between Memfault SDK 0.6.1 and SDK 0.6.0 - July 27, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a port for projects using the [nRF Connect SDK](ports/nrf-connect-sdk)
+  along with a
+  [step-by-step integration guide](https://mflt.io/nrf-connect-sdk-integration-guide).
+- Disabled optimizations for `memfault_data_export_chunk()` to guarantee the
+  [GDB chunk test utility](https://mflt.io/send-chunks-via-gdb) can always be
+  used to post chunks using the data export API.
+
 ### Changes between Memfault SDK 0.6.0 and SDK 0.5.1 - July 21, 2020
 
 #### :rocket: New Features

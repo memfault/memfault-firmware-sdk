@@ -1,0 +1,9 @@
+bootloader*
+mbedtls*
+modules*
+nrf*
+nrfxlib*
+sdk-nrf*
+test*
+tools*
+zephyr*

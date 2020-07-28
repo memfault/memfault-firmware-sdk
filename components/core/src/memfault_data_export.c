@@ -20,7 +20,7 @@ void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
   MEMFAULT_LOG_INFO("%s", base64_chunk);
 }
 
-void memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len) {
+static void prv_memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len) {
   MEMFAULT_SDK_ASSERT(chunk_data_len <= MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN);
 
   char base64[MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN];
@@ -40,6 +40,14 @@ void memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len) {
   base64[write_offset] = '\0';
 
   memfault_data_export_base64_encoded_chunk(base64);
+}
+
+//! Note: We disable optimizations for this function to guarantee the symbol is
+//! always exposed and our GDB test script (https://mflt.io/send-chunks-via-gdb)
+//! can be installed to watch and post chunks every time it is called.
+MEMFAULT_NO_OPT
+void memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len) {
+  prv_memfault_data_export_chunk(chunk_data, chunk_data_len);
 }
 
 static bool prv_try_send_memfault_data(void) {
