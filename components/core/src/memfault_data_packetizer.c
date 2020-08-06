@@ -142,11 +142,11 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
   if (!success) {
     // Read failures really should never happen. We have no way of knowing if the issue is
     // transient or not. If we aborted the transaction and the failure was persistent, we could get
-    // stuck trying to flush out the same data. Instead, just scrub the region with a pattern and
-    // continue on
+    // stuck trying to flush out the same data. Instead, we just continue on. We scrub the
+    // beginning of the chunk buffer with a known pattern to make the error easier to identify.
     MEMFAULT_LOG_ERROR("Read at offset 0x%" PRIx32 " (%d bytes) for source type %d failed", offset,
                        (int)buf_len, (int)msg_metadata->source.type);
-    memset(bufp, 0xEF, buf_len);
+    memset(bufp, 0xEF, MEMFAULT_MIN(16, buf_len));
   }
 }
 

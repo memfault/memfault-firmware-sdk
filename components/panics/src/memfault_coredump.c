@@ -341,9 +341,15 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   }
 
   // write out any architecture specific regions
-  size_t num_arch_regions;
+  size_t num_arch_regions = 0;
   const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
   if (!prv_write_regions(storage_write_cb, &curr_offset, arch_regions, num_arch_regions)) {
+    return false;
+  }
+
+  size_t num_sdk_regions = 0;
+  const sMfltCoredumpRegion *sdk_regions = memfault_coredump_get_sdk_regions(&num_sdk_regions);
+  if (!prv_write_regions(storage_write_cb, &curr_offset, sdk_regions, num_sdk_regions)) {
     return false;
   }
 

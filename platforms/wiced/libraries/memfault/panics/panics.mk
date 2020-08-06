@@ -4,6 +4,7 @@ $(NAME)_SOURCES := \
   src/memfault_coredump.c \
   src/memfault_fault_handling_arm.c \
   src/memfault_coredump_regions_armv7.c \
+  src/memfault_coredump_sdk_regions.c
 
 $(NAME)_COMPONENTS := \
   drivers/spi_flash \

@@ -133,11 +133,6 @@ extern void memfault_log_handle_saved_callback(void);
 MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
 void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...);
 
-//! Reset the state of log tracking
-//!
-//! @note Internal function only intended for use with unit tests
-void memfault_log_reset(void);
-
 #ifdef __cplusplus
 }
 #endif

@@ -16,8 +16,9 @@
 #include "fakes/fake_memfault_platform_metrics_locking.h"
 
 #include "memfault/core/log.h"
+#include "memfault/core/log_impl.h"
 
-TEST_GROUP(MemfaultEventStorage) {
+TEST_GROUP(MemfaultLog) {
   void setup() {
     fake_memfault_metrics_platorm_locking_reboot();
 
@@ -55,7 +56,7 @@ static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
   LONGS_EQUAL(expected_level, log.level);
 }
 
-TEST(MemfaultEventStorage, Test_BadInit) {
+TEST(MemfaultLog, Test_BadInit) {
   // should be no-ops
   memfault_log_boot(NULL, 10);
   memfault_log_boot((void*)0xbadcafe, 0);
@@ -69,7 +70,7 @@ TEST(MemfaultEventStorage, Test_BadInit) {
   CHECK(!log_found);
 }
 
-TEST(MemfaultEventStorage, Test_MemfaultLogBasic) {
+TEST(MemfaultLog, Test_MemfaultLogBasic) {
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
@@ -91,10 +92,30 @@ void memfault_log_handle_saved_callback(void) {
   mock().actualCall(__func__);
 }
 
-TEST(MemfaultEventStorage, Test_MemfaultHandleSaveCallback) {
+TEST(MemfaultLog, Test_MemfaultLog_GetRegions) {
+  // try to get regions before init has been called
+  sMemfaultLogRegions regions;
+  bool found = memfault_log_get_regions(&regions);
+  CHECK(!found);
+
+  // now init and confirm we get the expected regions
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
+  found = memfault_log_get_regions(&regions);
+  CHECK(found);
+  LONGS_EQUAL(s_ram_log_store, regions.region[1].region_start);
+  LONGS_EQUAL(sizeof(s_ram_log_store), regions.region[1].region_size);
+
+  // sanity check - first region should be sMfltRamLogger
+  const uint8_t *mflt_ram_logger = (const uint8_t *)regions.region[0].region_start;
+  LONGS_EQUAL(1, mflt_ram_logger[0]); // version == 1
+  LONGS_EQUAL(1, mflt_ram_logger[1]); // enabled == 1
+}
+
+TEST(MemfaultLog, Test_MemfaultHandleSaveCallback) {
+  uint8_t s_ram_log_store[10];
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   mock().enable();
   const char *log0 = "log0";
@@ -113,7 +134,7 @@ TEST(MemfaultEventStorage, Test_MemfaultHandleSaveCallback) {
   mock().checkExpectations();
 }
 
-TEST(MemfaultEventStorage, Test_MemfaultLogTruncation) {
+TEST(MemfaultLog, Test_MemfaultLogTruncation) {
   const size_t max_log_size = MEMFAULT_LOG_MAX_LINE_SAVE_LEN;
 
   char long_log[max_log_size + 1 + 1 /* \0 */] = { 0 };
@@ -136,7 +157,7 @@ TEST(MemfaultEventStorage, Test_MemfaultLogTruncation) {
   prv_run_header_check(s_ram_log_store, level, long_log, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
 }
 
-TEST(MemfaultEventStorage, Test_MemfaultLogExpireOldest) {
+TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
@@ -154,7 +175,7 @@ TEST(MemfaultEventStorage, Test_MemfaultLogExpireOldest) {
   prv_run_header_check(&s_ram_log_store[4], level, log3, strlen(log3));
 }
 
-TEST(MemfaultEventStorage, Test_MemfaultLogBufTooLongForStorage) {
+TEST(MemfaultLog, Test_MemfaultLogBufTooLongForStorage) {
   uint8_t s_ram_log_store[5];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
@@ -168,7 +189,7 @@ TEST(MemfaultEventStorage, Test_MemfaultLogBufTooLongForStorage) {
   }
 }
 
-TEST(MemfaultEventStorage, Test_LevelFiltering) {
+TEST(MemfaultLog, Test_LevelFiltering) {
   uint8_t s_ram_log_store[10] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
@@ -189,7 +210,7 @@ TEST(MemfaultEventStorage, Test_LevelFiltering) {
   prv_run_header_check(&s_ram_log_store[5], level, unfiltered_log, unfiltered_log_len);
 }
 
-TEST(MemfaultEventStorage, Test_DroppedLogs) {
+TEST(MemfaultLog, Test_DroppedLogs) {
   uint8_t s_ram_log_store[13] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 

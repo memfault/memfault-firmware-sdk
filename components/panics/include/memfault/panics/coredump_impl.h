@@ -79,6 +79,14 @@ size_t memfault_coredump_get_save_size(const sMemfaultCoredumpSaveInfo *save_inf
 //! regions to collect
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions);
 
+//! Memory regions that are part of the SDK to include in a coredump
+//!
+//! @param num_regions The number of regions in the list returned
+//! @return memory regions with the SDK to collect or NULL if there are no extra
+//!   regions to collect
+const sMfltCoredumpRegion *memfault_coredump_get_sdk_regions(size_t *num_regions);
+
+
 #ifdef __cplusplus
 }
 #endif

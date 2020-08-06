@@ -8,6 +8,7 @@
 //! cloud UI.
 
 #include "memfault/core/log.h"
+#include "memfault/core/log_impl.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,12 +20,19 @@
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/core/platform/overrides.h"
 #include "memfault/util/circular_buffer.h"
+#include "memfault/util/crc16_ccitt.h"
 
 #define MEMFAULT_RAM_LOGGER_VERSION 1
 
 #ifndef MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL
   #define MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL kMemfaultPlatformLogLevel_Info
 #endif
+
+typedef struct MfltLogStorageInfo {
+  void *storage;
+  size_t len;
+  uint16_t crc16;
+} sMfltLogStorageRegionInfo;
 
 typedef struct {
   uint8_t version;
@@ -38,11 +46,47 @@ typedef struct {
   // that are no longer in the log buffer.
   uint32_t dropped_msg_count;
   sMfltCircularBuffer circ_buffer;
+  // When initialized we keep track of the user provided storage buffer and crc the location +
+  // size. When the system crashes we can check to see if this info has been corrupted in any way
+  // before trying to collect the region.
+  sMfltLogStorageRegionInfo region_info;
 } sMfltRamLogger;
 
 static sMfltRamLogger s_memfault_ram_logger = {
   .enabled = false,
 };
+
+static uint16_t prv_compute_log_region_crc16(void) {
+  return memfault_crc16_ccitt_compute(
+      MEMFAULT_CRC16_CCITT_INITIAL_VALUE, &s_memfault_ram_logger.region_info,
+      offsetof(sMfltLogStorageRegionInfo, crc16));
+}
+
+bool memfault_log_get_regions(sMemfaultLogRegions *regions) {
+  if (!s_memfault_ram_logger.enabled) {
+    return false;
+  }
+
+  const sMfltLogStorageRegionInfo *region_info = &s_memfault_ram_logger.region_info;
+  const uint16_t current_crc16 = prv_compute_log_region_crc16();
+  if (current_crc16 != region_info->crc16) {
+    return false;
+  }
+
+  *regions = (sMemfaultLogRegions) {
+    .region = {
+      {
+        .region_start = &s_memfault_ram_logger,
+        .region_size = sizeof(s_memfault_ram_logger),
+      },
+      {
+        .region_start = region_info->storage,
+        .region_size = region_info->len,
+      }
+    }
+  };
+  return true;
+}
 
 typedef enum {
   kMemfaultLogRecordType_Preformatted = 0,
@@ -264,10 +308,17 @@ bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {
   if (storage_buffer == NULL || buffer_len == 0 || s_memfault_ram_logger.enabled) {
     return false;
   }
+
   s_memfault_ram_logger = (sMfltRamLogger) {
     .version = MEMFAULT_RAM_LOGGER_VERSION,
     .min_log_level = MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL,
+    .region_info = {
+      .storage = storage_buffer,
+      .len = buffer_len,
+    },
   };
+
+  s_memfault_ram_logger.region_info.crc16 = prv_compute_log_region_crc16();
 
   memfault_circular_buffer_init(&s_memfault_ram_logger.circ_buffer, storage_buffer, buffer_len);
 

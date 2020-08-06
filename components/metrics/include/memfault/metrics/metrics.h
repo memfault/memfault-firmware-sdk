@@ -64,14 +64,24 @@ typedef enum MemfaultMetricValueType {
 //! something like:
 //!
 //! // memfault_metrics_heartbeat_config.def
-//! MEMFAULT_METRICS_KEY_DEFINE(battery_level, kMemfaultMetricType_Unsigned)
-//! MEMFAULT_METRICS_KEY_DEFINE(ambient_temperature_celcius, kMemfaultMetricType_Signed)
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(battery_level, kMemfaultMetricType_Unsigned, 0, 100)
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(ambient_temperature_celcius, kMemfaultMetricType_Signed, -40, 40)
 //!
 //! @param key_name The name of the key, without quotes. This gets surfaced in the Memfault UI, so
 //! it's useful to make these names human readable. C variable naming rules apply.
-//! @param value_type The type for this key
+//! @param value_type The eMemfaultMetricType type of the key
+//! @param min_value A hint as to what the expected minimum value of the metric will be
+//! @param max_value A hint as to what the expected maximum value of the metric will be
+//!
+//! @note min_value & max_value are used to define an expected range for a given metric.
+//! This information is used in the Memfault cloud to normalize the data to a range of your choosing.
+//! Metrics will still be ingested _even_ if they are outside the range defined.
 //!
 //! @note key_names must be unique
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
+  _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+//! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE' just with no range hints specified
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 

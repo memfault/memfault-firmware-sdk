@@ -17,11 +17,15 @@ extern "C" {
 #endif
 
 //! Generate extern const char * declarations for all IDs (used in key names):
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-extern const char * const g_memfault_metrics_id_##key_name;
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)       \
+  extern const char * const g_memfault_metrics_id_##key_name;
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
 
 #define _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   MEMFAULT_STATIC_ASSERT(false, \

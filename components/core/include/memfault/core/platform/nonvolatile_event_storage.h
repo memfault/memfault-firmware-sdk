@@ -63,7 +63,7 @@ typedef struct MemfaultNonVolatileEventStorageImpl {
 //! The easiest way to achieve this is to add the following to your port:
 //!
 //! #include "memfault/core/event_storage.h"
-//! void memfault_event_storage_handle_saved_callback(
+//! void memfault_event_storage_request_persist_callback(
 //!     const sMemfaultEventStoragePersistCbStatus *status) {
 //!   memfault_event_storage_persist();
 //! }

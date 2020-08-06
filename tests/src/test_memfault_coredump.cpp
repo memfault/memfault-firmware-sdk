@@ -20,8 +20,11 @@ extern "C" {
   static sMfltCoredumpRegion s_fake_memory_region[2];
   static size_t s_num_fake_regions;
 
-  static sMfltCoredumpRegion s_fake_arch_region[2];
+  static sMfltCoredumpRegion s_fake_arch_region[1];
   static size_t s_num_fake_arch_regions;
+
+  static sMfltCoredumpRegion s_fake_sdk_region[2];
+  static size_t s_num_fake_sdk_regions;
 
   static const uint8_t s_fake_memfault_build_id[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
@@ -69,6 +72,11 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
   return &s_fake_arch_region[0];
 }
 
+const sMfltCoredumpRegion *memfault_coredump_get_sdk_regions(size_t *num_regions) {
+  *num_regions = s_num_fake_sdk_regions;
+  return &s_fake_sdk_region[0];
+}
+
 TEST_GROUP(MfltCoredumpTestGroup) {
   void setup() {
     mock().enable();
@@ -91,8 +99,18 @@ TEST_GROUP(MfltCoredumpTestGroup) {
     s_fake_arch_region[0].type = kMfltCoredumpRegionType_Memory;
     s_fake_arch_region[0].region_start = &s_fake_arch_region1;
     s_fake_arch_region[0].region_size = sizeof(s_fake_arch_region1);
-
     s_num_fake_arch_regions = 1;
+
+    static uint8_t s_fake_sdk_region1[] = { 'a', 'b', 'c' };
+    s_fake_sdk_region[0].type = kMfltCoredumpRegionType_Memory;
+    s_fake_sdk_region[0].region_start = &s_fake_sdk_region1;
+    s_fake_sdk_region[0].region_size = sizeof(s_fake_sdk_region1);
+
+    static uint8_t s_fake_sdk_region2[] = { 'd', 'e', 'f' };
+    s_fake_sdk_region[1].type = kMfltCoredumpRegionType_Memory;
+    s_fake_sdk_region[1].region_start = &s_fake_sdk_region2;
+    s_fake_sdk_region[1].region_size = sizeof(s_fake_sdk_region2);
+    s_num_fake_sdk_regions = 2;
   }
 
   void teardown() {
@@ -182,6 +200,7 @@ static size_t prv_compute_space_needed(void *regs, size_t size,
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoRegions) {
   s_num_fake_regions = 0;
   s_num_fake_arch_regions = 0;
+  s_num_fake_sdk_regions = 0;
 
   prv_collect_regions_and_save(NULL, 0, 0);
   size_t size = prv_compute_space_needed(NULL, 0, 0);
@@ -207,7 +226,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const size_t coredump_size_without_build_id = 212;
+  const size_t coredump_size_without_build_id = 268;
   const size_t coredump_size_with_build_id = coredump_size_without_build_id + 20 /* sha1 */ + 12 /* sMfltCoredumpBlock */;
   for (size_t i = 1; i <= coredump_size_with_build_id; i++) {
     uint8_t storage[i];
@@ -342,9 +361,17 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
     total_length += arch_padding ? arch_padding + segment_hdr_sz : 0;
   }
 
+  for (size_t i = 0; i < s_num_fake_sdk_regions; i++) {
+    total_length += s_fake_sdk_region[i].region_size + segment_hdr_sz;
+
+    const uint32_t arch_padding = (4 - (total_length % 4));
+    total_length += arch_padding ? arch_padding + segment_hdr_sz : 0;
+  }
+
   for (size_t i = 0; i < s_num_fake_regions; i++) {
     total_length += s_fake_memory_region[i].region_size + segment_hdr_sz;
   }
+
   MEMCMP_EQUAL(&total_length, coredump_buf, sizeof(total_length));
   coredump_buf += sizeof(total_length);
 
@@ -406,6 +433,20 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
     size_t segment_size = s_fake_arch_region[i].region_size;
     coredump_buf += segment_hdr_sz;
     MEMCMP_EQUAL(s_fake_arch_region[i].region_start, coredump_buf, segment_size);
+    coredump_buf += segment_size;
+
+    const uint32_t arch_padding = (4 - ((uint64_t)coredump_buf % 4));
+    coredump_buf += arch_padding + segment_hdr_sz;
+  }
+
+  // now we should find the architecture specific regions
+  for (size_t i = 0; i < s_num_fake_sdk_regions; i++) {
+    // make sure regions are aligned on 4 byte boundaries
+    LONGS_EQUAL(0, (uint64_t)coredump_buf % 4);
+
+    size_t segment_size = s_fake_sdk_region[i].region_size;
+    coredump_buf += segment_hdr_sz;
+    MEMCMP_EQUAL(s_fake_sdk_region[i].region_start, coredump_buf, segment_size);
     coredump_buf += segment_size;
 
     const uint32_t arch_padding = (4 - ((uint64_t)coredump_buf % 4));

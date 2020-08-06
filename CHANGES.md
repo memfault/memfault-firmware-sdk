@@ -1,3 +1,26 @@
+### Changes between Memfault SDK 0.7.0 and SDK 0.6.1 - Aug 6, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added utility to facilitate collection of the memory regions used by the
+  [logging module](components/core/include/memfault/core/log.h) as part of a
+  coredump. With this change, when the SDK is compiled with
+  `MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1`, the logging region will
+  automatically be collected as part of a coredump. Step-by-step details can
+  also be found in the [logging integration guide](https://mflt.io/logging).
+- Added `MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE()` which can be used for
+  defining the minimum and maximum expected range for a heartbeat metric. This
+  information is used by the Memfault cloud to better normalize the data when it
+  is presented in the UI.
+
+#### :boom: Breaking Changes
+
+- If you are _not_ using our CMake or Make
+  [build system helpers](README.md#add-sources-to-build-system) and are using
+  the `panics` component, you will need to manually add the following file to
+  your build system:
+  `$(MEMFAULT_SDK_ROOT)/components/panics/src/memfault_coredump_sdk_regions.c`
+
 ### Changes between Memfault SDK 0.6.1 and SDK 0.6.0 - July 27, 2020
 
 #### :chart_with_upwards_trend: Improvements

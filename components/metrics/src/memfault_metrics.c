@@ -24,6 +24,7 @@
 #include "memfault/metrics/utils.h"
 
 #undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
 
 #define MEMFAULT_METRICS_KEY_NOT_FOUND (-1)
 #define MEMFAULT_METRICS_TYPE_INCOMPATIBLE (-2)
@@ -35,24 +36,38 @@
 typedef struct MemfaultMetricKVPair {
   MemfaultMetricId key;
   eMemfaultMetricType type;
+  // Notes:
+  // - We treat 'min' as a _signed_ integer when the 'type' == kMemfaultMetricType_Signed
+  // - We parse this range information in the Memfault cloud to better normalize data presented in
+  //   the UI.
+  uint32_t min;
+  uint32_t range;
 } sMemfaultMetricKVPair;
 
-// Generate global ID constants (ROM):
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  const char * const g_memfault_metrics_id_##key_name = MEMFAULT_EXPAND_AND_QUOTE(key_name);
-  #include "memfault/metrics/heartbeat_config.def"
-  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-#undef MEMFAULT_METRICS_KEY_DEFINE
-
 // Generate heartbeat keys table (ROM):
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
+  { .key = _MEMFAULT_METRICS_ID_CREATE(key_name), .type = value_type, \
+    .min = (uint32_t)min_value, .range = ((int64_t)max_value - (int64_t)min_value) },
+
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  { .key = _MEMFAULT_METRICS_ID_CREATE(key_name), .type = value_type },
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, 0, 0)
 
 static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
   #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
 };
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+// Generate global ID constants (ROM):
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)         \
+  const char * const g_memfault_metrics_id_##key_name = MEMFAULT_EXPAND_AND_QUOTE(key_name);
+  #include "memfault/metrics/heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+#undef MEMFAULT_METRICS_KEY_DEFINE
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_keys) != 0,
                        "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined");
