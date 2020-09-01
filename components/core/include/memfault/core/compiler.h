@@ -27,6 +27,8 @@ extern "C" {
 
 #if defined(__CC_ARM)
 #include "compiler_armcc.h"
+#elif defined(__TI_ARM__)
+#include "compiler_ti_arm.h"
 #elif defined(__GNUC__) || defined(__clang__)
 #include "compiler_gcc.h"
 #elif defined(__ICCARM__)

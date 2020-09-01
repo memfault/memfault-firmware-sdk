@@ -16,17 +16,15 @@
 extern "C" {
 #endif
 
-#ifdef __arm__
+#if defined(__arm__) || defined(__TI_ARM__)
 
-// By default, exception handlers use CMSIS naming conventions.
+// By default, exception handlers use CMSIS naming conventions. By default, the CMSIS library
+// provides a weak implementation for each handler that is implemented as an infinite loop. By
+// using the same name, the Memfault SDK can override this default behavior to capture crash
+// information when a fault handler runs.
+//
 // However, if needed, each handler can be renamed using the following
 // preprocessor defines:
-
-//! Non-Maskable Interrupt handler for ARM processors. The handler will capture fault
-//! information and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-#ifndef MEMFAULT_EXC_HANDLER_NMI
-#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
-#endif
 
 //! Hard Fault handler for ARM processors. The handler will capture fault information
 //! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
@@ -50,6 +48,24 @@ extern "C" {
 //! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
 #ifndef MEMFAULT_EXC_HANDLER_USAGE_FAULT
 #  define MEMFAULT_EXC_HANDLER_USAGE_FAULT UsageFault_Handler
+#endif
+
+//! Non-Maskable Interrupt handler for ARM processors. The handler will capture fault
+//! information and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+//!
+//! The NMI is the highest priority interrupt that can run on ARM devices and as the name implies
+//! cannot be disabled. Any fault from the NMI handler will trigger the ARM "lockup condition"
+//! which results in a reset.
+//!
+//! Usually a system will reboot or enter an infinite loop if an NMI interrupt is pended so we
+//! recommend overriding the default implementation with the Memfault Handler so you can discover
+//! if that ever happens.
+//!
+//! However, a few RTOSs and vendor SDKs make use of the handler. If you encounter a duplicate
+//! symbol name conflict due to this the memfault implementation can be disabled as follows:
+//!   CFLAGS += -MEMFAULT_EXC_HANDLER_NMI=MemfaultNmi_Handler_Disabled
+#ifndef MEMFAULT_EXC_HANDLER_NMI
+#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
 #endif
 
 //! (Optional) interrupt handler which can be installed for a watchdog

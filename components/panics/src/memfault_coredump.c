@@ -108,7 +108,7 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #if defined(MEMFAULT_UNITTEST)
   return kMfltCoredumpMachineType_None;
 #else
-#  if defined(__arm__) || defined(__ICCARM__)
+#  if defined(__arm__) || defined(__ICCARM__) || defined(__TI_ARM__)
   return kMfltCoredumpMachineType_ARM;
 #  elif defined(__XTENSA__)
   return kMfltCoredumpMachineType_Xtensa;

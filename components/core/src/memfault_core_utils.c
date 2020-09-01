@@ -25,7 +25,7 @@ static const void *prv_get_build_id_start_pointer(void) {
     }
     case kMemfaultBuildIdType_None:
     default:
-      return NULL;
+      break;
   }
 
   return NULL;

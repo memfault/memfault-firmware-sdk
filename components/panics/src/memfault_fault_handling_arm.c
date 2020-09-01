@@ -71,6 +71,16 @@ static uint32_t prv_read_msp_reg(void) {
   return reg_val;
 }
 
+#elif defined(__TI_ARM__)
+
+static uint32_t prv_read_psp_reg(void) {
+  return __get_PSP();
+}
+
+static uint32_t prv_read_msp_reg(void) {
+  return __get_MSP();
+}
+
 #elif defined(__GNUC__) || defined(__clang__) || defined(__ICCARM__)
 
 static uint32_t prv_read_psp_reg(void) {
@@ -98,6 +108,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     memfault_reboot_tracking_mark_reset_imminent(reason, &info);
     s_crash_reason = reason;
   }
+
 
   const bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
   const bool stack_alignment_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
@@ -243,7 +254,7 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
-  ldr r0, =0x8001 // kMfltRebootReason_Assert
+  ldr r0, =0x8004 // kMfltRebootReason_Nmi
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
@@ -255,6 +266,56 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
+}
+
+#elif defined(__TI_ARM__)
+
+MEMFAULT_NAKED_FUNC
+void memfault_fault_handling_shim(int reason) {
+  __asm(" tst lr, #4 \n"
+        " ite eq \n"
+        " mrseq r3, msp \n"
+        " mrsne r3, psp \n"
+        " push {r3-r11, lr} \n"
+        " mov r1, r0 \n"
+        " mov r0, sp \n"
+        " b memfault_fault_handler");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+  __asm(" mov r0, #0x9400 \n" // kMfltRebootReason_HardFault
+        " b memfault_fault_handling_shim \n");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+  __asm(" mov r0, #0x9200 \n" // kMfltRebootReason_MemFault
+        " b memfault_fault_handling_shim \n");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+  __asm(" mov r0, #0x9100 \n" // kMfltRebootReason_BusFault
+        " b memfault_fault_handling_shim \n");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+  __asm(" mov r0, #0x9300 \n" // kMfltRebootReason_UsageFault
+        " b memfault_fault_handling_shim \n");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_NMI(void) {
+  __asm(" mov r0, #0x8004 \n" // kMfltRebootReason_Nmi
+        " b memfault_fault_handling_shim \n");
+}
+
+MEMFAULT_NAKED_FUNC
+void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+  __asm(" mov r0, #0x8002 \n" // kMfltRebootReason_Watchdog
+        " b memfault_fault_handling_shim \n");
 }
 
 #elif defined(__GNUC__) || defined(__clang__)
@@ -324,7 +385,7 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
-  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Nmi);
 }
 
 MEMFAULT_NAKED_FUNC
@@ -407,7 +468,7 @@ void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_NMI(void) {
-  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Assert);
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Nmi);
 }
 
 MEMFAULT_NAKED_FUNC
@@ -419,6 +480,33 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
 #  error "New compiler to add support for!"
 #endif
 
+// The ARM architecture has a reserved instruction that is "Permanently Undefined" and always
+// generates an Undefined Instruction exception causing an ARM fault handler to be invoked.
+//
+// We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the immediate
+// value for easy disambiguation from any other udf invocations in a system.
+#if defined(__CC_ARM)
+__asm __forceinline void MEMFAULT_ASSERT_TRAP(void) {
+  PRESERVE8
+  UND #77
+  ALIGN
+}
+#elif defined(__TI_ARM__)
+// The TI Compiler doesn't support the udf asm instruction
+// so we encode the instruction & a nop as a word literal
+
+#pragma diag_push
+#pragma diag_suppress 1119
+
+void MEMFAULT_ASSERT_TRAP(void) {
+  __asm(" .word 3204505165"); // 0xbf00de4d
+}
+
+#pragma diag_pop
+#else
+#define MEMFAULT_ASSERT_TRAP() __asm volatile ("udf #77")
+#endif
+
 static void prv_fault_handling_assert(void *pc, void *lr) {
   sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)pc,
@@ -427,20 +515,7 @@ static void prv_fault_handling_assert(void *pc, void *lr) {
   s_crash_reason = kMfltRebootReason_Assert;
   memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
 
-  memfault_platform_halt_if_debugging();
-
-  // NOTE: Address of NMIPENDSET is a standard (please see
-  // the "Interrupt Control and State Register" section of the ARMV7-M reference manual)
-
-  // Run coredump collection handler from NMI handler
-  // Benefits:
-  //   At that priority level, we can't get interrupted
-  //   We can leverage the arm architecture to auto-capture register state for us
-  //   If the user is using psp/msp, we start execution from a more predictable stack location
-  const uint32_t nmipendset_mask = 0x1u << 31;
-  volatile uint32_t *icsr = (uint32_t *)0xE000ED04;
-  *icsr |= nmipendset_mask;
-  __asm("isb");
+  MEMFAULT_ASSERT_TRAP();
 }
 
 // Note: This function is annotated as "noreturn" which can be useful for static analysis.
@@ -450,9 +525,7 @@ MEMFAULT_NO_OPT
 void memfault_fault_handling_assert(void *pc, void *lr, MEMFAULT_UNUSED uint32_t extra) {
   prv_fault_handling_assert(pc, lr);
 
-  // We just pend'd a NMI interrupt which is higher priority than any other interrupt and so we
-  // should not get here unless the this gets called while fault handling is _already_ in progress
-  // and the NMI is running. In this situation, the best thing that can be done is rebooting the
-  // system to recover it
+  // We just trap'd into the fault handler logic so it should never be possible to get here but if
+  // we do the best thing that can be done is rebooting the system to recover it.
   memfault_platform_reboot();
 }

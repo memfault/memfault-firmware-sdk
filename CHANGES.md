@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.7.1 and SDK 0.7.0 - Sept 1, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added support for TI's ARM-CGT Compiler
+- Removed dependency on NMI Exception Handler for `MEMFAULT_ASSERT`s. Instead of
+  pending an NMI exception, the assert path will now "trap" into the fault
+  handler by executing a `udf` instruction. This unifies the fault handling
+  paths within the SDK and leaves the NMI Handler free for other uses within the
+  user's environment.
+- Added several more
+  [reboot reason options](components/panics/include/memfault/core/reboot_reason_types.h#L16):
+  `kMfltRebootReason_PowerOnReset`, `kMfltRebootReason_BrownOutReset`, &
+  `kMfltRebootReason_Nmi`.
+
 ### Changes between Memfault SDK 0.7.0 and SDK 0.6.1 - Aug 6, 2020
 
 #### :chart_with_upwards_trend: Improvements
