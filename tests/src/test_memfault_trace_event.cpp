@@ -16,7 +16,7 @@ bool memfault_arch_is_inside_isr(void) {
 
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
 
-#define MEMFAULT_TRACE_EVENT_WORST_CASE_SIZE_BYTES (57)
+#define MEMFAULT_TRACE_EVENT_WORST_CASE_SIZE_BYTES (59)
 
 TEST_GROUP(MfltTraceEvent) {
   void setup() {
@@ -48,19 +48,25 @@ TEST(MfltTraceEvent, Test_BootStorageTooSmall) {
 
 
 TEST(MfltTraceEvent, Test_CaptureButStorageUninitialized) {
-  const int rv = memfault_trace_event_capture(NULL, NULL, kMfltTraceReasonUser_Unknown);
+  const int rv = memfault_trace_event_capture(kMfltTraceReasonUser_Unknown, NULL, NULL);
   CHECK_EQUAL(rv, -1);
 }
 
 
-static void prv_run_capture_test(void *pc, void *lr, size_t storage_size, size_t expected_encoded_size) {
+static void prv_run_capture_test(
+    void *pc, void *lr, int32_t *status_code, size_t storage_size,
+    size_t expected_encoded_size) {
   fake_memfault_event_storage_clear();
   fake_memfault_event_storage_set_available_space(storage_size);
   mock().expectOneCall("memfault_arch_is_inside_isr");
   mock().expectOneCall("prv_begin_write");
   const bool expect_rollback = (storage_size < expected_encoded_size);
   mock().expectOneCall("prv_finish_write").withParameter("rollback", expect_rollback);
-  const int rv = memfault_trace_event_capture(pc, lr, kMfltTraceReasonUser_test);
+
+  const int rv = (status_code == NULL) ?
+      memfault_trace_event_capture(kMfltTraceReasonUser_test, pc, lr) :
+      memfault_trace_event_with_status_capture(kMfltTraceReasonUser_test, pc, lr, *status_code);
+
   CHECK_EQUAL(expect_rollback ? -2 : 0, rv);
   mock().checkExpectations();
 }
@@ -84,7 +90,39 @@ TEST(MfltTraceEvent, Test_CaptureOk_PcAndLr) {
   for (size_t i = 1; i <= sizeof(expected_data); i++) {
     void *pc = (void *)0x12345678;
     void *lr = (void *)0xaabbccdd;
-    prv_run_capture_test(pc, lr, i, sizeof(expected_data));
+    prv_run_capture_test(pc, lr, NULL, i, sizeof(expected_data));
+  }
+
+  fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
+}
+
+TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndStatus) {
+  fake_memfault_event_storage_clear();
+  const int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
+  CHECK_EQUAL(0, rv);
+
+  const uint8_t expected_data[] = {
+    0xA7,
+    0x02, 0x02,
+    0x03, 0x01,
+    0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+    0x0A, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1', '.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
+    0x04,
+    0xA4,
+    0x06, 0x03,
+    0x02, 0x1A, 0x12, 0x34, 0x56, 0x78,
+    0x03, 0x1A, 0xAA, 0xBB, 0xCC, 0xDD,
+    0x07, 0x20
+  };
+
+  // anything less than the expected size should fail to encode
+  for (size_t i = 1; i <= sizeof(expected_data); i++) {
+    void *pc = (void *)0x12345678;
+    void *lr = (void *)0xaabbccdd;
+    int32_t status_code = -1;
+    prv_run_capture_test(pc, lr, &status_code, i, sizeof(expected_data));
   }
 
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
@@ -98,14 +136,14 @@ static void prv_setup_isr_test(void) {
   mock().expectOneCall("memfault_arch_is_inside_isr").andReturnValue(true);
   void *pc = (void *)0x12345678;
   void *lr = (void *)0xaabbccdd;
-  rv = memfault_trace_event_capture(pc, lr, kMfltTraceReasonUser_test);
+  rv = memfault_trace_event_capture(kMfltTraceReasonUser_test, pc, lr);
   CHECK_EQUAL(0, rv);
   mock().checkExpectations();
 
   mock().expectOneCall("memfault_arch_is_inside_isr").andReturnValue(true);
   void *pc2 = (void *)2;
   void *lr2 = (void *)1;
-  rv = memfault_trace_event_capture(pc2, lr2, kMfltTraceReasonUser_test);
+  rv = memfault_trace_event_capture(kMfltTraceReasonUser_test, pc2, lr2);
   CHECK_EQUAL(-2, rv);
   mock().checkExpectations();
 }
@@ -143,7 +181,7 @@ TEST(MfltTraceEvent, Test_CaptureOk_FromIsrWithLazyFlush) {
   mock().expectOneCall("prv_finish_write").withParameter("rollback", expect_rollback);
   void *pc2 = (void *)NULL;
   void *lr2 = (void *)1;
-  int rv = memfault_trace_event_capture(pc2, lr2, kMfltTraceReasonUser_test);
+  int rv = memfault_trace_event_capture(kMfltTraceReasonUser_test, pc2, lr2);
   CHECK_EQUAL(-2, rv);
   mock().checkExpectations();
 
@@ -177,7 +215,7 @@ TEST(MfltTraceEvent, Test_CaptureOk_FromIsrWithLazyFlush) {
   // then the second event we want to record should be stored
   mock().expectOneCall("prv_begin_write");
   mock().expectOneCall("prv_finish_write").withParameter("rollback", expect_rollback);
-  rv = memfault_trace_event_capture(pc2, lr2, kMfltTraceReasonUser_test);
+  rv = memfault_trace_event_capture(kMfltTraceReasonUser_test, pc2, lr2);
   CHECK_EQUAL(0, rv);
 
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
@@ -201,7 +239,7 @@ TEST(MfltTraceEvent, Test_CaptureOk_LrOnly) {
   for (size_t i = 1; i <= sizeof(expected_data); i++) {
     void *pc = (void *)NULL;
     void *lr = (void *)1;
-    prv_run_capture_test(pc, lr, i, sizeof(expected_data));
+    prv_run_capture_test(pc, lr, NULL, i, sizeof(expected_data));
   }
 
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
@@ -219,7 +257,7 @@ TEST(MfltTraceEvent, Test_CaptureStorageFull) {
   // Expect rollback!
   mock().expectOneCall("prv_finish_write").withParameter("rollback", true);
 
-  const int rv = memfault_trace_event_capture(0, 0, kMfltTraceReasonUser_test);
+  const int rv = memfault_trace_event_capture(kMfltTraceReasonUser_test, 0, 0);
   CHECK_EQUAL(-2, rv);
 }
 

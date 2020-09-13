@@ -59,13 +59,13 @@ except ImportError:
 # Note: not using `requests` but using the built-in http.client instead, so
 # there will be no additional dependencies other than Python itself.
 try:
-    from httplib import HTTPSConnection, HTTPConnection
-    from urlparse import urlparse
+    from httplib import HTTPConnection, HTTPSConnection
     from Queue import Queue
+    from urlparse import urlparse
 except ImportError:
-    from http.client import HTTPSConnection, HTTPConnection
-    from urllib.parse import urlparse
+    from http.client import HTTPConnection, HTTPSConnection
     from queue import Queue
+    from urllib.parse import urlparse
 
 
 MEMFAULT_DEFAULT_INGRESS_BASE_URI = "https://ingress.memfault.com"

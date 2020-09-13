@@ -49,6 +49,7 @@ typedef enum {
   kMemfaultTraceInfoEventKey_McuReasonRegister = 4,
   kMemfaultTraceInfoEventKey_CoredumpSaved = 5,
   kMemfaultTraceInfoEventKey_UserReason = 6,
+  kMemfaultTraceInfoEventKey_StatusCode = 7,
 } eMemfaultTraceInfoEventKey;
 
 #ifdef __cplusplus

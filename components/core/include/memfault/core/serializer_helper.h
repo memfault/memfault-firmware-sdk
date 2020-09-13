@@ -26,6 +26,9 @@ bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder, e
 bool memfault_serializer_helper_encode_uint32_kv_pair(
     sMemfaultCborEncoder *encoder, uint32_t key, uint32_t value);
 
+bool memfault_serializer_helper_encode_int32_kv_pair(
+    sMemfaultCborEncoder *encoder, uint32_t key, int32_t value);
+
 typedef struct MemfaultTraceEventHelperInfo {
   eMemfaultTraceInfoEventKey reason_key;
   uint32_t reason_value;

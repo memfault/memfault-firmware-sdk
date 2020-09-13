@@ -63,7 +63,7 @@ extern "C" {
 //!
 //! However, a few RTOSs and vendor SDKs make use of the handler. If you encounter a duplicate
 //! symbol name conflict due to this the memfault implementation can be disabled as follows:
-//!   CFLAGS += -MEMFAULT_EXC_HANDLER_NMI=MemfaultNmi_Handler_Disabled
+//!   CFLAGS += -DMEMFAULT_EXC_HANDLER_NMI=MemfaultNmi_Handler_Disabled
 #ifndef MEMFAULT_EXC_HANDLER_NMI
 #  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
 #endif

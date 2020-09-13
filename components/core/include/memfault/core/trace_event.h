@@ -7,18 +7,16 @@
 //!
 //! @brief
 //! Subsystem to trace errors in a way that requires less storage than full coredump traces and
-//! also allows the system to keep running after capturing the event. Only the program counter,
-//! return address and a "reason" enum value are saved. Once uploaded to Memfault, each Trace Event
-//! will be associated with an Issue.
-//!
-//! @note Where coredumps provide full backtraces of *all* threads in the system and local & global
-//! variable values, trace events effectively only provide the 2 topmost frames of the backtrace of
-//! the current thread only (no locals nor globals).
+//! also allows the system to continue running after capturing the event.
 //!
 //! @note For a step-by-step guide about how to integrate and leverage the Trace Event component
 //! check out https://mflt.io/error-tracing
+//!
+//! @note To capture a full snapshot of an error condition (all tasks, logs, and local &
+//! global variable state), you can integrate memfault coredumps: https://mflt.io/coredumps
 
 #include "memfault/core/event_storage.h"
+#include "memfault/core/trace_event_impl.h"
 #include "memfault/core/trace_reason_user.h"
 
 #include <stddef.h>
@@ -27,15 +25,16 @@
 extern "C" {
 #endif
 
-//! Sets the storage implementation used to record Trace Events.
+//! Initializes trace event module
+//!
+//! @note This must be called before using MEMFAULT_TRACE_EVENT / MEMFAULT_TRACE_EVENT_WITH_STATUS
+//!
 //! @param storage_impl The event storage implementation being used (returned from
 //!   memfault_events_storage_boot())
 //! @return 0 on success, else error code.
-//! @note This must be called before MEMFAULT_TRACE_EVENT / memfault_trace_event_capture can be
-//! called!
 int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 
-//! Convenience macro to capture a Trace Event with given reason.
+//! Records a "Trace Event" with given reason, pc, & lr.
 //!
 //! The current program counter and return address are collected as part of the macro.
 //!
@@ -44,31 +43,35 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 //! @see memfault_trace_event_capture
 //! @see MEMFAULT_TRACE_REASON_DEFINE
 //! @note Ensure memfault_trace_event_boot() has been called before using this API!
-#define MEMFAULT_TRACE_EVENT(reason)                                    \
-do {                                                                    \
-  void *pc;                                                             \
-  MEMFAULT_GET_PC(pc);                                                  \
-  void *lr;                                                             \
-  MEMFAULT_GET_LR(lr);                                                  \
-  memfault_trace_event_capture(pc, lr, MEMFAULT_TRACE_REASON(reason));  \
-} while (0)
+#define MEMFAULT_TRACE_EVENT(reason)                                     \
+  do {                                                                   \
+    void *pc;                                                            \
+    MEMFAULT_GET_PC(pc);                                                 \
+    void *lr;                                                            \
+    MEMFAULT_GET_LR(lr);                                                 \
+    memfault_trace_event_capture(MEMFAULT_TRACE_REASON(reason), pc, lr); \
+  } while (0)
 
-//! Captures a Trace Event with given program counter, return address and reason.
+//! Records same info as MEMFAULT_TRACE_EVENT as well as a "status_code"
 //!
-//! This function should never be called directly by an end user. Instead, use the
-//! MEMFAULT_TRACE_EVENT macro in your code which automatically collects the program counter and
-//! return address.
+//! @note The status code allows one to disambiguate traces of the same "reason" class
+//!  and record additional diagnostic info.
 //!
-//! @param pc_addr The program counter
-//! @param return_addr The return address
-//! @param reason The error reason. See MEMFAULT_TRACE_REASON_DEFINE in trace_reason_user.h for
-//! information on how to define reason values.
-//! @return 0 on success, else error code.
-//! @see MEMFAULT_TRACE_EVENT
-//! @see MEMFAULT_TRACE_REASON_DEFINE
-//! @note Ensure memfault_trace_event_boot() has been called before using this API!
-//! @note This function is also safe to call from an ISR.
-int memfault_trace_event_capture(void *pc_addr, void *return_addr, eMfltTraceReasonUser reason);
+//!  Some example use cases:
+//!    reason=UnexpectedBluetoothDisconnect, status_codes = bluetooth error code
+//!    reason=LibCFileIoError, status_code = value of errno when operation failed
+//!
+//! @note Trace events with the same 'reason' but a different 'status_code' are classified as
+//!   unique issues in the Memfault UI
+#define MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code) \
+  do {                                                        \
+    void *pc;                                                 \
+    MEMFAULT_GET_PC(pc);                                      \
+    void *lr;                                                 \
+    MEMFAULT_GET_LR(lr);                                      \
+    memfault_trace_event_with_status_capture(                 \
+        MEMFAULT_TRACE_REASON(reason), pc, lr, status_code);  \
+  } while (0)
 
 //! Flushes an ISR trace event capture out to event storage
 //!

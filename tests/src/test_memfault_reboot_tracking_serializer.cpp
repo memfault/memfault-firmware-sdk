@@ -50,7 +50,8 @@ static void prv_run_reset_reason_serializer_test(const void *expected_data,
   mock().expectOneCall("prv_begin_write");
   mock().expectOneCall("prv_finish_write").withParameter("rollback", false);
   mock().expectOneCall("memfault_reboot_tracking_clear_reset_info");
-  memfault_reboot_tracking_collect_reset_info(s_fake_event_storage_impl);
+  const int rv = memfault_reboot_tracking_collect_reset_info(s_fake_event_storage_impl);
+  LONGS_EQUAL(0, rv);
 
   fake_event_storage_assert_contents_match(expected_data, expected_data_len);
 }
@@ -77,7 +78,8 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
 
     mock().expectOneCall("prv_begin_write");
     mock().expectOneCall("prv_finish_write").withParameter("rollback", true);
-    memfault_reboot_tracking_collect_reset_info(s_fake_event_storage_impl);
+    const int rv = memfault_reboot_tracking_collect_reset_info(s_fake_event_storage_impl);
+    LONGS_EQUAL(-2, rv);
   }
 
   prv_run_reset_reason_serializer_test(expected_data_all, sizeof(expected_data_all));
@@ -134,4 +136,9 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
 TEST(MfltRebootTrackingSerializer, Test_GetWorstCaseSerializeSize) {
   const size_t worst_case_size = memfault_reboot_tracking_compute_worst_case_storage_size();
   LONGS_EQUAL(52, worst_case_size);
+}
+
+TEST(MfltRebootTrackingSerializer, Test_BadParams) {
+  const int rv = memfault_reboot_tracking_collect_reset_info(NULL);
+  LONGS_EQUAL(-1, rv);
 }

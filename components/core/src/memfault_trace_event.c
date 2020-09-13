@@ -14,11 +14,29 @@
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
 #include "memfault/core/serializer_helper.h"
+#include "memfault/core/serializer_key_ids.h"
 
 #define MEMFAULT_TRACE_EVENT_STORAGE_UNINITIALIZED (-1)
 #define MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE (-2)
 #define MEMFAULT_TRACE_EVENT_STORAGE_TOO_SMALL (-3)
 #define MEMFAULT_TRACE_EVENT_BAD_PARAM (-4)
+
+#define TRACE_EVENT_OPT_FIELD_STATUS_MASK (1 << 0)
+
+typedef struct {
+  eMfltTraceReasonUser reason;
+  void *pc_addr;
+  void *return_addr;
+  //! A bitmask which tracks the optional fields have been captured.
+  uint32_t opt_fields;
+
+  //
+  // Optional fields which can be captured
+  //
+
+  //! A status / error code to record alongside a trace event
+  int32_t status_code;
+} sMemfaultTraceEventInfo;
 
 static struct {
   const sMemfaultEventStorageImpl *storage_impl;
@@ -39,23 +57,43 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl) {
 }
 
 static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
-  const sMemfaultTraceEventHelperInfo *info = (const sMemfaultTraceEventHelperInfo *)ctx;
-  return memfault_serializer_helper_encode_trace_event(encoder, info);
+  const sMemfaultTraceEventInfo *info = (const sMemfaultTraceEventInfo *)ctx;
+  uint32_t extra_event_info_pairs = 0;
+  const bool status_present = (info->opt_fields & TRACE_EVENT_OPT_FIELD_STATUS_MASK) != 0;
+  if (status_present) {
+    extra_event_info_pairs++;
+  }
+
+  sMemfaultTraceEventHelperInfo helper_info = {
+      .reason_key = kMemfaultTraceInfoEventKey_UserReason,
+      .reason_value = info->reason,
+      .pc = (uint32_t)(uintptr_t)info->pc_addr,
+      .lr = (uint32_t)(uintptr_t)info->return_addr,
+      .extra_event_info_pairs = extra_event_info_pairs,
+  };
+
+  bool success = memfault_serializer_helper_encode_trace_event(encoder, &helper_info);
+
+  if (success && status_present) {
+    success = memfault_serializer_helper_encode_int32_kv_pair(encoder,
+        kMemfaultTraceInfoEventKey_StatusCode, info->status_code);
+  }
+
+  return success;
 }
 
 typedef struct {
   uint32_t reason;
-  void *pc_addr;
-  void *return_addr;
+  sMemfaultTraceEventInfo info;
 } sMemfaultIsrTraceEvent;
 
 static sMemfaultIsrTraceEvent s_isr_trace_event;
 
 // To keep the number of cycles spent logging a trace from an ISR to a minimum we just copy the
 // values into a storage area and then flush the data after the system has returned from an ISR
-static int prv_trace_event_capture_from_isr(void *pc_addr, void *return_addr, eMfltTraceReasonUser reason) {
+static int prv_trace_event_capture_from_isr(sMemfaultTraceEventInfo *trace_info) {
   uint32_t expected_reason = MEMFAULT_TRACE_REASON(Unknown);
-  const uint32_t desired_reason = (uint32_t)reason;
+  const uint32_t desired_reason = (uint32_t)trace_info->reason;
 
   if (s_isr_trace_event.reason != expected_reason) {
     return MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE;
@@ -66,22 +104,14 @@ static int prv_trace_event_capture_from_isr(void *pc_addr, void *return_addr, eM
   // up overwriting it. The actual update of the reason (32 bit write) is an atomic op
   s_isr_trace_event.reason = desired_reason;
 
-  s_isr_trace_event.pc_addr = pc_addr;
-  s_isr_trace_event.return_addr = return_addr;
+  s_isr_trace_event.info = *trace_info;
   return 0;
 }
 
-static int prv_trace_event_capture(void *pc_addr, void *return_addr, eMfltTraceReasonUser reason) {
-  sMemfaultTraceEventHelperInfo info = {
-      .reason_key = kMemfaultTraceInfoEventKey_UserReason,
-      .reason_value = reason,
-      .pc = (uint32_t)(uintptr_t)pc_addr,
-      .lr = (uint32_t)(uintptr_t)return_addr,
-      .extra_event_info_pairs = 0,
-  };
+static int prv_trace_event_capture(sMemfaultTraceEventInfo *info) {
   sMemfaultCborEncoder encoder = { 0 };
   const bool success = memfault_serializer_helper_encode_to_storage(
-      &encoder, s_memfault_trace_event_ctx.storage_impl, prv_encode_cb, &info);
+      &encoder, s_memfault_trace_event_ctx.storage_impl, prv_encode_cb, info);
 
   if (!success) {
     MEMFAULT_LOG_ERROR("%s storage out of space", __func__);
@@ -96,8 +126,7 @@ int memfault_trace_event_try_flush_isr_event(void) {
     return 0;
   }
 
-  const int rv = prv_trace_event_capture(s_isr_trace_event.pc_addr, s_isr_trace_event.return_addr,
-                                         (eMfltTraceReasonUser)s_isr_trace_event.reason);
+  const int rv = prv_trace_event_capture(&s_isr_trace_event.info);
   if (rv == 0) {
     // we successfully flushed the ISR event, mark the space as free to use again
     s_isr_trace_event.reason = MEMFAULT_TRACE_REASON(Unknown);
@@ -105,13 +134,14 @@ int memfault_trace_event_try_flush_isr_event(void) {
   return rv;
 }
 
-int memfault_trace_event_capture(void *pc_addr, void *return_addr, eMfltTraceReasonUser reason) {
+
+static int prv_capture_trace_event_info(sMemfaultTraceEventInfo *info) {
   if (s_memfault_trace_event_ctx.storage_impl == NULL) {
     return MEMFAULT_TRACE_EVENT_STORAGE_UNINITIALIZED;
   }
 
   if (memfault_arch_is_inside_isr()) {
-    return prv_trace_event_capture_from_isr(pc_addr, return_addr, reason);
+    return prv_trace_event_capture_from_isr(info);
   }
 
   // NOTE: We flush any ISR pended events here so that the order in which events are captured is
@@ -122,18 +152,41 @@ int memfault_trace_event_capture(void *pc_addr, void *return_addr, eMfltTraceRea
     return rv;
   }
 
-  return prv_trace_event_capture(pc_addr, return_addr, reason);
+  return prv_trace_event_capture(info);
+}
+
+int memfault_trace_event_capture(eMfltTraceReasonUser reason, void *pc_addr,
+                                 void *lr_addr) {
+  sMemfaultTraceEventInfo event_info = {
+    .reason = reason,
+    .pc_addr = pc_addr,
+    .return_addr = lr_addr,
+  };
+  return prv_capture_trace_event_info(&event_info);
+}
+
+int memfault_trace_event_with_status_capture(eMfltTraceReasonUser reason, void *pc_addr,
+                                             void *lr_addr, int32_t status) {
+  sMemfaultTraceEventInfo event_info = {
+    .reason = reason,
+    .pc_addr = pc_addr,
+    .return_addr = lr_addr,
+    .opt_fields = TRACE_EVENT_OPT_FIELD_STATUS_MASK,
+    .status_code = status,
+  };
+  return prv_capture_trace_event_info(&event_info);
 }
 
 size_t memfault_trace_event_compute_worst_case_storage_size(void) {
-  sMemfaultTraceEventHelperInfo info = {
-      .reason_key = kMemfaultTraceInfoEventKey_UserReason,
-      .reason_value = UINT32_MAX,
-      .lr = UINT32_MAX,
-      .pc = UINT32_MAX,
+  sMemfaultTraceEventInfo event_info = {
+    .reason =  kMfltTraceReasonUser_NumReasons,
+    .pc_addr = (void *)(uintptr_t)UINT32_MAX,
+    .return_addr = (void *)(uintptr_t)UINT32_MAX,
+    .opt_fields = TRACE_EVENT_OPT_FIELD_STATUS_MASK,
+    .status_code = INT32_MAX,
   };
   sMemfaultCborEncoder encoder = { 0 };
-  return memfault_serializer_helper_compute_size(&encoder, prv_encode_cb, &info);
+  return memfault_serializer_helper_compute_size(&encoder, prv_encode_cb, &event_info);
 }
 
 void memfault_trace_event_reset(void) {

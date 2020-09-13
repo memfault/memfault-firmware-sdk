@@ -1,3 +1,11 @@
+### Changes between Memfault SDK 0.7.2 and SDK 0.7.1 - Sept 1, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- A status or error code (i.e bluetooth disconnect reason, errno value, etc) can
+  now be logged alongside a trace event by using a new API:
+  [`MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code)`](components/core/include/memfault/core/trace_event.h#L55).
+
 ### Changes between Memfault SDK 0.7.1 and SDK 0.7.0 - Sept 1, 2020
 
 #### :chart_with_upwards_trend: Improvements

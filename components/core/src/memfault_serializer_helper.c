@@ -80,6 +80,12 @@ bool memfault_serializer_helper_encode_uint32_kv_pair(
       memfault_cbor_encode_unsigned_integer(encoder, value);
 }
 
+bool memfault_serializer_helper_encode_int32_kv_pair(
+    sMemfaultCborEncoder *encoder, uint32_t key, int32_t value) {
+  return memfault_cbor_encode_unsigned_integer(encoder, key) &&
+      memfault_cbor_encode_signed_integer(encoder, value);
+}
+
 static bool prv_encode_event_key_uint32_pair(
     sMemfaultCborEncoder *encoder, eMemfaultEventKey key, uint32_t value) {
   return memfault_cbor_encode_unsigned_integer(encoder, key) &&

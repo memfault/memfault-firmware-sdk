@@ -70,6 +70,8 @@ typedef enum MfltTraceReasonUser {
   // This is just a convenience to avoid the need to create a .def file just for the demo.
   MEMFAULT_TRACE_REASON_DEFINE(MemfaultDemoCli_Error)
 #endif
+
+  kMfltTraceReasonUser_NumReasons,
 } eMfltTraceReasonUser;
 
 #ifdef __cplusplus
