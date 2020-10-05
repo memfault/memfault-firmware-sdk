@@ -79,6 +79,33 @@ TEST(MemfaultBuildInfo, Test_GnuBuildId) {
 #else /* Default - Memfault Generated Build Id is In Use */
 
 
+TEST(MemfaultBuildInfo, Test_MemfaultBuildIdGetString) {
+  const uint8_t fake_memfault_build_id[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+    0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0f, 0x10, 0x11, 0x12, 0x13
+  };
+  memcpy(g_memfault_sdk_derived_build_id, fake_memfault_build_id,
+         sizeof(fake_memfault_build_id));
+
+  g_memfault_build_id.type = kMemfaultBuildIdType_MemfaultBuildIdSha1;
+
+  char build_id_str[41];
+  bool success = memfault_build_id_get_string(build_id_str, 1);
+  CHECK(!success);
+
+  success = memfault_build_id_get_string(build_id_str, 6);
+  CHECK(success);
+  STRCMP_EQUAL("00010", build_id_str);
+
+  success = memfault_build_id_get_string(build_id_str, 7);
+  CHECK(success);
+  STRCMP_EQUAL("000102", build_id_str);
+
+  success = memfault_build_id_get_string(build_id_str, sizeof(build_id_str));
+  CHECK(success);
+  STRCMP_EQUAL("000102030405060708090a0b0c0d0e0f10111213", build_id_str);
+}
+
 TEST(MemfaultBuildInfo, Test_MemfaultBuildId) {
   // If a user hasn't run script to patch in build id, the value should be none
   sMemfaultBuildInfo info = { 0 };

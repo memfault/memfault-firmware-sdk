@@ -1,3 +1,20 @@
+### Changes between Memfault SDK 0.7.3 and SDK 0.7.2 - Oct 5, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Add support for sending multiple events in a single chunk. This can be useful
+  for optimizing throughput or packing more data into a single transmission
+  unit. The behavior is disabled by default but can be enabled with the
+  `MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED` compiler flag. More details can
+  be found in
+  [memfault_event_storage.c](components/core/src/memfault_event_storage.c#L30)
+- Added convenience API, `memfault_build_id_get_string`, for populating a buffer
+  with a portion of the
+  [Memfault Build ID](components/core/include/memfault/core/build_info.h#L8-L42)
+  as a string.
+- Added default implementations of several Memfault SDK dependency functions
+  when using FreeRTOS to [ports/freertos](ports/freertos).
+
 ### Changes between Memfault SDK 0.7.2 and SDK 0.7.1 - Sept 1, 2020
 
 #### :chart_with_upwards_trend: Improvements

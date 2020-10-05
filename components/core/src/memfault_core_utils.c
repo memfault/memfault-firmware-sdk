@@ -13,6 +13,7 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/math.h"
 
 static const void *prv_get_build_id_start_pointer(void) {
   switch (g_memfault_build_id.type) {
@@ -43,6 +44,27 @@ bool memfault_build_info_read(sMemfaultBuildInfo *info) {
 
 static char prv_nib_to_hex_ascii(uint8_t val) {
   return val < 10 ? (char)val + '0' : (char)(val - 10) + 'a';
+}
+
+bool memfault_build_id_get_string(char *out_buf, size_t buf_len) {
+  sMemfaultBuildInfo info;
+  bool id_available = memfault_build_info_read(&info);
+  if (!id_available || buf_len < 2) {
+    return false;
+  }
+
+  // 2 hex characters per byte
+  const size_t chars_per_byte = 2;
+  const size_t max_entries = MEMFAULT_MIN(sizeof(info.build_id) * chars_per_byte, buf_len - 1);
+
+  for (size_t i = 0; i < max_entries; i++) {
+    const uint8_t c = info.build_id[i / chars_per_byte];
+    const uint8_t nibble = (i % chars_per_byte) == 0 ? (c >> 4) & 0xf : c & 0xf;
+    out_buf[i] = prv_nib_to_hex_ascii(nibble);
+  }
+  out_buf[max_entries] = '\0';
+
+  return true;
 }
 
 void memfault_build_info_dump(void) {

@@ -28,7 +28,7 @@ except ImportError as e:
     Script depends on pyelftools. Add it to your requirements.txt or run:
     $ pip install pyelftools
     """
-    )
+    ) from e
 
 
 class SectionType(Enum):

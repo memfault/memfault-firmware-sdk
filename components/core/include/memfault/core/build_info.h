@@ -43,8 +43,9 @@
 //!         KEEP(*(.note.gnu.build-id))
 //!     } > FLASH
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +64,16 @@ typedef struct {
 //!
 //! @return true if a unique id was found and populated in info or false otherwise
 bool memfault_build_info_read(sMemfaultBuildInfo *info);
+
+
+//! Copies the build id as a hex string into the buffer provided
+//!
+//! @param[out] out_buf The buffer to copy the build id into
+//!
+//! @param buf_len The length of the buffer. This routine will copy up to buf_len - 1 bytes of the
+//! build id. For example, to copy only the first 5 hex characters of a build id, the buffer only
+//! needs to be 6 bytes long.
+bool memfault_build_id_get_string(char *out_buf, size_t buf_len);
 
 //! Dump version info tracked by Memfault to the console using an MEMFAULT_LOG_INFO()
 //!

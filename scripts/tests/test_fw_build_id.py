@@ -17,7 +17,7 @@ script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
 ELF_FIXTURES_DIR = os.path.join(test_dir, "elf_fixtures")
 
-from fw_build_id import BuildIdInspectorAndPatcher  # isort:skip
+from fw_build_id import BuildIdInspectorAndPatcher  # noqa isort:skip
 
 
 @contextlib.contextmanager

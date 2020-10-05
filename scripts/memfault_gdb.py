@@ -76,14 +76,12 @@ MEMFAULT_TRY_INGRESS_BASE_URI = "https://ingress.try.memfault.com"
 MEMFAULT_TRY_API_BASE_URI = "https://api.try.memfault.com"
 
 
-def _get_input():
-    try:
-        # Python 2.x
-        return raw_input
-    except:
-        # In Python 3.x, raw_input was renamed to input
-        # NOTE: Python 2.x also had an input() function which eval'd the input...!
-        return input
+try:
+    # In Python 3.x, raw_input was renamed to input
+    # NOTE: Python 2.x also had an input() function which eval'd the input...!
+    input = raw_input
+except NameError:
+    pass
 
 
 class MemfaultConfig(object):
@@ -95,10 +93,11 @@ class MemfaultConfig(object):
     project = None
     user_id = None
 
+    # indirection so tests can mock this
+    prompt = input
+
     # Added `json_path` and `input` as attributes on the config to aid unit testing:
     json_path = expanduser("~/.memfault/gdb.json")
-
-    input = _get_input()
 
     def can_make_project_api_request(self):
         return self.email and self.password and self.project and self.organization
@@ -148,7 +147,7 @@ def _pc_in_vector_table(register_list, exception_number, analytics_props):
         exc_handler, _ = _read_register(0x0 + vtor + (exception_number * 4))
         exc_handler &= ~0x1  # Clear thumb bit
         return exc_handler == curr_pc
-    except:
+    except Exception:  # noqa
         analytics_props["pc_in_vtor_check_error"] = {"traceback": traceback.format_exc()}
         return False
 
@@ -193,7 +192,7 @@ For example,
         # The pc is not at the start of the exception handler. Some firmware implementations
         # will redirect the vector table to a software vector table. If that's the case, it's
         # hard to detect programmatically, let's check in with the user
-        y = _get_input()(
+        y = MEMFAULT_CONFIG.prompt(
             "{}\nAre you currently at the start of an exception handler [y/n]?".format(
                 FAULT_START_PROMPT
             )
@@ -350,7 +349,7 @@ class XtensaCoredumpArch(CoredumpArch):
         try:
             for core_id in range(0, self.num_cores):
                 result.append(self._read_registers(core_id, gdb_thread, analytics_props))
-        except:
+        except Exception:  # noqa
             analytics_props["core_reg_collection_error"] = {"traceback": traceback.format_exc()}
 
         return result
@@ -461,7 +460,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
                 section.data = inferior.read_memory(section.addr, section.size)
                 cd_writer.add_section(section)
                 analytics_props["{}_ok".format(short_name)] = True
-            except:
+            except Exception:  # noqa
                 analytics_props["{}_collection_error".format(short_name)] = {
                     "traceback": traceback.format_exc()
                 }
@@ -469,7 +468,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         try:
             cd_writer.armv67_mpu = self._try_collect_mpu_settings()
             print("Collected MPU config")
-        except:
+        except Exception:  # noqa
             analytics_props["mpu_collection_error"] = {"traceback": traceback.format_exc()}
 
     def guess_ram_regions(self, elf_sections):
@@ -483,7 +482,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         base_addrs = map(lambda section: section.addr & 0xE0000000, capturable_elf_sections)
         filtered_addrs = set(filter(_is_ram, base_addrs))
         # Capture up to 1MB for each region
-        return [(addr, 1024 * 1024,) for addr in filtered_addrs]
+        return [(addr, capture_size,) for addr in filtered_addrs]
 
     def get_current_registers(self, gdb_thread, analytics_props):
         gdb_thread.switch()
@@ -538,7 +537,7 @@ def _try_read_register(arch, frame, lookup_name, register_list, analytics_props,
             _add_reg_collection_error_analytic(
                 arch, analytics_props, lookup_name, "<unavailable> value"
             )
-    except:
+    except Exception:  # noqa
         _add_reg_collection_error_analytic(
             arch, analytics_props, lookup_name, traceback.format_exc()
         )
@@ -599,7 +598,7 @@ def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
     # if we can't patch the registers, we'll just fallback to the active state
     try:
         check_and_patch_reglist_for_fault(register_list, analytics_props)
-    except Exception as e:
+    except Exception:  # noqa
         analytics_props["fault_register_recover_error"] = {"traceback": traceback.format_exc()}
         pass
 
@@ -786,7 +785,7 @@ def _http(method, base_uri, path, headers=None, body=None):
     body = response.read()
     try:
         json_body = loads(body)
-    except:
+    except Exception:  # noqa
         json_body = None
     conn.close()
     return status, reason, json_body
@@ -970,7 +969,7 @@ def populate_config_args_and_parse_args(parser, unicode_args, config):
     if parsed_args.email == MEMFAULT_CONFIG.email:
         config.user_id = MEMFAULT_CONFIG.user_id
     else:
-        status, reason, json_body = http_get_auth_me(api_uri, config.email, config.password)
+        status, reason, json_body = http_get_auth_me(config.api_uri, config.email, config.password)
         config.user_id = json_body["id"]
 
     return parsed_args
@@ -1016,7 +1015,7 @@ def settings_load():
     try:
         with open(MEMFAULT_CONFIG.json_path, "rb") as f:
             return load(f)
-    except:
+    except Exception:  # noqa
         return {}
 
 
@@ -1189,7 +1188,7 @@ class MemfaultPostChunk(MemfaultGdbCommand):
             if not file_match:
                 continue
             filename = file_match.groups()[0]
-            if chunk_handler_func_filename is None or not "components/demo" in filename:
+            if chunk_handler_func_filename is None or "components/demo" not in filename:
                 chunk_handler_func_filename = filename
 
         spec_prefix = (
@@ -1272,7 +1271,7 @@ class MemfaultCoredump(MemfaultGdbCommand):
             analytics_props["permission"] = "accepted-stored"
             return True
 
-        y = MEMFAULT_CONFIG.input(
+        y = MEMFAULT_CONFIG.prompt(
             """
 You are about to capture a coredump from the attached target.
 This means that memory contents of the target will be captured
@@ -1460,7 +1459,7 @@ Proceed? [y/n]
         # print("Note: for correct results, do not switch threads!")
         try:
             thread = gdb.selected_thread()
-        except:
+        except Exception:  # noqa
             # Exception can be raised if selected thread has dissappeared in the mean time
             # SystemError: could not find gdb thread object
             thread = None
@@ -1655,7 +1654,7 @@ class AnalyticsTracker(Thread):
                 # Throttle a bit
                 sleep(0.2)
 
-            except Exception as e:
+            except Exception:  # noqa
                 pass  # Never fail due to analytics requests erroring out
 
 
@@ -1670,12 +1669,12 @@ def _track_script_sourced():
         from platform import mac_ver
 
         mac_version = mac_ver()[0]
-    except:
+    except Exception:  # noqa
         mac_version = ""
 
     try:
         gdb_version = gdb.execute("show version", to_string=True).strip().split("\n")[0]
-    except:
+    except Exception:  # noqa
         gdb_version = ""
 
     ANALYTICS.track(

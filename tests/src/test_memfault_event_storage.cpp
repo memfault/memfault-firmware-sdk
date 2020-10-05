@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "fakes/fake_memfault_platform_metrics_locking.h"
+#include "memfault/core/batched_events.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
@@ -122,6 +123,8 @@ TEST(MemfaultEventStorage, Test_ApiMisuse) {
   CHECK(!success);
 }
 
+#if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED == 0
+
 TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
   // queue up 3 one byte events which due to 2-byte overhead should take up 9 bytes
   bool rollback = false;
@@ -186,6 +189,114 @@ TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
   prv_fake_event_impl_mark_event_read();
 }
 
+#else /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
+
+void memfault_batched_events_build_header(
+    size_t num_events, sMemfaultBatchedEventsHeader *header_out) {
+  if (num_events <= 1) {
+    return;
+  }
+
+  // a fake multi-byte header
+  header_out->length = 2;
+  header_out->data[0] = 0xAB;
+  header_out->data[1] = num_events & 0xff;
+}
+
+TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
+  // queue up 2, 3 byte events which due to 2-byte overhead should take 10 bytes
+  bool rollback = false;
+
+  const uint8_t evt1[] = { 0x1, 0x2 };
+  const uint8_t evt2[] = { 0x3, 0x4 };
+
+  prv_write_payload(&evt1, sizeof(evt1), rollback);
+  prv_write_payload(&evt2, sizeof(evt2), rollback);
+
+  // drain events (all at once)
+  bool has_event;
+  size_t event_size;
+
+  const uint8_t fake_header[] = { 0xAB, 0x02};
+
+  has_event = prv_fake_event_impl_has_event(&event_size);
+  CHECK(has_event);
+  LONGS_EQUAL(sizeof(fake_header) + sizeof(evt1) + sizeof(evt2), event_size);
+
+  // try an illegal read (past valid offset)
+  uint8_t data[event_size];
+  memset(data, 0x0, sizeof(data));
+  bool success = prv_fake_event_impl_read(8, data, sizeof(data));
+  CHECK(!success);
+
+  for (size_t i = 0; i < sizeof(data); i++) {
+    success = prv_fake_event_impl_read(i, &data[i], 1);
+    CHECK(success);
+  }
+
+  MEMCMP_EQUAL(fake_header, &data[0], sizeof(fake_header));
+  MEMCMP_EQUAL(evt1, &data[sizeof(fake_header)], sizeof(evt1));
+  MEMCMP_EQUAL(evt2, &data[sizeof(fake_header) + sizeof(evt1)], sizeof(evt2));
+
+  prv_fake_event_impl_mark_event_read();
+
+  has_event = prv_fake_event_impl_has_event(&event_size);
+  CHECK(!has_event);
+}
+
+// More bytes in event storage than MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES (4)
+TEST(MemfaultEventStorage, Test_MemfaultMultiEventLimited) {
+  // queue up two events
+  const uint8_t event1[] = { 0x1, 0x2 };
+  const uint8_t event2[] = { 0x3 };
+  const uint8_t event3[] = { 0x4, 0x5 };
+  bool rollback = false;
+  prv_write_payload(&event1, sizeof(event1), rollback);
+  prv_write_payload(&event2, sizeof(event2), rollback);
+  prv_write_payload(&event3, sizeof(event3), rollback);
+
+  bool has_event;
+  size_t event_size;
+  has_event = prv_fake_event_impl_has_event(&event_size);
+  CHECK(has_event);
+  LONGS_EQUAL(5, event_size);
+
+  const uint8_t expected_data[] = { 0xAB, 0x02, 0x1, 0x2, 0x3 };
+  uint8_t actual_data[sizeof(expected_data)];
+  bool success = prv_fake_event_impl_read(0, actual_data, sizeof(actual_data));
+  CHECK(success);
+  MEMCMP_EQUAL(expected_data, actual_data, sizeof(actual_data));
+
+  memset(actual_data, 0x0, sizeof(actual_data));
+  // read 1 byte of header
+  success = prv_fake_event_impl_read(0, &actual_data[0], 1);
+  CHECK(success);
+  // 1 byte header + 1 byte event
+  success = prv_fake_event_impl_read(1, &actual_data[1], 2);
+  CHECK(success);
+  // rest of data - 1 byte event1 + 1 byte event2
+  success = prv_fake_event_impl_read(3, &actual_data[3], 2);
+  CHECK(success);
+
+  MEMCMP_EQUAL(expected_data, actual_data, sizeof(actual_data));
+  prv_fake_event_impl_mark_event_read();
+
+  // final event
+  has_event = prv_fake_event_impl_has_event(&event_size);
+  CHECK(has_event);
+  LONGS_EQUAL(2, event_size);
+
+  success = prv_fake_event_impl_read(0, actual_data, event_size);
+  CHECK(success);
+  MEMCMP_EQUAL(event3, actual_data, sizeof(event3));
+  prv_fake_event_impl_mark_event_read();
+
+  has_event = prv_fake_event_impl_has_event(&event_size);
+  CHECK(!has_event);
+  LONGS_EQUAL(0, event_size);
+}
+
+#endif /* MEMFAULT_EVENT_STORAGE_MAX_READ_BATCH_LEN */
 //
 // We use a compilation flag and run the test suite twice so we can test the default stub
 // persistent source implementation as well as a real one

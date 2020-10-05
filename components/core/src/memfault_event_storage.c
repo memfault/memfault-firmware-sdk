@@ -12,15 +12,46 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
 
+#include "memfault/core/batched_events.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/math.h"
 #include "memfault/core/platform/nonvolatile_event_storage.h"
 #include "memfault/core/platform/overrides.h"
 #include "memfault/core/platform/system_time.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/util/circular_buffer.h"
+
+//! Controls whether or not multiple events will be batched into a single
+//! message when reading information via the event storage data source.
+//!
+//! This can be a useful strategy when trying to maximize the amount of data sent
+//! in a single transmission unit.
+//!
+//! To enable, you will need to update the compiler flags for your project, i.e
+//!   CFLAGS += -DMEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED=1
+#ifndef MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED
+# define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
+#endif
+
+#if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED != 0
+
+//! When batching is enabled, controls the maximum amount of event data bytes that will be
+//! in a single message.
+//!
+//! By default, there is no limit. To set a limit you will need to update the
+//! compiler flags for your project the following would cap the data payload
+//! size at 1024 bytes
+//!  CFLAGS += -DMEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES=1024
+#ifndef MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES
+# define MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES UINT32_MAX
+#endif
+
+#endif /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
 
 //
 // Routines which can optionally be implemented.
@@ -60,6 +91,8 @@ typedef struct {
 
 typedef struct {
   size_t active_event_read_size;
+  size_t num_events;
+  sMemfaultBatchedEventsHeader event_header;
 } sMemfaultEventStorageReadState;
 
 #define MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS 0xffff
@@ -88,36 +121,139 @@ static void prv_invoke_request_persist_callback(void) {
   memfault_event_storage_request_persist_callback(&status);
 }
 
-static bool prv_has_event_ram(size_t *total_size) {
-  sMemfaultEventStorageHeader hdr = { 0 };
-  bool success;
+static size_t prv_get_total_event_size(sMemfaultEventStorageReadState *state) {
+  if (state->num_events == 0) {
+    return 0;
+  }
+
+  const size_t hdr_overhead_bytes = state->num_events * sizeof(sMemfaultEventStorageHeader);
+  return (state->active_event_read_size + state->event_header.length) - hdr_overhead_bytes;
+}
+
+//! Walk the ram-backed event storage and determine data to read
+//!
+//! @return true if computation was successful, false otherwise
+static void prv_compute_read_state(sMemfaultEventStorageReadState *state) {
+  *state = (sMemfaultEventStorageReadState) { 0 };
+  while (1) {
+    sMemfaultEventStorageHeader hdr = { 0 };
+    const bool success = memfault_circular_buffer_read(
+        &s_event_storage, state->active_event_read_size, &hdr, sizeof(hdr));
+    if (!success || hdr.total_size == MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS) {
+      break;
+    }
+
+    state->num_events++;
+    state->active_event_read_size += hdr.total_size;
+
+#if (MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED == 0)
+    // if batching is disabled, only one event will be read at a time
+    break;
+#else
+    if ((state->num_events > 1) &&
+        (prv_get_total_event_size(state) > MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES)) {
+      // more bytes than desired, so don't count this event
+      state->num_events--;
+      state->active_event_read_size -= hdr.total_size;
+      break;
+    }
+#endif /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
+  }
+
+#if (MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED != 0)
+  memfault_batched_events_build_header(state->num_events, &state->event_header);
+#endif
+}
+
+static bool prv_has_data_ram(size_t *total_size) {
+  // Check to see if a read is already in progress and return that size if true
+  size_t curr_read_size;
   memfault_lock();
   {
-    success = memfault_circular_buffer_read(&s_event_storage, 0, &hdr, sizeof(hdr));
+    curr_read_size = prv_get_total_event_size(&s_event_storage_read_state);
   }
   memfault_unlock();
 
-  if (!success || hdr.total_size == MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS) {
-    *total_size = 0;
-    return false;
+  if (curr_read_size != 0) {
+    *total_size = curr_read_size;
+    return ((*total_size) != 0);
   }
 
-  s_event_storage_read_state = (sMemfaultEventStorageReadState) {
-    .active_event_read_size =  hdr.total_size,
-  };
+  // see if there are any events to read
+  sMemfaultEventStorageReadState read_state;
+  memfault_lock();
+  {
+    prv_compute_read_state(&read_state);
+    s_event_storage_read_state = read_state;
+  }
+  memfault_unlock();
 
-  *total_size = hdr.total_size - sizeof(hdr);
-  return true;
+
+  *total_size = prv_get_total_event_size(&s_event_storage_read_state);
+  return ((*total_size) != 0);
 }
 
-
 static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_len) {
-  offset += sizeof(sMemfaultEventStorageHeader);
-  if (offset >= s_event_storage_read_state.active_event_read_size) {
+  const size_t total_event_size = prv_get_total_event_size(&s_event_storage_read_state);
+  if ((offset + buf_len) > total_event_size) {
     return false;
   }
 
-  return memfault_circular_buffer_read(&s_event_storage, offset, buf, buf_len);
+  // header_length != 0 when we encode multiple events in a single read so
+  // first check to see if we need to copy any of that
+  uint8_t *bufp = (uint8_t *)buf;
+  if (offset < s_event_storage_read_state.event_header.length) {
+    const size_t bytes_to_copy = MEMFAULT_MIN(
+        buf_len, s_event_storage_read_state.event_header.length - offset);
+    memcpy(bufp, &s_event_storage_read_state.event_header.data[offset], bytes_to_copy);
+    buf_len -= bytes_to_copy;
+
+    offset = 0;
+    bufp += bytes_to_copy;
+  } else {
+    offset -= s_event_storage_read_state.event_header.length;
+  }
+
+  uint32_t curr_offset = 0;
+  uint32_t read_offset = 0;
+
+  while (buf_len > 0) {
+    sMemfaultEventStorageHeader hdr = { 0 };
+    const bool success = memfault_circular_buffer_read(
+        &s_event_storage, read_offset, &hdr, sizeof(hdr));
+    if (!success) {
+      // not possible to get here unless there is corruption
+      return false;
+    }
+
+    read_offset += sizeof(hdr);
+    const size_t event_size = hdr.total_size - sizeof(hdr);
+
+    if ((curr_offset + event_size) < offset) {
+      // we haven't reached the offset we were trying to read from
+      curr_offset += event_size;
+      read_offset += event_size;
+      continue;
+    }
+
+    // offset within the event to start reading at
+    const size_t evt_start_offset = offset - curr_offset;
+
+    const size_t bytes_to_read = MEMFAULT_MIN(event_size - evt_start_offset, buf_len);
+    if (!memfault_circular_buffer_read(&s_event_storage, read_offset + evt_start_offset,
+                                       bufp, bytes_to_read)) {
+      // not possible to get here unless there is corruption
+      return false;
+    }
+
+    bufp += bytes_to_read;
+    curr_offset += event_size;
+    read_offset += event_size;
+    buf_len -= bytes_to_read;
+    offset += bytes_to_read;
+  }
+
+  return true;
 }
 
 static void prv_event_storage_mark_event_read_ram(void) {
@@ -130,10 +266,9 @@ static void prv_event_storage_mark_event_read_ram(void) {
   {
     memfault_circular_buffer_consume(
         &s_event_storage, s_event_storage_read_state.active_event_read_size);
+    s_event_storage_read_state = (sMemfaultEventStorageReadState) { 0 };
   }
   memfault_unlock();
-
-  s_event_storage_read_state = (sMemfaultEventStorageReadState) { 0 };
 }
 
 // "begin" to write a heartbeat & return the space available
@@ -227,7 +362,7 @@ const sMemfaultEventStorageImpl *memfault_events_storage_boot(void *buf, size_t 
 
 static bool prv_save_event_to_persistent_storage(void) {
   size_t total_size;
-  if (!prv_has_event_ram(&total_size)) {
+  if (!prv_has_data_ram(&total_size)) {
     return false;
   }
 
@@ -280,7 +415,7 @@ static void prv_nv_event_storage_mark_read_cb(void) {
   g_memfault_platform_nv_event_storage_impl.consume();
 
   size_t total_size;
-  if (!prv_has_event_ram(&total_size)) {
+  if (!prv_has_data_ram(&total_size)) {
     return;
   }
 
@@ -289,7 +424,7 @@ static void prv_nv_event_storage_mark_read_cb(void) {
 
 static const sMemfaultDataSourceImpl *prv_get_active_event_storage_source(void) {
   static const sMemfaultDataSourceImpl s_memfault_ram_event_storage  = {
-    .has_more_msgs_cb = prv_has_event_ram,
+    .has_more_msgs_cb = prv_has_data_ram,
     .read_msg_cb = prv_event_storage_read_ram,
     .mark_msg_read_cb = prv_event_storage_mark_event_read_ram,
   };
