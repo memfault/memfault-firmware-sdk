@@ -6,6 +6,8 @@
 //! @brief
 //! Fault handling for Xtensa based architectures
 
+#if defined(__XTENSA__)
+
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
@@ -80,3 +82,5 @@ size_t memfault_coredump_storage_compute_size_required(void) {
 
   return memfault_coredump_get_save_size(&save_info);
 }
+
+#endif /* __XTENSA__ */

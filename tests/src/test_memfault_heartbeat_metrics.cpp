@@ -242,6 +242,21 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueRollover) {
   LONGS_EQUAL(17, val);
 }
 
+TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatNoChange) {
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
+
+  int rv = memfault_metrics_heartbeat_timer_start(key);
+  LONGS_EQUAL(0, rv);
+
+
+  rv = memfault_metrics_heartbeat_timer_stop(key);
+  LONGS_EQUAL(0, rv);
+
+  uint32_t val;
+  memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(0, val);
+}
+
 #define EXPECTED_HEARTBEAT_TIMER_VAL_MS  13
 
 static void prv_serialize_check_cb(void) {

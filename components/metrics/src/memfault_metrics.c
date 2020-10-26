@@ -257,10 +257,9 @@ static bool prv_update_timer_metric(const sMemfaultMetricValueInfo *value_info,
     const uint32_t start_time_ms = meta_datap->start_time_ms;
 
     uint32_t delta;
-    // account for rollover
-    if (stop_time_ms > start_time_ms) {
+    if (stop_time_ms >= start_time_ms) {
       delta = stop_time_ms - start_time_ms;
-    } else {
+    } else { // account for rollover
       delta = MEMFAULT_METRICS_TIMER_VAL_MAX - start_time_ms + stop_time_ms;
     }
     value_info->valuep->u32 += delta;

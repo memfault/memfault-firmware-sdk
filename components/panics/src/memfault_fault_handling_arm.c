@@ -270,8 +270,11 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
 
 #elif defined(__TI_ARM__)
 
+// Note: 'reason' is passed as arg0. However we mark the function
+// as void so the TI compiler does not emit any function prologue
+// pushing args on the stack
 MEMFAULT_NAKED_FUNC
-void memfault_fault_handling_shim(int reason) {
+void memfault_fault_handling_shim(void /* int reason */) {
   __asm(" tst lr, #4 \n"
         " ite eq \n"
         " mrseq r3, msp \n"

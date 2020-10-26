@@ -1,3 +1,24 @@
+### Changes between Memfault SDK 0.8.0 and SDK 0.7.2 - Oct 26, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a new convenience API,
+  [`memfault_coredump_storage_check_size()`](components/panics/include/memfault/panics/platform/coredump.h),
+  to check that coredump storage is appropriately sized.
+- Fixed a :bug: with heartbeat timers that would lead to an incorrect duration
+  being reported if the timer was started and stopped within the same
+  millisecond.
+- Fixed an issue when using TI's compiler that could lead to the incorrect
+  register state being captured during a fault.
+
+#### :boom: Breaking Changes
+
+- If you were **not** using the
+  [error tracing functionality](https://mflt.io/error-tracing), you will need to
+  create the configuration file "memfault_trace_reason_user_config.def" and add
+  it to your include path. This removes the requirement to manually define
+  `MEMFAULT_TRACE_REASON_USER_DEFS_FILE` as part of the compiler flags.
+
 ### Changes between Memfault SDK 0.7.3 and SDK 0.7.2 - Oct 5, 2020
 
 #### :chart_with_upwards_trend: Improvements

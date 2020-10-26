@@ -11,6 +11,8 @@
 //! NOTE: The internals of the MEMFAULT_TRACE_REASON APIs make use of "X-Macros" to enable more
 //! flexibility improving and extending the internal implementation without impacting the externally
 //! facing API.
+//!
+//! More details about error tracing in general can be found at https://mflt.io/error-tracing
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +48,10 @@ extern "C" {
 #define MEMFAULT_TRACE_REASON(reason) \
   kMfltTraceReasonUser_##reason
 
+#if !defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
+# define MEMFAULT_TRACE_REASON_USER_DEFS_FILE "memfault_trace_reason_user_config.def"
+#endif
+
 //! For compilers which support the __has_include macro display a more friendly error message
 //! when the user defined header is not found on the include path
 #if defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
@@ -58,18 +64,23 @@ extern "C" {
 # endif
 #endif
 
+//! If trace events are not being used, including the user config file can be disabled
+//! by adding -DMEMFAULT_DISABLE_USER_TRACE_REASONS=1 to CFLAGs
+#if !defined(MEMFAULT_DISABLE_USER_TRACE_REASONS)
+#define MEMFAULT_DISABLE_USER_TRACE_REASONS 0
+#endif /* MEMFAULT_DISABLE_USER_TRACE_REASONS */
+
 typedef enum MfltTraceReasonUser {
   MEMFAULT_TRACE_REASON_DEFINE(Unknown)
 
+#if (MEMFAULT_DISABLE_USER_TRACE_REASONS == 0)
   // Pick up any user specified trace reasons
-#if defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-#  include MEMFAULT_TRACE_REASON_USER_DEFS_FILE
-#else
-  // In case MEMFAULT_TRACE_REASON_USER_DEFS_FILE is not defined, define the reason
-  // that the "demo" component (memfault_demo_cli_cmd_trace_event_capture.c) uses.
-  // This is just a convenience to avoid the need to create a .def file just for the demo.
-  MEMFAULT_TRACE_REASON_DEFINE(MemfaultDemoCli_Error)
+  #include MEMFAULT_TRACE_REASON_USER_DEFS_FILE
 #endif
+
+  // A precanned reason which is used by the "demo" component
+  // (memfault_demo_cli_cmd_trace_event.c) and can be used for a user test command as well.
+  MEMFAULT_TRACE_REASON_DEFINE(MemfaultCli_Test)
 
   kMfltTraceReasonUser_NumReasons,
 } eMfltTraceReasonUser;

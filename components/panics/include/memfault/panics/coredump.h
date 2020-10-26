@@ -44,6 +44,12 @@ bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
 //! @param reason The reason the fault occurred
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason);
 
+//! Checks that a coredump can fit in the platform storage allocated
+//!
+//! @return true if the check passes & false otherwise. On failure, an error message
+//! is logged with information about how much more storage is needed.
+bool memfault_coredump_storage_check_size(void);
+
 //! Computes the size required to save a coredump on the system
 //!
 //! @note A user of the SDK can call this on boot to assert that

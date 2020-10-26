@@ -17,10 +17,6 @@ int memfault_demo_cli_cmd_trace_event_capture(MEMFAULT_UNUSED int argc,
                                               MEMFAULT_UNUSED char *argv[]) {
   // For more information on user-defined error reasons, see
   // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
-#if defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-  MEMFAULT_TRACE_EVENT(Unknown);
-#else
-  MEMFAULT_TRACE_EVENT(MemfaultDemoCli_Error);
-#endif
+  MEMFAULT_TRACE_EVENT(MemfaultCli_Test);
   return 0;
 }
