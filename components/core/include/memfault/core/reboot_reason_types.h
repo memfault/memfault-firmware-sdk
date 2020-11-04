@@ -26,6 +26,8 @@ typedef enum MfltResetReason {
   kMfltRebootReason_DebuggerHalted = 0x0005,
   kMfltRebootReason_ButtonReset = 0x0006,
   kMfltRebootReason_PowerOnReset = 0x0007,
+  kMfltRebootReason_SoftwareReset = 0x0008,
+  kMfltRebootReason_DeepSleep = 0x0009,
 
   //
   // Error Resets

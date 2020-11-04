@@ -1,6 +1,6 @@
 set(MEMFAULT_SDK_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-list(APPEND MEMFAULT_COMPONENTS core util panics demo http)
+list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)
 include(${MEMFAULT_SDK_ROOT}/cmake/Memfault.cmake)
 memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
   MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ARCH_XTENSA)
@@ -26,7 +26,7 @@ endif()
 
 # esp-idf version specific porting files
 list(APPEND MEMFAULT_COMPONENTS_SRCS
-   ${MEMFAULT_ESP_IDF_PORT}/memfault_esp_spi_flash.c
+  ${MEMFAULT_ESP_IDF_PORT}/memfault_esp_spi_flash.c
 )
 
 include(${CMAKE_CURRENT_LIST_DIR}/${MEMFAULT_ESP_IDF_PORT}/Memfault-esp-idf-compat.cmake)
@@ -77,4 +77,4 @@ mflt_esp32_component_get_target(this_component ${this_directory_name})
 #   FreeRTOS task list is walked server side instead of on device (so you can get crash data even if the lists are corrupted)
 #   Much more flexibility in debug information collected (e.g. all RAM, just the current stack trace, select stacks and variables)
 #   Data can be posted directly from device to Memfault cloud for deduplication and analysis
-target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_core_dump_to_flash -Wl,--wrap=esp_core_dump_init")
+target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_core_dump_to_flash -Wl,--wrap=esp_core_dump_init -Wl,--wrap=esp_core_dump_image_get")

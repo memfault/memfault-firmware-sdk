@@ -18,9 +18,23 @@
 # needed for the library and ${MEMFAULT_COMPONENTS_INC_FOLDERS} will contain the include
 # paths
 
+# Explicitly enable IN_LIST use inside if()
+#  https://cmake.org/cmake/help/v3.3/policy/CMP0057.html
+cmake_policy(SET CMP0057 NEW)
+
 function(memfault_library sdk_root components src_var_name inc_var_name)
   if(NOT IS_ABSOLUTE ${sdk_root})
     set(sdk_root "${CMAKE_CURRENT_SOURCE_DIR}/${sdk_root}")
+  endif()
+
+  if ("demo" IN_LIST ${components})
+    # The demo component is enabled so let's pick up component specific cli commands
+    # If the component is not enabled a weak implementation of the CLI command will get
+    # picked up from "demo/src/memfault_demo_shell_commands.c"
+    foreach(component IN LISTS ${components})
+      file(GLOB MEMFAULT_COMPONENT_DEMO_${component} ${sdk_root}/components/demo/src/${component}/*.c)
+      list(APPEND SDK_SRC ${MEMFAULT_COMPONENT_DEMO_${component}})
+    endforeach()
   endif()
 
   foreach(component IN LISTS ${components})
@@ -29,22 +43,15 @@ function(memfault_library sdk_root components src_var_name inc_var_name)
     list(APPEND SDK_INC ${sdk_root}/components/${component}/include)
   endforeach()
 
-  if ("demo" IN_LIST ${components})
-    # The demo component is enabled so let's pick up component specific cli commands
-    foreach(component IN LISTS ${components})
-      file(GLOB MEMFAULT_COMPONENT_DEMO_${component} ${sdk_root}/components/demo/src/${component}/*.c)
-      list(APPEND SDK_SRC ${MEMFAULT_COMPONENT_DEMO_${component}})
-    endforeach()
-  endif()
-
   set(arch ${ARGN})
   if(NOT arch)
     set(arch ARCH_ARM_CORTEX_M)
   endif()
 
   if(arch STREQUAL "ARCH_XTENSA")
+    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/core/src/arch_arm_cortex_m.c)
+    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/memfault_coredump_regions_armv7.c)
     list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/memfault_fault_handling_arm.c)
-    list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/arch_arm_cortex_m.c)
   elseif(arch STREQUAL "ARCH_ARM_CORTEX_M")
     list(REMOVE_ITEM SDK_SRC ${sdk_root}/components/panics/src/memfault_fault_handling_xtensa.c)
   else()

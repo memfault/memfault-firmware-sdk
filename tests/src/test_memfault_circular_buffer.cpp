@@ -58,7 +58,7 @@ TEST(MfltCircularBufferTestGroup, Test_MfltCircularWriteAtOffsetBasic) {
 
   // overwrite first two bytes and fill rest of buffer
   const uint8_t seq2[] = { 0x3, 0x4, 0x5, 0x6 };
-  memfault_circular_buffer_write_at_offset(&buffer, 2, seq2, sizeof(seq2));
+  success = memfault_circular_buffer_write_at_offset(&buffer, 2, seq2, sizeof(seq2));
   CHECK(success);
 
   // buffer should be full

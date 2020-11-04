@@ -13,6 +13,7 @@
 
 #include "esp_partition.h"
 #include "esp_spi_flash.h"
+#include "soc/soc.h"
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
@@ -24,22 +25,6 @@
 #if !CONFIG_ESP32_ENABLE_COREDUMP || !CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 #error "Memfault SDK integration requires CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y sdkconfig setting"
 #endif
-
-//! The default memory regions to collect with the esp-idf port
-//!
-//! @note The function is intentionally defined as weak so someone can
-//! easily override the port defaults by re-defining a non-weak version of
-//! the function in another file
-MEMFAULT_WEAK
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
-  static sMfltCoredumpRegion s_coredump_regions[1];
-
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-      crash_info->stack_address, 500);
-  *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
-  return &s_coredump_regions[0];
-}
 
 #define ESP_IDF_COREDUMP_PART_INIT_MAGIC 0x45524f43
 
@@ -55,6 +40,40 @@ static uint32_t prv_get_partition_info_crc(void) {
   return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
                                       &s_esp32_coredump_partition_info,
                                       offsetof(sEspIdfCoredumpPartitionInfo, crc));
+}
+
+static const esp_partition_t *prv_get_core_partition(void) {
+  if (s_esp32_coredump_partition_info.magic != ESP_IDF_COREDUMP_PART_INIT_MAGIC) {
+    return NULL;
+  }
+
+  return &s_esp32_coredump_partition_info.partition;
+}
+
+//! By default, we attempt to collect all of internal RAM as part of a Coredump
+//!
+//! @note The function is intentionally defined as weak so someone can
+//! easily override the port defaults by re-defining a non-weak version of
+//! the function in another file
+MEMFAULT_WEAK
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  static sMfltCoredumpRegion s_coredump_regions[1];
+
+  const uint32_t esp32_dram_start_addr = SOC_DMA_LOW;
+
+  size_t dram_collection_len = SOC_DMA_HIGH - SOC_DMA_LOW;
+  const esp_partition_t *core_part = prv_get_core_partition();
+  if (core_part != NULL) {
+    // NB: Leave some space in storage for other regions collected by the SDK
+    dram_collection_len = MEMFAULT_MIN((core_part->size * 7) / 8,
+                                       dram_collection_len);
+  }
+
+  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+      (void *)esp32_dram_start_addr, dram_collection_len);
+  *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
+  return &s_coredump_regions[0];
 }
 
 //! Opens partition system on boot to determine where a coredump can be saved
@@ -76,14 +95,28 @@ void __wrap_esp_core_dump_init(void) {
     .partition = *core_part,
   };
   s_esp32_coredump_partition_info.crc = prv_get_partition_info_crc();
+
+  // Log an error if there is not enough space to save the information requested
+  memfault_coredump_storage_check_size();
 }
 
-static const esp_partition_t *prv_get_core_partition(void) {
-  if (s_esp32_coredump_partition_info.magic != ESP_IDF_COREDUMP_PART_INIT_MAGIC) {
-    return NULL;
+esp_err_t __wrap_esp_core_dump_image_get(size_t* out_addr, size_t *out_size) {
+  if (out_addr == NULL || out_size == NULL) {
+    return ESP_ERR_INVALID_ARG;
   }
 
-  return &s_esp32_coredump_partition_info.partition;
+  const esp_partition_t *core_part = prv_get_core_partition();
+  if (core_part == NULL) {
+    return ESP_FAIL;
+  }
+
+
+  if (!memfault_coredump_has_valid_coredump(out_size)) {
+    return ESP_ERR_INVALID_SIZE;
+  }
+
+  *out_addr = core_part->address;
+  return ESP_OK;
 }
 
 const esp_partition_t *prv_validate_and_get_core_partition(void) {

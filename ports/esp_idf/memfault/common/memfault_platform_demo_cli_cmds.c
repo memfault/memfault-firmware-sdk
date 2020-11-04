@@ -155,8 +155,8 @@ void memfault_register_cli(void) {
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "post_core",
-      .help = "Post coredump to Memfault",
+      .command = "post_chunks",
+      .help = "Post Memfault data to cloud",
       .hint = NULL,
       .func = memfault_demo_cli_cmd_post_core,
   }));

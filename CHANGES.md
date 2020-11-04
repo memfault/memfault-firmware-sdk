@@ -1,3 +1,16 @@
+### Changes between Memfault SDK 0.8.1 and SDK 0.8.0 - Nov 3, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added several more
+  [reboot reason options](components/panics/include/memfault/core/reboot_reason_types.h#L16):
+  `kMfltRebootReason_SoftwareReset` & `kMfltRebootReason_DeepSleep`.
+- Extended [ESP32 port](https://mflt.io/esp-tutorial) to include integrations
+  for [reboot reason tracking](https://mflt.io/reboot-reasons) and
+  [log collection](https://mflt.io/logging).
+- Apply missing check to unit test
+  [reported on Github](https://github.com/memfault/memfault-firmware-sdk/pull/6)
+
 ### Changes between Memfault SDK 0.8.0 and SDK 0.7.2 - Oct 26, 2020
 
 #### :chart_with_upwards_trend: Improvements

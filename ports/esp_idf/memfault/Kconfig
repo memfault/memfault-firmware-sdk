@@ -1,0 +1,14 @@
+menu "Memfault"
+
+    config MEMFAULT_EVENT_STORAGE_RAM_SIZE
+        int "The amount of RAM storage to reserve for Memfault Events"
+        default 512
+
+
+    config MEMFAULT_LOG_STORAGE_RAM_SIZE
+        int "The amount of RAM storage to allocate for log storage"
+        default 1024
+        help
+            Logs stored in this buffer will be captured as part of a Memfault Coredump
+
+endmenu
