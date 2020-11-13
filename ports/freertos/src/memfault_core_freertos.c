@@ -5,6 +5,8 @@
 //!
 //! A port of dependency functions for Memfault core subsystem using FreeRTOS.
 
+#include "memfault/ports/freertos.h"
+
 #include "memfault/core/platform/overrides.h"
 #include "memfault/core/platform/core.h"
 
@@ -40,6 +42,15 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 
 static SemaphoreHandle_t s_memfault_lock;
 
+SemaphoreHandle_t prv_init_memfault_mutex(void) {
+#if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+  static StaticSemaphore_t s_memfault_lock_context;
+  return xSemaphoreCreateRecursiveMutexStatic(&s_memfault_lock_context);
+#else
+  return xSemaphoreCreateRecursiveMutex();
+#endif
+}
+
 void memfault_lock(void) {
   xSemaphoreTakeRecursive(s_memfault_lock, portMAX_DELAY);
 }
@@ -49,5 +60,5 @@ void memfault_unlock(void) {
 }
 
 void memfault_freertos_port_boot(void) {
-  s_memfault_lock = xSemaphoreCreateRecursiveMutex();
+  s_memfault_lock = prv_init_memfault_mutex();
 }

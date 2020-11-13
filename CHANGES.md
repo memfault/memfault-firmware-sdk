@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.8.2 and SDK 0.8.1 - Nov 13, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Coredumps will now be truncated (instead of failing to save completely) when
+  the memory regions requested take up more space than the platform storage
+  allocated for saving. A warning will also be displayed in the Memfault UI when
+  this happens. Regions are always read in the order returned from
+  [`memfault_platform_coredump_get_regions()`](
+  [memfault_platform_coredump_get_regions](components/panics/include/memfault/panics/platform/coredump.h#L56)
+  so it is recommended to order this list from the most to least important
+  regions to capture.
+- Updated FreeRTOS port to use static allocation APIs by default when the
+  `configSUPPORT_STATIC_ALLOCATION=1` configuration is used.
+
 ### Changes between Memfault SDK 0.8.1 and SDK 0.8.0 - Nov 3, 2020
 
 #### :chart_with_upwards_trend: Improvements
@@ -16,7 +31,7 @@
 #### :chart_with_upwards_trend: Improvements
 
 - Added a new convenience API,
-  [`memfault_coredump_storage_check_size()`](components/panics/include/memfault/panics/platform/coredump.h),
+  [`memfault_coredump_storage_check_size()`](components/panics/include/memfault/panics/coredump.h),
   to check that coredump storage is appropriately sized.
 - Fixed a :bug: with heartbeat timers that would lead to an incorrect duration
   being reported if the timer was started and stopped within the same

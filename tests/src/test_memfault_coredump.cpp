@@ -111,6 +111,7 @@ TEST_GROUP(MfltCoredumpTestGroup) {
     s_fake_sdk_region[1].region_start = &s_fake_sdk_region2;
     s_fake_sdk_region[1].region_size = sizeof(s_fake_sdk_region2);
     s_num_fake_sdk_regions = 2;
+
   }
 
   void teardown() {
@@ -226,7 +227,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const size_t coredump_size_without_build_id = 268;
+  const size_t coredump_size_without_build_id = 284;
   const size_t coredump_size_with_build_id = coredump_size_without_build_id + 20 /* sha1 */ + 12 /* sMfltCoredumpBlock */;
   for (size_t i = 1; i <= coredump_size_with_build_id; i++) {
     uint8_t storage[i];
@@ -237,7 +238,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
     // build id is written after the header and regs
     const uint32_t segment_hdr_sz = 12;
 
-    const size_t build_id_start_offset = (12 + sizeof(regs) + segment_hdr_sz);
+    const size_t build_id_start_offset = (12 + sizeof(regs) + segment_hdr_sz + 16 /* reserved for footer */);
     const bool do_collect_build_id = (i >= (build_id_start_offset + 3));
 
     if (i >= build_id_start_offset) {
@@ -254,8 +255,74 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
                                                                 coredump_size_without_build_id;
     LONGS_EQUAL(expected_coredump_size, space_needed);
 
-    CHECK(success == (i == coredump_size_with_build_id));
+    // once we get to the memory regions section, the save can succeed, we just won't get all the memory regions!
+    CHECK(success == (i >= 182));
   }
+}
+
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpTruncated) {
+  const uint32_t regs[] = { 0xabababab };
+  const uint32_t trace_reason = 0xdeadbeef;
+
+  // get the total size of the coredump
+  const bool do_collect_build_id = false;
+  fake_memfault_platform_coredump_storage_setup(NULL, 0, 0);
+  const size_t space_needed = prv_compute_space_needed_with_build_id(
+      (void *)&regs, sizeof(regs), trace_reason, do_collect_build_id);
+  LONGS_EQUAL(268, space_needed);
+
+  size_t num_regions;
+  const sMfltCoredumpRegion *regions =
+      memfault_platform_coredump_get_regions(NULL, &num_regions);
+  // this should match the number of fake regions we have in s_num_fake_regions
+  LONGS_EQUAL(2, num_regions);
+
+
+  const sMfltCoredumpRegion *last_region = &regions[num_regions - 1];
+  const size_t block_hdr_len = 12;
+
+  uint8_t storage[space_needed];
+  memset(&storage, 0x0, sizeof(storage));
+
+  // size such that the second to last region gets truncated
+  size_t storage_size = space_needed - last_region->region_size - block_hdr_len - 1;
+
+  fake_memfault_platform_coredump_storage_setup(storage, storage_size, storage_size);
+  bool success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(success);
+
+  size_t coredump_size;
+  bool has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
+  CHECK(has_coredump);
+  // second to last region should be truncated by one word
+  LONGS_EQUAL(storage_size - 3 , coredump_size);
+  memfault_platform_coredump_storage_clear();
+
+  // size with not enough space for the last region
+  storage_size = space_needed - last_region->region_size - block_hdr_len;
+  for (size_t i = 0; i < block_hdr_len + 3; i++) {
+    fake_memfault_platform_coredump_storage_setup(storage, storage_size + i, storage_size + i);
+    success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+    CHECK(success);
+
+    has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
+    CHECK(has_coredump);
+    LONGS_EQUAL(storage_size, coredump_size);
+    memfault_platform_coredump_storage_clear();
+  }
+
+  // space for beginning of last region so space used should increase
+  storage_size += block_hdr_len + 4;
+
+  fake_memfault_platform_coredump_storage_setup(storage, storage_size, storage_size);
+  success = prv_collect_regions_and_save((void *)&regs, sizeof(regs), trace_reason);
+  CHECK(success);
+
+  has_coredump = prv_check_coredump_validity_and_get_size(&coredump_size);
+  CHECK(has_coredump);
+  LONGS_EQUAL(storage_size, coredump_size);
+
+  memfault_platform_coredump_storage_clear();
 }
 
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNoOverwrite) {
@@ -338,7 +405,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   const uint32_t expected_header_magic = 0x45524f43;
   MEMCMP_EQUAL(coredump_buf, &expected_header_magic, sizeof(expected_header_magic));
   coredump_buf += sizeof(expected_header_magic);
-  const uint32_t expected_version = 1;
+  const uint32_t expected_version = 2;
   MEMCMP_EQUAL(coredump_buf, &expected_version, sizeof(expected_version));
   coredump_buf += sizeof(expected_version);
   const uint32_t segment_hdr_sz = 12;
@@ -371,6 +438,8 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   for (size_t i = 0; i < s_num_fake_regions; i++) {
     total_length += s_fake_memory_region[i].region_size + segment_hdr_sz;
   }
+
+  total_length += 16; // footer
 
   MEMCMP_EQUAL(&total_length, coredump_buf, sizeof(total_length));
   coredump_buf += sizeof(total_length);
@@ -462,6 +531,14 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
     MEMCMP_EQUAL(s_fake_memory_region[i].region_start, coredump_buf, segment_size);
     coredump_buf += segment_size;
   }
+
+  // check the footer
+  const uint32_t expected_footer_magic = 0x504d5544;
+  MEMCMP_EQUAL(coredump_buf, &expected_footer_magic, sizeof(expected_footer_magic));
+  coredump_buf += sizeof(expected_footer_magic);
+  uint32_t rsvd[] = {0x0, 0x0, 0x0};
+  MEMCMP_EQUAL(coredump_buf, &rsvd[0], sizeof(rsvd));
+
   // should have been no calls to memfault_coredump_read
   mock().checkExpectations();
 
@@ -470,78 +547,4 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   bool has_coredump = prv_check_coredump_validity_and_get_size(&total_coredump_size);
   CHECK(has_coredump);
   LONGS_EQUAL(total_length, total_coredump_size);
-}
-
-static bool prv_test_write_cb(const void *data, size_t data_len, void *ctx) {
-  return mock().actualCall(__func__)
-    .withMemoryBufferParameter("data", (const uint8_t *)data, data_len)
-    .withPointerParameter("ctx", ctx)
-    .returnBoolValueOrDefault(true);
-}
-
-TEST(MfltCoredumpTestGroup, Test_MfltCoredumpWriteHeader) {
-  const size_t test_size = 0x12345678;
-  void *test_ctx = (void *)0x56789ABC;
-
-  const uint8_t expected_data[] = {
-      'C', 'O', 'R', 'E',
-      0x01, 0x00, 0x00, 0x00,  // version 1
-      0x78, 0x56, 0x34, 0x12,  // size
-  };
-  mock().expectOneCall("prv_test_write_cb")
-    .withMemoryBufferParameter("data", expected_data, sizeof(expected_data))
-    .withPointerParameter("ctx", test_ctx);
-
-  CHECK_EQUAL(true, memfault_coredump_write_header(test_size, prv_test_write_cb, test_ctx));
-}
-
-TEST(MfltCoredumpTestGroup, Test_MfltCoredumpWriteBlock) {
-  void *test_ctx = (void *)0x56789ABC;
-  const uint8_t test_payload[] = { 0x01, 0x02, 0x03, 0x04, };
-
-  const uint8_t expected_block_header_data[] = {
-      0x01,                    // type
-      0x00, 0x00, 0x00,        // reserved
-      0x00, 0x00, 0x00, 0x00,  // address
-      0x04, 0x00, 0x00, 0x00,  // length
-  };
-  mock().expectOneCall("prv_test_write_cb")
-        .withMemoryBufferParameter("data", expected_block_header_data, sizeof(expected_block_header_data))
-        .withPointerParameter("ctx", test_ctx);
-  mock().expectOneCall("prv_test_write_cb")
-        .withMemoryBufferParameter("data", test_payload, sizeof(test_payload))
-        .withPointerParameter("ctx", test_ctx);
-
-  CHECK_EQUAL(true, memfault_coredump_write_block(kMfltCoredumpBlockType_MemoryRegion,
-      test_payload, sizeof(test_payload), prv_test_write_cb, test_ctx));
-}
-
-TEST(MfltCoredumpTestGroup, Test_MfltCoredumpWriteBlockNullPayload) {
-  void *test_ctx = (void *)0x56789ABC;
-  const size_t test_payload_size = 4;
-
-  const uint8_t expected_block_header_data[] = {
-      0x01,                    // type
-      0x00, 0x00, 0x00,        // reserved
-      0x00, 0x00, 0x00, 0x00,  // address
-      0x04, 0x00, 0x00, 0x00,  // length
-  };
-  mock().expectOneCall("prv_test_write_cb")
-        .withMemoryBufferParameter("data", expected_block_header_data, sizeof(expected_block_header_data))
-        .withPointerParameter("ctx", test_ctx);
-
-  CHECK_EQUAL(true, memfault_coredump_write_block(kMfltCoredumpBlockType_MemoryRegion,
-                                                  NULL, test_payload_size, prv_test_write_cb, test_ctx));
-}
-
-TEST(MfltCoredumpTestGroup, Test_MfltCoredumpWriteBlockWriteFailure) {
-  void *test_ctx = (void *)0x56789ABC;
-  const size_t test_payload_size = 4;
-
-  mock().expectOneCall("prv_test_write_cb")
-        .ignoreOtherParameters()
-        .andReturnValue(false);
-
-  CHECK_EQUAL(false, memfault_coredump_write_block(kMfltCoredumpBlockType_MemoryRegion,
-                                                  NULL, test_payload_size, prv_test_write_cb, test_ctx));
 }

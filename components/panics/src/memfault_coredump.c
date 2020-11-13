@@ -10,15 +10,23 @@
 #include "memfault/panics/coredump_impl.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
+#include "memfault/core/math.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/panics/platform/coredump.h"
 
 #define MEMFAULT_COREDUMP_MAGIC 0x45524f43
-#define MEMFAULT_COREDUMP_VERSION 1
+
+//! Version 2
+//!  - If there is not enough storage space for memory regions,
+//!    coredumps will now be truncated instead of failing completely
+//!  - Added sMfltCoredumpFooter to end of coredump. In this region
+//!    we track whether or not a coredump was truncated.
+#define MEMFAULT_COREDUMP_VERSION 2
 
 typedef MEMFAULT_PACKED_STRUCT MfltCoredumpHeader {
   uint32_t magic;
@@ -26,6 +34,19 @@ typedef MEMFAULT_PACKED_STRUCT MfltCoredumpHeader {
   uint32_t total_size;
   uint8_t data[];
 } sMfltCoredumpHeader;
+
+#define MEMFAULT_COREDUMP_FOOTER_MAGIC 0x504d5544
+
+typedef enum MfltCoredumpFooterFlags  {
+  kMfltCoredumpBlockType_SaveTruncated = 0,
+} eMfltCoredumpFooterFlags;
+
+typedef MEMFAULT_PACKED_STRUCT MfltCoredumpFooter {
+  uint32_t magic;
+  uint32_t flags;
+  // reserving for future footer additions such as a CRC over the contents saved
+  uint32_t rsvd[2];
+} sMfltCoredumpFooter;
 
 typedef MEMFAULT_PACKED_STRUCT MfltCoredumpBlock {
   eMfltCoredumpBlockType block_type:8;
@@ -50,26 +71,73 @@ typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
   uint32_t machine_type;
 } sMfltMachineTypeBlock;
 
-static bool prv_write_block_with_address(
-    eMfltCoredumpBlockType block_type, const void *block_payload, size_t block_payload_size,
-    uint32_t address, MfltCoredumpWriteCb write_cb, void *ctx, bool word_aligned_reads_only) {
-  const sMfltCoredumpBlock blk = {
-      .block_type = block_type,
-      .address = address,
-      .length = block_payload_size,
-  };
-  if (!write_cb(&blk, sizeof(blk), ctx)) {
+typedef struct {
+  // the space available for saving a coredump
+  uint32_t storage_size;
+  // the offset within storage currently being written to
+  uint32_t offset;
+  // set to true when no writes should be performed and only the total size of the write should be
+  // computed
+  bool compute_size_only;
+  // set to true if writing a block was truncated
+  bool truncated;
+  // set to true if a call to "memfault_platform_coredump_storage_write" failed
+  bool write_error;
+} sMfltCoredumpWriteCtx;
+
+static bool prv_platform_coredump_write(const void *data, size_t len, sMfltCoredumpWriteCtx *write_ctx) {
+  // if we are just computing the size needed, don't write any data but keep
+  // a count of how many bytes would be written.
+  if (!write_ctx->compute_size_only &&
+      !memfault_platform_coredump_storage_write(write_ctx->offset, data, len)) {
+    write_ctx->write_error = true;
     return false;
   }
-  // When NULL is passed as block_payload, only the header is written, even if the payload size is non-zero, this
-  // is a feature that allows one to write the block payload piece-meal.
+
+  write_ctx->offset += len;
+  return true;
+}
+
+static bool prv_write_block_with_address(
+    eMfltCoredumpBlockType block_type, const void *block_payload, size_t block_payload_size,
+    uint32_t address, sMfltCoredumpWriteCtx *write_ctx, bool word_aligned_reads_only) {
+  // nothing to write, ignore the request
   if (block_payload_size == 0 || (block_payload == NULL)) {
     return true;
   }
 
+  const size_t total_length = sizeof(sMfltCoredumpBlock) + block_payload_size;
+  const size_t storage_bytes_free =
+      write_ctx->storage_size > write_ctx->offset ?  write_ctx->storage_size - write_ctx->offset : 0;
+
+  if (!write_ctx->compute_size_only && storage_bytes_free < total_length) {
+    // We are trying to write a new block in the coredump and there is not enough
+    // space. Let's see if we can truncate the block to fit in the space that is left
+    write_ctx->truncated = true;
+
+    if (storage_bytes_free < sizeof(sMfltCoredumpBlock)) {
+      return false;
+    }
+
+    block_payload_size = MEMFAULT_FLOOR(storage_bytes_free - sizeof(sMfltCoredumpBlock), 4);
+    if (block_payload_size == 0) {
+      return false;
+    }
+  }
+
+  const sMfltCoredumpBlock blk = {
+    .block_type = block_type,
+    .address = address,
+    .length = block_payload_size,
+  };
+
+  if (!prv_platform_coredump_write(&blk, sizeof(blk), write_ctx)) {
+    return false;
+  }
+
   if (!word_aligned_reads_only || ((block_payload_size % 4) != 0)) {
     // no requirements on how the 'address' is read so whatever the user implementation does is fine
-    return write_cb(block_payload, block_payload_size, ctx);
+    return prv_platform_coredump_write(block_payload, block_payload_size, write_ctx);
   }
 
   // We have a region that needs to be read 32 bits at a time.
@@ -78,20 +146,20 @@ static bool prv_write_block_with_address(
   const uint32_t *word_data = block_payload;
   for (uint32_t i = 0; i < block_payload_size / 4; i++) {
     const uint32_t data = word_data[i];
-    if (!write_cb(&data, sizeof(data), ctx)) {
+    if (!prv_platform_coredump_write(&data, sizeof(data), write_ctx)) {
       return false;
     }
   }
 
-  return true;
+  return !write_ctx->truncated;
 }
 
-bool memfault_coredump_write_block(eMfltCoredumpBlockType block_type,
-                                   const void *block_payload, size_t block_payload_size,
-                                   MfltCoredumpWriteCb write_cb, void *ctx) {
+static bool prv_write_non_memory_block(eMfltCoredumpBlockType block_type,
+                                       const void *block_payload, size_t block_payload_size,
+                                       sMfltCoredumpWriteCtx *ctx) {
   const bool word_aligned_reads_only = false;
   return prv_write_block_with_address(block_type, block_payload, block_payload_size,
-                                      0, write_cb, ctx, word_aligned_reads_only);
+                                      0, ctx, word_aligned_reads_only);
 }
 
 static eMfltCoredumpBlockType prv_region_type_to_storage_type(eMfltCoredumpRegionType type) {
@@ -118,47 +186,42 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #endif
 }
 
-bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, void *ctx) {
+static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
 
   sMemfaultBuildInfo build_info;
   if (memfault_build_info_read(&build_info)) {
-    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_BuildId,
-                                       build_info.build_id, sizeof(build_info.build_id),
-                                       write_cb, ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_BuildId,
+                                    build_info.build_id, sizeof(build_info.build_id), ctx)) {
       return false;
     }
   }
 
   if (info.device_serial) {
-    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_DeviceSerial,
-                                       info.device_serial, strlen(info.device_serial),
-                                       write_cb, ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_DeviceSerial,
+                                    info.device_serial, strlen(info.device_serial), ctx)) {
       return false;
     }
   }
 
   if (info.software_version) {
-    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareVersion,
-                                       info.software_version, strlen(info.software_version),
-                                       write_cb, ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareVersion,
+                                    info.software_version, strlen(info.software_version), ctx)) {
       return false;
     }
   }
 
   if (info.software_type) {
-    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_SoftwareType,
-                                       info.software_type, strlen(info.software_type),
-                                       write_cb, ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareType,
+                                       info.software_type, strlen(info.software_type), ctx)) {
       return false;
     }
   }
 
   if (info.hardware_version) {
-    if (!memfault_coredump_write_block(kMfltCoredumpRegionType_HardwareVersion,
-                                       info.hardware_version, strlen(info.hardware_version),
-                                       write_cb, ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_HardwareVersion,
+                                       info.hardware_version, strlen(info.hardware_version), ctx)) {
       return false;
     }
   }
@@ -166,37 +229,33 @@ bool memfault_coredump_write_device_info_blocks(MfltCoredumpWriteCb write_cb, vo
   const sMfltMachineTypeBlock machine_block = {
     .machine_type = (uint32_t)prv_get_machine_type(),
   };
-  return memfault_coredump_write_block(kMfltCoredumpRegionType_MachineType,
-                                       &machine_block, sizeof(machine_block),
-                                       write_cb, ctx);
+  return prv_write_non_memory_block(kMfltCoredumpRegionType_MachineType,
+                                    &machine_block, sizeof(machine_block), ctx);
 }
 
-bool memfault_coredump_write_header(size_t total_coredump_size,
-                                    MfltCoredumpWriteCb write_cb, void *ctx) {
+static bool prv_write_coredump_header(size_t total_coredump_size, sMfltCoredumpWriteCtx *ctx) {
   sMfltCoredumpHeader hdr = (sMfltCoredumpHeader) {
-      .magic = MEMFAULT_COREDUMP_MAGIC,
-      .version = MEMFAULT_COREDUMP_VERSION,
-      .total_size = total_coredump_size,
+    .magic = MEMFAULT_COREDUMP_MAGIC,
+    .version = MEMFAULT_COREDUMP_VERSION,
+    .total_size = total_coredump_size,
   };
-  return write_cb(&hdr, sizeof(hdr), ctx);
+  return prv_platform_coredump_write(&hdr, sizeof(hdr), ctx);
 }
 
-static bool prv_write_trace_reason(MfltCoredumpWriteCb write_cb, uint32_t *offset,
-                                   uint32_t trace_reason) {
+static bool prv_write_trace_reason(sMfltCoredumpWriteCtx *ctx, uint32_t trace_reason) {
   sMfltTraceReasonBlock trace_info = {
     .reason = trace_reason,
   };
 
-  return memfault_coredump_write_block(kMfltCoredumpRegionType_TraceReason,
-                                       &trace_info, sizeof(trace_info),
-                                       write_cb, offset);
+  return prv_write_non_memory_block(kMfltCoredumpRegionType_TraceReason,
+                                    &trace_info, sizeof(trace_info), ctx);
 }
 
 // When copying out some regions (for example, memory or register banks)
 // we want to make sure we can do word-aligned accesses.
-static void prv_insert_padding_if_necessary(MfltCoredumpWriteCb write_cb, uint32_t *offset) {
+static void prv_insert_padding_if_necessary(sMfltCoredumpWriteCtx *write_ctx) {
   #define MEMFAULT_WORD_SIZE 4
-  const size_t remainder = *offset % MEMFAULT_WORD_SIZE;
+  const size_t remainder = write_ctx->offset % MEMFAULT_WORD_SIZE;
   if (remainder == 0) {
     return;
   }
@@ -207,8 +266,8 @@ static void prv_insert_padding_if_necessary(MfltCoredumpWriteCb write_cb, uint32
   size_t padding_needed = MEMFAULT_WORD_SIZE - remainder;
   memset(pad_bytes, 0x0, padding_needed);
 
-  memfault_coredump_write_block(kMfltCoredumpRegionType_PaddingRegion,
-      &pad_bytes, padding_needed, write_cb, offset);
+  prv_write_non_memory_block(kMfltCoredumpRegionType_PaddingRegion,
+                             &pad_bytes, padding_needed, write_ctx);
 }
 
 //! Callback that will be called to write coredump data.
@@ -246,10 +305,10 @@ static bool prv_coredump_header_is_valid(const sMfltCoredumpHeader *hdr) {
   return (hdr && hdr->magic == MEMFAULT_COREDUMP_MAGIC);
 }
 
-static bool prv_write_regions(MfltCoredumpWriteCb write_cb, uint32_t *curr_offset,
-                              const sMfltCoredumpRegion *regions, size_t num_regions) {
+static bool prv_write_regions(sMfltCoredumpWriteCtx *write_ctx, const sMfltCoredumpRegion *regions,
+                              size_t num_regions) {
   for (size_t i = 0; i < num_regions; i++) {
-    prv_insert_padding_if_necessary(write_cb, curr_offset);
+    prv_insert_padding_if_necessary(write_ctx);
     const sMfltCoredumpRegion *region = &regions[i];
     const bool word_aligned_reads_only =
         (region->type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
@@ -257,27 +316,10 @@ static bool prv_write_regions(MfltCoredumpWriteCb write_cb, uint32_t *curr_offse
     if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
                                       region->region_start, region->region_size,
                                       (uint32_t)(uintptr_t)region->region_start,
-                                      write_cb, curr_offset, word_aligned_reads_only)) {
+                                      write_ctx, word_aligned_reads_only)) {
       return false;
     }
   }
-  return true;
-}
-
-static bool prv_write_storage(const void *data, size_t len, void *ctx) {
-  uint32_t *offset = ctx;
-  if (!memfault_platform_coredump_storage_write(*offset, data, len)) {
-    return false;
-  }
-  *offset += len;
-  return true;
-}
-
-static bool prv_write_storage_compute_space_only(MEMFAULT_UNUSED const void *data, size_t len, void *ctx) {
-  // don't write any data but keep count of how many bytes would be written. This is used to
-  // compute the total amount of space needed to store a coredump
-  uint32_t *offset = ctx;
-  *offset += len;
   return true;
 }
 
@@ -316,54 +358,68 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
     return false;
   }
 
-  const MfltCoredumpWriteCb storage_write_cb =
-      compute_size_only ? prv_write_storage_compute_space_only : prv_write_storage;
+  sMfltCoredumpWriteCtx write_ctx = {
+    // We will write the header last as a way to mark validity
+    // so advance the offset past it to start
+    .offset = sizeof(hdr),
+    .compute_size_only = compute_size_only,
+    .storage_size = info.size,
+  };
 
-  // We will write the header last as a way to mark validity
-  uint32_t curr_offset = sizeof(hdr);
+  if (write_ctx.storage_size > sizeof(sMfltCoredumpFooter)) {
+    // always leave space for footer
+    write_ctx.storage_size -= sizeof(sMfltCoredumpFooter);
+  }
 
   const void *regs = save_info->regs;
   const size_t regs_size = save_info->regs_size;
   if (regs != NULL) {
-    if (!memfault_coredump_write_block(kMfltCoredumpBlockType_CurrentRegisters,
-        regs, regs_size, storage_write_cb, &curr_offset)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpBlockType_CurrentRegisters,
+                                    regs, regs_size, &write_ctx)) {
       return false;
     }
   }
 
-  if (!memfault_coredump_write_device_info_blocks(storage_write_cb, &curr_offset)) {
+  if (!prv_write_device_info_blocks(&write_ctx)) {
     return false;
   }
 
   const uint32_t trace_reason = save_info->trace_reason;
-  if (!prv_write_trace_reason(storage_write_cb, &curr_offset, trace_reason)) {
+  if (!prv_write_trace_reason(&write_ctx, trace_reason)) {
     return false;
   }
 
   // write out any architecture specific regions
   size_t num_arch_regions = 0;
   const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
-  if (!prv_write_regions(storage_write_cb, &curr_offset, arch_regions, num_arch_regions)) {
-    return false;
-  }
-
   size_t num_sdk_regions = 0;
   const sMfltCoredumpRegion *sdk_regions = memfault_coredump_get_sdk_regions(&num_sdk_regions);
-  if (!prv_write_regions(storage_write_cb, &curr_offset, sdk_regions, num_sdk_regions)) {
+
+  const bool write_completed =
+      prv_write_regions(&write_ctx, arch_regions, num_arch_regions) &&
+      prv_write_regions(&write_ctx, sdk_regions, num_sdk_regions) &&
+      prv_write_regions(&write_ctx, regions, num_regions);
+
+  if (!write_completed && write_ctx.write_error) {
     return false;
   }
 
-  if (!prv_write_regions(storage_write_cb, &curr_offset, regions, num_regions)) {
+  const sMfltCoredumpFooter footer = (sMfltCoredumpFooter) {
+    .magic = MEMFAULT_COREDUMP_FOOTER_MAGIC,
+    .flags = write_ctx.truncated ? (1 << kMfltCoredumpBlockType_SaveTruncated) : 0,
+  };
+  write_ctx.storage_size = info.size;
+  if (!prv_platform_coredump_write(&footer, sizeof(footer), &write_ctx)) {
     return false;
   }
 
-  // we are done, mark things as valid
-  size_t header_offset = 0;
-  const bool success = memfault_coredump_write_header(curr_offset, storage_write_cb,
-                                                      &header_offset);
+  const size_t end_offset = write_ctx.offset;
+  write_ctx.offset = 0; // we are writing the header so reset our write offset
+  const bool success = prv_write_coredump_header(end_offset, &write_ctx);
   if (success) {
-    *total_size = curr_offset;
+    *total_size = end_offset;
   }
+
   return success;
 }
 
