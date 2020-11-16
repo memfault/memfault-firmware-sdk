@@ -16,6 +16,7 @@
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/esp_port/http_client.h"
+#include "memfault/esp_port/core.h"
 #include "memfault/http/http_client.h"
 #include "memfault/http/root_certs.h"
 #include "memfault/panics/assert.h"
@@ -70,7 +71,8 @@ static int prv_post_chunks(esp_http_client_handle_t client, void *buffer, size_t
     // have a POST mechanism that can use a callback so our POST size is limited by the size of the
     // buffer we can allocate.
     size_t read_size = buf_len;
-    bool more_data = memfault_packetizer_get_chunk(buffer, &read_size);
+
+    const bool more_data = memfault_esp_port_get_chunk(buffer, &read_size);
     if (!more_data) {
       break;
     }
@@ -129,7 +131,7 @@ int memfault_platform_http_response_get_status(const sMfltHttpResponse *response
 int memfault_platform_http_client_post_data(
     sMfltHttpClient *_client, MemfaultHttpClientResponseCallback callback, void *ctx) {
 
-  if (!memfault_packetizer_data_available()) {
+  if (!memfault_esp_port_data_available()) {
     return 0; // no new chunks to send
   }
 

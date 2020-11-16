@@ -11,12 +11,13 @@
 #include "esp_console.h"
 #include "esp_err.h"
 
-#include "memfault/esp_port/cli.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/demo/cli.h"
+#include "memfault/esp_port/cli.h"
 #include "memfault/http/platform/http_client.h"
+#include "memfault/metrics/metrics.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/platform/coredump.h"
 
@@ -109,6 +110,11 @@ static int prv_esp32_crash_example(int argc, char** argv) {
   return 0;
 }
 
+static int prv_esp32_memfault_heartbeat_dump(int argc, char** argv) {
+  memfault_metrics_heartbeat_debug_print();
+  return 0;
+}
+
 void memfault_register_cli(void) {
   prv_timer_init();
 
@@ -159,5 +165,12 @@ void memfault_register_cli(void) {
       .help = "Post Memfault data to cloud",
       .hint = NULL,
       .func = memfault_demo_cli_cmd_post_core,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "heartbeat_dump",
+      .help = "Dump current Memfault metrics heartbeat state",
+      .hint = NULL,
+      .func = prv_esp32_memfault_heartbeat_dump,
   }));
 }

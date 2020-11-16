@@ -1,3 +1,31 @@
+### Changes between Memfault SDK 0.9.0 and SDK 0.8.2 - Nov 16, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP32 port improvements:
+  - The Memfault `metrics` component is now included by default in the ESP32
+    port
+  - `MEMFAULT_LOG_DEBUG` messages now print by default
+  - Added a `heartbeat_dump` CLI command for easy viewing of current heartbeat
+    metrics
+  - Custom handling of collecting Memfault data can now easily be implemented in
+    the ESP32 port using the new
+    [`memfault_esp_port_data_available()` & `memfault_esp_port_get_chunk()`](ports/esp_idf/memfault/include/memfault/esp_port/core.h)
+    APIS. This can be useful in scenarios where there are external MCUs
+    forwarding Memfault chunks to the ESP32.
+- The platform port for the memfault log dependency can now be implemented by
+  macros (rather than the `memfault_platform_log` dependency). See
+  [`components/core/include/memfault/core/debug_log.h`](components/core/include/memfault/core/debug_log.h)
+  for more details.
+
+#### :boom: Breaking Changes
+
+- If you were using the ESP32 port:
+  - Call to `memfault_metrics_boot()` can now be removed
+  - Custom implementations for `memfault_platform_metrics_timer_boot()` &
+    `memfault_platform_get_time_since_boot_ms()` can be removed as they are now
+    provided as part of the port.
+
 ### Changes between Memfault SDK 0.8.2 and SDK 0.8.1 - Nov 13, 2020
 
 #### :chart_with_upwards_trend: Improvements

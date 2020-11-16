@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES

@@ -21,7 +21,6 @@ MEMFAULT_PLATFORM_SDK_OVERRIDES = $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/sdk_overri
 MEMFAULT_PLATFORM_REFERENCE_SRC += \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_core.c \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_coredump.c \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_debug_log.c \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_device_info.c \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_reboot_tracking.c \
 
@@ -137,6 +136,7 @@ OPT = -O3 -g3
 # to compress packetized data
 # CFLAGS += -DMEMFAULT_DATA_SOURCE_RLE_ENABLED=0
 CFLAGS += -DMEMFAULT_USE_GNU_BUILD_ID=1
+CFLAGS += -DMEMFAULT_PLATFORM_HAS_LOG_CONFIG=1
 
 # C flags common to all targets
 CFLAGS += $(OPT)
