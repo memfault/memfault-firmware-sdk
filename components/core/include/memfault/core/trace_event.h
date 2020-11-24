@@ -43,13 +43,14 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 //! @see memfault_trace_event_capture
 //! @see MEMFAULT_TRACE_REASON_DEFINE
 //! @note Ensure memfault_trace_event_boot() has been called before using this API!
-#define MEMFAULT_TRACE_EVENT(reason)                                     \
-  do {                                                                   \
-    void *pc;                                                            \
-    MEMFAULT_GET_PC(pc);                                                 \
-    void *lr;                                                            \
-    MEMFAULT_GET_LR(lr);                                                 \
-    memfault_trace_event_capture(MEMFAULT_TRACE_REASON(reason), pc, lr); \
+#define MEMFAULT_TRACE_EVENT(reason)                                    \
+  do {                                                                  \
+    void *mflt_pc;                                                      \
+    MEMFAULT_GET_PC(mflt_pc);                                           \
+    void *mflt_lr;                                                      \
+    MEMFAULT_GET_LR(mflt_lr);                                           \
+    memfault_trace_event_capture(                                       \
+        MEMFAULT_TRACE_REASON(reason), mflt_pc, mflt_lr);               \
   } while (0)
 
 //! Records same info as MEMFAULT_TRACE_EVENT as well as a "status_code"
@@ -63,14 +64,31 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 //!
 //! @note Trace events with the same 'reason' but a different 'status_code' are classified as
 //!   unique issues in the Memfault UI
-#define MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code) \
-  do {                                                        \
-    void *pc;                                                 \
-    MEMFAULT_GET_PC(pc);                                      \
-    void *lr;                                                 \
-    MEMFAULT_GET_LR(lr);                                      \
-    memfault_trace_event_with_status_capture(                 \
-        MEMFAULT_TRACE_REASON(reason), pc, lr, status_code);  \
+#define MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code)           \
+  do {                                                                  \
+    void *mflt_pc;                                                      \
+    MEMFAULT_GET_PC(mflt_pc);                                           \
+    void *mflt_lr;                                                      \
+    MEMFAULT_GET_LR(mflt_lr);                                           \
+    memfault_trace_event_with_status_capture(                           \
+        MEMFAULT_TRACE_REASON(reason), mflt_pc, mflt_lr, status_code);  \
+  } while (0)
+
+//! Records same info as MEMFAULT_TRACE_EVENT as well as a log
+//!
+//! @note The log alows one to capture arbitrary metadata when a system error is detected
+//! such as the value of several registers or current state machine state.
+//!
+//! @note Trace events with the same 'reason' but a different 'log' are classified as
+//!   grouped together by default in the UI
+#define MEMFAULT_TRACE_EVENT_WITH_LOG(reason, ...)                      \
+  do {                                                                  \
+    void *mflt_pc;                                                      \
+    MEMFAULT_GET_PC(mflt_pc);                                           \
+    void *mflt_lr;                                                      \
+    MEMFAULT_GET_LR(mflt_lr);                                           \
+    memfault_trace_event_with_log_capture(                              \
+        MEMFAULT_TRACE_REASON(reason), mflt_pc, mflt_lr, __VA_ARGS__);  \
   } while (0)
 
 //! Flushes an ISR trace event capture out to event storage

@@ -31,13 +31,14 @@ const sMfltCoredumpRegion *memfault_coredump_get_sdk_regions(size_t *num_regions
   size_t total_regions = 0;
 
 #if MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS
-  sMemfaultLogRegions regions;
-  memfault_log_get_regions(&regions);
-  for (size_t i = 0; i < MEMFAULT_LOG_NUM_RAM_REGIONS; i++) {
-    sMemfaultLogMemoryRegion *log_region = &regions.region[i];
-    s_sdk_coredump_regions[total_regions] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-        log_region->region_start, log_region->region_size);
-    total_regions++;
+  sMemfaultLogRegions regions = { 0 };
+  if (memfault_log_get_regions(&regions)) {
+    for (size_t i = 0; i < MEMFAULT_LOG_NUM_RAM_REGIONS; i++) {
+      sMemfaultLogMemoryRegion *log_region = &regions.region[i];
+      s_sdk_coredump_regions[total_regions] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+          log_region->region_start, log_region->region_size);
+      total_regions++;
+    }
   }
 #endif
 

@@ -1,3 +1,44 @@
+### Changes between Memfault SDK 0.9.1 and SDK 0.9.0 - Nov 24, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- A log can now be captured alongside a trace event by using a new API:
+  [`MEMFAULT_TRACE_EVENT_WITH_LOG(reason, ...)`](components/core/include/memfault/core/trace_event.h#L77).
+  This can be useful to capture arbitrary diagnostic data with an error event or
+  to capture critical error logs that you would like to be alerted on when they
+  happen. For example:
+
+```c
+// @file memfault_trace_reason_user_config.def
+MEMFAULT_TRACE_REASON_DEFINE(Critical_Log)
+```
+
+```c
+// @file your_platform_log_implementation.h
+#include "memfault/core/trace_event.h"
+
+#define YOUR_PLATFORM_LOG_CRITICAL(fmt, ....) \
+    MEMFAULT_TRACE_EVENT_WITH_LOG(Critical_Log, fmt, __VA_ARGS__)
+```
+
+```c
+// @file your_platform_temperature_driver.c
+void record_temperature(void) {
+   // ...
+   // erase flash to free up space
+   int rv = spi_flash_erase(...);
+   if (rv != 0) {
+      YOUR_PLATFORM_LOG_CRITICAL("Flash Erase Failure: rv=%d, spi_err=0x%x", spi_bus_get_status());
+   }
+}
+```
+
+- The error tracing facilities are now initialized automatically for the esp-idf
+- Fixed a :bug: where an erroneous size was reported from
+  `memfault_coredump_storage_check_size()` if
+  `MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1`and `memfault_log_boot()` had not yet
+  been called
+
 ### Changes between Memfault SDK 0.9.0 and SDK 0.8.2 - Nov 16, 2020
 
 #### :chart_with_upwards_trend: Improvements
@@ -34,8 +75,7 @@
   the memory regions requested take up more space than the platform storage
   allocated for saving. A warning will also be displayed in the Memfault UI when
   this happens. Regions are always read in the order returned from
-  [`memfault_platform_coredump_get_regions()`](
-  [memfault_platform_coredump_get_regions](components/panics/include/memfault/panics/platform/coredump.h#L56)
+  [`memfault_platform_coredump_get_regions()`](components/panics/include/memfault/panics/platform/coredump.h)
   so it is recommended to order this list from the most to least important
   regions to capture.
 - Updated FreeRTOS port to use static allocation APIs by default when the

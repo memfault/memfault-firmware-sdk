@@ -128,6 +128,115 @@ TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndStatus) {
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
 }
 
+
+TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLog) {
+  fake_memfault_event_storage_clear();
+  int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
+  CHECK_EQUAL(0, rv);
+
+  const uint8_t expected_data[] = {
+    0xA7,
+    0x02, 0x02,
+    0x03, 0x01,
+    0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+    0x0A, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1', '.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
+    0x04,
+    0xA4,
+    0x06, 0x03,
+    0x02, 0x1A, 0x12, 0x34, 0x56, 0x78,
+    0x03, 0x1A, 0xAA, 0xBB, 0xCC, 0xDD,
+    0x08, 0x4E, '1', '2', '3','4','5','6','7','8','9','a', 'b', 'c', 'd', 'e'
+  };
+
+  void *pc = (void *)0x12345678;
+  void *lr = (void *)0xaabbccdd;
+
+#if defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED) && !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  const size_t expected_check_isr_calls = 2;
+#else
+  const size_t expected_check_isr_calls = 1;
+#endif
+
+  // anything less than the expected size should fail to encode
+  for (size_t i = 1; i <= sizeof(expected_data); i++) {
+    const size_t storage_size = i;
+    fake_memfault_event_storage_clear();
+    fake_memfault_event_storage_set_available_space(storage_size);
+    mock().expectNCalls(expected_check_isr_calls, "memfault_arch_is_inside_isr");
+    mock().expectOneCall("prv_begin_write");
+    const bool expect_rollback = (storage_size < sizeof(expected_data));
+    mock().expectOneCall("prv_finish_write").withParameter("rollback", expect_rollback);
+
+    rv = memfault_trace_event_with_log_capture(
+        kMfltTraceReasonUser_test, pc, lr, "%d%d%d%d%d%d789abcdetruncated", 1, 2, 3, 4, 5, 6);
+
+    CHECK_EQUAL(expect_rollback ? -2 : 0, rv);
+    mock().checkExpectations();
+  }
+
+  fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
+
+}
+
+TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLogFromIsr) {
+  const uint8_t expected_data[] = {
+    0xA7,
+    0x02, 0x02,
+    0x03, 0x01,
+    0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+    0x0A, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1', '.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
+    0x04,
+    0xA4,
+    0x06, 0x03,
+    0x02, 0x1A, 0x12, 0x34, 0x56, 0x78,
+    0x03, 0x1A, 0xAA, 0xBB, 0xCC, 0xDD,
+    0x08, 0x4E, '1', '2', '3','4','5','6','7','8','9','a', 'b', 'c', 'd', 'e'
+  };
+
+  void *pc = (void *)0x12345678;
+  void *lr = (void *)0xaabbccdd;
+
+#if defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED) && !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  const size_t expected_check_isr_calls = 2;
+#else
+  const size_t expected_check_isr_calls = 1;
+#endif
+
+  // let's also make sure collection from an isr works as expected
+  fake_memfault_event_storage_clear();
+  int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
+  CHECK_EQUAL(0, rv);
+  fake_memfault_event_storage_set_available_space(sizeof(expected_data));
+
+  mock().expectNCalls(expected_check_isr_calls, "memfault_arch_is_inside_isr").andReturnValue(true);
+  rv = memfault_trace_event_with_log_capture(
+      kMfltTraceReasonUser_test, pc, lr, "%d%d%d%d%d%d789abcdetruncated", 1, 2, 3, 4, 5, 6);
+  CHECK_EQUAL(0, rv);
+
+  mock().expectOneCall("prv_begin_write");
+  mock().expectOneCall("prv_finish_write").withParameter("rollback", false);
+  rv = memfault_trace_event_try_flush_isr_event();
+  CHECK_EQUAL(0, rv);
+  mock().checkExpectations();
+
+  size_t expected_isr_data_size = sizeof(expected_data);
+#if defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED) && !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  expected_isr_data_size -= 16;
+  uint8_t expected_data_no_log_from_isr[expected_isr_data_size];
+  memcpy(expected_data_no_log_from_isr, expected_data,  expected_isr_data_size);
+  expected_data_no_log_from_isr[38] = 0xA3; // array of 3 items instead of 4
+
+  fake_event_storage_assert_contents_match(expected_data_no_log_from_isr,
+                                           sizeof(expected_data_no_log_from_isr));
+#else
+  fake_event_storage_assert_contents_match(expected_data, expected_isr_data_size);
+#endif
+}
+
 static void prv_setup_isr_test(void) {
   fake_memfault_event_storage_clear();
   int rv = memfault_trace_event_boot(s_fake_event_storage_impl);

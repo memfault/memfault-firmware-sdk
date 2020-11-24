@@ -6,15 +6,32 @@
 #include "memfault/core/trace_event.h"
 #include "memfault_trace_event_private.h"
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "memfault/core/arch.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
+#include "memfault/core/math.h"
 #include "memfault/core/serializer_helper.h"
 #include "memfault/core/serializer_key_ids.h"
+
+//! By default, the Memfault SDK allows for trace events with logs to be captured for trace events
+//! from ISRs.
+//!
+//! However, this can be disabled to reduce static RAM usage by MEMFAULT_TRACE_EVENT_MAX_LOG_LEN
+#if !defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED)
+# define MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED 1
+#endif /* MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
+
+//! The maximum size allocated for a trace event log
+#if !defined(MEMFAULT_TRACE_EVENT_MAX_LOG_LEN)
+# define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
+#endif /* !MEMFAULT_TRACE_EVENT_MAX_LOG_LEN */
 
 #define MEMFAULT_TRACE_EVENT_STORAGE_UNINITIALIZED (-1)
 #define MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE (-2)
@@ -22,6 +39,7 @@
 #define MEMFAULT_TRACE_EVENT_BAD_PARAM (-4)
 
 #define TRACE_EVENT_OPT_FIELD_STATUS_MASK (1 << 0)
+#define TRACE_EVENT_OPT_FIELD_LOG_MASK (1 << 1)
 
 typedef struct {
   eMfltTraceReasonUser reason;
@@ -36,6 +54,9 @@ typedef struct {
 
   //! A status / error code to record alongside a trace event
   int32_t status_code;
+  //! A null terminated log captured alongside a trace event
+  const void *log;
+  size_t log_len;
 } sMemfaultTraceEventInfo;
 
 static struct {
@@ -64,6 +85,11 @@ static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
     extra_event_info_pairs++;
   }
 
+  const bool log_present = (info->opt_fields & TRACE_EVENT_OPT_FIELD_LOG_MASK) != 0;
+  if (log_present) {
+    extra_event_info_pairs++;
+  }
+
   sMemfaultTraceEventHelperInfo helper_info = {
       .reason_key = kMemfaultTraceInfoEventKey_UserReason,
       .reason_value = info->reason,
@@ -79,12 +105,20 @@ static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
         kMemfaultTraceInfoEventKey_StatusCode, info->status_code);
   }
 
+  if (success && log_present) {
+    success = memfault_cbor_encode_unsigned_integer(encoder, kMemfaultTraceInfoEventKey_Log) &&
+        memfault_cbor_encode_byte_string(encoder, info->log, info->log_len);
+  }
+
   return success;
 }
 
 typedef struct {
   uint32_t reason;
   sMemfaultTraceEventInfo info;
+#if MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  char log[MEMFAULT_TRACE_EVENT_MAX_LOG_LEN];
+#endif
 } sMemfaultIsrTraceEvent;
 
 static sMemfaultIsrTraceEvent s_isr_trace_event;
@@ -105,6 +139,14 @@ static int prv_trace_event_capture_from_isr(sMemfaultTraceEventInfo *trace_info)
   s_isr_trace_event.reason = desired_reason;
 
   s_isr_trace_event.info = *trace_info;
+
+  if (s_isr_trace_event.info.log != NULL) {
+#if MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+    memcpy(s_isr_trace_event.log, trace_info->log, trace_info->log_len);
+    s_isr_trace_event.info.log = &s_isr_trace_event.log[0];
+#endif
+  }
+
   return 0;
 }
 
@@ -133,7 +175,6 @@ int memfault_trace_event_try_flush_isr_event(void) {
   }
   return rv;
 }
-
 
 static int prv_capture_trace_event_info(sMemfaultTraceEventInfo *info) {
   if (s_memfault_trace_event_ctx.storage_impl == NULL) {
@@ -173,6 +214,37 @@ int memfault_trace_event_with_status_capture(eMfltTraceReasonUser reason, void *
     .return_addr = lr_addr,
     .opt_fields = TRACE_EVENT_OPT_FIELD_STATUS_MASK,
     .status_code = status,
+  };
+  return prv_capture_trace_event_info(&event_info);
+}
+
+int memfault_trace_event_with_log_capture(
+    eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr, const char *fmt, ...) {
+
+#if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  // If a log capture takes place while in an ISR we just record a normal trace event
+  if (memfault_arch_is_inside_isr()) {
+    return memfault_trace_event_capture(reason, pc_addr, lr_addr);
+  }
+#endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
+
+  // Note: By performing the vsnprintf in this function (rather than forward vargs in event_info),
+  // the stdlib dependency only gets pulled in when using trace event logs and not for all trace
+  // event types
+  char log[MEMFAULT_TRACE_EVENT_MAX_LOG_LEN] = { 0 };
+  va_list args;
+  va_start(args, fmt);
+  int rv = vsnprintf(log, sizeof(log), fmt, args);
+  size_t log_len = rv < 0 ? 0 : MEMFAULT_MIN(sizeof(log) - 1, (size_t)rv);
+  va_end(args);
+
+  sMemfaultTraceEventInfo event_info = {
+    .reason = reason,
+    .pc_addr = pc_addr,
+    .return_addr = lr_addr,
+    .opt_fields = TRACE_EVENT_OPT_FIELD_LOG_MASK,
+    .log = &log[0],
+    .log_len = log_len,
   };
   return prv_capture_trace_event_info(&event_info);
 }

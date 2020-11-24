@@ -10,6 +10,7 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/data_packetizer.h"
+#include "memfault/core/trace_event.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/sdk_assert.h"
@@ -158,6 +159,7 @@ static void __attribute__((constructor)) prv_memfault_boot(void) {
 
   const sMemfaultEventStorageImpl *evt_storage =
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+  memfault_trace_event_boot(evt_storage);
   memfault_reboot_tracking_collect_reset_info(evt_storage);
 
 
