@@ -11,4 +11,11 @@ menu "Memfault"
         help
             Logs stored in this buffer will be captured as part of a Memfault Coredump
 
+    config MEMFAULT_CLI_ENABLED
+        bool "The amount of RAM storage to allocate for log storage"
+        default y
+        help
+            By default, Memfault will register CLI commands for pushing data,
+            dumping state of the SDK, and performing device updates.
+
 endmenu

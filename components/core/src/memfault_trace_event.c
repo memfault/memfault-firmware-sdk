@@ -156,7 +156,6 @@ static int prv_trace_event_capture(sMemfaultTraceEventInfo *info) {
       &encoder, s_memfault_trace_event_ctx.storage_impl, prv_encode_cb, info);
 
   if (!success) {
-    MEMFAULT_LOG_ERROR("%s storage out of space", __func__);
     return MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE;
   }
 

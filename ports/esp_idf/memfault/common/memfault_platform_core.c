@@ -162,12 +162,13 @@ static void __attribute__((constructor)) prv_memfault_boot(void) {
   memfault_trace_event_boot(evt_storage);
   memfault_reboot_tracking_collect_reset_info(evt_storage);
 
-
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
 
+#if CONFIG_MEMFAULT_CLI_ENABLED
   // register CLI for easily testing Memfault
   memfault_register_cli();
+#endif
 }

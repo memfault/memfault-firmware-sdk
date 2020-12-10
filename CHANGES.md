@@ -1,3 +1,27 @@
+### Changes between Memfault SDK 0.9.2 and SDK 0.9.1 - Dec 10, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added Memfault OTA support to esp-idf port. Updates can now be performed by
+  calling `memfault_esp_port_ota_update()`. More details can be found in
+  [`ports/esp_idf/memfault/include/memfault/esp_port/http_client.h`](ports/esp_idf/memfault/include/memfault/esp_port/http_client.h)
+- The esp-idf port debug CLI can now easily be disabled by using the
+  `MEMFAULT_CLI_ENABLED=n` Kconfig option.
+- Added FreeRTOS utility to facilitate collecting minimal set of RAM in a
+  coredump necessary to recover backtraces for all tasks. More details can be
+  found in
+  [`ports/freertos/include/memfault/ports/freertos_coredump.h`](ports/freertos/include/memfault/ports/freertos_coredump.h)
+- Previously, if the Memfault event storage buffer was out of space, a "storage
+  out of space" error would be printed every time. Now, an error message is
+  printed when the issue first happend and an info message is printed when space
+  is free again.
+- Added a reference software watchdog port for the STM32H7 series LPTIM
+  peripheral. Users of the STM32 HAL can now compile in the reference port and
+  the `MemfaultWatchdog_Handler`. The handler will save a coredump so the full
+  system state can be recovered when a watchdog takes place. More details can be
+  found in
+  [`ports/include/memfault/ports/watchdog.h`](ports/include/memfault/ports/watchdog.h).
+
 ### Changes between Memfault SDK 0.9.1 and SDK 0.9.0 - Nov 24, 2020
 
 #### :chart_with_upwards_trend: Improvements

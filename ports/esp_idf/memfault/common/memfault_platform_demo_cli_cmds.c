@@ -10,12 +10,15 @@
 #include "driver/timer.h"
 #include "esp_console.h"
 #include "esp_err.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
 
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/demo/cli.h"
 #include "memfault/esp_port/cli.h"
+#include "memfault/esp_port/http_client.h"
 #include "memfault/http/platform/http_client.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/panics/assert.h"
@@ -115,6 +118,82 @@ static int prv_esp32_memfault_heartbeat_dump(int argc, char** argv) {
   return 0;
 }
 
+static bool prv_wifi_connected_check(const char *op) {
+  wifi_ap_record_t ap_info;
+  const bool connected = esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
+  if (connected) {
+    return true;
+  }
+
+  MEMFAULT_LOG_ERROR("Must be connected to WiFi to %s. Use 'join <ssid> <pass>'", op);
+  return false;
+}
+
+typedef struct {
+  bool perform_ota;
+} sMemfaultOtaUserCtx;
+
+static bool prv_handle_ota_upload_available(void *user_ctx) {
+  sMemfaultOtaUserCtx *ctx = (sMemfaultOtaUserCtx *)user_ctx;
+  MEMFAULT_LOG_DEBUG("OTA Update Available");
+
+  if (ctx->perform_ota) {
+    MEMFAULT_LOG_INFO("Starting OTA download ...");
+  }
+  return ctx->perform_ota;
+}
+
+static bool prv_handle_ota_download_complete(void *user_ctx) {
+  MEMFAULT_LOG_INFO("OTA Update Complete, Rebooting System");
+  esp_restart();
+  return true;
+}
+
+static int prv_memfault_ota(sMemfaultOtaUserCtx *ctx) {
+  if (!prv_wifi_connected_check("perform an OTA")) {
+    return -1;
+  }
+
+  sMemfaultOtaUpdateHandler handler = {
+    .user_ctx = ctx,
+    .handle_update_available = prv_handle_ota_upload_available,
+    .handle_download_complete = prv_handle_ota_download_complete,
+  };
+
+  MEMFAULT_LOG_DEBUG("Checking for OTA Update");
+
+  int rv = memfault_esp_port_ota_update(&handler);
+  if (rv == 0) {
+    MEMFAULT_LOG_DEBUG("Up to date!");
+  } else if (rv < 0) {
+    MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
+  }
+
+  return rv;
+}
+
+static int prv_memfault_ota_perform(int argc, char **argv) {
+  sMemfaultOtaUserCtx user_ctx = {
+    .perform_ota = true,
+  };
+  return prv_memfault_ota(&user_ctx);
+}
+
+static int prv_memfault_ota_check(int argc, char **argv) {
+  sMemfaultOtaUserCtx user_ctx = {
+    .perform_ota = false,
+  };
+  return prv_memfault_ota(&user_ctx);
+}
+
+static int prv_post_memfault_data(int argc, char **argv) {
+  if (!prv_wifi_connected_check("post Memfault data")) {
+    return -1;
+  }
+
+  return memfault_demo_cli_cmd_post_core(argc, argv);
+}
+
 void memfault_register_cli(void) {
   prv_timer_init();
 
@@ -164,7 +243,7 @@ void memfault_register_cli(void) {
       .command = "post_chunks",
       .help = "Post Memfault data to cloud",
       .hint = NULL,
-      .func = memfault_demo_cli_cmd_post_core,
+      .func = prv_post_memfault_data,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
@@ -172,5 +251,19 @@ void memfault_register_cli(void) {
       .help = "Dump current Memfault metrics heartbeat state",
       .hint = NULL,
       .func = prv_esp32_memfault_heartbeat_dump,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "memfault_ota_check",
+      .help = "Checks Memfault to see if a new OTA is available",
+      .hint = NULL,
+      .func = prv_memfault_ota_check,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "memfault_ota_perform",
+      .help = "Performs an OTA is an updates is available from Memfault",
+      .hint = NULL,
+      .func = prv_memfault_ota_perform,
   }));
 }

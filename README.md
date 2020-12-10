@@ -117,7 +117,7 @@ collection source files and include paths:
 ```c
 set(MEMFAULT_SDK_ROOT <The path to the root of the memfault-firmware-sdk repo>)
 list(APPEND MEMFAULT_COMPONENTS <The SDK components to be used, i.e "core util">)
-include(${MEMFAULT_SDK_ROOT}/cmake/MemfaultWorker.cmake)
+include(${MEMFAULT_SDK_ROOT}/cmake/Memfault.cmake)
 memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
  MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS)
 

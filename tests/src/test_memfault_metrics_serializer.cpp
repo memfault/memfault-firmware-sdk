@@ -14,6 +14,7 @@
 
 #include "fakes/fake_memfault_event_storage.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/serializer_helper.h"
 #include "memfault/metrics/serializer.h"
 #include "memfault/metrics/utils.h"
 
@@ -110,6 +111,12 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerializeOutOfSpace) {
 
     mock().checkExpectations();
   }
+
+  uint32_t drops = memfault_serializer_helper_read_drop_count();
+  LONGS_EQUAL(FAKE_EVENT_STORAGE_SIZE - 1, drops);
+
+  drops = memfault_serializer_helper_read_drop_count();
+  LONGS_EQUAL(0, drops);
 }
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricTypes) {

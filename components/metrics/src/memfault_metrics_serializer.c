@@ -108,9 +108,5 @@ bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *stora
   const bool success = memfault_serializer_helper_encode_to_storage(
       &state.encoder, storage_impl, prv_encode_cb, &state);
 
-  if (!success) {
-    MEMFAULT_LOG_ERROR("%s storage out of space", __func__);
-  }
-
   return success;
 }

@@ -78,6 +78,10 @@ extern sMfltHttpClientConfig g_mflt_http_client_config;
     (g_mflt_http_client_config.device_api.port ? g_mflt_http_client_config.device_api.port : \
                                                  MEMFAULT_HTTP_APIS_DEFAULT_PORT)
 
+//! Returns the "scheme" part of the URI based on client configuration
+#define MEMFAULT_HTTP_GET_SCHEME() \
+  (g_mflt_http_client_config.disable_tls ? "http" : "https")
+
 //! Forward declaration of a HTTP client.
 typedef struct MfltHttpClient sMfltHttpClient;
 

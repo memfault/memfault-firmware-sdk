@@ -7,7 +7,7 @@
 //!
 //! @brief
 //! Internal helper functions that are used when serializing Memfault Event based data
-//! A user of the sdk should never have to call these routines directly
+//! A user of the sdk should never have to call these routines directly.
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -57,6 +57,11 @@ size_t memfault_serializer_helper_compute_size(
 
 bool memfault_serializer_helper_check_storage_size(
     const sMemfaultEventStorageImpl *storage_impl, size_t (compute_worst_case_size)(void), const char *event_type);
+
+//! Return the number of events that were dropped since last call
+//!
+//! @note Calling this function resets the counters.
+uint32_t memfault_serializer_helper_read_drop_count(void);
 
 #ifdef __cplusplus
 }

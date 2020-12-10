@@ -8,6 +8,8 @@
 
 #include "memfault/core/serializer_helper.h"
 
+#include <inttypes.h>
+
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage_implementation.h"
@@ -30,6 +32,12 @@ typedef struct MemfaultSerializerOptions {
   //   MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL=0
   bool encode_device_serial;
 } sMemfaultSerializerOptions;
+
+//! The number of messages dropped since the last succesful send
+static uint32_t s_num_storage_drops = 0;
+//! A running sum of total messages dropped since memfault_serializer_helper_read_drop_count() was
+//! last called
+static uint32_t s_last_drop_count = 0;
 
 static const sMemfaultSerializerOptions s_memfault_serializer_options = {
   .encode_device_serial = (MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL != 0),
@@ -188,7 +196,27 @@ bool memfault_serializer_helper_encode_to_storage(sMemfaultCborEncoder *encoder,
   }
   const bool rollback = !success;
   storage_impl->finish_write_cb(rollback);
+
+  if (!success) {
+    if (s_num_storage_drops == 0) {
+      MEMFAULT_LOG_ERROR("Event storage full");
+    }
+    s_num_storage_drops++;
+  } else if (s_num_storage_drops != 0) {
+    MEMFAULT_LOG_INFO("Event saved successfully after %d drops",
+                      (int)s_num_storage_drops);
+    s_last_drop_count += s_num_storage_drops;
+    s_num_storage_drops = 0;
+  }
+
   return success;
+}
+
+uint32_t memfault_serializer_helper_read_drop_count(void) {
+  const uint32_t drop_count = s_last_drop_count + s_num_storage_drops;
+  s_last_drop_count = 0;
+  s_num_storage_drops = 0;
+  return drop_count;
 }
 
 size_t memfault_serializer_helper_compute_size(sMemfaultCborEncoder *encoder,
