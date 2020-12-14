@@ -1,16 +1,15 @@
 # Memfault Demo App
 
-A modified version of the Zephyr "Hello World" extended to include a Memfault
-Integration.
+A modified version of the the samples/nrf9160/https_client in the nRF Connect
+SDK which includes a Memfault Integration!
 
 ## Setup
 
-```bash
-$ west init -l memfault_demo_app
-$ west update
-$ cd zephyr
-$ git apply ../modules/memfault-firmware-sdk/ports/nrf-connect-sdk/zephyr/01-v1.3.0-full-esf.patch
-```
+An API key will need to be baked into the demo app to enable it to communicate
+with Memfault's web services. Go to https://app.memfault.com/, navigate to the
+project you want to use and select 'Settings'. Copy the 'Project API Key' and
+paste it into [`src/main.c`](src/main.c), replacing `<YOUR API KEY HERE>` with
+your API key.
 
 ## Compiling
 
@@ -18,7 +17,9 @@ You can compile for any board supported by the nRF Connect SDK. For example,
 targetting the nRF52 PDK would look like:
 
 ```bash
-$ west build  -b nrf52840dk_nrf52840 memfault_demo_app
+$ west init -l memfault_demo_app
+$ west update
+$ west  build  -b nrf9160dk_nrf9160ns memfault_demo_app
 ...
 [181/181] Linking C executable zephyr/zephyr.elf
 ```
@@ -38,6 +39,7 @@ Subcommands:
                     https://mflt.io/chunk-data-export
   trace            :Capture an example trace event
   get_device_info  :display device information
+  post_chunks      :Post Memfault data to cloud
 ```
 
 ## Adding the Memfault SDK to your Project

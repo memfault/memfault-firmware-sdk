@@ -482,7 +482,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         base_addrs = map(lambda section: section.addr & 0xE0000000, capturable_elf_sections)
         filtered_addrs = set(filter(_is_ram, base_addrs))
         # Capture up to 1MB for each region
-        return [(addr, capture_size,) for addr in filtered_addrs]
+        return [(addr, capture_size) for addr in filtered_addrs]
 
     def get_current_registers(self, gdb_thread, analytics_props):
         gdb_thread.switch()

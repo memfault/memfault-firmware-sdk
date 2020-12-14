@@ -13,6 +13,7 @@
 #include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/nrfconnect_port/http.h"
 
 static int prv_clear_core_cmd(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_clear_core(argc, argv);
@@ -47,6 +48,16 @@ static int prv_example_trace_event_capture(const struct shell *shell, size_t arg
   return 0;
 }
 
+static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
+  // For more information on user-defined error reasons, see
+  // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
+#if defined(CONFIG_MEMFAULT_SHELL)
+  return memfault_nrfconnect_port_post_data();
+#else
+  return 0;
+#endif
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_memfault_cmds,
     SHELL_CMD(get_core, NULL, "gets the core", prv_get_core_cmd),
@@ -55,6 +66,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(export_data, NULL, "dump chunks collected by Memfault SDK using https://mflt.io/chunk-data-export", prv_chunk_data_export),
     SHELL_CMD(trace, NULL, "Capture an example trace event", prv_example_trace_event_capture),
     SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
+    SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

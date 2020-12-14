@@ -21,7 +21,7 @@
 
 // By default, the Zephyr NMI handler is an infinite loop. Instead
 // let's register the Memfault Exception Handler
-static int prv_install_nmi_handler(struct device *dev) {
+static int prv_install_nmi_handler(const struct device *dev) {
   extern void z_NmiHandlerSet(void (*pHandler)(void));
   z_NmiHandlerSet(MEMFAULT_EXC_HANDLER_NMI);
   return 0;
@@ -37,20 +37,25 @@ extern void sys_arch_reboot(int type);
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
+  const struct __extra_esf_info *extra_info = &esf->extra_info;
+  const _callee_saved_t *callee_regs = extra_info->callee;
+
+  const uint32_t exc_return = extra_info->exc_return;
+  const bool msp_was_active = (exc_return & (1 << 3)) == 0;
+
   sMfltRegState reg = {
-    .exception_frame = (void *)esf->exception_frame,
-    .r4 = esf->callee_regs->r4,
-    .r5 = esf->callee_regs->r5,
-    .r6 = esf->callee_regs->r6,
-    .r7 = esf->callee_regs->r7,
-    .r8 = esf->callee_regs->r8,
-    .r9 = esf->callee_regs->r9,
-    .r10 = esf->callee_regs->r10,
-    .r11 = esf->callee_regs->r11,
-    .exc_return = esf->callee_regs->exc_return,
+    .exception_frame = (void *)(msp_was_active ? extra_info->msp : callee_regs->psp),
+    .r4 = callee_regs->v1,
+    .r5 = callee_regs->v2,
+    .r6 = callee_regs->v3,
+    .r7 = callee_regs->v4,
+    .r8 = callee_regs->v5,
+    .r9 = callee_regs->v6,
+    .r10 = callee_regs->v7,
+    .r11 = callee_regs->v8,
+    .exc_return = exc_return ,
   };
   memfault_fault_handler(&reg, kMfltRebootReason_HardFault);
-
 }
 
 MEMFAULT_WEAK

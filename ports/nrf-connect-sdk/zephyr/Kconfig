@@ -3,6 +3,8 @@ config MEMFAULT
         default y
         depends on CPU_CORTEX_M
         select RUNTIME_NMI
+        select EXTRA_EXCEPTION_INFO
+        select OPENOCD_SUPPORT
         help
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets
@@ -13,9 +15,43 @@ config MEMFAULT_RAM_BACKED_COREDUMP
         help
           Save a minimal coredump in RAM.
 
+config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
+        int "MEMFAULT Ram Backed Coredump"
+        default 8192
+        depends on MEMFAULT_RAM_BACKED_COREDUMP
+        help
+          Save a minimal coredump in RAM.
+
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"
         default y if MEMFAULT
         select SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
+
+config MEMFAULT_HTTP_ENABLE
+        bool "MEMFAULT Http Enable"
+        default y if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
+        help
+          Adds support for querying the Memfault API for OTA updates
+          and posting Memfault chunks
+
+config MEMFAULT_EVENT_STORAGE_SIZE
+       int "Memfault Event Storage RAM Buffer Size"
+       default 1024
+       help
+        The storage area used to batch memfault events before they are flushed
+        to persistent storage or the Memfault Cloud.
+
+config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
+       int "Maximum amount of bytes to collect for task"
+       default 256
+       help
+        The larger the size, the more stack frames Memfault can recover for tasks. The
+        default setting typically allows for 4 or more frames to be recovered.
+
+config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
+       int "Maximum amount of tasks to collect in a coredump"
+       default 16
+       help
+        The maximum amount of tasks Memfault will store state for in a coredump.

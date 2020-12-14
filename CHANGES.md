@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 0.9.3 and SDK 0.9.2 - Dec 14, 2020
+
+#### :chart_with_upwards_trend: Improvements
+
+- nRF Connect Upates:
+
+  - Updated port to support
+    [nRF Connect SDK v1.4.0](https://github.com/nrfconnect/sdk-nrf/tree/v1.4-branch)
+  - Added port of HTTP client to post data to Memfault
+  - Added support for capturing state of all Zephyr tasks during a crash. This
+    way the state of all threads can be seen in the Memfault UI when a crash is
+    uploaded.
+  - Updated
+    [memfault_demo_app](platforms/nrf-connect-sdk/nrf9160/memfault_demo_app) to
+    use the nRF9160-DK
+  - Added notes to the
+    [step-by-step integration guide](https://mflt.io/nrf-connect-sdk-integration-guide)
+    for the nRF9160.
+
 ### Changes between Memfault SDK 0.9.2 and SDK 0.9.1 - Dec 10, 2020
 
 #### :chart_with_upwards_trend: Improvements

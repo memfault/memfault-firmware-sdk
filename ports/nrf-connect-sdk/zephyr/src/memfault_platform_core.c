@@ -2,6 +2,7 @@
 //!
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
+//!
 
 #include "memfault/core/platform/core.h"
 
@@ -14,17 +15,13 @@
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
 
-#if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
-#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 1024
-#endif
-
 // On boot-up, log out any information collected as to why the
 // reset took place
 
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
-static int prv_init_and_log_reboot(struct device *dev) {
+static int prv_init_and_log_reboot(const struct device *dev) {
   memfault_reboot_tracking_boot(s_reboot_tracking, NULL);
 
   static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];

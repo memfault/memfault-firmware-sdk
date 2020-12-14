@@ -8,7 +8,7 @@ import os
 from invoke import task
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NRFCONNECT_ROOT = os.path.join(SDK_FW_ROOT, "platforms", "nrf-connect-sdk")
+NRFCONNECT_ROOT = os.path.join(SDK_FW_ROOT, "platforms", "nrf-connect-sdk", "nrf9160")
 NRFCONNECT_DEMO_APP_ROOT = os.path.join(NRFCONNECT_ROOT, "memfault_demo_app")
 
 CI_MEMFAULT_SDK_REPO_ROOT = os.path.join(SDK_FW_ROOT, "build", "release-repo")

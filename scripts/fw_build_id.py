@@ -211,7 +211,7 @@ class BuildIdInspectorAndPatcher:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("elf", action="store")
     args = parser.parse_args()
