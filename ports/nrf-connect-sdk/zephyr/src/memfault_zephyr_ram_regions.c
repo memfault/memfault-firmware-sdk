@@ -78,7 +78,7 @@ size_t memfault_nrfconnect_get_task_regions(sMfltCoredumpRegion *regions, size_t
 
   // First we will try to store all the task TCBs. This way if we run out of space
   // while storing tasks we will still be able to recover the state of all the threads
-  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs); i++) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs) && region_idx < num_regions; i++) {
     struct k_thread *thread = s_task_tcbs[i];
     if (thread == EMPTY_SLOT) {
       continue;
@@ -99,7 +99,7 @@ size_t memfault_nrfconnect_get_task_regions(sMfltCoredumpRegion *regions, size_t
 
   // Now we store the region of the stack where context is saved. This way
   // we can unwind the stacks for threads that are not actively running
-  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs); i++) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs) && region_idx < num_regions; i++) {
     struct k_thread *thread = s_task_tcbs[i];
     if (thread == EMPTY_SLOT) {
       continue;

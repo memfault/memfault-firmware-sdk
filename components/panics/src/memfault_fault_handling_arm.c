@@ -6,11 +6,14 @@
 //! @brief
 //! Fault handling for Cortex M based devices
 
+#include "memfault/core/compiler.h"
+
+#if MEMFAULT_COMPILER_ARM
+
 #include "memfault/panics/fault_handling.h"
 
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
-#include "memfault/core/compiler.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
@@ -99,7 +102,13 @@ static uint32_t prv_read_msp_reg(void) {
 #  error "New compiler to add support for!"
 #endif
 
+MEMFAULT_WEAK
+void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
+}
+
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
+  memfault_platform_fault_handler(regs, reason);
+
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
       .pc = regs->exception_frame->pc,
@@ -108,7 +117,6 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     memfault_reboot_tracking_mark_reset_imminent(reason, &info);
     s_crash_reason = reason;
   }
-
 
   const bool fpu_stack_space_rsvd = ((regs->exc_return & (1 << 4)) == 0);
   const bool stack_alignment_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
@@ -262,7 +270,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  ldr r0, =0x8002 // kMfltRebootReason_Watchdog
+  ldr r0, =0x8007 // kMfltRebootReason_SoftwareWatchdog
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
@@ -317,7 +325,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  __asm(" mov r0, #0x8002 \n" // kMfltRebootReason_Watchdog
+  __asm(" mov r0, #0x8007 \n" // kMfltRebootReason_SoftwareWatchdog
         " b memfault_fault_handling_shim \n");
 }
 
@@ -393,7 +401,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Watchdog);
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
 }
 
 #elif defined(__ICCARM__)
@@ -476,7 +484,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Watchdog);
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
 }
 
 #else
@@ -532,3 +540,5 @@ void memfault_fault_handling_assert(void *pc, void *lr, MEMFAULT_UNUSED uint32_t
   // we do the best thing that can be done is rebooting the system to recover it.
   memfault_platform_reboot();
 }
+
+#endif /* MEMFAULT_COMPILER_ARM */

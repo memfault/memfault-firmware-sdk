@@ -11,7 +11,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
-#include "memfault/panics/arch/xtensa/esp32.h"
+#include "memfault/panics/arch/xtensa/xtensa.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
 

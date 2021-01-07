@@ -10,7 +10,7 @@
 
 #include "esp_core_dump.h"
 #include "freertos/xtensa_api.h"
-#include "memfault/panics/arch/xtensa/esp32.h"
+#include "memfault/panics/arch/xtensa/xtensa.h"
 #include "memfault/panics/coredump.h"
 
 #ifndef ESP_PLATFORM

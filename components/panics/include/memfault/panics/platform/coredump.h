@@ -60,7 +60,7 @@ typedef struct CoredumpCrashInfo {
   //! Definitions for "struct MfltRegstate" are architecture dependent and
   //! can be found at:
   //!   memfault/panics/arch/arm/cortex_m.h
-  //!   memfault/panics/arch/xtensa/esp32.h
+  //!   memfault/panics/arch/xtensa/xtensa.h
   //!   etc
   const sMfltRegState *exception_reg_state;
 } sCoredumpCrashInfo;

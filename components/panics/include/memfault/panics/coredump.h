@@ -44,6 +44,14 @@ bool memfault_coredump_save(const sMemfaultCoredumpSaveInfo *save_info);
 //! @param reason The reason the fault occurred
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason);
 
+//! First function called in "memfault_fault_handler".
+//!
+//! This routine exists so an end user can optionally extend the fault handler logic
+//! or print metadata about the fault which occurred
+//!
+//! @note By default this is a weak function which behaves as a no-op.
+extern void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason);
+
 //! Checks that a coredump can fit in the platform storage allocated
 //!
 //! @return true if the check passes & false otherwise. On failure, an error message
@@ -65,6 +73,33 @@ size_t memfault_coredump_storage_compute_size_required(void);
 //! in bytes has been written to the variable.
 //! @return true when a valid coredump is present in the storage.
 bool memfault_coredump_has_valid_coredump(size_t *total_size_out);
+
+//
+// Integration utilities
+//
+// We recommend using these to verify the integration of coredump storage. They are not intended
+// to be included in release builds.
+//
+
+//! Runs tests on platform's coredump storage implementation to verify functionality
+//!
+//! @note Since coredumps are saved from an interrupt context, we recommend calling
+//!  this test routine from an ISR or with interrupts disabled.
+//! @note This routine records errors which will be dumped in
+//!  memfault_coredump_storage_debug_test_finish() but does not do any logging itself since it
+//!  runs from an ISR.
+//!
+//! @return true if checks passed, false otherwise.
+bool memfault_coredump_storage_debug_test_begin(void);
+
+//! Finishes platform coredump storage test and dumps info about any errors that occurred
+//!
+//! @note This function tests memfault_platform_coredump_storage_clear() which gets called
+//! while the system is running.
+//!
+//! @return if the entire storage test was succesful. On error, information is dumped
+//!  to the CLI for further debug.
+bool memfault_coredump_storage_debug_test_finish(void);
 
 #ifdef __cplusplus
 }

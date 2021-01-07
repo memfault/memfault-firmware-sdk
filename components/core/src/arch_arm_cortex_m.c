@@ -9,6 +9,8 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/core.h"
 
+#if MEMFAULT_COMPILER_ARM
+
 bool memfault_arch_is_inside_isr(void) {
   // We query the "Interrupt Control State Register" to determine
   // if there is an active Exception Handler
@@ -32,3 +34,5 @@ void memfault_platform_halt_if_debugging(void) {
   // be used by the system.
   MEMFAULT_BREAKPOINT(77);
 }
+
+#endif /* MEMFAULT_COMPILER_ARM */

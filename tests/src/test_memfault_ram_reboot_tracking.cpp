@@ -103,13 +103,13 @@ TEST(MfltStorageTestGroup, Test_RebootSequence) {
   size_t crash_count = memfault_reboot_tracking_get_crash_count();
   LONGS_EQUAL(0, crash_count);
   // 1. Watchdog Reboot - Confirm we get a Watchdog and then no more info
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_Watchdog, NULL);
+  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_SoftwareWatchdog, NULL);
   memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, NULL);
 
   sMfltResetReasonInfo info;
   bool info_available = memfault_reboot_tracking_read_reset_info(&info);
   CHECK(info_available);
-  LONGS_EQUAL(kMfltRebootReason_Watchdog, info.reason);
+  LONGS_EQUAL(kMfltRebootReason_SoftwareWatchdog, info.reason);
   memfault_reboot_tracking_clear_reset_info();
   info_available = memfault_reboot_tracking_read_reset_info(&info);
   CHECK(!info_available);

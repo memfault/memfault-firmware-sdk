@@ -21,6 +21,14 @@ extern "C" {
 // (i.e MEMFAULT_STATIC_STRLEN("abcd") == 4)
 #define MEMFAULT_STATIC_STRLEN(s) (sizeof(s) - 1)
 
+// A convenience macro that can be checked to see if the current compiler being used targets an
+// ARM-based architecture
+#if defined(__arm__) || defined(__ICCARM__) || defined(__TI_ARM__)
+#define MEMFAULT_COMPILER_ARM 1
+#else
+#define MEMFAULT_COMPILER_ARM 0
+#endif
+
 //
 // Pick up compiler specific macro definitions
 //

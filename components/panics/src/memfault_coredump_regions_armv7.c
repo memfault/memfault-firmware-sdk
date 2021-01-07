@@ -9,6 +9,9 @@
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
+
+#if MEMFAULT_COMPILER_ARM
+
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
@@ -143,3 +146,5 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
   *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
   return &s_coredump_regions[0];
 }
+
+#endif /* MEMFAULT_COMPILER_ARM */

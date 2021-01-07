@@ -74,8 +74,9 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-reserved-id-macro \
   -Wno-shorten-64-to-32 \
   -Wno-vla-extension \
-  -Wno-zero-as-null-pointer-constant
-
+  -Wno-zero-as-null-pointer-constant \
+  -Wno-unknown-warning-option \
+  -Wno-poison-system-directories
 else
 
 # GCC-only warnings

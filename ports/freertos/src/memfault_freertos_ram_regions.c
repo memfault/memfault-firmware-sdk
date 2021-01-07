@@ -133,7 +133,9 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
 
   size_t region_idx = 0;
 
-  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs); i++) {
+  // First we will try to store all the task TCBs. This way if we run out of space
+  // while storing tasks we will still be able to recover the state of all the threads
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs) && region_idx < num_regions; i++) {
     void *tcb_address = s_task_tcbs[i];
     if (tcb_address == EMPTY_SLOT) {
       continue;
@@ -142,14 +144,22 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
     const size_t tcb_size = memfault_platform_sanitize_address_range(
         tcb_address, sizeof(StaticTask_t));
     if (tcb_size == 0) {
+      // An invalid address, scrub the TCB from the list so we don't try to dereference
+      // it when grabbing stacks below and move on.
+      s_task_tcbs[i] = EMPTY_SLOT;
       continue;
     }
 
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(tcb_address, tcb_size);
     region_idx++;
+  }
 
-    if (region_idx == num_regions) {
-      return region_idx;
+  // Now we store the region of the stack where context is saved. This way
+  // we can unwind the stacks for threads that are not actively running
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs) && region_idx < num_regions; i++) {
+    void *tcb_address = s_task_tcbs[i];
+    if (tcb_address == EMPTY_SLOT) {
+      continue;
     }
 
     // pxTopOfStack is always the first entry in the FreeRTOS TCB

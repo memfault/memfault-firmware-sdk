@@ -84,7 +84,7 @@ static void prv_record_reboot_reason(void) {
     case ESP_RST_INT_WDT:
     case ESP_RST_TASK_WDT:
     case ESP_RST_WDT:
-      reboot_reason = kMfltRebootReason_Watchdog;
+      reboot_reason = kMfltRebootReason_HardwareWatchdog;
       break;
     case ESP_RST_DEEPSLEEP:
       reboot_reason = kMfltRebootReason_DeepSleep;

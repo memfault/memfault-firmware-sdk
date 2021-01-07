@@ -59,12 +59,24 @@ typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
   uint32_t reason;
 } sMfltTraceReasonBlock;
 
-// Using ELF machine enum values:
-// https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch4.eheader.html
+// Using ELF machine enum values which is a half word:
+//  https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch4.eheader.html
+//
+// NB: We use the upper 16 bits of the MachineType TLV pair in the coredump to
+// encode additional metadata about the architecture being targetted
+
+#define MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET 16
+
+#define MEMFAULT_MACHINE_TYPE_XTENSA 94
+
+#define MEMFAULT_MACHINE_TYPE_XTENSA_LX106 \
+  (1 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_XTENSA
+
 typedef enum MfltCoredumpMachineType  {
   kMfltCoredumpMachineType_None = 0,
   kMfltCoredumpMachineType_ARM = 40,
-  kMfltCoredumpMachineType_Xtensa = 94,
+  kMfltCoredumpMachineType_Xtensa = MEMFAULT_MACHINE_TYPE_XTENSA,
+  kMfltCoredumpMachineType_XtensaLx106 =  MEMFAULT_MACHINE_TYPE_XTENSA_LX106
 } eMfltCoredumpMachineType;
 
 typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
@@ -176,10 +188,14 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #if defined(MEMFAULT_UNITTEST)
   return kMfltCoredumpMachineType_None;
 #else
-#  if defined(__arm__) || defined(__ICCARM__) || defined(__TI_ARM__)
+#  if MEMFAULT_COMPILER_ARM
   return kMfltCoredumpMachineType_ARM;
 #  elif defined(__XTENSA__)
-  return kMfltCoredumpMachineType_Xtensa;
+  # if defined(__XTENSA_WINDOWED_ABI__)
+    return kMfltCoredumpMachineType_Xtensa;
+  # else
+    return kMfltCoredumpMachineType_XtensaLx106;
+  # endif
 #  else
 #    error "Coredumps are not supported for target architecture"
 #  endif

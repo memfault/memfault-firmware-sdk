@@ -1,3 +1,48 @@
+### Changes between Memfault SDK 0.10.0 and SDK 0.9.2 - Jan 5, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Updated
+  [`memfault_freertos_ram_regions.c`](ports/freertos/src/memfault_freertos_ram_regions.c)
+  port to collect all TCBs and then stacks. This way, the state of all tasks can
+  be recovered even if the coredump storage regin is filled while writing all
+  the task stacks.
+- Reference platform API implementations for the following MCUs/SDKs:
+  - STM32F4 family / STM32CubeF4
+    - [internal flash coredump storage](ports/stm32cube/f4/flash_coredump_storage.c)
+  - STM32L4 family / STM32CubeL4
+    - [internal flash coredump storage](ports/stm32cube/l4/flash_coredump_storage.c)
+  - NXP's S32K1xx family / S32K1 SDL
+    - [internal flash coredump storage using FTFC peripheral](ports/s32sdk/ftfc_flash_coredump_storage.c)
+    - [software watchdog implementation using LPIT peripheral](ports/s32sdk/lpit_software_watchdog.c)
+    - [rich reboot reason info derived from RCM SRS register](ports/s32sdk/rcm_reboot_tracking.c)
+  - Silicon Lab's EFM/EFR family / v3.0 Gecko SDK
+    - [internal flash coredump storage using MSC peripheral h](ports/emlib/msc_coredump_storage.c)
+    - [software watchdog implementation using warning interrupt in WDOG peripheral](ports/emlib/wdog_software_watchdog.c)
+    - [reboot reason info derived from RMU RSTCAUSE register](ports/emlib/rmu_reboot_tracking.c)
+
+#### :rocket: New Features
+
+- Added several more
+  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
+  - `kMfltRebootReason_PinReset` for explicitly tracking external pin resets.
+  - `kMfltRebootReason_SoftwareWatchdog` & `kMfltRebootReason_HardwareWatchdog`
+    for easier disambiguation between watchdog resets where a coredump was
+    captured versus ones where no software handler ran and hardware reset the
+    device.
+  - `kMfltRebootReason_ClockFailure` for explicit tracking of resets due to loss
+    of a clock signal or PLL lock.
+  - `kMfltRebootReason_Lockup` for explicit tracking of faults from within the
+    Hardfault or NMI exceptions on ARM Cortex-M MCUs.
+- Added a utility which can be used to verify a platform coredump storage
+  implementation is working as corrected. For more details about how to use, see
+  [memfault_coredump_storage_debug.c](components/panics/src/memfault_coredump_storage_debug.c#L1).
+
+#### :house: Internal
+
+- Added infrastructure to coredump collection in `panics` component to support
+  ESP8266 (Tensilica Xtensa LX106) MCU architecture.
+
 ### Changes between Memfault SDK 0.9.3 and SDK 0.9.2 - Dec 14, 2020
 
 #### :chart_with_upwards_trend: Improvements
@@ -129,7 +174,7 @@ void record_temperature(void) {
 #### :chart_with_upwards_trend: Improvements
 
 - Added several more
-  [reboot reason options](components/panics/include/memfault/core/reboot_reason_types.h#L16):
+  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
   `kMfltRebootReason_SoftwareReset` & `kMfltRebootReason_DeepSleep`.
 - Extended [ESP32 port](https://mflt.io/esp-tutorial) to include integrations
   for [reboot reason tracking](https://mflt.io/reboot-reasons) and
@@ -194,7 +239,7 @@ void record_temperature(void) {
   paths within the SDK and leaves the NMI Handler free for other uses within the
   user's environment.
 - Added several more
-  [reboot reason options](components/panics/include/memfault/core/reboot_reason_types.h#L16):
+  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
   `kMfltRebootReason_PowerOnReset`, `kMfltRebootReason_BrownOutReset`, &
   `kMfltRebootReason_Nmi`.
 
@@ -477,7 +522,7 @@ void record_temperature(void) {
 - A reboot reason event will now _always_ be generated when
   `memfault_reboot_tracking_boot()` is called even if no information about the
   reboot has been provided. In this scenario, the reset reason will be
-  [`kMfltRebootReason_Unknown`](components/panics/include/memfault/core/reboot_reason_types.h#L16)
+  [`kMfltRebootReason_Unknown`](components/core/include/memfault/core/reboot_reason_types.h#L16)
 
 #### :house: Internal
 
