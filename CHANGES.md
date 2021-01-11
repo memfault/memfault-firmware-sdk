@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 0.10.1 and SDK 0.10.0 - Jan 10, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Reference platform API implementations for the following MCUs/SDKs:
+  - STM32F4 family / STM32CubeF4:
+    - [rich reboot reason info derived from RCC CSR register](ports/stm32cube/f4/rcc_reboot_tracking.c)
+  - STM32L4 family / STM32CubeL4
+    - [rich reboot reason info derived from RCM SRS register](ports/stm32cube/l4/rcc_reboot_tracking.c)
+  - nRF Connect SDK
+    - [rich reboot reason info derived from PMU RESETREAS register](ports/nrf-connect-sdk/nrfx/pmu_reboot_tracking.c)
+    - refactored HTTP port to support multiple backing storage strategies for
+      root certificates. See
+      [`MEMFAULT_ROOT_CERT_STORAGE_*`](ports/nrf-connect-sdk/zephyr/Kconfig)
+      Kconfig options for more details
+    - Added support for Memfault OTA downloads. See
+      [memfault_nrfconnect_port_ota_update()](ports/nrf-connect-sdk/zephyr/include/memfault/nrfconnect_port/http.h)
+      for more details
+
 ### Changes between Memfault SDK 0.10.0 and SDK 0.9.2 - Jan 5, 2021
 
 #### :chart_with_upwards_trend: Improvements
@@ -47,7 +66,7 @@
 
 #### :chart_with_upwards_trend: Improvements
 
-- nRF Connect Upates:
+- nRF Connect Updates:
 
   - Updated port to support
     [nRF Connect SDK v1.4.0](https://github.com/nrfconnect/sdk-nrf/tree/v1.4-branch)

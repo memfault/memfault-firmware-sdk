@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#if defined(__arm__) || defined(__TI_ARM__)
+#if MEMFAULT_COMPILER_ARM
 
 // By default, exception handlers use CMSIS naming conventions. By default, the CMSIS library
 // provides a weak implementation for each handler that is implemented as an infinite loop. By

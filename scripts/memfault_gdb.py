@@ -751,8 +751,7 @@ def read_memory_until_error(inferior, start, size, read_size=4 * 1024):
             data += bytes(inferior.read_memory(addr, min(read_size, end - addr)))
     except Exception as e:  # Catch gdbserver read exceptions -- not sure what exception classes can get raised here
         print(e)
-    finally:
-        return data
+    return data
 
 
 def _create_http_connection(base_uri):
@@ -1459,15 +1458,16 @@ Proceed? [y/n]
         # print("Note: for correct results, do not switch threads!")
         try:
             thread = gdb.selected_thread()
-        except Exception:  # noqa
+        except SystemError as e:
             # Exception can be raised if selected thread has dissappeared in the mean time
             # SystemError: could not find gdb thread object
+            print(e)
             thread = None
-        finally:
-            if not thread:
-                print("Did not find any threads!?")
-                analytics_props["error"] = "Failed to activate thread"
-                return None, None
+
+        if not thread:
+            print("Did not find any threads!?")
+            analytics_props["error"] = "Failed to activate thread"
+            return None, None
 
         info_sections_output = gdb.execute("maintenance info sections", to_string=True)
         elf_fn, sections = parse_maintenance_info_sections(info_sections_output)

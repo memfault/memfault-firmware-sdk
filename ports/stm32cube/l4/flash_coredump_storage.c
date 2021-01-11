@@ -165,7 +165,7 @@ void memfault_platform_coredump_storage_clear(void) {
         FLASH_TYPEPROGRAM_DOUBLEWORD, MEMFAULT_COREDUMP_STORAGE_START_ADDR, clear_val);
 
     if (res != HAL_OK) {
-      MEMFAULT_LOG_ERROR("Could not clear coredump storage, 0x%" PRIx32, (int)res);
+      MEMFAULT_LOG_ERROR("Could not clear coredump storage, 0x%" PRIx32, res);
     }
   }
   HAL_FLASH_Lock();

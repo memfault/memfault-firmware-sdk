@@ -42,13 +42,6 @@ extern uint32_t __MemfaultCoreStorageEnd[];
 #define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
-#ifndef MEMFAULT_COREDUMP_STORAGE_FLASH_SECTOR_NUMBER
-//! The sector number to write to. This ID can be found in the "Embedded Flash memory"
-//! section of the reference manual for the STM32 family
-extern uint32_t __MemfaultCoreStorageSectorNumber[];
-#define MEMFAULT_COREDUMP_STORAGE_FLASH_SECTOR_NUMBER ((uint32_t)__MemfaultCoreStorageSectorNumber)
-#endif
-
 // Error writing to flash - should never happen & likely detects a configuration error
 // Call the reboot handler which will halt the device if a debugger is attached and then reboot
 MEMFAULT_NO_OPT

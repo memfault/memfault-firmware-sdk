@@ -1,6 +1,8 @@
 if(CONFIG_MEMFAULT)
 
   set(MEMFAULT_SDK_ROOT ../../..)
+  set(MEMFAULT_SDK_PORT_ROOT ${MEMFAULT_SDK_ROOT}/ports)
+  set(MEMFAULT_SDK_NRFX_PORT_ROOT ${MEMFAULT_SDK_PORT_ROOT}/nrf-connect-sdk/nrfx)
 
   # Collect Memfault SDK dependencies
   list(APPEND MEMFAULT_COMPONENTS core util panics demo)
@@ -17,7 +19,14 @@ if(CONFIG_MEMFAULT)
   zephyr_interface_library_named(memfault)
   zephyr_library()
   zephyr_library_sources(${MEMFAULT_COMPONENTS_SRCS})
-  zephyr_include_directories(${MEMFAULT_COMPONENTS_INC_FOLDERS} include)
+  zephyr_include_directories(
+    ${MEMFAULT_COMPONENTS_INC_FOLDERS}
+    ${MEMFAULT_SDK_PORT_ROOT}/include
+    include
+  )
+
+  zephyr_library_sources_ifdef(CONFIG_MEMFAULT_DEFAULT_REBOOT_REASON_IMPL
+    ${MEMFAULT_SDK_NRFX_PORT_ROOT}/pmu_reboot_tracking.c)
 
   # Pick up Zephyr specific port files
   add_subdirectory(src)

@@ -14,6 +14,7 @@
 #include "memfault/core/event_storage.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/ports/reboot_reason.h"
 
 // On boot-up, log out any information collected as to why the
 // reset took place
@@ -22,7 +23,10 @@ MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 static int prv_init_and_log_reboot(const struct device *dev) {
-  memfault_reboot_tracking_boot(s_reboot_tracking, NULL);
+  sResetBootupInfo reset_info = { 0 };
+  memfault_reboot_reason_get(&reset_info);
+
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
   static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
   const sMemfaultEventStorageImpl *evt_storage =

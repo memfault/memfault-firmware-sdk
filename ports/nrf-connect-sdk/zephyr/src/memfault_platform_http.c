@@ -5,6 +5,7 @@
 //!
 
 #include "memfault/nrfconnect_port/http.h"
+#include "memfault/nrfconnect_port/root_cert_storage.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -13,11 +14,12 @@
 
 #include <init.h>
 #include <kernel.h>
-#include <modem/modem_key_mgmt.h>
+
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 #include <zephyr.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
@@ -26,22 +28,44 @@
 #include "memfault/http/utils.h"
 #include "memfault/panics/assert.h"
 
-typedef enum {
-  // arbitrarily high base so as not to conflict with id used for other certs in use by the system
-  kMemfaultRootCert_Base = 1000,
-  kMemfaultRootCert_DstCaX3,
-  kMemfaultRootCert_DigicertRootCa,
-  kMemfaultRootCert_DigicertRootG2,
-  kMemfaultRootCert_CyberTrustRoot,
-  kMemfaultRootCert_AmazonRootCa1,
-  // Must be last, used to track number of root certs in use
-  kMemfaultRootCert_MaxIndex,
-} eMemfaultRootCert;
+#if CONFIG_MBEDTLS
+
+// Sanity check that SNI extension is enabled when using Mbed TLS since as of 2.4 Zephyr doesn't
+// enable it by default
+
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "mbedtls/config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
+
+#if !defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+#error "MBEDTLS_SSL_SERVER_NAME_INDICATION must be enabled for Memfault HTTPS. This can be done with CONFIG_MBEDTLS_USER_CONFIG_ENABLE/FILE"
+#endif
+
+#endif /* CONFIG_MBEDTLS */
+
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+static void *prv_calloc(size_t count, size_t size) {
+  return calloc(count, size);
+}
+
+static void prv_free(void *ptr) {
+  free(ptr);
+}
+#elif CONFIG_HEAP_MEM_POOL_SIZE > 0
+static void *prv_calloc(size_t count, size_t size) {
+  return k_calloc(count, size);
+}
+
+static void prv_free(void *ptr) {
+  k_free(ptr);
+}
+#else
+#error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
+#endif
 
 static bool prv_install_cert(eMemfaultRootCert cert_id) {
-  bool exists;
-  uint8_t unused;
-
   const char *cert;
   size_t cert_len;
 
@@ -72,25 +96,7 @@ static bool prv_install_cert(eMemfaultRootCert cert_id) {
       return -1;
   }
 
-  int err = modem_key_mgmt_exists(cert_id,
-                              MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
-                              &exists, &unused);
-  if (err != 0) {
-    MEMFAULT_LOG_ERROR("Failed to install cert %d, rv=%d\n", cert_id, err);
-    return err;
-  }
-
-  if (exists) {
-    return 0;
-  }
-
-  MEMFAULT_LOG_INFO("Installing Root CA %d", cert_id);
-  err = modem_key_mgmt_write(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
-                             cert, cert_len);
-  if (err != 0) {
-    MEMFAULT_LOG_ERROR("Failed to provision certificate, err %d\n", err);
-  }
-  return err;
+  return memfault_root_cert_storage_add(cert_id, cert, cert_len);
 }
 
 int memfault_nrfconnect_port_install_root_certs(void) {
@@ -327,4 +333,218 @@ int memfault_nrfconnect_port_post_data(void) {
 cleanup:
   freeaddrinfo(res);
   return rv;
+}
+
+static bool prv_wait_for_http_response_header(int sock_fd, sMemfaultHttpResponseContext *ctx,
+                                              void *buf, size_t *buf_len) {
+  const size_t orig_buf_len = *buf_len;
+  size_t bytes_read;
+
+  while (1) {
+    bytes_read = orig_buf_len;
+    if (!prv_read_socket_data(sock_fd, buf, &bytes_read)) {
+      return false;
+    }
+
+    const bool done = memfault_http_parse_response_header(ctx, buf, bytes_read);
+    if (done) {
+      break;
+    }
+  }
+
+  if (ctx->parse_error != kMfltHttpParseStatus_Ok) {
+    MEMFAULT_LOG_ERROR("Failed to parse response: Parse Status %d", (int)ctx->parse_error);
+    return false;
+  }
+
+  // Move unprocessed message-body bytes to the beginning of the working buf
+  // and update buf_len with the number of read bytes
+  const size_t message_body_bytes = bytes_read - ctx->data_bytes_processed;
+  if (message_body_bytes != 0) {
+    const void *message_body_bufp = &((uint8_t *)buf)[ctx->data_bytes_processed];
+    memmove(buf, message_body_bufp, message_body_bytes);
+  }
+  *buf_len = message_body_bytes;
+
+  if (ctx->http_status_code >= 400) {
+    MEMFAULT_LOG_ERROR("Unexpected HTTP Status: %d", ctx->http_status_code);
+    // A future improvement here would be to dump the message-body on error
+    // if it is text or application/json
+    return false;
+  }
+
+  return true;
+}
+
+static bool prv_install_ota_payload(int sock_fd,
+                                    const sMemfaultOtaUpdateHandler *handler) {
+  sMemfaultHttpResponseContext ctx = { 0 };
+  size_t buf_len = handler->buf_len;
+  if (!prv_wait_for_http_response_header(sock_fd, &ctx, handler->buf, &buf_len)) {
+    return false;
+  }
+
+  sMemfaultOtaInfo ota_info = {
+    .size = ctx.content_length,
+  };
+
+  if (!handler->handle_update_available(&ota_info, handler->user_ctx)) {
+    return false;
+  }
+
+  if (buf_len != 0 && !handler->handle_data(handler->buf, buf_len, handler->user_ctx)) {
+    return false;
+  }
+
+  size_t curr_offset = buf_len;
+  while (curr_offset != ctx.content_length) {
+    size_t bytes_read = MEMFAULT_MIN(ctx.content_length - curr_offset, handler->buf_len);
+    if (!prv_read_socket_data(sock_fd, handler->buf, &bytes_read)) {
+      return false;
+    }
+
+    if (!handler->handle_data(handler->buf, bytes_read, handler->user_ctx)) {
+      return false;
+    }
+
+    curr_offset += bytes_read;
+  }
+
+  return handler->handle_download_complete(handler->user_ctx);
+}
+
+static bool prv_fetch_ota_payload(const char *url,
+                                  const sMemfaultOtaUpdateHandler *handler) {
+  bool success = false;
+
+  sMemfaultUriInfo uri_info;
+  const size_t url_len = strlen(url);
+
+  if (!memfault_http_parse_uri(url, url_len, &uri_info)) {
+    MEMFAULT_LOG_ERROR("Unable to parse url: %s", url);
+    return false;
+  }
+
+  // create nul terminated host string from parsed url
+  char host[uri_info.host_len + 1];
+  memcpy(host, uri_info.host, uri_info.host_len);
+  host[uri_info.host_len] = '\0';
+
+  // create the connection
+  struct addrinfo *res = NULL;
+  int sock_fd = prv_open_socket(&res, host, uri_info.port);
+  if (sock_fd < 0) {
+    goto cleanup;
+  }
+
+  if (!memfault_http_get_ota_payload(prv_send_data, &sock_fd, url, url_len)) {
+    goto cleanup;
+  }
+
+  success = prv_install_ota_payload(sock_fd, handler);
+cleanup:
+  if (sock_fd >= 0) {
+    close(sock_fd);
+  }
+
+  if (res != NULL) {
+    freeaddrinfo(res);
+  }
+  return success;
+}
+
+static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_url_out) {
+  sMemfaultHttpResponseContext ctx = { 0 };
+
+  char working_buf[32];
+  size_t working_buf_len = sizeof(working_buf);
+  if (!prv_wait_for_http_response_header(sock_fd, &ctx, working_buf, &working_buf_len)) {
+    return false;
+  }
+
+  if (ctx.http_status_code != 200) {
+    return true; // up to date!
+  }
+
+  const size_t url_len = ctx.content_length + 1 /* for '\0' */;
+  char *download_url = prv_calloc(1, url_len);
+  if (download_url == NULL) {
+    MEMFAULT_LOG_ERROR("Unable to allocate %d bytes for url", (int)url_len);
+    return false;
+  }
+
+  // copy any parts of the message-body we already received into the storage holding
+  // the download url
+  if (working_buf_len != 0) {
+    memcpy(download_url, working_buf, working_buf_len);
+  }
+
+  size_t curr_offset = working_buf_len;
+  while (curr_offset != ctx.content_length) {
+    size_t bytes_read = ctx.content_length - curr_offset;
+    if (!prv_read_socket_data(sock_fd, &download_url[curr_offset], &bytes_read)) {
+      goto error;
+    }
+    curr_offset += bytes_read;
+  }
+
+  *download_url_out = download_url;
+  return true;
+error:
+  prv_free(download_url);
+  return false;
+}
+
+//! Checks to see if a new OTA Update is available
+//!
+//! @return true on success, false otherwise. On success, the download_url will be populated with
+//! the link to the new ota payload iff a new update is available.
+static bool prv_check_for_ota_update(char **download_url) {
+  bool success = false;
+
+  const char *host = MEMFAULT_HTTP_GET_DEVICE_API_HOST();
+  const int port = MEMFAULT_HTTP_GET_DEVICE_API_PORT();
+
+  struct addrinfo *res = NULL;
+  int sock_fd = prv_open_socket(&res, host, port);
+  if (sock_fd < 0) {
+    goto cleanup;
+  }
+
+  if (!memfault_http_get_latest_ota_payload_url(prv_send_data, &sock_fd)) {
+    goto cleanup;
+  }
+
+  // We successfully sent the http request for a latest ota payload parse the response
+  success = prv_parse_new_ota_payload_url_response(sock_fd, download_url);
+cleanup:
+  if (sock_fd >= 0) {
+    close(sock_fd);
+  }
+
+  freeaddrinfo(res);
+  return success;
+}
+
+int memfault_nrfconnect_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
+  MEMFAULT_ASSERT(
+      (handler != NULL) &&
+      (handler->buf != NULL) && (handler->buf > 0) &&
+      (handler->handle_update_available != NULL) &&
+      (handler->handle_data != NULL) &&
+      (handler->handle_download_complete != NULL));
+
+  char *download_url = NULL;
+  bool success = prv_check_for_ota_update(&download_url);
+  if (!success) {
+    return -1; // error
+  }
+
+  if (download_url == NULL) {
+    return 0; // up to date
+  }
+
+  success = prv_fetch_ota_payload(download_url, handler);
+  prv_free(download_url);
+  return success ? 1 : -1;
 }
