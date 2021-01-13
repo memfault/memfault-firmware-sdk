@@ -1,6 +1,5 @@
 config MEMFAULT
         bool "MEMFAULT Support"
-        default y
         depends on CPU_CORTEX_M
         select RUNTIME_NMI
         select EXTRA_EXCEPTION_INFO
@@ -9,9 +8,11 @@ config MEMFAULT
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets
 
+if MEMFAULT
+
 config MEMFAULT_RAM_BACKED_COREDUMP
         bool "MEMFAULT Ram Backed Coredump"
-        default y if MEMFAULT
+        default y
         help
           Save a minimal coredump in RAM.
 
@@ -24,7 +25,7 @@ config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
 
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"
-        default y if MEMFAULT
+        default y
         select SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
@@ -87,3 +88,5 @@ config MEMFAULT_CLEAR_RESET_REG
        help
         When disabled, the end user is responsible for clearing the reset register. (Bits are
         generally sticky across resets)
+
+endif # MEMFAULT
