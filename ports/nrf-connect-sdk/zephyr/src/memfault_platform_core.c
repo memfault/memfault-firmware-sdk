@@ -15,6 +15,9 @@
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
 #include "memfault/ports/reboot_reason.h"
+#ifdef CONFIG_MEMFAULT_METRICS
+#include "memfault/metrics/metrics.h"
+#endif
 
 // On boot-up, log out any information collected as to why the
 // reset took place
@@ -33,7 +36,10 @@ static int prv_init_and_log_reboot(const struct device *dev) {
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_reboot_tracking_collect_reset_info(evt_storage);
   memfault_trace_event_boot(evt_storage);
-
+#ifdef CONFIG_MEMFAULT_METRICS
+  sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
+  memfault_metrics_boot(evt_storage, &boot_info);
+#endif
   memfault_build_info_dump();
   return 0;
 }

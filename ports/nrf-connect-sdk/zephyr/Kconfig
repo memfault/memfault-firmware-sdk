@@ -87,3 +87,6 @@ config MEMFAULT_CLEAR_RESET_REG
        help
         When disabled, the end user is responsible for clearing the reset register. (Bits are
         generally sticky across resets)
+
+config MEMFAULT_METRICS
+       bool "Enable metrics"
