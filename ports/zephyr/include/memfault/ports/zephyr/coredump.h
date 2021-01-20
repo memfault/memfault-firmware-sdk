@@ -39,19 +39,19 @@ extern size_t memfault_platform_sanitize_address_range(void *start_addr, size_t 
 //!
 //! @return The number of entries that were populated in the 'regions' argument. Will always
 //!  be <= num_regions
-size_t memfault_nrfconnect_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions);
+size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions);
 
 //! Helper to collect regions of RAM used for BSS variables
 //!
 //! @return The number of entries that were populated in the 'regions' argument. Will always
 //!  be <= num_regions
-size_t memfault_nrfconnect_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_regions);
+size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_regions);
 
 //! Helper to collect regions of RAM used for DATA variables
 //!
 //! @return The number of entries that were populated in the 'regions' argument. Will always
 //!  be <= num_regions
-size_t memfault_nrfconnect_get_data_regions(sMfltCoredumpRegion *regions, size_t num_regions);
+size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num_regions);
 
 #ifdef __cplusplus
 }

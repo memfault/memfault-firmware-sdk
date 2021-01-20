@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#include <misc/printk.h>
+#include "zephyr_release_specific_headers.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
 #  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)

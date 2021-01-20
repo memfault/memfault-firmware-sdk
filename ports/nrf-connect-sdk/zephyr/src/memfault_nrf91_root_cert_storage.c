@@ -7,10 +7,11 @@
 //! tls_credential_add() API. Instead they need to be added using the
 //! modem management API which is what this port does.
 
-#include "memfault/nrfconnect_port/root_cert_storage.h"
+#include "memfault/ports/zephyr/root_cert_storage.h"
+
+#include <string.h>
 
 #include <modem/modem_key_mgmt.h>
-
 #include "memfault/core/debug_log.h"
 
 int memfault_root_cert_storage_add(
@@ -32,7 +33,7 @@ int memfault_root_cert_storage_add(
 
   MEMFAULT_LOG_INFO("Installing Root CA %d", cert_id);
   err = modem_key_mgmt_write(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
-                             cert, cert_length);
+                             cert, strlen(cert));
   if (err != 0) {
     MEMFAULT_LOG_ERROR("Failed to provision certificate, err %d\n", err);
   }

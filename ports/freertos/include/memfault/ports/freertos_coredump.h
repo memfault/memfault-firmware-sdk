@@ -22,6 +22,10 @@
 # define MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT 256
 #endif
 
+//! For each task tracked we will need to collect the TCB + a region of the stack
+#define MEMFAULT_PLATFORM_MAX_TASK_REGIONS \
+  (MEMFAULT_PLATFORM_MAX_TRACKED_TASKS * (1 /* TCB */ + 1 /* stack */))
+
 //! Given a pointer and size returns the actual size which should be collected.
 //!
 //! @note This is used to make sure the memory being collected is within the bounds

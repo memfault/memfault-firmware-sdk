@@ -8,8 +8,14 @@
 //! This file needs to be included from your platforms FreeRTOSConfig.h to take advantage of
 //! Memfault's hooks into the FreeRTOS tracing utilities
 
+// FreeRTOSConfig.h is often included in assembly files so wrap function declarations for
+// convenience to prevent compilation errors
+#if !defined(__ASSEMBLER__) && !defined(__IAR_SYSTEMS_ASM__)
+
 void memfault_freertos_trace_task_create(void *tcb);
 void memfault_freertos_trace_task_delete(void *tcb);
+
+#endif
 
 //
 // We ifndef the trace macros so it's possible for an end user to use a custom definition that

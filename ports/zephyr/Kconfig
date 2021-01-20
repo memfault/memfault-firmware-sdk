@@ -1,29 +1,97 @@
 config MEMFAULT
         bool "MEMFAULT Support"
-        default y
+        default n
         depends on CPU_CORTEX_M
-        select EXTENDED_ESF
-        select PERSIST_CFSR_STATE
         select RUNTIME_NMI
+        select EXTRA_EXCEPTION_INFO
+        select OPENOCD_SUPPORT
         help
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets
 
+if MEMFAULT
 
+config MEMFAULT_RAM_BACKED_COREDUMP
+        bool "MEMFAULT Ram Backed Coredump"
+        default y
+        help
+          Save a minimal coredump in RAM.
+
+config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
+        int "MEMFAULT Ram Backed Coredump"
+        default 8192
+        depends on MEMFAULT_RAM_BACKED_COREDUMP
+        help
+          Save a minimal coredump in RAM.
 
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"
-        default y if MEMFAULT
+        default y
         select SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
 
-
-config MEMFAULT_HTTP_SUPPORT
-        bool "MEMFAULT HTTP Support"
-        default y if MEMFAULT
-        select NET_SOCKETS_SOCKOPT_TLS
-        select DNS_RESOLVER
-        select MBEDTLS
+config MEMFAULT_HTTP_ENABLE
+        bool "MEMFAULT Http Enable"
+        default y if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
         help
-          Enable posting of Memfault Data directly from device over HTTPS
+          Adds support for querying the Memfault API for OTA updates
+          and posting Memfault chunks
+
+choice
+    bool "Implementation used to store Memfault Root certificates"
+    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
+    default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
+
+config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
+    bool "Uses the storage on the NRF9160 modem for storing root certificates"
+
+config MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
+    bool "Uses Zephyr's tls_credential_add() API for storing root certificates"
+
+config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
+    bool "Provide a custom implementation of memfault_root_cert_storage_add()"
+
+endchoice
+
+
+config MEMFAULT_EVENT_STORAGE_SIZE
+       int "Memfault Event Storage RAM Buffer Size"
+       default 1024
+       help
+        The storage area used to batch memfault events before they are flushed
+        to persistent storage or the Memfault Cloud.
+
+config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
+       int "Maximum amount of bytes to collect for task"
+       default 256
+       help
+        The larger the size, the more stack frames Memfault can recover for tasks. The
+        default setting typically allows for 4 or more frames to be recovered.
+
+config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
+       int "Maximum amount of tasks to collect in a coredump"
+       default 16
+       help
+        The maximum amount of tasks Memfault will store state for in a coredump.
+
+config MEMFAULT_DEFAULT_REBOOT_REASON_IMPL
+       bool "Port provided implementation used to decode MCU Reset Register"
+       default y
+       help
+        User of SDK must provide their own implementation of memfault_reboot_reason_get()
+        when disabled
+
+config MEMFAULT_CLEAR_RESET_REG
+       bool "Whether or not to clear bits in MCU reset reason register"
+       depends on MEMFAULT_DEFAULT_REBOOT_REASON_IMPL
+       default y
+       help
+        When disabled, the end user is responsible for clearing the reset register. (Bits
+        generally persist across resets)
+
+config MEMFAULT_METRICS
+       bool "Enable metrics"
+       default n
+
+endif # MEMFAULT

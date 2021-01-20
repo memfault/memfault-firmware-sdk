@@ -17,7 +17,7 @@
 memfault_assert_arg_defined = \
   $(if $(value $(strip $1)),,$(error Undefined $1:$2))
 
-MEMFAULT_VALID_COMPONENTS := core demo http panics util
+MEMFAULT_VALID_COMPONENTS := core demo http panics util metrics
 
 $(call memfault_assert_arg_defined,MEMFAULT_COMPONENTS,\
   Must be set to one or more of "$(MEMFAULT_VALID_COMPONENTS)")
@@ -25,8 +25,11 @@ $(call memfault_assert_arg_defined,MEMFAULT_SDK_ROOT,\
   Must define the path to the root of the Memfault SDK)
 
 MEMFAULT_COMPONENTS_DIR := $(MEMFAULT_SDK_ROOT)/components
+
 MEMFAULT_COMPONENTS_INC_FOLDERS := \
-  $(foreach component, $(MEMFAULT_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
+  $(MEMFAULT_COMPONENTS_DIR)/include \
+  $(foreach component, $(MEMFAULT_VALID_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
+
 MEMFAULT_COMPONENTS_SRCS = $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
 
 ifneq ($(filter demo,$(MEMFAULT_COMPONENTS)),)

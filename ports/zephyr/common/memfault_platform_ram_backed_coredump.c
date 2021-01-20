@@ -20,7 +20,7 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
-#include "memfault/nrfconnect_port/coredump.h"
+#include "memfault/ports/zephyr/coredump.h"
 
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8)
 static uint8_t s_ram_backed_coredump_region[CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE];
@@ -48,7 +48,7 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
    *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
    region_idx++;
 
-   region_idx += memfault_nrfconnect_get_task_regions(
+   region_idx += memfault_zephyr_get_task_regions(
        &s_coredump_regions[region_idx],
        MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 
@@ -58,11 +58,11 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
    // data and bss we can collect!
    //
 
-   region_idx +=  memfault_nrfconnect_get_data_regions(
+   region_idx +=  memfault_zephyr_get_data_regions(
        &s_coredump_regions[region_idx],
        MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 
-   region_idx +=  memfault_nrfconnect_get_bss_regions(
+   region_idx +=  memfault_zephyr_get_bss_regions(
        &s_coredump_regions[region_idx],
        MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 

@@ -6,7 +6,7 @@
 //! Implements convenience APIs that can be used when building the set of
 //! RAM regions to collect as part of a coredump. See header for more details/
 
-#include "memfault/nrfconnect_port/coredump.h"
+#include "memfault/ports/zephyr/coredump.h"
 
 #include <zephyr.h>
 #include <kernel.h>
@@ -53,9 +53,9 @@ void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 MEMFAULT_WEAK
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
-  // NB: The nrf-connect SDK targets the nRF53, nRF52, and nRF91 family. All of
-  // these MCUs have a contigous RAM address range so it is sufficient to just look
-  // at _image_ram_start/end from the Zephyr linker script
+  // NB: This only works for MCUs which have a contiguous RAM address range. (i.e Any MCU in the
+  // nRF53, nRF52, and nRF91 family). All of these MCUs have a contigous RAM address range so it is
+  // sufficient to just look at _image_ram_start/end from the Zephyr linker script
   extern uint32_t _image_ram_start[];
   extern uint32_t _image_ram_end[];
 
@@ -69,7 +69,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
   return 0;
 }
 
-size_t memfault_nrfconnect_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
+size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
   if (regions == NULL || num_regions == 0) {
     return 0;
   }
@@ -129,7 +129,7 @@ size_t memfault_nrfconnect_get_task_regions(sMfltCoredumpRegion *regions, size_t
   return region_idx;
 }
 
-size_t memfault_nrfconnect_get_data_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
+size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
   if (num_regions == 0) {
     return 0;
   }
@@ -143,7 +143,7 @@ size_t memfault_nrfconnect_get_data_regions(sMfltCoredumpRegion *regions, size_t
   return 1;
 }
 
-size_t memfault_nrfconnect_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
+size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
   if (num_regions == 0) {
     return 0;
   }

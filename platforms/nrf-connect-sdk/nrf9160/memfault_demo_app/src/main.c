@@ -46,8 +46,12 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 
   if (!s_init) {
     const size_t version_len = strlen(s_fw_version);
+    // We will use 6 characters of the build id to make our versions unique and
+    // identifiable between releases
+    const size_t build_id_chars = 6 + 1 /* '\0' */;
+
     const size_t build_id_num_chars =
-        MEMFAULT_MIN(7, sizeof(s_fw_version) - version_len - 1);
+        MEMFAULT_MIN(build_id_chars, sizeof(s_fw_version) - version_len - 1);
 
     memfault_build_id_get_string(&s_fw_version[version_len], build_id_num_chars);
     s_init = true;

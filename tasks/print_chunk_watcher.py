@@ -52,7 +52,7 @@ class PrintChunkWatcher(StreamWatcher):
         # and some platforms aren't consistent with how they format newlines. Let's clean up the newlines
         # format used and save the command run in a temp file
         try:
-            cmd_f = NamedTemporaryFile(delete=True)
+            cmd_f = NamedTemporaryFile()
             for line in cmd.splitlines():
                 if len(line) == 0:
                     continue

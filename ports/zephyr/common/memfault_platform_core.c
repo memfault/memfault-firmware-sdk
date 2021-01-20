@@ -7,33 +7,17 @@
 
 #include <soc.h>
 #include <init.h>
-#include "zephyr_release_specific_headers.h"
 
+#include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/ports/reboot_reason.h"
 
-#if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
-#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 100
+#if CONFIG_MEMFAULT_METRICS
+#include "memfault/metrics/metrics.h"
 #endif
-
-void memfault_platform_reboot(void) {
-  const int reboot_type_unused = 0; // ignored for ARM
-  sys_reboot(reboot_type_unused);
-  MEMFAULT_UNREACHABLE;
-}
-
-// By default, the Zephyr NMI handler is an infinite loop. Instead
-// let's register the Memfault Exception Handler
-static int prv_install_nmi_handler(struct device *dev) {
-  extern void z_NmiHandlerSet(void (*pHandler)(void));
-  extern void NMI_Handler(void);
-  z_NmiHandlerSet(NMI_Handler);
-  return 0;
-}
-
-SYS_INIT(prv_install_nmi_handler, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 // On boot-up, log out any information collected as to why the
 // reset took place
@@ -41,14 +25,40 @@ SYS_INIT(prv_install_nmi_handler, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAU
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
-static int prv_init_and_log_reboot(struct device *dev) {
-  memfault_reboot_tracking_boot(s_reboot_tracking, NULL);
+static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
-  static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
+MEMFAULT_WEAK
+void memfault_reboot_reason_get(sResetBootupInfo *info) {
+  *info = (sResetBootupInfo) {
+    .reset_reason = kMfltRebootReason_Unknown,
+  };
+}
+
+// Note: the function signature has changed here across zephyr releases
+// "struct device *dev" -> "const struct device *dev"
+//
+// Since we don't use the arguments we match anything with () to avoid
+// compiler warnings and share the same bootup logic
+static int prv_init_and_log_reboot() {
+  sResetBootupInfo reset_info = { 0 };
+  memfault_reboot_reason_get(&reset_info);
+
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
   const sMemfaultEventStorageImpl *evt_storage =
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_reboot_tracking_collect_reset_info(evt_storage);
   memfault_trace_event_boot(evt_storage);
+
+
+#if CONFIG_MEMFAULT_METRICS
+  sMemfaultMetricBootInfo boot_info = {
+    .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
+  };
+  memfault_metrics_boot(evt_storage, &boot_info);
+#endif
+
+  memfault_build_info_dump();
   return 0;
 }
 

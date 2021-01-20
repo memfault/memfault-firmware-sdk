@@ -1,0 +1,29 @@
+diff --git a/components/freertos/port/esp8266/include/freertos/FreeRTOSConfig.h b/components/freertos/port/esp8266/include/freertos/FreeRTOSConfig.h
+index 080ce65c..319d25af 100644
+--- a/components/freertos/port/esp8266/include/freertos/FreeRTOSConfig.h
++++ b/components/freertos/port/esp8266/include/freertos/FreeRTOSConfig.h
+@@ -31,6 +31,9 @@
+ 
+ #include "sdkconfig.h"
+ 
++#include "memfault/ports/freertos_trace.h"
++#define INCLUDE_xTaskGetHandle 1
++
+ #ifndef __ASSEMBLER__
+ #include <stdlib.h>
+ #include "rom/ets_sys.h"
+diff --git a/make/project.mk b/make/project.mk
+index c06835b2..9ca2edf6 100644
+--- a/make/project.mk
++++ b/make/project.mk
+@@ -508,6 +508,10 @@ COMPONENT_LINKER_DEPS ?=
+ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a) $(COMPONENT_LINKER_DEPS) $(COMPONENT_PROJECT_VARS)
+ 	$(summary) LD $(patsubst $(PWD)/%,%,$@)
+ 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
++ifndef IS_BOOTLOADER_BUILD
++	$(summary) Adding Unique Build Id
++	$(PYTHON) $(PROJECT_PATH)/components/memfault_port/memfault-firmware-sdk/scripts/fw_build_id.py $@
++endif
+ 
+ app: $(APP_BIN) partition_table_get_info
+ ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image

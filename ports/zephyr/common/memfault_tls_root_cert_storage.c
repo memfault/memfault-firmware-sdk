@@ -5,7 +5,7 @@
 //!
 //! Installs root certificates using Zephyrs default infrastructure
 
-#include "memfault/nrfconnect_port/root_cert_storage.h"
+#include "memfault/ports/zephyr/root_cert_storage.h"
 
 #include <net/tls_credentials.h>
 

@@ -39,11 +39,15 @@ $ cd zephyr
 $ git apply ../../../ports/zephyr/v2.0/zephyr-integration.patch
 ```
 
-5. Symlink to SDK
+5. Add memfault-firmware-sdk to `ZEPHYR_EXTRA_MODULES` in CMakeLists.txt
 
-```
-$ cd ext/lib/memfault/
-$ ln -s  ../../../../../.. memfault-firmware-sdk
+```diff
++ set(MEMFAULT_ZEPHYR_PORT_TARGET v2.0)
++ set(MEMFAULT_SDK_ROOT /path/to/memfault-firmware-sdk)
++ list(APPEND ZEPHYR_EXTRA_MODULES ${MEMFAULT_SDK_ROOT}/ports)
+
+include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+project(memfault_demo_app)
 ```
 
 ### Memfault API key

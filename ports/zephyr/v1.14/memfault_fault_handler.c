@@ -13,6 +13,14 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 
+#include "zephyr_release_specific_headers.h"
+
+void memfault_platform_reboot(void) {
+  const int reboot_type_unused = 0; // ignored for ARM
+  sys_reboot(reboot_type_unused);
+  MEMFAULT_UNREACHABLE;
+}
+
 void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf) {
   sMfltRegState reg = {
     .exception_frame = (sMfltExceptionFrame *)esf->exception_frame_addr,

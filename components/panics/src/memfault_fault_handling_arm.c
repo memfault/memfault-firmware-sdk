@@ -270,7 +270,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  ldr r0, =0x8007 // kMfltRebootReason_SoftwareWatchdog
+  ldr r0, =0x8006 // kMfltRebootReason_SoftwareWatchdog
   ldr r1, =memfault_fault_handling_shim
   bx r1
   ALIGN
@@ -325,7 +325,7 @@ void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  __asm(" mov r0, #0x8007 \n" // kMfltRebootReason_SoftwareWatchdog
+  __asm(" mov r0, #0x8006 \n" // kMfltRebootReason_SoftwareWatchdog
         " b memfault_fault_handling_shim \n");
 }
 

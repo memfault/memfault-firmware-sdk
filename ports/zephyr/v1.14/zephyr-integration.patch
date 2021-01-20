@@ -7,7 +7,7 @@ Subject: [PATCH] Integrate Memfault Firmware SDK into Zephyr RTOS
   a 'memfault-firmware-sdk' directory to the folder & copy or
   symlink a clone of https://github.com/memfault/memfault-firmware-sdk.git
 * Extend Zephyr Fault Handler to store extra register as the exception
-  stack frame (using the CONFIG_EXTENDED_ESF option)
+  stack frame (using the CONFIG_EXTRA_EXCEPTION_INFO option)
 * Add an option to skip clearing of fault status register information
   during exception handling (CONFIG_PERSIST_CFSR_STATE). This information
   can be useful for post-mortem fault analysis
@@ -16,11 +16,8 @@ Subject: [PATCH] Integrate Memfault Firmware SDK into Zephyr RTOS
  arch/arm/core/fault.c           | 26 ++++++++++++-----
  arch/arm/core/fault_s.S         | 12 +++++++-
  ext/Kconfig                     |  2 ++
- ext/lib/CMakeLists.txt          |  1 +
- ext/lib/memfault/CMakeLists.txt |  2 ++
  include/arch/arm/cortex_m/exc.h | 52 ++++++++++++++++++++++++++-------
  7 files changed, 91 insertions(+), 19 deletions(-)
- create mode 100644 ext/lib/memfault/CMakeLists.txt
 
 diff --git a/arch/arm/core/cortex_m/Kconfig b/arch/arm/core/cortex_m/Kconfig
 index de38b72f35..9d14681cce 100644
@@ -30,8 +27,8 @@ index de38b72f35..9d14681cce 100644
 
  if CPU_CORTEX_M
 
-+config EXTENDED_ESF
-+	bool
++config EXTRA_EXCEPTION_INFO
++	bool "Enable collection of callee saved register state"
 +	help
 +	  Enables preserving callee saved registers as part of the
 +	  Exception Stack Frame (z_arch_esf_t) provided to fault handlers.
@@ -123,13 +120,13 @@ index 5734ef4911..d0d946097c 100644
  	u32_t reason = _NANO_ERR_HW_EXCEPTION;
  	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
-+#if defined(CONFIG_EXTENDED_ESF)
++#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 +	NANO_ESF esf_copy = { 0 };
 +	memcpy(&esf_copy, esfp, sizeof(*esfp));
 +	NANO_ESF *esf = &esf_copy;
 +	esf->exception_frame_addr = esfp;
 +	esf->callee_regs = callee_regs;
-+#endif /* CONFIG_EXTENDED_ESF */
++#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 +
  	LOG_PANIC();
 
@@ -144,7 +141,7 @@ index 472fd01da7..6a8c28c712 100644
  	push {r0, lr}
 -	bl _Fault
 
-+#if defined(CONFIG_EXTENDED_ESF)
++#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 +        /* push the callee-saved registers on the stack and pass them to _Fault
 +         * as part of argument 2
 +         */
@@ -152,40 +149,12 @@ index 472fd01da7..6a8c28c712 100644
 +        mov r2, sp
 +#endif
 +        bl _Fault
-+#if defined(CONFIG_EXTENDED_ESF)
++#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 +        pop {r4-r11, lr}
 +#endif
  	pop {r0, pc}
 
  	.end
-diff --git a/ext/Kconfig b/ext/Kconfig
-index 73144dcebf..62c6180e19 100644
---- a/ext/Kconfig
-+++ b/ext/Kconfig
-@@ -18,4 +18,6 @@ source "ext/lib/ipc/open-amp/Kconfig"
-
- source "ext/lib/mgmt/Kconfig"
-
-+source "ext/lib/memfault/memfault-firmware-sdk/ports/zephyr/Kconfig"
-+
- endmenu
-diff --git a/ext/lib/CMakeLists.txt b/ext/lib/CMakeLists.txt
-index c381a6a80a..f08afa2971 100644
---- a/ext/lib/CMakeLists.txt
-+++ b/ext/lib/CMakeLists.txt
-@@ -2,3 +2,4 @@ add_subdirectory(crypto)
- add_subdirectory(ipc)
- add_subdirectory(mgmt)
- add_subdirectory_ifdef(CONFIG_FNMATCH fnmatch)
-+add_subdirectory_ifdef(CONFIG_MEMFAULT memfault)
-diff --git a/ext/lib/memfault/CMakeLists.txt b/ext/lib/memfault/CMakeLists.txt
-new file mode 100644
-index 0000000000..2dd4e08a0a
---- /dev/null
-+++ b/ext/lib/memfault/CMakeLists.txt
-@@ -0,0 +1,2 @@
-+set(MEMFAULT_ZEPHYR_PORT_TARGET v1.14)
-+add_subdirectory(memfault-firmware-sdk/ports/zephyr)
 diff --git a/include/arch/arm/cortex_m/exc.h b/include/arch/arm/cortex_m/exc.h
 index 87ce5489b1..f9ae1da0db 100644
 --- a/include/arch/arm/cortex_m/exc.h
@@ -227,7 +196,7 @@ index 87ce5489b1..f9ae1da0db 100644
  #endif
  };
 
-+#if defined(CONFIG_EXTENDED_ESF)
++#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 +struct __callee_saved_esf {
 +	uint32_t r4;
 +	uint32_t r5;

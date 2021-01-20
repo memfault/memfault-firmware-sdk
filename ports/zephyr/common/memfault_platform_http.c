@@ -4,7 +4,8 @@
 //! See License.txt for details
 //!
 
-#include "memfault_zephyr_http.h"
+#include "memfault/ports/zephyr/http.h"
+#include "memfault/ports/zephyr/root_cert_storage.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -13,11 +14,12 @@
 
 #include <init.h>
 #include <kernel.h>
-#include <misc/printk.h>
+
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 #include <zephyr.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
@@ -25,6 +27,11 @@
 #include "memfault/http/root_certs.h"
 #include "memfault/http/utils.h"
 #include "memfault/panics/assert.h"
+
+#if CONFIG_MBEDTLS
+
+// Sanity check that SNI extension is enabled when using Mbed TLS since as of 2.4 Zephyr doesn't
+// enable it by default
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -36,78 +43,73 @@
 #error "MBEDTLS_SSL_SERVER_NAME_INDICATION must be enabled for Memfault HTTPS. This can be done with CONFIG_MBEDTLS_USER_CONFIG_ENABLE/FILE"
 #endif
 
-#define MEMFAULT_NUM_CERTS_REGISTERED 5
+#endif /* CONFIG_MBEDTLS */
 
-#if !defined(CONFIG_TLS_MAX_CREDENTIALS_NUMBER) || (CONFIG_TLS_MAX_CREDENTIALS_NUMBER < MEMFAULT_NUM_CERTS_REGISTERED)
-# pragma message("ERROR: CONFIG_TLS_MAX_CREDENTIALS_NUMBER must be >= "MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_NUM_CERTS_REGISTERED))
-# error "Update CONFIG_TLS_MAX_CREDENTIALS_NUMBER in prj.conf"
-#endif
-
-#if !defined(CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS) || (CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS < MEMFAULT_NUM_CERTS_REGISTERED)
-# pragma message("ERROR: CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS must be >= "MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_NUM_CERTS_REGISTERED))
-# error "Update CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS in prj.conf"
-#endif
-
-typedef enum {
-  // arbitrarily high base so as not to conflict with id used for other certs in use by the system
-  kMemfaultRootCert_Base = 1000,
-  kMemfaultRootCert_DstCaX3,
-  kMemfaultRootCert_DigicertRootCa,
-  kMemfaultRootCert_DigicertRootG2,
-  kMemfaultRootCert_CyberTrustRoot,
-  kMemfaultRootCert_AmazonRootCa1,
-  // Must be last, used to track number of root certs in use
-  kkMemfaultRootCert_MaxIndex,
-} eMemfaultRootCert;
-
-MEMFAULT_STATIC_ASSERT(
-    (kkMemfaultRootCert_MaxIndex - (kMemfaultRootCert_Base + 1)) == MEMFAULT_NUM_CERTS_REGISTERED,
-    "MEMFAULT_NUM_CERTS_REGISTERED define out of sync");
-
-
-static int prv_memfault_http_install_certs(struct device *dev) {
-
-  int rv = tls_credential_add(kMemfaultRootCert_DstCaX3, TLS_CREDENTIAL_CA_CERTIFICATE,
-                              g_memfault_cert_dst_ca_x3, g_memfault_cert_dst_ca_x3_len);
-  if (rv != 0) {
-    goto error;
-  }
-
-  rv = tls_credential_add(kMemfaultRootCert_DigicertRootCa, TLS_CREDENTIAL_CA_CERTIFICATE,
-                          g_memfault_cert_digicert_global_root_ca,
-                          g_memfault_cert_digicert_global_root_ca_len);
-  if (rv != 0) {
-    goto error;
-  }
-
-  rv = tls_credential_add(kMemfaultRootCert_DigicertRootG2, TLS_CREDENTIAL_CA_CERTIFICATE,
-                          g_memfault_cert_digicert_global_root_g2,
-                          g_memfault_cert_digicert_global_root_g2_len);
-  if (rv != 0) {
-    goto error;
-  }
-
-  rv = tls_credential_add(kMemfaultRootCert_CyberTrustRoot, TLS_CREDENTIAL_CA_CERTIFICATE,
-                          g_memfault_cert_baltimore_cybertrust_root,
-                          g_memfault_cert_baltimore_cybertrust_root_len);
-  if (rv != 0) {
-    goto error;
-  }
-
-  rv = tls_credential_add(kMemfaultRootCert_AmazonRootCa1, TLS_CREDENTIAL_CA_CERTIFICATE,
-                          g_memfault_cert_amazon_root_ca1,
-                          g_memfault_cert_amazon_root_ca1_len);
-  if (rv != 0) {
-    goto error;
-  }
-
-  return 0; // success!
-error:
-  MEMFAULT_LOG_ERROR("Cert init failed, rv=%d", rv);
-  return rv;
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+static void *prv_calloc(size_t count, size_t size) {
+  return calloc(count, size);
 }
 
-SYS_INIT(prv_memfault_http_install_certs, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+static void prv_free(void *ptr) {
+  free(ptr);
+}
+#elif CONFIG_HEAP_MEM_POOL_SIZE > 0
+static void *prv_calloc(size_t count, size_t size) {
+  return k_calloc(count, size);
+}
+
+static void prv_free(void *ptr) {
+  k_free(ptr);
+}
+#else
+#error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
+#endif
+
+static bool prv_install_cert(eMemfaultRootCert cert_id) {
+  const char *cert;
+  size_t cert_len;
+
+  switch (cert_id) {
+    case kMemfaultRootCert_DstCaX3:
+      cert = MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3;
+      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3);
+      break;
+    case kMemfaultRootCert_DigicertRootCa:
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA;
+      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA);
+      break;
+    case kMemfaultRootCert_DigicertRootG2:
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2;
+      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2);
+      break;
+    case kMemfaultRootCert_CyberTrustRoot:
+      cert = MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT;
+      cert_len = sizeof(MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT);
+      break;
+    case kMemfaultRootCert_AmazonRootCa1:
+      cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1;
+      cert_len = sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1);
+      break;
+
+    default:
+      MEMFAULT_LOG_ERROR("Unknown cert id: %d", (int)cert_id);
+      return -1;
+  }
+
+  return memfault_root_cert_storage_add(cert_id, cert, cert_len);
+}
+
+int memfault_zephyr_port_install_root_certs(void) {
+  for (eMemfaultRootCert cert_id = kMemfaultRootCert_DstCaX3; cert_id <  kMemfaultRootCert_MaxIndex;
+       cert_id ++) {
+    const int rv = prv_install_cert(cert_id);
+    if (rv != 0) {
+      return rv;
+    }
+  }
+
+  return 0;
+}
 
 static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   int fd = *(int *)ctx;
@@ -116,11 +118,26 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
 }
 
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
-  sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_DigicertRootCa,
-                              kMemfaultRootCert_DstCaX3,  kMemfaultRootCert_CyberTrustRoot,
-                              kMemfaultRootCert_AmazonRootCa1 };
+  const sec_tag_t sec_tag_opt[] = {
+    kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_DigicertRootCa,
+    kMemfaultRootCert_DstCaX3,  kMemfaultRootCert_CyberTrustRoot,
+    kMemfaultRootCert_AmazonRootCa1 };
   int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
+    return rv;
+  }
+
+  /* Set up TLS peer verification */
+  enum {
+    NONE = 0,
+    OPTIONAL = 1,
+    REQUIRED = 2,
+  };
+
+  int verify = REQUIRED;
+  rv = setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
+  if (rv) {
+    printk("Failed to setup peer verification, err %d\n", errno);
     return rv;
   }
 
@@ -269,7 +286,9 @@ static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
 static bool prv_wait_for_http_response(int sock_fd) {
   sMemfaultHttpResponseContext ctx = { 0 };
   while (1) {
-    char buf[32]; // arbitrary receive buf small
+    // We don't expect any response that needs to be parsed so
+    // just use an arbitrarily small receive buffer
+    char buf[32];
     size_t bytes_read = sizeof(buf);
     if (!prv_read_socket_data(sock_fd, buf, &bytes_read)) {
       return false;
@@ -417,7 +436,7 @@ static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_
   }
 
   const size_t url_len = ctx.content_length + 1 /* for '\0' */;
-  char *download_url = calloc(1, url_len);
+  char *download_url = prv_calloc(1, url_len);
   if (download_url == NULL) {
     MEMFAULT_LOG_ERROR("Unable to allocate %d bytes for url", (int)url_len);
     return false;
@@ -441,7 +460,7 @@ static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_
   *download_url_out = download_url;
   return true;
 error:
-  free(download_url);
+  prv_free(download_url);
   return false;
 }
 
@@ -495,7 +514,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   }
 
   success = prv_fetch_ota_payload(download_url, handler);
-  free(download_url);
+  prv_free(download_url);
   return success ? 1 : -1;
 }
 
