@@ -35,13 +35,13 @@ commands:
       - restore_cache:
           name: Restore Python Package Cache
           keys:
-            - v3-pip-dependencies-{{ checksum "requirements-dev.txt" }}
+            - v3-pip-dependencies-{{ checksum "requirements.txt" }}
             - v3-pip-dependencies-
-      - run: pip install -r requirements-dev.txt
+      - run: pip install -r requirements.txt
       - save_cache:
           paths:
             - ~/venv
-          key: v3-pip-dependencies-{{ checksum "requirements-dev.txt" }}
+          key: v3-pip-dependencies-{{ checksum "requirements.txt" }}
 
   # TODO: move into Dockerfile
   lcov_install:
