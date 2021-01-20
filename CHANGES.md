@@ -1,3 +1,53 @@
+### Changes between Memfault SDK 0.11.1 and SDK 0.10.1 - Jan 19, 2021
+
+#### :rocket: New Features
+
+- Added full support for the ESP8266 (Tensilica Xtensa LX106) MCU architecture!
+  A step-by-step integration guide can be found
+  [here](https://mflt.io/esp8266-tutorial) and the port to the ESP8266 RTOS SDK
+  can be found [here](ports/esp8266_sdk/).
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a convenience header for picking up includes for all Memfault
+  components. If you are using the
+  [build system helpers](README.md#add-sources-to-build-system), this path will
+  be picked up automatically.
+
+```c
+#include "memfault/components.h"
+
+// call to any Memfault API in the components folder
+```
+
+- Fixed a :bug: leading to Root CAs not get loaded correctly when using the nRF
+  Connect SDK port and the `MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE=y`
+  Kconfig option.
+- Applied suggestions from @rerickson1 for the Zephyr and nRF Connect SDK ports:
+  - [`CONFIG_MEMFAULT_METRICS=y`](https://github.com/memfault/memfault-firmware-sdk/pull/8)
+    can now be used to compile the metrics component into the Zephyr and nRF
+    Connect SDK ports.
+  - [`CONFIG_MEMFAULT=y`](https://github.com/memfault/memfault-firmware-sdk/pull/7)
+    must now be specified to enable the Memfault integration.
+
+#### :house: Internal
+
+- Refactored the [nRF Connect SDK port](ports/nrf-connect-sdk) to build directly
+  on top of the [zephyr port](ports/zephyr) reducing code duplication and
+  facilitate the rollout of additional features to both SDKs at the same time
+  moving forward.
+
+#### :boom: Breaking Changes
+
+- If you are using a Memfault
+  [build system helper](README.md#add-sources-to-build-system) _and_ not using
+  the trace or metrics functionality, you will now need to create a
+  `memfault_trace_reason_user_config.def` or
+  `memfault_metrics_heartbeat_config.def` file, respectively, and add it to your
+  include path.
+- When using the Zephyr port, the memfault integration must be enabled
+  explicitly by adding `CONFIG_MEMFAULT=y` to your `prj.conf`
+
 ### Changes between Memfault SDK 0.10.1 and SDK 0.10.0 - Jan 10, 2021
 
 #### :chart_with_upwards_trend: Improvements
