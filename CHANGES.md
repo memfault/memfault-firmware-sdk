@@ -1,4 +1,12 @@
-### Changes between Memfault SDK 0.11.1 and SDK 0.10.1 - Jan 19, 2021
+### Changes between Memfault SDK 0.11.2 and SDK 0.11.1 - Jan 21, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added support for nRF Connect SDK v1.2.x and updated the
+  [integration guide](https://mflt.io/nrf-connect-sdk-integration-guide)
+  accordingly.
+
+### Changes between Memfault SDK 0.11.0 and SDK 0.10.1 - Jan 19, 2021
 
 #### :rocket: New Features
 

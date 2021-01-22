@@ -21,7 +21,13 @@
 
 // By default, the Zephyr NMI handler is an infinite loop. Instead
 // let's register the Memfault Exception Handler
-static int prv_install_nmi_handler(const struct device *dev) {
+//
+// Note: the function signature has changed here across zephyr releases
+// "struct device *dev" -> "const struct device *dev"
+//
+// Since we don't use the arguments we match anything with () to avoid
+// compiler warnings and share the same bootup logic
+static int prv_install_nmi_handler() {
   extern void z_NmiHandlerSet(void (*pHandler)(void));
   z_NmiHandlerSet(MEMFAULT_EXC_HANDLER_NMI);
   return 0;
