@@ -19,7 +19,7 @@
 │   [...] // Where all the tests wind up
 ├── fakes
 │   // fakes for unit tests
-├── fakes
+├── mocks
 │   // mocks for unit tests
 ├── makefiles // Each c file you unit test has a makefile here
 │   └── Makefile_<module_name>.mk

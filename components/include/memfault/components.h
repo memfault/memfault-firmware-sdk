@@ -40,6 +40,7 @@ extern "C" {
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/core/data_packetizer.h"
 #include "memfault/demo/cli.h"
 #include "memfault/demo/shell.h"
 #include "memfault/demo/util.h"

@@ -107,6 +107,8 @@ static void prv_reset_packetizer_state(void) {
   s_mflt_packetizer_state = (sMfltTransportState) {
     .active_message = false,
   };
+
+  memfault_data_source_rle_encoder_set_active(NULL);
 }
 
 static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *buf,

@@ -219,6 +219,28 @@ static int prv_open_socket(struct addrinfo **res, const char *host, int port_num
 }
 
 static bool prv_send_next_msg(int sock) {
+#if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
+  uint8_t buf[CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE];
+  size_t buf_len = sizeof(buf);
+
+  bool data_available = memfault_packetizer_get_chunk(buf, &buf_len);
+  if (!data_available) {
+    MEMFAULT_LOG_DEBUG("No more data to send");
+    return false; // no more data to send
+  }
+
+  memfault_http_start_chunk_post(prv_send_data, &sock, buf_len);
+
+  if (!prv_try_send(sock, buf, buf_len)) {
+    // unexpected failure, abort in-flight transaction
+    memfault_packetizer_abort();
+    return false;
+  }
+
+  // message sent, await response
+  return true;
+
+#else
   const sPacketizerConfig cfg = {
     // let a single msg span many "memfault_packetizer_get_next" calls
     .enable_multi_packet_chunk = true,
@@ -255,6 +277,7 @@ static bool prv_send_next_msg(int sock) {
 
   // message sent, await response
   return true;
+#endif /* CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE */
 }
 
 static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
@@ -495,6 +518,25 @@ cleanup:
   return success;
 }
 
+int memfault_zephyr_port_get_download_url(char **download_url) {
+  bool success = prv_check_for_ota_update(download_url);
+  if (!success) {
+    return -1; // error
+  }
+
+  if (download_url == NULL) {
+    return 0; // up to date
+  }
+
+  return 1;
+}
+
+int memfault_zephyr_port_release_download_url(char **download_url) {
+  prv_free(*download_url);
+  download_url = NULL;
+  return 0;
+}
+
 int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   MEMFAULT_ASSERT(
       (handler != NULL) &&
@@ -548,3 +590,37 @@ cleanup:
   freeaddrinfo(res);
   return rv;
 }
+
+#if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD
+
+static void prv_metrics_work_handler(struct k_work *work) {
+  if (!memfault_packetizer_data_available()) {
+    return;
+  }
+
+  MEMFAULT_LOG_DEBUG("POSTing Memfault Data");
+  memfault_zephyr_port_post_data();
+}
+
+K_WORK_DEFINE(s_upload_timer_work, prv_metrics_work_handler);
+
+static void prv_timer_expiry_handler(struct k_timer *dummy) {
+  k_work_submit(&s_upload_timer_work);
+}
+
+K_TIMER_DEFINE(s_upload_timer, prv_timer_expiry_handler, NULL);
+
+static int prv_background_upload_init() {
+  const uint32_t interval_secs = CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS;
+
+  // randomize the first post to spread out the reporting of
+  // information from a fleet of devices that all reboot at once
+  const uint32_t duration_secs = 60 + (sys_rand32_get() % interval_secs);
+
+  k_timer_start(&s_upload_timer, K_SECONDS(duration_secs), K_SECONDS(interval_secs));
+  return 0;
+}
+
+SYS_INIT(prv_background_upload_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif /* CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD */
