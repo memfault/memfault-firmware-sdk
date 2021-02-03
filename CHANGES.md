@@ -1,3 +1,27 @@
+### Changes between Memfault SDK 0.11.3 and SDK 0.11.2 - Jan 31, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Reference platform API implementations for the following MCUs/SDKs:
+  - nRF Connect SDK
+    - Added support for nRF Connect SDK v1.3.x
+    - Added support for FOTA with Memfault. See
+      [`memfault_fota_start()`](ports/nrf-connect-sdk/zephyr/include/memfault/nrfconnect_port/fota.h)
+      for more details
+  - Zephyr
+    - Added implementations for `memfault_platform_metrics_timer_boot()` &
+      `memfault_platform_get_time_since_boot_ms()` memfault dependencies to
+      Zephyr port. A custom implementation can still be provided by
+      setting`MEMFAULT_METRICS_TIMER_CUSTOM=y`
+    - Metrics support is now enabled by default when `CONFIG_MEMFAULT=y` and can
+      be disabled by setting `CONFIG_MEMFAULT_METRICS=n`
+    - Added support for periodically uploading Memfault data in the background.
+      This is off by default and can be enabled with the
+      `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y` option
+- Fixed a :bug: that could lead to an invalid coredump being sent to Memfault
+  when `memfault_packetizer_abort()` was called after a coredump was partially
+  sent.
+
 ### Changes between Memfault SDK 0.11.2 and SDK 0.11.1 - Jan 21, 2021
 
 #### :chart_with_upwards_trend: Improvements

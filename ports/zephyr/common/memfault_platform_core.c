@@ -11,6 +11,7 @@
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
 #include "memfault/ports/reboot_reason.h"
@@ -18,6 +19,10 @@
 #if CONFIG_MEMFAULT_METRICS
 #include "memfault/metrics/metrics.h"
 #endif
+
+uint64_t memfault_platform_get_time_since_boot_ms(void) {
+  return k_uptime_get();
+}
 
 // On boot-up, log out any information collected as to why the
 // reset took place

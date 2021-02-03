@@ -73,6 +73,24 @@ typedef struct {
 //!     1 New update is available and handlers were invoked
 int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler);
 
+//! Query Memfault's Release Mgmt Infra for an OTA update
+//!
+//! @param download_url populated with a string containing the download URL to use
+//! if an OTA update is available.
+//!
+//! @note After use, memfault_zephyr_port_release_download_url() must be called
+//!  to free the memory where the download URL is stored.
+//!
+//! @return
+//!   < 0 Error while trying to figure out if an update was available
+//!     0 Check completed successfully - No new update available
+//!     1 New update is available and download_url has been populated with
+//!       the url to use for download
+int memfault_zephyr_port_get_download_url(char **download_url);
+
+//! Releases the memory returned from memfault_zephyr_port_get_download_url()
+int memfault_zephyr_port_release_download_url(char **download_url);
+
 #ifdef __cplusplus
 }
 #endif

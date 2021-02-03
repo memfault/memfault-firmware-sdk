@@ -14,10 +14,13 @@
 //! Between nrf-connect-sdk v1.2.1 and v1.4 the locations of some headers changed.
 //! We use __has_include() to support both paths so the port works with either SDK
 //! version.
+#if __has_include("zephyr/types.h")
+#include "zephyr/types.h"
+#endif
+
 #if __has_include("modem/modem_key_mgmt.h")
 #include "modem/modem_key_mgmt.h"
 #else
-#include <zephyr/types.h>
 #include <modem_key_mgmt.h>
 #endif
 

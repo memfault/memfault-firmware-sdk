@@ -1,8 +1,17 @@
 zephyr_library_sources(memfault_platform_debug_log.c)
 zephyr_library_sources(memfault_platform_core.c)
 zephyr_library_sources(memfault_zephyr_ram_regions.c)
+zephyr_library_sources(memfault_platform_lock.c)
+
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP memfault_platform_ram_backed_coredump.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE memfault_tls_root_cert_storage.c)
+
+if (NOT CONFIG_MEMFAULT_METRICS_TIMER_CUSTOM)
+  zephyr_library_sources(memfault_platform_metrics.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD memfault_http_periodic_upload.c)
+
 zephyr_include_directories(.)

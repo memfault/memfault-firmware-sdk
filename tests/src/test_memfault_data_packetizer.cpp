@@ -128,7 +128,10 @@ void memfault_chunk_transport_get_chunk_info(sMfltChunkTransportCtx *ctx) {
 TEST_GROUP(MemfaultDataPacketizer){
   void setup() {
     // abort any in-progress transactions
+    mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
     memfault_packetizer_abort();
+    mock().checkExpectations();
+    mock().clear();
     s_multi_call_chunking_enabled = false;
     mock().strictOrder();
   }
@@ -187,6 +190,7 @@ static void prv_run_single_packet_test(void) {
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectOneCall("prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
@@ -225,6 +229,7 @@ TEST(MemfaultDataPacketizer, Test_MessageUsesRle) {
 
   mock().expectOneCall("prv_rle_mark_msg_read");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
@@ -246,6 +251,7 @@ TEST(MemfaultDataPacketizer, Test_EventMessageFitsInSinglePacket) {
   mock().expectOneCall("prv_heartbeat_metric_has_event");
   mock().expectOneCall("prv_heartbeat_metric_read_event");
   mock().expectOneCall("prv_heartbeat_metric_mark_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_event));
@@ -277,6 +283,7 @@ TEST(MemfaultDataPacketizer, Test_MoreDataAvailable) {
   uint8_t packet[16];
   mock().expectOneCall("prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
@@ -305,6 +312,7 @@ static void prv_test_msg_fits_in_multiple_packets(void) {
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectNCalls(num_calls, "prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
@@ -347,6 +355,7 @@ TEST(MemfaultDataPacketizer, Test_SimpleGetChunkApi) {
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectNCalls(num_calls, "prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   // the fake chunker has 0 overhead
   size_t total_packet_length = sizeof(s_fake_coredump) + 1 /* hdr */;
@@ -386,6 +395,7 @@ TEST(MemfaultDataPacketizer, Test_MessageSendAbort) {
   eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet, &buf_len);
   LONGS_EQUAL(5, buf_len);
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
   memfault_packetizer_abort();
   mock().checkExpectations();
 
@@ -398,6 +408,7 @@ TEST(MemfaultDataPacketizer, Test_MessageWithCoredumpReadFailure) {
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectOneCall("prv_coredump_read_core").andReturnValue(false);
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
@@ -442,6 +453,7 @@ TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
   // now read the actual coredump data
   mock().expectOneCall("prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
   uint8_t packet[16];
   buf_len = sizeof(packet);
   rv = memfault_packetizer_get_next(packet, &buf_len);

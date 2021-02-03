@@ -32,6 +32,10 @@
 #include "memfault/http/http_client.h"
 #include "memfault/nrfconnect_port/http.h"
 
+#if CONFIG_DFU_TARGET_MCUBOOT
+#include <dfu/mcuboot.h>
+#endif
+
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = "<YOUR API KEY HERE>",
 };
@@ -93,7 +97,15 @@ static void prv_init_device_info(void) {
 }
 
 void main(void) {
-  printk("Memfault Demo App Started!");
+  printk("Memfault Demo App Started!\n");
+
+#if CONFIG_DFU_TARGET_MCUBOOT
+  if (!boot_is_img_confirmed()) {
+    // Mark the ota image as installed so we don't revert
+    printk("Confirming OTA update\n");
+    boot_write_img_confirmed();
+  }
+#endif
 
   int err = bsdlib_init();
   if (err) {
