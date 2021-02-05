@@ -8,6 +8,8 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_MEMFAULT_CLI_ENABLED
+
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_system.h"
@@ -206,3 +208,5 @@ void memfault_register_cli(void) {
       .func = prv_collect_metric_data,
   }));
 }
+
+#endif /* MEMFAULT_CLI_ENABLED */

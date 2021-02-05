@@ -1,3 +1,15 @@
+### Changes between Memfault SDK 0.11.4 and SDK 0.11.3 - Feb 4, 2021
+
+- ESP8266 Updates
+  - Added new Kconfig option which can be set via `make menuconfig` and be used
+    to disable the Memfault integration, `CONFIG_MEMFAULT=n`.
+  - Fixed a :bug: leading to a compilation error when
+    both`CONFIG_USING_ESP_CONSOLE=n` and `CONFIG_MEMFAULT_CLI_ENABLED=n`
+- Added default implementations for `MEMFAULT_GET_LR()`, `MEMFAULT_GET_PC()`,
+  and `MEMFAULT_BREAKPOINT()` to
+  [`compiler_gcc.h`](components/core/include/memfault/core/compiler_gcc.h) to
+  facilitate compilations of the SDK against other architectures.
+
 ### Changes between Memfault SDK 0.11.3 and SDK 0.11.2 - Jan 31, 2021
 
 #### :chart_with_upwards_trend: Improvements

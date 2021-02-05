@@ -1,4 +1,8 @@
-menu "Memfault"
+menuconfig MEMFAULT
+   bool "Enable Memfault Integration"
+   default y
+
+if MEMFAULT
 
     config MEMFAULT_EVENT_COLLECTION_ENABLED
         bool "Enables collection of Memfault Events (Reboots, Traces, Heartbeats)"
@@ -69,4 +73,4 @@ menu "Memfault"
           bool "User defined coredump storage region"
    endchoice
 
-endmenu
+endif # MEMFAULT

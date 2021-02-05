@@ -1,3 +1,5 @@
+ifdef CONFIG_MEMFAULT
+
 MEMFAULT_SDK_ROOT := ../../..
 
 COMPONENT_SRCDIRS += \
@@ -10,3 +12,12 @@ COMPONENT_ADD_INCLUDEDIRS += \
 # we explicitly list the .o here because we only want to compile one file
 COMPONENT_OBJS := \
   $(MEMFAULT_SDK_ROOT)/ports/freertos/src/memfault_freertos_ram_regions.o
+
+else
+
+# Disable Memfault FreeRTOS Port
+COMPONENT_ADD_INCLUDEDIRS :=
+COMPONENT_ADD_LDFLAGS :=
+COMPONENT_SRCDIRS :=
+
+endif
