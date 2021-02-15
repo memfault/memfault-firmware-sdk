@@ -19,14 +19,9 @@
 
 #include <stddef.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/util/base64.h"
-
-//! The max size of a chunk. Should be a size suitable to write to transport
-//! data is being dumped over.
-#if !defined(MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN)
-#define MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN 80
-#endif
 
 #ifdef __cplusplus
 extern "C" {

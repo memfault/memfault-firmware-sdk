@@ -29,17 +29,12 @@
 
 #include <inttypes.h>
 
+#include "memfault/config.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/metrics/ids_impl.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-//! The frequency in seconds to collect heartbeat metrics. The suggested interval is once per hour
-//! but the value can be overriden to be as low as once every 15 minutes.
-#ifndef MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
-#define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS 3600
 #endif
 
 #include "memfault/core/compiler.h"

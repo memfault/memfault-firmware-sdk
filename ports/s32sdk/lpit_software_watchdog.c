@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 
+#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 

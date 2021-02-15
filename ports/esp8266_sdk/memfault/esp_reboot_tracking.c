@@ -17,10 +17,7 @@
 #include "esp_libc.h"
 
 #include "memfault/core/debug_log.h"
-
-#ifndef MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
-#endif
+#include "memfault/config.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)

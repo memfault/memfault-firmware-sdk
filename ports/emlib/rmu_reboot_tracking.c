@@ -14,13 +14,10 @@
 
 #include "em_rmu.h"
 
+#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
-
-#ifndef MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
-#endif
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)

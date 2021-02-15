@@ -15,6 +15,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "memfault/config.h"
 #include "memfault/core/batched_events.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
@@ -25,33 +26,6 @@
 #include "memfault/core/platform/system_time.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/util/circular_buffer.h"
-
-//! Controls whether or not multiple events will be batched into a single
-//! message when reading information via the event storage data source.
-//!
-//! This can be a useful strategy when trying to maximize the amount of data sent
-//! in a single transmission unit.
-//!
-//! To enable, you will need to update the compiler flags for your project, i.e
-//!   CFLAGS += -DMEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED=1
-#ifndef MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED
-# define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
-#endif
-
-#if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED != 0
-
-//! When batching is enabled, controls the maximum amount of event data bytes that will be
-//! in a single message.
-//!
-//! By default, there is no limit. To set a limit you will need to update the
-//! compiler flags for your project the following would cap the data payload
-//! size at 1024 bytes
-//!  CFLAGS += -DMEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES=1024
-#ifndef MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES
-# define MEMFAULT_EVENT_STORAGE_READ_BATCHING_MAX_BYTES UINT32_MAX
-#endif
-
-#endif /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
 
 //
 // Routines which can optionally be implemented.

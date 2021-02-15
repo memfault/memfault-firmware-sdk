@@ -26,9 +26,7 @@ $(call memfault_assert_arg_defined,MEMFAULT_SDK_ROOT,\
 
 MEMFAULT_COMPONENTS_DIR := $(MEMFAULT_SDK_ROOT)/components
 
-MEMFAULT_COMPONENTS_INC_FOLDERS := \
-  $(MEMFAULT_COMPONENTS_DIR)/include \
-  $(foreach component, $(MEMFAULT_VALID_COMPONENTS), $(MEMFAULT_COMPONENTS_DIR)/$(component)/include)
+MEMFAULT_COMPONENTS_INC_FOLDERS := $(MEMFAULT_COMPONENTS_DIR)/include
 
 MEMFAULT_COMPONENTS_SRCS = $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
 

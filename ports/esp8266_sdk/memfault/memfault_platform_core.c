@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memfault/config.h"
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"

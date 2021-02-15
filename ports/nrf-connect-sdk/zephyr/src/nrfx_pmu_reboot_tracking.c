@@ -10,6 +10,7 @@
 
 #include "memfault/ports/reboot_reason.h"
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
@@ -22,14 +23,6 @@
 //! NRF91 reasons are defined in nrf_power.h whereas nrf53 reasons are defined in nrf_reset.h
 #if !NRF_POWER_HAS_RESETREAS
 #include <hal/nrf_reset.h>
-#endif
-
-#ifndef MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
-#endif
-
-#ifndef MEMFAULT_REBOOT_REASON_CLEAR
-#define MEMFAULT_REBOOT_REASON_CLEAR 1
 #endif
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP

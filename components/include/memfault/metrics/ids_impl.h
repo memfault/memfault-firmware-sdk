@@ -12,9 +12,7 @@
 extern "C" {
 #endif
 
-#if !defined(MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
-#  define MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE "memfault_metrics_heartbeat_config.def"
-#endif
+#include "memfault/config.h"
 
 //! Generate extern const char * declarations for all IDs (used in key names):
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \

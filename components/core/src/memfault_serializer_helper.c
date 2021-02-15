@@ -10,6 +10,7 @@
 
 #include <inttypes.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage_implementation.h"
@@ -17,10 +18,6 @@
 #include "memfault/core/platform/system_time.h"
 #include "memfault/core/serializer_key_ids.h"
 #include "memfault/util/cbor.h"
-
-#ifndef MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
-#  define MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL 0
-#endif
 
 typedef struct MemfaultSerializerOptions {
   // By default, the device serial number is not encoded in each event to conserve space

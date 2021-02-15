@@ -40,12 +40,6 @@ function(memfault_library sdk_root components src_var_name inc_var_name)
 
   list(APPEND SDK_INC
     ${sdk_root}/components/include
-    ${sdk_root}/components/core/include
-    ${sdk_root}/components/demo/include
-    ${sdk_root}/components/http/include
-    ${sdk_root}/components/metrics/include
-    ${sdk_root}/components/panics/include
-    ${sdk_root}/components/util/include
   )
 
   foreach(component IN LISTS ${components})

@@ -17,11 +17,8 @@
 
 #include "memfault/panics/coredump_impl.h"
 
+#include "memfault/config.h"
 #include "memfault/core/log_impl.h"
-
-#if !defined(MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS)
-#  define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS 0
-#endif
 
 #define MEMFAULT_TOTAL_SDK_MEMORY_REGIONS MEMFAULT_LOG_NUM_RAM_REGIONS
 

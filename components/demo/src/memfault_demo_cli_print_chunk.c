@@ -19,10 +19,6 @@
 #include "memfault/core/math.h"
 #include "memfault/demo/util.h"
 
-#ifndef MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES
-#  define MEMFAULT_CLI_LOG_BUFFER_MAX_SIZE_BYTES (80)
-#endif
-
 //
 // Weak function implementations for when the "http" component is not enabled. This way we can
 // still dump a CLI command that shows how to post a chunk using curl.

@@ -27,7 +27,9 @@ export CPPUTEST_MAKFILE_INFRA := $(MFLT_TEST_ROOT)/MakefileWorkerOverrides.mk
 # Gather -Icomponents/*/src and -Icomponents/*/include:
 MFLT_COMPONENTS_ALL_INCLUDE_DIRS := \
   $(wildcard $(MFLT_COMPONENTS_DIR)/*/include) \
+  $(PROJECT_DIR)/components/include \
   $(PROJECT_DIR)/ports/include
+
 MFLT_COMPONENTS_ALL_SRC_DIRS := $(wildcard $(MFLT_COMPONENTS_DIR)/*/src)
 MFLT_COMPONENTS_ALL_INCLUDE_FLAGS := \
   $(foreach COMPONENT_INCLUDE, $(MFLT_COMPONENTS_ALL_INCLUDE_DIRS) $(MFLT_COMPONENTS_ALL_SRC_DIRS), -I$(COMPONENT_INCLUDE))

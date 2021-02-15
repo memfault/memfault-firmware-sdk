@@ -35,6 +35,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 

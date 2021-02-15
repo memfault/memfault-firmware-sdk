@@ -14,9 +14,7 @@ extern "C" {
 
 #include <stdint.h>
 
-#ifndef MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS
-# define MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS 10
-#endif
+#include "memfault/config.h"
 
 //! Starts a software watchdog with a timeout of MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS
 //!

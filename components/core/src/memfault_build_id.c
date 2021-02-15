@@ -12,9 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#ifndef MEMFAULT_USE_GNU_BUILD_ID
-# define MEMFAULT_USE_GNU_BUILD_ID 0
-#endif
+#include "memfault/config.h"
 
 #if MEMFAULT_USE_GNU_BUILD_ID
 

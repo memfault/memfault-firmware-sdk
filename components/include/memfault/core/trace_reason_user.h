@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #include "memfault/core/compiler.h"
+#include "memfault/config.h"
 
 //! Defines a user-defined trace reason.
 //!
@@ -48,13 +49,9 @@ extern "C" {
 #define MEMFAULT_TRACE_REASON(reason) \
   kMfltTraceReasonUser_##reason
 
-#if !defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-# define MEMFAULT_TRACE_REASON_USER_DEFS_FILE "memfault_trace_reason_user_config.def"
-#endif
-
 //! For compilers which support the __has_include macro display a more friendly error message
 //! when the user defined header is not found on the include path
-#if defined(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
+//!
 //! NB: ARMCC and IAR define __has_include but they don't work as expected
 # if !defined(__CC_ARM) && !defined(__ICCARM__)
 #  if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
@@ -62,7 +59,7 @@ extern "C" {
 #    error "See trace_reason_user.h for more details"
 #  endif
 # endif
-#endif
+
 
 //! If trace events are not being used, including the user config file can be disabled
 //! by adding -DMEMFAULT_DISABLE_USER_TRACE_REASONS=1 to CFLAGs

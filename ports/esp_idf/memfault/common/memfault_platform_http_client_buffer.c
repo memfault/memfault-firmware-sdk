@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
 #ifndef MEMFAULT_HTTP_CLIENT_MAX_BUFFER_SIZE

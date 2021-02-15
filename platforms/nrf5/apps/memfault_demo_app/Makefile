@@ -20,17 +20,25 @@ MEMFAULT_PLATFORM_REFERENCE_IMPL = $(MEMFAULT_SDK_ROOT)/platforms/nrf5/libraries
 MEMFAULT_PLATFORM_SDK_OVERRIDES = $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/sdk_overrides/
 MEMFAULT_PLATFORM_REFERENCE_SRC += \
   $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_core.c \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_coredump.c \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_device_info.c \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_reboot_tracking.c \
+  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_device_info.c
+
+MEMFAULT_PORTS_ROOT := $(MEMFAULT_SDK_ROOT)/ports
+MEMFAULT_PORTS_NRFSDK := $(MEMFAULT_PORTS_ROOT)/nrf5_sdk
+MEMFAULT_PORTS_INCLUDE := $(MEMFAULT_PORTS_ROOT)/include
+MEMFAULT_PORTS_SRC += \
+  $(MEMFAULT_PORTS_NRFSDK)/memfault_nrf5_coredump.c \
+  $(MEMFAULT_PORTS_NRFSDK)/resetreas_reboot_tracking.c
 
 SRC_FILES += \
    $(MEMFAULT_COMPONENTS_SRCS) \
+   $(MEMFAULT_COMPONENTS_SRCS) \
    $(MEMFAULT_PLATFORM_REFERENCE_SRC) \
+   $(MEMFAULT_PORTS_SRC)
 
 INC_FOLDERS += \
  $(MEMFAULT_PLATFORM_SDK_OVERRIDES) \
- $(MEMFAULT_COMPONENTS_INC_FOLDERS)
+ $(MEMFAULT_COMPONENTS_INC_FOLDERS) \
+ $(MEMFAULT_PORTS_INCLUDE)
 
 # Add the gnu build id to the elf for better tracking between elf and binary
 # https://interrupt.memfault.com/blog/gnu-build-id-for-firmware

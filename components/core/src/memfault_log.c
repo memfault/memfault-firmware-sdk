@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
@@ -23,10 +24,6 @@
 #include "memfault/util/crc16_ccitt.h"
 
 #define MEMFAULT_RAM_LOGGER_VERSION 1
-
-#ifndef MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL
-  #define MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL kMemfaultPlatformLogLevel_Info
-#endif
 
 typedef struct MfltLogStorageInfo {
   void *storage;

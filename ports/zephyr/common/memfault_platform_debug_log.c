@@ -12,6 +12,8 @@
 
 #include "zephyr_release_specific_headers.h"
 
+#include "memfault/config.h"
+
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
 #  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif

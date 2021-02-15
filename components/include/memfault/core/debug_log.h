@@ -23,32 +23,12 @@
 //! #define YOUR_PLATFORM_LOG_WARN(...) MEMAULT_LOG_WARN(__VA_ARGS__)
 //! #define YOUR_PLATFORM_LOG_ERROR(...) MEMAULT_LOG_ERROR(__VA_ARGS__)
 
+#include "memfault/config.h"
 #include "memfault/core/log.h"
 #include "memfault/core/platform/debug_log.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-// Shouldn't typically be needed but allows for persisting of MEMFAULT_LOG_*'s
-// to be disabled via a CFLAG: CFLAGS += -DMEMFAULT_SDK_LOG_SAVE_DISABLE=1
-#if !defined(MEMFAULT_SDK_LOG_SAVE_DISABLE)
-  #define MEMFAULT_SDK_LOG_SAVE_DISABLE 0
-#endif
-
-// Allows for the MEMFAULT_LOG APIs to be re-mapped to another macro rather
-// than the  memfault_platform_log dependency function
-//
-// In this mode a user of the SDK will need to define the following macros:
-//   MEMFAULT_LOG_DEBUG(...)
-//   MEMFAULT_LOG_INFO(...)
-//   MEMFAULT_LOG_WARN(...)
-//   MEMFAULT_LOG_ERROR(...)
-//
-// And if the "demo" component is being used:
-//   MEMFAULT_LOG_RAW(...)
-#if !defined(MEMFAULT_PLATFORM_HAS_LOG_CONFIG)
-  #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 0
 #endif
 
 #if !MEMFAULT_SDK_LOG_SAVE_DISABLE

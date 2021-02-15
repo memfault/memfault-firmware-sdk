@@ -7,20 +7,8 @@
 
 #include <stddef.h>
 
+#include "memfault/config.h"
 #include "memfault/panics/platform/coredump.h"
-
-//! The maximum number of tasks which can be tracked by this subsystem at one time. If your system
-//! has more tasks than this, the number will need to be bumped in order for the stacks to be fully
-//! recovered
-#if !defined(MEMFAULT_PLATFORM_MAX_TRACKED_TASKS)
-# define MEMFAULT_PLATFORM_MAX_TRACKED_TASKS 16
-#endif /* MEMFAULT_PLATFORM_MAX_TRACKED_TASKS */
-
-//! The default amount of stack for each task to collect in bytes.  The larger the size, the more
-//! stack frames Memfault will be able to unwind when the coredump is uploaded.
-#if !defined(MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT)
-# define MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT 256
-#endif
 
 //! For each task tracked we will need to collect the TCB + a region of the stack
 #define MEMFAULT_PLATFORM_MAX_TASK_REGIONS \

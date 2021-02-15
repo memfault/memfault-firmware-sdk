@@ -1,6 +1,5 @@
 {
     "macros": ["MBED_FAULT_HANDLER_DISABLED=1"],
-
     "target_overrides": {
         "*": {
             "platform.stdio-baud-rate": 115200,

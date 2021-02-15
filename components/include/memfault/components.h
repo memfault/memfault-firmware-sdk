@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+#include "memfault/config.h"
 #include "memfault/core/arch.h"
 #include "memfault/core/batched_events.h"
 #include "memfault/core/build_info.h"

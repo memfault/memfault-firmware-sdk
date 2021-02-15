@@ -12,12 +12,6 @@ COMPONENT_SRCDIRS += \
 
 
 COMPONENT_ADD_INCLUDEDIRS += \
-  $(MEMFAULT_SDK_ROOT)/components/core/include \
-  $(MEMFAULT_SDK_ROOT)/components/demo/include \
-  $(MEMFAULT_SDK_ROOT)/components/http/include \
-  $(MEMFAULT_SDK_ROOT)/components/metrics/include \
-  $(MEMFAULT_SDK_ROOT)/components/panics/include \
-  $(MEMFAULT_SDK_ROOT)/components/util/include \
   $(MEMFAULT_SDK_ROOT)/components/include \
   $(MEMFAULT_SDK_ROOT)/ports/esp8266_sdk/memfault/include \
   $(MEMFAULT_SDK_ROOT)/ports/freertos/include \

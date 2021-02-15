@@ -15,6 +15,7 @@
 
 #include "memfault/core/data_packetizer.h"
 
+#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/math.h"

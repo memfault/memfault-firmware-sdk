@@ -20,6 +20,7 @@
 
 #include "memfault/ports/watchdog.h"
 
+#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 
 #include "em_wdog.h"

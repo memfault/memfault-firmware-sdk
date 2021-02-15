@@ -21,13 +21,9 @@
 
 #include "memfault/demo/cli.h"
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
-
-#if !defined(MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE)
-// Note: Arbitrary default size for CLI command. Can be as small as 9 bytes.
-#define MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE 1024
-#endif
 
 // Note: We mark the function as weak so an end user can override this with a real implementation
 // and we disable optimizations so the parameters don't get stripped away

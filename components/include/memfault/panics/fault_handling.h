@@ -10,6 +10,7 @@
 
 #include <inttypes.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
 #ifdef __cplusplus
@@ -18,37 +19,7 @@ extern "C" {
 
 #if MEMFAULT_COMPILER_ARM
 
-// By default, exception handlers use CMSIS naming conventions. By default, the CMSIS library
-// provides a weak implementation for each handler that is implemented as an infinite loop. By
-// using the same name, the Memfault SDK can override this default behavior to capture crash
-// information when a fault handler runs.
-//
-// However, if needed, each handler can be renamed using the following
-// preprocessor defines:
-
-//! Hard Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-#ifndef MEMFAULT_EXC_HANDLER_HARD_FAULT
-#  define MEMFAULT_EXC_HANDLER_HARD_FAULT HardFault_Handler
-#endif
-
-//! Memory Management handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-#ifndef MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT
-#  define MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT MemoryManagement_Handler
-#endif
-
-//! Bus Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-#ifndef MEMFAULT_EXC_HANDLER_BUS_FAULT
-#  define MEMFAULT_EXC_HANDLER_BUS_FAULT BusFault_Handler
-#endif
-
-//! Usage Fault handler for ARM processors. The handler will capture fault information
-//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
-#ifndef MEMFAULT_EXC_HANDLER_USAGE_FAULT
-#  define MEMFAULT_EXC_HANDLER_USAGE_FAULT UsageFault_Handler
-#endif
+//! Function prototypes for fault handlers
 
 //! Non-Maskable Interrupt handler for ARM processors. The handler will capture fault
 //! information and PC/LR addresses, trigger a coredump to be captured and finally reboot.
@@ -64,9 +35,24 @@ extern "C" {
 //! However, a few RTOSs and vendor SDKs make use of the handler. If you encounter a duplicate
 //! symbol name conflict due to this the memfault implementation can be disabled as follows:
 //!   CFLAGS += -DMEMFAULT_EXC_HANDLER_NMI=MemfaultNmi_Handler_Disabled
-#ifndef MEMFAULT_EXC_HANDLER_NMI
-#  define MEMFAULT_EXC_HANDLER_NMI NMI_Handler
-#endif
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void);
+
+//! Hard Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void);
+
+//! Memory Management handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void);
+
+//! Bus Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void);
+
+
+//! Usage Fault handler for ARM processors. The handler will capture fault information
+//! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void);
 
 //! (Optional) interrupt handler which can be installed for a watchdog
 //!
@@ -76,16 +62,6 @@ extern "C" {
 //!
 //! For more ideas about configuring watchdogs in general check out:
 //!   https://mflt.io/root-cause-watchdogs
-#ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
-#  define MEMFAULT_EXC_HANDLER_WATCHDOG MemfaultWatchdog_Handler
-#endif
-
-//! Function prototypes for fault handlers
-MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void);
-MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void);
-MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void);
-MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void);
-MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void);
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
 #endif
 

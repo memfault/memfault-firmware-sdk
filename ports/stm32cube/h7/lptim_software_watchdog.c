@@ -20,6 +20,7 @@
 
 #include "stm32h7xx_hal.h"
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 

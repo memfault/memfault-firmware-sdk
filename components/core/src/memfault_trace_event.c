@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memfault/config.h"
 #include "memfault/core/arch.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
@@ -19,19 +20,6 @@
 #include "memfault/core/math.h"
 #include "memfault/core/serializer_helper.h"
 #include "memfault/core/serializer_key_ids.h"
-
-//! By default, the Memfault SDK allows for trace events with logs to be captured for trace events
-//! from ISRs.
-//!
-//! However, this can be disabled to reduce static RAM usage by MEMFAULT_TRACE_EVENT_MAX_LOG_LEN
-#if !defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED)
-# define MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED 1
-#endif /* MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
-
-//! The maximum size allocated for a trace event log
-#if !defined(MEMFAULT_TRACE_EVENT_MAX_LOG_LEN)
-# define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
-#endif /* !MEMFAULT_TRACE_EVENT_MAX_LOG_LEN */
 
 #define MEMFAULT_TRACE_EVENT_STORAGE_UNINITIALIZED (-1)
 #define MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE (-2)

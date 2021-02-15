@@ -12,20 +12,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
 #define MEMFAULT_HTTP_URL_BUFFER_SIZE (128)
-
-#ifndef MEMFAULT_HTTP_CHUNKS_API_HOST
-#  define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks.memfault.com"
-#endif
-#ifndef MEMFAULT_HTTP_DEVICE_API_HOST
-#  define MEMFAULT_HTTP_DEVICE_API_HOST "device.memfault.com"
-#endif
-
-#ifndef MEMFAULT_HTTP_APIS_DEFAULT_PORT
-#  define MEMFAULT_HTTP_APIS_DEFAULT_PORT (443)
-#endif
 
 #define MEMFAULT_HTTP_CHUNKS_API_PREFIX "/api/v0/"
 #define MEMFAULT_HTTP_CHUNKS_API_SUBPATH "chunks"

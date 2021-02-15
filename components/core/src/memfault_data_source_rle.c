@@ -6,9 +6,7 @@
 //! @brief
 //! See header for more details
 
-#ifndef MEMFAULT_DATA_SOURCE_RLE_ENABLED
-#define MEMFAULT_DATA_SOURCE_RLE_ENABLED 1
-#endif
+#include "memfault/config.h"
 
 #if MEMFAULT_DATA_SOURCE_RLE_ENABLED
 

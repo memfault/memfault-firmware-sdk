@@ -11,16 +11,11 @@
 //! Asserts are _only_ used for API misuse and configuration issues (i.e a NULL function pointer
 //! as for a function in a *StorageImpl context).
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-//! While it is recommended that MEMFAULT_SDK_ASSERT be left enabled, they can be disabled by
-//! adding -DMEMFAULT_SDK_ASSERT_ENABLED=0 to the CFLAGS used to compile the SDK
-#ifndef MEMFAULT_SDK_ASSERT_ENABLED
-#define MEMFAULT_SDK_ASSERT_ENABLED 1
 #endif
 
 #if MEMFAULT_SDK_ASSERT_ENABLED

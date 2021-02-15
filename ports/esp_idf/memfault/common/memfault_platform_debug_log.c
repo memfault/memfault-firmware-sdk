@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memfault/config.h"
+
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 

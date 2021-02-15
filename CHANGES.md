@@ -1,3 +1,40 @@
+### Changes between Memfault SDK 0.12.0 and SDK 0.11.4 - Feb 14, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- The SDK now includes a central configuration header at
+  [`components/include/memfault/config.h`](components/include/memfault/config.h#L1).
+  Platform overrides can be defined in `memfault_platform_config.h`
+- Reference platform API implementations for the
+  [nRF5 SDK](https://infocenter.nordicsemi.com/topic/struct_sdk/struct/sdk_nrf5_latest.html)
+  - [rich reboot reason info derived from RESETREAS register](ports/nrf5_sdk/resetreas_reboot_tracking.c#L1)
+  - [internal flash coredump storage](ports/nrf5_sdk/memfault_nrf5_coredump.c#L1)
+- All headers for Memfault "components" can now be found under
+  [`components/include/memfault/`](components/include/memfault/). This
+  simplifies adding components to build systems as only a single path is now
+  needed!
+
+#### :boom: Breaking Changes
+
+- You must create the file `memfault_platform_config.h` and add it to your
+  include path. This file can be used in place of compiler defines to tune the
+  SDK configurations settings.
+- If you are not using a Memfault
+  [build system helper](README.md#add-sources-to-build-system)
+  1. Remove all include paths at
+     `${MEMFAULT_FIRMWARE_SDK}/components/${COMPONENT}/include`
+  2. Add include path `${MEMFAULT_FIRMWARE_SDK}/components/include` to your
+     build system
+- If you were linking any of the nRF5 example app files in your project, the
+  directory has changed:
+
+```diff
+- ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c
++ ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/resetreas_reboot_tracking.c
+- ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_coredump.c
++ ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/memfault_nrf5_coredump.c
+```
+
 ### Changes between Memfault SDK 0.11.4 and SDK 0.11.3 - Feb 4, 2021
 
 - ESP8266 Updates
