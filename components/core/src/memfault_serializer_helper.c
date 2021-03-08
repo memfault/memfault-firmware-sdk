@@ -30,7 +30,7 @@ typedef struct MemfaultSerializerOptions {
   bool encode_device_serial;
 } sMemfaultSerializerOptions;
 
-//! The number of messages dropped since the last succesful send
+//! The number of messages dropped since the last successful send
 static uint32_t s_num_storage_drops = 0;
 //! A running sum of total messages dropped since memfault_serializer_helper_read_drop_count() was
 //! last called

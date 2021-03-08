@@ -19,7 +19,7 @@ size_t memfault_encode_varint_u32(uint32_t value, void *buf) {
 
 size_t memfault_encode_varint_si32(int32_t value, void *buf) {
   // A representation that maps negative numbers onto odd positive numbers and
-  // postive numbers onto positive even numbers. Some example conversions follow:
+  // positive numbers onto positive even numbers. Some example conversions follow:
   //  0 -> 0
   // -1 -> 1
   //  1 -> 2

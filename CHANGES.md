@@ -1,3 +1,45 @@
+### Changes between Memfault SDK 0.13.0 and SDK 0.12.0 - March 4, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Improved documentation in [README](README.md) and [components](components/)
+  directories.
+- Added coredump capture support to panics component for the AARCH64
+  architecture.
+- Reference platform API implementations for the following MCUs/SDKs:
+  - STM32WBxx family / STM32CubeWB:
+    - [rich reboot reason info derived from RCC CSR register](ports/stm32cube/wb/rcc_reboot_tracking.c#L1)
+  - nRF5 SDK
+    - [app_timer based port for metric dependencies](ports/nrf5_sdk/memfault_platform_metrics.c#L1)
+- [`fw_build_id.py`](scripts/fw_build_id.py) script improvements
+  - script is now compatible with Python2 environments.
+  - Added new `--dump <chars>` option to simplify extraction of build id in
+    automation, i.e:
+    ```
+     python scripts/fw_build_id.py <ELF> --dump 7
+     3a3e81f
+    ```
+
+#### :house: Internal
+
+- Started work to enable automatic capture of logs in a coredump for the Zephyr
+  & nRF Connect SDK.
+
+#### :boom: Breaking Changes
+
+- If you were linking `memfault_nrf5_coredump.c` in your project:
+  - the file has been split into `nrf5_coredump_regions.c` (which defines the
+    regions to collect in a coredump) & `nrf5_coredump_storage.c` (which
+    implements the port for saving coredumps to internal flash). Both of these
+    files must be added to your build system.
+  - Linker script names for region to save coredump to and regions to collect
+    need to be updated:
+    - Update`__CoreStart` & `__MemfaultCoreStorageEnd` to
+      `__MemfaultCoreStorageStart` & `__MemfaultCoreStorageEnd` in linker
+      script.
+    - Update `__MfltCoredumpRamStart` & `__MfltCoredumpRamEnd` to
+      `__MemfaultCoredumpRamStart` & `__MemfaultCoredumpRamEnd`
+
 ### Changes between Memfault SDK 0.12.0 and SDK 0.11.4 - Feb 14, 2021
 
 #### :chart_with_upwards_trend: Improvements
@@ -44,7 +86,7 @@
     both`CONFIG_USING_ESP_CONSOLE=n` and `CONFIG_MEMFAULT_CLI_ENABLED=n`
 - Added default implementations for `MEMFAULT_GET_LR()`, `MEMFAULT_GET_PC()`,
   and `MEMFAULT_BREAKPOINT()` to
-  [`compiler_gcc.h`](components/core/include/memfault/core/compiler_gcc.h) to
+  [`compiler_gcc.h`](components/include/memfault/core/compiler_gcc.h) to
   facilitate compilations of the SDK against other architectures.
 
 ### Changes between Memfault SDK 0.11.3 and SDK 0.11.2 - Jan 31, 2021
@@ -174,7 +216,7 @@
 #### :rocket: New Features
 
 - Added several more
-  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
+  [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
   - `kMfltRebootReason_PinReset` for explicitly tracking external pin resets.
   - `kMfltRebootReason_SoftwareWatchdog` & `kMfltRebootReason_HardwareWatchdog`
     for easier disambiguation between watchdog resets where a coredump was
@@ -241,7 +283,7 @@
 #### :chart_with_upwards_trend: Improvements
 
 - A log can now be captured alongside a trace event by using a new API:
-  [`MEMFAULT_TRACE_EVENT_WITH_LOG(reason, ...)`](components/core/include/memfault/core/trace_event.h#L77).
+  [`MEMFAULT_TRACE_EVENT_WITH_LOG(reason, ...)`](components/include/memfault/core/trace_event.h#L77).
   This can be useful to capture arbitrary diagnostic data with an error event or
   to capture critical error logs that you would like to be alerted on when they
   happen. For example:
@@ -294,7 +336,7 @@ void record_temperature(void) {
     forwarding Memfault chunks to the ESP32.
 - The platform port for the memfault log dependency can now be implemented by
   macros (rather than the `memfault_platform_log` dependency). See
-  [`components/core/include/memfault/core/debug_log.h`](components/core/include/memfault/core/debug_log.h)
+  [`components/include/memfault/core/debug_log.h`](components/include/memfault/core/debug_log.h)
   for more details.
 
 #### :boom: Breaking Changes
@@ -313,7 +355,7 @@ void record_temperature(void) {
   the memory regions requested take up more space than the platform storage
   allocated for saving. A warning will also be displayed in the Memfault UI when
   this happens. Regions are always read in the order returned from
-  [`memfault_platform_coredump_get_regions()`](components/panics/include/memfault/panics/platform/coredump.h)
+  [`memfault_platform_coredump_get_regions()`](components/include/memfault/panics/platform/coredump.h)
   so it is recommended to order this list from the most to least important
   regions to capture.
 - Updated FreeRTOS port to use static allocation APIs by default when the
@@ -324,7 +366,7 @@ void record_temperature(void) {
 #### :chart_with_upwards_trend: Improvements
 
 - Added several more
-  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
+  [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
   `kMfltRebootReason_SoftwareReset` & `kMfltRebootReason_DeepSleep`.
 - Extended [ESP32 port](https://mflt.io/esp-tutorial) to include integrations
   for [reboot reason tracking](https://mflt.io/reboot-reasons) and
@@ -337,7 +379,7 @@ void record_temperature(void) {
 #### :chart_with_upwards_trend: Improvements
 
 - Added a new convenience API,
-  [`memfault_coredump_storage_check_size()`](components/panics/include/memfault/panics/coredump.h),
+  [`memfault_coredump_storage_check_size()`](components/include/memfault/panics/coredump.h),
   to check that coredump storage is appropriately sized.
 - Fixed a :bug: with heartbeat timers that would lead to an incorrect duration
   being reported if the timer was started and stopped within the same
@@ -365,8 +407,8 @@ void record_temperature(void) {
   [memfault_event_storage.c](components/core/src/memfault_event_storage.c#L30)
 - Added convenience API, `memfault_build_id_get_string`, for populating a buffer
   with a portion of the
-  [Memfault Build ID](components/core/include/memfault/core/build_info.h#L8-L42)
-  as a string.
+  [Memfault Build ID](components/include/memfault/core/build_info.h#L8-L42) as a
+  string.
 - Added default implementations of several Memfault SDK dependency functions
   when using FreeRTOS to [ports/freertos](ports/freertos).
 
@@ -376,7 +418,7 @@ void record_temperature(void) {
 
 - A status or error code (i.e bluetooth disconnect reason, errno value, etc) can
   now be logged alongside a trace event by using a new API:
-  [`MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code)`](components/core/include/memfault/core/trace_event.h#L55).
+  [`MEMFAULT_TRACE_EVENT_WITH_STATUS(reason, status_code)`](components/include/memfault/core/trace_event.h#L55).
 
 ### Changes between Memfault SDK 0.7.1 and SDK 0.7.0 - Sept 1, 2020
 
@@ -389,7 +431,7 @@ void record_temperature(void) {
   paths within the SDK and leaves the NMI Handler free for other uses within the
   user's environment.
 - Added several more
-  [reboot reason options](components/core/include/memfault/core/reboot_reason_types.h#L16):
+  [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
   `kMfltRebootReason_PowerOnReset`, `kMfltRebootReason_BrownOutReset`, &
   `kMfltRebootReason_Nmi`.
 
@@ -398,7 +440,7 @@ void record_temperature(void) {
 #### :chart_with_upwards_trend: Improvements
 
 - Added utility to facilitate collection of the memory regions used by the
-  [logging module](components/core/include/memfault/core/log.h) as part of a
+  [logging module](components/include/memfault/core/log.h) as part of a
   coredump. With this change, when the SDK is compiled with
   `MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1`, the logging region will
   automatically be collected as part of a coredump. Step-by-step details can
@@ -432,7 +474,7 @@ void record_temperature(void) {
 #### :rocket: New Features
 
 - Added
-  [memfault/core/data_export.h](components/core/include/memfault/core/data_export.h#L5)
+  [memfault/core/data_export.h](components/include/memfault/core/data_export.h#L5)
   API to facilitate production and evaluation use cases where Memfault data is
   extracted over a log interface (i.e shell, uart console, log file, etc). See
   the header linked above or the
@@ -552,7 +594,7 @@ void record_temperature(void) {
 
 - Added native SDK support for tracking and generating a unique firmware build
   id with any compiler! Quick integration steps can be found in
-  [memfault/core/build_info.h](components/core/include/memfault/core/build_info.h#L8-L42).
+  [memfault/core/build_info.h](components/include/memfault/core/build_info.h#L8-L42).
   It is very common, especially during development, to not change the firmware
   version between editing and compiling the code. This will lead to issues when
   recovering backtraces or symbol information because the debug information in
@@ -581,8 +623,8 @@ void record_temperature(void) {
   - `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_build_id.c`
   - `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_core_utils.c`
 - We also encourage you to add a
-  [unique build id](components/core/include/memfault/core/build_info.h#L8-L42)
-  to your build (several line code change).
+  [unique build id](components/include/memfault/core/build_info.h#L8-L42) to
+  your build (several line code change).
 
 ### Changes between Memfault SDK 0.4.0 and SDK 0.3.4 - May 6, 2020
 
@@ -592,14 +634,14 @@ void record_temperature(void) {
   non-volatile storage mediums. This can be useful for devices which experience
   prolonged periods of no connectivity. To leverage the feature, an end user
   must implement the
-  [nonvolatile_event_storage platform API](components/core/include/memfault/core/platform/nonvolatile_event_storage.h#L7).
+  [nonvolatile_event_storage platform API](components/include/memfault/core/platform/nonvolatile_event_storage.h#L7).
 
 #### :chart_with_upwards_trend: Improvements
 
 - Added an assert used internally by the SDK which makes it easier to debug API
   misuse during bringup. The assert is enabled by default but can easily be
   disabled or overriden. For more details see
-  [`memfault/core/sdk_assert.h`](components/core/include/memfault/core/sdk_assert.h#L6).
+  [`memfault/core/sdk_assert.h`](components/include/memfault/core/sdk_assert.h#L6).
 - Added a default implementation of
   [`memfault_platform_halt_if_debugging()`](components/core/src/arch_arm_cortex_m.c#L20-L34)
   for Cortex-M targets. The function is defined as _weak_ so a user can still
@@ -655,7 +697,7 @@ void record_temperature(void) {
 #### :rocket: New Features
 
 - The `captured_date` for an event can now be set by implementing
-  [`memfault_platform_time_get_current()`](components/core/include/memfault/core/platform/system_time.h#L33).
+  [`memfault_platform_time_get_current()`](components/include/memfault/core/platform/system_time.h#L33).
   If the API is not implemented, the `captured_date` will continue to be set
   based on the time the event was received by the memfault cloud.
 
@@ -666,13 +708,13 @@ void record_temperature(void) {
   [NRF52 demo app](platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
   and a new `reboot` CLI command to easily exercise it.
 - A `reset_reason` can now optionally be provided as part of
-  [`sResetBootupInfo`](components/panics/include/memfault/core/reboot_tracking.h#L41).
+  [`sResetBootupInfo`](components/include/memfault/core/reboot_tracking.h#L41).
   This can be useful for scenarios where the reboot reason is known on bootup
   but could not be set prior to the device crashing.
 - A reboot reason event will now _always_ be generated when
   `memfault_reboot_tracking_boot()` is called even if no information about the
   reboot has been provided. In this scenario, the reset reason will be
-  [`kMfltRebootReason_Unknown`](components/core/include/memfault/core/reboot_reason_types.h#L16)
+  [`kMfltRebootReason_Unknown`](components/include/memfault/core/reboot_reason_types.h#L16)
 
 #### :house: Internal
 
@@ -695,8 +737,7 @@ void record_temperature(void) {
 
 #### :rocket: New Features
 
-- Added
-  [`memfault_log_read()`](components/core/include/memfault/core/log.h#L95-L121)
+- Added [`memfault_log_read()`](components/include/memfault/core/log.h#L95-L121)
   API to make it possible to use the module to cache logs in RAM and then flush
   them out to slower mediums, such as a UART console or Flash, from a background
   task.
@@ -705,7 +746,7 @@ void record_temperature(void) {
 
 - A pointer to the stack frame upon exception entry is now included in
   `sCoredumpCrashInfo` when
-  [memfault_platform_coredump_get_regions](components/panics/include/memfault/panics/platform/coredump.h#L56)
+  [memfault_platform_coredump_get_regions](components/include/memfault/panics/platform/coredump.h#L56)
   is invoked. This can (optionally) be used to configure regions collected based
   on the state or run platform specific cleanup based on the state.
 - Added Root Certificates needed for release downloads to
@@ -723,7 +764,7 @@ void record_temperature(void) {
 - Introduced a lightweight logging module. When used, the logs leading up to a
   crash will now be decoded and displayed from the Memfault Issue Details Web
   UI. For instructions about how to use the module in your project, check out
-  [log.h](components/core/include/memfault/core/log.h).
+  [log.h](components/include/memfault/core/log.h).
 - The metrics component will now automatically collect the elapsed time and the
   number of unexpected reboots during a heartbeat interval. The Memfault cloud
   now uses this information to automatically compute and display the overall
@@ -744,13 +785,12 @@ void record_temperature(void) {
 - The function signature for `memfault_metrics_boot()` changed as part of this
   update. If you are already using the `metrics` component, you will need to
   update the call accordingly. See the notes in
-  [metrics.h](components/metrics/include/memfault/metrics/metrics.h) for more
-  details.
+  [metrics.h](components/include/memfault/metrics/metrics.h) for more details.
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system), you will need
   to add `$(MEMFAULT_SDK_ROOT)/components/core/src/memfault_log.c` to your
   project. (Note that until
-  [`memfault_log_boot()`](https://github.com/memfault/memfault-firmware-sdk/blob/master/components/core/include/memfault/core/log.h#L33-L38)
+  [`memfault_log_boot()`](https://github.com/memfault/memfault-firmware-sdk/blob/master/components/include/memfault/core/log.h#L33-L38)
   is called, all calls made to the logging module will be a no-op).
 
 ### Changes between Memfault SDK 0.2.5 and SDK 0.2.4 - March 20, 2020
@@ -799,7 +839,7 @@ void record_temperature(void) {
 
 - Add support for compressing coredumps as they are sent using Run Length
   Encoding (RLE). More details can be found in
-  [memfault/core/data_source_rle.h](components/core/include/memfault/core/data_source_rle.h).
+  [memfault/core/data_source_rle.h](components/include/memfault/core/data_source_rle.h).
 - Update **metrics** component to support compilation with the IAR ARM C/C++
   Compiler.
 - Update Mbed OS 5 port to use `memfault_demo_shell` instead `mbed-client-cli`,
@@ -848,8 +888,7 @@ void record_temperature(void) {
 ### Changes between Memfault SDK 0.0.16 and SDK 0.0.15 - Jan 6, 2020
 
 - Add convenience API, `memfault_packetizer_get_chunk()`, to
-  [data_packetizer](components/core/include/memfault/core/data_packetizer.h)
-  module.
+  [data_packetizer](components/include/memfault/core/data_packetizer.h) module.
 - Add a new eMfltCoredumpRegionType, `MemoryWordAccessOnly` which can be used to
   force the region to be read 32 bits at a time. This can be useful for
   accessing certain peripheral register ranges which are not byte addressable.

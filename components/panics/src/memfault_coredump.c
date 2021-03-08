@@ -63,20 +63,21 @@ typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
 //  https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch4.eheader.html
 //
 // NB: We use the upper 16 bits of the MachineType TLV pair in the coredump to
-// encode additional metadata about the architecture being targetted
+// encode additional metadata about the architecture being targeted
 
 #define MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET 16
 
 #define MEMFAULT_MACHINE_TYPE_XTENSA 94
 
 #define MEMFAULT_MACHINE_TYPE_XTENSA_LX106 \
-  (1 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_XTENSA
+  ((1 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_XTENSA)
 
 typedef enum MfltCoredumpMachineType  {
   kMfltCoredumpMachineType_None = 0,
   kMfltCoredumpMachineType_ARM = 40,
+  kMfltCoredumpMachineType_Aarch64 = 183,
   kMfltCoredumpMachineType_Xtensa = MEMFAULT_MACHINE_TYPE_XTENSA,
-  kMfltCoredumpMachineType_XtensaLx106 =  MEMFAULT_MACHINE_TYPE_XTENSA_LX106
+  kMfltCoredumpMachineType_XtensaLx106 = MEMFAULT_MACHINE_TYPE_XTENSA_LX106
 } eMfltCoredumpMachineType;
 
 typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
@@ -190,13 +191,15 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #else
 #  if MEMFAULT_COMPILER_ARM
   return kMfltCoredumpMachineType_ARM;
+#  elif defined(__aarch64__)
+  return kMfltCoredumpMachineType_Aarch64;
 #  elif defined(__XTENSA__)
   # if defined(__XTENSA_WINDOWED_ABI__)
     return kMfltCoredumpMachineType_Xtensa;
   # else
     return kMfltCoredumpMachineType_XtensaLx106;
   # endif
-#  else
+# else
 #    error "Coredumps are not supported for target architecture"
 #  endif
 #endif
@@ -357,7 +360,7 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
       return false;
     }
 
-    // If we are saving a new coredump but one is already stored, don't overwrite it. This way an
+    // If we are saving a new coredump but one is already stored, don't overwrite it. This way
     // the first issue which started the crash loop can be determined
     MfltCoredumpReadCb coredump_read_cb = memfault_platform_coredump_storage_read;
     if (!prv_get_info_and_header(&hdr, &info, coredump_read_cb)) {

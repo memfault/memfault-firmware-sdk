@@ -11,7 +11,7 @@
 //! "memfault_platform_config.h". If no setting is specified, the default values
 //! below will get picked up.
 //!
-//! The configuration file has three settings which can be overriden by adding a
+//! The configuration file has three settings which can be overridden by adding a
 //! compiler time define to your CFLAG list:
 //!  1. MEMFAULT_PLATFORM_CONFIG_FILE can be used to change the default name of
 //!     the platform configuration file, "memfault_platform_config.h"
@@ -34,7 +34,6 @@ extern "C" {
 #include MEMFAULT_PLATFORM_CONFIG_FILE
 #endif
 
-  //!
 #ifndef MEMFAULT_PLATFORM_CONFIG_STRICT
 #define MEMFAULT_PLATFORM_CONFIG_STRICT 0
 #endif

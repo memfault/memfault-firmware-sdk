@@ -28,10 +28,11 @@ extern "C" {
 
 typedef struct MemfaultEventStorageImpl sMemfaultEventStorageImpl;
 
-//! Must be called by the customer on boot to setup heartbeat storage.
+//! Must be called by the customer on boot to setup event storage.
 //!
-//! This is where serialized heartbeat data is stored as it waits to be drained
-//! (via call's to memfault_packetizer_get_next())
+//! This is where serialized event data like heartbeat metrics, reboot tracking info, and
+//! trace event data is stored as it waits to be drained (via call's
+//! to memfault_packetizer_get_next()).
 //!
 //! For any module using the event store the worst case size needed can be computed using the
 //! exported APIs:
@@ -39,15 +40,15 @@ typedef struct MemfaultEventStorageImpl sMemfaultEventStorageImpl;
 //!   memfault_metrics_heartbeat_compute_worst_case_storage_size()
 //!   memfault_trace_event_compute_worst_case_storage_size()
 //!
-//! For example, if a device connects to the internet once/hour and collects a heartbeat at this
+//! For example, if a device connects to the Internet once/hour and collects a heartbeat at this
 //! interval as well, the buffer size to allocate can easily be computed as:
 //!  buf_len = memfault_metrics_heartbeat_compute_worst_case_storage_size() * 1
 //!
 //! When a module using the event store is initialized a WARNING will print on boot and an error
 //! code will return if it is not appropriately sized to hold at least one event.
 //!
-//! @param buf The buffer to use for heartbeat storage
-//! @param buf_len The length of the buffer to use for heartbeat storage
+//! @param buf The buffer to use for event storage
+//! @param buf_len The length of the buffer to use for event storage
 //!
 //! @return a handle to the event storage implementation on success & false on failure.
 //!  This handle will need to be provided to modules which use the event store on initialization

@@ -106,3 +106,29 @@ def test_no_memfault_sdk_present():
     ):
         b = BuildIdInspectorAndPatcher(elf_fixture_filename)
         b.check_or_update_build_id()
+
+
+def test_no_build_id_on_dump():
+    elf_fixture_filename = os.path.join(
+        ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
+    )
+    with pytest.raises(Exception, match="No Build ID Found"):
+        b = BuildIdInspectorAndPatcher(elf_fixture_filename)
+        b.dump_build_info(num_chars=1)
+
+
+def test_build_id_dump(capsys, snapshot):
+    elf_fixture_filename = os.path.join(
+        ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
+    )
+    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
+        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+        b.dump_build_info(num_chars=1)
+        b.dump_build_info(num_chars=2)
+        b.dump_build_info(num_chars=30)
+
+        assert filecmp.cmp(elf_copy_filename, elf_fixture_filename)
+
+    out, _ = capsys.readouterr()
+    lines = out.splitlines()
+    snapshot.assert_match(lines)

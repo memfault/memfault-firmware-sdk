@@ -19,3 +19,33 @@ hardware version).
 
 Please change `memfault_platform_device_info.c` in ways that makes sense for
 your project.
+
+### Core features
+
+- Build ID
+- Packetizing and serializing data used for sending dat to the Memfault cloud.
+- Event storage for metrics, heartbeat, reboot reasons and trace events. RAM
+  based events can optionally be persisted to NVRAM via user-installed
+  callbacks.
+- Logging support provides a lightweight logging infrastructure with level
+  filtering and the ability to write log entries quickly with user-installable
+  callback support to drain log entries to slower mediums like NVRAM or serial
+  devices. Information stored in the log module will be uploaded to Memfault in
+  the event of a crash.
+- Reboot (reset) tracking captures a reset cause in a section of RAM that is not
+  modified by any firmware during reset and rebooting.
+- Memfault assert macro that can halt if the debugger is attached and call a
+  user function if defined.
+- Trace event capturing
+
+### Storage allocations
+
+- `memfault_events_storage_boot()` to reserve storage for events.
+- `memfault_reboot_tracking_boot()` points to a memory region that is not
+  touched by any firmware except for reboot tracking API functions. Reboot info
+  can be pushed to the event storage for packetization to be sent to Memfault.
+
+# `memfault_trace_event_boot()`: not an allocation but connects a trace event context into the event storge allocation.
+
+- `memfault_log_boot()` to reserve storage for the logging module. The logging
+  storage gets sent to Memfault as part of the core dump data if enabled.

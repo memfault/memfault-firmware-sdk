@@ -4,7 +4,6 @@
 //! See License.txt for details
 
 #include <zephyr.h>
-#include <misc/printk.h>
 
 #include <string.h>
 

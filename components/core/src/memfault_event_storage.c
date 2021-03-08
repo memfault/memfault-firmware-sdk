@@ -245,7 +245,7 @@ static void prv_event_storage_mark_event_read_ram(void) {
   memfault_unlock();
 }
 
-// "begin" to write a heartbeat & return the space available
+// "begin" to write event data & return the space available
 static size_t prv_event_storage_storage_begin_write(void) {
   if (s_event_storage_write_state.write_in_progress) {
     return 0;

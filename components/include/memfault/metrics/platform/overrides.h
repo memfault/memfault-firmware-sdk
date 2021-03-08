@@ -15,7 +15,7 @@ extern "C" {
 
 //! Function invoked every time a heartbeat interval has passed
 //!
-//! It can (optionally) be overriden by the application to collect and update
+//! It can (optionally) be overridden by the application to collect and update
 //! the data for the heartbeat before it is serialized and stored.
 void memfault_metrics_heartbeat_collect_data(void);
 

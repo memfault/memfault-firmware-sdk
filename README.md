@@ -24,7 +24,7 @@ is needed for your project. The SDK has been designed to have minimal impact on
 code-space, bandwidth, and power consumption.
 
 The [`components`](components/) directory folder contains the various components
-of the SDK. Each component contains a`README.md`, source code, header files and
+of the SDK. Each component contains a `README.md`, source code, header files and
 "platform" header files.
 
 The platform header files describe the interfaces which the component relies on
@@ -65,23 +65,25 @@ typically looks like:
 
 ```
 <YOUR_PROJECT>
-├── memfault
-│   └── sdk
-│       # Contents of _this_ repo
-│       # (https://github.com/memfault/memfault-firmware-sdk)
-│   └── platform_port
-│       # Implementations for the Memfault SDK dependencies
-│       # specified in the platform include directory for each component in the SDK
-│       ├── memfault_platform_core.c
-│       ├── memfault_platform_coredump.c
-│       ├── [...]
+├── third_party/memfault
+│               ├── memfault-firmware-sdk (submodule)
+│               │
+│               │ # Files where port to your platform will be implemented
+│               ├── memfault_platform_port.c
+│               ├── memfault_platform_coredump_regions.c
+│               │
+│               │ # Configuration headers
+│               ├── memfault_platform_config.h
+│               ├── memfault_trace_reason_user_config.def
+│               ├── memfault_metrics_heartbeat_config.def
+│               └── memfault_platform_log_config.h
 ```
 
 If you are using `git`, the Memfault SDK is typically added to a project as a
 submodule:
 
 ```
-$ git submodule add git@github.com:memfault/memfault-firmware-sdk.git $YOUR_PROJECT/memfault/sdk
+$ git submodule add git@github.com:memfault/memfault-firmware-sdk.git $YOUR_PROJECT/third_party/memfault/memfault-firmware-sdk
 ```
 
 This makes it easy to track the history of the Memfault SDK. You should not need

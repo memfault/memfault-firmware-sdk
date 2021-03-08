@@ -38,6 +38,26 @@ config MEMFAULT_HTTP_ENABLE
           Adds support for querying the Memfault API for OTA updates
           and posting Memfault chunks
 
+config MEMFAULT_LOGGING_ENABLE
+        bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
+        default n
+        help
+          Adds support for routing Zephyr logging calls to the Memfault
+          logging backend.
+
+if MEMFAULT_LOGGING_ENABLE
+
+config MEMFAULT_LOGGING_RAM_SIZE
+        int "Set the size of the Memfault logging storage buffer"
+        default 512
+        depends on MEMFAULT_LOGGING_ENABLE
+        help
+          The Memfault logs will be stored in a static logging storage buffer
+          defined in memfault_logging.c. Adjust this value to ensure enough
+          room for a reasonalbe number of log entries.
+
+endif # MEMFAULT_LOGGING_ENABLE
+
 choice
     bool "Implementation used to store Memfault Root certificates"
     default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS

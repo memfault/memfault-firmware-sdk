@@ -12,7 +12,7 @@ PROJ_SRC_DIR := src/
 #
 
 # Pick up the
-MEMFAULT_COMPONENTS := core demo panics http util
+MEMFAULT_COMPONENTS := core demo panics http util metrics
 MEMFAULT_SDK_ROOT := $(abspath ../../../..)
 include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
 
@@ -26,7 +26,9 @@ MEMFAULT_PORTS_ROOT := $(MEMFAULT_SDK_ROOT)/ports
 MEMFAULT_PORTS_NRFSDK := $(MEMFAULT_PORTS_ROOT)/nrf5_sdk
 MEMFAULT_PORTS_INCLUDE := $(MEMFAULT_PORTS_ROOT)/include
 MEMFAULT_PORTS_SRC += \
-  $(MEMFAULT_PORTS_NRFSDK)/memfault_nrf5_coredump.c \
+  $(MEMFAULT_PORTS_NRFSDK)/memfault_platform_metrics.c \
+  $(MEMFAULT_PORTS_NRFSDK)/nrf5_coredump_regions.c \
+  $(MEMFAULT_PORTS_NRFSDK)/nrf5_coredump_storage.c \
   $(MEMFAULT_PORTS_NRFSDK)/resetreas_reboot_tracking.c
 
 SRC_FILES += \
@@ -137,14 +139,6 @@ LIB_FILES += \
 
 # Optimization flags
 OPT = -O3 -g3
-
-# Memfault Flags
-
-# MEMFAULT_DATA_SOURCE_RLE_ENABLED can be used to toggle whether or not run-length-encoding is used
-# to compress packetized data
-# CFLAGS += -DMEMFAULT_DATA_SOURCE_RLE_ENABLED=0
-CFLAGS += -DMEMFAULT_USE_GNU_BUILD_ID=1
-CFLAGS += -DMEMFAULT_PLATFORM_HAS_LOG_CONFIG=1
 
 # C flags common to all targets
 CFLAGS += $(OPT)

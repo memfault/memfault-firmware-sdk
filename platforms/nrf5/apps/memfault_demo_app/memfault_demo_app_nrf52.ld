@@ -12,6 +12,12 @@ MEMORY
   RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a848
 }
 
+__MemfaultCoreStorageStart = ORIGIN(MEMFAULT_CORES);
+__MemfaultCoreStorageEnd = ORIGIN(MEMFAULT_CORES) + LENGTH(MEMFAULT_CORES);
+
+__MemfaultCoredumpRamStart = ORIGIN(RAM);
+__MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
+
 SECTIONS
 {
 }
@@ -137,18 +143,6 @@ SECTIONS
      KEEP(*(.note.gnu.build-id))
   } > FLASH
 
-  /** Create some linker symbols describing where to save cores */
-  .core_space :
-  {
-      __CoreStart = ORIGIN(MEMFAULT_CORES);
-      __CoreEnd = ORIGIN(MEMFAULT_CORES) + LENGTH(MEMFAULT_CORES);
-  } > FLASH
-
-  .mflt_coredump_symbols :
-  {
-      __MfltCoredumpRamStart = ORIGIN(RAM);
-      __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
-  } > FLASH
 } INSERT AFTER .text
 
 INCLUDE "nrf_common.ld"

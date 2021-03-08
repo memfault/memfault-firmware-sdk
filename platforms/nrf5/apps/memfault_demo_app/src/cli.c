@@ -11,11 +11,7 @@
 #include "nrf_cli_rtt.h"
 #include "nrf_log.h"
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/math.h"
-#include "memfault/demo/cli.h"
-#include "memfault/http/platform/http_client.h"
+#include "memfault/components.h"
 
 // The nRF board is not capable of doing HTTP requests directly, but the 'print_chunk' command
 // will use this information to print out a cURL command that you can copy & paste into a shell
@@ -69,30 +65,41 @@ static void prv_system_reboot_cmd(nrf_cli_t const *p_cli, size_t argc, char **ar
   memfault_demo_cli_cmd_system_reboot(argc, argv);
 }
 
-static void prv_drain_chunks_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
-  memfault_demo_drain_chunk_data(argc, argv);
+static void prv_export_data_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+  memfault_data_export_dump_chunks();
+}
+
+static void prv_coredump_storage_test_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+  __disable_irq();
+  memfault_coredump_storage_debug_test_begin();
+  __enable_irq();
+
+  memfault_coredump_storage_debug_test_finish();
 }
 
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
 NRF_CLI_CMD_REGISTER(trace, NULL, "capture trace event", prv_trace_example);
+NRF_CLI_CMD_REGISTER(core_storage_test, NULL, "verify coredump storage implementation with test patterns",
+                     prv_coredump_storage_test_cmd);
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
 NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send and print as a curl command", prv_print_chunk_cmd);
 NRF_CLI_CMD_REGISTER(reboot, NULL, "reboots system and tracks it with a trace event", prv_system_reboot_cmd);
-NRF_CLI_CMD_REGISTER(drain_chunks, NULL, "Can be used to post chunks via GDB", prv_drain_chunks_cmd);
+NRF_CLI_CMD_REGISTER(export, NULL, "Can be used to dump chunks to console or post via GDB", prv_export_data_cmd);
 
 // nrf_cli_help_print() doesn't work from the top level CLI so add a little shim 'help' function
 // for better discoverability of memfault added commands
 static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, crash, _raw),
   &CONCAT_3(nrf_cli_, trace, _raw),
+  &CONCAT_3(nrf_cli_, core_storage_test, _raw),
   &CONCAT_3(nrf_cli_, clear_core, _raw),
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
   &CONCAT_3(nrf_cli_, print_chunk, _raw),
   &CONCAT_3(nrf_cli_, reboot, _raw),
-  &CONCAT_3(nrf_cli_, drain_chunks, _raw),
+  &CONCAT_3(nrf_cli_, export, _raw),
 };
 
 static void prv_help_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {

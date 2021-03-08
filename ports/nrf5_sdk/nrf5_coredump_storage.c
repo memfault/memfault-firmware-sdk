@@ -3,8 +3,8 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
-//! Reference implementation of platform dependency functions which could be used
-//! for coredump collection on the NRF52
+//! Implements platform dependency functions required for saving coredumps
+//! to internal flash when using the NRF5 SDK.
 
 #include "memfault/panics/coredump.h"
 
@@ -17,12 +17,19 @@
 #include "nrf_sdh_soc.h"
 #include "nrf_soc.h"
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/platform/coredump.h"
 
-#ifndef MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY
-#  define MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY 1
+#ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
+extern uint32_t __MemfaultCoreStorageStart[];
+#define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
+#endif
+
+#ifndef MEMFAULT_COREDUMP_STORAGE_END_ADDR
+extern uint32_t __MemfaultCoreStorageEnd[];
+#define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
 typedef enum {
@@ -70,47 +77,6 @@ static void prv_coredump_handle_soc_update(uint32_t sys_evt, void * p_context) {
 
 NRF_SDH_SOC_OBSERVER(m_soc_evt_observer, 0, prv_coredump_handle_soc_update, NULL);
 
-// Linker defined symbols specifying the region to store coredumps to
-//
-// NOTE: The size of the regions you collect must be less than the size
-// of the space reserved for saving coredumps!
-extern uint32_t __CoreStart;
-extern uint32_t __CoreEnd;
-
-//! To capture the entire "RAM" region, define these symbols in the .ld script
-//! of your project:
-//!
-//! .mflt_coredump_symbols :
-//! {
-//!   __MfltCoredumpRamStart = ORIGIN(RAM);
-//!   __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
-//! } > FLASH
-extern uint32_t __MfltCoredumpRamStart;
-extern uint32_t __MfltCoredumpRamEnd;
-
-#define CORE_REGION_START ((uint32_t)&__CoreStart)
-#define CORE_REGION_LENGTH ((uint32_t)&__CoreEnd - CORE_REGION_START)
-
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
-                                                                  size_t *num_regions) {
-  // Let's collect the callstack at the time of crash
-  static sMfltCoredumpRegion s_coredump_regions[1];
-
-#if (MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY == 1)
-  const void *stack_start_addr = crash_info->stack_address;
-  // Capture only the interrupt stack. Use only if there is not enough storage to capture all of RAM.
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(stack_start_addr, (uint32_t)STACK_TOP - (uint32_t)stack_start_addr);
-#else
-  // Capture all of RAM. Recommended: it enables broader post-mortem analyses, but has larger storage requirements.
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&__MfltCoredumpRamStart,
-      (uint32_t)&__MfltCoredumpRamEnd - (uint32_t)&__MfltCoredumpRamStart);
-#endif
-
-  *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
-
-  return s_coredump_regions;
-}
-
 void memfault_platform_coredump_storage_clear(void) {
   // static because sd_flash_write may take place asynchrnously
   const static uint32_t invalidate = 0x0;
@@ -127,7 +93,7 @@ void memfault_platform_coredump_storage_clear(void) {
     // More details can be found in Section 8 "Flash memory API" of the SoftDevice Spec
     //    https://infocenter.nordicsemi.com/pdf/S140_SDS_v2.1.pdf
     s_coredump_clear_state = kMemfaultCoredumpClearState_ClearRequested;
-    const uint32_t rv = sd_flash_write((void *)CORE_REGION_START, &invalidate, 1);
+    const uint32_t rv = sd_flash_write((void *)MEMFAULT_COREDUMP_STORAGE_START_ADDR, &invalidate, 1);
     if (rv == NRF_SUCCESS) {
       s_coredump_clear_state = kMemfaultCoredumpClearState_ClearInProgress;
     } else if (rv == NRF_ERROR_BUSY) {
@@ -139,15 +105,24 @@ void memfault_platform_coredump_storage_clear(void) {
       NRF_LOG_ERROR("Unexpected error clearing coredump! %d", rv);
     }
   } else {
-    nrf_nvmc_write_word(CORE_REGION_START, invalidate);
+    nrf_nvmc_write_word(MEMFAULT_COREDUMP_STORAGE_START_ADDR, invalidate);
   }
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
+  const size_t size =
+      MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
+
   *info  = (sMfltCoredumpStorageInfo) {
-    .size = CORE_REGION_LENGTH,
+    .size = size,
     .sector_size = NRF_FICR->CODEPAGESIZE,
   };
+}
+
+static bool prv_op_within_flash_bounds(uint32_t offset, size_t data_len) {
+  sMfltCoredumpStorageInfo info = { 0 };
+  memfault_platform_coredump_storage_get_info(&info);
+  return (offset + data_len) <= info.size;
 }
 
 //! Don't return any new data while a clear operation is in progress
@@ -167,11 +142,11 @@ bool memfault_coredump_read(uint32_t offset, void *data, size_t read_len) {
 
 bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
                                               size_t data_len) {
-  if ((offset + data_len) > CORE_REGION_LENGTH) {
+  if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }
 
-  uint32_t address = CORE_REGION_START + offset;
+  uint32_t address = MEMFAULT_COREDUMP_STORAGE_START_ADDR + offset;
 
   const uint32_t word_size = 4;
   if (((address % word_size) == 0) && (((uint32_t)data % word_size) == 0)) {
@@ -191,18 +166,17 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
 
 bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
                                              size_t read_len) {
-  if ((offset + read_len) > CORE_REGION_LENGTH) {
+  if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }
 
-  uint32_t address = CORE_REGION_START + offset;
-
+  const uint32_t address = MEMFAULT_COREDUMP_STORAGE_START_ADDR + offset;
   memcpy(data, (void *)address, read_len);
   return true;
 }
 
 bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size) {
-  if ((offset + erase_size) > CORE_REGION_LENGTH) {
+  if (!prv_op_within_flash_bounds(offset, erase_size)) {
     return false;
   }
 
@@ -213,7 +187,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   }
 
   for (size_t sector = offset; sector < erase_size; sector += sector_size) {
-    uint32_t  address = CORE_REGION_START + sector;
+    const uint32_t address = MEMFAULT_COREDUMP_STORAGE_START_ADDR + sector;
     nrf_nvmc_page_erase(address);
   }
 

@@ -3,6 +3,9 @@ zephyr_library_sources(memfault_platform_core.c)
 zephyr_library_sources(memfault_zephyr_ram_regions.c)
 zephyr_library_sources(memfault_platform_lock.c)
 
+# Allow users to Kconfig memfault logging as a backend as needed. See
+# memfault/sdk/embedded/ports/zephyr/Kconfig and adjust MEMFAULT_LOGGING_XXX.
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_LOGGING_ENABLE memfault_logging.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP memfault_platform_ram_backed_coredump.c)
