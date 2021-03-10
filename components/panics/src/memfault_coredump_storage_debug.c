@@ -131,11 +131,11 @@ bool memfault_coredump_storage_debug_test_begin(void) {
   // the 12 byte header which is written last. We will simulate that behavior here.
   //
 
-  const uint8_t pattern1[] = {
+  static const uint8_t pattern1[] = {
     0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab };
   MEMFAULT_STATIC_ASSERT(sizeof(pattern1) < sizeof(s_read_buf), "pattern1 is too long");
 
-  const uint8_t pattern2[] = { 0x5f, 0x5e, 0x5d, 0x5c, 0x5b, 0x5a, 0x59};
+  static const uint8_t pattern2[] = { 0x5f, 0x5e, 0x5d, 0x5c, 0x5b, 0x5a, 0x59};
   MEMFAULT_STATIC_ASSERT(sizeof(pattern2) < sizeof(s_read_buf), "pattern2 is too long");
 
   struct {

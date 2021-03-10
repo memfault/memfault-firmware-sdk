@@ -367,7 +367,7 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
       "mov r3, r12 \n"                           \
       "push {r3-r7} \n"                          \
       "mov r0, sp \n"                            \
-      "ldr r1, =%0 \n"                           \
+      "ldr r1, =%c0 \n"                           \
       "b memfault_fault_handler \n"              \
       :                                          \
       : "i" (_x)                                 \

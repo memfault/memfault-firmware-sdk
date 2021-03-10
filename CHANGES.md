@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.13.1 and SDK 0.13.0 - March 10, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Reference platform API implementations for DA1468x:
+  - [rich reboot reason info derived from RESET_STAT_REG register](ports/dialog/da1468x/reset_stat_reboot_tracking.c#L1)
+- Fixed a :bug: that led to a unit test failure in `test_coredump_storage_debug`
+  in some environments where `const` arrays were getting dynamically built on
+  the stack at runtime.
+- Worked around a limitation in GNU GCC 4.9's extended ASM to fix a compiler bug
+  that would arise when compiling `memfault_fault_handling_arm.c` for Cortex-M0
+  targets.
+- Added a new [`ports/templates`](ports/templates) folder that can be
+  copy/pasted into a project and used as a starting point for a Memfault port!
+
 ### Changes between Memfault SDK 0.13.0 and SDK 0.12.0 - March 4, 2021
 
 #### :chart_with_upwards_trend: Improvements
