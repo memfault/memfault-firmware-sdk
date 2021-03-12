@@ -2,6 +2,7 @@
 
 #include "hpy_info.h"
 #include "memfault/components.h"
+#include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
 
 #include <stdbool.h>
@@ -55,8 +56,7 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
 //! This function _must_ be called by your main() routine prior
 //! to starting an RTOS or baremetal loop.
 int memfault_platform_boot(void) {
-  // TODO: Add init to any platform specific ports here.
-  // (This will be done in later steps in the getting started Guide)
+  memfault_freertos_port_boot();
 
   memfault_build_info_dump();
 
