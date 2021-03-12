@@ -1,27 +1,31 @@
 //! @file memfault_platform_port.c
 
+#include "hpy_info.h"
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
 
 #include <stdbool.h>
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
+    static char serial_num_str[HPY_SERIAL_NUM_STR_LEN];
+    hpy_get_serial_num_str(serial_num_str);
+
   // See https://mflt.io/version-nomenclature for more context
   *info = (sMemfaultDeviceInfo) {
      // An ID that uniquely identifies the device in your fleet
      // (i.e serial number, mac addr, chip id, etc)
-    .device_serial = "DEMOSERIAL",
+    .device_serial = serial_num_str,
      // A name to represent the firmware running on the MCU.
      // (i.e "ble-fw", "main-fw", or a codename for your project)
-    .software_type = "app-fw",
+    .software_type = HPY_FW_BUILD_VARIANT_STR,
      // The version of the "software_type" currently running.
      // "software_type" + "software_version" must uniquely represent
      // a single binary
-    .software_version = "1.0.0",
+    .software_version = SW_VERSION_STR,
      // The revision of hardware for the device. This value must remain
      // the same for a unique device.
      // (i.e evt, dvt, pvt, or rev1, rev2, etc)
-    .hardware_version = "dvt1",
+    .hardware_version = HPY_HW_REVISION_STR,
   };
 }
 
