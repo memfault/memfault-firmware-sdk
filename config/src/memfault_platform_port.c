@@ -7,6 +7,8 @@
 #include "memfault/core/trace_event.h"
 
 #include <stdbool.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 MEMFAULT_PUT_IN_SECTION(".noinit")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
@@ -87,4 +89,38 @@ int memfault_platform_boot(void) {
 void test_trace(void)
 {
     MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
+}
+
+void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+
+  char log_buf[128];
+  vsnprintf(log_buf, sizeof(log_buf), fmt, args);
+
+  const char *lvl_str;
+  switch (level) {
+    case kMemfaultPlatformLogLevel_Debug:
+      lvl_str = "D";
+      break;
+
+    case kMemfaultPlatformLogLevel_Info:
+      lvl_str = "I";
+      break;
+
+    case kMemfaultPlatformLogLevel_Warning:
+      lvl_str = "W";
+      break;
+
+    case kMemfaultPlatformLogLevel_Error:
+      lvl_str = "E";
+      break;
+
+    default:
+      break;
+  }
+
+  vsnprintf(log_buf, sizeof(log_buf), fmt, args);
+
+  printf("[%s] MFLT: %s\n", lvl_str, log_buf);
 }
