@@ -5,6 +5,8 @@
 //!
 //! Hooks for collecting coredumps from failure paths in FreeRTOS kernel
 
+#if defined(HPY_MEMFAULT_ASSERTS_ENABLED)
+
 #include "memfault/panics/assert.h"
 
 #include "FreeRTOS.h"
@@ -26,3 +28,4 @@ void vAssertCalled(const char *file, int line) {
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
   MEMFAULT_ASSERT(0);
 }
+#endif
