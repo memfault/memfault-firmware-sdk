@@ -4,6 +4,7 @@
 #include "memfault/components.h"
 #include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
+#include "memfault/core/trace_event.h"
 
 #include <stdbool.h>
 
@@ -81,4 +82,9 @@ int memfault_platform_boot(void) {
   memfault_metrics_boot(evt_storage, &boot_info);
 
   return 0;
+}
+
+void test_trace(void)
+{
+    MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
 }

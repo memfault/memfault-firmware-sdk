@@ -1,0 +1,1 @@
+MEMFAULT_TRACE_REASON_DEFINE(critical_error)
