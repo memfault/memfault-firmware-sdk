@@ -1,0 +1,2 @@
+//! @file memfault_metrics_heartbeat_config.def
+MEMFAULT_METRICS_KEY_DEFINE(MainTaskWakeups, kMemfaultMetricType_Unsigned)
