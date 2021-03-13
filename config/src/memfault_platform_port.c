@@ -7,6 +7,9 @@
 
 #include <stdbool.h>
 
+MEMFAULT_PUT_IN_SECTION(".noinit")
+static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     static char serial_num_str[HPY_SERIAL_NUM_STR_LEN];
     hpy_get_serial_num_str(serial_num_str);
@@ -57,6 +60,11 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
 //! to starting an RTOS or baremetal loop.
 int memfault_platform_boot(void) {
   memfault_freertos_port_boot();
+
+  /* Collect reboot reason */
+  sResetBootupInfo reset_info = { 0 };
+  memfault_reboot_reason_get(&reset_info);
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
   memfault_build_info_dump();
 
