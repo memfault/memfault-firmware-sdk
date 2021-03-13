@@ -86,11 +86,6 @@ int memfault_platform_boot(void) {
   return 0;
 }
 
-void test_trace(void)
-{
-    MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
-}
-
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -123,4 +118,25 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   vsnprintf(log_buf, sizeof(log_buf), fmt, args);
 
   printf("[%s] MFLT: %s\n", lvl_str, log_buf);
+}
+
+void test_trace(void)
+{
+    MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
+}
+
+void test_memfault(void)
+{
+    // Note: Coredump saving runs from an ISR prior to reboot so should
+    // be safe to call with interrupts disabled.
+    GLOBAL_INT_DISABLE();
+    memfault_coredump_storage_debug_test_begin();
+    GLOBAL_INT_RESTORE();
+
+    memfault_coredump_storage_debug_test_finish();
+    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+    memfault_platform_reboot();
+    MEMFAULT_ASSERT(0);
+    void (*bad_func)(void) = (void *)0xEEEEDEAD;
+    bad_func();
 }
