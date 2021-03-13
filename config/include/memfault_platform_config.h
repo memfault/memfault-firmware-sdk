@@ -1,0 +1,1 @@
+#define MEMFAULT_USE_GNU_BUILD_ID 1
