@@ -149,10 +149,10 @@ void test_memfault(void)
     GLOBAL_INT_RESTORE();
 
     memfault_coredump_storage_debug_test_finish();
-    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
-    MEMFAULT_ASSERT(0);
-    void (*bad_func)(void) = (void *)0xEEEEDEAD;
-    bad_func();
+//    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+//    MEMFAULT_ASSERT(0);
+//    void (*bad_func)(void) = (void *)0xEEEEDEAD;
+//    bad_func();
 }
 
 // Note: We mark the function as weak so an end user can override this with a real implementation
