@@ -14,8 +14,8 @@
 //static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-    static char serial_num_str[HPY_SERIAL_NUM_STR_LEN];
-    hpy_get_serial_num_str(serial_num_str);
+    static uint8_t serial_num_str[HPY_SERIAL_NUM_STR_LEN];
+    hpy_get_bd_addr(serial_num_str);
 
   // See https://mflt.io/version-nomenclature for more context
   *info = (sMemfaultDeviceInfo) {
@@ -127,6 +127,13 @@ void test_trace(void)
 
 void test_memfault(void)
 {
+    struct MemfaultDeviceInfo info = {0};
+    memfault_platform_get_device_info(&info);
+    MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
+    MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");
+    MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
+    MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
+
     // Note: Coredump saving runs from an ISR prior to reboot so should
     // be safe to call with interrupts disabled.
     GLOBAL_INT_DISABLE();
