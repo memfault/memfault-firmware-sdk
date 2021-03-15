@@ -20,8 +20,11 @@ __RETAINED_UNINIT MEMFAULT_ALIGNED(8)
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-    static uint8_t serial_num_str[HPY_SERIAL_NUM_STR_LEN];
-    hpy_get_bd_addr(serial_num_str);
+    static uint8_t serial_num_str[HPY_SERIAL_NUM_STR_LEN] = {0};
+
+    // Only initialize this once
+    if(0 == serial_num_str[0])
+        hpy_get_bd_addr(serial_num_str);
 
   // See https://mflt.io/version-nomenclature for more context
   *info = (sMemfaultDeviceInfo) {
