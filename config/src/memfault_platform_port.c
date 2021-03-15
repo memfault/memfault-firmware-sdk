@@ -40,7 +40,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 //! any final cleanup and then reset the device
 void memfault_platform_reboot(void) {
    // TODO: Perform any final system cleanup and issue a software reset
-   // (i.e NVIC_SystemReset())
+   NVIC_SystemReset();
    while (1) { } // unreachable
 }
 
