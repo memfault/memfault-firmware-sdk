@@ -175,3 +175,11 @@ static bool prv_try_send_memfault_data(void) {
   user_transport_send_chunk_data(buf, buf_len);
   return true;
 }
+
+//extern PRIVILEGED_DATA static OS_TASK hpy_dispatch_task_handle;
+//
+//void memfault_metrics_heartbeat_collect_data(void)
+//{
+//    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(MainTaskStackHwm),
+//                                            uxTaskGetStackHighWaterMark(hpy_dispatch_task_handle));
+//}
