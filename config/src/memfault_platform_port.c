@@ -150,7 +150,6 @@ void test_memfault(void)
 
     memfault_coredump_storage_debug_test_finish();
     memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
-    memfault_platform_reboot();
     MEMFAULT_ASSERT(0);
     void (*bad_func)(void) = (void *)0xEEEEDEAD;
     bad_func();
