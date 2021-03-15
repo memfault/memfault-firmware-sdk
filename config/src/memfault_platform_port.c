@@ -1,14 +1,20 @@
 //! @file memfault_platform_port.c
 
 #include "hpy_info.h"
+
+#include "memfault/config.h"
 #include "memfault/components.h"
 #include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
+#include "memfault/core/compiler.h"
+#include "memfault/core/data_packetizer.h"
 #include "memfault/core/trace_event.h"
 
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+static bool prv_try_send_memfault_data(void);
 
 //MEMFAULT_PUT_IN_SECTION("RETENTION_RAM0")
 //static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
@@ -40,6 +46,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 //! any final cleanup and then reset the device
 void memfault_platform_reboot(void) {
    // TODO: Perform any final system cleanup and issue a software reset
+   while (prv_try_send_memfault_data()) { }
    NVIC_SystemReset();
    while (1) { } // unreachable
 }
@@ -123,6 +130,7 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
 void test_trace(void)
 {
     MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
+    while (prv_try_send_memfault_data()) { }
 }
 
 void test_memfault(void)
@@ -146,4 +154,25 @@ void test_memfault(void)
     MEMFAULT_ASSERT(0);
     void (*bad_func)(void) = (void *)0xEEEEDEAD;
     bad_func();
+}
+
+// Note: We mark the function as weak so an end user can override this with a real implementation
+// and we disable optimizations so the parameters don't get stripped away
+MEMFAULT_NO_OPT
+MEMFAULT_WEAK
+void user_transport_send_chunk_data(MEMFAULT_UNUSED void *chunk_data,
+                                    MEMFAULT_UNUSED size_t chunk_data_len) {
+}
+
+static bool prv_try_send_memfault_data(void) {
+  // buffer to copy chunk data into
+  uint8_t buf[MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE];
+  size_t buf_len = sizeof(buf);
+  bool data_available = memfault_packetizer_get_chunk(buf, &buf_len);
+  if (!data_available ) {
+    return false; // no more data to send
+  }
+  // send payload collected to chunks/ endpoint
+  user_transport_send_chunk_data(buf, buf_len);
+  return true;
 }
