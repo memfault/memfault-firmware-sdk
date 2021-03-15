@@ -77,7 +77,7 @@ int memfault_platform_boot(void) {
   /* Collect reboot reason */
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
-  //memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
   memfault_build_info_dump();
 
