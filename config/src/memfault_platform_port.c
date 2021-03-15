@@ -10,8 +10,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-MEMFAULT_PUT_IN_SECTION(".noinit")
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+//MEMFAULT_PUT_IN_SECTION("RETENTION_RAM0")
+//static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     static char serial_num_str[HPY_SERIAL_NUM_STR_LEN];
@@ -67,7 +67,7 @@ int memfault_platform_boot(void) {
   /* Collect reboot reason */
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
-  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+  //memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
   memfault_build_info_dump();
 
