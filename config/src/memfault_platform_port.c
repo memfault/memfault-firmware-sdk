@@ -50,7 +50,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
      // The version of the "software_type" currently running.
      // "software_type" + "software_version" must uniquely represent
      // a single binary
-    .software_version = SW_VERSION_STR,
+    .software_version = HPY_FW_RELEASE_STR,
      // The revision of hardware for the device. This value must remain
      // the same for a unique device.
      // (i.e evt, dvt, pvt, or rev1, rev2, etc)
