@@ -16,7 +16,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-static bool prv_try_send_memfault_data(void);
+bool prv_try_send_memfault_data(void);
 
 __RETAINED_UNINIT MEMFAULT_ALIGNED(8)
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
@@ -176,7 +176,7 @@ void user_transport_send_chunk_data(MEMFAULT_UNUSED void *chunk_data,
                                     MEMFAULT_UNUSED size_t chunk_data_len) {
 }
 
-static bool prv_try_send_memfault_data(void) {
+bool prv_try_send_memfault_data(void) {
   // buffer to copy chunk data into
   uint8_t buf[MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE];
   size_t buf_len = sizeof(buf);
