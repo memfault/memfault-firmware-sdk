@@ -22,35 +22,18 @@ __RETAINED_UNINIT MEMFAULT_ALIGNED(8)
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-    static uint8_t serial_num_str[HPY_SERIAL_NUM_STR_LEN] = {0};
-    static uint8_t build_variant_str[HPY_FW_BUILD_VARIANT_STR_SIZE] = HPY_FW_BUILD_VARIANT_STUB_STR;
-
-    // Only initialize this once
-    if(0 == serial_num_str[0])
-    {
-        hpy_get_bd_addr(serial_num_str);
-
-        /* Add some of the GNU build ID to the build variant string */
-        if (HPY_FW_BUILD_VARIANT_STR_SIZE ==
-            HPY_FW_BUILD_VARIANT_STUB_STR_LEN + HPY_FW_BUILD_VARIANT_BUILD_ID_STR_SIZE)
-        {
-            memfault_build_id_get_string(&build_variant_str[HPY_FW_BUILD_VARIANT_STUB_STR_LEN],
-                                         HPY_FW_BUILD_VARIANT_BUILD_ID_STR_SIZE);
-        }
-    }
-
   // See https://mflt.io/version-nomenclature for more context
   *info = (sMemfaultDeviceInfo) {
      // An ID that uniquely identifies the device in your fleet
      // (i.e serial number, mac addr, chip id, etc)
-    .device_serial = serial_num_str,
+    .device_serial = hpy_get_bd_str(),
      // A name to represent the firmware running on the MCU.
      // (i.e "ble-fw", "main-fw", or a codename for your project)
-    .software_type = build_variant_str,
+    .software_type = HPY_FW_BUILD_VARIANT_STR,
      // The version of the "software_type" currently running.
      // "software_type" + "software_version" must uniquely represent
      // a single binary
-    .software_version = HPY_FW_RELEASE_STR,
+    .software_version = hpy_get_full_fw_version_str(),
      // The revision of hardware for the device. This value must remain
      // the same for a unique device.
      // (i.e evt, dvt, pvt, or rev1, rev2, etc)
