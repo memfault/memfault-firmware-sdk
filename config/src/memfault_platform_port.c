@@ -128,6 +128,8 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
 
 void test_memfault(void)
 {
+    MEMFAULT_TRACE_EVENT_WITH_LOG(info, "Starting test_memfault()");
+
     struct MemfaultDeviceInfo info = {0};
     memfault_platform_get_device_info(&info);
     MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
@@ -135,7 +137,6 @@ void test_memfault(void)
     MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
     MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
 
-    MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "A test error trace!");
     while (prv_try_send_memfault_data()) { }
 
     // Note: Coredump saving runs from an ISR prior to reboot so should
