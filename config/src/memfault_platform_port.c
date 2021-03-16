@@ -44,9 +44,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 //! Last function called after a coredump is saved. Should perform
 //! any final cleanup and then reset the device
 void memfault_platform_reboot(void) {
-   // TODO: Perform any final system cleanup and issue a software reset
-   while (prv_try_send_memfault_data()) { }
-   NVIC_SystemReset();
+    hpy_dispatch_error_exit();
    while (1) { } // unreachable
 }
 
@@ -137,6 +135,7 @@ void test_memfault(void)
     MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
     MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
 
+    // Force any pending data out
     while (prv_try_send_memfault_data()) { }
 
     // Note: Coredump saving runs from an ISR prior to reboot so should
@@ -150,6 +149,9 @@ void test_memfault(void)
 //    MEMFAULT_ASSERT(0);
 //    void (*bad_func)(void) = (void *)0xEEEEDEAD;
 //    bad_func();
+
+    // Force any pending data out
+    while (prv_try_send_memfault_data()) { }
 }
 
 // Note: We mark the function as weak so an end user can override this with a real implementation
