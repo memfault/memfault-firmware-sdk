@@ -141,10 +141,12 @@ void test_memfault(void)
     // Note: Coredump saving runs from an ISR prior to reboot so should
     // be safe to call with interrupts disabled.
     GLOBAL_INT_DISABLE();
-    memfault_coredump_storage_debug_test_begin();
+    if(!memfault_coredump_storage_debug_test_begin())
+        MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "memfault_coredump_storage_debug_test_begin() failed");
     GLOBAL_INT_RESTORE();
 
-    memfault_coredump_storage_debug_test_finish();
+    if(!memfault_coredump_storage_debug_test_finish())
+        MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "memfault_coredump_storage_debug_test_finish() failed");
 //    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
 //    MEMFAULT_ASSERT(0);
 //    void (*bad_func)(void) = (void *)0xEEEEDEAD;
