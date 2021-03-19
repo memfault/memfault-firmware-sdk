@@ -36,7 +36,7 @@ into your system without modification. You can find them in the
 
 For some of the popular MCUs & vendor SDKs, we have already provided a reference
 implementation for platform dependencies which can be found in the
-[`platforms`](platforms/) folder. These can also serve as a good example when
+[`examples`](examples/) folder. These can also serve as a good example when
 initially setting up the SDK on your platform.
 
 ### Main components

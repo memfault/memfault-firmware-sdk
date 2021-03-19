@@ -14,7 +14,7 @@ from .print_chunk_watcher import PrintChunkWatcher
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.dirname(TASKS_DIR)
-NRF_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "platforms", "nrf5")
+NRF_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "examples", "nrf5")
 NRF_DEMO_APP_ROOT = os.path.join(NRF_ROOT, "apps", "memfault_demo_app")
 NRF_DEMO_APP_ELF = os.path.join(NRF_DEMO_APP_ROOT, "build", "memfault_demo_app_nrf52840_s140.out")
 

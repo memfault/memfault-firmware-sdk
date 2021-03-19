@@ -16,7 +16,7 @@ MEMFAULT_SDK_ROOT = os.path.dirname(TASKS_DIR)
 MBED_TARGET = "DISCO_F429ZI"
 MBED_TOOLCHAIN = "GCC_ARM"
 MBED_BAUD_RATE = 115200
-MBED_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "platforms", "mbed")
+MBED_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "examples", "mbed")
 MBED_DEMO_APP_ROOT = os.path.join(MBED_ROOT, "apps", "memfault_demo_app")
 MBED_DEMO_APP_BUILD_ROOT = os.path.join(
     MBED_DEMO_APP_ROOT, "BUILD", MBED_TARGET, "{}-DEBUG".format(MBED_TOOLCHAIN)

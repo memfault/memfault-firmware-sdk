@@ -1,0 +1,76 @@
+diff --git a/demos/STM32/RT-STM32H743I-NUCLEO144/Makefile b/demos/STM32/RT-STM32H743I-NUCLEO144/Makefile
+index 61879fd8c..47ba2a59c 100644
+--- a/demos/STM32/RT-STM32H743I-NUCLEO144/Makefile
++++ b/demos/STM32/RT-STM32H743I-NUCLEO144/Makefile
+@@ -30,7 +30,9 @@ endif
+ 
+ # Enable this if you want link time optimizations (LTO).
+ ifeq ($(USE_LTO),)
+-  USE_LTO = yes
++# Older versions of GCC have a lot of known issues with respect to LTO.
++# Disable for now, for better portability
++  USE_LTO = no
+ endif
+ 
+ # Enable this if you want to see the full log while compiling.
+@@ -164,6 +166,14 @@ ULIBDIR =
+ # List all user libraries here
+ ULIBS =
+ 
++EMBEDDED_MFLT_SDK_ROOT := ./memfault-firmware-sdk
++STM32_CUBE_DIR := ./stm32_cube
++include $(EMBEDDED_MFLT_SDK_ROOT)/examples/stm32/stm32h743i/memfault_sdk.mk
++
++UINCDIR += $(EMBEDDED_MFLT_SDK_INCLUDES)
++ULIBS += $(EMBEDDED_MFLT_SDK_OBJS)
++
++
+ #
+ # End of user section
+ ##############################################################################
+@@ -184,6 +194,21 @@ include $(RULESPATH)/rules.mk
+ # Custom rules
+ #
+ 
++# Custom rule for building flash drivers within STM32 Cube HAL
++
++VPATH += $(sort $(dir $(EMBEDDED_MFLT_SDK_SRCS)))
++
++$(EMBEDDED_MFLT_SDK_OBJS): $(EMBEDDED_MFLT_OBJ_DIR)/%.o: ./%.c $(MAKEFILE_LIST)
++	@echo Compiling $(<F)
++	@$(CC) -c $(CFLAGS) -I. -DSTM32H743xx -DUSE_RTOS=0 -Wno-unused-parameter $(EMBEDDED_MFLT_SDK_INC) $< -o $@
++
++$(EMBEDDED_MFLT_SDK_OBJS): | $(EMBEDDED_MFLT_OBJ_DIR)
++
++$(EMBEDDED_MFLT_OBJ_DIR):
++	@mkdir -p $(EMBEDDED_MFLT_OBJ_DIR)
++
++$(BUILDDIR)/$(PROJECT).elf: $(EMBEDDED_MFLT_SDK_OBJS)
++
+ #
+ # Custom rules
+ ##############################################################################
+diff --git a/demos/STM32/RT-STM32H743I-NUCLEO144/main.c b/demos/STM32/RT-STM32H743I-NUCLEO144/main.c
+index 9b7d49b83..1ecc22625 100644
+--- a/demos/STM32/RT-STM32H743I-NUCLEO144/main.c
++++ b/demos/STM32/RT-STM32H743I-NUCLEO144/main.c
+@@ -19,6 +19,9 @@
+ #include "rt_test_root.h"
+ #include "oslib_test_root.h"
+ 
++#include "memfault/panics/assert.h"
++#include "memfault/panics/platform/coredump.h"
++
+ /*
+  * This is a periodic thread that does absolutely nothing except flashing
+  * a LED.
+@@ -70,6 +73,9 @@ int main(void) {
+       test_execute((BaseSequentialStream *)&SD3, &rt_test_suite);
+       test_execute((BaseSequentialStream *)&SD3, &oslib_test_suite);
+     }
++    memfault_platform_coredump_storage_clear();
++    MEMFAULT_ASSERT(0);
++
+     chThdSleepMilliseconds(500);
+   }
+ }

@@ -19,6 +19,7 @@
 //! made from multiple tasks, these APIs must be implemented. Locks are _only_ held while copying
 //! data into the backing circular buffer so durations will be very quick.
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -132,6 +133,11 @@ extern void memfault_log_handle_saved_callback(void);
 //! @note: Should only be called via MEMFAULT_LOG_SAVE macro
 MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
 void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...);
+
+//! Formats the provided string from a variable argument list
+//!
+//! @note Prefer saving logs via MEMFAULT_LOG_SAVE() when possible
+void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_list args);
 
 #ifdef __cplusplus
 }

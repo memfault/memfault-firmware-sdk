@@ -20,7 +20,7 @@ extern "C" {
 //!   automatically by the build system helpers when the "http" component is enabled.
 const char *memfault_demo_get_chunks_url(void);
 
-//! Returns the current Project API Key
+//! Returns the current Project Key
 //!
 //! @note Default weak implementation exists in demo/src so the "print_chunk"
 //!   cli command can be used without the need of the "http" component.

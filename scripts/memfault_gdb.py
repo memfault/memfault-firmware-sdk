@@ -528,7 +528,11 @@ def _try_read_register(arch, frame, lookup_name, register_list, analytics_props,
     # `info reg` will print all registers, even though they are not part of the core.
     # If that's the case, doing frame.read_register() will raise a gdb.error.
     try:
-        value = frame.read_register(lookup_name)
+        if hasattr(frame, "read_register"):
+            value = frame.read_register(lookup_name)
+        else:
+            # GCC <= 4.9 doesn't have the read_register API
+            value = gdb.parse_and_eval("${}".format(lookup_name))
         value_str = str(value)
         if value_str != "<unavailable>":
             name_to_use = lookup_name if result_name is None else result_name

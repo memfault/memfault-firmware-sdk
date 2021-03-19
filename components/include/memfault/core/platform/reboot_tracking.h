@@ -14,7 +14,7 @@ extern "C" {
 //! @note A user of the SDK can chose to implement this function and call it during bootup.
 //!
 //! @note A reference implementation can be found in the NRF52 demo application:
-//!  platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c
+//!  ports/nrf5_sdk/resetreas_reboot_tracking.c
 void memfault_platform_reboot_tracking_boot(void);
 
 #ifdef __cplusplus

@@ -248,18 +248,15 @@ MEMFAULT_WEAK void memfault_log_handle_saved_callback(void) {
   return;
 }
 
-void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
+void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_list args) {
   if (!prv_should_log(level)) {
     return;
   }
 
   char log_buf[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1];
 
-  va_list args;
-  va_start(args, fmt);
   const size_t available_space = sizeof(log_buf);
   const int rv = vsnprintf(log_buf, available_space, fmt, args);
-  va_end(args);
 
   if (rv <= 0) {
     return;
@@ -270,6 +267,13 @@ void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
     bytes_written = available_space - 1;
   }
   memfault_log_save_preformatted(level, log_buf, bytes_written);
+}
+
+void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  memfault_vlog_save(level, fmt, args);
+  va_end(args);
 }
 
 void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,

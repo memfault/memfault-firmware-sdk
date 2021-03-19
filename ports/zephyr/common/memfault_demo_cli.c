@@ -12,7 +12,10 @@
 
 #include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/platform/core.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/metrics/metrics.h"
 #include "memfault/ports/zephyr/http.h"
 
 static int prv_clear_core_cmd(const struct shell *shell, size_t argc, char **argv) {
@@ -29,6 +32,16 @@ static int prv_crash_example(const struct shell *shell, size_t argc, char **argv
 
 static int prv_get_device_info(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_get_device_info(argc, argv);
+}
+
+static int prv_hang_example(const struct shell *shell, size_t argc, char **argv) {
+#if !CONFIG_WATCHDOG
+  MEMFAULT_LOG_WARN("No watchdog configured, this will hang forever");
+#else
+  MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
+#endif
+  while (1) { }
+  return -1;
 }
 
 static int prv_chunk_data_export(const struct shell *shell, size_t argc, char **argv) {
@@ -112,15 +125,35 @@ static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t
 #endif
 }
 
+static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **argv) {
+#if CONFIG_MEMFAULT_METRICS
+  shell_print(shell, "Triggering Heartbeat");
+  memfault_metrics_heartbeat_debug_trigger();
+  return 0;
+#else
+  shell_print(shell, "CONFIG_MEMFAULT_METRICS not enabled");
+  return 0;
+#endif
+}
+
+static int prv_test_reboot(const struct shell *shell, size_t argc, char **argv) {
+  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+  memfault_platform_reboot();
+  return 0; // should be unreachable
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_memfault_cmds,
+    SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),
     SHELL_CMD(get_core, NULL, "gets the core", prv_get_core_cmd),
     SHELL_CMD(clear_core, NULL, "clear the core", prv_clear_core_cmd),
     SHELL_CMD(crash, NULL, "trigger a crash", prv_crash_example),
+    SHELL_CMD(hang, NULL, "trigger a hang to test watchdog functionality", prv_hang_example),
     SHELL_CMD(export, NULL, "dump chunks collected by Memfault SDK using https://mflt.io/chunk-data-export", prv_chunk_data_export),
     SHELL_CMD(trace, NULL, "Capture an example trace event", prv_example_trace_event_capture),
     SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
     SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
+    SHELL_CMD(trigger_heartbeat, NULL, "Trigger an immediate capture of all heartbeat metrics", prv_trigger_heartbeat),
     SHELL_CMD(get_latest_release, NULL, "checks to see if new ota payload is available", prv_check_and_fetch_ota_payload_cmd),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );

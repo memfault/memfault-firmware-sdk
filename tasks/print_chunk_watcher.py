@@ -39,7 +39,7 @@ class PrintChunkWatcher(StreamWatcher):
         self.search_start_idx = len(stream)
 
         cmd = search_stream[start_idx:end_idx]
-        if "<YOUR API KEY HERE>" in cmd:
+        if "<YOUR PROJECT KEY HERE>" in cmd:
             info = (
                 "\n\nInvoke CLI wrapper detected 'print_chunk' call but a valid\n"
                 + "'Memfault-Project-Key' was not specified. Please consult README for target\n"

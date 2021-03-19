@@ -573,6 +573,13 @@ int memfault_zephyr_port_post_data(void) {
   }
 
   int max_messages_to_send = 5;
+#if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE && CONFIG_MEMFAULT_RAM_BACKED_COREDUMP
+  // The largest data type we will send is a coredump. If CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
+  // is being used, make sure we issue enough HTTP POSTS such that an entire coredump will be sent.
+  max_messages_to_send = MEMFAULT_MAX(max_messages_to_send,
+                                      CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE);
+#endif
+
   while (max_messages_to_send-- > 0) {
     if (!prv_send_next_msg(sock_fd)) {
       break;

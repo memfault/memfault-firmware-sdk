@@ -1,9 +1,0 @@
-{
-    "name": "memfault",
-    "config": {
-        "project_api_key": {
-            "help": "Project API Key to use for uploading coredump",
-            "value": "\"<YOUR API KEY HERE>\""
-        }
-    }
-}

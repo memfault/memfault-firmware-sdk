@@ -15,6 +15,10 @@ if (NOT CONFIG_MEMFAULT_METRICS_TIMER_CUSTOM)
   zephyr_library_sources(memfault_platform_metrics.c)
 endif()
 
+if (NOT CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM)
+  zephyr_library_sources(memfault_software_watchdog.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD memfault_http_periodic_upload.c)
 
 zephyr_include_directories(.)

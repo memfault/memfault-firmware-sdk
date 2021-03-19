@@ -12,7 +12,7 @@
 //! facilities or during initial bringup before another transport is in place.
 //!
 //! The extracted data can be published to the Memfault cloud using the memfault-cli:
-//! $ memfault --project-key ${YOUR_PROJECT_API_KEY} post-chunk --encoding sdk_data_export your_exported_data.txt
+//! $ memfault --project-key ${YOUR_PROJECT_KEY} post-chunk --encoding sdk_data_export your_exported_data.txt
 //!
 //! A step-by-step integration guide with more details can be found at:
 //!   https://mflt.io/chunk-data-export
@@ -55,7 +55,7 @@ void memfault_data_export_base64_encoded_chunk(const char *chunk_str);
 //!
 //!   (gdb) source $MEMFAULT_FIRMWARE_SDK/scripts/memfault_gdb.py
 //!   (gdb) memfault install_chunk_handler --help
-//!   (gdb) memfault install_chunk_handler -pk <YOUR_PROJECT_API_KEY>
+//!   (gdb) memfault install_chunk_handler -pk <YOUR_PROJECT_KEY>
 //!
 //!   For more details see https://mflt.io/posting-chunks-with-gdb
 //!

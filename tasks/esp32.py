@@ -16,7 +16,7 @@ from .gdb import gdb_build_cmd
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.join(TASKS_DIR, "..")
-ESP32_PLATFORM_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "platforms", "esp32")
+ESP32_PLATFORM_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "examples", "esp32")
 ESP32_IDF_ROOT = os.path.join(ESP32_PLATFORM_ROOT, "esp-idf")
 ESP32_IDF_SCRIPT = os.path.join(ESP32_IDF_ROOT, "tools", "idf.py")
 ESP32_COREDUMP_SCRIPT = os.path.join(ESP32_IDF_ROOT, "components", "espcoredump", "espcoredump.py")

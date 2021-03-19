@@ -123,7 +123,7 @@ config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
 
 config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
        int "Maximum amount of tasks to collect in a coredump"
-       default 16
+       default 32
        help
         The maximum amount of tasks Memfault will store state for in a coredump.
 
@@ -159,5 +159,19 @@ config MEMFAULT_METRICS_TIMER_CUSTOM
         a custom implementation of memfault_platform_metrics_timer_boot() to be provided
 
 endif # MEMFAULT_METRICS
+
+config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
+       bool "Provide a custom implementation of Software Watchdog"
+       default n
+       help
+        By default Memfault implements a software watchdog implementation. Users can call
+        memfault_software_watchdog_enable() on boot and memfault_software_watchdog_feed()
+        when they feed the hardware watchdog. When the software watchdog expires, Memfault
+        will capture a coredump and then the system will be rebooted. This option can be used
+        to disable the implementation in ports/zephyr/common/memfault_software_watchdog.c
+
+config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
+       int "The time, in seconds, to configure the software watchdog expiration for"
+       default 15
 
 endif # MEMFAULT

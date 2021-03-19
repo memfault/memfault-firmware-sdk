@@ -29,5 +29,12 @@
 #define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS 1
 #endif
 
+#define MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
+
+// Logs are saved to the Memfault logging system as part of
+// memfault logging integration (CONFIG_MEMFAULT_LOGGING_ENABLE=y)
+// so no need to save from the SDK
+#define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
+
 // Pick up any user configuration overrides
 #include "memfault_platform_config.h"

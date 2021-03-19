@@ -106,6 +106,11 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     }
 
     void *sp = (void*)thread->callee_saved.psp;
+    if ((uintptr_t)_kernel.cpus[0].current == (uintptr_t)thread) {
+      // thread context is only valid when task is _not_ running so we skip collecting it
+      continue;
+    }
+
 #if defined(CONFIG_THREAD_STACK_INFO)
     // We know where the top of the stack is. Use that information to shrink
     // the area we need to collect if less than CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT

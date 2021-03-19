@@ -1,3 +1,40 @@
+### Changes between Memfault SDK 0.14.0 and SDK 0.13.1 - March 18, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Renamed `platforms` folder to [`examples`](examples/) to better capture that
+  the folder contains "example" integrations of the Memfault SDK into hello
+  world style apps from various SDKs
+- Port Updates:
+  - Zephyr: added a
+    [software watchdog port](ports/zephyr/common/memfault_software_watchdog.c#L1)
+    which can be used for capturing coredumps ahead of a hardware watchdog
+    reset.
+  - EFR32:
+    [rich reboot reason info derived from EMU_RSTCAUSE register](ports/emlib/rmu_reboot_tracking.c#L1)
+- Updated [nRF9160 Demo Application](examples/nrf-connect-sdk/nrf9160) to be
+  compatible with
+  [nRF Connect SDK 1.5](https://github.com/nrfconnect/sdk-nrf/tree/v1.5-branch)
+- Added support for capturing coredumps with GDB from GNU GCC 4.9 to
+  [`memfault_gdb.py`](scripts/memfault_gdb.py)
+
+#### :house: Internal
+
+- Added support for automatically capturing logs with Zephyr when logging in
+  synchronous mode `CONFIG_LOG_IMMEDIATE=y`
+- Unified nomenclature for references to the "Project Key" used to push data to
+  Memfault
+
+#### :boom: Breaking Changes
+
+If you were linking any files from the `platforms` folder into your project, the
+path needs to be updated to `examples`:
+
+```diff
+- ${MEMFAULT_FIRMWARE_SDK}/platforms/
++ ${MEMFAULT_FIRMWARE_SDK}/examples/
+```
+
 ### Changes between Memfault SDK 0.13.1 and SDK 0.13.0 - March 10, 2021
 
 #### :chart_with_upwards_trend: Improvements
@@ -263,7 +300,7 @@
     way the state of all threads can be seen in the Memfault UI when a crash is
     uploaded.
   - Updated
-    [memfault_demo_app](platforms/nrf-connect-sdk/nrf9160/memfault_demo_app) to
+    [memfault_demo_app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app) to
     use the nRF9160-DK
   - Added notes to the
     [step-by-step integration guide](https://mflt.io/nrf-connect-sdk-integration-guide)
@@ -720,7 +757,7 @@ void record_temperature(void) {
 
 - Added a reference implementation of
   [reboot reason tracking](https://mflt.io/2QlOlgH) to the
-  [NRF52 demo app](platforms/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
+  [NRF52 demo app](examples/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c#L1)
   and a new `reboot` CLI command to easily exercise it.
 - A `reset_reason` can now optionally be provided as part of
   [`sResetBootupInfo`](components/include/memfault/core/reboot_tracking.h#L41).
@@ -825,7 +862,7 @@ void record_temperature(void) {
   - A drop-in port for an existing v3.x or v4.x based ESP-IDF project can be
     found at [ports/esp_idf](ports/esp_idf).
   - An example application exercising the memfault-firmware-sdk can be found
-    [here](platforms/esp32/README.md).
+    [here](examples/esp32/README.md).
 
 ### Changes between Memfault SDK 0.2.3 and SDK 0.2.2 - March 3, 2020
 
@@ -940,10 +977,10 @@ void record_temperature(void) {
   more details.
 - Add demo application running Quantum Leaps' QP™/C running on the
   [STM32F407 discovery board](https://www.st.com/en/evaluation-tools/stm32f4discovery.html).
-  See [platforms/qp/README.md](platforms/qp/README.md) for more details.
+  See [examples/qp/README.md](examples/qp/README.md) for more details.
 - Added demo application and port for Arm Mbed OS 5 running on the
   [STM32F429I-DISC1 evaluation board](https://www.st.com/en/evaluation-tools/32f429idiscovery.html).
-  See [platforms/mbed/README.md](platforms/mbed/README.md) for more details.
+  See [examples/mbed/README.md](examples/mbed/README.md) for more details.
 - Changed `print_core` to `print_chunk` in demo applications to better align
   with the Memfault nomenclature for
   [data transfer](https://mflt.io/data-to-cloud).
@@ -959,7 +996,7 @@ void record_temperature(void) {
   for the 1.14 Long Term Support Release as well as the 2.0 Release. See
   [ports/zephyr/README.md](ports/zephyr/README.md) for more details
 - Add Zephyr demo application (tested on the STM32L4). See
-  [zephyr demo app directory](platforms/zephyr/README.md) for more details
+  [zephyr demo app directory](examples/zephyr/README.md) for more details
 
 ### Changes between Memfault SDK 0.0.11 and SDK 0.0.10 - Nov 25, 2019
 
@@ -1040,7 +1077,7 @@ void record_temperature(void) {
 ### Changes between Memfault Firmware SDK 0.0.6 and 0.0.5 - Oct 14, 2019
 
 - Added example port and demo for the STM32H743I-NUCLEO144 evaluation board
-  running ChibiOS. See `platforms/stm32/stm32h743i/README.md` for more details.
+  running ChibiOS. See `examples/stm32/stm32h743i/README.md` for more details.
 - general README documentation improvements
 - Fixed compilation error that could arise in `memfault_fault_handling_arm.c`
   when using old versions of GCC
@@ -1067,7 +1104,7 @@ void record_temperature(void) {
 ### Changes between Memfault Firmware SDK 0.0.3 and 0.0.2 - July 2, 2019
 
 - added example port and demo of **panics** SDK for the Nordic nRF52840
-  (PCA10056) development kit. See `platforms/nrf5/README.md` for more details.
+  (PCA10056) development kit. See `examples/nrf5/README.md` for more details.
 - Made SDK headers suitable for includion in C++ files
 
 First Public Release of Memfault Firmware SDK 0.0.2 - June 26, 2019
@@ -1077,6 +1114,5 @@ First Public Release of Memfault Firmware SDK 0.0.2 - June 26, 2019
   Cortex-M device to save a "core" (crash state) on faults and system asserts.
   See`components/panics/README.md` for more details
 - Added example port and demo of **panics** SDK for the BCM943364WCD1 evaluation
-  board running the WICED Wifi stack. More details in
-  `platforms/wiced/README.md`
+  board running the WICED Wifi stack. More details in `examples/wiced/README.md`
 - add python invoke based CLI wrapper for demo ports

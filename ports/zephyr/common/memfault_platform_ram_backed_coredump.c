@@ -3,12 +3,10 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
-//!
 //! @brief
 
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/panics/arch/arm/cortex_m.h"
 
 #include <zephyr.h>
 #include <kernel.h>
@@ -26,7 +24,7 @@ MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8)
 static uint8_t s_ram_backed_coredump_region[CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE];
 
 #define EXTRA_REGIONS (   \
-  1 /* active stack */ + \
+  2 /* active stack(s) */ + \
   1 /* _kernel variable */ + \
   1 /* data region */ + \
   1 /* bss region */ )
@@ -37,37 +35,54 @@ MEMFAULT_WEAK
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
 
-   int region_idx = 0;
-   s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-       crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
-   *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
-   region_idx++;
+  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 3)) == 0;
+  int region_idx = 0;
 
-   s_coredump_regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-       &_kernel, sizeof(_kernel));
-   *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
-   region_idx++;
+  size_t stack_size_to_collect = memfault_platform_sanitize_address_range(
+        crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
 
-   region_idx += memfault_zephyr_get_task_regions(
-       &s_coredump_regions[region_idx],
-       MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+  s_coredump_regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+      crash_info->stack_address, stack_size_to_collect);
+  region_idx++;
 
-   //
-   // Now that we have captures all the task state, we will
-   // fill whatever space remains in coredump storage with the
-   // data and bss we can collect!
-   //
+  if (msp_was_active) {
+    // System crashed in an ISR but the running task state is on PSP so grab that too
+    void *psp = (void *)(uintptr_t)__get_PSP();
 
-   region_idx +=  memfault_zephyr_get_data_regions(
-       &s_coredump_regions[region_idx],
-       MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+    // Collect a little bit more stack for the PSP since there is an
+    // exception frame that will have been stacked on it as well
+    const uint32_t extra_stack_bytes = 128;
+    stack_size_to_collect = memfault_platform_sanitize_address_range(
+        psp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT + extra_stack_bytes);
+    s_coredump_regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+        psp, stack_size_to_collect);
+    region_idx++;
+  }
 
-   region_idx +=  memfault_zephyr_get_bss_regions(
-       &s_coredump_regions[region_idx],
-       MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+  s_coredump_regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+      &_kernel, sizeof(_kernel));
+  region_idx++;
 
-   *num_regions = region_idx;
-   return &s_coredump_regions[0];
+  region_idx += memfault_zephyr_get_task_regions(
+      &s_coredump_regions[region_idx],
+      MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+
+  //
+  // Now that we have captured all the task state, we will
+  // fill whatever space remains in coredump storage with the
+  // data and bss we can collect!
+  //
+
+  region_idx +=  memfault_zephyr_get_data_regions(
+      &s_coredump_regions[region_idx],
+      MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+
+  region_idx +=  memfault_zephyr_get_bss_regions(
+      &s_coredump_regions[region_idx],
+      MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+
+  *num_regions = region_idx;
+  return &s_coredump_regions[0];
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {

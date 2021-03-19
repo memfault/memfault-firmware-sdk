@@ -70,11 +70,11 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 
 ```
 sMfltHttpClientConfig g_mflt_http_client_config = {
-  .api_key = "<YOUR API KEY HERE>",
+  .api_key = "<YOUR PROJECT KEY HERE>",
 };
 ```
 
 ## Demo
 
 An example integration and instructions can be found for the STM32F407 in
-`$MEMFAULT_SDK_ROOT/platforms/qp/README.md`
+`$MEMFAULT_SDK_ROOT/examples/qp/README.md`

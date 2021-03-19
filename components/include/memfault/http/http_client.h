@@ -34,7 +34,7 @@ typedef struct {
 
 //! Configuration of the Memfault HTTP client.
 typedef struct MfltHttpClientConfig {
-  //! The project API key. This is a mandatory field.
+  //! The project key. This is a mandatory field.
   //! Go to app.memfault.com, then navigate to "Settings" to find your key.
   const char *api_key;
   //! When false, TLS/https will be used, otherwise plain text http will be used.

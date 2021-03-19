@@ -13,7 +13,7 @@ from .print_chunk_watcher import PrintChunkWatcher
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.join(TASKS_DIR, "..")
-WICED_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "platforms", "wiced")
+WICED_ROOT = os.path.join(MEMFAULT_SDK_ROOT, "examples", "wiced")
 WICED_DEMO_APP_ROOT = os.path.join(WICED_ROOT, "memfault_demo_app")
 WICED_DEMO_APP_MAKEFILE = os.path.join(WICED_DEMO_APP_ROOT, "Makefile")
 WICED_SDK_ROOT = os.path.join(WICED_ROOT, "wiced_sdk")
@@ -81,7 +81,7 @@ def wiced_flash(ctx):
     """Flashes WICED demo app"""
 
     # See doc/make_target_examples.txt:
-    # "* For the BCM943364WCD1, BCM943438WCD1, and BCM9433634WCD1 platforms you must also add "download_apps" to the end of
+    # "* For the BCM943364WCD1, BCM943438WCD1, and BCM9433634WCD1 examples you must also add "download_apps" to the end of
     #    the target string to download the WLAN firmare to the external flash":
     _wiced_make(ctx, DEMO_APP_TARGET, "download", "download_apps")
 
