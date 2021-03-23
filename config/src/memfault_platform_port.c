@@ -126,7 +126,7 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
 
 void test_memfault(void)
 {
-    MEMFAULT_TRACE_EVENT_WITH_LOG(info, "Starting test_memfault()");
+//    MEMFAULT_TRACE_EVENT_WITH_LOG(info, "Starting test_memfault()");
 
     struct MemfaultDeviceInfo info = {0};
     memfault_platform_get_device_info(&info);
@@ -147,10 +147,24 @@ void test_memfault(void)
 
     if(!memfault_coredump_storage_debug_test_finish())
         MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "memfault_coredump_storage_debug_test_finish() failed");
+
 //    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
-//    MEMFAULT_ASSERT(0);
 //    void (*bad_func)(void) = (void *)0xEEEEDEAD;
-//    bad_func();
+//    volatile uint8_t error = 0;
+//
+//    switch (error) {
+//        case 0:
+//            MEMFAULT_ASSERT(0);
+//            break;
+//        case 1:
+//            bad_func();
+//            break;
+//        case 2:
+//            OS_MALLOC(100000);
+//            break;
+//        default:
+//            break;
+//    }
 
     // Force any pending data out
     while (prv_try_send_memfault_data()) { }
