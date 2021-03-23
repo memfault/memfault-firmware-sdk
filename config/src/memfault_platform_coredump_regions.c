@@ -14,10 +14,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define HPY_RAM_START (0x07fc0000)
-#define HPY_RAM_SIZE  (0x23280)
-#define HPY_RAM_END   (0x7fe3280)
-
 //! holds the RAM regions to collect in a coredump
 __RETAINED_UNINIT MEMFAULT_ALIGNED(8)
 static uint8_t s_ram_backed_coredump_region[HPY_MEMFAULT_COREDUMP_SIZE];
@@ -26,8 +22,8 @@ static uint8_t s_ram_backed_coredump_region[HPY_MEMFAULT_COREDUMP_SIZE];
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size)
 {
     // TODO: Check if these symbols are available from the linker directive file?
-    const uint32_t ram_start = HPY_RAM_START;
-    const uint32_t ram_end = HPY_RAM_END;
+    const uint32_t ram_start = MEMORY_SYSRAM_BASE;
+    const uint32_t ram_end = MEMORY_SYSRAM_END;
 
     if ((uint32_t)start_addr >= ram_start && (uint32_t)start_addr < ram_end) {
         return MEMFAULT_MIN(desired_size, ram_end - (uint32_t )start_addr);
