@@ -10,7 +10,7 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
-static uint8_t s_ram_backed_coredump_region[256];
+static uint8_t s_ram_backed_coredump_region[200];
 #define COREDUMP_REGION_SIZE sizeof(s_ram_backed_coredump_region)
 
 static bool s_inject_get_info_failure = false;
@@ -73,7 +73,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   uint8_t *erase_ptr = &s_ram_backed_coredump_region[offset];
   memset(erase_ptr, 0x0, erase_size);
 
-  switch (s_inject_erase_failure) {
+  switch ((int)s_inject_erase_failure) {
     case kMemfaultEraseFailureMode_ClearFailure:
       s_ram_backed_coredump_region[COREDUMP_REGION_SIZE / 2] = 0xa5;
       break;
@@ -105,7 +105,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
     return false;
   }
 
-  switch (s_inject_write_failure) {
+  switch ((int)s_inject_write_failure) {
     case kMemfaultWriteFailureMode_WriteDriverFailure:
       return false;
 

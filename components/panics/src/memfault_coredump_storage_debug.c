@@ -114,7 +114,7 @@ bool memfault_coredump_storage_debug_test_begin(void) {
       return false;
     }
 
-    for (size_t j = 0; j < sizeof(s_read_buf); j++) {
+    for (size_t j = 0; j <  bytes_to_read; j++) {
       if (!prv_verify_erased(s_read_buf[j])) {
         prv_record_failure(kMemfaultCoredumpStorageTestOp_Erase,
                            kMemfaultCoredumpStorageResult_CompareFailed, j + i, 1);
@@ -273,13 +273,20 @@ bool memfault_coredump_storage_debug_test_finish(void) {
       op_suffix = "clear";
       break;
 
+    case kMemfaultCoredumpStorageTestOp_GetInfo:
+      op_suffix = "get info";
+      break;
+
     default:
       op_suffix = "unknown";
       break;
   }
 
-  const char *reason_str;
+  const char *reason_str = "";
   switch (s_test_result.result) {
+    case kMemfaultCoredumpStorageResult_Success:
+      break;
+
     case kMemfaultCoredumpStorageResult_PlatformApiFail:
       reason_str = "Api call failed during";
       break;

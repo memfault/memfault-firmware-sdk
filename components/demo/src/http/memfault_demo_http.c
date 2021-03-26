@@ -32,15 +32,15 @@ int memfault_demo_cli_cmd_post_core(MEMFAULT_UNUSED int argc,
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
     return MemfaultInternalReturnCode_Error;
   }
-  const eMfltPostDataStatus rv =
-      (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
-  if (rv == kMfltPostDataStatus_NoDataFound) {
+
+  const int rv = memfault_http_client_post_data(http_client);
+  if ((eMfltPostDataStatus)rv == kMfltPostDataStatus_NoDataFound) {
     MEMFAULT_LOG_INFO("No new data found");
   } else {
-    MEMFAULT_LOG_INFO("Result: %d", (int)rv);
+    MEMFAULT_LOG_INFO("Result: %d", rv);
   }
   const uint32_t timeout_ms = 30 * 1000;
   memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);
   memfault_http_client_destroy(http_client);
-  return (int)rv;
+  return rv;
 }

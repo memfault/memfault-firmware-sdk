@@ -9,6 +9,10 @@
 #include <autoconf.h> // For Kconfig settings
 #include <version.h>  // Zephyr version macros
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Note that pre-v2.0 Zephyr did not create the section allocation needed to support
 // our Gnu build ID usage.
 #if KERNEL_VERSION_MAJOR >= 2
@@ -38,3 +42,7 @@
 
 // Pick up any user configuration overrides
 #include "memfault_platform_config.h"
+
+#ifdef __cplusplus
+}
+#endif

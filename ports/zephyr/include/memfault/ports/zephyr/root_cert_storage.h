@@ -11,6 +11,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   // arbitrarily high base so as not to conflict with id used for other certs in use by the system
   kMemfaultRootCert_Base = 1000,
@@ -31,3 +35,7 @@ typedef enum {
 //!
 //! @return 0 on success or if the cert was already loaded, else error code
 int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert, size_t cert_length);
+
+#ifdef __cplusplus
+}
+#endif

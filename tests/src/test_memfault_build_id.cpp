@@ -1,17 +1,21 @@
+//! @file
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <string.h>
-  #include <stddef.h>
+#include <string.h>
+#include <stddef.h>
 
-  #include "memfault/core/build_info.h"
-  #include "memfault/core/platform/debug_log.h"
-  #include "memfault_build_id_private.h"
+#include "memfault/core/build_info.h"
+#include "memfault/core/platform/device_info.h"
+#include "memfault/core/platform/debug_log.h"
+#include "memfault_build_id_private.h"
+
+void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
+  memset(info, 0x0, sizeof(*info));
 }
-
 
 TEST_GROUP(MemfaultBuildInfo) {
   void setup() {

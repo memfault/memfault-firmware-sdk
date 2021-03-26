@@ -245,8 +245,9 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
     }
   }
 
+  eMfltCoredumpMachineType machine_type = prv_get_machine_type();
   const sMfltMachineTypeBlock machine_block = {
-    .machine_type = (uint32_t)prv_get_machine_type(),
+    .machine_type = (uint32_t)machine_type,
   };
   return prv_write_non_memory_block(kMfltCoredumpRegionType_MachineType,
                                     &machine_block, sizeof(machine_block), ctx);

@@ -11,6 +11,10 @@
 
 #include "rom/ets_sys.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! A printf() routine that is safe to call when interrupts are disabled.
 #define MEMFAULT_ESP_PANIC_PRINTF(_fmt, ...) ets_printf(_fmt, ##__VA_ARGS__)
 
@@ -52,3 +56,7 @@ void memfault_esp_port_boot(void);
 void memfault_esp_port_event_collection_boot(void);
 void memfault_esp_port_coredump_storage_boot(void);
 void memfault_register_cli(void);
+
+#ifdef __cplusplus
+}
+#endif

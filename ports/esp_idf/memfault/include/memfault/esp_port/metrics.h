@@ -8,6 +8,10 @@
 
 #include "memfault/metrics/platform/timer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! Called each time a heartbeat interval expires to invoke the handler
 //!
 //! The Memfault port implements a default implementation of this in
@@ -21,3 +25,7 @@
 //!
 //! @param handler The callback to invoke to serialize heartbeat metrics
 void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler);
+
+#ifdef __cplusplus
+}
+#endif

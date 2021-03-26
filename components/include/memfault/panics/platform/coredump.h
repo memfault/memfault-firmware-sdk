@@ -73,6 +73,27 @@ typedef struct CoredumpCrashInfo {
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions);
 
+//! Given a pointer and size returns the actual size which should be collected.
+//!
+//! @note This is used to make sure the memory being collected is within the bounds
+//! of the MCUs memory map.
+//! @note A user _must_ implement this function if they are using a number of the default
+//! ports/ provided in the SDK
+//!
+//! @note This can be useful for truncating memory blocks that have a changing address based on
+//! where a crash takes place (i.e the stack pointer):
+//!
+//!  const size_t stack_size = memfault_platform_sanitize_address_range(
+//!     crash_info->stack_addr, 512 /* max amount of stack to collect */);
+//!  s_coredump_regions[idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+//!    crash_info->stack_address, stack_size);
+//!
+//! @param[in] start_addr The address of the start of the memory range to collect
+//! @param[in] desired_size The size trying to be collected for the region
+//!
+//! @return The actual size to collect or 0 if the address is invalid.
+size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size);
+
 typedef struct MfltCoredumpStorageInfo {
   //! The size of the coredump storage region (must be greater than the space needed to capture all
   //! the regions returned from @ref memfault_platform_coredump_get_regions)

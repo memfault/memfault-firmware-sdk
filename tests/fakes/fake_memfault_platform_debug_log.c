@@ -25,6 +25,7 @@ static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
       return "W";
     case kMemfaultPlatformLogLevel_Error:
       return "E";
+    case kMemfaultPlatformLogLevel_NumLevels: // silence error with -Wswitch-enum
     default:
       return "U";
   }

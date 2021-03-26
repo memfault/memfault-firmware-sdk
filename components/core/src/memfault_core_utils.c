@@ -6,6 +6,8 @@
 //! @brief
 
 #include "memfault/core/build_info.h"
+#include "memfault/core/device_info.h"
+#include "memfault/core/platform/device_info.h"
 #include "memfault_build_id_private.h"
 
 #include <string.h>
@@ -87,4 +89,13 @@ void memfault_build_info_dump(void) {
   }
 
   MEMFAULT_LOG_INFO("%s Build ID: %s", is_gnu ? "GNU" : "Memfault", build_id_sha);
+}
+
+void memfault_device_info_dump(void) {
+  struct MemfaultDeviceInfo info = {0};
+  memfault_platform_get_device_info(&info);
+  MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
+  MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");
+  MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
+  MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
 }

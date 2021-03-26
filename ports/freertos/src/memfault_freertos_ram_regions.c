@@ -71,14 +71,29 @@
 
 #include "memfault/ports/freertos_coredump.h"
 
+#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
 
 #include "FreeRTOS.h"
+#include "task.h"
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
+#endif
+
+
+#if tskKERNEL_VERSION_MAJOR <= 8
+//! Note: What we want here is sizeof(TCB_t) but that is a private declaration in FreeRTOS
+//! tasks.c. Since the static declaration doesn't exist for FreeRTOS kernel <= 8, fallback to a
+//! generous size that will include the entire TCB. A user of the SDK can tune the size by adding
+//! MEMFAULT_FREERTOS_TCB_SIZE to memfault_platform_config.h
+#if !defined(MEMFAULT_FREERTOS_TCB_SIZE)
+#define MEMFAULT_FREERTOS_TCB_SIZE 200
+#endif
+#else
+#define MEMFAULT_FREERTOS_TCB_SIZE sizeof(StaticTask_t)
 #endif
 
 //! The maximum number
@@ -142,7 +157,7 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
     }
 
     const size_t tcb_size = memfault_platform_sanitize_address_range(
-        tcb_address, sizeof(StaticTask_t));
+        tcb_address, MEMFAULT_FREERTOS_TCB_SIZE);
     if (tcb_size == 0) {
       // An invalid address, scrub the TCB from the list so we don't try to dereference
       // it when grabbing stacks below and move on.

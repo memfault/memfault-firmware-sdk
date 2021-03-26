@@ -10,6 +10,10 @@
 
 #include "net/fota_download.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! A callback invoked while a FOTA is in progress
 //!
 //! @note The default implementation will reboot the system after an OTA download has completed.
@@ -25,3 +29,7 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt);
 //!     0 Check completed successfully - No new update available
 //!     1 New update is available and handlers were invoked
 int memfault_fota_start(void);
+
+#ifdef __cplusplus
+}
+#endif

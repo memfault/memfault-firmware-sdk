@@ -138,6 +138,10 @@ static void prv_metric_iterator(void *ctx, MemfaultMetricKvIteratorCb cb) {
         meta_datap = &s_memfault_heartbeat_timer_values_metadata[timer_metadata_index];
         timer_metadata_index++;
         break;
+
+      case kMemfaultMetricType_Signed:
+      case kMemfaultMetricType_Unsigned:
+      case kMemfaultMetricType_NumTypes: // To silence -Wswitch-enum
       default:
         break;
     }
@@ -342,7 +346,7 @@ static int prv_find_key_and_add(MemfaultMetricId key, int32_t amount) {
   }
   union MemfaultMetricValue *value = value_info.valuep;
 
-  switch (type) {
+  switch ((int)type) {
     case kMemfaultMetricType_Signed: {
       int32_t new_value = value->i32 + amount;
       const bool amount_is_positive = amount > 0;
@@ -367,6 +371,8 @@ static int prv_find_key_and_add(MemfaultMetricId key, int32_t amount) {
       break;
     }
 
+    case kMemfaultMetricType_Timer:
+    case kMemfaultMetricType_NumTypes: // To silence -Wswitch-enum
     default:
       MEMFAULT_LOG_ERROR("Can only add to number types (key: %s)", key._impl);
       return MEMFAULT_METRICS_TYPE_INCOMPATIBLE;
@@ -498,6 +504,8 @@ static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
     case kMemfaultMetricType_Signed:
       MEMFAULT_LOG_DEBUG("  %s: %" PRIi32, key->_impl, value->i32);
       break;
+
+    case kMemfaultMetricType_NumTypes: // To silence -Wswitch-enum
     default:
       MEMFAULT_LOG_DEBUG("  %s: <unknown type>", key->_impl);
       break;

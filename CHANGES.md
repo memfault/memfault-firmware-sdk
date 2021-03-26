@@ -1,3 +1,56 @@
+### Changes between Memfault SDK 0.15.0 and SDK 0.14.0 - March 24, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a new convenience API,
+  [`memfault_device_info_dump()`](components/include/memfault/core/device_info.h#L1)
+  which can be used to pretty print the device information populated in the
+  `memfault_platform_get_device_info()` dependency function.
+- Added
+  [`memfault_platform_sanitize_address_range()`](components/include/memfault/panics/platform/coredump.h#L95).
+  This functrions is intended for use in your
+  `memfault_platform_coredump_get_regions()` implementation when capturing
+  regions that are not defined at compile time.
+- Fixed a :bug: with `memfault_coredump_storage_debug_test_*` which would
+  generate a false positive test failure when the coredump storage area was not
+  divisible by 16.
+- C++ header guards are now included in all headers in the ports/ directory for
+  easier integration in mixed C/C++ environments
+- Port Updates:
+  - Dialog DA1468x: Added patch which can be used to add
+    [GNU Build ID](ports/dialog/da1468x/gnu-build-id.patch#L1)
+  - Added support for FreeRTOS 8 to the [FreeRTOS port](ports/freertos/).
+  - STM32H7 family / STM32CubeH7:
+    - [rich reboot reason info derived from RCC RSR register](ports/stm32cube/h7/rcc_reboot_tracking.c#L1)
+  - STM32WBxx family / STM32CubeWB:
+    - [internal flash coredump storage](ports/stm32cube/wb/flash_coredump_storage.c#L1)
+  - Improved configurability of
+    [RAM backed coredump storage port](ports/panics/src/memfault_platform_ram_backed_coredump.c#L1)
+    with new configuration options for to control where RAM is allocated, what
+    memory regions are collected, and stack size to collect.
+- Added additional comments to [`ports/templates`](ports/templates) directory to
+  facilitate porting.
+
+#### :house: Internal
+
+- [Demo CLI Shell commands](components/demo/src/memfault_demo_shell_commands.c#L50)
+  are now defined as weak symbols so they can be overriden with a custom set.
+
+#### :boom: Breaking Changes
+
+- If you were using the
+  [`ports/emlib/msc_coredump_storage.c`](ports/emlib/msc_coredump_storage.c)
+  port in your system, you must add
+  `MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH=1` to your
+  `memfault_platform_config.h`
+- If you were using `ports/panics/src/memfault_platform_ram_backed_coredump.c`:
+  - [`memfault_platform_sanitize_address_range()`](components/include/memfault/panics/platform/coredump.h)
+    must be implemented.
+  - The default coredump storage RAM size was changed from 700 to 1024 bytes so
+    more information can be captured. The original size can be restored by
+    setting `MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE 700` in your
+    `memfault_platform_config.h`
+
 ### Changes between Memfault SDK 0.14.0 and SDK 0.13.1 - March 18, 2021
 
 #### :chart_with_upwards_trend: Improvements

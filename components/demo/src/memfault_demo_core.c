@@ -12,18 +12,14 @@
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/device_info.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/reboot_tracking.h"
 
 int memfault_demo_cli_cmd_get_device_info(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  struct MemfaultDeviceInfo info = {0};
-  memfault_platform_get_device_info(&info);
-  MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
-  MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");
-  MEMFAULT_LOG_INFO("SW version: %s", info.software_version ? info.software_version : "<NULL>");
-  MEMFAULT_LOG_INFO("HW version: %s", info.hardware_version ? info.hardware_version : "<NULL>");
+  memfault_device_info_dump();
   return 0;
 }
 

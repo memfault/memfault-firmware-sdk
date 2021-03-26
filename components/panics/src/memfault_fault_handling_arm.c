@@ -103,7 +103,8 @@ static uint32_t prv_read_msp_reg(void) {
 #endif
 
 MEMFAULT_WEAK
-void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
+void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
+                                     MEMFAULT_UNUSED eMemfaultRebootReason reason) {
 }
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {

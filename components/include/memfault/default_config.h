@@ -275,6 +275,56 @@ extern "C" {
 #define MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT 256
 #endif
 
+//! The default amount of stack to collect for the stack that was active leading up to a crash
+#ifndef MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT
+#define MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT 512
+#endif
+
+//
+// Controls whether RAM or FLASH coredump storage port is picked up.
+//
+
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH 0
+#endif
+
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_RAM
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_RAM (!MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH)
+#endif
+
+#if MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH && MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_RAM
+#error "Configuration error. Only one of _USE_FLASH or _USE_RAM can be set!"
+#endif
+
+//
+// RAM backed coredump configuration options
+//
+
+//! When set to 1, end user must allocate and provide pointer to
+//! coredump storage noinit region and define MEMFAULT_PLATFORM_COREDUMP_RAM_START_ADDR
+//! in memfault_platform_config.h
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM 0
+#endif
+
+//! Controls the section name used for the noinit region a RAM backed coredump is saved to
+//! Some vendor SDKs have pre-defined no-init regions in which case this can be overriden
+#ifndef MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME
+#define MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME ".noinit.mflt_coredump"
+#endif
+
+//! Controls the size of the RAM region allocated for coredump storage
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE 1024
+#endif
+
+//! The RAM port will by default collect the active stack at the time of crash.
+//! Alternatively, an end user can define custom regions by implementing their own
+//! version of memfault_platform_coredump_get_regions()
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_REGIONS_CUSTOM
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_REGIONS_CUSTOM 0
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -10,22 +10,13 @@
 #include "memfault/config.h"
 #include "memfault/panics/platform/coredump.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! For each task tracked we will need to collect the TCB + a region of the stack
 #define MEMFAULT_PLATFORM_MAX_TASK_REGIONS \
   (MEMFAULT_PLATFORM_MAX_TRACKED_TASKS * (1 /* TCB */ + 1 /* stack */))
-
-//! Given a pointer and size returns the actual size which should be collected.
-//!
-//! @note This is used to make sure the memory being collected is within the bounds
-//! of the MCUs memory map.
-//! @note A user _must_ implement this function if they are using
-//! "memfault_freertos_get_task_regions()"
-//!
-//! @param[in] start_addr The address of the start of the memory range to collect
-//! @param[in] desired_size The size trying to be collected for the region
-//!
-//! @return The actual size to collect or 0 if the address is invalid.
-extern size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size);
 
 //! Helper to collect minimal RAM needed for backtraces of non-running FreeRTOS tasks
 //!
@@ -36,3 +27,7 @@ extern size_t memfault_platform_sanitize_address_range(void *start_addr, size_t 
 //! @return The number of entries that were populated in the 'regions' argument. Will always
 //!  be <= num_regions
 size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions);
+
+#ifdef __cplusplus
+}
+#endif

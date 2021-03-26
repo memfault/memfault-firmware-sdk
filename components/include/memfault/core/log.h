@@ -137,6 +137,7 @@ void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...);
 //! Formats the provided string from a variable argument list
 //!
 //! @note Prefer saving logs via MEMFAULT_LOG_SAVE() when possible
+MEMFAULT_PRINTF_LIKE_FUNC(2, 0)
 void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_list args);
 
 #ifdef __cplusplus

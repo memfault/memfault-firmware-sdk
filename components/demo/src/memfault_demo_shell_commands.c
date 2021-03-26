@@ -15,7 +15,6 @@
 #include "memfault/demo/cli.h"
 #include "memfault/core/compiler.h"
 
-
 static int prv_panics_component_required(void) {
   MEMFAULT_LOG_RAW("Disabled. panics component integration required");
   return -1;
@@ -48,5 +47,8 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"help", memfault_shell_help_handler, "Lists all commands"},
 };
 
+// Note: Declared as weak so an end user can override the command table
+MEMFAULT_WEAK
 const sMemfaultShellCommand *const g_memfault_shell_commands = s_memfault_shell_commands;
+MEMFAULT_WEAK
 const size_t g_memfault_num_shell_commands = MEMFAULT_ARRAY_SIZE(s_memfault_shell_commands);

@@ -10,6 +10,10 @@
 
 #include "memfault/core/reboot_tracking.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! Reads platform reset reason registers and converts to format suitable for reporting to Memfault
 //!
 //! @note Reboot reasons are recorded and reported to the Memfault UI and
@@ -25,3 +29,7 @@
 //!  is populated with the reset reason register value and reset_reason is populated with a
 //!  eMemfaultRebootReason which will be displayed in the Memfault UI
 void memfault_reboot_reason_get(sResetBootupInfo *info);
+
+#ifdef __cplusplus
+}
+#endif

@@ -5,7 +5,14 @@
 #include <string.h>
 #include <stddef.h>
 
+#include "memfault/config.h"
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/core/compiler.h"
+
+size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
+  (void)start_addr;
+  return desired_size;
+}
 
 TEST_GROUP(MfltRamBackedCoredumpPort) {
   void setup() { }
@@ -25,16 +32,15 @@ TEST(MfltRamBackedCoredumpPort, Test_GetRegions) {
   const sMfltCoredumpRegion *r = &regions[0];
   LONGS_EQUAL(kMfltCoredumpRegionType_Memory, r->type);
   LONGS_EQUAL(info.stack_address, r->region_start);
-  LONGS_EQUAL(200, r->region_size);
+  LONGS_EQUAL(MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT, r->region_size);
 }
 
 TEST(MfltRamBackedCoredumpPort, Test_GetInfo) {
   sMfltCoredumpStorageInfo info;
   memfault_platform_coredump_storage_get_info(&info);
-  LONGS_EQUAL(info.size, info.sector_size);
 
   // Assert if the size changes so we can catch this and make _sure_ it's what we want to do
-  LONGS_EQUAL(700, info.size);
+  LONGS_EQUAL(MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE, info.size);
 }
 
 static size_t prv_get_size(void) {

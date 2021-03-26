@@ -46,6 +46,7 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
       state->encode_success = memfault_cbor_encode_signed_integer(encoder, value);
       break;
     }
+    case kMemfaultMetricType_NumTypes: // silence error with -Wswitch-enum
     default:
       break;
   }

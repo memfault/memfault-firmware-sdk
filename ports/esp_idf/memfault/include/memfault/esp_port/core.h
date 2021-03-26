@@ -8,6 +8,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! Returns whether or not there is Memfault data to send
 //!
 //! This function is called by memfault_http_client_post_data() when data is being pushed to the
@@ -35,3 +39,7 @@ bool memfault_esp_port_data_available(void);
 //!
 //! @return true if the buffer was filled, false otherwise
 bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len);
+
+#ifdef __cplusplus
+}
+#endif

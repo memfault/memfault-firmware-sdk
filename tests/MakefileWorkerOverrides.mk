@@ -44,12 +44,14 @@ CPPUTEST_WARNINGFLAGS = \
   -Wshadow \
   -Wswitch-default
 
+CPPUTEST_CFLAGS += \
+  -Wbad-function-cast
+
 # These warnings aren't particularly helpful for our use case so we disable them
 CPPUTEST_WARNINGFLAGS += \
   -Wno-missing-braces \
   -Wno-missing-field-initializers \
   -Wno-packed \
-  -Wno-switch-enum \
   -Wno-vla \
 
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"

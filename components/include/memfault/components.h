@@ -21,6 +21,7 @@ extern "C" {
 #include "memfault/core/arch.h"
 #include "memfault/core/batched_events.h"
 #include "memfault/core/build_info.h"
+#include "memfault/core/device_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"

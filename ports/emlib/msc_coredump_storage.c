@@ -18,6 +18,10 @@
 //! __MemfaultCoreStorageStart = ORIGIN(COREDUMP_STORAGE_FLASH);
 //! __MemfaultCoreStorageEnd = ORIGIN(COREDUMP_STORAGE_FLASH) + LENGTH(COREDUMP_STORAGE_FLASH);
 
+#include "memfault/config.h"
+
+#if MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH
+
 #include "memfault/panics/coredump.h"
 #include "memfault/ports/buffered_coredump_storage.h"
 
@@ -121,3 +125,5 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 
   return true;
 }
+
+#endif /* MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH */

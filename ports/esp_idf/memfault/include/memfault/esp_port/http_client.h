@@ -11,6 +11,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MEMFAULT_HTTP_CLIENT_MIN_BUFFER_SIZE 1024
 
 //! Called to get a buffer to use for POSTing data to the Memfault cloud
@@ -62,3 +66,7 @@ typedef struct {
 //!     0 Check completed successfully - No new update available
 //!     1 New update is available and handlers were invoked
 int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler);
+
+#ifdef __cplusplus
+}
+#endif

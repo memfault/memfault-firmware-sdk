@@ -8,6 +8,10 @@
 //! This file needs to be included from your platforms FreeRTOSConfig.h to take advantage of
 //! Memfault's hooks into the FreeRTOS tracing utilities
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // FreeRTOSConfig.h is often included in assembly files so wrap function declarations for
 // convenience to prevent compilation errors
 #if !defined(__ASSEMBLER__) && !defined(__IAR_SYSTEMS_ASM__)
@@ -32,3 +36,7 @@ void memfault_freertos_trace_task_delete(void *tcb);
 
 //! A define that is used to assert that this file has been included from FreeRTOSConfig.h
 #define MEMFAULT_FREERTOS_TRACE_ENABLED 1
+
+#ifdef __cplusplus
+}
+#endif

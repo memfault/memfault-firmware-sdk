@@ -13,6 +13,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MEMFAULT_HTTP_CLIENT_MAX_BUFFER_SIZE  CONFIG_MEMFAULT_HTTP_CLIENT_BUFFER_SIZE
 #define MEMFAULT_HTTP_CLIENT_MIN_BUFFER_SIZE 512
 
@@ -43,3 +47,7 @@ int memfault_esp_port_http_client_post_data(void);
 
 //! @return true if connected to WiFi, false otherwise
 bool memfault_esp_port_wifi_available(void);
+
+#ifdef __cplusplus
+}
+#endif
