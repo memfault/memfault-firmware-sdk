@@ -148,23 +148,23 @@ void test_memfault(void)
     if(!memfault_coredump_storage_debug_test_finish())
         MEMFAULT_TRACE_EVENT_WITH_LOG(critical_error, "memfault_coredump_storage_debug_test_finish() failed");
 
-//    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
-//    void (*bad_func)(void) = (void *)0xEEEEDEAD;
-//    volatile uint8_t error = 0;
-//
-//    switch (error) {
-//        case 0:
-//            MEMFAULT_ASSERT(0);
-//            break;
-//        case 1:
-//            bad_func();
-//            break;
-//        case 2:
-//            OS_MALLOC(100000);
-//            break;
-//        default:
-//            break;
-//    }
+    memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+    void (*bad_func)(void) = (void *)0xEEEEDEAD;
+    volatile uint8_t error = 0xFF;
+
+    switch (error) {
+        case 0:
+            MEMFAULT_ASSERT(0);
+            break;
+        case 1:
+            bad_func();
+            break;
+        case 2:
+            OS_MALLOC(100000);
+            break;
+        default:
+            break;
+    }
 
     // Force any pending data out
     while (prv_try_send_memfault_data()) { }
