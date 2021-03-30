@@ -21,7 +21,7 @@ static uint8_t s_ram_backed_coredump_region[HPY_MEMFAULT_COREDUMP_SIZE];
 //! Truncates the region if it's outside the bounds of RAM
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size)
 {
-    // TODO: Check if these symbols are available from the linker directive file?
+    // This defines the valid RAM range and is pulled from sdk_defs.h.
     const uint32_t ram_start = MEMORY_SYSRAM_BASE;
     const uint32_t ram_end = MEMORY_SYSRAM_END;
 
