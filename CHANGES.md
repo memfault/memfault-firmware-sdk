@@ -1,3 +1,35 @@
+### Changes between Memfault SDK 0.16.0 and SDK 0.15.0 - April 8, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added new convenience APIs, `memfault_event_storage_bytes_used()` &
+  `memfault_event_storage_bytes_free()`, to
+  [event storage module](components/include/memfault/core/event_storage.h#L1).
+- Added a new configuration option,
+  [`MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED`](components/include/memfault/default_config.h#L1).
+  By default, it is off, but when enabled will cause
+  `memfault_platform_halt_if_debugging()` to be called prior to triggering the
+  full coredump capture.
+- Fixed a type conversion compiler warning emitted by IAR and ARMCC in
+  [`resetreas_reboot_tracking.c`](ports/nrf5_sdk/resetreas_reboot_tracking.c#L1).
+- Port Updates:
+  - Dialog DA1468x
+    - [QSPI coredump storage port](ports/dialog/da1468x/qspi_coredump_storage.c#L1)
+    - [Added `memfault_platform_reboot_tracking_boot()` implementation](ports/dialog/da1468x/reset_stat_reboot_tracking.c)
+
+#### :house: Internal
+
+- Removed "Heartbeat triggered!" print when
+  `memfault_metrics_heartbeat_debug_trigger()` is called
+
+#### :boom: Breaking Changes
+
+- If you were using
+  [`ports/dialog/da1468x/reset_stat_reboot_tracking.c`](ports/dialog/da1468x/reset_stat_reboot_tracking.c),
+  the `memfault_platform_reboot_tracking_boot()` implementation from your
+  `memfault_platform_port.c` file can be removed and the one in the port can be
+  picked up.
+
 ### Changes between Memfault SDK 0.15.0 and SDK 0.14.0 - March 24, 2021
 
 #### :chart_with_upwards_trend: Improvements

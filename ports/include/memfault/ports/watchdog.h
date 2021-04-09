@@ -36,7 +36,7 @@ int memfault_software_watchdog_disable(void);
 //! @return 0 on success, else error code
 int memfault_software_watchdog_feed(void);
 
-//! Resets and chancges the software watchdog timeout
+//! Resets and changes the software watchdog timeout
 //!
 //! @return 0 on success, else error code
 int memfault_software_watchdog_update_timeout(uint32_t timeout_ms);

@@ -503,7 +503,7 @@ TEST(MemfaultEventStorage, Test_PersistStorageFatalError) {
 
   s_nv_storage_enabled = false;
 
-  // should be a no-op if storage us disabled
+  // should be a no-op if storage is disabled
   const int events_persisted = memfault_event_storage_persist();
   LONGS_EQUAL(0, events_persisted);
 
@@ -553,5 +553,43 @@ TEST(MemfaultEventStorage, Test_PersistEvents) {
   events_persisted = memfault_event_storage_persist();
   LONGS_EQUAL(1, events_persisted);
   mock().checkExpectations();
+}
+
+TEST(MemfaultEventStorage, Test_UsedFreeSizes) {
+  const size_t per_event_overhead = 2;
+  const size_t first_half = s_ram_store_size / 2; // Integer truncation is fine
+  const size_t second_half = s_ram_store_size - first_half;
+  const bool async = true;
+  const bool no_rollback = false;
+
+  // We'll write the same buffer data twice.
+  uint8_t my_buffer[sizeof s_ram_store / 2 + 1] = {0};
+
+  // 1. Initially empty
+  size_t bytes_used = memfault_event_storage_bytes_used();
+  size_t bytes_free = memfault_event_storage_bytes_free();
+  LONGS_EQUAL(bytes_used, 0);
+  LONGS_EQUAL(bytes_free, s_ram_store_size);
+
+  // NOTE: we write with knowledge of the event overhead but check
+  // bytes used based on total bytes written to event storage.
+
+  // 2. Partially full
+  prv_write_and_expect_persist_callback(
+      async, my_buffer, first_half-per_event_overhead, no_rollback);
+
+  bytes_used = memfault_event_storage_bytes_used();
+  bytes_free = memfault_event_storage_bytes_free();
+  LONGS_EQUAL(bytes_used, first_half);
+  LONGS_EQUAL(bytes_free, second_half);
+
+  // 3. Full
+  prv_write_and_expect_persist_callback(
+      async, my_buffer, second_half-per_event_overhead, no_rollback);
+
+  bytes_used = memfault_event_storage_bytes_used();
+  bytes_free = memfault_event_storage_bytes_free();
+  LONGS_EQUAL(bytes_used, s_ram_store_size);
+  LONGS_EQUAL(bytes_free, 0);
 }
 #endif /* !MEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE */

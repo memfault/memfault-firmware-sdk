@@ -435,3 +435,29 @@ const sMemfaultDataSourceImpl g_memfault_event_data_source  = {
   .read_msg_cb = prv_event_storage_read,
   .mark_msg_read_cb = prv_event_storage_mark_event_read,
 };
+
+// These getters provide the information that user doesn't have. The user knows the total size
+// of the event storage because they supply it but they need help to get the free/used stats.
+size_t memfault_event_storage_bytes_used(void) {
+  size_t bytes_used;
+
+  memfault_lock();
+  {
+    bytes_used = memfault_circular_buffer_get_read_size(&s_event_storage);
+  }
+  memfault_unlock();
+
+  return bytes_used;
+}
+
+size_t memfault_event_storage_bytes_free(void) {
+  size_t bytes_free;
+
+  memfault_lock();
+  {
+    bytes_free = memfault_circular_buffer_get_write_size(&s_event_storage);
+  }
+  memfault_unlock();
+
+  return bytes_free;
+}

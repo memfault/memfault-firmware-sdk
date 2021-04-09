@@ -82,8 +82,11 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   const uint32_t reset_reason_reg = prv_reset_reason_get();
   prv_reset_reason_clear(reset_reason_reg);
 
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, RESETREAS=0x%" PRIx32, reset_reason_reg);
+  MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");
+
   // Assume "no bits set" implies POR.
-  uint32_t reset_reason = kMfltRebootReason_PowerOnReset;
+  eMemfaultRebootReason reset_reason = kMfltRebootReason_PowerOnReset;
 
   // These appear to be common. Also, the assumption is
   // that only one bit per actual reset event can be set.

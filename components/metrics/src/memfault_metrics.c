@@ -521,7 +521,6 @@ void memfault_metrics_heartbeat_debug_print(void) {
 
 void memfault_metrics_heartbeat_debug_trigger(void) {
   prv_heartbeat_timer();
-  MEMFAULT_LOG_DEBUG("Heartbeat triggered!");
 }
 
 int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,

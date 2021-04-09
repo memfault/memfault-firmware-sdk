@@ -82,13 +82,21 @@ typedef struct MemfaultEventStoragePersistCbStatus {
 //!
 //! @note It is safe to call "memfault_event_storage_persist()" both synchronously and
 //!  asynchronously from this callback
-extern void memfault_event_storage_request_persist_callback(
+void memfault_event_storage_request_persist_callback(
     const sMemfaultEventStoragePersistCbStatus *status);
 
 //! Saves events which have been collected into non-volatile storage
 //!
 //! @return number of events saved or <0 for unexpected errors
 int memfault_event_storage_persist(void);
+
+//! Simple API call to retrieve the number of bytes used in the allocated event storage buffer.
+//! Returns zero if the storage has not been allocated.
+size_t memfault_event_storage_bytes_used(void);
+
+//! Simple API call to retrieve the number of bytes free (unused) in the allocated event storage buffer.
+//! Returns zero if the storage has not been allocated.
+size_t memfault_event_storage_bytes_free(void);
 
 #ifdef __cplusplus
 }

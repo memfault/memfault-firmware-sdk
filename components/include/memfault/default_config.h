@@ -33,6 +33,14 @@ extern "C" {
 #define MEMFAULT_SDK_ASSERT_ENABLED 1
 #endif
 
+//! Controls whether or not memfault_platform_halt_if_debugging() will be called
+//! at the beginning of an assert handler prior to trapping into the fault handler.
+//!
+//! This can make viewing the stack trace prior to exception easier when debugging locally
+#ifndef MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
+#define MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED 0
+#endif
+
 //! Controls whether or not device serial is encoded in events
 //!
 //! When disabled (default), the device serial is derived from the API route

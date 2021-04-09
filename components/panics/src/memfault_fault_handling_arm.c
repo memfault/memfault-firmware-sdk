@@ -527,6 +527,10 @@ static void prv_fault_handling_assert(void *pc, void *lr) {
   s_crash_reason = kMfltRebootReason_Assert;
   memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
 
+#if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
+  memfault_platform_halt_if_debugging();
+#endif
+
   MEMFAULT_ASSERT_TRAP();
 }
 

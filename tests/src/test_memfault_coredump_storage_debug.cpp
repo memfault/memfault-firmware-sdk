@@ -10,6 +10,15 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
+static bool s_inject_prepare_failure = false;
+bool memfault_platform_coredump_save_begin(void) {
+  if (s_inject_prepare_failure) {
+    return false;
+  }
+
+  return true;
+}
+
 static uint8_t s_ram_backed_coredump_region[200];
 #define COREDUMP_REGION_SIZE sizeof(s_ram_backed_coredump_region)
 
@@ -152,6 +161,7 @@ TEST_GROUP(MfltCoredumpStorageTestGroup) {
     s_inject_read_failure_offset = -1;
     s_inject_erase_failure = kMemfaultEraseFailureMode_None;
     s_inject_get_info_failure = false;
+    s_inject_prepare_failure = false;
   }
 
   void teardown() {
@@ -212,6 +222,13 @@ TEST(MfltCoredumpStorageTestGroup, Test_ClearFailureDueToReadFailure) {
 
 TEST(MfltCoredumpStorageTestGroup, Test_GetInfoFail) {
   s_inject_get_info_failure = true;
+  bool success = memfault_coredump_storage_debug_test_begin();
+  success &= memfault_coredump_storage_debug_test_finish();
+  CHECK(!success);
+}
+
+TEST(MfltCoredumpStorageTestGroup, Test_PrepareFail) {
+  s_inject_prepare_failure = true;
   bool success = memfault_coredump_storage_debug_test_begin();
   success &= memfault_coredump_storage_debug_test_finish();
   CHECK(!success);

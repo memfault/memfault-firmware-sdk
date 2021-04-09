@@ -90,9 +90,9 @@ int memfault_platform_boot(void) {
   // !FIXME: Add init to any platform specific ports here.
   // (This will be done in later steps in the getting started Guide)
 
-  memfault_platform_reboot_tracking_boot();
   memfault_build_info_dump();
   memfault_device_info_dump();
+  memfault_platform_reboot_tracking_boot();
 
   static uint8_t s_event_storage[1024];
   const sMemfaultEventStorageImpl *evt_storage =
@@ -105,6 +105,8 @@ int memfault_platform_boot(void) {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
+
+  MEMFAULT_LOG_INFO("Memfault Initialized!");
 
   return 0;
 }

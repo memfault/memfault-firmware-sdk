@@ -114,9 +114,9 @@ static bool prv_find_slot(size_t *idx, void *desired_tcb) {
 void memfault_freertos_trace_task_create(void *tcb) {
   size_t idx = 0;
 
-  // For a typical workload, tasks are creating as part of the boot process and never but we add a
-  // critical section to cover the off-chance that two tasks are creating other tasks at exactly
-  // the same time.
+  // For a typical workload, tasks are created as part of the boot process and never after
+  // the scheduler has been started but we add a critical section to cover the off-chance
+  // that two tasks are creating other tasks at exactly the same time.
   portENTER_CRITICAL();
   const bool slot_found = prv_find_slot(&idx, EMPTY_SLOT);
   if (slot_found) {

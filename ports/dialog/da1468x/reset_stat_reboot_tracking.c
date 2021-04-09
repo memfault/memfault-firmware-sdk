@@ -10,6 +10,7 @@
 //! section of the datasheet document for your specific chip.
 #include "hw_cpm.h"
 #include "osal.h"
+#include "sdk_defs.h"
 
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
@@ -28,6 +29,20 @@
 #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
+// Use Dialog's way of locating variables to a no-init section. This allocation is very
+// Dialog specific so we can put it here within the chip implementation.
+__RETAINED_UNINIT MEMFAULT_ALIGNED(8)
+static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+
+// Called by the user application to get our reboot allocation registered with the core.
+void memfault_platform_reboot_tracking_boot(void) {
+  // For a detailed explanation about reboot reason storage options check out the guide at:
+  //    https://mflt.io/reboot-reason-storage
+  sResetBootupInfo reset_reason = {0};
+  memfault_reboot_reason_get(&reset_reason);
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_reason);
+}
+
 // Private helper functions deal with the details of manipulating the CPU's
 // reset reason register. On some CPUs this is more involved.
 static uint32_t prv_reset_reason_get(void) {
@@ -39,27 +54,6 @@ static void prv_reset_reason_clear(uint32_t reset_reas_clear_mask) {
 
   // Write zero to clear, not ones.
   CRG_TOP->RESET_STAT_REG = 0;
-}
-
-// Called by the user application.
-void memfault_platform_reboot_tracking_boot(void) {
-  // For a detailed explanation about reboot reason storage options check out the guide at:
-  //    https://mflt.io/reboot-reason-storage
-
-  // We can determine the bottom of the stack from Dialog's generated linker scripts using
-  // the __StackLimit symbol. If poisoning is enabled a signature will get written starting
-  // at __StackLimit and overwrite our reboot tracking reason saved data. Note that we are
-  // "stealing" a little bit off the end of the user's stack allocation.
-  extern uint32_t __StackLimit[];
-#if defined(OS_FREERTOS) && dg_configCHECK_HEAP_STACK_OVERRUN == 1
-  uint32_t reboot_tracking_start_addr = (uint32_t) (uintptr_t) __StackLimit + OS_MEM_POISON_SIZE;
-#else
-  uint32_t reboot_tracking_start_addr = (uint32_t) (uintptr_t) __StackLimit;
-#endif
-
-  sResetBootupInfo reset_reason = {0};
-  memfault_reboot_reason_get(&reset_reason);
-  memfault_reboot_tracking_boot((void *)reboot_tracking_start_addr, &reset_reason);
 }
 
 // Map chip-specific reset reasons to Memfault reboot reasons. Below is from the
@@ -86,25 +80,25 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   // Assume "no bits set" implies POR.
   uint32_t reset_reason = kMfltRebootReason_PowerOnReset;
 
-  // Note that POR is set for POR, WD, and SWD reset so test order is important here.
-  if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_PORESET_STAT_Pos) {
-    // Important to check PORESET_STAT first as it also sets some other bits.
+  // Note that POR also sets WD, and SWD bits so check order is important.
+  if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_PORESET_STAT_Msk) {
+    // Important to check PORESET_STAT first.
     MEMFAULT_PRINT_RESET_INFO(" Power on Reset");
     reset_reason = kMfltRebootReason_PowerOnReset;
-  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_HWRESET_STAT_Pos) {
-    MEMFAULT_PRINT_RESET_INFO(" Pin Reset");
-    reset_reason = kMfltRebootReason_PinReset;
-  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_SWRESET_STAT_Pos) {
-    MEMFAULT_PRINT_RESET_INFO(" Software");
-    reset_reason = kMfltRebootReason_SoftwareReset;
-  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_WDOGRESET_STAT_Pos) {
-    // Actual WD reset since POR flag was not set.
-    MEMFAULT_PRINT_RESET_INFO(" Watchdog");
-    reset_reason = kMfltRebootReason_HardwareWatchdog;
-  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_SWD_HWRESET_STAT_Pos) {
-    // Actual SWD reset since POR flag was not set. We just map it to SW reset.
+  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_SWD_HWRESET_STAT_Msk) {
+    // True SWD reset since POR flag was not set. We just map it to SW reset.
     MEMFAULT_PRINT_RESET_INFO(" Debugger (SWD)");
     reset_reason = kMfltRebootReason_SoftwareReset;
+  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_WDOGRESET_STAT_Msk) {
+    // True WD reset since POR flag was not set.
+    MEMFAULT_PRINT_RESET_INFO(" Watchdog");
+    reset_reason = kMfltRebootReason_HardwareWatchdog;
+  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_SWRESET_STAT_Msk) {
+    MEMFAULT_PRINT_RESET_INFO(" Software");
+    reset_reason = kMfltRebootReason_SoftwareReset;
+  } else if (reset_reason_reg & CRG_TOP_RESET_STAT_REG_HWRESET_STAT_Msk) {
+    MEMFAULT_PRINT_RESET_INFO(" Pin Reset");
+    reset_reason = kMfltRebootReason_PinReset;
   }
 
   *info = (sResetBootupInfo) {

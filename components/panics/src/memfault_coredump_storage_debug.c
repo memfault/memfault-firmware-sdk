@@ -33,7 +33,8 @@
 #include "memfault/panics/platform/coredump.h"
 
 typedef enum {
-  kMemfaultCoredumpStorageTestOp_Erase = 0,
+  kMemfaultCoredumpStorageTestOp_Prepare = 0,
+  kMemfaultCoredumpStorageTestOp_Erase,
   kMemfaultCoredumpStorageTestOp_Write,
   kMemfaultCoredumpStorageTestOp_Clear,
   kMemfaultCoredumpStorageTestOp_GetInfo,
@@ -88,6 +89,16 @@ bool memfault_coredump_storage_debug_test_begin(void) {
   memfault_platform_coredump_storage_get_info(&info);
   if (info.size == 0) {
     prv_record_failure(kMemfaultCoredumpStorageTestOp_GetInfo,
+                       kMemfaultCoredumpStorageResult_PlatformApiFail,
+                       0, info.size);
+    return false;
+  }
+
+  // On some ports there maybe some extra setup that needs to occur
+  // before we can safely use the backing store without interrupts
+  // enabled. Call this setup function now.
+  if (!memfault_platform_coredump_save_begin()) {
+    prv_record_failure(kMemfaultCoredumpStorageTestOp_Prepare,
                        kMemfaultCoredumpStorageResult_PlatformApiFail,
                        0, info.size);
     return false;
@@ -261,6 +272,10 @@ bool memfault_coredump_storage_debug_test_finish(void) {
 
   const char *op_suffix;
   switch (s_test_result.op) {
+    case kMemfaultCoredumpStorageTestOp_Prepare:
+      op_suffix = "prepare";
+      break;
+
     case kMemfaultCoredumpStorageTestOp_Erase:
       op_suffix = "erase";
       break;
