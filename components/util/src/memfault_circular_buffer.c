@@ -80,6 +80,40 @@ bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf
   return true;
 }
 
+bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf,
+                                                 size_t offset, size_t data_len, void *ctx,
+                                                 MemfaultCircularBufferReadCallback callback) {
+  if (circular_buf == NULL) {
+    return false;
+  }
+  if (callback == NULL) {
+    return false;
+  }
+  if (circular_buf->read_size < (offset + data_len)) {
+    return false;
+  }
+
+  size_t bytes_left = data_len;
+  uint8_t *read_ptr = NULL;
+  size_t read_ptr_len = 0;
+  while (bytes_left) {
+    const size_t dst_offset = data_len - bytes_left;
+    if (!memfault_circular_buffer_get_read_pointer(
+      circular_buf, offset + dst_offset, &read_ptr, &read_ptr_len)) {
+      // Note: At this point, the memfault_circular_buffer_get_read_pointer() calls should never fail. A
+      // failure is indicative of memory corruption (e.g calls taking place from multiple tasks without
+      // having implemented memfault_lock() / memfault_unlock())
+      return false;
+    }
+    const size_t bytes_to_read = MEMFAULT_MIN(bytes_left, read_ptr_len);
+    if (!callback(ctx, dst_offset, read_ptr, bytes_to_read)) {
+      return false;
+    }
+    bytes_left -= bytes_to_read;
+  }
+  return true;
+}
+
 bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t consume_len) {
   if (circular_buf == NULL) {
     return false;

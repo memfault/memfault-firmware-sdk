@@ -22,6 +22,7 @@ export MFLT_TEST_SRC_DIR ?= $(MFLT_TEST_ROOT)/src
 export MFLT_TEST_COMMON_SRC_DIR := $(MFLT_TEST_ROOT)/src
 export MFLT_TEST_FAKE_DIR := $(MFLT_TEST_ROOT)/fakes
 export MFLT_TEST_MOCK_DIR := $(MFLT_TEST_ROOT)/mocks
+export MFLT_TEST_STUB_DIR := $(MFLT_TEST_ROOT)/stubs
 export CPPUTEST_MAKFILE_INFRA := $(MFLT_TEST_ROOT)/MakefileWorkerOverrides.mk
 
 # Gather -Icomponents/*/src and -Icomponents/*/include:

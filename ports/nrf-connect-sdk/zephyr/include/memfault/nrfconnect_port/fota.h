@@ -8,11 +8,12 @@
 //! Integrates the Memfault Release Management Infrastructure with the FOTA Client in the nRF
 //! Connect SDK
 
-#include "net/fota_download.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if CONFIG_MEMFAULT_FOTA
+#include "net/fota_download.h"
 
 //! A callback invoked while a FOTA is in progress
 //!
@@ -29,6 +30,8 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt);
 //!     0 Check completed successfully - No new update available
 //!     1 New update is available and handlers were invoked
 int memfault_fota_start(void);
+
+#endif /* CONFIG_MEMFAULT_FOTA */
 
 #ifdef __cplusplus
 }

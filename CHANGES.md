@@ -1,3 +1,29 @@
+### Changes between Memfault SDK 0.16.1 and SDK 0.16.0 - April 12, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fixed a :bug: in Zephyr port leading to a compilation error with nRF Connect
+  SDK when `CONFIG_DOWNLOAD_CLIENT=y` & `CONFIG_MEMFAULT_NRF_SHELL=y`
+- Dialog DA1468x
+  [QSPI coredump storage port](ports/dialog/da1468x/qspi_coredump_storage.c#L1)
+  updates:
+  - default storage parition (`NVMS_LOG_PART`) can be overridden
+    `MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION`
+  - Max space used within partition can be limited using
+    `MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES`
+- Updated [zephyr example application](examples/zephyr/README.md) and docs to be
+  compatible with v2.5 release.
+
+#### :house: Internal
+
+- Added `memfault_log_save` stub to unit tests to facilitate easier testing of
+  logging dependencies
+- Improved correctness of strategy used to capture `msp` & `psp` register in
+  Cortex-M fault handler.
+- Added new convenience utility,
+  `memfault_circular_buffer_read_with_callback()`, to
+  [circular buffer api](components/include/memfault/util/circular_buffer.h).
+
 ### Changes between Memfault SDK 0.16.0 and SDK 0.15.0 - April 8, 2021
 
 #### :chart_with_upwards_trend: Improvements

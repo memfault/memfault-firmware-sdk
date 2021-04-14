@@ -65,6 +65,34 @@ bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t off
 bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf, size_t offset,
                                                uint8_t **read_ptr, size_t *read_ptr_len);
 
+//! Callback invoked when "memfault_circular_buffer_read_with_callback" is called.
+//!
+//! @param ctx User defined context as passed into "memfault_circular_buffer_read_with_callback".
+//! @param offset The offset within the storage to write to. These offsets are guaranteed to be
+//!   sequential. (i.e If the last write wrote 3 bytes at offset 0, the next write_cb will begin at
+//!   offset 3) The offset is returned as a convenience.
+//! @param buf The payload to write to the storage
+//! @param buf_len The size of the payload to write
+//! @return false if writing was not successful.
+typedef bool (*MemfaultCircularBufferReadCallback)(void *ctx, size_t offset,
+                                                   const void *buf, size_t buf_len);
+
+//! Convenience wrapper around "memfault_circular_buffer_get_read_pointer", to directly access
+//! all the data in the circular buffer from a callback, without needing to copy the data to a
+//! temporary buffer first.
+//!
+//! @param offset The offset within the buffer to start reading at (must be less than
+//!   memfault_circular_buffer_get_read_size())
+//! @param data_len The amount of data to read and the size of space available in data
+//! @param ctx User defined context.
+//! @param callback If there is no data in the buffer, the callback will not get invoked. If there
+//! is data in the buffer and it is stored in a contiguous block of memory, the callback argument
+//! gets invoked once. If the data is stored in non-contiguous blocks of memory, the callback will
+//! be called for each block.
+bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf,
+                                                 size_t offset, size_t data_len, void *ctx,
+                                                 MemfaultCircularBufferReadCallback callback);
+
 //! Flush the requested number of bytes from the circular buffer
 //!
 //! @param circular_buffer The buffer to clear bytes from

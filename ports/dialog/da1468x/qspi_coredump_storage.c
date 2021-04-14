@@ -56,6 +56,12 @@
 #define MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION NVMS_LOG_PART
 #endif
 
+// By default, the size used will match the size of the partition selected but we expose a
+// configuration option so a user can truncate to the beginning of the partition
+#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES UINT32_MAX
+#endif
+
 // The NVMS partition will appear to us as a block of storage from "address" zero to
 // partition_size - 1. For this reason we do not need to have explicit start and end addresses.
 typedef struct nvms_partition_t {
@@ -114,16 +120,18 @@ static void prv_coredump_writer_assert_and_reboot(int error_code) {
 // NOTE: The user must call ad_nvms_init() before calling this function.
 void memfault_platform_coredump_storage_boot(void) {
   partition_entry_t partition_info = {0};
-  const bool exists = ad_nvms_get_partition_info(NVMS_LOG_PART, &partition_info);
+  const bool exists = ad_nvms_get_partition_info(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION, &partition_info);
   if (!exists) {
     MEMFAULT_LOG_ERROR("Could not locate partition for coredump storage, has ad_nvms_init() been called?");
     return;
   }
 
   // ad_nvms_open() should not fail if above check succeeds.
-  s_qspi_coredump_partition_info.partition.handle = ad_nvms_open(NVMS_LOG_PART);
-  s_qspi_coredump_partition_info.partition.size = ad_nvms_get_size(
-      s_qspi_coredump_partition_info.partition.handle);
+  s_qspi_coredump_partition_info.partition.handle = ad_nvms_open(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION);
+  const size_t partition_size = ad_nvms_get_size(s_qspi_coredump_partition_info.partition.handle);
+  s_qspi_coredump_partition_info.partition.size = MEMFAULT_MIN(
+      partition_size, MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES);
+
   s_qspi_coredump_partition_info.magic = QSPI_COREDUMP_PART_INIT_MAGIC;
   s_qspi_coredump_partition_info.crc = prv_get_partition_info_crc();
 }

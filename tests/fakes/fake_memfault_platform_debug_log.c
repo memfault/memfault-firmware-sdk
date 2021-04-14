@@ -31,10 +31,6 @@ static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
   }
 }
 
-// stub
-void memfault_log_save(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
-                       MEMFAULT_UNUSED const char *fmt, ...) { }
-
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);

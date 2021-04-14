@@ -4,27 +4,40 @@ This folder contains an example integration of the Memfault SDK using the port
 provided in `ports/zephyr`
 
 The demo was tested using the
-[STM32L4 discovery board](https://docs.zephyrproject.org/2.0.0/boards/arm/disco_l475_iot1/doc/index.html?#st-disco-l475-iot01-b-l475e-iot01a)
-but should work for any ARM Cortex-M based Zephyr target board.
+[STM32L4 Discovery kit](https://www.st.com/en/evaluation-tools/b-l475e-iot01a.html).
 
-For the purposes of this demo we will be using the v2.0 release of Zephyr
-because WiFi/HTTP is not fully implemented on the Zephyr v1.14 LTS Release.
+However, the example application can be compiled for any other ARM Cortex-M
+board supported by Zephyr such as the nRF52840 (`--board=nrf52840dk_nrf52840`).
+
+For the purposes of this demo we will be using the v2.5 release of Zephyr.
 
 ## Getting Started
 
 Make sure you have read the instructions in the `README.md` in the root of the
 SDK and performed the installation steps that are mentioned there.
 
+### Prerequisite
+
+We assume you already have a working Zephyr toolchain installed locally.
+Step-by-step instructions can be found in the
+[Zephyr Documentation](https://docs.zephyrproject.org/2.5.0/getting_started/index.html#build-hello-world).
+
 ### Setup
 
 1. Clone the repo
 
 ```bash
-$ git clone git@github.com:zephyrproject-rtos/zephyr.git --branch v2.0-branch zephyr
+$ git clone git@github.com:zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
 ```
 
-2. Setup a working zephyr environment. Step-by-step instructions can be found
-   [here](https://docs.zephyrproject.org/2.0.0/getting_started/index.html#build-hello-world).
+2. Create a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r zephyr/scripts/requirements.txt
+```
+
 3. Initialize a new build environment:
 
 ```bash
@@ -32,22 +45,35 @@ $ west init -l zephyr/
 $ west update
 ```
 
-4. Apply patches to integrate Memfault SDK
-
-```
-$ cd zephyr
-$ git apply ../../../ports/zephyr/v2.0/zephyr-integration.patch
-```
-
-5. Add memfault-firmware-sdk to `ZEPHYR_EXTRA_MODULES` in CMakeLists.txt
+4. When using the STM32L4 discovery board, the following patch is also needed
+   due to bugs in the stack:
 
 ```diff
-+ set(MEMFAULT_ZEPHYR_PORT_TARGET v2.0)
-+ set(MEMFAULT_SDK_ROOT /path/to/memfault-firmware-sdk)
-+ list(APPEND ZEPHYR_EXTRA_MODULES ${MEMFAULT_SDK_ROOT}/ports)
+diff --git a/drivers/wifi/eswifi/Kconfig.eswifi b/drivers/wifi/eswifi/Kconfig.eswifi
+index 6468b98113..5f80c918cd 100644
+--- a/drivers/wifi/eswifi/Kconfig.eswifi
++++ b/drivers/wifi/eswifi/Kconfig.eswifi
+@@ -9,7 +9,7 @@ menuconfig WIFI_ESWIFI
+        select WIFI_OFFLOAD
+        select NET_OFFLOAD
+        select NET_SOCKETS
+-       select NET_SOCKETS_OFFLOAD
++       imply NET_SOCKETS_OFFLOAD
+        select GPIO
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(memfault_demo_app)
+ if WIFI_ESWIFI
+diff --git a/drivers/wifi/eswifi/eswifi_socket.c b/drivers/wifi/eswifi/eswifi_socket.c
+index e31ca0eecd..119f55778d 100644
+--- a/drivers/wifi/eswifi/eswifi_socket.c
++++ b/drivers/wifi/eswifi/eswifi_socket.c
+@@ -301,6 +301,6 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
+        k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
+        socket->usage = 1;
+        LOG_DBG("Socket index %d", socket->index);
+-
++       net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+        return socket->index;
+ }
 ```
 
 ### Memfault Project Key
@@ -59,7 +85,7 @@ https://app.memfault.com/, navigate to the project you want to use and select
 `$MEMFAULT_SDK/examples/zephyr/apps/memfault_demo_app/src/main.c`, replacing
 `<YOUR PROJECT KEY HERE>` with your Project Key.
 
-### Building the App
+### Building
 
 ```
 $ cd $MEMFAULT_SDK/examples/zephyr/
@@ -68,29 +94,57 @@ $ west build -b disco_l475_iot1 apps/memfault_demo_app
 [271/271] Linking C executable zephyr/zephyr.elf
 ```
 
-### Running the App
+### Flashing
 
-At this point you should be able to
-[flash and run](https://docs.zephyrproject.org/2.0.0/getting_started/index.html#run-the-application-by-flashing-to-a-board)
-the application
+The build can be flashed on the development board using `west flash` ( See
+Zephyr
+["Building, Flashing, & Debugging" documentation](https://docs.zephyrproject.org/2.5.0/guides/west/build-flash-debug.html?highlight=building%20flashing#flashing-west-flash))
+
+Or, alternatively, if you are using a SEGGER JLink:
+
+1. In one terminal, start a GDB Server
+
+```bash
+$ JLinkGDBServer -if swd -device STM32L475VG
+```
+
+2. In another terminal, load `zephyr.elf` with GDB:
+
+```bash
+arm-none-eabi-gdb-py --eval-command="target remote localhost:2331"  --ex="mon reset" --ex="load"
+--ex="mon reset"  --se=build/zephyr/zephyr.elf
+```
+
+### Using the App:
+
+At this point, the application should be running and you can open a console:
 
 ```
 $ miniterm.py /dev/cu.usbmodem* 115200 --raw
-uart:~$ help mflt
+*** Booting Zephyr OS build zephyr-v2.5.0-56-gec0aa8331a65  ***
+<inf> <mflt>: GNU Build ID: c20cef04e29e3ae7784002c3650d48f3a0b7b07d
+<inf> <mflt>: S/N: DEMOSERIAL
+<inf> <mflt>: SW type: zephyr-app
+<inf> <mflt>: SW version: 1.0.0+c20cef
+<inf> <mflt>: HW version: disco_l475_iot1
+[00:00:00.578,000] <inf> mflt: Memfault Demo App! Board disco_l475_iot1
+
+uart:~$
+uart:~$ mflt help
 mflt - Memfault Test Commands
 Subcommands:
-  crash            :trigger a crash
-  clear_core       :clear the core
-  get_core         :gets the core
-  get_device_info  :display device information
-  print_chunk      :get next Memfault data chunk to send and print as a curl command
-  post_chunk       :get next Memfault data chunk to send and POST it to the Memfault
-                    Cloud
-uart:~$ mflt get_device_info
-<inf> <mflt>: S/N: DEMOSERIAL
-<inf> <mflt>: SW type: zephyr-main
-<inf> <mflt>: SW version: 1.15.0
-<inf> <mflt>: HW version: disco_l475_iot1
+  reboot              :trigger a reboot and record it using memfault
+  get_core            :gets the core
+  clear_core          :clear the core
+  crash               :trigger a crash
+  hang                :trigger a hang to test watchdog functionality
+  export              :dump chunks collected by Memfault SDK using
+                       https://mflt.io/chunk-data-export
+  trace               :Capture an example trace event
+  get_device_info     :display device information
+  post_chunks         :Post Memfault data to cloud
+  trigger_heartbeat   :Trigger an immediate capture of all heartbeat metrics
+  get_latest_release  :checks to see if new ota payload is available
 ```
 
 ### Causing a crash
@@ -161,16 +215,12 @@ The network stack dependencies can also be disabled completely by using the
 
 When using a board that does not have a network stack enabled or for debug
 purposes, the messages to push to the Memfault cloud can also be dumped from the
-CLI using the `mflt print_chunk` command:
+CLI using the `mflt export` command:
 
 ```
-uart:~$ mflt print_chunk
-echo \
-[...]
-| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DEMOSERIAL\
- -H 'Memfault-Project-Key:<YOUR_PROJECT_KEY>\
- -H 'Content-Type:application/octet-stream' --data-binary @- -i
+uart:~$ mflt export
+<inf> <mflt>: MC:CAKmAgIDAQpqemVwaHlyLWFwcAlsMS4wLjArYzIwY2VmBm9kaXNjb19sNDc1X2lvdDEEogECBQD8Fw==:
 ```
 
-You can copy and paste the output into a terminal to upload the captured data to
-Memfault.
+You can then copy and paste the output into the "Chunks Debug" view in the
+Memfault UI for your project https://app.memfault.com/

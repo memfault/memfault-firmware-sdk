@@ -9,6 +9,7 @@ config MEMFAULT_FOTA
         default n
         depends on MEMFAULT_HTTP_ENABLE
         depends on FOTA_DOWNLOAD
+        depends on DOWNLOAD_CLIENT
         help
           Adds support for using Memfaults Release Management infrastructure
           to retrieve binaries to install (https://mflt.io/release-mgmt). If an update

@@ -129,7 +129,10 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     sp_prior_to_exception += 0x4;
   }
 
-  const bool msp_was_active = (regs->exc_return & (1 << 3)) == 0;
+  // Read the "SPSEL" bit where
+  //  0 = Main Stack Pointer in use prior to exception
+  //  1 = Process Stack Pointer in use prior to exception
+  const bool msp_was_active = (regs->exc_return & (1 << 2)) == 0;
 
   sMfltCortexMRegs core_regs = {
     .r0 = regs->exception_frame->r0,
