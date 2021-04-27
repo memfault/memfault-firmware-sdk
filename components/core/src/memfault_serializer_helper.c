@@ -99,11 +99,18 @@ static bool prv_encode_event_key_uint32_pair(
 
 bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder,
                                                 eMemfaultEventType type) {
-  sMemfaultCurrentTime time = {
-    .type = kMemfaultCurrentTimeType_Unknown,
-  };
-  const bool unix_timestamp_available = memfault_platform_time_get_current(&time) &&
-      (time.type == kMemfaultCurrentTimeType_UnixEpochTimeSec);
+  sMemfaultCurrentTime time;
+  if (!memfault_platform_time_get_current(&time)) {
+    time.type = kMemfaultCurrentTimeType_Unknown;
+  }
+  return memfault_serializer_helper_encode_metadata_with_time(encoder, type, &time);
+}
+
+bool memfault_serializer_helper_encode_metadata_with_time(sMemfaultCborEncoder *encoder,
+                                                          eMemfaultEventType type,
+                                                          const sMemfaultCurrentTime *time) {
+  const bool unix_timestamp_available = (time != NULL) &&
+      (time->type == kMemfaultCurrentTimeType_UnixEpochTimeSec);
 
   const size_t top_level_num_pairs =
       1 /* type */ +
@@ -131,7 +138,7 @@ bool memfault_serializer_helper_encode_metadata(sMemfaultCborEncoder *encoder,
 
   return !unix_timestamp_available || prv_encode_event_key_uint32_pair(
           encoder, kMemfaultEventKey_CapturedDateUnixTimestamp,
-          (uint32_t)time.info.unix_timestamp_secs);
+          (uint32_t)time->info.unix_timestamp_secs);
 }
 
 bool memfault_serializer_helper_encode_trace_event(sMemfaultCborEncoder *e,

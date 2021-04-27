@@ -63,6 +63,12 @@ extern "C" {
 #define MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL kMemfaultPlatformLogLevel_Info
 #endif
 
+//! Controls whether or not to include the memfault_log_trigger_collection() API
+//! and the module that is responsible for sending collected logs.
+#ifndef MEMFAULT_LOG_DATA_SOURCE_ENABLED
+#define MEMFAULT_LOG_DATA_SOURCE_ENABLED 1
+#endif
+
 // Shouldn't typically be needed but allows for persisting of MEMFAULT_LOG_*'s
 // to be disabled via a CFLAG: CFLAGS += -DMEMFAULT_SDK_LOG_SAVE_DISABLE=1
 #ifndef MEMFAULT_SDK_LOG_SAVE_DISABLE
@@ -184,6 +190,29 @@ extern "C" {
 // needed for coredump storage.
 #ifndef MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT
 #define MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT 32
+#endif
+
+// ARMv7-M can support an IMPLEMENTATION DEFINED number of MPU regions if the MPU
+// is implemented. If MPU_TYPE register is non-zero then the MPU is implemented and the
+// number of regions will be indicated in MPU_TYPE[DREGIONS] since the ARMv7-m
+// uses a unified MPU, e.g. MPU_TYPE[SEPARATE] = 0.
+//
+// By default, we disable MPU collection since it requires more RAM and not
+// every MCU has an MPU implemented or, if it is, may not be employed. Users
+// should set MEMFAULT_COLLECT_MPU_STATE and verify MEMFAULT_MPU_REGIONS_TO_COLLECT
+// matches their needs to collect the number of regions they actually configure
+// in the MPU.
+//
+// For ideas on how to make use of the MPU in your application check out
+// https://mflt.io/mpu-stack-overflow-debug
+#ifndef MEMFAULT_COLLECT_MPU_STATE
+// This controls allocations and code need to collect the MPU state.
+#define MEMFAULT_COLLECT_MPU_STATE 0
+#endif
+
+#ifndef MEMFAULT_MPU_REGIONS_TO_COLLECT
+// This is used to define the sMfltMpuRegs structure.
+#define MEMFAULT_MPU_REGIONS_TO_COLLECT 8
 #endif
 
 // By default, exception handlers use CMSIS naming conventions. By default, the

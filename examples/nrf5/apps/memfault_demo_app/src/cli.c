@@ -49,6 +49,14 @@ static void prv_crash_example(nrf_cli_t const * p_cli, size_t argc, char **argv)
   memfault_demo_cli_cmd_crash(argc, argv);
 }
 
+static void prv_test_log(nrf_cli_t const * p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_test_log(argc, argv);
+}
+
+static void prv_trigger_logs(nrf_cli_t const * p_cli, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_trigger_logs(argc, argv);
+}
+
 static void prv_trace_example(nrf_cli_t const * p_cli, size_t argc, char **argv) {
   memfault_demo_cli_cmd_trace_event_capture(argc, argv);
 }
@@ -78,6 +86,8 @@ static void prv_coredump_storage_test_cmd(nrf_cli_t const *p_cli, size_t argc, c
 }
 
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
+NRF_CLI_CMD_REGISTER(test_log, NULL, "writes test logs to log buffer", prv_test_log);
+NRF_CLI_CMD_REGISTER(trigger_logs, NULL, "trigger capture of current log buffer contents", prv_trigger_logs);
 NRF_CLI_CMD_REGISTER(trace, NULL, "capture trace event", prv_trace_example);
 NRF_CLI_CMD_REGISTER(core_storage_test, NULL, "verify coredump storage implementation with test patterns",
                      prv_coredump_storage_test_cmd);
@@ -92,6 +102,8 @@ NRF_CLI_CMD_REGISTER(export, NULL, "Can be used to dump chunks to console or pos
 // for better discoverability of memfault added commands
 static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, crash, _raw),
+  &CONCAT_3(nrf_cli_, test_log, _raw),
+  &CONCAT_3(nrf_cli_, trigger_logs, _raw),
   &CONCAT_3(nrf_cli_, trace, _raw),
   &CONCAT_3(nrf_cli_, core_storage_test, _raw),
   &CONCAT_3(nrf_cli_, clear_core, _raw),

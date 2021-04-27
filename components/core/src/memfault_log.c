@@ -9,8 +9,10 @@
 
 #include "memfault/core/log.h"
 #include "memfault/core/log_impl.h"
+#include "memfault_log_private.h"
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -22,6 +24,12 @@
 #include "memfault/core/platform/overrides.h"
 #include "memfault/util/circular_buffer.h"
 #include "memfault/util/crc16_ccitt.h"
+
+#include "memfault/config.h"
+
+#if MEMFAULT_LOG_DATA_SOURCE_ENABLED
+#include "memfault_log_data_source_private.h"
+#endif
 
 #define MEMFAULT_RAM_LOGGER_VERSION 1
 
@@ -91,37 +99,6 @@ typedef enum {
   kMemfaultLogRecordType_NumTypes,
 } eMemfaultLogRecordType;
 
-typedef MEMFAULT_PACKED_STRUCT {
-  // data about the message stored (details below)
-  uint8_t hdr;
-  // the length of the msg
-  uint8_t len;
-  // underlying message
-  uint8_t msg[];
-} sMfltRamLogEntry;
-
-// Note: We do not use bitfields here to avoid portability complications on the decode side since
-// alignment of bitfields as well as the order of bitfields is left up to the compiler per the C
-// standard.
-//
-// Header Layout:
-// 0brxxx.tlll
-// where
-//  r = read (1 if the message has been read, 0 otherwise)
-//  x = rsvd
-//  t = type (0 = formatted log)
-//  l = log level (eMemfaultPlatformLogLevel)
-
-#define MEMFAULT_LOG_HDR_LEVEL_POS  0
-#define MEMFAULT_LOG_HDR_LEVEL_MASK 0x07u
-#define MEMFAULT_LOG_HDR_TYPE_POS   3u
-#define MEMFAULT_LOG_HDR_TYPE_MASK  0x08u
-#define MEMFAULT_LOG_HDR_READ_MASK  0x80u
-
-static eMemfaultPlatformLogLevel prv_get_level_from_hdr(uint8_t hdr) {
-  return (eMemfaultPlatformLogLevel)((hdr & MEMFAULT_LOG_HDR_LEVEL_MASK) >> MEMFAULT_LOG_HDR_LEVEL_POS);
-}
-
 static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRecordType type) {
   MEMFAULT_STATIC_ASSERT(kMemfaultPlatformLogLevel_NumLevels <= 8,
                          "Number of log levels exceed max number that log module can track");
@@ -152,6 +129,14 @@ static bool prv_try_free_space(sMfltCircularBuffer *circ_bufp, int bytes_needed)
     return false;
   }
 
+#if MEMFAULT_LOG_DATA_SOURCE_ENABLED
+  if (memfault_log_data_source_has_been_triggered()) {
+    // Don't allow expiring old logs. memfault_log_trigger_collection() has been
+    // called, so we're in the process of uploading the logs in the buffer.
+    return false;
+  }
+#endif
+
   // Expire oldest logs until there is enough room available
   while (tot_read_space != 0) {
     sMfltRamLogEntry curr_entry = { 0 };
@@ -176,6 +161,73 @@ static bool prv_try_free_space(sMfltCircularBuffer *circ_bufp, int bytes_needed)
   return false; // should be unreachable
 }
 
+static void prv_iterate(MemfaultLogIteratorCallback callback, sMfltLogIterator *iter) {
+  sMfltCircularBuffer *const circ_bufp = &s_memfault_ram_logger.circ_buffer;
+  bool should_continue = true;
+  while (should_continue) {
+    if (!memfault_circular_buffer_read(
+        circ_bufp, iter->read_offset, &iter->entry, sizeof(iter->entry))) {
+      return;
+    }
+
+    // Note: At this point, the memfault_log_iter_update_entry(),
+    // memfault_log_entry_get_msg_pointer() calls made from the callback should never fail.
+    // A failure is indicative of memory corruption (e.g calls taking place from multiple tasks
+    // without having implemented memfault_lock() / memfault_unlock())
+
+    should_continue = callback(iter);
+    iter->read_offset += sizeof(iter->entry) + iter->entry.len;
+  }
+}
+
+void memfault_log_iterate(MemfaultLogIteratorCallback callback, sMfltLogIterator *iter) {
+  memfault_lock();
+  prv_iterate(callback, iter);
+  memfault_unlock();
+}
+
+bool memfault_log_iter_update_entry(sMfltLogIterator *iter) {
+  sMfltCircularBuffer *const circ_bufp = &s_memfault_ram_logger.circ_buffer;
+  const size_t offset_from_end =
+      memfault_circular_buffer_get_read_size(circ_bufp) - iter->read_offset;
+  return memfault_circular_buffer_write_at_offset(
+      circ_bufp, offset_from_end, &iter->entry, sizeof(iter->entry));
+}
+
+bool memfault_log_iter_copy_msg(sMfltLogIterator *iter, MemfaultLogMsgCopyCallback callback) {
+  sMfltCircularBuffer *const circ_bufp = &s_memfault_ram_logger.circ_buffer;
+  return memfault_circular_buffer_read_with_callback(
+    circ_bufp, iter->read_offset + sizeof(iter->entry), iter->entry.len, iter,
+    (MemfaultCircularBufferReadCallback)callback);
+}
+
+typedef struct {
+  sMemfaultLog *log;
+  bool has_log;
+} sMfltReadLogCtx;
+
+static bool prv_read_log_iter_callback(sMfltLogIterator *iter) {
+  sMfltReadLogCtx *const ctx = (sMfltReadLogCtx *)iter->user_ctx;
+  sMfltCircularBuffer *const circ_bufp = &s_memfault_ram_logger.circ_buffer;
+
+  // mark the message as read
+  iter->entry.hdr |= MEMFAULT_LOG_HDR_READ_MASK;
+  if (!memfault_log_iter_update_entry(iter)) {
+    return false;
+  }
+
+  if (!memfault_circular_buffer_read(
+      circ_bufp, iter->read_offset + sizeof(iter->entry), ctx->log->msg, iter->entry.len)) {
+    return false;
+  }
+
+  ctx->log->msg[iter->entry.len] = '\0';
+  ctx->log->level = memfault_log_get_level_from_hdr(iter->entry.hdr);
+  ctx->log->msg_len = iter->entry.len;
+  ctx->has_log = true;
+  return false;
+}
+
 static bool prv_read_log(sMemfaultLog *log) {
   if (s_memfault_ram_logger.dropped_msg_count) {
     log->level = kMemfaultPlatformLogLevel_Warning;
@@ -186,37 +238,19 @@ static bool prv_read_log(sMemfaultLog *log) {
     return true;
   }
 
-  sMfltCircularBuffer *circ_bufp = &s_memfault_ram_logger.circ_buffer;
-  sMfltRamLogEntry curr_entry = { 0 };
-  uint32_t read_offset = s_memfault_ram_logger.log_read_offset;
-  if (!memfault_circular_buffer_read(circ_bufp, read_offset, &curr_entry, sizeof(curr_entry))) {
-    return false;
-  }
+  sMfltReadLogCtx user_ctx = {
+    .log = log
+  };
 
-  // Note: At this point, the memfault_circular_buffer_* return calls below should never fail. A
-  // failure is indicative of memory corruption (e.g calls taking place from multiple tasks without
-  // having implemented memfault_lock() / memfault_unlock())
+  sMfltLogIterator iter = {
+    .read_offset = s_memfault_ram_logger.log_read_offset,
 
-  // mark the message as read
-  curr_entry.hdr |= MEMFAULT_LOG_HDR_READ_MASK;
+    .user_ctx = &user_ctx
+  };
 
-  const size_t offset_from_end = memfault_circular_buffer_get_read_size(circ_bufp) - read_offset;
-  if (!memfault_circular_buffer_write_at_offset(
-          circ_bufp, offset_from_end, &curr_entry, sizeof(curr_entry))) {
-    return false;
-  }
-
-
-  read_offset += sizeof(curr_entry);
-  if (!memfault_circular_buffer_read(circ_bufp, read_offset, log->msg, curr_entry.len)) {
-    return false;
-  }
-
-  log->msg[curr_entry.len] = '\0';
-  log->level = prv_get_level_from_hdr(curr_entry.hdr);
-  log->msg_len = curr_entry.len;
-  s_memfault_ram_logger.log_read_offset = read_offset + curr_entry.len;
-  return true;
+  prv_iterate(prv_read_log_iter_callback, &iter);
+  s_memfault_ram_logger.log_read_offset = iter.read_offset;
+  return user_ctx.has_log;
 }
 
 bool memfault_log_read(sMemfaultLog *log) {

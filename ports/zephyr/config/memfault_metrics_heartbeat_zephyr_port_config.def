@@ -1,0 +1,19 @@
+//! @file
+
+#include "version.h"
+
+#if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
+
+#if CONFIG_THREAD_STACK_INFO && (KERNEL_VERSION_MAJOR >= 2 && KERNEL_VERSION_MINOR >= 2)
+MEMFAULT_METRICS_KEY_DEFINE(TimerTaskFreeStack, kMemfaultMetricType_Unsigned)
+#endif
+
+#if CONFIG_THREAD_RUNTIME_STATS
+MEMFAULT_METRICS_KEY_DEFINE(TimerTaskCpuUsage, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
+#endif
+
+#endif
+
+// Pull in the user's heartbeat defs
+#include "memfault_metrics_heartbeat_config.def"

@@ -19,16 +19,21 @@
 
 //! Note: NRF_LOG_FLUSH() needs to be called if NRF_LOG_DEFERRED=1 in order
 //! for string formatters to print
-#define _MEMFAULT_PORT_LOG_IMPL(_level, fmt, ...)   \
+#define _MEMFAULT_PORT_LOG_IMPL(_level, mflt_level, fmt, ...)   \
   do {                                              \
+    MEMFAULT_SDK_LOG_SAVE(mflt_level, fmt, ## __VA_ARGS__);     \
     NRF_LOG_##_level("MFLT: " fmt, ## __VA_ARGS__); \
     NRF_LOG_FLUSH();                                \
   } while (0)
 
-#define MEMFAULT_LOG_DEBUG(fmt, ...) _MEMFAULT_PORT_LOG_IMPL(DEBUG, fmt, ## __VA_ARGS__)
-#define MEMFAULT_LOG_INFO(fmt, ...) _MEMFAULT_PORT_LOG_IMPL(INFO, fmt, ## __VA_ARGS__)
-#define MEMFAULT_LOG_WARN(fmt, ...)   _MEMFAULT_PORT_LOG_IMPL(WARNING, fmt, ## __VA_ARGS__)
-#define MEMFAULT_LOG_ERROR(fmt, ...)  _MEMFAULT_PORT_LOG_IMPL(ERROR, fmt, ## __VA_ARGS__)
+#define MEMFAULT_LOG_DEBUG(fmt, ...) \
+  _MEMFAULT_PORT_LOG_IMPL(DEBUG, kMemfaultPlatformLogLevel_Debug, fmt, ## __VA_ARGS__)
+#define MEMFAULT_LOG_INFO(fmt, ...) \
+  _MEMFAULT_PORT_LOG_IMPL(INFO, kMemfaultPlatformLogLevel_Info, fmt, ## __VA_ARGS__)
+#define MEMFAULT_LOG_WARN(fmt, ...) \
+  _MEMFAULT_PORT_LOG_IMPL(WARNING, kMemfaultPlatformLogLevel_Warning, fmt, ## __VA_ARGS__)
+#define MEMFAULT_LOG_ERROR(fmt, ...) \
+  _MEMFAULT_PORT_LOG_IMPL(ERROR, kMemfaultPlatformLogLevel_Error, fmt, ## __VA_ARGS__)
 
 
 //! Note: nrf_delay_ms() is called to give the host a chance to drain the buffers and avoid Segger

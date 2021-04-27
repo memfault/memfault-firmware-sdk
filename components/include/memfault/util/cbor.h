@@ -105,6 +105,32 @@ bool memfault_cbor_encode_byte_string(sMemfaultCborEncoder *encoder, const void 
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_string(sMemfaultCborEncoder *encoder, const char *str);
 
+//! Called to start the encoding of a C string
+//!
+//! @param encoder The encoder context to use
+//! @param str_len The length of the string to store in bytes, excluding NULL terminator.
+//!
+//! @return true on success, false otherwise
+//!
+//! @note Use one or more calls to memfault_cbor_encode_string_add() to write the contents
+//! of the string.
+bool memfault_cbor_encode_string_begin(sMemfaultCborEncoder *encoder, size_t str_len);
+
+//! Called to encode the given C string to the string started with
+//! memfault_cbor_encode_string_begin().
+//!
+//! @note Can be called one or multiple times after calling memfault_cbor_encode_string_begin().
+//! It is the responsibililty of the caller to ensure that the total number of bytes added matches
+//! the str_len that was passed to memfault_cbor_encode_string_begin().
+//! @note It is not expected to add the NULL terminator.
+//!
+//! @param encoder The encoder context to use
+//! @param str The string to add
+//! @param len The number of bytes to add from str
+//!
+//! @return true on success, false otherwise
+bool memfault_cbor_encode_string_add(sMemfaultCborEncoder *encoder, const char *str, size_t len);
+
 //! Encodes a IEEE 754 double-precision float that is packed in a uint64_t
 //!
 //! @param encoder The encoder context to use

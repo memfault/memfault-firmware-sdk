@@ -7,8 +7,10 @@ $(NAME)_SOURCES := \
   src/memfault_data_packetizer.c \
   src/memfault_event_storage.c \
   src/memfault_log.c \
+  src/memfault_log_data_source.c \
   src/memfault_ram_reboot_info_tracking.c \
   src/memfault_sdk_assert.c \
+  src/memfault_serializer_helper.c \
 
 $(NAME)_COMPONENTS :=
 

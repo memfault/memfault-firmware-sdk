@@ -8,8 +8,8 @@
 //! @brief
 //!
 //! A lightweight set of log utilities which can be wrapped around pre-existing logging
-//! infrastructure to capture events or errors that transpired leading up to a crash. Any logs
-//! captured by the module will appear in the "Logs" view for issues in the Memfault Web UI.
+//! infrastructure to capture events or errors that transpired leading up to an issue.
+//! See https://mflt.io/logging for detailed integration steps.
 //!
 //! @note These utilities are already integrated into memfault/core/debug_log.h module. If your
 //! project does not have a logging subsystem, see the notes in that header about how to leverage
@@ -139,6 +139,15 @@ void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...);
 //! @note Prefer saving logs via MEMFAULT_LOG_SAVE() when possible
 MEMFAULT_PRINTF_LIKE_FUNC(2, 0)
 void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_list args);
+
+//! Freezes the contents of the log buffer in preparation of uploading the logs to Memfault.
+//!
+//! Once the log buffer contents have been uploaded, the buffer is unfrozen. While the buffer is
+//! frozen, logs can still be added, granted enough space is available in the buffer. If the buffer
+//! is full, newly logs will get dropped. Once the buffer is unfrozen again, the oldest logs will be
+//! expunged again upon writing new logs that require the space.
+//! @note This function must not be called from an ISR context.
+void memfault_log_trigger_collection(void);
 
 #ifdef __cplusplus
 }

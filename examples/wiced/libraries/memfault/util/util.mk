@@ -4,6 +4,7 @@ $(NAME)_SOURCES := \
   src/memfault_chunk_transport.c \
   src/memfault_crc16_ccitt.c \
   src/memfault_circular_buffer.c \
+  src/memfault_minimal_cbor.c \
   src/memfault_varint.c \
 
 $(NAME)_COMPONENTS :=

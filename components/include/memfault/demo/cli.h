@@ -27,6 +27,17 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]);
 //! Trace Event with the error reason set to "MemfaultDemoCli_Error".
 int memfault_demo_cli_cmd_trace_event_capture(int argc, char *argv[]);
 
+//! Command to insert test logs into the RAM log buffer. One log for each log level
+//! is written. The command takes no arguments.
+//! @note By default, the minimum save level is >= Info. Use the
+//! memfault_log_set_min_save_level() API to control this.
+int memfault_demo_cli_cmd_test_log(int argc, char *argv[]);
+
+//! Command to trigger "freeze" the current contents of the RAM log buffer and
+//! allow them to be collected through the data transport (see memfault_demo_drain_chunk_data()).
+//! It takes no arguments.
+int memfault_demo_cli_cmd_trigger_logs(int argc, char *argv[]);
+
 //! Command to get whether a coredump is currently stored and how large it is.
 //! It takes no arguments.
 int memfault_demo_cli_cmd_get_core(int argc, char *argv[]);

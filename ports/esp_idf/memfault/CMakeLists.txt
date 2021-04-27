@@ -10,18 +10,18 @@ memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
 
 include($ENV{IDF_PATH}/tools/cmake/version.cmake OPTIONAL)
 
+# Version 3.3.5 and later provide IDF_VERSION_MAJOR.
 if(DEFINED IDF_VERSION_MAJOR)
-if(IDF_VERSION_MAJOR VERSION_EQUAL 4)
-set(MEMFAULT_ESP_IDF_PORT v4.x)
+  if(IDF_VERSION_MAJOR VERSION_EQUAL 4)
+    set(MEMFAULT_ESP_IDF_PORT v4.x)
+  elseif(IDF_VERSION_MAJOR VERSION_EQUAL 3)
+    set(MEMFAULT_ESP_IDF_PORT v3.x)
+  else()
+    message(FATAL_ERROR "IDF_VERSION_MAJOR=${IDF_VERSION_MAJOR} provided is not currenly supported")
+  endif()
 else()
-message(FATAL_ERROR
-   "Memfault Port for v${IDF_VERSION_MAJOR}.x esp-idf is not available yet! "
-   "Don't hesitate to reach out to support@memfault.com for a timeline"
-)
-endif()
-else()
-message(STATUS "No IDF_VERSION_MAJOR provided, using esp-idf v3.x Memfault port")
-set(MEMFAULT_ESP_IDF_PORT v3.x)
+  message(STATUS "No IDF_VERSION_MAJOR provided, using esp-idf v3.x Memfault port")
+  set(MEMFAULT_ESP_IDF_PORT v3.x)
 endif()
 
 # esp-idf version specific porting files

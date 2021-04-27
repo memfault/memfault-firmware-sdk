@@ -4,12 +4,14 @@
 #
 
 import os
+import platform
 import shutil
 import sys
 from glob import glob
 from sys import executable as PYTHON
 from sys import exit
 
+from pyftdi.usbtools import UsbTools
 from invoke import Collection, task
 
 from .gdb import gdb_build_cmd
@@ -22,6 +24,7 @@ ESP32_IDF_SCRIPT = os.path.join(ESP32_IDF_ROOT, "tools", "idf.py")
 ESP32_COREDUMP_SCRIPT = os.path.join(ESP32_IDF_ROOT, "components", "espcoredump", "espcoredump.py")
 ESP32_TEST_APP_ROOT = os.path.join(ESP32_PLATFORM_ROOT, "apps", "memfault_demo_app")
 ESP32_TEST_APP_ELF = os.path.join(ESP32_TEST_APP_ROOT, "build", "memfault-esp32-demo-app.elf")
+ESP32_FTDI_VID_PID = [(0x0403, 0x6010)]
 
 OPENOCD_GDB_PORT_DEFAULT = 3333
 
@@ -37,17 +40,25 @@ def _run_idf_script(ctx, *args, **kwargs):
 
 def _esp32_guess_console_port():
     def _esp32_find_console_port():
-        from pyftdi.usbtools import UsbTools
+        host_os = platform.system()
+        if host_os == "Darwin":
+            usb_paths = glob("/dev/cu.usbserial-*1")
+            if usb_paths:
+                return usb_paths[0]
 
-        # Try pyftdi first:
-        devs = UsbTools.find_all([(0x0403, 0x6010)])
-        if devs:
-            return "ftdi://ftdi:2232/2"
-
-        # Fall back to /dev/cu... device:
-        usb_paths = glob("/dev/cu.usbserial-*1")
-        if usb_paths:
-            return usb_paths[0]
+            # Try pyftdi only on MacOS as it fails on Linux.
+            # Actually, Espressif's esptool.py seems not to
+            # like this at all.
+            print("Trying FTDI first")
+            devs = UsbTools.find_all(ESP32_FTDI_VID_PID)
+            if devs:
+                return "ftdi://ftdi:2232/2"
+        elif host_os == "Linux":
+            # Try ttyUSB1, no need to glob.
+            serial_device = "/dev/ttyUSB1"
+            print("Trying {serdev}".format(serdev=serial_device))
+            if os.path.exists(serial_device):
+                return serial_device
 
         print(
             "Cannot find ESP32 console /dev/... nor ftdi:// path, please specify it manually using --port"

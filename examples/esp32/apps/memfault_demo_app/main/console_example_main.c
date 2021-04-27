@@ -60,6 +60,11 @@ static void initialize_nvs()
   ESP_ERROR_CHECK(err);
 }
 
+// Name change at version 4.x
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR > 3
+#define CONFIG_CONSOLE_UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
+#endif
+
 static void initialize_console()
 {
   /* Disable buffering on stdin and stdout */

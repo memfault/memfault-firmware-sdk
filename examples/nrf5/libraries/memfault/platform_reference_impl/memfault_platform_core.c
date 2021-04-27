@@ -13,9 +13,22 @@
 #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 512
 #endif
 
+#if !defined(CONFIG_MEMFAULT_LOGGING_RAM_SIZE)
+#define CONFIG_MEMFAULT_LOGGING_RAM_SIZE 512
+#endif
+
+static void prv_log_init(void) {
+  // static RAM storage where logs will be stored. Storage can be any size
+  // you want but you will want it to be able to hold at least a couple logs.
+  static uint8_t s_mflt_log_buf_storage[CONFIG_MEMFAULT_LOGGING_RAM_SIZE];
+  memfault_log_boot(s_mflt_log_buf_storage, sizeof(s_mflt_log_buf_storage));
+}
+
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
 int memfault_platform_boot(void) {
+  prv_log_init();
+
   memfault_platform_reboot_tracking_boot();
   memfault_build_info_dump();
 

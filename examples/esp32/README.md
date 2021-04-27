@@ -1,6 +1,6 @@
 # Memfault for ESP32
 
-This example application shows an integration with the ESP-IDF v3.1 SDK where a
+This example application shows an integration with the ESP-IDF v3.3.5 SDK where a
 saved coredump is posted to the Memfault cloud for analysis.
 
 If you already have an ESP-IDF project based on the v4.x or v3.x SDK, a step by
@@ -34,27 +34,26 @@ Make sure you have read the instructions in the `README.md` in the root of the
 SDK and performed the installation steps that are mentioned there.
 
 We assume you have a working setup for the
-[v3.1 SDK](https://docs.espressif.com/projects/esp-idf/en/v3.1/):
+[v3.3.5 SDK](https://docs.espressif.com/projects/esp-idf/en/v3.3.5/):
 
 - have a version of CMAKE installed
 - installed the xtensa
-  [toolchain](https://docs.espressif.com/projects/esp-idf/en/v3.1/get-started/index.html#setup-toolchain)
+  [toolchain](https://docs.espressif.com/projects/esp-idf/en/v3.3.5/get-started/index.html#setup-toolchain)
   and added it to your path
 
 <a name="adding-memfault"></a>
 
 ### Adding Memfault to the ESP-IDF SDK
 
-1. Delete the dummy esp-idf directory and clone a copy of the v3.1 SDK. _NOTE_
-   If you would like to use Memfaults pyinvoke commands you need to clone the
-   Memfault fork of the v3.1 branch which enables Python3 compatiblity:
+1. Delete the dummy esp-idf directory and clone a copy of the v3.3.5 SDK.
 
 ```bash
 cd examples/esp32/
 rmdir esp-idf
-git clone https://github.com/memfault/esp-idf.git esp-idf
+git clone -b v3.3.5 --recursive https://github.com/espressif/esp-idf.git esp-idf
 cd esp-idf
-git submodule  update --init --recursive
+export IDF_TOOLS_PATH=$(pwd)
+source ./export.sh
 ```
 
 That's it! You should be good to go!
@@ -66,11 +65,10 @@ using pyinvoke:
 ```bash
 invoke esp32.build
 ```
-
-or set up your own python2.7 environment and run
+or use the Espressif command:
 
 ```bash
-cd examples/esp32/apps/memfault_demo_app && examples/esp32/esp-idf/tools/idf.py build
+cd examples/esp32/apps/memfault_demo_app && idf.py build
 ```
 
 ### Flashing the demo app
@@ -78,11 +76,10 @@ cd examples/esp32/apps/memfault_demo_app && examples/esp32/esp-idf/tools/idf.py 
 ```bash
 invoke esp32.flash
 ```
-
-or set up your own python2.7 environment and run
+or use the Espressif command:
 
 ```bash
-cd examples/esp32/apps/memfault_demo_app && examples/esp32/esp-idf/tools/idf.py -p <ftdi port, i.e -p ftdi://ftdi:2232/2> flash
+cd examples/esp32/apps/memfault_demo_app && idf.py -p <console port, i.e -p /dev/ttyUSB1> flash
 ```
 
 ### Console
@@ -90,7 +87,6 @@ cd examples/esp32/apps/memfault_demo_app && examples/esp32/esp-idf/tools/idf.py 
 ```
 invoke esp32.console
 ```
-
 or
 
 ```bash
@@ -180,7 +176,7 @@ This ELF file contains the symbols (debug information) amongst other things.
 To post the collected crash to the Memfault cloud, first join a WiFi network:
 
 ```
-esp32> join <SSID> <PASSWORD
+esp32> join <SSID> <PASSWORD>
 I (116450) connect: Connecting to '<SSID>'
 ```
 

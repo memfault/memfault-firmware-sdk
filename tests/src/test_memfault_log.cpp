@@ -7,7 +7,6 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,9 +17,18 @@
 #include "memfault/core/log.h"
 #include "memfault/core/log_impl.h"
 
+#include "memfault_log_data_source_private.h"
+#include "memfault_log_private.h"
+
+static bool s_fake_data_source_has_been_triggered;
+bool memfault_log_data_source_has_been_triggered(void) {
+    return s_fake_data_source_has_been_triggered;
+}
+
 TEST_GROUP(MemfaultLog) {
   void setup() {
     fake_memfault_metrics_platorm_locking_reboot();
+    s_fake_data_source_has_been_triggered = false;
 
     // we selectively enable memfault_log_handle_saved_callback() for certain tests
     mock().disable();
@@ -71,15 +79,22 @@ TEST(MemfaultLog, Test_BadInit) {
 }
 
 TEST(MemfaultLog, Test_MemfaultLogBasic) {
-  uint8_t s_ram_log_store[10];
+  uint8_t s_ram_log_store[20];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   const char *my_log = "12345678";
   const size_t my_log_len = strlen(my_log);
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
   memfault_log_save_preformatted(level, my_log, my_log_len);
+  // Write a second log, to exercise the s_memfault_ram_logger.log_read_offset
+  // book-keeping:
+  memfault_log_save_preformatted(level, my_log, my_log_len);
 
   prv_run_header_check(s_ram_log_store, level, my_log, my_log_len);
+  prv_run_header_check(&s_ram_log_store[10], level, my_log, my_log_len);
+
+  // Read the two logs:
+  prv_read_log_and_check(level, my_log, my_log_len);
   prv_read_log_and_check(level, my_log, my_log_len);
 
   // should be no more logs
@@ -175,6 +190,29 @@ TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
   prv_run_header_check(&s_ram_log_store[4], level, log3, strlen(log3));
 }
 
+TEST(MemfaultLog, Test_MemfaultLogFrozenBuffer) {
+    // Test that when the log buffer is frozen (because the logging data source
+    // is using it), logs will not be pruned when a log gets written that does
+    // not fit in the remaining space:
+
+    mock().enable();
+    mock().expectOneCall("memfault_log_handle_saved_callback");
+
+    uint8_t s_ram_log_store[10];
+    memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+    const char *log0 = "45678"; // 7 bytes with header
+    eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+    memfault_log_save_preformatted(level, log0, strlen(log0));
+
+    s_fake_data_source_has_been_triggered = true;
+
+    const char *log1 = "abcde"; // 7 bytes with header
+    memfault_log_save_preformatted(level, log1, strlen(log1));
+
+    prv_run_header_check(&s_ram_log_store[0], level, log0, strlen(log0));
+}
+
 TEST(MemfaultLog, Test_MemfaultLogBufTooLongForStorage) {
   uint8_t s_ram_log_store[5];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
@@ -230,4 +268,60 @@ TEST(MemfaultLog, Test_DroppedLogs) {
 
   const char *expected_msg5 = "MSG 5";
   prv_read_log_and_check(level, expected_msg5, strlen(expected_msg5));
+}
+
+static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset,
+                                        const char *buf, size_t buf_len) {
+  return mock()
+    .actualCall(__func__)
+    .withPointerParameter("iter", iter)
+    .withUnsignedLongIntParameter("offset", offset)
+    .withConstPointerParameter("buf", buf)
+    .withUnsignedLongIntParameter("buf_len", buf_len)
+    .returnBoolValueOrDefault(true);
+}
+
+static bool prv_iterate_callback(sMfltLogIterator *iter){
+  mock().actualCall("prv_iterate_callback")
+    .withUnsignedLongIntParameter("read_offset", iter->read_offset);
+  memfault_log_iter_copy_msg(iter, prv_log_entry_copy_callback);
+  return true;
+}
+
+TEST(MemfaultLog, Test_Iterate) {
+  uint8_t s_ram_log_store[10] = {0};
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  const char *log0 = "0";
+  const size_t log0_len = strlen(log0);
+  memfault_log_save_preformatted(level, log0, log0_len);
+
+  const char *log1 = "1";
+  const size_t log1_len = strlen(log1);
+  memfault_log_save_preformatted(level, log1, log1_len);
+
+  sMfltLogIterator iterator = (sMfltLogIterator) {0};
+
+  mock().enable();
+
+  mock().expectOneCall("prv_iterate_callback")
+    .withUnsignedLongIntParameter("read_offset", 0);
+
+  mock().expectOneCall("prv_log_entry_copy_callback")
+    .withPointerParameter("iter", &iterator)
+    .withUnsignedLongIntParameter("offset", 0)
+    .withConstPointerParameter("buf", &s_ram_log_store[2])
+    .withUnsignedLongIntParameter("buf_len", 1);
+
+  mock().expectOneCall("prv_iterate_callback")
+    .withUnsignedLongIntParameter("read_offset", 3);
+
+  mock().expectOneCall("prv_log_entry_copy_callback")
+    .withPointerParameter("iter", &iterator)
+    .withUnsignedLongIntParameter("offset", 0)
+    .withConstPointerParameter("buf", &s_ram_log_store[5])
+    .withUnsignedLongIntParameter("buf_len", 1);
+
+  memfault_log_iterate(prv_iterate_callback, &iterator);
 }

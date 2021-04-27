@@ -212,6 +212,20 @@ void memfault_register_cli(void) {
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "test_log",
+      .help = "Writes test logs to log buffer",
+      .hint = NULL,
+      .func = memfault_demo_cli_cmd_test_log,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "trigger_logs",
+      .help = "Trigger capture of current log buffer contents",
+      .hint = NULL,
+      .func = memfault_demo_cli_cmd_trigger_logs,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
       .command = "clear_core",
       .help = "Clear an existing coredump",
       .hint = NULL,

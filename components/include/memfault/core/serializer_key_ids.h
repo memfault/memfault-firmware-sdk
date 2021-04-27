@@ -28,20 +28,20 @@ typedef enum {
   kMemfaultEventKey_SoftwareType = 10,
 } eMemfaultEventKey;
 
-typedef enum {
-  kMemfaultHeartbeatInfoKey_Metrics = 1,
-} eMemfaultHeartbeatInfoKey;
-
-typedef enum {
-  kMemfaultLogInfoKey_Log = 1,
-} eMemfaultLogInfoKey;
-
+//! Possible values for the kMemfaultEventKey_Type field.
 typedef enum {
   kMemfaultEventType_Heartbeat = 1,
   kMemfaultEventType_Trace = 2,
   kMemfaultEventType_LogError = 3,
+  kMemfaultEventType_Logs = 4,
 } eMemfaultEventType;
 
+//! EventInfo dictionary keys for events with type kMemfaultEventType_Heartbeat.
+typedef enum {
+  kMemfaultHeartbeatInfoKey_Metrics = 1,
+} eMemfaultHeartbeatInfoKey;
+
+//! EventInfo dictionary keys for events with type kMemfaultEventType_Trace.
 typedef enum {
   kMemfaultTraceInfoEventKey_Reason = 1,
   kMemfaultTraceInfoEventKey_ProgramCounter = 2,
@@ -52,6 +52,14 @@ typedef enum {
   kMemfaultTraceInfoEventKey_StatusCode = 7,
   kMemfaultTraceInfoEventKey_Log = 8,
 } eMemfaultTraceInfoEventKey;
+
+//! EventInfo dictionary keys for events with type kMemfaultEventType_LogError.
+typedef enum {
+  kMemfaultLogErrorInfoKey_Log = 1,
+} eMemfaultLogErrorInfoKey;
+
+//! For events with type kMemfaultEventType_Logs, the EventInfo contains a single array containing
+//! all logs: [lvl1, msg1, lvl2, msg2, ...]
 
 #ifdef __cplusplus
 }

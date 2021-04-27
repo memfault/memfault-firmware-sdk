@@ -31,7 +31,8 @@ your project.
   filtering and the ability to write log entries quickly with user-installable
   callback support to drain log entries to slower mediums like NVRAM or serial
   devices. Information stored in the log module will be uploaded to Memfault in
-  the event of a crash.
+  the event of a crash. Stored logs will also be uploaded after
+  `memfault_log_trigger_collection()` is called.
 - Reboot (reset) tracking captures a reset cause in a section of RAM that is not
   modified by any firmware during reset and rebooting.
 - Memfault assert macro that can halt if the debugger is attached and call a

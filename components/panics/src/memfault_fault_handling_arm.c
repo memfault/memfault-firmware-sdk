@@ -186,9 +186,16 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 
 #if defined(__CC_ARM)
 
-// armcc emits a define for the CPU target. Use that information to decide whether or not to pick
-// up the ARMV6M port by default
-#if defined(__TARGET_CPU_CORTEX_M0)
+// armcc emits a define for the CPU target.
+//
+// Use that information to decide whether or not to pick up the ARMV6M port by default
+//
+// Cortex M0 (--cpu=cortex-m0)
+//   __TARGET_CPU_CORTEX_M0
+// Cortex M0+ (--cpu=cortex-m0plus or --cpu=cortex-m0+)
+//   __TARGET_CPU_CORTEX_M0PLUS
+//   __TARGET_CPU_CORTEX_M0_
+#if defined(__TARGET_CPU_CORTEX_M0) || defined (__TARGET_CPU_CORTEX_M0_) || defined(__TARGET_CPU_CORTEX_M0PLUS)
 #define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
 #endif
 

@@ -30,6 +30,14 @@ static int prv_crash_example(const struct shell *shell, size_t argc, char **argv
   return memfault_demo_cli_cmd_crash(argc, argv);
 }
 
+static int prv_test_log(const struct shell *shell, size_t argc, char **argv) {
+  return memfault_demo_cli_cmd_test_log(argc, argv);
+}
+
+static int prv_trigger_logs(const struct shell *shell, size_t argc, char **argv) {
+  return memfault_demo_cli_cmd_trigger_logs(argc, argv);
+}
+
 static int prv_get_device_info(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
@@ -148,6 +156,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(get_core, NULL, "gets the core", prv_get_core_cmd),
     SHELL_CMD(clear_core, NULL, "clear the core", prv_clear_core_cmd),
     SHELL_CMD(crash, NULL, "trigger a crash", prv_crash_example),
+    SHELL_CMD(test_log, NULL, "Writes test logs to log buffer", prv_test_log),
+    SHELL_CMD(trigger_logs, NULL, "Trigger capture of current log buffer contents", prv_trigger_logs),
     SHELL_CMD(hang, NULL, "trigger a hang to test watchdog functionality", prv_hang_example),
     SHELL_CMD(export, NULL, "dump chunks collected by Memfault SDK using https://mflt.io/chunk-data-export", prv_chunk_data_export),
     SHELL_CMD(trace, NULL, "Capture an example trace event", prv_example_trace_event_capture),

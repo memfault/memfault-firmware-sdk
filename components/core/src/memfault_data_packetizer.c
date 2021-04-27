@@ -54,6 +54,12 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_event_data_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
+MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_log_data_source = {
+  .has_more_msgs_cb = prv_data_source_has_event_stub,
+  .read_msg_cb = prv_data_source_read_stub,
+  .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
+};
+
 MEMFAULT_WEAK
 bool memfault_data_source_rle_encoder_set_active(
     MEMFAULT_UNUSED const sMemfaultDataSourceImpl *active_source) {
@@ -65,6 +71,7 @@ typedef enum {
   kMfltMessageType_None = 0,
   kMfltMessageType_Coredump = 1,
   kMfltMessageType_Event = 2,
+  kMfltMessageType_Log = 3,
 } eMfltMessageType;
 
 typedef struct MemfaultDataSource {
@@ -83,6 +90,11 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
     .type = kMfltMessageType_Event,
     .use_rle = false,
     .impl = &g_memfault_event_data_source,
+  },
+  {
+    .type = kMfltMessageType_Log,
+    .use_rle = false,
+    .impl = &g_memfault_log_data_source,
   }
 };
 

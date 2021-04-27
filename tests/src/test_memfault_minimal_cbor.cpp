@@ -255,6 +255,44 @@ TEST(MemfaultMinimalCbor, Test_EncodeString) {
   prv_run_string_encoder_check("\"\\", expected_enc_quote_backslash, sizeof(expected_enc_quote_backslash));
 }
 
+
+static void prv_run_incremental_string_encoder_check(
+  const char *str, const uint8_t *expected_seq, size_t expected_seq_len) {
+
+  sMemfaultCborEncoder encoder;
+  uint8_t result[expected_seq_len];
+  memset(result, 0x0, sizeof(result));
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, sizeof(result));
+
+  const bool success = memfault_cbor_encode_string_begin(&encoder, strlen(str));
+  CHECK(success);
+
+  for (size_t i = 0; i < strlen(str); ++i) {
+    CHECK(memfault_cbor_encode_string_add(&encoder, &str[i], 1));
+  }
+
+  const size_t encoded_length = memfault_cbor_encoder_deinit(&encoder);
+  LONGS_EQUAL(expected_seq_len, encoded_length);
+
+  MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
+}
+
+
+TEST(MemfaultMinimalCbor, Test_EncodeStringIncremental) {
+  // RFC Appendix A.  Examples
+  const uint8_t expected_enc_empty[] =  { 0x60 };
+  prv_run_incremental_string_encoder_check("", expected_enc_empty, sizeof(expected_enc_empty));
+
+  const uint8_t expected_enc_a[] =  { 0x61, 0x61 };
+  prv_run_incremental_string_encoder_check("a", expected_enc_a, sizeof(expected_enc_a));
+
+  const uint8_t expected_enc_IETF[] = { 0x64, 0x49, 0x45, 0x54, 0x46 };
+  prv_run_incremental_string_encoder_check("IETF", expected_enc_IETF, sizeof(expected_enc_IETF));
+
+  const uint8_t expected_enc_quote_backslash[] = { 0x62, 0x22, 0x5c};
+  prv_run_incremental_string_encoder_check("\"\\", expected_enc_quote_backslash, sizeof(expected_enc_quote_backslash));
+}
+
 static void prv_run_binary_encoder_check(
     const void *buf, size_t buf_len, const uint8_t *expected_seq, size_t expected_seq_len) {
 

@@ -163,6 +163,14 @@ bool memfault_cbor_encode_string(sMemfaultCborEncoder *encoder, const char *str)
           prv_add_to_result_buffer(encoder, str, str_len));
 }
 
+bool memfault_cbor_encode_string_begin(sMemfaultCborEncoder *encoder, size_t str_len) {
+  return prv_encode_unsigned_integer(encoder, kCborMajorType_TextString,  str_len);
+}
+
+bool memfault_cbor_encode_string_add(sMemfaultCborEncoder *encoder, const char *str, size_t len) {
+  return prv_add_to_result_buffer(encoder, str, len);
+}
+
 bool memfault_cbor_encode_dictionary_begin(
     sMemfaultCborEncoder *encoder, size_t num_elements) {
   return prv_encode_unsigned_integer(encoder, kCborMajorType_Map, num_elements);

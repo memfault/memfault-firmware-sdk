@@ -1,3 +1,36 @@
+### Changes between Memfault SDK 0.17.0 and SDK 0.16.1 - April 26, 2021
+
+#### :rocket: New Features
+
+- Added support for collecting ARMv7-M MPU regions as part of coredump
+  collection. To enable, set
+  [`MEMFAULT_COLLECT_MPU_STATE=1`](components/include/memfault/default_config.h#L1)
+  in your `memfault_platform_config.h`. Once enabled, the MPU will be
+  automatically analyzed for configuration errors and results will be presented
+  in the "MPU" tab in the Memfault UI for a coredump.
+- Added a new API,
+  [`memfault_log_trigger_collection`](components/include/memfault/core/log.h#L143),
+  which can be used to "freeze" the current contents of the log buffer when
+  unexpected behavior takes place on the device for upload to Memfault. The logs
+  can then be [uploaded to Memfault](https://mflt.io/data-to-cloud) just like
+  any other data and appear in the UI for a device. For more details about the
+  Memfault log subsystem see https://mflt.io/logging
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fixed compilation error when compiling the panics component against Cortex-M0+
+  with ARM Compiler 5
+- Added several
+  [default heartbeat metrics to the Zephyr port](ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def)
+  around timer task stack usage and execution time.
+
+#### :house: Internal
+
+- Refreshed esp32 example app README and updated instructions for the v3.3.5
+  esp-idf
+- Added `test_log` & `trigger_logs` CLI commands to nRF5 & Zephyr example
+  applications to exercise new log collection functionality.
+
 ### Changes between Memfault SDK 0.16.1 and SDK 0.16.0 - April 12, 2021
 
 #### :chart_with_upwards_trend: Improvements

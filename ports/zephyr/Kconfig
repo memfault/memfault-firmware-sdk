@@ -158,6 +158,15 @@ config MEMFAULT_METRICS_TIMER_CUSTOM
         ports/zephyr/common/memfault_platform_metrics.c and allow for
         a custom implementation of memfault_platform_metrics_timer_boot() to be provided
 
+config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
+       bool "Enable collection of a default set of metrics by the Zephyr port"
+       default y
+       help
+        By default the Memfault SDK will automatically capture heartbeat metrics
+        to help track how the Zephyr RTOS is operating. For more details about the
+        metrics collected, see ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def
+        When disabled, no default metrics will be collected.
+
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM

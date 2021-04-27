@@ -177,6 +177,8 @@ static bool prv_write_non_memory_block(eMfltCoredumpBlockType block_type,
 
 static eMfltCoredumpBlockType prv_region_type_to_storage_type(eMfltCoredumpRegionType type) {
   switch (type) {
+    case kMfltCoredumpRegionType_ArmV6orV7MpuUnrolled:
+      return kMfltCoredumpRegionType_ArmV6orV7Mpu;
     case kMfltCoredumpRegionType_ImageIdentifier:
     case kMfltCoredumpRegionType_Memory:
     case kMfltCoredumpRegionType_MemoryWordAccessOnly:

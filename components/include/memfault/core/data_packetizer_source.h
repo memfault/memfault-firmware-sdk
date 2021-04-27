@@ -65,6 +65,9 @@ extern const sMemfaultDataSourceImpl g_memfault_coredump_data_source;
 //! component, respectively
 extern const sMemfaultDataSourceImpl g_memfault_event_data_source;
 
+//! Logging data source provided as part of "core" component (memfault/core/log.h)
+extern const sMemfaultDataSourceImpl g_memfault_log_data_source;
+
 #ifdef __cplusplus
 }
 #endif
