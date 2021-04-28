@@ -1,7 +1,5 @@
 //! @file memfault_port_coredump_regions.c
 
-#if defined(HPY_MEMFAULT_RAM_COREDUMP_ENABLED)
-
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
@@ -14,9 +12,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#if defined(HPY_MEMFAULT_RAM_COREDUMP_ENABLED)
 //! holds the RAM regions to collect in a coredump
 __RETAINED_UNINIT MEMFAULT_ALIGNED(8)
 static uint8_t s_ram_backed_coredump_region[HPY_MEMFAULT_COREDUMP_SIZE];
+#endif //#if defined(HPY_MEMFAULT_RAM_COREDUMP_ENABLED)
 
 //! Truncates the region if it's outside the bounds of RAM
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size)
@@ -45,6 +45,7 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     return &s_coredump_regions[0];
 }
 
+#if defined(HPY_MEMFAULT_RAM_COREDUMP_ENABLED)
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 {
     *info = (sMfltCoredumpStorageInfo ) { .size = HPY_MEMFAULT_COREDUMP_SIZE,
