@@ -29,6 +29,7 @@
 
 #include "memfault/panics/coredump.h"
 
+#include "memfault/core/math.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/panics/assert.h"
