@@ -121,6 +121,7 @@ static void prv_coredump_writer_assert_and_reboot(int error_code) {
 // NOTE: The user must call ad_nvms_init() before calling this function.
 void memfault_platform_coredump_storage_boot(void) {
   partition_entry_t partition_info = {0};
+  ad_nvms_init();
   const bool exists = ad_nvms_get_partition_info(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION, &partition_info);
   if (!exists) {
     MEMFAULT_LOG_ERROR("Could not locate partition for coredump storage, has ad_nvms_init() been called?");

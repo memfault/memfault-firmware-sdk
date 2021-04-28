@@ -11,10 +11,13 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/core/trace_reason_user.h"
 
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+void memfault_platform_coredump_storage_boot(void);
 
 bool prv_try_send_memfault_data(void);
 
@@ -72,6 +75,9 @@ int memfault_platform_boot(void) {
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
+  /* Initialize the coredump qspi storage */
+  memfault_platform_coredump_storage_boot();
 
   memfault_build_info_dump();
 
