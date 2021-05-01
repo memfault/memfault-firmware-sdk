@@ -65,10 +65,6 @@ static void prv_get_device_info(nrf_cli_t const * p_cli, size_t argc, char **arg
   memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
 
-static void prv_print_chunk_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {
-  memfault_demo_cli_cmd_print_chunk(argc, argv);
-}
-
 static void prv_system_reboot_cmd(nrf_cli_t const *p_cli, size_t argc, char **argv) {
   memfault_demo_cli_cmd_system_reboot(argc, argv);
 }
@@ -94,7 +90,6 @@ NRF_CLI_CMD_REGISTER(core_storage_test, NULL, "verify coredump storage implement
 NRF_CLI_CMD_REGISTER(clear_core, NULL, "clear the core", prv_clear_core_cmd);
 NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
-NRF_CLI_CMD_REGISTER(print_chunk, NULL, "Get next Memfault data chunk to send and print as a curl command", prv_print_chunk_cmd);
 NRF_CLI_CMD_REGISTER(reboot, NULL, "reboots system and tracks it with a trace event", prv_system_reboot_cmd);
 NRF_CLI_CMD_REGISTER(export, NULL, "Can be used to dump chunks to console or post via GDB", prv_export_data_cmd);
 
@@ -109,7 +104,6 @@ static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, clear_core, _raw),
   &CONCAT_3(nrf_cli_, get_core, _raw),
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
-  &CONCAT_3(nrf_cli_, print_chunk, _raw),
   &CONCAT_3(nrf_cli_, reboot, _raw),
   &CONCAT_3(nrf_cli_, export, _raw),
 };

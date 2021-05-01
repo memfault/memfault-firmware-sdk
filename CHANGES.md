@@ -1,3 +1,24 @@
+### Changes between Memfault SDK 0.17.1 and SDK 0.17.0 - April 30, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP32 Example App Updates:
+  - Added `export` command to demonstrate how data can be dumped via the console
+  - Added
+    [Memfault Build ID](examples/esp32/apps/memfault_demo_app/CMakeLists.txt) to
+    example app as a reference
+- Fixed a :bug: in
+  [`memfault_platform_sanitize_address_range()`](ports/templates/memfault_platform_port.c)
+  template example.
+- Refactored nRF5 example app to mirror integration steps listed in the
+  [latest integration guide](https://mflt.io/cortex-m-getting-started)
+- Added a new configuration option, `MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM`,
+  which can be used to explicitly disable the stub
+  [`memfault_platform_fault_handler()` implementation](components/panics/src/memfault_fault_handling_arm.c)
+- Improve the quality of backtrace recovery for asserts when using Arm Compiler
+  5 by removing use of noreturn function attribute for
+  `memfault_fault_handling_assert()` declaration.
+
 ### Changes between Memfault SDK 0.17.0 and SDK 0.16.1 - April 26, 2021
 
 #### :rocket: New Features

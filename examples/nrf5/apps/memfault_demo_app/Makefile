@@ -12,35 +12,28 @@ PROJ_SRC_DIR := src/
 #
 
 # Pick up the
+MEMFAULT_PORT_ROOT := $(abspath third_party/memfault)
+
+# Note: Would typically be $(MEMFAULT_PORT_ROOT)/memfault-firmware-sdk
+MEMFAULT_SDK_ROOT := $(abspath ../../../../)
+
 MEMFAULT_COMPONENTS := core demo panics http util metrics
-MEMFAULT_SDK_ROOT := $(abspath ../../../..)
 include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
-
-MEMFAULT_PLATFORM_REFERENCE_IMPL = $(MEMFAULT_SDK_ROOT)/examples/nrf5/libraries/memfault/platform_reference_impl
-MEMFAULT_PLATFORM_SDK_OVERRIDES = $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/sdk_overrides/
-MEMFAULT_PLATFORM_REFERENCE_SRC += \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_core.c \
-  $(MEMFAULT_PLATFORM_REFERENCE_IMPL)/memfault_platform_device_info.c
-
-MEMFAULT_PORTS_ROOT := $(MEMFAULT_SDK_ROOT)/ports
-MEMFAULT_PORTS_NRFSDK := $(MEMFAULT_PORTS_ROOT)/nrf5_sdk
-MEMFAULT_PORTS_INCLUDE := $(MEMFAULT_PORTS_ROOT)/include
-MEMFAULT_PORTS_SRC += \
-  $(MEMFAULT_PORTS_NRFSDK)/memfault_platform_metrics.c \
-  $(MEMFAULT_PORTS_NRFSDK)/nrf5_coredump_regions.c \
-  $(MEMFAULT_PORTS_NRFSDK)/nrf5_coredump_storage.c \
-  $(MEMFAULT_PORTS_NRFSDK)/resetreas_reboot_tracking.c
+MEMFAULT_NRF5_SDK_PORT_ROOT := $(MEMFAULT_SDK_ROOT)/ports/nrf5_sdk
 
 SRC_FILES += \
-   $(MEMFAULT_COMPONENTS_SRCS) \
-   $(MEMFAULT_COMPONENTS_SRCS) \
-   $(MEMFAULT_PLATFORM_REFERENCE_SRC) \
-   $(MEMFAULT_PORTS_SRC)
+  $(MEMFAULT_COMPONENTS_SRCS) \
+  $(MEMFAULT_NRF5_SDK_PORT_ROOT)/memfault_platform_metrics.c \
+  $(MEMFAULT_NRF5_SDK_PORT_ROOT)/nrf5_coredump_regions.c \
+  $(MEMFAULT_NRF5_SDK_PORT_ROOT)/nrf5_coredump_storage.c \
+  $(MEMFAULT_NRF5_SDK_PORT_ROOT)/resetreas_reboot_tracking.c \
+  $(MEMFAULT_PORT_ROOT)/memfault_platform_port.c
 
 INC_FOLDERS += \
- $(MEMFAULT_PLATFORM_SDK_OVERRIDES) \
  $(MEMFAULT_COMPONENTS_INC_FOLDERS) \
- $(MEMFAULT_PORTS_INCLUDE)
+ $(MEMFAULT_SDK_ROOT)/ports/include \
+ $(MEMFAULT_PORT_ROOT) \
+ $(MEMFAULT_PORT_ROOT)/sdk_overrides
 
 # Add the gnu build id to the elf for better tracking between elf and binary
 # https://interrupt.memfault.com/blog/gnu-build-id-for-firmware

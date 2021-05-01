@@ -13,6 +13,7 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 
+#include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
@@ -194,6 +195,11 @@ static int prv_post_memfault_data(int argc, char **argv) {
   return memfault_demo_cli_cmd_post_core(argc, argv);
 }
 
+static int prv_chunk_data_export(int argc, char **argv) {
+  memfault_data_export_dump_chunks();
+  return 0;
+}
+
 void memfault_register_cli(void) {
   prv_timer_init();
 
@@ -258,6 +264,13 @@ void memfault_register_cli(void) {
       .help = "Post Memfault data to cloud",
       .hint = NULL,
       .func = prv_post_memfault_data,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "export",
+      .help = "Can be used to dump chunks to console or post via GDB",
+      .hint = NULL,
+      .func = prv_chunk_data_export,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {

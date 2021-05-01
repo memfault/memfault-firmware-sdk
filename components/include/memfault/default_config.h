@@ -248,6 +248,10 @@ extern "C" {
 #define MEMFAULT_EXC_HANDLER_WATCHDOG MemfaultWatchdog_Handler
 #endif
 
+#ifndef MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM
+#define MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM  0
+#endif
+
 //
 // Http Configuration Options
 //
