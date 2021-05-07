@@ -120,16 +120,15 @@ static void prv_coredump_writer_assert_and_reboot(int error_code) {
 // This is Dialog specific and not extern'd in a header file.
 // NOTE: The user must call ad_nvms_init() before calling this function.
 void memfault_platform_coredump_storage_boot(void) {
-  partition_entry_t partition_info = {0};
   ad_nvms_init();
-  const bool exists = ad_nvms_get_partition_info(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION, &partition_info);
-  if (!exists) {
+  nvms_t part = ad_nvms_open(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION);
+  if (part == NULL) {
     MEMFAULT_LOG_ERROR("Could not locate partition for coredump storage, has ad_nvms_init() been called?");
     return;
   }
 
   // ad_nvms_open() should not fail if above check succeeds.
-  s_qspi_coredump_partition_info.partition.handle = ad_nvms_open(MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION);
+  s_qspi_coredump_partition_info.partition.handle = part;
   const size_t partition_size = ad_nvms_get_size(s_qspi_coredump_partition_info.partition.handle);
   s_qspi_coredump_partition_info.partition.size = MEMFAULT_MIN(
       partition_size, MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES);
