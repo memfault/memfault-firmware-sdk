@@ -39,8 +39,8 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
 
     s_coredump_regions[0] =
         MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-            crash_info->stack_address,
-            memfault_platform_sanitize_address_range(crash_info->stack_address, HPY_MEMFAULT_COREDUMP_SIZE));
+            (void *)MEMORY_SYSRAM_BASE,
+            (uint32_t) memfault_platform_sanitize_address_range((void *)MEMORY_SYSRAM_BASE, HPY_MEMFAULT_COREDUMP_SIZE));
     *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
     return &s_coredump_regions[0];
 }
