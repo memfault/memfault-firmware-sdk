@@ -130,6 +130,10 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   printf("[%s] MFLT: %s\n", lvl_str, log_buf);
 }
 
+#if KEEP_FOR_REFERENCE
+// NOTE: This function was used to validate memfault during integration.
+//       It has to be called in a precise location during initializaion, e.g. before BLE startup,
+//       or else it disrupts BLE timing and causes errors.
 void test_memfault(void)
 {
 //    MEMFAULT_TRACE_EVENT_WITH_LOG(info, "Starting test_memfault()");
@@ -175,6 +179,7 @@ void test_memfault(void)
     // Force any pending data out
     while (prv_try_send_memfault_data()) { }
 }
+#endif // #if KEEP_FOR_REFERENCE
 
 // Note: We mark the function as weak so an end user can override this with a real implementation
 // and we disable optimizations so the parameters don't get stripped away
