@@ -328,7 +328,7 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
           .hdr = prv_build_header(level, kMemfaultLogRecordType_Preformatted),
         };
         memfault_circular_buffer_write(circ_bufp, &entry, sizeof(entry));
-        memfault_circular_buffer_write(circ_bufp, log, log_len);
+        memfault_circular_buffer_write(circ_bufp, log, entry.len);
         log_written = true;
     }
   }
