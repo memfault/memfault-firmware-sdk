@@ -1,3 +1,4 @@
 //! @file memfault_metrics_heartbeat_config.def
 MEMFAULT_METRICS_KEY_DEFINE(MainTaskWakeups, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(MainTaskStackHwm, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(PartitionTableRewrites, kMemfaultMetricType_Unsigned)
