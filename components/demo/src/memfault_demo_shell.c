@@ -8,15 +8,15 @@
 //! NOTE: For simplicity, ANSI escape sequences are not dealt with!
 
 #include "memfault/demo/shell.h"
-#include "memfault_demo_shell_commands.h"
+#include "memfault/demo/shell_commands.h"
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
-#define MEMFAULT_SHELL_RX_BUFFER_SIZE (256)
 #define MEMFAULT_SHELL_MAX_ARGS (16)
 #define MEMFAULT_SHELL_PROMPT "mflt> "
 
@@ -28,7 +28,7 @@
 static struct MemfaultShellContext {
   int (*send_char)(char c);
   size_t rx_size;
-  char rx_buffer[MEMFAULT_SHELL_RX_BUFFER_SIZE];
+  char rx_buffer[MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE];
 } s_mflt_shell;
 
 static bool prv_booted(void) {
@@ -60,7 +60,7 @@ static char prv_last_char(void) {
 }
 
 static bool prv_is_rx_buffer_full(void) {
-  return s_mflt_shell.rx_size >= MEMFAULT_SHELL_RX_BUFFER_SIZE;
+  return s_mflt_shell.rx_size >= MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE;
 }
 
 static void prv_reset_rx_buffer(void) {
@@ -109,7 +109,7 @@ static void prv_process(void) {
     }
   }
 
-  if (s_mflt_shell.rx_size == MEMFAULT_SHELL_RX_BUFFER_SIZE) {
+  if (s_mflt_shell.rx_size == MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE) {
     prv_echo('\n');
   }
 

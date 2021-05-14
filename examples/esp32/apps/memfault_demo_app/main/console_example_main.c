@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_system.h"
+#include "esp_task.h"
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
@@ -22,7 +23,13 @@
 #include "nvs_flash.h"
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
 #include "memfault/esp_port/cli.h"
+#include "memfault/esp_port/core.h"
+#include "memfault/esp_port/http_client.h"
+#include "memfault/metrics/platform/timer.h"
+#include "memfault/metrics/metrics.h"
+#include "memfault/panics/assert.h"
 
 static const char* TAG = "example";
 
@@ -50,8 +57,7 @@ static void initialize_filesystem()
 }
 #endif // CONFIG_STORE_HISTORY
 
-static void initialize_nvs()
-{
+static void initialize_nvs() {
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     ESP_ERROR_CHECK( nvs_flash_erase() );
@@ -65,8 +71,7 @@ static void initialize_nvs()
 #define CONFIG_CONSOLE_UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
 #endif
 
-static void initialize_console()
-{
+static void initialize_console() {
   /* Disable buffering on stdin and stdout */
   setvbuf(stdin, NULL, _IONBF, 0);
   setvbuf(stdout, NULL, _IONBF, 0);
@@ -117,8 +122,22 @@ static void initialize_console()
 MEMFAULT_ALIGNED(4) static IRAM_ATTR uint8_t s_my_buf[10];
 void *g_unaligned_buffer;
 
-void app_main()
-{
+// Periodically post any Memfault data that has not yet been posted.
+static void prv_poster_task(void *args) {
+  const uint32_t interval_sec = 60;
+  const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
+
+  MEMFAULT_LOG_INFO("Data poster task up and running every %us.", interval_sec);
+  while (true) {
+    MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
+    memfault_esp_port_http_client_post_data();
+    memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(PosterTaskNumSchedules), 1);
+    vTaskDelay(delay_ms);
+  }
+}
+
+// This task started by cpu_start.c::start_cpu0_default().
+void app_main() {
   extern void memfault_platform_device_info_boot(void);
   memfault_platform_device_info_boot();
   g_unaligned_buffer = &s_my_buf[1];
@@ -130,6 +149,13 @@ void app_main()
 #endif
 
   initialize_console();
+
+  // We need another task to post data since we block waiting for user
+  // input in this task.
+  const portBASE_TYPE res = xTaskCreate(prv_poster_task, "poster",
+                                        ESP_TASK_MAIN_STACK, NULL,
+                                        ESP_TASK_MAIN_PRIO, NULL);
+  MEMFAULT_ASSERT(res == pdTRUE);
 
   /* Register commands */
   esp_console_register_help_command();
@@ -165,7 +191,7 @@ void app_main()
 
   /* Main loop */
   while(true) {
-    /* Get a line using linenoise.
+    /* Get a line using linenoise (blocking call).
      * The line is returned when ENTER is pressed.
      */
     char* line = linenoise(prompt);

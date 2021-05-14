@@ -46,7 +46,7 @@ void memfault_http_client_release_chunk_buffer(void *buffer);
 int memfault_esp_port_http_client_post_data(void);
 
 //! @return true if connected to WiFi, false otherwise
-bool memfault_esp_port_wifi_available(void);
+bool memfault_esp_port_wifi_connected(void);
 
 #ifdef __cplusplus
 }

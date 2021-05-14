@@ -82,6 +82,50 @@ TEST(MemfaultBuildInfo, Test_GnuBuildId) {
 
 #else /* Default - Memfault Generated Build Id is In Use */
 
+TEST(MemfaultBuildInfo, Test_MemfaultCreateUniqueVersionString) {
+  const uint8_t fake_memfault_build_id[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
+    0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0f, 0x10, 0x11, 0x12, 0x13
+  };
+  memcpy(g_memfault_sdk_derived_build_id, fake_memfault_build_id,
+         sizeof(fake_memfault_build_id));
+
+  g_memfault_build_id.type = kMemfaultBuildIdType_MemfaultBuildIdSha1;
+
+  // Test order is important.
+  // 1. NULL at genesis
+  const char *unique = memfault_create_unique_version_string(NULL);
+  CHECK(!unique);
+
+  // 2. Too big at genesis
+  // Instead of pulling in default_config.h just use an
+  // unrealistically large size.
+  char too_big[1024];
+  memset(too_big, 'v', sizeof(too_big) - 1);
+  unique = memfault_create_unique_version_string(too_big);
+  CHECK(!unique);
+
+  // 3. Good user version
+  unique = memfault_create_unique_version_string("1.2.3");
+  CHECK(unique);
+  STRCMP_EQUAL("1.2.3+000102", unique);
+
+  // 4a. Immutable checks
+  unique = memfault_create_unique_version_string("changed");
+  CHECK(unique);
+  STRCMP_EQUAL("1.2.3+000102", unique);
+
+  // 4b. Null should degrade into memfault_get_unique_version_string()
+  // after a good version has been created.
+  unique = memfault_create_unique_version_string(NULL);
+  CHECK(unique);
+  STRCMP_EQUAL("1.2.3+000102", unique);
+
+  // 5. Getter check (for completeness)
+  unique = memfault_get_unique_version_string();
+  CHECK(unique);
+  STRCMP_EQUAL("1.2.3+000102", unique);
+}
 
 TEST(MemfaultBuildInfo, Test_MemfaultBuildIdGetString) {
   const uint8_t fake_memfault_build_id[] = {

@@ -326,9 +326,34 @@ static void prv_expect_parse_failure(const void *response, size_t response_len,
 }
 
 TEST(MfltHttpClientUtils, Test_HttpResponseUnexpectedlyLong) {
-  const static uint8_t response_parser[256] = "POST longdata";
-  prv_expect_parse_failure(response_parser, sizeof(response_parser),
-                           MfltHttpParseStatus_HeaderTooLongError);
+  // One really long header we don't care about but must tolerate.
+  const char *rsp =
+      "HTTP/1.1 202 Accepted\r\n"
+      "Content-Type: text/plain; charset=utf-8\r\n"
+      "ReallyLongHeader:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\r\n"
+      "Content-Length: 8\r\n"
+      "Date: Wed, 27 Nov 2019 22:52:57 GMT\r\n"
+      "Connection: keep-alive\r\n"
+      "\r\n"
+      "Accepted"; // Body, 8 bytes
+
+    prv_expect_parse_success(rsp, strlen(rsp), 202);
+}
+
+TEST(MfltHttpClientUtils, Test_HttpResponseUnexpectedlyLongFirstLine) {
+  // One really long header as the first line should fail.
+  const char *rsp =
+      "ReallyLongHeader:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\r\n"
+      "HTTP/1.1 202 Accepted\r\n"
+      "Content-Type: text/plain; charset=utf-8\r\n"
+      "Content-Length: 8\r\n"
+      "Date: Wed, 27 Nov 2019 22:52:57 GMT\r\n"
+      "Connection: keep-alive\r\n"
+      "\r\n"
+      "Accepted"; // Body, 8 bytes
+
+    prv_expect_parse_failure(rsp, strlen(rsp), 
+                             MfltHttpParseStatus_HeaderTooLongError);
 }
 
 TEST(MfltHttpClientUtils, Test_HeaderBeforeStatus) {

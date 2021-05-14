@@ -1,3 +1,46 @@
+### Changes between Memfault SDK 0.18.0 and SDK 0.17.1 - May 14, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Support for Dialog DA145xx chip family (Huge thanks to @iandmorris for the
+  help here!)
+  - GCC & Keil based demo application for the DA14531 & DA14585/DA14586
+    [can be found here](examples/dialog/da145xx).
+  - Ports for applications using the DA145xx SDK
+    [can be found here](ports/dialog/da145xx).
+- ESP32 port improvements
+  - Added example of periodically posting data to memfault via a background
+    task.
+  - Added a new Kconfig option, `MEMFAULT_COREDUMP_USE_OTA_SLOT=y` which can be
+    used to save a coredump in an unused OTA slot rather than the default
+    coredump partition. This can be useful in situations where Memfault is being
+    integrated after a product has shipped and updating the partition table is
+    no longer possible.
+- Added `MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED=0` which can be used to
+  disable dynamic configuration of non-volatile storage. Setting this flag when
+  the non-volatile event storage API is not in use will save several hundred
+  bytes of codespace.
+- Hardened
+  [memfault_http_parse_response()](components/http/src/memfault_http_utils.c)
+  utility to parse HTTP responses with headers that exceed a length of 128 bytes
+- Fixed a :bug: in`memfault_log_save_preformatted()` leading to invalid logs
+  being reported when attempting to save log lines > 128 bytes. (thanks @alvarop
+  for the report!)
+- Added a convenience API,
+  [`memfault_create_unique_version_string()`](components/include/memfault/core/platform/device_info.h),
+  which can be used for easily appending a build id on the software version
+  reported.
+
+#### :house: Internal
+
+- Updates to demo cli:
+  - `MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE` can be used to shrink the maximum
+    amount of bytes that can be buffered on a single line.
+  - Made `memfault_demo_shell_commands.h` public and moved it to
+    [`memfault/demo/shell_commands.h`](components/include/memfault/demo/shell_commands.h)
+    to facilitate easier overriding of the default set of commands used in a
+    build.
+
 ### Changes between Memfault SDK 0.17.1 and SDK 0.17.0 - April 30, 2021
 
 #### :chart_with_upwards_trend: Improvements

@@ -317,18 +317,19 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
   }
 
   bool log_written = false;
-  const size_t bytes_needed = sizeof(sMfltRamLogEntry) + log_len;
+  const size_t truncated_log_len = MEMFAULT_MIN(log_len, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
+  const size_t bytes_needed = sizeof(sMfltRamLogEntry) + truncated_log_len;
   memfault_lock();
   {
     sMfltCircularBuffer *circ_bufp = &s_memfault_ram_logger.circ_buffer;
     const bool space_free = prv_try_free_space(circ_bufp, bytes_needed);
     if (space_free) {
         sMfltRamLogEntry entry = {
-          .len = (uint8_t)MEMFAULT_MIN(log_len, MEMFAULT_LOG_MAX_LINE_SAVE_LEN),
+          .len = (uint8_t)truncated_log_len,
           .hdr = prv_build_header(level, kMemfaultLogRecordType_Preformatted),
         };
         memfault_circular_buffer_write(circ_bufp, &entry, sizeof(entry));
-        memfault_circular_buffer_write(circ_bufp, log, log_len);
+        memfault_circular_buffer_write(circ_bufp, log, truncated_log_len);
         log_written = true;
     }
   }

@@ -385,6 +385,7 @@ int memfault_event_storage_persist(void) {
   return events_saved;
 }
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 static void prv_nv_event_storage_mark_read_cb(void) {
   g_memfault_platform_nv_event_storage_impl.consume();
 
@@ -395,6 +396,7 @@ static void prv_nv_event_storage_mark_read_cb(void) {
 
   prv_invoke_request_persist_callback();
 }
+#endif /* MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED */
 
 static const sMemfaultDataSourceImpl *prv_get_active_event_storage_source(void) {
   static const sMemfaultDataSourceImpl s_memfault_ram_event_storage  = {
@@ -403,6 +405,7 @@ static const sMemfaultDataSourceImpl *prv_get_active_event_storage_source(void) 
     .mark_msg_read_cb = prv_event_storage_mark_event_read_ram,
   };
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
   static sMemfaultDataSourceImpl s_memfault_nv_event_storage = { 0 };
   s_memfault_nv_event_storage = (sMemfaultDataSourceImpl) {
     .has_more_msgs_cb = g_memfault_platform_nv_event_storage_impl.has_event,
@@ -412,6 +415,9 @@ static const sMemfaultDataSourceImpl *prv_get_active_event_storage_source(void) 
 
   return prv_nv_event_storage_enabled() ? &s_memfault_nv_event_storage :
                                           &s_memfault_ram_event_storage;
+#else
+  return &s_memfault_ram_event_storage;
+#endif /* MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED */
 }
 
 static bool prv_has_event(size_t *event_size) {

@@ -67,6 +67,16 @@ typedef struct {
 //!     1 New update is available and handlers were invoked
 int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler);
 
+//! POSTs all collected diagnostic data to Memfault Cloud
+//!
+//! @note This function should only be called when connected to WiFi
+//!
+//! @return 0 on success, else error code
+int memfault_esp_port_http_client_post_data(void);
+
+//! @return true if connected to WiFi, false otherwise
+bool memfault_esp_port_wifi_connected(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -3,16 +3,16 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <string.h>
-  #include <stddef.h>
-  #include <stdio.h>
 
-  #include "memfault/core/math.h"
-  #include "memfault/demo/shell.h"
+#include <string.h>
+#include <stddef.h>
+#include <stdio.h>
 
-  #include "memfault_demo_shell_commands.h"
-}
+#include "memfault/config.h"
+#include "memfault/core/math.h"
+#include "memfault/demo/shell.h"
+
+#include "memfault/demo/shell_commands.h"
 
 static size_t s_num_chars_sent = 0;
 static char s_chars_sent_buffer[1024] = {0};
@@ -117,13 +117,14 @@ TEST(MfltDemoShell, Test_MfltDemoShellHelpCmd) {
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellRxBufferFull) {
-  for (size_t i = 0; i < 256; ++i) {
+  for (size_t i = 0; i < MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE; ++i) {
     memfault_demo_shell_receive_char('X');
   }
-  STRCMP_EQUAL("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n"
-               "Unknown command: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n"
-               "Type 'help' to list all commands\r\n"
-               "mflt> ",
+  STRCMP_EQUAL(
+      "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n" // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE + 1 X's
+      "Unknown command: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n" // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE X's
+      "Type 'help' to list all commands\r\n"
+      "mflt> ",
       s_chars_sent_buffer);
 }
 

@@ -103,6 +103,22 @@ TEST(MemfaultLog, Test_MemfaultLogBasic) {
   CHECK(!log_found);
 }
 
+TEST(MemfaultLog, Test_MemfaultLogOversize) {
+  uint8_t s_ram_log_store[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + sizeof(sMfltRamLogEntry)];
+  memset(s_ram_log_store, 0, sizeof(s_ram_log_store));
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  char my_log[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 2];
+  memset(my_log, 'A', sizeof(my_log));
+  my_log[sizeof(my_log) - 1] = '\0';
+
+  const eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  memfault_log_save_preformatted(level, my_log, strlen(my_log));
+
+  my_log[sizeof(my_log) - 2] = '\0';
+  prv_read_log_and_check(level, my_log, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
+}
+
 void memfault_log_handle_saved_callback(void) {
   mock().actualCall(__func__);
 }

@@ -19,7 +19,7 @@ extern "C" {
 #define MEMFAULT_PACKED_STRUCT MEMFAULT_PACKED struct
 #define MEMFAULT_NORETURN __declspec(noreturn)
 #define MEMFAULT_NAKED_FUNC __asm
-#define MEMFAULT_UNREACHABLE
+#define MEMFAULT_UNREACHABLE while (1)
 #define MEMFAULT_NO_OPT
 #define MEMFAULT_ALIGNED(x) __attribute__((aligned(x)))
 #define MEMFAULT_UNUSED __attribute__((unused))

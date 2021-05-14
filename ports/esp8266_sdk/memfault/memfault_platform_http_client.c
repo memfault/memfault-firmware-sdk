@@ -220,14 +220,14 @@ int memfault_platform_http_client_wait_until_requests_completed(
   return 0;
 }
 
-bool memfault_esp_port_wifi_available(void) {
+bool memfault_esp_port_wifi_connected(void) {
   wifi_ap_record_t ap_info;
   const bool connected = esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
   return connected;
 }
 
 int memfault_esp_port_http_client_post_data(void) {
-  if (!memfault_esp_port_wifi_available()) {
+  if (!memfault_esp_port_wifi_connected()) {
     MEMFAULT_LOG_INFO("%s: Wifi unavailable", __func__);
     return -1;
   }

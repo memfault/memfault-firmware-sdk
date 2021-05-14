@@ -1,0 +1,1174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+    	
+    <storageModule moduleId="org.eclipse.cdt.core.settings">
+        		
+        <cconfiguration configurationName="DA14586" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018">
+            			
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018" moduleId="org.eclipse.cdt.core.settings" name="DA14586">
+                				
+                <externalSettings/>
+                				
+                <extensions>
+                    					
+                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    				
+                </extensions>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
+                				
+                <configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="${cross_rm} -rf" description="" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018" name="DA14586" parent="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug" prebuildStep="${cross_make} generate_ldscripts PRE_BUILD_EXTRA_DEFS=&quot;${PRE_BUILD_EXTRA_DEFS}&quot; CC=&quot;${cross_prefix}${cross_c}${cross_suffix}&quot; LDSCRIPT_INCLUDE_DIR=&quot;../../src/config ../../../../../../../../../../sdk/common_project_files&quot; LDSCRIPT_PATH=&quot;../../../../../../../../../../sdk/common_project_files/ldscripts&quot; LDSCRIPT_FILES=&quot;ldscript_DA14585_586.lds&quot;">
+                    					
+                    <folderInfo id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018" name="DA14586" resourcePath="">
+                        						
+                        <toolChain id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.elf.debug.1217135954.269867018" name="Cross ARM GCC" superClass="ilg.gnuarmeclipse.managedbuild.cross.toolchain.elf.debug">
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level.767719213" name="Optimization Level" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level" useByScannerDiscovery="true" value="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level.size" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.messagelength.1733510366" name="Message length (-fmessage-length=0)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.messagelength" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.signedchar.1005627555" name="'char' is signed (-fsigned-char)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.signedchar" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.functionsections.8466032" name="Function sections (-ffunction-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.datasections.1199054382" name="Data sections (-fdata-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level.2033016306" name="Debug level" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level" useByScannerDiscovery="true" value="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level.max" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.format.1848039867" name="Debug format" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.format" useByScannerDiscovery="true"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.name.202160264" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.name" useByScannerDiscovery="false" value="GNU Tools for ARM Embedded Processors" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.2145258392" name="Architecture" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.architecture" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.arm" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.family.1376903666" name="ARM family (-mcpu)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.family" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.mcpu.cortex-m0" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset.273093397" name="Instruction set" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset.thumb" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.prefix.1568903030" name="Prefix" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.prefix" useByScannerDiscovery="false" value="arm-none-eabi-" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.c.1335520600" name="C compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.c" useByScannerDiscovery="false" value="gcc" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.cpp.1099887381" name="C++ compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.cpp" useByScannerDiscovery="false" value="g++" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.ar.856180104" name="Archiver" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.ar" useByScannerDiscovery="false" value="ar" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.objcopy.388002520" name="Hex/Bin converter" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.objcopy" useByScannerDiscovery="false" value="objcopy" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.objdump.1734902931" name="Listing generator" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.objdump" useByScannerDiscovery="false" value="objdump" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.size.147281940" name="Size command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.size" useByScannerDiscovery="false" value="size" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.make.1054903599" name="Build command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.make" useByScannerDiscovery="false" value="make" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.rm.721841971" name="Remove command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.rm" useByScannerDiscovery="false" value="rm" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash.1273357821" name="Create flash image" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize.406576250" name="Print size" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.warnings.allwarn.1114274551" name="Enable all common warnings (-Wall)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.warnings.allwarn" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.id.159819911" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.id" useByScannerDiscovery="false" value="1287942917" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.lto.1206316233" name="Link-time optimizer (-flto)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.lto" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+                            							
+                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform.904910957" isAbstract="false" osList="all" superClass="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform"/>
+                            							
+                            <builder buildPath="${workspace_loc:/${ProjName}}/${config_name:${ProjName}}" id="ilg.gnuarmeclipse.managedbuild.cross.builder.1395615536" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.105151552" name="Cross ARM GNU Assembler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor.433397236" name="Use preprocessor" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.1553647969" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" useByScannerDiscovery="true"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs.1252237744" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs" useByScannerDiscovery="true" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="__DA14586__"/>
+                                    								
+                                </option>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input.1494693132" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.695125892" name="Cross ARM C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.1511250632" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/app_modules/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/include/CMSIS/5.6.0/Include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/em&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/llc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/lld&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/llm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/ea/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/em/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/hci/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/hci/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/attc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/attm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/atts&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap/gapc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap/gapm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt/gattc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt/gattm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/l2c/l2cc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/l2c/l2cm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp/smpc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp/smpm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anc/ancc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp/anpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp/anps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bas/basc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bas/bass/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs/bcsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs/bcss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp/blpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp/blps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms/bmsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms/bmss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp/cppc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp/cpps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp/cscpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp/cscps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts/ctsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts/ctss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/custom&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/custom/custs/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/dis/disc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/dis/diss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find/findl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find/findt/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/gatt/gatt_client/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp/glpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp/glps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogpbh/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogpd/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogprh/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp/hrpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp/hrps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp/htpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp/htpt/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan/lanc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan/lans/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp/paspc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp/pasps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/prox/proxm/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/prox/proxr/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp/rscpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp/rscps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp/scppc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp/scpps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/suota/suotar/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip/tipc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip/tips/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds/udsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds/udss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss/wssc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss/wsss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/rwble&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/rwble_hl&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/common_project_files&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot/ARM&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot/GCC&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler/ARM&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler/GCC&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/ll&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/main&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/arch_console&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/common/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/crypto&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/dbg/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/gtl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/gtl/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/h4tl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/ke/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/ke/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/nvds/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/rf/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/rwip/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/adc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/battery&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/ble&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/dma&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/gpio&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/hw_otpc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/i2c&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/i2c_eeprom&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/pdm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/reg&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/rtc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/spi&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/spi_flash&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/syscntl&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/systick&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/timer&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/trng&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/uart&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/wkupct_quadec&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/system_library/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/utilities/otp_hdr&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../third_party/hash&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../third_party/rand&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../ports/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../components/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src/config&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src/custom_profile&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.files.2063487453" name="Include files (-include)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.files" useByScannerDiscovery="false" valueType="includeFiles">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/da1458x_config_basic.h}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/da1458x_config_advanced.h}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/user_config.h}&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.456886557" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="__DA14586__"/>
+                                    								
+                                </option>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.800222375" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.578467208" name="Cross ARM C++ Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.1106459880" name="Cross ARM C Linker" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.gcsections.166069439" name="Remove unused sections (-Xlinker --gc-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.gcsections" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.libs.1941951958" name="Libraries (-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.libs" useByScannerDiscovery="false" valueType="libs">
+                                    									
+                                    <listOptionValue builtIn="false" value=":da14585_586.lib"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.paths.2089907711" name="Library search path (-L)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.paths" useByScannerDiscovery="false" valueType="libPaths">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/system_library/output/Keil_5&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}/${ConfigName}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../../../../../../../../../../sdk/common_project_files/misc"/>
+                                    								
+                                </option>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnano.72885312" name="Use newlib-nano (--specs=nano.specs)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnano" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.scriptfile.167703708" name="Script files (-T)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.scriptfile" useByScannerDiscovery="false" valueType="stringList">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;ldscript_DA14585_586.lds&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostdlibs.1114900288" name="No startup or default libs (-nostdlib)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostdlibs" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostart.1901933943" name="Do not use standard start files (-nostartfiles)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostart" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other.1486310472" name="Other linker flags" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other" useByScannerDiscovery="false" value="-Wl,--no-wchar-size-warning" valueType="string"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.flags.351850764" name="Linker flags (-Xlinker [option])" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.flags" useByScannerDiscovery="false"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnosys.1398595598" name="Do not use syscalls (--specs=nosys.specs)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnosys" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.verbose.1270225707" name="Verbose (-v)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.verbose" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.input.916722809" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.input">
+                                    									
+                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+                                    									
+                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
+                                    								
+                                </inputType>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.linker.72681375" name="Cross ARM C++ Linker" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.linker">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.gcsections.1619263666" name="Remove unused sections (-Xlinker --gc-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.gcsections" value="true" valueType="boolean"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.archiver.1258141264" name="Cross ARM GNU Archiver" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.archiver"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.createflash.1764000784" name="Cross ARM GNU Create Flash Image" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.createflash">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.1124461498" name="Output file format (-O)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.ihex" valueType="enumerated"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.createlisting.1337818075" name="Cross ARM GNU Create Listing" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.createlisting">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source.1876087282" name="Display source (--source|-S)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.allheaders.1073098417" name="Display all headers (--all-headers|-x)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.allheaders" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.demangle.263415900" name="Demangle names (--demangle|-C)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.demangle" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.linenumbers.1204136673" name="Display line numbers (--line-numbers|-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.wide.1611905430" name="Wide lines (--wide|-w)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.wide" value="true" valueType="boolean"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.printsize.356446441" name="Cross ARM GNU Print Size" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.printsize">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.printsize.format.494321346" name="Size format" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.printsize.format" useByScannerDiscovery="false"/>
+                                							
+                            </tool>
+                            						
+                        </toolChain>
+                        					
+                    </folderInfo>
+                    					
+                    <sourceEntries>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="memfault_components"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="memfault_dialog"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_app"/>
+                        						
+                        <entry excluding="otp_cs.c|arch_hibernation.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_arch"/>
+                        						
+                        <entry excluding="ble_arp.c|rf_531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_ble"/>
+                        						
+                        <entry excluding="startup_DA14531.S|startup_DA14531.s|ivtable_DA14531.S|system_DA14531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_boot"/>
+                        						
+                        <entry excluding="adc_531.c|hw_otpc_531.c|spi_531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_driver"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_profiles"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_app"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_config"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_custom_profile"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_platform"/>
+                        					
+                    </sourceEntries>
+                    				
+                </configuration>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+            			
+            <storageModule moduleId="ilg.gnuarmeclipse.managedbuild.packs"/>
+            			
+            <storageModule moduleId="ilg.gnumcueclipse.managedbuild.packs"/>
+            		
+        </cconfiguration>
+        		
+        <cconfiguration configurationName="DA14585" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017.957592248">
+            			
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017.957592248" moduleId="org.eclipse.cdt.core.settings" name="DA14585">
+                				
+                <externalSettings/>
+                				
+                <extensions>
+                    					
+                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    				
+                </extensions>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
+                				
+                <configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="${cross_rm} -rf" description="" id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017.957592248" name="DA14585" parent="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug" prebuildStep="${cross_make} generate_ldscripts PRE_BUILD_EXTRA_DEFS=&quot;${PRE_BUILD_EXTRA_DEFS}&quot; CC=&quot;${cross_prefix}${cross_c}${cross_suffix}&quot; LDSCRIPT_INCLUDE_DIR=&quot;../../src/config ../../../../../../../../../../sdk/common_project_files&quot; LDSCRIPT_PATH=&quot;../../../../../../../../../../sdk/common_project_files/ldscripts&quot; LDSCRIPT_FILES=&quot;ldscript_DA14585_586.lds&quot;">
+                    					
+                    <folderInfo id="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017.957592248." name="DA14585" resourcePath="">
+                        						
+                        <toolChain id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.elf.debug.139183355" name="Cross ARM GCC" superClass="ilg.gnuarmeclipse.managedbuild.cross.toolchain.elf.debug">
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level.1819294537" name="Optimization Level" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level" useByScannerDiscovery="true" value="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.level.size" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.messagelength.1522880059" name="Message length (-fmessage-length=0)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.messagelength" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.signedchar.1999854160" name="'char' is signed (-fsigned-char)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.signedchar" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.functionsections.195175182" name="Function sections (-ffunction-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.functionsections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.datasections.1810987837" name="Data sections (-fdata-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.datasections" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level.296710994" name="Debug level" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level" useByScannerDiscovery="true" value="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.level.max" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.format.1745663926" name="Debug format" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.format" useByScannerDiscovery="true"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.name.1895524031" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.name" useByScannerDiscovery="false" value="GNU Tools for ARM Embedded Processors" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.379802070" name="Architecture" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.architecture" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.arm" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.family.1700694062" name="ARM family (-mcpu)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.family" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.mcpu.cortex-m0" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset.236152091" name="Instruction set" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.arm.target.instructionset.thumb" valueType="enumerated"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.prefix.15200195" name="Prefix" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.prefix" useByScannerDiscovery="false" value="arm-none-eabi-" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.c.1627209098" name="C compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.c" useByScannerDiscovery="false" value="gcc" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.cpp.130670082" name="C++ compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.cpp" useByScannerDiscovery="false" value="g++" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.ar.1523759033" name="Archiver" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.ar" useByScannerDiscovery="false" value="ar" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.objcopy.1062587030" name="Hex/Bin converter" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.objcopy" useByScannerDiscovery="false" value="objcopy" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.objdump.99988660" name="Listing generator" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.objdump" useByScannerDiscovery="false" value="objdump" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.size.658308773" name="Size command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.size" useByScannerDiscovery="false" value="size" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.make.373620821" name="Build command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.make" useByScannerDiscovery="false" value="make" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.command.rm.1647775332" name="Remove command" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.command.rm" useByScannerDiscovery="false" value="rm" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash.100210039" name="Create flash image" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.createflash" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize.344637650" name="Print size" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.addtools.printsize" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.warnings.allwarn.1992385110" name="Enable all common warnings (-Wall)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.warnings.allwarn" useByScannerDiscovery="true" value="true" valueType="boolean"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.id.158946322" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.toolchain.id" useByScannerDiscovery="false" value="1287942917" valueType="string"/>
+                            							
+                            <option id="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.lto.1613331233" name="Link-time optimizer (-flto)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.optimization.lto" useByScannerDiscovery="true" value="false" valueType="boolean"/>
+                            							
+                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform.1636133078" isAbstract="false" osList="all" superClass="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform"/>
+                            							
+                            <builder buildPath="${workspace_loc:/${ProjName}}/${config_name:${ProjName}}" id="ilg.gnuarmeclipse.managedbuild.cross.builder.2076769819" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.1334440331" name="Cross ARM GNU Assembler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor.24204699" name="Use preprocessor" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.1348216729" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" useByScannerDiscovery="true"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs.886124492" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.defs" useByScannerDiscovery="true"/>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input.559521760" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.863419641" name="Cross ARM C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.254222580" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/app_modules/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/include/CMSIS/5.6.0/Include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/em&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/llc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/lld&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/controller/llm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/ea/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/em/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/hci/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/hci/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/attc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/attm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/att/atts&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap/gapc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gap/gapm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt/gattc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/gatt/gattm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/l2c/l2cc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/l2c/l2cm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp/smpc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/host/smp/smpm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anc/ancc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp/anpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/anp/anps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bas/basc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bas/bass/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs/bcsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bcs/bcss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp/blpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/blp/blps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms/bmsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/bms/bmss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp/cppc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cpp/cpps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp/cscpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cscp/cscps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts/ctsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/cts/ctss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/custom&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/custom/custs/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/dis/disc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/dis/diss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find/findl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/find/findt/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/gatt/gatt_client/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp/glpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/glp/glps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogpbh/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogpd/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hogp/hogprh/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp/hrpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/hrp/hrps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp/htpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/htp/htpt/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan/lanc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/lan/lans/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp/paspc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/pasp/pasps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/prox/proxm/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/prox/proxr/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp/rscpc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/rscp/rscps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp/scppc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/scpp/scpps/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/suota/suotar/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip/tipc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/tip/tips/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds/udsc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/uds/udss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss/wssc/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/profiles/wss/wsss/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/rwble&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/ble_stack/rwble_hl&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/common_project_files&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot/ARM&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/boot/GCC&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler/ARM&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/compiler/GCC&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/ll&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/arch/main&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/arch_console&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/common/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/crypto&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/dbg/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/gtl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/gtl/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/h4tl/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/ke/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/ke/src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/nvds/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/rf/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/core_modules/rwip/api&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/adc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/battery&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/ble&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/dma&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/gpio&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/hw_otpc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/i2c&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/i2c_eeprom&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/pdm&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/reg&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/rtc&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/spi&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/spi_flash&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/syscntl&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/systick&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/timer&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/trng&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/uart&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/driver/wkupct_quadec&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/system_library/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/utilities/otp_hdr&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../third_party/hash&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../third_party/rand&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../ports/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../components/include&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src/config&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../src/custom_profile&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.files.1182959361" name="Include files (-include)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.files" useByScannerDiscovery="false" valueType="includeFiles">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/da1458x_config_basic.h}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/da1458x_config_advanced.h}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/user_config/user_config.h}&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="true" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.1726197259" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.other.1763183386" name="Other compiler flags" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.other" useByScannerDiscovery="true" value="" valueType="string"/>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.1515189068" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.1858039132" name="Cross ARM C++ Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.339762943" name="Cross ARM C Linker" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.gcsections.995327685" name="Remove unused sections (-Xlinker --gc-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.gcsections" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.libs.1646334583" name="Libraries (-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.libs" useByScannerDiscovery="false" valueType="libs">
+                                    									
+                                    <listOptionValue builtIn="false" value=":da14585_586.lib"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.paths.83327924" name="Library search path (-L)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.paths" useByScannerDiscovery="false" valueType="libPaths">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;../../../../../../../../../../sdk/platform/system_library/output/Keil_5&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}/${ConfigName}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../../../../../../../../../../sdk/common_project_files/misc"/>
+                                    								
+                                </option>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnano.1824221567" name="Use newlib-nano (--specs=nano.specs)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnano" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.scriptfile.1958147037" name="Script files (-T)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.scriptfile" useByScannerDiscovery="false" valueType="stringList">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;ldscript_DA14585_586.lds&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostdlibs.46592396" name="No startup or default libs (-nostdlib)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostdlibs" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostart.114337276" name="Do not use standard start files (-nostartfiles)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.nostart" useByScannerDiscovery="false" value="false" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other.744648004" name="Other linker flags" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other" useByScannerDiscovery="false" value="-Wl,--no-wchar-size-warning -Wl,--build-id" valueType="string"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.flags.2036170150" name="Linker flags (-Xlinker [option])" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.flags" useByScannerDiscovery="false"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnosys.403234982" name="Do not use syscalls (--specs=nosys.specs)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.usenewlibnosys" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.verbose.1508765" name="Verbose (-v)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.verbose" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.input.1199211327" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.linker.input">
+                                    									
+                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+                                    									
+                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
+                                    								
+                                </inputType>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.linker.1319966536" name="Cross ARM C++ Linker" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.linker">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.gcsections.1019421875" name="Remove unused sections (-Xlinker --gc-sections)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.linker.gcsections" value="true" valueType="boolean"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.archiver.109560170" name="Cross ARM GNU Archiver" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.archiver"/>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.createflash.1795093930" name="Cross ARM GNU Create Flash Image" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.createflash">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.29089982" name="Output file format (-O)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice" useByScannerDiscovery="false" value="ilg.gnuarmeclipse.managedbuild.cross.option.createflash.choice.binary" valueType="enumerated"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.createlisting.951891956" name="Cross ARM GNU Create Listing" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.createlisting">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source.859744183" name="Display source (--source|-S)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.source" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.allheaders.588056952" name="Display all headers (--all-headers|-x)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.allheaders" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.demangle.1630456329" name="Demangle names (--demangle|-C)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.demangle" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.linenumbers.92984763" name="Display line numbers (--line-numbers|-l)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.linenumbers" value="true" valueType="boolean"/>
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.wide.333710504" name="Wide lines (--wide|-w)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.createlisting.wide" value="true" valueType="boolean"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.printsize.471604977" name="Cross ARM GNU Print Size" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.printsize">
+                                								
+                                <option id="ilg.gnuarmeclipse.managedbuild.cross.option.printsize.format.777486741" name="Size format" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.printsize.format" useByScannerDiscovery="false"/>
+                                							
+                            </tool>
+                            						
+                        </toolChain>
+                        					
+                    </folderInfo>
+                    					
+                    <sourceEntries>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="memfault_components"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="memfault_dialog"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_app"/>
+                        						
+                        <entry excluding="otp_cs.c|arch_hibernation.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_arch"/>
+                        						
+                        <entry excluding="ble_arp.c|rf_531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_ble"/>
+                        						
+                        <entry excluding="startup_DA14531.S|startup_DA14531.s|ivtable_DA14531.S|system_DA14531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_boot"/>
+                        						
+                        <entry excluding="adc_531.c|hw_otpc_531.c|spi_531.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_driver"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="sdk_profiles"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_app"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_config"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_custom_profile"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="user_platform"/>
+                        					
+                    </sourceEntries>
+                    				
+                </configuration>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+            			
+            <storageModule moduleId="ilg.gnuarmeclipse.managedbuild.packs"/>
+            			
+            <storageModule moduleId="ilg.gnumcueclipse.managedbuild.packs"/>
+            		
+        </cconfiguration>
+        	
+    </storageModule>
+    	
+    <storageModule moduleId="cdtBuildSystem" version="4.0.0">
+        		
+        <project id="template.ilg.gnuarmeclipse.managedbuild.cross.target.elf.186284257" name="Executable" projectType="ilg.gnuarmeclipse.managedbuild.cross.target.elf"/>
+        	
+    </storageModule>
+    	
+    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+    	
+    <storageModule moduleId="refreshScope" versionNumber="2">
+        		
+        <configuration configurationName="DA14586">
+            			
+            <resource resourceType="PROJECT" workspacePath="/${ProjName}"/>
+            		
+        </configuration>
+        		
+        <configuration configurationName="DA14531">
+            			
+            <resource resourceType="PROJECT" workspacePath="/${ProjName}"/>
+            		
+        </configuration>
+        		
+        <configuration configurationName="DA14585_MEMFAULT"/>
+        		
+        <configuration configurationName="DA14531_MEMFAULT"/>
+        		
+        <configuration configurationName="DA14585">
+            			
+            <resource resourceType="PROJECT" workspacePath="/${ProjName}"/>
+            		
+        </configuration>
+        	
+    </storageModule>
+    	
+    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+    	
+    <storageModule moduleId="scannerConfiguration">
+        		
+        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+        		
+        <scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867019;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867019;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.695125892;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.800222375">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867017;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.695125892;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.800222375">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018;ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.269867018;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.695125892;ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.800222375">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        	
+    </storageModule>
+    
+</cproject>
