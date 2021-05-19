@@ -3,6 +3,7 @@
 # See License.txt for details
 #
 
+import json
 import os
 import sys
 from io import BufferedIOBase, BytesIO
@@ -115,7 +116,9 @@ def http_expect_request():
             response = MagicMock()
             response.status = resp_status
             response.reason = ""
-            response.read.return_value = dumps(resp_body).encode("utf8")
+            response.read.return_value = (
+                None if resp_body is None else dumps(resp_body).encode("utf8")
+            )
             connection.getresponse.return_value = response
             connections.append(connections)
             return connection
@@ -548,10 +551,42 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
     )
 
     # Upload Symbols
+    token = "token-foo"
+    upload_url = "https://memfault-test-east1.s3.amazonaws.com/symbols/foo"
     http_expect_request(
-        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/software_types/main/software_versions/1.0.0-md5+b61b2d6c/artifacts/symbols",
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/upload",
+        "POST",
+        ANY,
+        ANY,
+        200,
+        {
+            "data": {
+                "token": token,
+                "upload_url": upload_url,
+            }
+        },
+    )
+
+    http_expect_request(
+        upload_url,
         "PUT",
         ANY,
+        ANY,
+        200,
+        None,
+    )
+
+    http_expect_request(
+        "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/symbols",
+        "POST",
+        lambda body_bytes: json.loads(body_bytes)
+        == {
+            "file": {"token": token, "name": "symbols.elf"},
+            "software_version": {
+                "version": "1.0.0-md5+b61b2d6c",
+                "software_type": "main",
+            },
+        },
         ANY,
         200,
         {"data": {}},

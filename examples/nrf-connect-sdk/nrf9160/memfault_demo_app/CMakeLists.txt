@@ -2,7 +2,9 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/nrf-connect-sdk)
+if(DEFINED ENV{MEMFAULT_ZEPHYR_EXTRA_MODULE_INCLUDE})
+  list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports)
+endif()
 
 # Required for app to compile against nRF Connect SDK <= v1.2
 if(DEFINED ENV{MEMFAULT_INCLUDE_ZEPHYR_BOILERPLATE})

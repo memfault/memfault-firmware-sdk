@@ -36,6 +36,7 @@ import argparse
 import os
 import platform
 import re
+import sys
 import traceback
 import uuid
 from binascii import b2a_base64
@@ -61,11 +62,11 @@ except ImportError:
 try:
     from httplib import HTTPConnection, HTTPSConnection
     from Queue import Queue
-    from urlparse import urlparse
+    from urlparse import urlparse, urlunparse
 except ImportError:
     from http.client import HTTPConnection, HTTPSConnection
     from queue import Queue
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, urlunparse
 
 
 MEMFAULT_DEFAULT_INGRESS_BASE_URI = "https://ingress.memfault.com"
@@ -778,7 +779,7 @@ def _http(method, base_uri, path, headers=None, body=None):
     conn = _create_http_connection(base_uri)
     # Convert to a string/bytes object so 'Content-Length' is set appropriately
     # Python 2.7 uses this by default but 3.6 & up were using 'chunked'
-    if hasattr(body, "read"):
+    if sys.version_info.major >= 3 and hasattr(body, "read"):
         body = body.read()
 
     conn.request(method, path, body=body, headers=headers)
@@ -802,9 +803,22 @@ def add_basic_auth(user, password, headers=None):
     return headers
 
 
-def _http_api(config, method, path, headers=None, body=None):
+class HttpApiError(Exception):
+    def __init__(self, status, reason):
+        super(Exception, self).__init__("{} (HTTP {})".format(reason, status))
+
+
+def _check_http_response(status, reason):
+    if status < 200 or status >= 300:
+        raise HttpApiError(status, reason)
+
+
+def _http_api(config, method, path, headers=None, body=None, should_raise=False):
     headers = add_basic_auth(config.email, config.password, headers=headers)
-    return _http(method, config.api_uri, path, headers, body)
+    status, reason, body = _http(method, config.api_uri, path, headers, body)
+    if should_raise:
+        _check_http_response(status, reason)
+    return status, reason, body
 
 
 def http_post_coredump(coredump_file, project_key, ingress_uri):
@@ -832,25 +846,60 @@ def http_get_auth_me(api_uri, email, password):
     return _http("GET", api_uri, "/auth/me", headers=headers)
 
 
-def http_put_artifact(
-    config, artifact_readable, software_type, software_version, artifact_type="symbols"
-):
-    status, reason, body = _http_api(
+def http_get_prepared_url(config):
+    _, _, body = _http_api(
         config,
-        "PUT",
-        "/api/v0/organizations/{organization}/projects/{project}/software_types/{software_type}/software_versions/{software_version}/artifacts/{artifact_type}".format(
+        "POST",
+        "/api/v0/organizations/{organization}/projects/{project}/upload".format(
             organization=config.organization,
             project=config.project,
-            software_type=software_type,
-            software_version=software_version,
-            artifact_type=artifact_type,
         ),
-        headers={"Content-Type": "application/octet-stream"},
-        body=artifact_readable,
+        headers={"Accept": "application/json"},
+        should_raise=True,
     )
-    if status < 200 or status >= 300:
-        return False, (status, reason)
-    return True, None
+    data = body["data"]
+    return data["token"], data["upload_url"]
+
+
+def http_upload_file(config, file_readable):
+    token, upload_url = http_get_prepared_url(config)
+    url_parts = urlparse(upload_url)
+    base_uri = urlunparse((url_parts[0], url_parts[1], "", "", "", ""))
+    path = urlunparse(("", "", url_parts[2], url_parts[3], url_parts[4], url_parts[5]))
+    status, reason, _ = _http(
+        "PUT",
+        base_uri,
+        path,
+        # NB: Prepared upload API does not expect Content-Type to be set so
+        # we need to exclude the Content-Type or set it to an empty string
+        headers={"Content-Type": ""},
+        body=file_readable,
+    )
+    _check_http_response(status, reason)
+    return token
+
+
+def http_upload_symbol_file(config, artifact_readable, software_type, software_version):
+    token = http_upload_file(config, artifact_readable)
+    _http_api(
+        config,
+        "POST",
+        "/api/v0/organizations/{organization}/projects/{project}/symbols".format(
+            organization=config.organization,
+            project=config.project,
+        ),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        body=dumps(
+            {
+                "file": {"token": token, "name": "symbols.elf"},
+                "software_version": {
+                    "version": software_version,
+                    "software_type": software_type,
+                },
+            }
+        ),
+        should_raise=True,
+    )
 
 
 def http_get_software_version(config, software_type, software_version):
@@ -902,17 +951,15 @@ def upload_symbols_if_needed(config, elf_fn, software_type, software_version):
     if not has_symbols:
         print("Uploading symbols...")
         with open(elf_fn, "rb") as elf_f:
-            success, status_and_reason = http_put_artifact(
-                config, elf_f, software_type, software_version
-            )
-            if not success:
-                print("Failed to upload symbols: {}".format(status_and_reason))
-            else:
+            try:
+                http_upload_symbol_file(config, elf_f, software_type, software_version)
                 # NOTE: upload is processed asynchronously. Give the symbol file
                 # a little time to be processed. In the future, we could poll here
                 # for completion
                 sleep(0.3)
                 print("Done!")
+            except HttpApiError as e:
+                print("Failed to upload symbols: {}".format(e))
 
 
 # FIXME: Duped from tools/gdb_memfault.py

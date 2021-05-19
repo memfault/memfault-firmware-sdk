@@ -146,7 +146,7 @@ static bool memfault_coredump_storage_buffered_write(uint32_t offset, const void
         (page_aligned_start_address + MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) - start_addr,
         data_len);
     uint32_t write_offset = start_addr - page_aligned_start_address;
-    memcpy(&working_buffer->data[write_offset], datap, bytes_to_write);
+    memmove(&working_buffer->data[write_offset], datap, bytes_to_write);
     working_buffer->bytes_written += bytes_to_write;
     working_buffer->write_offset = page_aligned_start_address;
     if (!prv_try_flush()) {
@@ -165,7 +165,7 @@ static bool memfault_coredump_storage_buffered_write(uint32_t offset, const void
         MEMFAULT_MIN(MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE, data_len - i);
     sCoredumpWorkingBuffer *working_buffer =
         prv_get_working_buf(start_addr + i);
-    memcpy(&working_buffer->data, &datap[i], size);
+    memmove(&working_buffer->data, &datap[i], size);
     working_buffer->bytes_written += size;
     working_buffer->write_offset = start_addr + i;
     if (!prv_try_flush()) {

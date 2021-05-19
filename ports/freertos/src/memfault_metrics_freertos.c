@@ -11,6 +11,7 @@
 
 #include "memfault/ports/freertos.h"
 
+#include "memfault/core/compiler.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 
@@ -18,7 +19,7 @@
 #include "timers.h"
 
 static MemfaultPlatformTimerCallback *s_metric_timer_cb = NULL;
-static void prv_metric_timer_callback(TimerHandle_t handle) {
+static void prv_metric_timer_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
   s_metric_timer_cb();
 }
 

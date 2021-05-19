@@ -19,6 +19,13 @@ if (NOT CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM)
   zephyr_library_sources(memfault_software_watchdog.c)
 endif()
 
+if (CONFIG_MEMFAULT_CACHE_FAULT_REGS)
+  # We need to wrap z_arm_fault() so we can get a copy
+  # of the fault registers before Zephyr consumes and
+  # clears the CFSR. See ports/zephyr/common/memfault_platform_core.c.
+  zephyr_ld_options(-Wl,--wrap=z_arm_fault)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD memfault_http_periodic_upload.c)
 
 zephyr_include_directories(.)

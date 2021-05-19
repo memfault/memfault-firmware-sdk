@@ -6,6 +6,8 @@
 //! Architecture-specific registers collected collected by Memfault SDK Extra decoding and analysis
 //! of these registers is provided from the Memfault cloud
 
+#include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "memfault/config.h"
@@ -26,6 +28,9 @@ MEMFAULT_STATIC_ASSERT((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT) <= 512, "Exceeded m
 MEMFAULT_STATIC_ASSERT((MEMFAULT_MPU_REGIONS_TO_COLLECT) <= 16, "Exceeded max possible size");
 
 // Subset of ARMv7-M "System Control and ID blocks" related to fault status
+// On some ports some of these registers may need to be pre-cached before
+// the OS consumes them. For simplicity if any need pre-caching then we
+// grab them all.
 typedef MEMFAULT_PACKED_STRUCT {
   uint32_t SHCSR;
   uint32_t CFSR;
@@ -87,6 +92,43 @@ typedef MEMFAULT_PACKED_STRUCT {
 } sMfltMpuRegs;
 #endif /* MEMFAULT_COLLECT_MPU_STATE */
 
+
+#if MEMFAULT_CACHE_FAULT_REGS
+#define FAULT_REG_REGION_TYPE  kMfltCoredumpRegionType_CachedMemory
+#define FAULT_REG_REGION_START ((void*)&s_cached_fault_regs)
+#define FAULT_REG_REGION_SIZE  (sizeof(s_cached_fault_regs))
+
+// Raw buffer for a sMfltCachedBlock.
+static uint32_t s_cached_fault_regs[MEMFAULT_CACHE_BLOCK_SIZE_WORDS(sizeof(sMfltFaultRegs))];
+
+// This fault register harvester function allows us to get unadulterated copies
+// of the ARM fault registers before they are modified (cleared) by an OS. We send
+// this information in place of whatever may be in the HW register by the
+// time we get to them.
+void memfault_coredump_cache_fault_regs(void) {
+  sMfltCachedBlock *fault_regs = (sMfltCachedBlock *)&s_cached_fault_regs[0];
+  fault_regs->cached_address = 0xE000ED24; // SCB->SHCSR
+
+  const volatile uint32_t * const hwreg =
+      (uint32_t *)fault_regs->cached_address;
+  sMfltFaultRegs * const scb = (sMfltFaultRegs *) fault_regs->blk;
+
+  scb->SHCSR = hwreg[offsetof(sMfltFaultRegs, SHCSR) / sizeof(*hwreg)];
+  scb->CFSR  = hwreg[offsetof(sMfltFaultRegs, CFSR)  / sizeof(*hwreg)];
+  scb->HFSR  = hwreg[offsetof(sMfltFaultRegs, HFSR)  / sizeof(*hwreg)];
+  scb->DFSR  = hwreg[offsetof(sMfltFaultRegs, DFSR)  / sizeof(*hwreg)];
+  scb->MMFAR = hwreg[offsetof(sMfltFaultRegs, MMFAR) / sizeof(*hwreg)];
+  scb->BFAR  = hwreg[offsetof(sMfltFaultRegs, BFAR)  / sizeof(*hwreg)];
+  scb->AFSR  = hwreg[offsetof(sMfltFaultRegs, AFSR)  / sizeof(*hwreg)];
+  fault_regs->blk_size = sizeof(sMfltFaultRegs);
+  fault_regs->valid_cache = true;
+}
+#else
+#define FAULT_REG_REGION_TYPE  kMfltCoredumpRegionType_MemoryWordAccessOnly
+#define FAULT_REG_REGION_START 0xE000ED24 // Start at SHCSR
+#define FAULT_REG_REGION_SIZE  (sizeof(sMfltFaultRegs))
+#endif
+
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
 #if MEMFAULT_COLLECT_MPU_STATE
   static sMfltMpuRegs s_mflt_mpu_regs;
@@ -114,17 +156,16 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 #endif /* MEMFAULT_COLLECT_MPU_STATE */
 
   static sMfltCoredumpRegion s_coredump_regions[] = {
-#if !MEMFAULT_COLLECT_INTERRUPT_STATE
     {
-      .type = kMfltCoredumpRegionType_MemoryWordAccessOnly,
-      .region_start = (void *)0xE000ED24,
-      .region_size = sizeof(sMfltFaultRegs)
+      .type = FAULT_REG_REGION_TYPE,
+      .region_start = (void *)FAULT_REG_REGION_START,
+      .region_size = FAULT_REG_REGION_SIZE
     },
-#else
+#if MEMFAULT_COLLECT_INTERRUPT_STATE
     {
       .type = kMfltCoredumpRegionType_MemoryWordAccessOnly,
       .region_start = (void *)0xE000ED18,
-      .region_size = sizeof(sMfltSysHandlerPriorityRegs) + sizeof(sMfltFaultRegs)
+      .region_size = sizeof(sMfltSysHandlerPriorityRegs)
     },
     {
       .type = kMfltCoredumpRegionType_MemoryWordAccessOnly,
@@ -162,6 +203,7 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
       .region_size = sizeof(sMfltNvicIpr)
     },
 #endif /* MEMFAULT_COLLECT_INTERRUPT_STATE */
+
 #if MEMFAULT_COLLECT_MPU_STATE
     {
       .type = kMfltCoredumpRegionType_ArmV6orV7MpuUnrolled,

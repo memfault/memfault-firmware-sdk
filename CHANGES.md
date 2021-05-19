@@ -1,3 +1,37 @@
+### Changes between Memfault SDK 0.19.0 and SDK 0.18.0 - May 19, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added support for collecting additional register information when a Hardfault takes place when
+  using the Zephyr port. This information will be decoded and displayed in the Memfault UI in
+  the "Exceptions" tab.
+- Updated
+  [`buffered_coredump_storage.h` ](ports/include/memfault/ports/buffered_coredump_storage.h) to use
+  `memmov` instead of `memcpy` since `dst` and `src` buffers may overlap when all of `.bss` is saved
+  in a coredump capture.
+- Added a new Kconfig option to the Zephyr port, `CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE=y`, which
+  causes `memfault_metrics_heartbeat_extra.def` to be included in the metric definitions. This can
+  be utilized by a third party consumer of Zephyr to more easily extend the default heartbeat
+  metrics collected when using memfault.
+
+#### :house: Internal
+
+- Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use latest Memfault API for
+  uploading symbol files.
+
+#### :boom: Breaking Changes
+
+- If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK will now automatically be picked up
+as a Zephyr Module! You will need to make two changes:
+  1. Remove the `ZEPHYR_EXTRA_MODULES` addition from your projects CMakeLists.txt, i.e
+  ```diff
+  --- a/your_application/CMakeLists.txt
+  +++ b/your_application/CMakeLists.txt
+  @@ -3,7 +3,6 @@
+  - list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/nrf-connect-sdk)
+  ```
+  2. Add `CONFIG_MEMFAULT_NRF_CONNECT_SDK=y` to your projects `prj.conf`
+
 ### Changes between Memfault SDK 0.18.0 and SDK 0.17.1 - May 14, 2021
 
 #### :chart_with_upwards_trend: Improvements

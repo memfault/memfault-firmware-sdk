@@ -225,6 +225,14 @@ extern "C" {
 #define MEMFAULT_COLLECT_MPU_STATE 0
 #endif
 
+#ifndef MEMFAULT_CACHE_FAULT_REGS
+// Controls whether memfault_coredump_get_arch_regions() will collect
+// the HW registers as-is insert a pre-cached memory copy of them.
+// This entails calling memfault_coredump_cache_fault_regs() before
+// the OS processes the fault.
+#define MEMFAULT_CACHE_FAULT_REGS 0
+#endif
+
 #ifndef MEMFAULT_MPU_REGIONS_TO_COLLECT
 // This is used to define the sMfltMpuRegs structure.
 #define MEMFAULT_MPU_REGIONS_TO_COLLECT 8

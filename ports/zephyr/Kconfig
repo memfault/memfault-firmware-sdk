@@ -11,6 +11,14 @@ config MEMFAULT
 
 if MEMFAULT
 
+config MEMFAULT_CACHE_FAULT_REGS
+        bool "MEMFAULT Cache ARM fault registers"
+        default y
+        help
+          Save a copy of the ARMv7's fault registers before Zephyr
+          modifies them to provide a more accurate crash analysis
+          in the Memfault Issues view.
+
 config MEMFAULT_RAM_BACKED_COREDUMP
         bool "MEMFAULT Ram Backed Coredump"
         default y
@@ -148,6 +156,14 @@ config MEMFAULT_METRICS
 
 if MEMFAULT_METRICS
 
+config MEMFAULT_METRICS_EXTRA_DEFS_FILE
+       bool "Enable inclusion of additional metrics definition file"
+       default n
+       help
+        Enables inclusion of an additional metric definition file,
+        'memfault_metrics_heartbeat_extra.def'. This can be useful for third party
+        libraries that want to include additional default metrics.
+
 config MEMFAULT_METRICS_TIMER_CUSTOM
        bool "Provide a custom implementation of Memfault Metric Deps"
        default n
@@ -184,3 +200,5 @@ config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
        default 15
 
 endif # MEMFAULT
+
+rsource "ncs/Kconfig"

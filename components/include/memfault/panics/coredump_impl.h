@@ -13,6 +13,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "memfault/config.h"
+#include "memfault/core/compiler.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
@@ -36,6 +38,19 @@ typedef enum MfltCoredumpBlockType  {
   kMfltCoredumpRegionType_SoftwareType = 11,
   kMfltCoredumpRegionType_BuildId = 12,
 } eMfltCoredumpBlockType;
+
+// All elements are in word-sized units for alignment-friendliness.
+typedef struct MfltCachedBlock {
+  uint32_t valid_cache;
+  uint32_t cached_address;
+
+  uint32_t blk_size;
+  uint32_t blk[];
+} sMfltCachedBlock;
+
+// We'll point to a properly sized memory block of type MfltCachedBlock.
+#define MEMFAULT_CACHE_BLOCK_SIZE_WORDS(blk_size) \
+  ((sizeof(sMfltCachedBlock) + blk_size) / sizeof(uint32_t))
 
 //! Computes the amount of space that will be required to save a coredump
 //!
