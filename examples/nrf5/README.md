@@ -227,30 +227,18 @@ re-assemble data sent over a BLE link and post. If you are interested in these
 implementations, please don't hesitate to reach out!
 
 For the purposes of this demo, we will just grab the core information from the
-cli using the `print_chunk` command. It should look something like:
+cli using the `export` command. It should look something like:
 
 ```
-echo \
-434f5245010000004881030000000000000000004400000001000000025b002000000000feca\
-[...]
-| xxd -p -r | curl -X POST https://ingress.memfault.com/api/v0/upload/coredump\
- -H 'Memfault-Project-Key:<YOUR PROJECT KEY HERE>'\
- -H 'Content-Type:application/octet-stream' --data-binary @- -
+rtt_cli:~$ export
+<info> app: MFLT: MC:CAKmAgIDAQpobnJmLW1haW4JbDEuMC4wKzU1ZmMxMwZocGNhMTAwNTYEowEIBAQFAH/0:
 ```
 
-If you started the console using `invoke nrf.console`, the wrapper will
-automatically detect when this command has been run and prompt you to upload.
-You will see something like:
-
-```
-Invoke CLI wrapper detected 'print_chunk' call
-Would you like to run the command displayed above? [y/n]
-```
-
-Otherwise, you can copy & paste this output to a terminal to send the coredump
-to the Memfault web service. The coredump is now being processed by Memfault's
-services and will show up shortly under Issues. If it does not, take a look at
-the FAQ in the `README.md` in the root of the SDK.
+You can copy & paste this output into the "Chunks Debug" view in the Memfault UI
+or upload using the [desktop CLI tool](https://mflt.io/chunk-data-export). The
+coredump is now being processed by Memfault's services and will show up shortly
+under Issues. If it does not, take a look at the FAQ in the `README.md` in the
+root of the SDK.
 
 ### Clearing a coredump
 

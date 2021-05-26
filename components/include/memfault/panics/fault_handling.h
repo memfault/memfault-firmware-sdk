@@ -77,7 +77,12 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
 //! @param extra Extra information (reserved for internal use)
 //! @see MEMFAULT_ASSERT_RECORD
 //! @see MEMFAULT_ASSERT
+#if defined(__CC_ARM)
+//! ARMCC will optimize away link register stores from callsites which makes it impossible for a reliable
+//! backtrace to be resolved so we don't use the NORETURN attribute
+#else
 MEMFAULT_NORETURN
+#endif
 void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra);
 
 #ifdef __cplusplus

@@ -102,10 +102,12 @@ static uint32_t prv_read_msp_reg(void) {
 #  error "New compiler to add support for!"
 #endif
 
+#if !MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM
 MEMFAULT_WEAK
 void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
                                      MEMFAULT_UNUSED eMemfaultRebootReason reason) {
 }
+#endif /* MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM */
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   memfault_platform_fault_handler(regs, reason);

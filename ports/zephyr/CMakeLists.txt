@@ -1,6 +1,12 @@
 if(CONFIG_MEMFAULT)
   set(MEMFAULT_SDK_ROOT ../..)
 
+  if(NOT DEFINED MEMFAULT_ZEPHYR_PORT_TARGET)
+    # Pick up latest supported target by default.
+    # Currently works for Zephyr >= 2.4
+    set(MEMFAULT_ZEPHYR_PORT_TARGET v2.4)
+  endif()
+
   # Collect Memfault SDK dependencies
   list(APPEND MEMFAULT_COMPONENTS core util panics demo)
 
@@ -28,7 +34,7 @@ if(CONFIG_MEMFAULT)
   )
 
   # Be sure to use the Zephyr override config file if config'd in. This file
-  # will include the base config file. zephyr_compile_definitions() use 
+  # will include the base config file. zephyr_compile_definitions() use
   # INTERFACE as the scope so users will pickup this define as expected.
   zephyr_compile_definitions(MEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_zephyr_platform_config.h\")
 
@@ -44,6 +50,7 @@ if(CONFIG_MEMFAULT)
   # Pick up Zephyr specific port files
   add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
   add_subdirectory(common)
+  add_subdirectory_ifdef(CONFIG_MEMFAULT_NRF_CONNECT_SDK ncs)
 
   # Link Memfault Library
   zephyr_library_link_libraries(memfault)

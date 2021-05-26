@@ -21,9 +21,15 @@ extern "C" {
 // Core Components
 //
 
-//! Controls the
+//! Controls the use of the Gnu build ID feature.
 #ifndef MEMFAULT_USE_GNU_BUILD_ID
 #define MEMFAULT_USE_GNU_BUILD_ID 0
+#endif
+
+//! Allows users to dial in the correct amount of storage for their
+//! software version + build ID string.
+#ifndef MEMFAULT_UNIQUE_VERSION_MAX_LEN
+#define MEMFAULT_UNIQUE_VERSION_MAX_LEN 32
 #endif
 
 //! While it is recommended that MEMFAULT_SDK_ASSERT be left enabled, they can
@@ -100,6 +106,15 @@ extern "C" {
 //!   CFLAGS += -DMEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED=1
 #ifndef MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED
 #define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
+#endif
+
+//! Enables support for the non-volatile event storage at compile time
+//! instead of dynamically at runtime
+//!
+//! Disabling this feature saves several hundred bytes of codespace and can be useful to enable for
+//! extremely constrained environments
+#ifndef MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
+#define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 1
 #endif
 
 #if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED != 0
@@ -210,6 +225,14 @@ extern "C" {
 #define MEMFAULT_COLLECT_MPU_STATE 0
 #endif
 
+#ifndef MEMFAULT_CACHE_FAULT_REGS
+// Controls whether memfault_coredump_get_arch_regions() will collect
+// the HW registers as-is insert a pre-cached memory copy of them.
+// This entails calling memfault_coredump_cache_fault_regs() before
+// the OS processes the fault.
+#define MEMFAULT_CACHE_FAULT_REGS 0
+#endif
+
 #ifndef MEMFAULT_MPU_REGIONS_TO_COLLECT
 // This is used to define the sMfltMpuRegs structure.
 #define MEMFAULT_MPU_REGIONS_TO_COLLECT 8
@@ -248,6 +271,10 @@ extern "C" {
 #define MEMFAULT_EXC_HANDLER_WATCHDOG MemfaultWatchdog_Handler
 #endif
 
+#ifndef MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM
+#define MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM  0
+#endif
+
 //
 // Http Configuration Options
 //
@@ -275,6 +302,11 @@ extern "C" {
 #ifndef MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE
 // Note: Arbitrary default size for CLI command. Can be as small as 9 bytes.
 #define MEMFAULT_DEMO_CLI_USER_CHUNK_SIZE 1024
+#endif
+
+//! The maximum length supported for a single CLI command
+#ifndef MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE
+#define MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE 64
 #endif
 
 //

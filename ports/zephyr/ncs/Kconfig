@@ -1,8 +1,8 @@
-# Note: Kconfig doesn't support relative paths so we derive the Kconfig location
-# relative to ${ZEPHYR_BASE}. This does create an implicit req that the user must
-# place the memfault-firmware-sdk in the modules/ directory but this is already how
-# third party libs are working with the nrf connect sdk.
-source "${ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/zephyr/Kconfig"
+config MEMFAULT_NRF_CONNECT_SDK
+        bool "nRF Connect SDK extensions"
+        default y if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
+
+if MEMFAULT_NRF_CONNECT_SDK
 
 config MEMFAULT_FOTA
         bool "Enable Memfault FOTA Library"
@@ -42,3 +42,5 @@ config MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
           this option and implementing memfault_fota_download_callback()
 
 endif # MEMFAULT_FOTA
+
+endif # MEMFAULT_NRF_CONNECT_SDK

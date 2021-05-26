@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdint.h>
 
+#include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_spi_flash.h"
 #include "soc/soc.h"
@@ -22,11 +23,27 @@
 #include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16_ccitt.h"
 
-#if !CONFIG_ESP32_ENABLE_COREDUMP || !CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+// Factor out issues with Espressif's ESP32 to ESP conversion in sdkconfig
+#define COREDUMPS_ENABLED \
+  (CONFIG_ESP32_ENABLE_COREDUMP || CONFIG_ESP_COREDUMP_ENABLE)
+#define COREDUMP_TO_FLASH_ENABLED \
+  (CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH || CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH)
+
+#if !COREDUMPS_ENABLED || !COREDUMP_TO_FLASH_ENABLED
 #error "Memfault SDK integration requires CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y sdkconfig setting"
 #endif
 
 #define ESP_IDF_COREDUMP_PART_INIT_MAGIC 0x45524f43
+
+// If there is no coredump partition defined or one cannot be defined
+// the user can try using an OTA slot instead.
+#if CONFIG_MEMFAULT_COREDUMP_USE_OTA_SLOT
+#define GET_COREDUMP_PARTITION() \
+  esp_ota_get_next_update_partition(NULL);
+#else
+#define GET_COREDUMP_PARTITION() \
+  esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
+#endif
 
 typedef struct {
   uint32_t magic;
@@ -82,13 +99,18 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
 //! @note Function invocation is here:
 //!   https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/cpu_start.c#L415-L422
 void __wrap_esp_core_dump_init(void) {
-  const esp_partition_t *const core_part = esp_partition_find_first(
-      ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
+  const esp_partition_t *const core_part = GET_COREDUMP_PARTITION();
+
   if (core_part == NULL) {
     MEMFAULT_LOG_ERROR("Coredumps enabled but no partition exists!");
     MEMFAULT_LOG_ERROR("Add \"coredump\" to your partition.csv file");
     return;
   }
+
+  MEMFAULT_LOG_INFO("Coredumps will be saved to '%s' partition",
+                    core_part->label);
+  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08X",
+                    core_part, core_part->address);
 
   s_esp32_coredump_partition_info = (sEspIdfCoredumpPartitionInfo) {
     .magic = ESP_IDF_COREDUMP_PART_INIT_MAGIC,

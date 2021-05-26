@@ -74,10 +74,10 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_mcu_mem_regions); i++) {
-    const uint32_t start_addr = s_mcu_mem_regions[i].start_addr;
-    const uint32_t end_addr = start_addr + s_mcu_mem_regions[i].length;
-    if ((uint32_t)start_addr >= start_addr && ((uint32_t)start_addr < end_addr)) {
-      return MEMFAULT_MIN(desired_size, end_addr - (uint32_t)start_addr);
+    const uint32_t lower_addr = s_mcu_mem_regions[i].start_addr;
+    const uint32_t upper_addr = lower_addr + s_mcu_mem_regions[i].length;
+    if ((uint32_t)start_addr >= lower_addr && ((uint32_t)start_addr < upper_addr)) {
+      return MEMFAULT_MIN(desired_size, upper_addr - (uint32_t)start_addr);
     }
   }
 

@@ -31,5 +31,3 @@ snapshots["test_memfault_id_unpopulated 1"] = [
     "Added Memfault Generated Build ID to ELF: 16e0fe39af176cfa4cf961321ccf5193c2590451",
     "Found Memfault Build Id: 16e0fe39af176cfa4cf961321ccf5193c2590451",
 ]
-
-snapshots["test_no_build_id_on_dump 1"] = ["1", "16", "16e0fe39af176cfa4cf961321ccf51"]

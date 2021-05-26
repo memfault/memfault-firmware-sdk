@@ -1,0 +1,11 @@
+DA14531/
+DA14585/
+DA14586/
+.settings/
+*.uvguix.*
+jlink.log
+JLinkLog.txt
+JLinkSettings.ini
+EventRecorderStub.scvd
+
+

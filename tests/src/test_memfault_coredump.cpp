@@ -20,7 +20,7 @@ extern "C" {
   static sMfltCoredumpRegion s_fake_memory_region[2];
   static size_t s_num_fake_regions;
 
-  static sMfltCoredumpRegion s_fake_arch_region[1];
+  static sMfltCoredumpRegion s_fake_arch_region[3];
   static size_t s_num_fake_arch_regions;
 
   static sMfltCoredumpRegion s_fake_sdk_region[2];
@@ -99,7 +99,36 @@ TEST_GROUP(MfltCoredumpTestGroup) {
     s_fake_arch_region[0].type = kMfltCoredumpRegionType_Memory;
     s_fake_arch_region[0].region_start = &s_fake_arch_region1;
     s_fake_arch_region[0].region_size = sizeof(s_fake_arch_region1);
-    s_num_fake_arch_regions = 1;
+
+    // Valid cache of "registers" starting at 0xE0000000.
+    static uint32_t s_fake_arch_cached_block_region[(sizeof(sMfltCachedBlock) + 3*4)/4];
+    sMfltCachedBlock *blk = (sMfltCachedBlock *)&s_fake_arch_cached_block_region[0];
+    blk->blk_size = sizeof(s_fake_arch_cached_block_region) - sizeof(sMfltCachedBlock);
+    blk->cached_address = 0xE0000000;
+    blk->blk[0] = 0x12345678;
+    blk->blk[1] = 0xAABBCCDD;
+    blk->blk[2] = 0x9999EEEE;
+    blk->valid_cache = 1;
+
+    s_fake_arch_region[1].type = kMfltCoredumpRegionType_CachedMemory;
+    s_fake_arch_region[1].region_start = &s_fake_arch_cached_block_region;
+    s_fake_arch_region[1].region_size = sizeof(s_fake_arch_cached_block_region);
+
+    // Invalid cache of "registers" starting at 0xE000E000.
+    static uint32_t s_fake_arch_cached_block_region_invalid[(sizeof(sMfltCachedBlock) + 3*4)/4];
+    blk = (sMfltCachedBlock *)&s_fake_arch_cached_block_region_invalid[0];
+    blk->blk_size = sizeof(s_fake_arch_cached_block_region_invalid) - sizeof(sMfltCachedBlock);
+    blk->cached_address = 0xE000E000;
+    blk->blk[0] = 0x77777777;
+    blk->blk[1] = 0x88888888;
+    blk->blk[2] = 0xFEEDFACE;
+    blk->valid_cache = 0;
+
+    s_fake_arch_region[2].type = kMfltCoredumpRegionType_CachedMemory;
+    s_fake_arch_region[2].region_start = &s_fake_arch_cached_block_region_invalid;
+    s_fake_arch_region[2].region_size = sizeof(s_fake_arch_cached_block_region_invalid);
+
+    s_num_fake_arch_regions = 3;
 
     static uint8_t s_fake_sdk_region1[] = { 'a', 'b', 'c' };
     s_fake_sdk_region[0].type = kMfltCoredumpRegionType_Memory;
@@ -110,8 +139,8 @@ TEST_GROUP(MfltCoredumpTestGroup) {
     s_fake_sdk_region[1].type = kMfltCoredumpRegionType_Memory;
     s_fake_sdk_region[1].region_start = &s_fake_sdk_region2;
     s_fake_sdk_region[1].region_size = sizeof(s_fake_sdk_region2);
-    s_num_fake_sdk_regions = 2;
 
+    s_num_fake_sdk_regions = 2;
   }
 
   void teardown() {
@@ -227,7 +256,8 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  const size_t coredump_size_without_build_id = 284;
+  // update coredump_size_without_build_id if you add/remove regions.
+  const size_t coredump_size_without_build_id = 308;
   const size_t coredump_size_with_build_id = coredump_size_without_build_id + 20 /* sha1 */ + 12 /* sMfltCoredumpBlock */;
   for (size_t i = 1; i <= coredump_size_with_build_id; i++) {
     uint8_t storage[i];
@@ -264,12 +294,13 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpTruncated) {
   const uint32_t regs[] = { 0xabababab };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  // get the total size of the coredump
+  // get the total size of the coredump, update space_needed
+  // check if you add/remove regions.
   const bool do_collect_build_id = false;
   fake_memfault_platform_coredump_storage_setup(NULL, 0, 0);
   const size_t space_needed = prv_compute_space_needed_with_build_id(
       (void *)&regs, sizeof(regs), trace_reason, do_collect_build_id);
-  LONGS_EQUAL(268, space_needed);
+  LONGS_EQUAL(292, space_needed);
 
   size_t num_regions;
   const sMfltCoredumpRegion *regions =
@@ -392,6 +423,31 @@ TEST(MfltCoredumpTestGroup, Test_CoredumpReadHeaderMagic) {
   LONGS_EQUAL(0x45524f43, word);
 }
 
+// Returns correct region size for any region even if cached. Invalid
+// cached blocks result in zero length so they are properly ignored.
+static size_t prv_get_region_size(const sMfltCoredumpRegion *const region) {
+  if (region->type != kMfltCoredumpRegionType_CachedMemory) {
+    return region->region_size;
+  }
+
+  const sMfltCachedBlock *cached_block = (sMfltCachedBlock *)region->region_start;
+  return cached_block->valid_cache ? cached_block->blk_size : 0;
+}
+
+// Returns correct region start for any region even if cached.
+static const void *prv_get_region_start(const sMfltCoredumpRegion *const region) {
+  if (region->type != kMfltCoredumpRegionType_CachedMemory) {
+    return region->region_start;
+  }
+
+  const sMfltCachedBlock *cached_block = (sMfltCachedBlock *)region->region_start;
+  return cached_block->blk;
+}
+
+static size_t prv_compute_padding_needed(uint64_t const offset) {
+  return (offset % 4) ? 4 - (offset % 4) : 0;
+}
+
 // Test the basics ... make sure the coredump is flushed out in the order we expect
 TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   const uint32_t regs[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
@@ -416,27 +472,41 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   total_length += (6 * segment_hdr_sz) + sizeof(s_fake_memfault_build_id) + strlen(info.device_serial) +
       strlen(info.hardware_version) + strlen(info.software_version) + strlen(info.software_type) + sizeof(uint32_t);
 
-  const uint32_t pad_needed = (4 - (total_length % 4));
+  const uint32_t pad_needed = prv_compute_padding_needed(total_length);
   total_length += pad_needed ? pad_needed + segment_hdr_sz : 0;
 
   total_length += sizeof(trace_reason) + segment_hdr_sz;
 
   for (size_t i = 0; i < s_num_fake_arch_regions; i++) {
-    total_length += s_fake_arch_region[0].region_size + segment_hdr_sz;
+    const size_t arch_region_size = prv_get_region_size(&s_fake_arch_region[i]);
+    if (arch_region_size == 0) {
+      // Skip invalid cached regions.
+      continue;
+    }
 
-    const uint32_t arch_padding = (4 - (total_length % 4));
+    total_length += arch_region_size + segment_hdr_sz;
+    const uint32_t arch_padding = prv_compute_padding_needed(total_length);
     total_length += arch_padding ? arch_padding + segment_hdr_sz : 0;
   }
 
   for (size_t i = 0; i < s_num_fake_sdk_regions; i++) {
-    total_length += s_fake_sdk_region[i].region_size + segment_hdr_sz;
+    const size_t sdk_region_size = prv_get_region_size(&s_fake_sdk_region[i]);
+    if (sdk_region_size == 0) {
+      continue;
+    }
 
-    const uint32_t arch_padding = (4 - (total_length % 4));
-    total_length += arch_padding ? arch_padding + segment_hdr_sz : 0;
+    total_length += sdk_region_size + segment_hdr_sz;
+    const uint32_t sdk_padding = prv_compute_padding_needed(total_length);
+    total_length += sdk_padding ? sdk_padding + segment_hdr_sz : 0;
   }
 
   for (size_t i = 0; i < s_num_fake_regions; i++) {
-    total_length += s_fake_memory_region[i].region_size + segment_hdr_sz;
+    const size_t mem_region_size = prv_get_region_size(&s_fake_memory_region[i]);
+    if (mem_region_size == 0) {
+      continue;
+    }
+
+    total_length += mem_region_size + segment_hdr_sz;
   }
 
   total_length += 16; // footer
@@ -499,36 +569,53 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
     // make sure regions are aligned on 4 byte boundaries
     LONGS_EQUAL(0, (uint64_t)coredump_buf % 4);
 
-    size_t segment_size = s_fake_arch_region[i].region_size;
+    size_t segment_size = prv_get_region_size(&s_fake_arch_region[i]);
+    if (segment_size == 0) {
+      // Invalid cached block, skip it.
+      continue;
+    }
     coredump_buf += segment_hdr_sz;
-    MEMCMP_EQUAL(s_fake_arch_region[i].region_start, coredump_buf, segment_size);
+
+    const void *memory = prv_get_region_start(&s_fake_arch_region[i]);
+    MEMCMP_EQUAL(memory, coredump_buf, segment_size);
     coredump_buf += segment_size;
 
-    const uint32_t arch_padding = (4 - ((uint64_t)coredump_buf % 4));
-    coredump_buf += arch_padding + segment_hdr_sz;
+    if (((uint64_t)coredump_buf % 4) != 0) {
+      const uint32_t arch_padding = (4 - ((uint64_t)coredump_buf % 4));
+      coredump_buf += arch_padding + segment_hdr_sz;
+    }
   }
 
-  // now we should find the architecture specific regions
   for (size_t i = 0; i < s_num_fake_sdk_regions; i++) {
     // make sure regions are aligned on 4 byte boundaries
     LONGS_EQUAL(0, (uint64_t)coredump_buf % 4);
 
-    size_t segment_size = s_fake_sdk_region[i].region_size;
+    size_t segment_size = prv_get_region_size(&s_fake_sdk_region[i]);
+    if (segment_size == 0) {
+      continue;
+    }
     coredump_buf += segment_hdr_sz;
-    MEMCMP_EQUAL(s_fake_sdk_region[i].region_start, coredump_buf, segment_size);
+
+    const void *memory = prv_get_region_start(&s_fake_sdk_region[i]);
+    MEMCMP_EQUAL(memory, coredump_buf, segment_size);
     coredump_buf += segment_size;
 
-    const uint32_t arch_padding = (4 - ((uint64_t)coredump_buf % 4));
-    coredump_buf += arch_padding + segment_hdr_sz;
+    const uint32_t sdk_padding = prv_compute_padding_needed((uint64_t)coredump_buf);
+    coredump_buf += sdk_padding + segment_hdr_sz;
   }
 
   for (size_t i = 0; i < s_num_fake_regions; i++) {
     // make sure regions are aligned on 4 byte boundaries
     LONGS_EQUAL(0, (uint64_t)coredump_buf % 4);
 
-    size_t segment_size = s_fake_memory_region[i].region_size;
+    size_t segment_size = prv_get_region_size(&s_fake_memory_region[i]);
+    if (segment_size == 0) {
+      continue;
+    }
     coredump_buf += segment_hdr_sz;
-    MEMCMP_EQUAL(s_fake_memory_region[i].region_start, coredump_buf, segment_size);
+
+    const void *memory = prv_get_region_start(&s_fake_memory_region[i]);
+    MEMCMP_EQUAL(memory, coredump_buf, segment_size);
     coredump_buf += segment_size;
   }
 

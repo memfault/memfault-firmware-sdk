@@ -31,6 +31,7 @@ typedef enum MfltCoredumpRegionType {
   kMfltCoredumpRegionType_MemoryWordAccessOnly,
   kMfltCoredumpRegionType_ImageIdentifier,
   kMfltCoredumpRegionType_ArmV6orV7MpuUnrolled,
+  kMfltCoredumpRegionType_CachedMemory,
 } eMfltCoredumpRegionType;
 
 //! Convenience macro to define a sMfltCoredumpRegion of type kMfltCoredumpRegionType_Memory.

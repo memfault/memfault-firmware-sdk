@@ -98,6 +98,37 @@ typedef struct {
   bool write_error;
 } sMfltCoredumpWriteCtx;
 
+// Checks to see if the block is a cached region and applies
+// required fixups to allow the coredump to properly record
+// the original cached address and its associated data. Will
+// succeed if not a cached block or is a valid cached block.
+// Callers should ignore the region if failure is returned
+// because the block is not valid.
+static bool prv_fixup_if_cached_block(sMfltCoredumpRegion *region, uint32_t *cached_address) {
+
+  if (region->type ==  kMfltCoredumpRegionType_CachedMemory) {
+    const sMfltCachedBlock *cached_blk = region->region_start;
+    if (!cached_blk->valid_cache) {
+      // Ignore this block.
+      return false;
+    }
+
+    // This is where we want Memfault to indicate the data came from.
+    *cached_address = cached_blk->cached_address;
+
+    // The cached block is just regular memory.
+    region->type = kMfltCoredumpRegionType_Memory;
+
+    // Remove our header from the size and region_start
+    // is where we cached the <cached_address>'s data.
+    region->region_size = cached_blk->blk_size;
+    region->region_start = cached_blk->blk; // Must be last operation!
+  }
+
+  // Success, untouched or fixed up.
+  return true;
+}
+
 static bool prv_platform_coredump_write(const void *data, size_t len, sMfltCoredumpWriteCtx *write_ctx) {
   // if we are just computing the size needed, don't write any data but keep
   // a count of how many bytes would be written.
@@ -182,6 +213,7 @@ static eMfltCoredumpBlockType prv_region_type_to_storage_type(eMfltCoredumpRegio
     case kMfltCoredumpRegionType_ImageIdentifier:
     case kMfltCoredumpRegionType_Memory:
     case kMfltCoredumpRegionType_MemoryWordAccessOnly:
+    case kMfltCoredumpRegionType_CachedMemory:
     default:
       return kMfltCoredumpBlockType_MemoryRegion;
   }
@@ -331,14 +363,23 @@ static bool prv_write_regions(sMfltCoredumpWriteCtx *write_ctx, const sMfltCored
                               size_t num_regions) {
   for (size_t i = 0; i < num_regions; i++) {
     prv_insert_padding_if_necessary(write_ctx);
-    const sMfltCoredumpRegion *region = &regions[i];
-    const bool word_aligned_reads_only =
-        (region->type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
 
-    if (!prv_write_block_with_address(prv_region_type_to_storage_type(region->type),
-                                      region->region_start, region->region_size,
-                                      (uint32_t)(uintptr_t)region->region_start,
-                                      write_ctx, word_aligned_reads_only)) {
+    // Just in case *regions is some how in r/o memory make a non-const copy
+    // and work with that from here on.
+    sMfltCoredumpRegion region_copy = regions[i];
+
+    uint32_t address = (uint32_t)(uintptr_t)region_copy.region_start;
+    if (!prv_fixup_if_cached_block(&region_copy, &address)) {
+      // We must skip invalid cached blocks.
+      continue;
+    }
+
+    const bool word_aligned_reads_only =
+        (region_copy.type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
+
+    if (!prv_write_block_with_address(prv_region_type_to_storage_type(region_copy.type),
+                                      region_copy.region_start, region_copy.region_size,
+                                      address, write_ctx, word_aligned_reads_only)) {
       return false;
     }
   }

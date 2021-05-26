@@ -1,0 +1,3 @@
+build:
+  cmake: ports/zephyr
+  kconfig: ports/zephyr/Kconfig

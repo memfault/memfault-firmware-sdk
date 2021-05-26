@@ -359,12 +359,26 @@ static bool prv_parse_http_response(sMemfaultHttpResponseContext *ctx, const voi
     }
 
     if (ctx->line_len >= sizeof(ctx->line_buf)) {
-      ctx->parse_error = MfltHttpParseStatus_HeaderTooLongError;
-      return true;
+      if (ctx->phase == kMfltHttpParsePhase_ExpectingHeader) {
+        // We want to truncate headers at index sizeof(line_buf)-2
+        // so we can place the source's CR/LF sequence at the end
+        // when the source is finally exhausted.
+        static const size_t lf_idx = sizeof(ctx->line_buf) - 2;
+        static const size_t cr_idx = sizeof(ctx->line_buf) - 1;
+        if (c == '\r') {
+          ctx->line_buf[lf_idx] = c;
+        } else if (c == '\n') {
+          ctx->line_buf[cr_idx] = c;
+        }
+      } else {
+        // It's too long so set a parse error and return done.
+        ctx->parse_error = MfltHttpParseStatus_HeaderTooLongError;
+        return true;
+      }
+    } else {
+      line_buf[ctx->line_len] = c;
+      ctx->line_len++;
     }
-
-    line_buf[ctx->line_len] = c;
-    ctx->line_len++;
 
     if (ctx->line_len < 2) {
       continue;

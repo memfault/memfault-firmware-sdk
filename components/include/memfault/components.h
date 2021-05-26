@@ -44,6 +44,7 @@ extern "C" {
 #include "memfault/core/data_packetizer.h"
 #include "memfault/demo/cli.h"
 #include "memfault/demo/shell.h"
+#include "memfault/demo/shell_commands.h"
 #include "memfault/demo/util.h"
 #include "memfault/http/http_client.h"
 #include "memfault/http/platform/http_client.h"

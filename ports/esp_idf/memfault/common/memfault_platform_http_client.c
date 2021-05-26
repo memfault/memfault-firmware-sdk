@@ -10,6 +10,7 @@
 
 #include <string.h>
 
+#include "esp_wifi.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 
@@ -319,3 +320,41 @@ int memfault_platform_http_client_wait_until_requests_completed(
   // No-op because memfault_platform_http_client_post_data() is synchronous
   return 0;
 }
+
+bool memfault_esp_port_wifi_connected(void) {
+  wifi_ap_record_t ap_info;
+  const bool connected = esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
+  return connected;
+}
+
+// Similar to memfault_platform_http_client_post_data() but just posts
+// whatever is pending, if anything.
+int memfault_esp_port_http_client_post_data(void) {
+  if (!memfault_esp_port_wifi_connected()) {
+    MEMFAULT_LOG_INFO("%s: Wifi unavailable", __func__);
+    return -1;
+  }
+
+  // Check for data available first as nothing else matters if not.
+  if (!memfault_esp_port_data_available()) {
+    return 0;
+  }
+
+  sMfltHttpClient *http_client = memfault_http_client_create();
+  if (!http_client) {
+    MEMFAULT_LOG_ERROR("Failed to create HTTP client");
+    return MemfaultInternalReturnCode_Error;
+  }
+  const eMfltPostDataStatus rv =
+      (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
+  if (rv == kMfltPostDataStatus_NoDataFound) {
+    MEMFAULT_LOG_INFO("No new data found");
+  } else {
+    MEMFAULT_LOG_INFO("Result: %d", (int)rv);
+  }
+  const uint32_t timeout_ms = 30 * 1000;
+  memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);
+  memfault_http_client_destroy(http_client);
+  return (int)rv;
+}
+

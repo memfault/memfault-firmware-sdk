@@ -15,5 +15,9 @@ MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
 
 #endif
 
+#if CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE
+#include "memfault_metrics_heartbeat_extra.def"
+#endif
+
 // Pull in the user's heartbeat defs
 #include "memfault_metrics_heartbeat_config.def"

@@ -1,0 +1,11 @@
+.PHONY: main-build pre-build generate_ldscripts FORCE
+main-build : | pre-build
+
+FORCE:
+
+INC_PARAMS=$(foreach d, $(LDSCRIPT_INCLUDE_DIR), -I "$d")
+
+generate_ldscripts : $(LDSCRIPT_FILES)
+
+%.lds : $(LDSCRIPT_PATH)/%.lds.S FORCE
+	"$(CC)" ${INC_PARAMS} $(PRE_BUILD_EXTRA_DEFS) $(LD_DEFS) -E -P -c "$<" -o "$@"

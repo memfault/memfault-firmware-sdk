@@ -40,6 +40,12 @@ extern "C" {
 // so no need to save from the SDK
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
 
+#if CONFIG_MEMFAULT_CACHE_FAULT_REGS
+// Map Zephyr config to Memfault define so that we can
+// collect the HW fault regs before Zephyr modifies them.
+#define MEMFAULT_CACHE_FAULT_REGS 1
+#endif
+
 // Pick up any user configuration overrides
 #include "memfault_platform_config.h"
 

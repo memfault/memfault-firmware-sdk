@@ -1,3 +1,101 @@
+### Changes between Memfault SDK 0.19.0 and SDK 0.18.0 - May 19, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added support for collecting additional register information when a Hardfault takes place when
+  using the Zephyr port. This information will be decoded and displayed in the Memfault UI in
+  the "Exceptions" tab.
+- Updated
+  [`buffered_coredump_storage.h` ](ports/include/memfault/ports/buffered_coredump_storage.h) to use
+  `memmov` instead of `memcpy` since `dst` and `src` buffers may overlap when all of `.bss` is saved
+  in a coredump capture.
+- Added a new Kconfig option to the Zephyr port, `CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE=y`, which
+  causes `memfault_metrics_heartbeat_extra.def` to be included in the metric definitions. This can
+  be utilized by a third party consumer of Zephyr to more easily extend the default heartbeat
+  metrics collected when using memfault.
+
+#### :house: Internal
+
+- Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use latest Memfault API for
+  uploading symbol files.
+
+#### :boom: Breaking Changes
+
+- If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK will now automatically be picked up
+as a Zephyr Module! You will need to make two changes:
+  1. Remove the `ZEPHYR_EXTRA_MODULES` addition from your projects CMakeLists.txt, i.e
+  ```diff
+  --- a/your_application/CMakeLists.txt
+  +++ b/your_application/CMakeLists.txt
+  @@ -3,7 +3,6 @@
+  - list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/nrf-connect-sdk)
+  ```
+  2. Add `CONFIG_MEMFAULT_NRF_CONNECT_SDK=y` to your projects `prj.conf`
+
+### Changes between Memfault SDK 0.18.0 and SDK 0.17.1 - May 14, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Support for Dialog DA145xx chip family (Huge thanks to @iandmorris for the
+  help here!)
+  - GCC & Keil based demo application for the DA14531 & DA14585/DA14586
+    [can be found here](examples/dialog/da145xx).
+  - Ports for applications using the DA145xx SDK
+    [can be found here](ports/dialog/da145xx).
+- ESP32 port improvements
+  - Added example of periodically posting data to memfault via a background
+    task.
+  - Added a new Kconfig option, `MEMFAULT_COREDUMP_USE_OTA_SLOT=y` which can be
+    used to save a coredump in an unused OTA slot rather than the default
+    coredump partition. This can be useful in situations where Memfault is being
+    integrated after a product has shipped and updating the partition table is
+    no longer possible.
+- Added `MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED=0` which can be used to
+  disable dynamic configuration of non-volatile storage. Setting this flag when
+  the non-volatile event storage API is not in use will save several hundred
+  bytes of codespace.
+- Hardened
+  [memfault_http_parse_response()](components/http/src/memfault_http_utils.c)
+  utility to parse HTTP responses with headers that exceed a length of 128 bytes
+- Fixed a :bug: in`memfault_log_save_preformatted()` leading to invalid logs
+  being reported when attempting to save log lines > 128 bytes. (thanks @alvarop
+  for the report!)
+- Added a convenience API,
+  [`memfault_create_unique_version_string()`](components/include/memfault/core/platform/device_info.h),
+  which can be used for easily appending a build id on the software version
+  reported.
+
+#### :house: Internal
+
+- Updates to demo cli:
+  - `MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE` can be used to shrink the maximum
+    amount of bytes that can be buffered on a single line.
+  - Made `memfault_demo_shell_commands.h` public and moved it to
+    [`memfault/demo/shell_commands.h`](components/include/memfault/demo/shell_commands.h)
+    to facilitate easier overriding of the default set of commands used in a
+    build.
+
+### Changes between Memfault SDK 0.17.1 and SDK 0.17.0 - April 30, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP32 Example App Updates:
+  - Added `export` command to demonstrate how data can be dumped via the console
+  - Added
+    [Memfault Build ID](examples/esp32/apps/memfault_demo_app/CMakeLists.txt) to
+    example app as a reference
+- Fixed a :bug: in
+  [`memfault_platform_sanitize_address_range()`](ports/templates/memfault_platform_port.c)
+  template example.
+- Refactored nRF5 example app to mirror integration steps listed in the
+  [latest integration guide](https://mflt.io/cortex-m-getting-started)
+- Added a new configuration option, `MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM`,
+  which can be used to explicitly disable the stub
+  [`memfault_platform_fault_handler()` implementation](components/panics/src/memfault_fault_handling_arm.c)
+- Improve the quality of backtrace recovery for asserts when using Arm Compiler
+  5 by removing use of noreturn function attribute for
+  `memfault_fault_handling_assert()` declaration.
+
 ### Changes between Memfault SDK 0.17.0 and SDK 0.16.1 - April 26, 2021
 
 #### :rocket: New Features

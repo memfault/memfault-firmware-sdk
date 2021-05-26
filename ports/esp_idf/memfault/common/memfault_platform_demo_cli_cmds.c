@@ -13,6 +13,7 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 
+#include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
@@ -90,9 +91,6 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
   timer_start(TIMER_GROUP_0, TIMER_0);
 }
 
-// jump through some hoops to trick the compiler into doing an unaligned 64 bit access
-extern void *g_unaligned_buffer;
-
 static int prv_esp32_crash_example(int argc, char** argv) {
   int crash_type =  0;
 
@@ -119,9 +117,7 @@ static int prv_esp32_memfault_heartbeat_dump(int argc, char** argv) {
 }
 
 static bool prv_wifi_connected_check(const char *op) {
-  wifi_ap_record_t ap_info;
-  const bool connected = esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK;
-  if (connected) {
+  if (memfault_esp_port_wifi_connected()) {
     return true;
   }
 
@@ -187,11 +183,12 @@ static int prv_memfault_ota_check(int argc, char **argv) {
 }
 
 static int prv_post_memfault_data(int argc, char **argv) {
-  if (!prv_wifi_connected_check("post Memfault data")) {
-    return -1;
-  }
+  return memfault_esp_port_http_client_post_data();
+}
 
-  return memfault_demo_cli_cmd_post_core(argc, argv);
+static int prv_chunk_data_export(int argc, char **argv) {
+  memfault_data_export_dump_chunks();
+  return 0;
 }
 
 void memfault_register_cli(void) {
@@ -258,6 +255,13 @@ void memfault_register_cli(void) {
       .help = "Post Memfault data to cloud",
       .hint = NULL,
       .func = prv_post_memfault_data,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "export",
+      .help = "Can be used to dump chunks to console or post via GDB",
+      .hint = NULL,
+      .func = prv_chunk_data_export,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {

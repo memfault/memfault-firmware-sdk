@@ -14,10 +14,27 @@
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/ports/reboot_reason.h"
 
 #if CONFIG_MEMFAULT_METRICS
 #include "memfault/metrics/metrics.h"
+#endif
+
+#if CONFIG_MEMFAULT_CACHE_FAULT_REGS
+// Zephy's z_arm_fault() function consumes and clears
+// the SCB->CFSR register so we must wrap their function
+// so we can preserve the pristine fault register values.
+void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
+                        _callee_saved_t *callee_regs) {
+
+  memfault_coredump_cache_fault_regs();
+
+  // Now let the Zephyr fault handler complete as normal.
+  void __real_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
+                          _callee_saved_t *callee_regs);
+  __real_z_arm_fault(msp, psp, exc_return, callee_regs);
+}
 #endif
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {

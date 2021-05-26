@@ -43,9 +43,6 @@ static void log_init(void) {
 }
 
 int main(void) {
-  // initialize reboot tracking and store state from NRF_POWER->RESETREAS
-  memfault_platform_reboot_tracking_boot();
-
   nrf_drv_clock_init();
   nrf_drv_clock_lfclk_request(NULL);
 
@@ -53,7 +50,6 @@ int main(void) {
   timers_init();
   mflt_cli_init();
   memfault_platform_boot();
-  memfault_build_info_dump();
 
   while (1) {
     mflt_cli_try_process();
