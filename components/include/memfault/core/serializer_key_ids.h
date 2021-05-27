@@ -26,6 +26,7 @@ typedef enum {
   kMemfaultEventKey_ReleaseVersionDeprecated = 8,
   kMemfaultEventKey_SoftwareVersion = 9,
   kMemfaultEventKey_SoftwareType = 10,
+  kMemfaultEventKey_BuildId = 11,
 } eMemfaultEventKey;
 
 //! Possible values for the kMemfaultEventKey_Type field.

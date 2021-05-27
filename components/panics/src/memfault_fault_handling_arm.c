@@ -348,7 +348,15 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
 #define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
 #endif
 
-#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
+// Note: ARMV8-M has a subprofile referred to as the "Baseline" implementation
+// with an instruction set similar to ARMV6-M. See https://mflt.io/armv8m-subprofiles
+// for more details.
+#if defined(__ARM_ARCH_8M_BASE__) && (__ARM_ARCH_8M_BASE__ == 1)
+#define MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER 1
+#endif
+
+#if (!defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER) && \
+     !defined(MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER))
 #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
   __asm volatile(                                \
       "tst lr, #4 \n"                            \
@@ -380,10 +388,10 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
       "mov r3, r12 \n"                           \
       "push {r3-r7} \n"                          \
       "mov r0, sp \n"                            \
-      "ldr r1, =%c0 \n"                           \
+      "ldr r1, =%c0 \n"                          \
       "b memfault_fault_handler \n"              \
       :                                          \
-      : "i" (_x)                                 \
+      : "i" ((uint16_t)_x)                       \
    )
 #endif
 

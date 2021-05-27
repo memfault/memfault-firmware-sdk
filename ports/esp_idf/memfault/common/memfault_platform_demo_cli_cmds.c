@@ -13,6 +13,7 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 
+#include "memfault/config.h"
 #include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
@@ -125,6 +126,8 @@ static bool prv_wifi_connected_check(const char *op) {
   return false;
 }
 
+#if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
+
 typedef struct {
   bool perform_ota;
 } sMemfaultOtaUserCtx;
@@ -185,6 +188,7 @@ static int prv_memfault_ota_check(int argc, char **argv) {
 static int prv_post_memfault_data(int argc, char **argv) {
   return memfault_esp_port_http_client_post_data();
 }
+#endif /* MEMFAULT_ESP_HTTP_CLIENT_ENABLE */
 
 static int prv_chunk_data_export(int argc, char **argv) {
   memfault_data_export_dump_chunks();
@@ -249,14 +253,6 @@ void memfault_register_cli(void) {
       .hint = "curl | hex",
       .func = memfault_demo_cli_cmd_print_chunk,
   }));
-
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "post_chunks",
-      .help = "Post Memfault data to cloud",
-      .hint = NULL,
-      .func = prv_post_memfault_data,
-  }));
-
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
       .command = "export",
       .help = "Can be used to dump chunks to console or post via GDB",
@@ -269,6 +265,14 @@ void memfault_register_cli(void) {
       .help = "Dump current Memfault metrics heartbeat state",
       .hint = NULL,
       .func = prv_esp32_memfault_heartbeat_dump,
+  }));
+
+#if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "post_chunks",
+      .help = "Post Memfault data to cloud",
+      .hint = NULL,
+      .func = prv_post_memfault_data,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
@@ -284,4 +288,5 @@ void memfault_register_cli(void) {
       .hint = NULL,
       .func = prv_memfault_ota_perform,
   }));
+#endif /* MEMFAULT_ESP_HTTP_CLIENT_ENABLE */
 }

@@ -47,16 +47,16 @@ list(APPEND MEMFAULT_COMPONENTS_SRCS
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
    include
    include/${MEMFAULT_ESP_IDF_PORT}
+   $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
 )
 
 # Register Memfault SDK Component
 set(COMPONENT_SRCS ${MEMFAULT_COMPONENTS_SRCS})
 set(COMPONENT_ADD_INCLUDEDIRS ${MEMFAULT_COMPONENTS_INC_FOLDERS})
-set(COMPONENT_REQUIRES
+list(APPEND COMPONENT_REQUIRES
     ${MEMFAULT_ESP_IDF_VERSION_SPECIFIC_REQUIRES}
     $ENV{MEMFAULT_PLATFORM_PORT_COMPONENTS}
     esp32
-    esp_http_client
     freertos
     heap
     log
@@ -64,12 +64,18 @@ set(COMPONENT_REQUIRES
     spi_flash
     console
 )
+
+if($ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
+list(APPEND COMPONENT_REQUIRES esp_http_client)
+endif()
 register_component()
 
 # sdk_overrides/esp_http_client.c needs the (private) esp_http header files:
 get_filename_component(this_directory_name . ABSOLUTE DIRECTORY)
 get_filename_component(this_directory_name ${this_directory_name} NAME)
 mflt_esp32_component_get_target(this_component ${this_directory_name})
+
+component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 # and run the Memfault Fault Handler instead.

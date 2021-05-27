@@ -55,6 +55,25 @@ extern "C" {
 #define MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL 0
 #endif
 
+//! Controls whether or not the Build Id is encoded in events
+//!
+//! The Build Id can be used by Memfault to reliably find the corresponding
+//! symbol file to process the event. When disabled, the software version & type
+//! are used instead to find the symbol file.
+#ifndef MEMFAULT_EVENT_INCLUDE_BUILD_ID
+#define MEMFAULT_EVENT_INCLUDE_BUILD_ID 1
+#endif
+
+//! Controls the truncation of the Build Id that is encoded in events
+//!
+//! The full Build Id hash is 20 bytes, but is truncated by default to save space. The
+//! default truncation to 6 bytes (48 bits) has a 0.1% chance of collisions given
+//! 7.5 * 10 ^ 5 (750,000) Build Ids.
+//! See https://en.wikipedia.org/wiki/Birthday_problem#Probability_table
+#ifndef MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES
+#define MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES 6
+#endif
+
 //! Controls whether or not run length encoding (RLE) is used when packetizing
 //! data
 //!
@@ -207,6 +226,14 @@ extern "C" {
 #define MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT 32
 #endif
 
+// Enables the collection of fault registers information
+//
+// When fault registers are collected, an analysis will be presented on the
+// "issues" page of the Memfault UI.
+#ifndef MEMFAULT_COLLECT_FAULT_REGS
+#define MEMFAULT_COLLECT_FAULT_REGS 1
+#endif
+
 // ARMv7-M can support an IMPLEMENTATION DEFINED number of MPU regions if the MPU
 // is implemented. If MPU_TYPE register is non-zero then the MPU is implemented and the
 // number of regions will be indicated in MPU_TYPE[DREGIONS] since the ARMv7-m
@@ -289,6 +316,18 @@ extern "C" {
 
 #ifndef MEMFAULT_HTTP_APIS_DEFAULT_PORT
 #define MEMFAULT_HTTP_APIS_DEFAULT_PORT (443)
+#endif
+
+//
+// Util Configuration Options
+//
+
+// Enables the use of a (512 bytes) lookup table for CRC16 computation to improve performance
+//
+// For extremely constrained environments where a small amount of data is being sent anyway the
+// lookup table can be disabled to save ~500 bytes of flash space
+#ifndef MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
+#define MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE 1
 #endif
 
 //

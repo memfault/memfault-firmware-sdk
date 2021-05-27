@@ -6,6 +6,10 @@
 //! @brief
 //! Example implementation of platform dependencies on the ESP32 for the Memfault HTTP APIs
 
+#include "memfault/config.h"
+
+#if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
+
 #include "memfault/http/platform/http_client.h"
 
 #include <string.h>
@@ -16,7 +20,6 @@
 
 #include "memfault/core/data_packetizer.h"
 
-#include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/math.h"
@@ -358,3 +361,4 @@ int memfault_esp_port_http_client_post_data(void) {
   return (int)rv;
 }
 
+#endif /* MEMFAULT_ESP_HTTP_CLIENT_ENABLE */

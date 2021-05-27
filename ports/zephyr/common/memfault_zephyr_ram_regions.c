@@ -159,5 +159,5 @@ size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_
 
   const size_t size_to_collect = (uint32_t)__bss_end - (uint32_t)__bss_start;
   regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(__bss_start, size_to_collect);
-  return 0;
+  return 1;
 }

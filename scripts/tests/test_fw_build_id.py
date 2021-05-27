@@ -17,11 +17,11 @@ script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
 ELF_FIXTURES_DIR = os.path.join(test_dir, "elf_fixtures")
 
-from fw_build_id import BuildIdInspectorAndPatcher  # noqa isort:skip
+from fw_build_id import BuildIdInspectorAndPatcher, MemfaultBuildIdTypes  # noqa isort:skip
 
 
 @contextlib.contextmanager
-def temporary_filename(file_to_copy=None):
+def open_copy(file_to_copy, *args, **kwargs):
     f = tempfile.NamedTemporaryFile(delete=False)
     try:
         tmp_name = f.name
@@ -30,7 +30,8 @@ def temporary_filename(file_to_copy=None):
         if file_to_copy is not None:
             shutil.copy2(file_to_copy, tmp_name)
 
-        yield tmp_name
+        with open(tmp_name, *args, **kwargs) as file:
+            yield file
     finally:
         os.unlink(tmp_name)
 
@@ -38,11 +39,11 @@ def temporary_filename(file_to_copy=None):
 def test_gnu_build_id_in_use(capsys, snapshot):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "gnu_id_present_and_used.elf")
 
-    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
-        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
         b.check_or_update_build_id()
 
-        assert filecmp.cmp(elf_copy_filename, elf_fixture_filename)
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
@@ -53,11 +54,11 @@ def test_gnu_build_id_present_but_not_used(capsys, snapshot):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "gnu_id_present_and_not_used.elf")
     result_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "memfault_id_used_gnu_id_present.elf")
 
-    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
-        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
         b.check_or_update_build_id()
 
-        assert filecmp.cmp(elf_copy_filename, result_fixture_filename)
+        assert filecmp.cmp(elf_copy_file.name, result_fixture_filename)
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
@@ -72,11 +73,11 @@ def test_memfault_id_unpopulated(capsys, snapshot):
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
     )
 
-    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
-        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
         b.check_or_update_build_id()
 
-        assert filecmp.cmp(elf_copy_filename, result_fixture_filename)
+        assert filecmp.cmp(elf_copy_file.name, result_fixture_filename)
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
@@ -88,11 +89,11 @@ def test_memfault_id_populated(capsys, snapshot):
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
     )
 
-    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
-        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
         b.check_or_update_build_id()
 
-        assert filecmp.cmp(elf_copy_filename, elf_fixture_filename)
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
@@ -104,8 +105,9 @@ def test_no_memfault_sdk_present():
     with pytest.raises(
         Exception, match="Could not locate 'g_memfault_build_id' symbol in provided ELF"
     ):
-        b = BuildIdInspectorAndPatcher(elf_fixture_filename)
-        b.check_or_update_build_id()
+        with open(elf_fixture_filename, "rb") as elf_fixture_file:
+            b = BuildIdInspectorAndPatcher(elf_fixture_file)
+            b.check_or_update_build_id()
 
 
 def test_no_build_id_on_dump():
@@ -113,22 +115,49 @@ def test_no_build_id_on_dump():
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
     )
     with pytest.raises(Exception, match="No Build ID Found"):
-        b = BuildIdInspectorAndPatcher(elf_fixture_filename)
-        b.dump_build_info(num_chars=1)
+        with open(elf_fixture_filename, "rb") as elf_fixture_file:
+            b = BuildIdInspectorAndPatcher(elf_fixture_file)
+            b.dump_build_info(num_chars=1)
 
 
 def test_build_id_dump(capsys, snapshot):
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
     )
-    with temporary_filename(elf_fixture_filename) as elf_copy_filename:
-        b = BuildIdInspectorAndPatcher(elf_copy_filename)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
         b.dump_build_info(num_chars=1)
         b.dump_build_info(num_chars=2)
         b.dump_build_info(num_chars=30)
 
-        assert filecmp.cmp(elf_copy_filename, elf_fixture_filename)
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
     snapshot.assert_match(lines)
+
+
+@pytest.mark.parametrize(
+    ("fixture", "expected_result"),
+    [
+        (
+            "memfault_build_id_present_and_populated.elf",
+            (
+                MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1,
+                "16e0fe39af176cfa4cf961321ccf5193c2590451",
+            ),
+        ),
+        (
+            "no_memfault_symbols.elf",
+            # BuildIdException is caught and None, None is returned:
+            (None, None),
+        ),
+    ],
+)
+def test_get_build_info(fixture, expected_result):
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, fixture)
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        assert b.get_build_info() == expected_result
+
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)

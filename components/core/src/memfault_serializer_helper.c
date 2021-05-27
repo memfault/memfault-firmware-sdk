@@ -19,6 +19,11 @@
 #include "memfault/core/serializer_key_ids.h"
 #include "memfault/util/cbor.h"
 
+#if MEMFAULT_EVENT_INCLUDE_BUILD_ID
+#include "memfault/core/build_info.h"
+#include "memfault_build_id_private.h"
+#endif
+
 typedef struct MemfaultSerializerOptions {
   // By default, the device serial number is not encoded in each event to conserve space
   // and instead is derived from the identifier provided when posting to the chunks endpoint
@@ -91,6 +96,12 @@ bool memfault_serializer_helper_encode_int32_kv_pair(
       memfault_cbor_encode_signed_integer(encoder, value);
 }
 
+bool memfault_serializer_helper_encode_byte_string_kv_pair(
+  sMemfaultCborEncoder *encoder, uint32_t key, const void *buf, size_t buf_len) {
+  return memfault_cbor_encode_unsigned_integer(encoder, key) &&
+      memfault_cbor_encode_byte_string(encoder, buf, buf_len);
+}
+
 static bool prv_encode_event_key_uint32_pair(
     sMemfaultCborEncoder *encoder, eMemfaultEventKey key, uint32_t value) {
   return memfault_cbor_encode_unsigned_integer(encoder, key) &&
@@ -112,11 +123,19 @@ bool memfault_serializer_helper_encode_metadata_with_time(sMemfaultCborEncoder *
   const bool unix_timestamp_available = (time != NULL) &&
       (time->type == kMemfaultCurrentTimeType_UnixEpochTimeSec);
 
+#if MEMFAULT_EVENT_INCLUDE_BUILD_ID
+  sMemfaultBuildInfo info;
+  const bool has_build_id = memfault_build_info_read(&info);
+#else
+  const bool has_build_id = false;
+#endif
+
   const size_t top_level_num_pairs =
       1 /* type */ +
       (unix_timestamp_available ? 1 : 0) +
       (s_memfault_serializer_options.encode_device_serial ? 1 : 0) +
       3 /* sw version, sw type, hw version */ +
+      (has_build_id ? 1 : 0) +
       1 /* cbor schema version */ +
       1 /* event_info */;
 
@@ -135,6 +154,17 @@ bool memfault_serializer_helper_encode_metadata_with_time(sMemfaultCborEncoder *
   if (!prv_encode_device_version_info(encoder)) {
     return false;
   }
+
+#if MEMFAULT_EVENT_INCLUDE_BUILD_ID
+  MEMFAULT_STATIC_ASSERT(MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES >= 5 &&
+                         MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES <= sizeof(info.build_id),
+                         "MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES must be between 5 and 20 (inclusive)");
+  if (has_build_id &&
+      !memfault_serializer_helper_encode_byte_string_kv_pair(encoder, kMemfaultEventKey_BuildId, info.build_id,
+                                                             MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES)) {
+    return false;
+  }
+#endif
 
   return !unix_timestamp_available || prv_encode_event_key_uint32_pair(
           encoder, kMemfaultEventKey_CapturedDateUnixTimestamp,

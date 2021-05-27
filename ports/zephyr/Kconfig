@@ -19,9 +19,16 @@ config MEMFAULT_CACHE_FAULT_REGS
           modifies them to provide a more accurate crash analysis
           in the Memfault Issues view.
 
+config MEMFAULT_COREDUMP_STORAGE_CUSTOM
+        bool "Disable default coredump storage option in favor of custom implementation"
+        default n
+        help
+          Can be used by another Kconfig option to disable the RAM backed
+          coredump implementation using select.
+
 config MEMFAULT_RAM_BACKED_COREDUMP
         bool "MEMFAULT Ram Backed Coredump"
-        default y
+        default y if !MEMFAULT_COREDUMP_STORAGE_CUSTOM
         help
           Save a minimal coredump in RAM.
 
@@ -31,6 +38,22 @@ config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
         depends on MEMFAULT_RAM_BACKED_COREDUMP
         help
           Save a minimal coredump in RAM.
+
+config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
+        bool "Include data region in coredump"
+        default y
+        help
+          When enabled, the data region will be captured as part
+          of the coredump. If not enough space is available for all of
+          the data, the coredump will be truncated.
+
+config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
+        bool "Include bss region in coredump"
+        default n
+        help
+          When enabled, the bss region will be captured as part
+          of the coredump. If not enough space is available for all of
+          the data, the coredump will be truncated.
 
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"

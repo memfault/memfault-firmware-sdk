@@ -45,10 +45,17 @@ class MemfaultBuildIdTypes(Enum):
     MEMFAULT_BUILD_ID_SHA1 = 3
 
 
+class BuildIdException(Exception):
+    pass
+
+
 class BuildIdInspectorAndPatcher:
     def __init__(self, elf_file):
+        """
+        :param elf_file: file object with the ELF to inspect and/or patch
+        """
         self.elf_file = elf_file
-        self.elf = ELFFile(open(elf_file, "rb"))
+        self.elf = ELFFile(elf_file)
 
     @staticmethod
     def _section_in_binary(section):
@@ -103,7 +110,7 @@ class BuildIdInspectorAndPatcher:
 
         section = self._find_section_for_address_range((symbol_start, symbol_start + symbol_size))
         if section is None:
-            raise Exception("Could not locate a section with symbol {}".format(symbol_name))
+            raise BuildIdException("Could not locate a section with symbol {}".format(symbol_name))
         return (symbol, section)
 
     def _generate_build_id(self):
@@ -155,7 +162,7 @@ class BuildIdInspectorAndPatcher:
         sdk_build_id_sym_name = "g_memfault_build_id"
         symbol, section = self._find_symbol_and_section(sdk_build_id_sym_name)
         if symbol is None:
-            raise Exception(
+            raise BuildIdException(
                 "Could not locate '{}' symbol in provided ELF".format(sdk_build_id_sym_name)
             )
 
@@ -166,35 +173,37 @@ class BuildIdInspectorAndPatcher:
         build_id_type = data[0]
         if build_id_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1.value:
             if gnu_build_id is None:
-                raise Exception(
+                raise BuildIdException(
                     "Couldn't locate GNU Build ID but 'MEMFAULT_USE_GNU_BUILD_ID' is in use"
                 )
 
-            return build_id_type, gnu_build_id
+            return MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1, gnu_build_id
 
         derived_sym_name = "g_memfault_sdk_derived_build_id"
         sdk_build_id, sdk_build_id_section = self._find_symbol_and_section(derived_sym_name)
         if sdk_build_id is None:
-            raise Exception("Could not locate '{}' symbol in provided elf".format(derived_sym_name))
+            raise BuildIdException(
+                "Could not locate '{}' symbol in provided elf".format(derived_sym_name)
+            )
 
         data = self._get_symbol_data(sdk_build_id, sdk_build_id_section)
 
         if build_id_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value:
             build_id = data.hex() if isinstance(data, bytes) else bytes(data).encode("hex")
-            return build_id_type, build_id
+            return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id
 
         if gnu_build_id is not None:
             print("WARNING: Located a GNU build id but it's not being used by the Memfault SDK")
 
         if build_id_type != MemfaultBuildIdTypes.NONE.value:
-            raise Exception("Unrecognized Build Id Type '{}'".format(build_id_type))
+            raise BuildIdException("Unrecognized Build Id Type '{}'".format(build_id_type))
 
         if dump_only:
             return None, None
 
         build_id = self._generate_build_id()
 
-        with open(self.elf_file, "r+b") as fh:
+        with open(self.elf_file.name, "r+b") as fh:
             build_id_type_patch_offset = section["sh_offset"] + self._get_symbol_offset_in_sector(
                 symbol, section
             )
@@ -210,21 +219,27 @@ class BuildIdInspectorAndPatcher:
             fh.write(build_id.digest())
         build_id = build_id.hexdigest()
         print("Added Memfault Generated Build ID to ELF: {}".format(build_id))
-        return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value, build_id
+        return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id
 
     def check_or_update_build_id(self):
         build_type, build_id = self._write_and_return_build_info(dump_only=False)
-        if build_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1.value:
+        if build_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1:
             print("Found GNU Build ID: {}".format(build_id))
-        elif build_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value:
+        elif build_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1:
             print("Found Memfault Build Id: {}".format(build_id))
 
     def dump_build_info(self, num_chars):
         build_type, build_id = self._write_and_return_build_info(dump_only=True)
         if build_type is None or build_id is None:
-            raise Exception("No Build ID Found")
+            raise BuildIdException("No Build ID Found")
 
         print(build_id[:num_chars])
+
+    def get_build_info(self):
+        try:
+            return self._write_and_return_build_info(dump_only=True)
+        except BuildIdException:
+            return None, None
 
 
 if __name__ == "__main__":
@@ -234,8 +249,9 @@ if __name__ == "__main__":
     parser.add_argument("elf", action="store")
     parser.add_argument("--dump", nargs="?", const=7, type=int)
     args = parser.parse_args()
-    b = BuildIdInspectorAndPatcher(elf_file=args.elf)
-    if args.dump is None:
-        b.check_or_update_build_id()
-    else:
-        b.dump_build_info(args.dump)
+    with open(args.elf, "rb") as elf_file:
+        b = BuildIdInspectorAndPatcher(elf_file=elf_file)
+        if args.dump is None:
+            b.check_or_update_build_id()
+        else:
+            b.dump_build_info(args.dump)

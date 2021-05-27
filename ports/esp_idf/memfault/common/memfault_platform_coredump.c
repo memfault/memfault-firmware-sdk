@@ -11,7 +11,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_spi_flash.h"
 #include "soc/soc.h"
@@ -38,6 +37,7 @@
 // If there is no coredump partition defined or one cannot be defined
 // the user can try using an OTA slot instead.
 #if CONFIG_MEMFAULT_COREDUMP_USE_OTA_SLOT
+#include "esp_ota_ops.h"
 #define GET_COREDUMP_PARTITION() \
   esp_ota_get_next_update_partition(NULL);
 #else

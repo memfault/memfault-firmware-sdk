@@ -18,12 +18,26 @@ extern "C" {
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)       \
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   extern const char * const g_memfault_metrics_id_##key_name;
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+
+//! Generate an enum for all IDs (used for indexing into values)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
+  kMfltMetricsIndex_##key_name,
+
+typedef enum MfltMetricsIndex {
+  #include "memfault/metrics/heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  #undef MEMFAULT_METRICS_KEY_DEFINE
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+} eMfltMetricsIndex;
 
 #define _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   MEMFAULT_STATIC_ASSERT(false, \
@@ -41,14 +55,15 @@ extern "C" {
 //! The struct wrapper does not have any function, except for preventing one from passing a C
 //! string to the API:
 typedef struct {
-  const char *_impl;  // Please refrain from using / relying on this directly!
+  const char *_impl;  // Please refrain from using / relying on _impl members.
+  int _impl2;
 } MemfaultMetricId;
 
 #define _MEMFAULT_METRICS_ID_CREATE(id) \
-  { MEMFAULT_EXPAND_AND_QUOTE(id) }
+  { MEMFAULT_EXPAND_AND_QUOTE(id), kMfltMetricsIndex_##id }
 
 #define _MEMFAULT_METRICS_ID(id) \
-  ((MemfaultMetricId) { ._impl = g_memfault_metrics_id_##id })
+  ((MemfaultMetricId) { ._impl = g_memfault_metrics_id_##id, ._impl2 = kMfltMetricsIndex_##id })
 
 #ifdef __cplusplus
 }

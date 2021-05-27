@@ -112,12 +112,43 @@ static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[]
 MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_)
 MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_)
 
+// We need a key-index table of pointers to timer metadata for fast lookups.
+// The enum eMfltMetricsTimerIndex will create a subset of indexes for use
+// in the s_memfault_heartbeat_timer_values_metadata[] table. The
+// s_metric_timer_metadata_mapping[] table provides the mapping from the
+// exhaustive list of keys to valid timer indexes or -1 if not a timer.
+#define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) \
+   MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
+
+#undef MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(key_name) \
+  kMfltMetricsTimerIndex_##key_name,
+
+typedef enum MfltTimerIndex {
+   #include "memfault/metrics/heartbeat_config.def"
+   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+} eMfltMetricsTimerIndex;
+
+#undef MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned
+#undef MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed
+
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_name) \
+  -1,
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_name) \
+  -1,
+
+static const int s_metric_timer_metadata_mapping[] = {
+  #include "memfault/metrics/heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  #undef MEMFAULT_METRICS_KEY_DEFINE
+};
+
 static struct {
   const sMemfaultEventStorageImpl *storage_impl;
 } s_memfault_metrics_ctx;
 
 //
-// Routines which can be overrideen by customers
+// Routines which can be overridden by customers
 //
 
 MEMFAULT_WEAK
@@ -164,29 +195,44 @@ typedef struct {
   sMemfaultMetricValueInfo value_info_out;
 } sFindValueForKeyCtx;
 
-static bool prv_find_key_cb(void *ctx, const sMemfaultMetricKVPair *key,
-                            const sMemfaultMetricValueInfo *value) {
-  sFindValueForKeyCtx *key_ctx = (sFindValueForKeyCtx *)ctx;
+// Returns NULL if not a timer type or out of bounds index.
+static sMemfaultMetricValueMetadata *prv_find_timer_metadatap(
+    eMfltMetricsIndex metric_index) {
+  if (metric_index >= MEMFAULT_ARRAY_SIZE(s_metric_timer_metadata_mapping)) {
+    MEMFAULT_LOG_ERROR("Metric index %u exceeds expected array bounds %u\n",
+                       metric_index, (unsigned)MEMFAULT_ARRAY_SIZE(s_metric_timer_metadata_mapping));
+    return NULL;
 
-  // No need to do strcmp(), because the key pointers are global/singleton anyway:
-  if (key->key._impl != key_ctx->key_to_find._impl) {
-    // continue looking
-    return true;
   }
-  // we found the key!
-  key_ctx->type_out = key->type;
-  key_ctx->value_info_out = *value;
-  return false;
+
+  const eMfltMetricsTimerIndex timer_index =
+      (eMfltMetricsTimerIndex)s_metric_timer_metadata_mapping[metric_index];
+  if (s_metric_timer_metadata_mapping[metric_index] == -1 ||
+      timer_index >= MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_timer_values_metadata)) {
+    return NULL;
+  }
+
+  return &s_memfault_heartbeat_timer_values_metadata[timer_index];
 }
 
 static eMemfaultMetricType prv_find_value_for_key(MemfaultMetricId key,
                                                   sMemfaultMetricValueInfo *value_info_out) {
-  sFindValueForKeyCtx ctx = {
-    .key_to_find = key,
+  const size_t idx = key._impl2;
+  if (idx >= MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_values)) {
+    // How best to indicate not found?
+    *value_info_out = (sMemfaultMetricValueInfo) {
+      .valuep = NULL,
+      .meta_datap = NULL,
+    };
+    return kMemfaultMetricType_NumTypes;
+  }
+
+  *value_info_out = (sMemfaultMetricValueInfo) {
+    .valuep = &s_memfault_heartbeat_values[idx],
+    .meta_datap = prv_find_timer_metadatap((eMfltMetricsIndex)idx),
   };
-  prv_metric_iterator(&ctx, prv_find_key_cb);
-  *value_info_out = ctx.value_info_out;
-  return ctx.type_out;
+
+  return s_memfault_heartbeat_keys[idx].type;
 }
 
 static int prv_find_value_info_for_type(MemfaultMetricId key, eMemfaultMetricType expected_type,
@@ -204,7 +250,7 @@ static int prv_find_value_info_for_type(MemfaultMetricId key, eMemfaultMetricTyp
 
 static int prv_find_and_set_value_for_key(
     MemfaultMetricId key, eMemfaultMetricType expected_type, union MemfaultMetricValue *new_value) {
-  sMemfaultMetricValueInfo value_info;
+  sMemfaultMetricValueInfo value_info = {0};
   int rv = prv_find_value_info_for_type(key, expected_type, &value_info);
   if (rv != 0) {
     return rv;
@@ -283,7 +329,7 @@ static bool prv_update_timer_metric(const sMemfaultMetricValueInfo *value_info,
 }
 
 static int prv_find_timer_metric_and_update(MemfaultMetricId key, eMemfaultTimerOp op) {
-  sMemfaultMetricValueInfo value_info;
+  sMemfaultMetricValueInfo value_info = {0};
   int rv = prv_find_value_info_for_type(key, kMemfaultMetricType_Timer, &value_info);
   if (rv != 0) {
     return rv;
@@ -339,7 +385,7 @@ static void prv_heartbeat_timer(void) {
 }
 
 static int prv_find_key_and_add(MemfaultMetricId key, int32_t amount) {
-  sMemfaultMetricValueInfo value_info;
+  sMemfaultMetricValueInfo value_info = {0};
   const eMemfaultMetricType type = prv_find_value_for_key(key, &value_info);
   if (value_info.valuep == NULL) {
     return MEMFAULT_METRICS_KEY_NOT_FOUND;
@@ -392,7 +438,7 @@ int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount) {
 
 static int prv_find_key_of_type(MemfaultMetricId key, eMemfaultMetricType expected_type,
                                 union MemfaultMetricValue **value_out) {
-  sMemfaultMetricValueInfo value_info;
+  sMemfaultMetricValueInfo value_info = {0};
   const eMemfaultMetricType type = prv_find_value_for_key(key, &value_info);
   if (value_info.valuep == NULL) {
     return MEMFAULT_METRICS_KEY_NOT_FOUND;

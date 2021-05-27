@@ -1,29 +1,59 @@
+### Changes between Memfault SDK 0.20.0 and SDK 0.18.0 - May 27, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Updated
+  [memfault_fault_handling_arm.c](components/panics/src/memfault_fault_handling_arm.c)
+  to work around a compiler bug when using 6.x of the GNU ARM Toolchain
+- Port Improvements:
+  - SAML10/SAML11
+    - [rich reboot reason info derived from RCAUSE register](ports/atmel/saml1x/rcause_reboot_tracking.c#L1)
+  - Updated [esp-idf port](ports/esp_idf) to streamline integrations making use
+    of the [amazon-freertos](https://github.com/aws/amazon-freertos)
+  - Zephyr
+    - Added several Kconfig options for better control over information
+      collected in a coredump:
+      - `CONFIG_MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS` to enable/disable
+        collection of `.data` region
+      - `CONFIG_MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS` to enable/disable
+        collection of `.bss` region
+      - `CONFIG_MEMFAULT_COREDUMP_STORAGE_CUSTOM=y` can be used to opt out of
+        the default RAM backed coredump implementation and provide a custom one
+        in the port.
+- Reduced instruction cycles required to update a
+  [heartbeat metric](metrics/src/memfault_metrics.c)
+- Events will now store an abbreviated build id when serialized
+
 ### Changes between Memfault SDK 0.19.0 and SDK 0.18.0 - May 19, 2021
 
 #### :chart_with_upwards_trend: Improvements
 
-- Added support for collecting additional register information when a Hardfault takes place when
-  using the Zephyr port. This information will be decoded and displayed in the Memfault UI in
-  the "Exceptions" tab.
+- Added support for collecting additional register information when a Hardfault
+  takes place when using the Zephyr port. This information will be decoded and
+  displayed in the Memfault UI in the "Exceptions" tab.
+
 - Updated
-  [`buffered_coredump_storage.h` ](ports/include/memfault/ports/buffered_coredump_storage.h) to use
-  `memmov` instead of `memcpy` since `dst` and `src` buffers may overlap when all of `.bss` is saved
-  in a coredump capture.
-- Added a new Kconfig option to the Zephyr port, `CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE=y`, which
-  causes `memfault_metrics_heartbeat_extra.def` to be included in the metric definitions. This can
-  be utilized by a third party consumer of Zephyr to more easily extend the default heartbeat
-  metrics collected when using memfault.
+  [`buffered_coredump_storage.h` ](ports/include/memfault/ports/buffered_coredump_storage.h)
+  to use `memmov` instead of `memcpy` since `dst` and `src` buffers may overlap
+  when all of `.bss` is saved in a coredump capture.
+- Added a new Kconfig option to the Zephyr port,
+  `CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE=y`, which causes
+  `memfault_metrics_heartbeat_extra.def` to be included in the metric
+  definitions. This can be utilized by a third party consumer of Zephyr to more
+  easily extend the default heartbeat metrics collected when using memfault.
 
 #### :house: Internal
 
-- Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use latest Memfault API for
-  uploading symbol files.
+- Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use
+  latest Memfault API for uploading symbol files.
 
 #### :boom: Breaking Changes
 
-- If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK will now automatically be picked up
-as a Zephyr Module! You will need to make two changes:
-  1. Remove the `ZEPHYR_EXTRA_MODULES` addition from your projects CMakeLists.txt, i.e
+- If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK
+  will now automatically be picked up as a Zephyr Module! You will need to make
+  two changes:
+  1. Remove the `ZEPHYR_EXTRA_MODULES` addition from your projects
+     CMakeLists.txt, i.e
   ```diff
   --- a/your_application/CMakeLists.txt
   +++ b/your_application/CMakeLists.txt

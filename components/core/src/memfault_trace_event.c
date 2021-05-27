@@ -94,8 +94,8 @@ static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
   }
 
   if (success && log_present) {
-    success = memfault_cbor_encode_unsigned_integer(encoder, kMemfaultTraceInfoEventKey_Log) &&
-        memfault_cbor_encode_byte_string(encoder, info->log, info->log_len);
+    success = memfault_serializer_helper_encode_byte_string_kv_pair(encoder,
+        kMemfaultTraceInfoEventKey_Log, info->log, info->log_len);
   }
 
   return success;

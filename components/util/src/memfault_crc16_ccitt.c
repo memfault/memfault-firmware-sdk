@@ -8,8 +8,11 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
+
+#if MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
 
 static const uint16_t s_crc16_ccit_table[] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108,
@@ -57,3 +60,24 @@ uint16_t memfault_crc16_ccitt_compute(
 
   return crc;
 }
+
+#else
+
+uint16_t memfault_crc16_ccitt_compute(
+    uint16_t crc_initial_value, const void *data, size_t data_len_bytes) {
+  const uint32_t polynomial = 0x1021;
+  uint32_t crc = crc_initial_value;
+  const uint8_t *curr_ptr = data;
+  for (size_t i = 0; i < data_len_bytes; i++) {
+    crc = (crc ^ (uint32_t)(*curr_ptr++ << 8));
+    for (int bit = 0;  bit < 8; bit++) {
+      crc = (crc << 1);
+      if (crc & 0x10000) {
+        crc = ((crc ^ polynomial) & 0xFFFF);
+      }
+    }
+  }
+  return (uint16_t)crc;
+}
+
+#endif /* MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE */

@@ -102,6 +102,8 @@ TEST(MemfaultBuildInfo, Test_MemfaultCreateUniqueVersionString) {
   // unrealistically large size.
   char too_big[1024];
   memset(too_big, 'v', sizeof(too_big) - 1);
+  too_big[sizeof(too_big) - 1] = '\0';
+
   unique = memfault_create_unique_version_string(too_big);
   CHECK(!unique);
 
