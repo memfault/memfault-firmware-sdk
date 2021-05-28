@@ -158,16 +158,15 @@ config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
        help
         The maximum amount of tasks Memfault will store state for in a coredump.
 
-config MEMFAULT_DEFAULT_REBOOT_REASON_IMPL
-       bool "Port provided implementation used to decode MCU Reset Register"
-       default y
+config MEMFAULT_REBOOT_REASON_GET_CUSTOM
+       bool "Provide a custom implementation for recovering reboot information"
+       default n
        help
         User of SDK must provide their own implementation of memfault_reboot_reason_get()
         when disabled
 
 config MEMFAULT_CLEAR_RESET_REG
        bool "Whether or not to clear bits in MCU reset reason register"
-       depends on MEMFAULT_DEFAULT_REBOOT_REASON_IMPL
        default y
        help
         When disabled, the end user is responsible for clearing the reset register. (Bits

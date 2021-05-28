@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.20.1 and SDK 0.20.0 - May 28, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr / nRF Connect SDK port:
+  - Replaced `MEMFAULT_DEFAULT_REBOOT_REASON_IMPL` Kconfig option with `MEMFAULT_REBOOT_REASON_GET_CUSTOM` and
+    updated default configuration for the nRF Connect SDK. This fixes an issue resulting in the
+    [generic memfault_reboot_reason_get](ports/zephyr/common/memfault_platform_core.c#L53) getting linked rather
+    than the [nRF Connect SDK port](ports/zephyr/ncs/src/nrfx_pmu_reboot_tracking.c#L139).
+
 ### Changes between Memfault SDK 0.20.0 and SDK 0.18.0 - May 27, 2021
 
 #### :chart_with_upwards_trend: Improvements

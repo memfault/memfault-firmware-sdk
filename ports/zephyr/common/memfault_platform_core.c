@@ -49,12 +49,14 @@ static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
+#if !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
 MEMFAULT_WEAK
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
   *info = (sResetBootupInfo) {
     .reset_reason = kMfltRebootReason_Unknown,
   };
 }
+#endif
 
 // Note: the function signature has changed here across zephyr releases
 // "struct device *dev" -> "const struct device *dev"
