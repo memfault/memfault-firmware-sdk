@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.20.2 and SDK 0.20.1 - June 4, 2021
+
+#### :house: Internal
+
+- Updated `sMemfaultBuildIdStorage` structure to track the build id length used for event
+  serialization and updated [`fw_build_id.py`](scripts/fw_build_id.py) script to extract information.
+
 ### Changes between Memfault SDK 0.20.1 and SDK 0.20.0 - May 28, 2021
 
 #### :chart_with_upwards_trend: Improvements

@@ -34,6 +34,9 @@ typedef enum {
 typedef struct {
   uint8_t type; // eMemfaultBuildIdType
   uint8_t len;
+  // the length, in bytes, of the build id used when reporting data
+  uint8_t short_len;
+  uint8_t rsvd;
   const void *storage;
 } sMemfaultBuildIdStorage;
 

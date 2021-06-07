@@ -22,6 +22,7 @@ extern uint8_t __start_gnu_build_id_start[];
 MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id = {
   .type = kMemfaultBuildIdType_GnuBuildIdSha1,
   .len = sizeof(sMemfaultElfNoteSection),
+  .short_len = MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES,
   .storage = __start_gnu_build_id_start,
 };
 #else
@@ -32,6 +33,7 @@ MEMFAULT_BUILD_ID_QUALIFIER uint8_t g_memfault_sdk_derived_build_id[MEMFAULT_BUI
 MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id = {
   .type = kMemfaultBuildIdType_None,
   .len = sizeof(g_memfault_sdk_derived_build_id),
+  .short_len = MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES,
   .storage = g_memfault_sdk_derived_build_id,
 };
 #endif

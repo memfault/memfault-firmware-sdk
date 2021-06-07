@@ -145,12 +145,29 @@ def test_build_id_dump(capsys, snapshot):
             (
                 MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1,
                 "16e0fe39af176cfa4cf961321ccf5193c2590451",
+                None,
             ),
         ),
         (
             "no_memfault_symbols.elf",
             # BuildIdException is caught and None, None is returned:
-            (None, None),
+            (None, None, None),
+        ),
+        (
+            "memfault_build_id_with_short_len.elf",
+            (
+                MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1,
+                "ef960811c7e83525457dc76722bbbb38f362769c",
+                7,
+            ),
+        ),
+        (
+            "gnu_id_with_short_len.elf",
+            (
+                MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1,
+                "152121637a37ec8f8b7c3a29b8708b705e3350cb",
+                7,
+            ),
         ),
     ],
 )

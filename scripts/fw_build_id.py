@@ -168,8 +168,14 @@ class BuildIdInspectorAndPatcher:
 
         gnu_build_id = self._get_build_id()
 
-        # sMemfaultBuildIdStorage
+        # Maps to sMemfaultBuildIdStorage from "core/src/memfault_build_id_private.h"
         data = self._get_symbol_data(symbol, section)
+
+        # FW SDK's <= 0.20.1 did not encode the configured short length in the
+        # "sMemfaultBuildIdStorage". In this situation the byte was a zero-initialized padding
+        # byte. In this scenario we report "None" to signify we do not know the short len
+        short_len = data[2] or None
+
         build_id_type = data[0]
         if build_id_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1.value:
             if gnu_build_id is None:
@@ -177,7 +183,7 @@ class BuildIdInspectorAndPatcher:
                     "Couldn't locate GNU Build ID but 'MEMFAULT_USE_GNU_BUILD_ID' is in use"
                 )
 
-            return MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1, gnu_build_id
+            return MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1, gnu_build_id, short_len
 
         derived_sym_name = "g_memfault_sdk_derived_build_id"
         sdk_build_id, sdk_build_id_section = self._find_symbol_and_section(derived_sym_name)
@@ -190,7 +196,7 @@ class BuildIdInspectorAndPatcher:
 
         if build_id_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value:
             build_id = data.hex() if isinstance(data, bytes) else bytes(data).encode("hex")
-            return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id
+            return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id, short_len
 
         if gnu_build_id is not None:
             print("WARNING: Located a GNU build id but it's not being used by the Memfault SDK")
@@ -199,7 +205,7 @@ class BuildIdInspectorAndPatcher:
             raise BuildIdException("Unrecognized Build Id Type '{}'".format(build_id_type))
 
         if dump_only:
-            return None, None
+            return None, None, None
 
         build_id = self._generate_build_id()
 
@@ -219,17 +225,17 @@ class BuildIdInspectorAndPatcher:
             fh.write(build_id.digest())
         build_id = build_id.hexdigest()
         print("Added Memfault Generated Build ID to ELF: {}".format(build_id))
-        return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id
+        return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id, short_len
 
     def check_or_update_build_id(self):
-        build_type, build_id = self._write_and_return_build_info(dump_only=False)
+        build_type, build_id, _ = self._write_and_return_build_info(dump_only=False)
         if build_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1:
             print("Found GNU Build ID: {}".format(build_id))
         elif build_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1:
             print("Found Memfault Build Id: {}".format(build_id))
 
     def dump_build_info(self, num_chars):
-        build_type, build_id = self._write_and_return_build_info(dump_only=True)
+        build_type, build_id, _ = self._write_and_return_build_info(dump_only=True)
         if build_type is None or build_id is None:
             raise BuildIdException("No Build ID Found")
 
@@ -239,7 +245,7 @@ class BuildIdInspectorAndPatcher:
         try:
             return self._write_and_return_build_info(dump_only=True)
         except BuildIdException:
-            return None, None
+            return None, None, None
 
 
 if __name__ == "__main__":
