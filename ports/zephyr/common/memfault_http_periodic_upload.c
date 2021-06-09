@@ -13,6 +13,12 @@
 #include <random/rand32.h>
 #include <zephyr.h>
 
+#if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+static K_THREAD_STACK_DEFINE(
+    memfault_http_stack_area, CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE);
+static struct k_work_q memfault_http_work_q;
+#endif
+
 static void prv_metrics_work_handler(struct k_work *work) {
   if (!memfault_packetizer_data_available()) {
     return;
@@ -25,7 +31,11 @@ static void prv_metrics_work_handler(struct k_work *work) {
 K_WORK_DEFINE(s_upload_timer_work, prv_metrics_work_handler);
 
 static void prv_timer_expiry_handler(struct k_timer *dummy) {
+#if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+  k_work_submit_to_queue(&memfault_http_work_q, &s_upload_timer_work);
+#else
   k_work_submit(&s_upload_timer_work);
+#endif
 }
 
 K_TIMER_DEFINE(s_upload_timer, prv_timer_expiry_handler, NULL);
@@ -38,6 +48,18 @@ static int prv_background_upload_init() {
   const uint32_t duration_secs = 60 + (sys_rand32_get() % interval_secs);
 
   k_timer_start(&s_upload_timer, K_SECONDS(duration_secs), K_SECONDS(interval_secs));
+
+
+#if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+  struct k_work_queue_config config = {
+    .name = "mflt_http",
+    .no_yield = false,
+  };
+
+  k_work_queue_start(&memfault_http_work_q, memfault_http_stack_area,
+                     K_THREAD_STACK_SIZEOF(memfault_http_stack_area),
+                     K_HIGHEST_APPLICATION_THREAD_PRIO, &config);
+#endif
   return 0;
 }
 

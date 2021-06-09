@@ -1,19 +1,49 @@
+### Changes between Memfault SDK 0.21.0 and SDK 0.20.2 - June 8, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr / nRF Connect SDK port:
+  - `CONFIG_MEMFAULT_NRF_CONNECT_SDK` is now only enabled by default when
+    `CONFIG_MEMFAULT=y`
+  - `CONFIG_DEBUG_THREAD_INFO=y` is now selected by default (in prep for
+    deprecation of `CONFIG_OPENOCD_SUPPORT`)
+  - Added new option (`CONFIG_MEMFAULT_USER_CONFIG_ENABLE=y`) which can be used
+    to remove requirement of providing any user specific configuration.
+  - Added two choices for periodic posting of memfault data:
+    - `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE`. This is the
+      default and matches previous release behavior of posting data to Memfault
+      from the system work queue
+    - `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE` This is a
+      new option which can be used to post data from a dedicated worker queue.
+      This can be useful if the network stack may block for extended periods of
+      time which would stall other system work queue jobs from getting
+      processed.
+
+#### :boom: Breaking Changes
+
+- The Zephyr & nRF Connect SDK ports will now only enable the `MEMFAULT_SHELL`
+  by default when the Zephyr shell is enabled. `CONFIG_SHELL=y` must now be
+  enabled explicitly in your `prj.conf` for the Memfault Shell to be enabled.
+
 ### Changes between Memfault SDK 0.20.2 and SDK 0.20.1 - June 4, 2021
 
 #### :house: Internal
 
-- Updated `sMemfaultBuildIdStorage` structure to track the build id length used for event
-  serialization and updated [`fw_build_id.py`](scripts/fw_build_id.py) script to extract information.
+- Updated `sMemfaultBuildIdStorage` structure to track the build id length used
+  for event serialization and updated [`fw_build_id.py`](scripts/fw_build_id.py)
+  script to extract information.
 
 ### Changes between Memfault SDK 0.20.1 and SDK 0.20.0 - May 28, 2021
 
 #### :chart_with_upwards_trend: Improvements
 
 - Zephyr / nRF Connect SDK port:
-  - Replaced `MEMFAULT_DEFAULT_REBOOT_REASON_IMPL` Kconfig option with `MEMFAULT_REBOOT_REASON_GET_CUSTOM` and
-    updated default configuration for the nRF Connect SDK. This fixes an issue resulting in the
-    [generic memfault_reboot_reason_get](ports/zephyr/common/memfault_platform_core.c#L53) getting linked rather
-    than the [nRF Connect SDK port](ports/zephyr/ncs/src/nrfx_pmu_reboot_tracking.c#L139).
+  - Replaced `MEMFAULT_DEFAULT_REBOOT_REASON_IMPL` Kconfig option with
+    `MEMFAULT_REBOOT_REASON_GET_CUSTOM` and updated default configuration for
+    the nRF Connect SDK. This fixes an issue resulting in the
+    [generic memfault_reboot_reason_get](ports/zephyr/common/memfault_platform_core.c#L53)
+    getting linked rather than the
+    [nRF Connect SDK port](ports/zephyr/ncs/src/nrfx_pmu_reboot_tracking.c#L139).
 
 ### Changes between Memfault SDK 0.20.0 and SDK 0.18.0 - May 27, 2021
 

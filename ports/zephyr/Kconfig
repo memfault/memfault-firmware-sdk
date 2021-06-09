@@ -4,6 +4,7 @@ config MEMFAULT
         depends on CPU_CORTEX_M
         select RUNTIME_NMI
         select EXTRA_EXCEPTION_INFO
+        select DEBUG_THREAD_INFO
         select OPENOCD_SUPPORT
         help
           Enable Zephyr Integration with the Memfault SDK
@@ -19,8 +20,18 @@ config MEMFAULT_CACHE_FAULT_REGS
           modifies them to provide a more accurate crash analysis
           in the Memfault Issues view.
 
+config MEMFAULT_USER_CONFIG_ENABLE
+        bool "Enable user configuration of the Memfault SDK"
+        default y
+        help
+          When enabled, a user must add the three Memfault
+          configuration files to their port:
+          memfault_platform_config.h
+          memfault_metrics_heartbeat_config.def
+          memfault_trace_reason_user_config.def
+
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
-        bool "Disable default coredump storage option in favor of custom implementation"
+        bool
         default n
         help
           Can be used by another Kconfig option to disable the RAM backed
@@ -29,15 +40,16 @@ config MEMFAULT_COREDUMP_STORAGE_CUSTOM
 config MEMFAULT_RAM_BACKED_COREDUMP
         bool "MEMFAULT Ram Backed Coredump"
         default y if !MEMFAULT_COREDUMP_STORAGE_CUSTOM
+        depends on !MEMFAULT_COREDUMP_STORAGE_CUSTOM
         help
-          Save a minimal coredump in RAM.
+          Save a minimal coredump in noinit RAM.
 
 config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
         int "MEMFAULT Ram Backed Coredump"
         default 8192
         depends on MEMFAULT_RAM_BACKED_COREDUMP
         help
-          Save a minimal coredump in RAM.
+          The amount of RAM to allocate for saving coredumps
 
 config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
         bool "Include data region in coredump"
@@ -57,16 +69,16 @@ config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
 
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"
-        default y
-        select SHELL
+        default y if SHELL
+        depends on SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
 
 config MEMFAULT_HTTP_ENABLE
-        bool "MEMFAULT Http Enable"
+        bool "Enables support for using Memfault's HTTP APIs"
         default y if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
         help
-          Adds support for querying the Memfault API for OTA updates
+          Enables support for querying the Memfault API for OTA updates
           and posting Memfault chunks
 
 config MEMFAULT_LOGGING_ENABLE
@@ -124,9 +136,33 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD
         help
           This implementation makes use of a k_timer_* and k_work_submit to schedule
           a background job that periodically checks to see if new Memfault data
-          is available and pushes it to Memfault if so (via a HTTP POST). When using
-          this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE is set appropriately
-          for the board's HTTP stack to not cause a stack overflow.
+          is available and pushes it to Memfault if so (via a HTTP POST).
+
+choice
+        prompt "Work queue implementation to use for periodic HTTP posting"
+        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+
+config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+        bool "Periodically push new data to Memfault from system workqueue"
+        help
+          When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
+          is set appropriately for the board's HTTP stack to not cause a stack overflow.
+
+config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+        bool "Periodically push new data to Memfault using a dedicated workqueue"
+        help
+          When using this feature, make sure CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
+          is set appropriately for the board's HTTP stack to not cause a stack overflow. A dedicated
+          workqueue over the system workqueue is beneficial if http requests for the network stack
+          in use can block for a long time but comes at the cost of using extra RAM.
+
+endchoice
+
+config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
+        int ""
+        default 2048
+        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
         int "Interval with which the periodic upload task should run"
@@ -221,6 +257,7 @@ config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
        int "The time, in seconds, to configure the software watchdog expiration for"
        default 15
 
-endif # MEMFAULT
 
 rsource "ncs/Kconfig"
+
+endif # MEMFAULT

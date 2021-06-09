@@ -46,8 +46,12 @@ extern "C" {
 #define MEMFAULT_CACHE_FAULT_REGS 1
 #endif
 
+#if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
 // Pick up any user configuration overrides
 #include "memfault_platform_config.h"
+#else
+#define MEMFAULT_DISABLE_USER_TRACE_REASONS 1
+#endif
 
 #ifdef __cplusplus
 }

@@ -22,8 +22,8 @@ config MEMFAULT_FOTA
 
 config MEMFAULT_NRF_SHELL
         bool "Enable Memfault NRF Shell"
-        default y if MEMFAULT
-        select SHELL
+        default y if MEMFAULT_SHELL
+        depends on SHELL
         help
           CLI Utilities for interfacing with the nRF Connect SDK
 

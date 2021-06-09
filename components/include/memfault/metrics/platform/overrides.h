@@ -1,3 +1,5 @@
+#pragma once
+
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.

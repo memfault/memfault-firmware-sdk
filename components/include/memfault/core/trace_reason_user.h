@@ -49,23 +49,24 @@ extern "C" {
 #define MEMFAULT_TRACE_REASON(reason) \
   kMfltTraceReasonUser_##reason
 
-//! For compilers which support the __has_include macro display a more friendly error message
-//! when the user defined header is not found on the include path
-//!
-//! NB: ARMCC and IAR define __has_include but they don't work as expected
-# if !defined(__CC_ARM) && !defined(__ICCARM__)
-#  if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-#    pragma message("ERROR: " MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_TRACE_REASON_USER_DEFS_FILE) " must be in header search path")
-#    error "See trace_reason_user.h for more details"
-#  endif
-# endif
-
-
 //! If trace events are not being used, including the user config file can be disabled
 //! by adding -DMEMFAULT_DISABLE_USER_TRACE_REASONS=1 to CFLAGs
 #if !defined(MEMFAULT_DISABLE_USER_TRACE_REASONS)
 #define MEMFAULT_DISABLE_USER_TRACE_REASONS 0
 #endif /* MEMFAULT_DISABLE_USER_TRACE_REASONS */
+
+//! For compilers which support the __has_include macro display a more friendly error message
+//! when the user defined header is not found on the include path
+//!
+//! NB: ARMCC and IAR define __has_include but they don't work as expected
+# if !MEMFAULT_DISABLE_USER_TRACE_REASONS
+#  if !defined(__CC_ARM) && !defined(__ICCARM__)
+#   if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
+#     pragma message("ERROR: " MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_TRACE_REASON_USER_DEFS_FILE) " must be in header search path")
+#     error "See trace_reason_user.h for more details"
+#   endif
+#  endif
+# endif
 
 typedef enum MfltTraceReasonUser {
   MEMFAULT_TRACE_REASON_DEFINE(Unknown)
