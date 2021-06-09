@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.21.1 and SDK 0.21.0 - June 9, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr / nRF Connect SDK port:
+  - Made periodic upload a named choice,
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT`, so the default can be overriden
+    from other Kconfig files.
+  - Added prompt text for `MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE`
+
 ### Changes between Memfault SDK 0.21.0 and SDK 0.20.2 - June 8, 2021
 
 #### :chart_with_upwards_trend: Improvements

@@ -138,7 +138,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD
           a background job that periodically checks to see if new Memfault data
           is available and pushes it to Memfault if so (via a HTTP POST).
 
-choice
+choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
         prompt "Work queue implementation to use for periodic HTTP posting"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
@@ -160,7 +160,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 endchoice
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
-        int ""
+        int "Stack size for dedicated http upload queue, in bytes"
         default 2048
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
