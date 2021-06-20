@@ -216,7 +216,7 @@ When the WICED SDK builds the app, it creates an .elf file at
 `/path/to/WICED-SDK-x.x.x/43xxx_Wi-Fi/build/memfault_demo_app-BCM943364WCD1-SDIO-release/binary/memfault_demo_app-BCM943364WCD1-SDIO-debug.elf`.
 This .elf contains the symbols (debug information) amongst other things.
 
-[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
+[More information on Build Ids and uploading Symbol Files can be found here](https://mflt.io/symbol-file-build-ids).
 
 #### Connect WiFi
 
@@ -315,4 +315,3 @@ If you run into any issues, please do not hesitate to reach out for help.
 
 [bcm943364wcd1]:
   https://www.cypress.com/documentation/development-kitsboards/bcm943364wcd1evb-evaluation-and-development-kit
-[http api to upload symbols files]: https://mflt.io/uploading-artifacts-api

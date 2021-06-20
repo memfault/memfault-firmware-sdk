@@ -157,7 +157,7 @@ The full path to the ELF file is displayed when you build with
 
 This ELF file contains the symbols (debug information) amongst other things.
 
-[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
+[More information on Build Ids and uploading Symbol Files can be found here](https://mflt.io/symbol-file-build-ids).
 
 #### Posting the coredump
 

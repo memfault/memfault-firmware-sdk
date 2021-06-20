@@ -1,0 +1,8 @@
+FROM python:2.7-slim AS base
+
+RUN pip install enum34==1.1.10
+RUN pip install snapshottest==0.5.0
+RUN pip install pyelftools==0.27
+RUN pip install pytest==4.6.11
+
+COPY ./ /mflt-build-id/

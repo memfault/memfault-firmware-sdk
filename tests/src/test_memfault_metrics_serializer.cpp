@@ -40,17 +40,16 @@ TEST_GROUP(MemfaultMetricsSerializer){
 
 void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void *ctx) {
   sMemfaultMetricInfo info = { 0 };
-  info.key._impl = "unsigned_int";
+  // Note: info.key._impl is not needed for serialization so leaving blank
+
   info.type = kMemfaultMetricType_Unsigned;
   info.val.u32 = 1000;
   cb(ctx, &info);
 
-  info.key._impl = "signed_int";
   info.type = kMemfaultMetricType_Signed;
   info.val.i32 = -1000;
   cb(ctx, &info);
 
-  info.key._impl = "timer_key";
   info.type = kMemfaultMetricType_Timer;
   info.val.u32 = 1234;
   cb(ctx, &info);

@@ -119,7 +119,6 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   // than opening a client with all certs loaded
 
   const char *memfault_root_certs[] = {
-    MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3,
     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2,
     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA,
     MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT,

@@ -70,10 +70,6 @@ static bool prv_install_cert(eMemfaultRootCert cert_id) {
   size_t cert_len;
 
   switch (cert_id) {
-    case kMemfaultRootCert_DstCaX3:
-      cert = MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DST_ROOT_CA_X3);
-      break;
     case kMemfaultRootCert_DigicertRootCa:
       cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA;
       cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA);
@@ -100,7 +96,8 @@ static bool prv_install_cert(eMemfaultRootCert cert_id) {
 }
 
 int memfault_zephyr_port_install_root_certs(void) {
-  for (eMemfaultRootCert cert_id = kMemfaultRootCert_DstCaX3; cert_id <  kMemfaultRootCert_MaxIndex;
+  for (eMemfaultRootCert cert_id = kMemfaultRootCert_DigicertRootCa;
+       cert_id < kMemfaultRootCert_MaxIndex;
        cert_id ++) {
     const int rv = prv_install_cert(cert_id);
     if (rv != 0) {
@@ -120,7 +117,7 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
   const sec_tag_t sec_tag_opt[] = {
     kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_DigicertRootCa,
-    kMemfaultRootCert_DstCaX3,  kMemfaultRootCert_CyberTrustRoot,
+    kMemfaultRootCert_CyberTrustRoot,
     kMemfaultRootCert_AmazonRootCa1 };
   int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {

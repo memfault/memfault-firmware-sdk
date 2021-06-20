@@ -18,7 +18,6 @@ extern "C" {
 typedef enum {
   // arbitrarily high base so as not to conflict with id used for other certs in use by the system
   kMemfaultRootCert_Base = 1000,
-  kMemfaultRootCert_DstCaX3,
   kMemfaultRootCert_DigicertRootCa,
   kMemfaultRootCert_DigicertRootG2,
   kMemfaultRootCert_CyberTrustRoot,

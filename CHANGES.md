@@ -1,3 +1,24 @@
+### Changes between Memfault SDK 0.22.0 and SDK 0.21.1 - June 17, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Reduced code space utilized by metric subsystem by transitioning from a string
+  representation of metric names to an enum representation.
+- Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use
+  latest Memfault API for uploading symbol files.
+- Removed "DST Root CA X3" from the required Memfault
+  [root certificate list](components/include/memfault/http/root_certs.h) as
+  there is no infrastructure that relies on it anymore.
+- Updated PEM representation of all root certificates to include newlines after
+  64-character intervals to improve portability with various TLS stacks.
+
+#### :house: Internal
+
+- Updated [`fw_build_id.py`](scripts/fw_build_id.py) script. The same script can
+  now also be installed via [`pypi`](https://pypi.org/project/mflt-build-id/):
+  `pip install mflt_build_id`
+- Various improvements to example app documentation
+
 ### Changes between Memfault SDK 0.21.1 and SDK 0.21.0 - June 9, 2021
 
 #### :chart_with_upwards_trend: Improvements
@@ -55,7 +76,7 @@
     getting linked rather than the
     [nRF Connect SDK port](ports/zephyr/ncs/src/nrfx_pmu_reboot_tracking.c#L139).
 
-### Changes between Memfault SDK 0.20.0 and SDK 0.18.0 - May 27, 2021
+### Changes between Memfault SDK 0.20.0 and SDK 0.19.0 - May 27, 2021
 
 #### :chart_with_upwards_trend: Improvements
 

@@ -43,27 +43,20 @@ typedef enum MfltMetricsIndex {
   MEMFAULT_STATIC_ASSERT(false, \
     "MEMFAULT_METRICS_KEY_DEFINE should only be used in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
 
-//! NOTE: Currently, there's only an implementation that uses constant C strings for keys.
-//!
-//! A future implementation may use smaller representations (for example, an index into an off-line
-//! string lookup table) to reduce code size as well as reduce the size of packets that go over the
-//! wire.
-//!
-//! Access to a key should _always_ be made via the MEMFAULT_METRICS_KEY() macro to ensure source
+//! NOTE: Access to a key should _always_ be made via the MEMFAULT_METRICS_KEY() macro to ensure source
 //! code compatibility with future APIs updates
 //!
 //! The struct wrapper does not have any function, except for preventing one from passing a C
 //! string to the API:
 typedef struct {
-  const char *_impl;  // Please refrain from using / relying on _impl members.
-  int _impl2;
+  int _impl;
 } MemfaultMetricId;
 
 #define _MEMFAULT_METRICS_ID_CREATE(id) \
-  { MEMFAULT_EXPAND_AND_QUOTE(id), kMfltMetricsIndex_##id }
+  { kMfltMetricsIndex_##id }
 
 #define _MEMFAULT_METRICS_ID(id) \
-  ((MemfaultMetricId) { ._impl = g_memfault_metrics_id_##id, ._impl2 = kMfltMetricsIndex_##id })
+  ((MemfaultMetricId) { kMfltMetricsIndex_##id })
 
 #ifdef __cplusplus
 }

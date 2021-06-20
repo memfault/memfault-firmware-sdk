@@ -20,11 +20,11 @@ SDK and performed the installation steps that are mentioned there.
 ### Adding Memfault to the nRF5 SDK
 
 1. Download the [v15.2.0 nRF5 SDK]
-2. Delete the nrf5_sdk directory and create a symlink between that and the nRF5
-   SDK. For example
+2. Delete the nrf5_sdk directory (if present) and create a symlink between that
+   and the nRF5 SDK. For example
 
 ```bash
-$ rmdir nrf5_sdk
+$ rm -rf nrf5_sdk
 $ ln -s path/to/nrf5_sdk/ nrf5_sdk
 ```
 
@@ -215,7 +215,7 @@ The nRF SDK demo app symbol file can be found at:
 
 This ELF file contains the symbols (debug information) amongst other things.
 
-[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
+[More information on Build Ids and uploading Symbol Files can be found here](https://mflt.io/symbol-file-build-ids).
 
 #### Post coredump
 

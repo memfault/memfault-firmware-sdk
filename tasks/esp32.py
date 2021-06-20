@@ -11,8 +11,8 @@ from glob import glob
 from sys import executable as PYTHON
 from sys import exit
 
-from pyftdi.usbtools import UsbTools
 from invoke import Collection, task
+from pyftdi.usbtools import UsbTools
 
 from .gdb import gdb_build_cmd
 
@@ -115,7 +115,7 @@ def esp32_console(ctx, port=None):
         port = _esp32_guess_console_port()
     # For now, just use miniterm, idf_monitor.py doesn't play nice with pyftdi for some reason :(
     # _run_idf_script(ctx, '-p {port}'.format(port=port), 'monitor', pty=True)
-    ctx.run("miniterm.py --raw {port} 115200".format(port=port), pty=True)
+    ctx.run("miniterm.py --eol CR --raw {port} 115200".format(port=port), pty=True)
 
 
 @task

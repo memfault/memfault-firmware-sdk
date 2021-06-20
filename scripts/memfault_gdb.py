@@ -939,8 +939,10 @@ def has_uploaded_symbols(config, software_type, software_version):
     software_version_obj = http_get_software_version(config, software_type, software_version)
     if not software_version_obj:
         return False
-    artifacts = software_version_obj["artifacts"]
-    return any(map(lambda artifact: artifact["type"] == "symbols", artifacts))
+    symbol_file = software_version_obj.get("symbol_file")
+    if not symbol_file:
+        return False
+    return bool(symbol_file.get("downloadable"))
 
 
 def upload_symbols_if_needed(config, elf_fn, software_type, software_version):

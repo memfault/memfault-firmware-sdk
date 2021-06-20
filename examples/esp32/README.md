@@ -1,7 +1,7 @@
 # Memfault for ESP32
 
-This example application shows an integration with the ESP-IDF v3.3.5 SDK where a
-saved coredump is posted to the Memfault cloud for analysis.
+This example application shows an integration with the ESP-IDF v3.3.5 SDK where
+a saved coredump is posted to the Memfault cloud for analysis.
 
 If you already have an ESP-IDF project based on the v4.x or v3.x SDK, a step by
 step getting started guide can be found [here](https://mflt.io/esp-tutorial).
@@ -45,16 +45,23 @@ We assume you have a working setup for the
 
 ### Adding Memfault to the ESP-IDF SDK
 
-1. Delete the dummy esp-idf directory and clone a copy of the v3.3.5 SDK.
+1. Delete the dummy esp-idf directory (if present) and clone a copy of the
+   v3.3.5 SDK.
 
-```bash
-cd examples/esp32/
-rmdir esp-idf
-git clone -b v3.3.5 --recursive https://github.com/espressif/esp-idf.git esp-idf
-cd esp-idf
-export IDF_TOOLS_PATH=$(pwd)
-source ./export.sh
-```
+   ```bash
+   cd examples/esp32/
+   rm -rf esp-idf
+   git clone -b v3.3.5 --recursive https://github.com/espressif/esp-idf.git esp-idf
+   cd esp-idf
+   export IDF_TOOLS_PATH=$(pwd)
+   source ./export.sh
+   ```
+
+1. Install the memfault build id utility:
+
+   ```bash
+   pip install mflt-build-id
+   ```
 
 That's it! You should be good to go!
 
@@ -65,6 +72,7 @@ using pyinvoke:
 ```bash
 invoke esp32.build
 ```
+
 or use the Espressif command:
 
 ```bash
@@ -76,6 +84,7 @@ cd examples/esp32/apps/memfault_demo_app && idf.py build
 ```bash
 invoke esp32.flash
 ```
+
 or use the Espressif command:
 
 ```bash
@@ -84,9 +93,10 @@ cd examples/esp32/apps/memfault_demo_app && idf.py -p <console port, i.e -p /dev
 
 ### Console
 
-```
+```bash
 invoke esp32.console
 ```
+
 or
 
 ```bash
@@ -117,7 +127,7 @@ the project and attach the debug console (see instruction above).
 As a sanity check, let's request the device info from the debug console, enter
 `get_device_info` and press enter:
 
-```
+```plaintext
 esp32> get_device_info
 I (55239) mflt: S/N: 30AEA44AFF28
 I (55239) mflt: SW type: esp32-main
@@ -136,7 +146,7 @@ requirements (see
 Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`:
 
-```
+```plaintext
 esp32> crash 0
 abort() was called at PC 0x400e54a3 on core 0
 
@@ -153,7 +163,7 @@ again.
 To check whether the coredump has been captured, try running the `get_core`
 command:
 
-```
+```plaintext
 esp32> get_core
 
 I (77840) mflt: Has coredump with size: 768
@@ -169,20 +179,20 @@ The ESP32 SDK demo app symbol file can be found at:
 
 This ELF file contains the symbols (debug information) amongst other things.
 
-[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
+[More information on Build Ids and uploading Symbol Files can be found here](https://mflt.io/symbol-file-build-ids).
 
 #### Post coredump
 
 To post the collected crash to the Memfault cloud, first join a WiFi network:
 
-```
+```plaintext
 esp32> join <SSID> <PASSWORD>
 I (116450) connect: Connecting to '<SSID>'
 ```
 
 Then post the data:
 
-```
+```plaintext
 esp32> post_core
 I (12419) mflt: Posting Memfault Data...
 I (12419) mflt: Result: 0

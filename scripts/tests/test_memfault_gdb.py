@@ -14,9 +14,9 @@ from unittest.mock import ANY, MagicMock
 
 import pytest
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-root_dir = os.path.dirname(os.path.dirname(script_dir))
-sys.path.insert(0, root_dir)
+tests_dir = os.path.dirname(os.path.realpath(__file__))
+scripts_dir = os.path.dirname(tests_dir)
+sys.path.insert(0, scripts_dir)
 
 
 @pytest.fixture
@@ -695,9 +695,13 @@ def test_login_command_try(gdb_base_fixture, http_expect_request):
         (
             True,
             200,
-            {"data": {"artifacts": [{"type": "symbols", "hardware_version": TEST_HW_VERSION}]}},
+            {"data": {"symbol_file": {"downloadable": True}}},
         ),
-        (False, 200, {"data": {"artifacts": []}}),
+        (
+            False,
+            200,
+            {"data": {}},
+        ),
         (False, 404, None),
     ],
 )

@@ -322,7 +322,7 @@ TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
 TEST(MemfaultHeartbeatMetrics, Test_KeyDNE) {
   // NOTE: Using the macro MEMFAULT_METRICS_KEY, it's impossible for a non-existent key to trigger a
   // compilation error so we just create an invalid key.
-  MemfaultMetricId key = (MemfaultMetricId){ "non_existent_key", INT32_MAX };
+  MemfaultMetricId key = (MemfaultMetricId){ INT32_MAX };
 
   int rv = memfault_metrics_heartbeat_set_signed(key, 0);
   CHECK(rv != 0);

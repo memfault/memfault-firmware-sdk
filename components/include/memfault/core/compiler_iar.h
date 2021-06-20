@@ -21,7 +21,6 @@ extern "C" {
 #define MEMFAULT_NAKED_FUNC
 #define MEMFAULT_UNREACHABLE while (1)
 #define MEMFAULT_NO_OPT _Pragma("optimize=none")
-#define MEMFAULT_STRINGIZE(x) #x
 #define MEMFAULT_ALIGNED(x) _Pragma(MEMFAULT_QUOTE(data_alignment=x))
 #define MEMFAULT_UNUSED
 #define MEMFAULT_USED __root

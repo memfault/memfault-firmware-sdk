@@ -17,7 +17,7 @@ script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
 ELF_FIXTURES_DIR = os.path.join(test_dir, "elf_fixtures")
 
-from fw_build_id import BuildIdInspectorAndPatcher, MemfaultBuildIdTypes  # noqa isort:skip
+from mflt_build_id import BuildIdInspectorAndPatcher, MemfaultBuildIdTypes  # noqa isort:skip
 
 
 @contextlib.contextmanager
@@ -167,6 +167,22 @@ def test_build_id_dump(capsys, snapshot):
                 MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1,
                 "152121637a37ec8f8b7c3a29b8708b705e3350cb",
                 7,
+            ),
+        ),
+        (
+            "gnu_id_present_and_not_used.elf",
+            (
+                MemfaultBuildIdTypes.NONE,
+                None,
+                None,
+            ),
+        ),
+        (
+            "no_symtab_no_text_no_data.elf",
+            (
+                None,
+                None,
+                None,
             ),
         ),
     ],

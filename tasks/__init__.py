@@ -22,6 +22,10 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
         env_dict["CPPUTEST_HOME"] = os.environ.get(
             "CPPUTEST_HOME", "/usr/local/Cellar/cpputest/3.8"
         )
+
+    if "CPPUTEST_HOME" in os.environ:
+        # override target platform so the test build system can locate the
+        # conda-installed cpputest libraries
         env_dict["TARGET_PLATFORM"] = ""
 
     if coverage:

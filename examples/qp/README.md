@@ -138,7 +138,7 @@ Memfault needs the symbols for the firmware in order to analyze the coredump.
 The ELF is located at `build/memfault_demo_app.elf`. This .elf contains the
 symbols (debug information) amongst other things.
 
-[More information on creating Software Versions and uploading symbols can be found here](https://mflt.io/2LGUDoA).
+[More information on Build Ids and uploading Symbol Files can be found here](https://mflt.io/symbol-file-build-ids).
 
 #### Posting captured data to Memfault
 
