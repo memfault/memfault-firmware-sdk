@@ -8,18 +8,16 @@
 
 #if defined(__aarch64__)
 
-#include "memfault/panics/fault_handling.h"
-
 #include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/panics/arch/arm/aarch64.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
+#include "memfault/panics/fault_handling.h"
 
 MEMFAULT_WEAK
-void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
-
-}
+void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
+                                     MEMFAULT_UNUSED eMemfaultRebootReason reason) {}
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   *num_regions = 0;
@@ -28,6 +26,7 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 
 static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
+MEMFAULT_NORETURN
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   memfault_platform_fault_handler(regs, reason);
 
@@ -62,21 +61,30 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   MEMFAULT_UNREACHABLE;
 }
 
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
+MEMFAULT_NORETURN
+static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
   sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)(uintptr_t)pc,
     .lr = (uint32_t)(uintptr_t)lr,
   };
-  s_crash_reason = kMfltRebootReason_Assert;
+  s_crash_reason = reason;
   memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
 
   // For assert path, we will trap into fault handler
   __builtin_trap();
 }
 
+void memfault_fault_handling_assert(void *pc, void *lr) {
+  prv_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
+}
+
+void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
+  prv_fault_handling_assert(pc, lr, extra_info->assert_reason);
+}
+
 size_t memfault_coredump_storage_compute_size_required(void) {
   // actual values don't matter since we are just computing the size
-  sMfltRegState core_regs = { 0 };
+  sMfltRegState core_regs = {0};
   sMemfaultCoredumpSaveInfo save_info = {
     .regs = &core_regs,
     .regs_size = sizeof(core_regs),

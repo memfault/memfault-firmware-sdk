@@ -12,10 +12,12 @@ import tempfile
 
 import pytest
 
+from .elf_fixtures import ELF_FIXTURES_DIR
+
 test_dir = os.path.dirname(os.path.realpath(__file__))
 script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
-ELF_FIXTURES_DIR = os.path.join(test_dir, "elf_fixtures")
+
 
 from mflt_build_id import BuildIdInspectorAndPatcher, MemfaultBuildIdTypes  # noqa isort:skip
 

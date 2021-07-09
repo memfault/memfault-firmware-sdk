@@ -1,3 +1,36 @@
+### Changes between Memfault SDK 0.23.0 and SDK 0.22.0 - July 8, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Support for Dialog DA1469x chip family (Huge thanks to @iandmorris for the
+  help here!)
+  - Example eclipse project and more details about how to add the port to any
+    DA1469x based project [can be found here](examples/dialog/da1469x).
+- Added a simple utility to track heap allocations. This can be used to more
+  easily debug what allocations led to out of memory situations with the
+  addition of only several hundred bytes to a coredump capture. For more
+  details, see
+  [`memfault/core/heap_stats.h`](components/include/memfault/core/heap_stats.h)
+  - For FreeRTOS users, automatic tracking of heap allocations can be enabled
+    with the Memfault port. To enable, see the "Heap Tracking" section in the
+    README at [ports/freertos/](ports/freertos).
+- Added new convenience utilities for asserting when a watchdog event is
+  detected,
+  [`MEMFAULT_SOFTWARE_WATCHDOG`](components/include/memfault/panics/assert.h#L65).
+  This will result in the issue in the Memfault UI being classified for as a
+  "Software Watchdog" instead of an "Assert" for easier classification.
+- Fixed a :bug: in
+  [Zephyr port](ports/zephyr/common/memfault_platform_metrics.c) where cpu
+  runtime metrics were never getting reset after a heartbeat was collected
+  leading to always increasing runtime values getting reported.
+
+#### :house: Internal
+
+- Improved support for running [tests](tests/) against different versions of
+  clang and gcc and enabled more address sanitizers such as
+  [`-fsanitize=undefined`](https://interrupt.memfault.com/blog/ubsan-trap)
+- Misc documentation edits
+
 ### Changes between Memfault SDK 0.22.0 and SDK 0.21.1 - June 17, 2021
 
 #### :chart_with_upwards_trend: Improvements

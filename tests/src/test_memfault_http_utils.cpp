@@ -352,7 +352,7 @@ TEST(MfltHttpClientUtils, Test_HttpResponseUnexpectedlyLongFirstLine) {
       "\r\n"
       "Accepted"; // Body, 8 bytes
 
-    prv_expect_parse_failure(rsp, strlen(rsp), 
+    prv_expect_parse_failure(rsp, strlen(rsp),
                              MfltHttpParseStatus_HeaderTooLongError);
 }
 
@@ -419,14 +419,14 @@ TEST(MfltHttpClientUtils, Test_MfltResponseShort) {
 TEST(MfltHttpClientUtils, Test_MfltResponseBadContentLength) {
   const static char *rsp =
       "HTTP/1.1 202 Accepted\r\n"
-      "Content-Length:1a\r\n\r\n";;
+      "Content-Length:1a\r\n\r\n";
   prv_expect_parse_failure(rsp, strlen(rsp), MfltHttpParseStatus_ParseHeaderError);
 }
 
 TEST(MfltHttpClientUtils, Test_MfltResponseNoColonSeparator) {
   const static char *rsp =
       "HTTP/1.1 202 Accepted\r\n"
-      "Content-Length&10\r\n\r\n";;
+      "Content-Length&10\r\n\r\n";
   prv_expect_parse_failure(rsp, strlen(rsp), MfltHttpParseStatus_ParseHeaderError);
 }
 

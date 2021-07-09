@@ -27,6 +27,7 @@ extern "C" {
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/event_storage.h"
+#include "memfault/core/heap_stats.h"
 #include "memfault/core/log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"

@@ -1,0 +1,11 @@
+LDSCRIPT_PATH=../ldscripts
+
+.PHONY: main-build pre-build generate_ldscripts FORCE
+main-build : | pre-build
+
+FORCE:
+
+generate_ldscripts : mem.ld sections.ld
+
+%.ld : $(LDSCRIPT_PATH)/%.ld.h FORCE
+	"$(CC)" -I "$(BSP_CONFIG_DIR)" -I "$(MIDDLEWARE_CONFIG_DIR)" $(PRE_BUILD_EXTRA_DEFS) -imacros "$(APP_CONFIG_H)" $(LD_DEFS) -Ddg_configDEVICE=$(DEVICE) -E -P -c "$<" -o "$@"

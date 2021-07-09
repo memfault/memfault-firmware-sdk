@@ -24,6 +24,6 @@ size_t memfault_encode_varint_si32(int32_t value, void *buf) {
   // -1 -> 1
   //  1 -> 2
   // -2 -> 3
-  uint32_t u32_repr = (uint32_t)(value << 1) ^ (uint32_t)(value >> 31);
+  uint32_t u32_repr = ((uint32_t)value << 1) ^ (uint32_t)(value >> 31);
   return memfault_encode_varint_u32(u32_repr, buf);
 }

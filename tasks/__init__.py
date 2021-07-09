@@ -19,14 +19,17 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
     """Runs unit tests"""
     env_dict = {}
     if is_macos():
+        # Search to see if CPPUTEST_HOME is already on the path (i.e in a conda environment)
+        # Otherwise, fallback to the default install location used with brew
         env_dict["CPPUTEST_HOME"] = os.environ.get(
-            "CPPUTEST_HOME", "/usr/local/Cellar/cpputest/3.8"
+            "CPPUTEST_HOME", "/usr/local/Cellar/cpputest/4.0"
         )
 
     if "CPPUTEST_HOME" in os.environ:
         # override target platform so the test build system can locate the
-        # conda-installed cpputest libraries
-        env_dict["TARGET_PLATFORM"] = ""
+        # conda-installed cpputest libraries. the conda-forge linux installation
+        # puts the library under lib64 for some reason 🙄
+        env_dict["TARGET_PLATFORM"] = "lib" if is_macos() else "lib64"
 
     if coverage:
         rule += " lcov"

@@ -38,47 +38,40 @@ class SectionType(Enum):
     UNALLOCATED = 5
 
 
-class MemfaultBuildIdTypes(Enum):
-    # "eMemfaultBuildIdType" from "core/src/memfault_build_id_private.h"
-    NONE = 1
-    GNU_BUILD_ID_SHA1 = 2
-    MEMFAULT_BUILD_ID_SHA1 = 3
-
-
-class BuildIdException(Exception):
-    pass
-
-
-class BuildIdInspectorAndPatcher:
-    def __init__(self, elf_file):
+class ELFFileHelper:
+    def __init__(self, elf):
         """
-        :param elf_file: file object with the ELF to inspect and/or patch
+        :param elf: An elftools.elf.elffile.ELFFile instance
         """
-        self.elf_file = elf_file
-        self.elf = ELFFile(elf_file)
+        self.elf = elf
 
     @staticmethod
-    def _section_in_binary(section):
+    def section_in_binary(section):
         # Only allocated sections make it into the actual binary
         sh_flags = section["sh_flags"]
         return sh_flags & SH_FLAGS.SHF_ALLOC != 0
 
-    def _get_section_type(self, section):
-        if not self._section_in_binary(section):
-            return SectionType.UNALLOCATED
+    def find_symbol_and_section(self, symbol_name):
+        symtab = self.elf.get_section_by_name(".symtab")
+        if symtab is None:
+            return None, None
+        symbol = symtab.get_symbol_by_name(symbol_name)
+        if not symbol:
+            return None, None
 
-        sh_flags = section["sh_flags"]
-        is_text = sh_flags & SH_FLAGS.SHF_EXECINSTR != 0 or sh_flags & SH_FLAGS.SHF_WRITE == 0
-        if is_text:
-            return SectionType.TEXT
-        if section["sh_type"] != "SHT_NOBITS":
-            return SectionType.DATA
+        symbol = symbol[0]
 
-        return SectionType.BSS
+        symbol_start = symbol["st_value"]
+        symbol_size = symbol["st_size"]
 
-    def _find_section_for_address_range(self, addr_range):
+        section = self.find_section_for_address_range((symbol_start, symbol_start + symbol_size))
+        if section is None:
+            raise BuildIdException("Could not locate a section with symbol {}".format(symbol_name))
+        return (symbol, section)
+
+    def find_section_for_address_range(self, addr_range):
         for section in self.elf.iter_sections():
-            if not self._section_in_binary(section):
+            if not ELFFileHelper.section_in_binary(section):
                 continue
 
             sec_start = section["sh_addr"]
@@ -97,34 +90,62 @@ class BuildIdInspectorAndPatcher:
             return section
         return None
 
-    def _find_symbol_and_section(self, symbol_name):
-        symtab = self.elf.get_section_by_name(".symtab")
-        if symtab is None:
-            return None, None
-        symbol = symtab.get_symbol_by_name(symbol_name)
-        if not symbol:
-            return None, None
+    @staticmethod
+    def get_symbol_offset_in_sector(symbol, section):
+        return symbol["st_value"] - section["sh_addr"]
 
-        symbol = symbol[0]
-
-        symbol_start = symbol["st_value"]
+    def get_symbol_data(self, symbol, section):
+        offset_in_section = self.get_symbol_offset_in_sector(symbol, section)
         symbol_size = symbol["st_size"]
+        data = section.data()[offset_in_section : offset_in_section + symbol_size]
+        if isinstance(data, str):  # Python 2.x
+            return bytearray(data)
+        return data
 
-        section = self._find_section_for_address_range((symbol_start, symbol_start + symbol_size))
-        if section is None:
-            raise BuildIdException("Could not locate a section with symbol {}".format(symbol_name))
-        return (symbol, section)
+    def get_section_type(self, section):
+        if not self.section_in_binary(section):
+            return SectionType.UNALLOCATED
+
+        sh_flags = section["sh_flags"]
+        is_text = sh_flags & SH_FLAGS.SHF_EXECINSTR != 0 or sh_flags & SH_FLAGS.SHF_WRITE == 0
+        if is_text:
+            return SectionType.TEXT
+        if section["sh_type"] != "SHT_NOBITS":
+            return SectionType.DATA
+
+        return SectionType.BSS
+
+
+class MemfaultBuildIdTypes(Enum):
+    # "eMemfaultBuildIdType" from "core/src/memfault_build_id_private.h"
+    NONE = 1
+    GNU_BUILD_ID_SHA1 = 2
+    MEMFAULT_BUILD_ID_SHA1 = 3
+
+
+class BuildIdException(Exception):
+    pass
+
+
+class BuildIdInspectorAndPatcher:
+    def __init__(self, elf_file):
+        """
+        :param elf_file: file object with the ELF to inspect and/or patch
+        """
+        self.elf_file = elf_file
+        self.elf = ELFFile(elf_file)
+        self._helper = ELFFileHelper(self.elf)
 
     def _generate_build_id(self):
         build_id = hashlib.sha1()
         for section in self.elf.iter_sections():
-            if not self._section_in_binary(section):
+            if not self._helper.section_in_binary(section):
                 continue
 
             sec_start = section["sh_addr"]
             build_id.update(struct.pack("<I", sec_start))
 
-            sec_type = self._get_section_type(section)
+            sec_type = self._helper.get_section_type(section)
             if sec_type == SectionType.BSS:
                 # All zeros so just include the length of the section in our sha1
                 length = section["sh_size"]
@@ -133,18 +154,6 @@ class BuildIdInspectorAndPatcher:
                 build_id.update(section.data())
 
         return build_id
-
-    @staticmethod
-    def _get_symbol_offset_in_sector(symbol, section):
-        return symbol["st_value"] - section["sh_addr"]
-
-    def _get_symbol_data(self, symbol, section):
-        offset_in_section = self._get_symbol_offset_in_sector(symbol, section)
-        symbol_size = symbol["st_size"]
-        data = section.data()[offset_in_section : offset_in_section + symbol_size]
-        if isinstance(data, str):
-            return bytearray(data)
-        return data
 
     def _get_build_id(self):
         def _get_note_sections(elf):
@@ -162,7 +171,7 @@ class BuildIdInspectorAndPatcher:
 
     def _write_and_return_build_info(self, dump_only):
         sdk_build_id_sym_name = "g_memfault_build_id"
-        symbol, section = self._find_symbol_and_section(sdk_build_id_sym_name)
+        symbol, section = self._helper.find_symbol_and_section(sdk_build_id_sym_name)
         if symbol is None:
             raise BuildIdException(
                 "Could not locate '{}' symbol in provided ELF".format(sdk_build_id_sym_name)
@@ -171,7 +180,7 @@ class BuildIdInspectorAndPatcher:
         gnu_build_id = self._get_build_id()
 
         # Maps to sMemfaultBuildIdStorage from "core/src/memfault_build_id_private.h"
-        data = self._get_symbol_data(symbol, section)
+        data = self._helper.get_symbol_data(symbol, section)
 
         # FW SDK's <= 0.20.1 did not encode the configured short length in the
         # "sMemfaultBuildIdStorage". In this situation the byte was a zero-initialized padding
@@ -188,13 +197,13 @@ class BuildIdInspectorAndPatcher:
             return MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1, gnu_build_id, short_len
 
         derived_sym_name = "g_memfault_sdk_derived_build_id"
-        sdk_build_id, sdk_build_id_section = self._find_symbol_and_section(derived_sym_name)
+        sdk_build_id, sdk_build_id_section = self._helper.find_symbol_and_section(derived_sym_name)
         if sdk_build_id is None:
             raise BuildIdException(
                 "Could not locate '{}' symbol in provided elf".format(derived_sym_name)
             )
 
-        data = self._get_symbol_data(sdk_build_id, sdk_build_id_section)
+        data = self._helper.get_symbol_data(sdk_build_id, sdk_build_id_section)
 
         if build_id_type == MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value:
             build_id = data.hex() if isinstance(data, bytes) else bytes(data).encode("hex")
@@ -212,16 +221,16 @@ class BuildIdInspectorAndPatcher:
         build_id = self._generate_build_id()
 
         with open(self.elf_file.name, "r+b") as fh:
-            build_id_type_patch_offset = section["sh_offset"] + self._get_symbol_offset_in_sector(
-                symbol, section
-            )
+            build_id_type_patch_offset = section[
+                "sh_offset"
+            ] + self._helper.get_symbol_offset_in_sector(symbol, section)
             fh.seek(build_id_type_patch_offset)
 
             fh.write(struct.pack("B", MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1.value))
 
             derived_id_patch_offset = sdk_build_id_section[
                 "sh_offset"
-            ] + self._get_symbol_offset_in_sector(sdk_build_id, sdk_build_id_section)
+            ] + self._helper.get_symbol_offset_in_sector(sdk_build_id, sdk_build_id_section)
 
             fh.seek(derived_id_patch_offset)
             fh.write(build_id.digest())

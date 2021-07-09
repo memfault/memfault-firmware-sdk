@@ -12,6 +12,20 @@
 
 static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 
+#if CONFIG_THREAD_RUNTIME_STATS
+static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t curr_cycles,
+                                              uint64_t *prev_cycles) {
+  uint64_t heartbeat_cycles;
+  if (*prev_cycles > curr_cycles) {
+    heartbeat_cycles = UINT64_MAX - *prev_cycles + curr_cycles;
+  } else {
+    heartbeat_cycles = curr_cycles - *prev_cycles;
+  }
+  memfault_metrics_heartbeat_set_unsigned(key, heartbeat_cycles);
+  *prev_cycles = curr_cycles;
+}
+#endif
+
 // Written as a function vs. in-line b/c we might want to extern this at some point?
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
 // where the metrics key names come from.
@@ -30,15 +44,20 @@ static void prv_metrics_update_stats(void) {
 #endif
 
 #if defined(CONFIG_THREAD_RUNTIME_STATS)
+  static uint64_t s_prev_thread_execution_cycles = 0;
+  static uint64_t s_prev_all_execution_cycles = 0;
+
   k_thread_runtime_stats_t rt_stats_thread;
   k_thread_runtime_stats_get(me, &rt_stats_thread);
-  memfault_metrics_heartbeat_set_unsigned(
-      MEMFAULT_METRICS_KEY(TimerTaskCpuUsage), rt_stats_thread.execution_cycles);
+  prv_execution_cycles_delta_update(MEMFAULT_METRICS_KEY(TimerTaskCpuUsage),
+                                    rt_stats_thread.execution_cycles,
+                                    &s_prev_thread_execution_cycles);
 
   k_thread_runtime_stats_t rt_stats_all;
   k_thread_runtime_stats_all_get(&rt_stats_all);
-  memfault_metrics_heartbeat_set_unsigned(
-      MEMFAULT_METRICS_KEY(AllTasksCpuUsage), rt_stats_all.execution_cycles);
+  prv_execution_cycles_delta_update(MEMFAULT_METRICS_KEY(AllTasksCpuUsage),
+                                    rt_stats_all.execution_cycles,
+                                    &s_prev_all_execution_cycles);
 #endif
 
 #endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */

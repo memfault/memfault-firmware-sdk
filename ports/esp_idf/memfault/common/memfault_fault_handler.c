@@ -12,14 +12,17 @@
 #include "freertos/xtensa_api.h"
 #include "memfault/panics/arch/xtensa/xtensa.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/panics/fault_handling.h"
 
 #ifndef ESP_PLATFORM
 #  error "The port assumes the esp-idf is in use!"
 #endif
 
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
-  // Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
-  // chip reboot so we just piggback off of that
+// Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
+// chip reboot so we just piggback off of that
+void memfault_fault_handling_assert(void *pc, void *lr) { abort(); }
+
+void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   abort();
 }
 

@@ -12,10 +12,17 @@
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
+#include "memfault/core/reboot_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! Additional information supplied to the Memfault extended assert handler
+typedef struct MemfaultAssertInfo {
+  uint32_t extra;
+  eMemfaultRebootReason assert_reason;
+} sMemfaultAssertInfo;
 
 #if MEMFAULT_COMPILER_ARM
 
@@ -49,7 +56,6 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void);
 //! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void);
 
-
 //! Usage Fault handler for ARM processors. The handler will capture fault information
 //! and PC/LR addresses, trigger a coredump to be captured and finally reboot.
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void);
@@ -74,16 +80,30 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
 //!
 //! @param pc The program counter
 //! @param lr The return address
-//! @param extra Extra information (reserved for internal use)
 //! @see MEMFAULT_ASSERT_RECORD
 //! @see MEMFAULT_ASSERT
 #if defined(__CC_ARM)
-//! ARMCC will optimize away link register stores from callsites which makes it impossible for a reliable
-//! backtrace to be resolved so we don't use the NORETURN attribute
+//! ARMCC will optimize away link register stores from callsites which makes it impossible for a
+//! reliable backtrace to be resolved so we don't use the NORETURN attribute
 #else
 MEMFAULT_NORETURN
 #endif
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra);
+void memfault_fault_handling_assert(void *pc, void *lr);
+
+//! Memfault assert handler with additional information.
+//!
+//! @param pc The program counter
+//! @param lr The return address
+//! @param extra_info Additional information used by the assert handler
+//! @see MEMFAULT_ASSERT_RECORD
+//! @see MEMFAULT_ASSERT
+#if defined(__CC_ARM)
+//! ARMCC will optimize away link register stores from callsites which makes it impossible for a
+//! reliable backtrace to be resolved so we don't use the NORETURN attribute
+#else
+MEMFAULT_NORETURN
+#endif
+void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info);
 
 #ifdef __cplusplus
 }

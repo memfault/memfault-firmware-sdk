@@ -380,14 +380,15 @@ static int prv_find_key_and_add(MemfaultMetricId key, int32_t amount) {
 
   switch ((int)type) {
     case kMemfaultMetricType_Signed: {
-      int32_t new_value = value->i32 + amount;
-      const bool amount_is_positive = amount > 0;
-      const bool did_increase = new_value > value->i32;
       // Clip in case of overflow:
-      if ((uint32_t) amount_is_positive ^ (uint32_t) did_increase) {
-        new_value = amount_is_positive ? INT32_MAX : INT32_MIN;
+      int64_t new_value = (int64_t)value->i32 + (int64_t)amount;
+      if (new_value > INT32_MAX) {
+        value->i32 = INT32_MAX;
+      } else if (new_value < INT32_MIN) {
+        value->i32 = INT32_MIN;
+      } else {
+        value->i32 = new_value;
       }
-      value->i32 = new_value;
       break;
     }
 

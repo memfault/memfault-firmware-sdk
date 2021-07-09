@@ -73,9 +73,6 @@ MEMFAULT_DEFAULT_INGRESS_BASE_URI = "https://ingress.memfault.com"
 MEMFAULT_DEFAULT_CHUNKS_BASE_URI = "https://chunks.memfault.com"
 MEMFAULT_DEFAULT_API_BASE_URI = "https://api.memfault.com"
 
-MEMFAULT_TRY_INGRESS_BASE_URI = "https://ingress.try.memfault.com"
-MEMFAULT_TRY_API_BASE_URI = "https://api.try.memfault.com"
-
 
 try:
     # In Python 3.x, raw_input was renamed to input
@@ -1579,12 +1576,8 @@ class MemfaultLogin(MemfaultGdbCommand):
         except MemfaultGdbArgumentParseError:
             return
 
-        if parsed_args.try_me:
-            api_uri = MEMFAULT_TRY_API_BASE_URI
-            ingress_uri = MEMFAULT_TRY_INGRESS_BASE_URI
-        else:
-            api_uri = parsed_args.api_uri
-            ingress_uri = parsed_args.ingress_uri
+        api_uri = parsed_args.api_uri
+        ingress_uri = parsed_args.ingress_uri
 
         status, reason, json_body = http_get_auth_me(
             api_uri, parsed_args.email, parsed_args.password
@@ -1631,9 +1624,6 @@ class MemfaultLogin(MemfaultGdbCommand):
                 MEMFAULT_DEFAULT_INGRESS_BASE_URI
             ),
             default=MEMFAULT_DEFAULT_INGRESS_BASE_URI,
-        )
-        parser.add_argument(
-            "--try-me", help="Use try.memfault.com base URIs", default=False, action="store_true"
         )
         args = list(filter(None, unicode_args.split(" ")))
         return parser.parse_args(args)

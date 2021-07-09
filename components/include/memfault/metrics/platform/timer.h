@@ -24,7 +24,7 @@ typedef void (MemfaultPlatformTimerCallback)(void);
 //! @param callback to invoke
 //!
 //! @return true if the timer was successfully created and started, false otherwise
-bool memfault_platform_metrics_timer_boot(uint32_t period_sec, MemfaultPlatformTimerCallback callback);
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec, MemfaultPlatformTimerCallback *callback);
 
 #ifdef __cplusplus
 }

@@ -161,6 +161,32 @@ extern "C" {
 #define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS 0
 #endif
 
+//! When the FreeRTOS port is being used, controls whether or not heap
+//! allocation tracking is enabled.
+//! Note: When using this feature, MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 0
+//! is also required
+#ifndef MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE
+#define MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE 0
+#endif
+
+//! Enable this flag to collect the heap stats information on coredump
+#ifndef MEMFAULT_COREDUMP_COLLECT_HEAP_STATS
+#define MEMFAULT_COREDUMP_COLLECT_HEAP_STATS 0
+#endif
+
+//! Max number of recent outstanding heap allocations to track.
+//! oldest tracked allocations are expired (by allocation order)
+#ifndef MEMFAULT_HEAP_STATS_MAX_COUNT
+#define MEMFAULT_HEAP_STATS_MAX_COUNT 32
+#endif
+
+//! Controls whether or not memfault_lock() will be used in the heap stats module.  If the
+//! allocation implementation in use already enables locks of it's own (i.e FreeRTOS heap_*.c
+//! implementations), the recommendation is to disable memfault locking
+#ifndef MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE
+#define MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 1
+#endif
+
 #ifndef MEMFAULT_TRACE_REASON_USER_DEFS_FILE
 #define MEMFAULT_TRACE_REASON_USER_DEFS_FILE \
   "memfault_trace_reason_user_config.def"

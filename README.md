@@ -11,9 +11,6 @@ integration guides
 
 # Getting Started
 
-To see a demo of the type of data which can be collected before writing _any_
-code, check out https://try.memfault.com.
-
 To start integrating in your platform today,
 [create a Memfault cloud account](https://mflt.io/signup).
 

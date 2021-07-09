@@ -61,19 +61,32 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
     crash_type = atoi(argv[1]);
   }
 
-  if (crash_type == 0) {
-    MEMFAULT_ASSERT(0);
-  } else if (crash_type == 1) {
-    g_bad_func_call();
-  } else if (crash_type == 2) {
-    uint64_t *buf = g_memfault_unaligned_buffer;
-    *buf = 0xbadcafe0000;
-  } else if (crash_type == 3) {
-    do_some_work5(argv);
-  } else {
-    // this should only ever be reached if crash_type is invalid
-    MEMFAULT_LOG_ERROR("Usage: \"crash\" or \"crash <n>\" where n is 0..3");
-    return -1;
+  switch (crash_type) {
+    case 0:
+      MEMFAULT_ASSERT(0);
+      break;
+
+    case 1:
+      g_bad_func_call();
+      break;
+
+    case 2: {
+      uint64_t *buf = g_memfault_unaligned_buffer;
+      *buf = 0xbadcafe0000;
+    } break;
+
+    case 3:
+      do_some_work5(argv);
+      break;
+
+    case 4:
+      MEMFAULT_SOFTWARE_WATCHDOG(0);
+      break;
+
+    default:
+      // this should only ever be reached if crash_type is invalid
+      MEMFAULT_LOG_ERROR("Usage: \"crash\" or \"crash <n>\" where n is 0..4");
+      return -1;
   }
 
   // Should be unreachable. If we get here, trigger an assert and record the crash_type which

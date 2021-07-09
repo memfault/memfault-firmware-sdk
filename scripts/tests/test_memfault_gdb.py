@@ -671,24 +671,6 @@ def test_login_command_with_all_options(gdb_base_fixture, http_expect_request):
     assert MEMFAULT_CONFIG.ingress_uri == test_ingress_uri
 
 
-def test_login_command_try(gdb_base_fixture, http_expect_request):
-    from memfault_gdb import MEMFAULT_CONFIG, MemfaultLogin
-
-    http_expect_request(
-        "https://api.try.memfault.com/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
-    )
-
-    login = MemfaultLogin()
-    login.invoke("{} {} --try-me".format(TEST_EMAIL, TEST_PASSWORD), True)
-
-    assert MEMFAULT_CONFIG.email == TEST_EMAIL
-    assert MEMFAULT_CONFIG.password == TEST_PASSWORD
-    assert MEMFAULT_CONFIG.organization is None
-    assert MEMFAULT_CONFIG.project is None
-    assert MEMFAULT_CONFIG.api_uri == "https://api.try.memfault.com"
-    assert MEMFAULT_CONFIG.ingress_uri == "https://ingress.try.memfault.com"
-
-
 @pytest.mark.parametrize(
     "expected_result,resp_status,resp_body",
     [

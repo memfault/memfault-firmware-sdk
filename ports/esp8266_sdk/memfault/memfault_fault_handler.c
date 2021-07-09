@@ -36,11 +36,15 @@ typedef struct {
   uint32_t exccause;
 } XtExcFrame;
 
+// Note: The esp8266 SDK implements abort which will invoke the esp-idf coredump handler as well
+// as a chip reboot so we just utilize that.
+
 // NB: Disable optimizations so we can get better unwinds from aborts at this point
 MEMFAULT_NO_OPT
-void memfault_fault_handling_assert(void *pc, void *lr, uint32_t extra) {
-  // Note: The esp8266 SDK implements abort which will invoke the esp-idf coredump handler as well
-  // as a chip reboot so we just utilize that.
+void memfault_fault_handling_assert(void *pc, void *lr) { abort(); }
+
+MEMFAULT_NO_OPT
+void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   abort();
 }
 

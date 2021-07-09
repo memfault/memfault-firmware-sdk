@@ -430,7 +430,7 @@ static size_t prv_get_region_size(const sMfltCoredumpRegion *const region) {
     return region->region_size;
   }
 
-  const sMfltCachedBlock *cached_block = (sMfltCachedBlock *)region->region_start;
+  const sMfltCachedBlock *cached_block = (const sMfltCachedBlock *)region->region_start;
   return cached_block->valid_cache ? cached_block->blk_size : 0;
 }
 
@@ -440,7 +440,7 @@ static const void *prv_get_region_start(const sMfltCoredumpRegion *const region)
     return region->region_start;
   }
 
-  const sMfltCachedBlock *cached_block = (sMfltCachedBlock *)region->region_start;
+  const sMfltCachedBlock *cached_block = (const sMfltCachedBlock *)region->region_start;
   return cached_block->blk;
 }
 
@@ -520,46 +520,56 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   coredump_buf += sizeof(regs);
 
   // device info
-  LONGS_EQUAL(12, *((uint32_t*)(uintptr_t)coredump_buf));
+  uint32_t actual_value;
+  // memcpy for possibly unaligned address
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(12, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(s_fake_memfault_build_id, coredump_buf, sizeof(s_fake_memfault_build_id));
   coredump_buf += sizeof(s_fake_memfault_build_id);
 
-  LONGS_EQUAL(2, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(2, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.device_serial, coredump_buf, strlen(info.device_serial));
   coredump_buf += strlen(info.device_serial);
 
-  LONGS_EQUAL(10, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(10, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.software_version, coredump_buf, strlen(info.software_version));
   coredump_buf += strlen(info.software_version);
 
-  LONGS_EQUAL(11, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(11, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.software_type, coredump_buf, strlen(info.software_type));
   coredump_buf += strlen(info.software_type);
 
-  LONGS_EQUAL(4, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(4, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.hardware_version, coredump_buf, strlen(info.hardware_version));
   coredump_buf += strlen(info.hardware_version);
 
-  LONGS_EQUAL(7, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(7, actual_value);
   coredump_buf += segment_hdr_sz;
   const uint32_t machine_type = 0;
   MEMCMP_EQUAL(&machine_type, coredump_buf, sizeof(machine_type));
   coredump_buf += sizeof(machine_type);
 
   // trace reason
-  LONGS_EQUAL(5, *((uint32_t*)(uintptr_t)coredump_buf));
+  memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+  LONGS_EQUAL(5, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(&trace_reason, coredump_buf, sizeof(trace_reason));
   coredump_buf += sizeof(trace_reason);
 
   // expected padding
   if (pad_needed) {
-    LONGS_EQUAL(6, *((uint32_t*)(uintptr_t)coredump_buf));
+    memcpy(&actual_value, coredump_buf, sizeof(actual_value));
+    LONGS_EQUAL(6, actual_value);
     coredump_buf += segment_hdr_sz;
     coredump_buf += pad_needed;
   }
