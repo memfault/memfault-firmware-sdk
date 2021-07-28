@@ -14,7 +14,7 @@
 #include <zephyr.h>
 
 static void prv_software_watchdog_timeout(struct k_timer *dummy) {
-  MEMFAULT_ASSERT(0);
+  MEMFAULT_SOFTWARE_WATCHDOG(0);
 }
 
 K_TIMER_DEFINE(s_watchdog_timer, prv_software_watchdog_timeout, NULL);
