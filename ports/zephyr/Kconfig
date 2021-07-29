@@ -174,6 +174,14 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
 
 endif # MEMFAULT_HTTP_ENABLE
 
+config MEMFAULT_SINGLE_CERT_FILE
+        bool "use a single CA cert file with all certs inside it"
+        default n
+
+config MEMFAULT_TLS_OFFLOAD
+        bool "TLS will be handled by offload"
+        default n
+
 config MEMFAULT_EVENT_STORAGE_SIZE
        int "Memfault Event Storage RAM Buffer Size"
        default 1024

@@ -28,7 +28,7 @@
 #include "memfault/http/utils.h"
 #include "memfault/panics/assert.h"
 
-#if CONFIG_MBEDTLS
+#if CONFIG_MBEDTLS && !CONFIG_MEMFAULT_TLS_OFFLOAD
 
 // Sanity check that SNI extension is enabled when using Mbed TLS since as of 2.4 Zephyr doesn't
 // enable it by default
@@ -115,10 +115,14 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
 }
 
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
+#if CONFIG_MEMFAULT_SINGLE_CERT_FILE
+  const sec_tag_t sec_tag_opt[] = {kMemfaultRootCert_DigicertRootG2 };
+#else
   const sec_tag_t sec_tag_opt[] = {
     kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_DigicertRootCa,
     kMemfaultRootCert_CyberTrustRoot,
     kMemfaultRootCert_AmazonRootCa1 };
+#endif
   int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;
