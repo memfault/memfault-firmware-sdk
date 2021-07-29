@@ -19,10 +19,13 @@ targetting the nRF52 PDK would look like:
 ```bash
 $ west init -l memfault_demo_app
 $ west update
-$ west  build  -b nrf9160dk_nrf9160ns memfault_demo_app
+$ west build -b nrf9160dk_nrf9160_ns memfault_demo_app
 ...
 [181/181] Linking C executable zephyr/zephyr.elf
 ```
+
+Note that you will need to use `nrf9160dk_nrf9160ns` instead on
+versions of NCS based on Zephyr 2.6 and earlier.
 
 ## Testing the Integration
 
