@@ -63,7 +63,7 @@ extern "C" {
   } while (0)
 
 //! Assert subclass to be used when a software watchdog trips.
-#define MEMFAULT_SOFTWARE_WATCHDOG(exp) \
+#define MEMFAULT_SOFTWARE_WATCHDOG() \
   MEMFAULT_ASSERT_EXTRA_AND_REASON(0, kMfltRebootReason_SoftwareWatchdog)
 
 #ifdef __cplusplus

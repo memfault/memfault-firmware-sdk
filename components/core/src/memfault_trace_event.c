@@ -3,9 +3,6 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/core/trace_event.h"
-#include "memfault_trace_event_private.h"
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,12 +11,15 @@
 
 #include "memfault/config.h"
 #include "memfault/core/arch.h"
+#include "memfault/core/compact_log_serializer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
 #include "memfault/core/math.h"
 #include "memfault/core/serializer_helper.h"
 #include "memfault/core/serializer_key_ids.h"
+#include "memfault/core/trace_event.h"
+#include "memfault_trace_event_private.h"
 
 #define MEMFAULT_TRACE_EVENT_STORAGE_UNINITIALIZED (-1)
 #define MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE (-2)
@@ -94,8 +94,13 @@ static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
   }
 
   if (success && log_present) {
+#if !MEMFAULT_COMPACT_LOG_ENABLE
     success = memfault_serializer_helper_encode_byte_string_kv_pair(encoder,
         kMemfaultTraceInfoEventKey_Log, info->log, info->log_len);
+#else
+    success = memfault_cbor_encode_unsigned_integer(encoder, kMemfaultTraceInfoEventKey_CompactLog) &&
+        memfault_cbor_join(encoder, info->log, info->log_len);
+#endif
   }
 
   return success;
@@ -205,6 +210,8 @@ int memfault_trace_event_with_status_capture(eMfltTraceReasonUser reason, void *
   return prv_capture_trace_event_info(&event_info);
 }
 
+#if !MEMFAULT_COMPACT_LOG_ENABLE
+
 int memfault_trace_event_with_log_capture(
     eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr, const char *fmt, ...) {
 
@@ -235,6 +242,49 @@ int memfault_trace_event_with_log_capture(
   };
   return prv_capture_trace_event_info(&event_info);
 }
+
+#else
+
+static void prv_fill_compact_log_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
+  uint8_t *log = (uint8_t *)ctx;
+  memcpy(&log[offset], buf, buf_len);
+}
+
+int memfault_trace_event_with_compact_log_capture(
+    eMfltTraceReasonUser reason, void *lr_addr,
+    uint32_t log_id, uint32_t compressed_fmt, ...) {
+
+#if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  // If a log capture takes place while in an ISR we just record a normal trace event
+  if (memfault_arch_is_inside_isr()) {
+    return memfault_trace_event_capture(reason, 0, lr_addr);
+  }
+#endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
+
+  va_list args;
+  va_start(args, compressed_fmt);
+  uint8_t log[MEMFAULT_TRACE_EVENT_MAX_LOG_LEN] = { 0 };
+
+  sMemfaultCborEncoder encoder;
+  memfault_cbor_encoder_init(&encoder, prv_fill_compact_log_cb, log, sizeof(log));
+  memfault_vlog_compact_serialize(&encoder, log_id, compressed_fmt, args);
+  size_t log_len = memfault_cbor_encoder_deinit(&encoder);
+
+  sMemfaultTraceEventInfo event_info = {
+    .reason = reason,
+    // Note: pc is recovered from file/line encoded in compact log so no need to collect!
+    .pc_addr = 0,
+    .return_addr = lr_addr,
+    .opt_fields = TRACE_EVENT_OPT_FIELD_LOG_MASK,
+    .log = &log[0],
+    .log_len = log_len,
+  };
+  va_end(args);
+
+  return prv_capture_trace_event_info(&event_info);
+}
+
+#endif
 
 size_t memfault_trace_event_compute_worst_case_storage_size(void) {
   sMemfaultTraceEventInfo event_info = {

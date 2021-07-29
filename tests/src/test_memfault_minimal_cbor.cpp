@@ -106,6 +106,41 @@ static void prv_run_array_encoder_check(
   MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
 }
 
+TEST(MemfaultMinimalCbor, Test_Join) {
+  // start an encoding for an array
+  char result[4];
+  memset(result, 0x0, sizeof(result));
+
+  sMemfaultCborEncoder encoder;
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, sizeof(result));
+
+  const uint32_t values123[] = { 0x1, 0x2, 0x3 };
+  bool success = memfault_cbor_encode_array_begin(&encoder, MEMFAULT_ARRAY_SIZE(values123));
+  CHECK(success);
+
+  // build list of integers in a seperate encoder context
+  sMemfaultCborEncoder encoder2;
+  char cbor_ints[3];
+  memfault_cbor_encoder_init(&encoder2, prv_write_cb, cbor_ints, sizeof(cbor_ints));
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(values123); i++) {
+    success = memfault_cbor_encode_unsigned_integer(&encoder2, values123[i]);
+    CHECK(success);
+  }
+
+  size_t encoded_length = memfault_cbor_encoder_deinit(&encoder2);
+  LONGS_EQUAL(sizeof(cbor_ints), encoded_length);
+
+  // join results from integer encoding into main encoder
+  success = memfault_cbor_join(&encoder, cbor_ints, encoded_length);
+
+  const uint8_t three_num_array_expected_encode[] = { 0x83, 0x01, 0x02, 0x03 };
+  encoded_length = memfault_cbor_encoder_deinit(&encoder);
+  LONGS_EQUAL(sizeof(three_num_array_expected_encode), encoded_length);
+
+  MEMCMP_EQUAL(three_num_array_expected_encode, result, sizeof(three_num_array_expected_encode));
+}
+
 TEST(MemfaultMinimalCbor, Test_EncodeArray) {
   // RFC Appendix A. Examples
 

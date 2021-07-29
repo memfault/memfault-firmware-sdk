@@ -1,3 +1,31 @@
+### Changes between Memfault SDK 0.24.0 and SDK 0.23.0 - July 27, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added "compact log" support to trace events. When enabled, the format string will be removed at
+  compile time from calls to `MEMFAULT_TRACE_EVENT_WITH_LOG` and an integer along with arguments
+  will be serialized instead. The actual string will recovered and formatted when it arrives in the
+  Memfault cloud. This leads to a massive reduction in space & bandwidth needed to send trace
+  events. For more details about how to set up,
+  [check out this guide!](https://mflt.io/compact-logs)
+- Fixed a `-Wshadow` compiler error that would arise in
+[`memfault_coredump_regions_armv7.c`](components/panics/src/memfault_coredump_regions_armv7.c)  when
+`MEMFAULT_COLLECT_MPU_STATE` was enabled
+- Updated debug print utility in
+  [`memfault_coredump_storage_debug.c`](components/panics/src/memfault_coredump_storage_debug.c) to
+  guard against potentially printing an uninitialized string.
+- Removed unnecessary extra argument from `MEMFAULT_SOFTWARE_WATCHDOG`
+
+#### :boom: Breaking Changes
+
+- If you were already using `MEMFAULT_SOFTWARE_WATCHDOG`, you will need to update your call site
+invocations to remove the argument being passed. i.e
+
+```diff
+-      MEMFAULT_SOFTWARE_WATCHDOG(0);
++      MEMFAULT_SOFTWARE_WATCHDOG();
+```
+
 ### Changes between Memfault SDK 0.23.0 and SDK 0.22.0 - July 8, 2021
 
 #### :chart_with_upwards_trend: Improvements
@@ -1332,7 +1360,7 @@ void record_temperature(void) {
   The feature can be disabled completely by adding
   `-DMEMFAULT_COLLECT_INTERRUPT_STATE=0` to your compiler flags. More
   configuration options can be found in
-  [memfault_coredump_regions_armv7.m](components/panics/src/memfault_coredump_regions_armv7.c).
+  [memfault_coredump_regions_armv7.c](components/panics/src/memfault_coredump_regions_armv7.c).
 - Improve documentation about integrating the SDK within a project in README
 - Update Release note summary to use markdown headings for easier referencing.
 - Update try script used to collect coredumps via GDB to also collect

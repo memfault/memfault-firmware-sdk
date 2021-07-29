@@ -206,6 +206,15 @@ extern "C" {
 #define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
 #endif
 
+//! Enables use of "compact" logs.
+//!
+//! Compact logs convert format strings to an integer index at compile time and serialize an "id"
+//! and format arguments on the device. The Memfault cloud will decode the log and format the full
+//! log greatly reducing the storage and overhead on the device side.
+#ifndef MEMFAULT_COMPACT_LOG_ENABLE
+#define MEMFAULT_COMPACT_LOG_ENABLE 0
+#endif
+
 //
 // Metrics Component Configurations
 //

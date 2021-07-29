@@ -142,6 +142,10 @@ bool memfault_cbor_encode_unsigned_integer(
   return prv_encode_unsigned_integer(encoder, kCborMajorType_UnsignedInteger, value);
 }
 
+bool memfault_cbor_join(sMemfaultCborEncoder *encoder, const void *cbor_data, size_t cbor_data_len) {
+  return prv_add_to_result_buffer(encoder, cbor_data, cbor_data_len);
+}
+
 bool memfault_cbor_encode_signed_integer(sMemfaultCborEncoder *encoder, int32_t value) {
   // Logic derived from "Appendix C Pseudocode" of RFC 7049
   int32_t ui = (value >> 31);

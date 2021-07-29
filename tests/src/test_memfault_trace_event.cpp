@@ -1,10 +1,15 @@
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
+//! @file
 
 #include <string.h>
 
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
+
 #include "fakes/fake_memfault_event_storage.h"
+
 #include "memfault/core/arch.h"
+#include "memfault/core/compact_log_serializer.h"
+#include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/trace_event.h"
@@ -12,6 +17,14 @@
 
 bool memfault_arch_is_inside_isr(void) {
   return mock().actualCall(__func__).returnBoolValueOrDefault(false);
+}
+
+bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder,
+                                     MEMFAULT_UNUSED uint32_t log_id,
+                                     MEMFAULT_UNUSED uint32_t compressed_fmt,
+                                     MEMFAULT_UNUSED va_list args) {
+  const uint8_t cbor[] = { 0x84, 0x08, 0x01, 0x02, 0x03 };
+  return memfault_cbor_join(encoder, &cbor, sizeof(cbor));
 }
 
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
@@ -128,6 +141,7 @@ TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndStatus) {
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
 }
 
+#if !MEMFAULT_COMPACT_LOG_ENABLE
 
 TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLog) {
   fake_memfault_event_storage_clear();
@@ -177,7 +191,6 @@ TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLog) {
   }
 
   fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
-
 }
 
 TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLogFromIsr) {
@@ -236,6 +249,58 @@ TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndLogFromIsr) {
   fake_event_storage_assert_contents_match(expected_data, expected_isr_data_size);
 #endif
 }
+
+#else
+
+TEST(MfltTraceEvent, Test_CaptureOk_PcAndLrAndCompactLog) {
+  fake_memfault_event_storage_clear();
+  int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
+  CHECK_EQUAL(0, rv);
+
+  const uint8_t expected_data[] = {
+    0xA7,
+    0x02, 0x02,
+    0x03, 0x01,
+    0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
+    0x0A, 0x64, 'm', 'a', 'i', 'n',
+    0x09, 0x65, '1', '.', '2', '.', '3',
+    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
+    0x04,
+    0xA3,
+    0x06, 0x03,
+    0x03, 0x1A, 0xAA, 0xBB, 0xCC, 0xDD,
+    0x09, 0x84, 0x08, 0x01, 0x02, 0x03,
+  };
+
+  void *lr = (void *)0xaabbccdd;
+
+#if defined(MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED) && !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  const size_t expected_check_isr_calls = 2;
+#else
+  const size_t expected_check_isr_calls = 1;
+#endif
+
+  // anything less than the expected size should fail to encode
+  for (size_t i = 1; i <= sizeof(expected_data); i++) {
+    const size_t storage_size = i;
+    fake_memfault_event_storage_clear();
+    fake_memfault_event_storage_set_available_space(storage_size);
+    mock().expectNCalls(expected_check_isr_calls, "memfault_arch_is_inside_isr");
+    mock().expectOneCall("prv_begin_write");
+    const bool expect_rollback = (storage_size < sizeof(expected_data));
+    mock().expectOneCall("prv_finish_write").withParameter("rollback", expect_rollback);
+
+    rv = memfault_trace_event_with_compact_log_capture(
+        kMfltTraceReasonUser_test, lr, 0x40, 8, 1, 2, 3);
+
+    CHECK_EQUAL(expect_rollback ? -2 : 0, rv);
+    mock().checkExpectations();
+  }
+
+  fake_event_storage_assert_contents_match(expected_data, sizeof(expected_data));
+}
+
+#endif /* MEMFAULT_COMPACT_LOG_ENABLE */
 
 static void prv_setup_isr_test(void) {
   fake_memfault_event_storage_clear();

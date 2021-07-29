@@ -80,7 +80,7 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
       break;
 
     case 4:
-      MEMFAULT_SOFTWARE_WATCHDOG(0);
+      MEMFAULT_SOFTWARE_WATCHDOG();
       break;
 
     default:

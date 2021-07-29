@@ -133,6 +133,9 @@ LIB_FILES += \
 # Optimization flags
 OPT = -O3 -g3
 
+# NB: Compact logging utilizes GNU extension for token paste operator
+CFLAGS += -std=gnu11
+
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DBOARD_PCA10056

@@ -15,11 +15,14 @@
 //! @note To capture a full snapshot of an error condition (all tasks, logs, and local &
 //! global variable state), you can integrate memfault coredumps: https://mflt.io/coredumps
 
+#include <stddef.h>
+
+#include "memfault/config.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/trace_event_impl.h"
 #include "memfault/core/trace_reason_user.h"
-
-#include <stddef.h>
+#include "memfault/core/compact_log_helpers.h"
+#include "memfault/core/compact_log_compile_time_checks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +77,8 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
         MEMFAULT_TRACE_REASON(reason), mflt_pc, mflt_lr, status_code);  \
   } while (0)
 
+#if !MEMFAULT_COMPACT_LOG_ENABLE
+
 //! Records same info as MEMFAULT_TRACE_EVENT as well as a log
 //!
 //! @note The log alows one to capture arbitrary metadata when a system error is detected
@@ -90,6 +95,22 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
     memfault_trace_event_with_log_capture(                              \
         MEMFAULT_TRACE_REASON(reason), mflt_pc, mflt_lr, __VA_ARGS__);  \
   } while (0)
+
+#else
+
+#define MEMFAULT_TRACE_EVENT_WITH_LOG(reason, format, ...)                           \
+  do {                                                                               \
+    void *lr;                                                                        \
+    MEMFAULT_GET_LR(lr);                                                             \
+    MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ## __VA_ARGS__);                \
+    MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ## __VA_ARGS__);                      \
+    memfault_trace_event_with_compact_log_capture(MEMFAULT_TRACE_REASON(reason), lr, \
+                                          MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY_PTR,    \
+                                          MFLT_GET_COMPRESSED_LOG_FMT(__VA_ARGS__),  \
+                                          ## __VA_ARGS__);                           \
+   } while (0)
+
+#endif
 
 //! Flushes an ISR trace event capture out to event storage
 //!

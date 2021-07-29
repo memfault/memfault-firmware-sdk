@@ -52,6 +52,7 @@ typedef enum {
   kMemfaultTraceInfoEventKey_UserReason = 6,
   kMemfaultTraceInfoEventKey_StatusCode = 7,
   kMemfaultTraceInfoEventKey_Log = 8,
+  kMemfaultTraceInfoEventKey_CompactLog = 9,
 } eMemfaultTraceInfoEventKey;
 
 //! EventInfo dictionary keys for events with type kMemfaultEventType_LogError.

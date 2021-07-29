@@ -44,6 +44,7 @@ class ELFFileHelper:
         :param elf: An elftools.elf.elffile.ELFFile instance
         """
         self.elf = elf
+        self._symtab = None
 
     @staticmethod
     def section_in_binary(section):
@@ -51,8 +52,16 @@ class ELFFileHelper:
         sh_flags = section["sh_flags"]
         return sh_flags & SH_FLAGS.SHF_ALLOC != 0
 
+    @property
+    def symtab(self):
+        # Cache the SymbolTableSection, to avoid re-parsing
+        if self._symtab:
+            return self._symtab
+        self._symtab = self.elf.get_section_by_name(".symtab")
+        return self._symtab
+
     def find_symbol_and_section(self, symbol_name):
-        symtab = self.elf.get_section_by_name(".symtab")
+        symtab = self.symtab
         if symtab is None:
             return None, None
         symbol = symtab.get_symbol_by_name(symbol_name)
@@ -128,12 +137,13 @@ class BuildIdException(Exception):
 
 
 class BuildIdInspectorAndPatcher:
-    def __init__(self, elf_file):
+    def __init__(self, elf_file, elf=None):
         """
         :param elf_file: file object with the ELF to inspect and/or patch
+        :param elf: optional, already instantiated ELFFile
         """
         self.elf_file = elf_file
-        self.elf = ELFFile(elf_file)
+        self.elf = elf or ELFFile(elf_file)
         self._helper = ELFFileHelper(self.elf)
 
     def _generate_build_id(self):

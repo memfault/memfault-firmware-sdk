@@ -13,10 +13,9 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/core/trace_event.h"
 
-int memfault_demo_cli_cmd_trace_event_capture(MEMFAULT_UNUSED int argc,
-                                              MEMFAULT_UNUSED char *argv[]) {
+int memfault_demo_cli_cmd_trace_event_capture(int argc, MEMFAULT_UNUSED char *argv[]) {
   // For more information on user-defined error reasons, see
   // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
-  MEMFAULT_TRACE_EVENT(MemfaultCli_Test);
+  MEMFAULT_TRACE_EVENT_WITH_LOG(MemfaultCli_Test, "Example Trace Event. Num Args %d", argc);
   return 0;
 }

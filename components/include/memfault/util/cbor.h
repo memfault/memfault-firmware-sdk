@@ -87,6 +87,17 @@ bool memfault_cbor_encode_unsigned_integer(sMemfaultCborEncoder *encoder, uint32
 //! Same as "memfault_cbor_encode_unsigned_integer" but store an unsigned integer instead
 bool memfault_cbor_encode_signed_integer(sMemfaultCborEncoder *encoder, int32_t value);
 
+//! Adds pre-encoded cbor data to the current encoder
+//!
+//! @param encoder The encoder context to use
+//! @param cbor_data The pre-encoded data to add to the current context
+//! @param cbor_data_len The length of the pre-encoded data
+//!
+//! @note Care must be taken by the end user to ensure the data being joined into the current
+//! encoding creates a valid cbor entry when combined. This utility can helpful, for example, when
+//! adding a value to a cbor dictionary/map which is a cbor record itself.
+bool memfault_cbor_join(sMemfaultCborEncoder *encoder, const void *cbor_data, size_t cbor_data_len);
+
 //! Called to encode an arbitrary binary payload
 //!
 //! @param encoder The encoder context to use

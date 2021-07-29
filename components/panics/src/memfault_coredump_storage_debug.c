@@ -257,7 +257,8 @@ static void prv_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) 
   for (uint32_t j = 0; j < buf_len; ++j) {
     sprintf(&hex_buffer[j * 2], "%02x", buf[j]);
   }
-
+  // make sure buffer is NUL terminated even if buf_len = 0
+  hex_buffer[buf_len * 2] = '\0';
   MEMFAULT_LOG_INFO("%s: %s", prefix, hex_buffer);
 }
 

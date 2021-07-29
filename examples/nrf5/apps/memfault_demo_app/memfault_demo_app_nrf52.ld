@@ -20,6 +20,11 @@ __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);
 
 SECTIONS
 {
+    log_fmt 0xF0000000 (INFO):
+    {
+       KEEP(*(*.log_fmt_hdr))
+       KEEP(*(log_fmt))
+    }
 }
 
 SECTIONS

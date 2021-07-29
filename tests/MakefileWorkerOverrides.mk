@@ -28,8 +28,16 @@ CPPUTEST_CPPFLAGS += $(MEMFAULT_EXTRA_INC_PATHS) \
 # Clang defaults to c++98 but all modern cpp compilers implement most of the features (such as
 # variadic macros) introduced in c99 that were later added as part of the c++11 specification
 # so we pin the unit tests cpp standard to c++11.
-CPPUTEST_CXXFLAGS += \
-  -std=c++11
+#
+# memfault/core/compact_log_helpers.h makes use of the gnu expansion rules for ,## __VA_ARGS__. We
+# explicitly opt in unit tests that need this feature with different gnu standard args for these
+# tests
+ifneq (,$(findstring MEMFAULT_COMPACT_LOG_ENABLE=1=,$(CPPUTEST_CFLAGS)))
+CPPUTEST_CXXFLAGS += -std=c++11
+else
+CPPUTEST_CFLAGS += -std=gnu11
+CPPUTEST_CXXFLAGS += -std=gnu++11
+endif
 
 export SILENCE ?= @
 
