@@ -30,6 +30,31 @@ static sMfltCoredumpRegion s_coredump_regions[
 #endif
     ];
 
+#if defined(__CC_ARM)
+
+static uint32_t prv_read_psp_reg(void) {
+  register uint32_t reg_val  __asm("psp");
+  return reg_val;
+}
+
+#elif defined(__TI_ARM__)
+
+static uint32_t prv_read_psp_reg(void) {
+  return __get_PSP();
+}
+
+#elif defined(__GNUC__) || defined(__clang__) || defined(__ICCARM__)
+
+static uint32_t prv_read_psp_reg(void) {
+  uint32_t reg_val;
+  __asm volatile ("mrs %0, psp"  : "=r" (reg_val));
+  return reg_val;
+}
+
+#else
+#  error "New compiler to add support for!"
+#endif
+
 MEMFAULT_WEAK
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
@@ -46,7 +71,7 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
 
   if (msp_was_active) {
     // System crashed in an ISR but the running task state is on PSP so grab that too
-    void *psp = (void *)(uintptr_t)__get_PSP();
+    void *psp = (void *)(uintptr_t)prv_read_psp_reg();
 
     // Collect a little bit more stack for the PSP since there is an
     // exception frame that will have been stacked on it as well
