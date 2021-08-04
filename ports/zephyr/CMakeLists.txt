@@ -48,7 +48,12 @@ if(CONFIG_MEMFAULT)
   endif()
 
   # Pick up Zephyr specific port files
-  add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
+  if(${MEMFAULT_ZEPHYR_PORT_TARGET} MATCHES "^v2\.[456]")
+    add_subdirectory(v2.y)
+  else()
+    add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
+  endif()
+
   add_subdirectory(common)
   add_subdirectory_ifdef(CONFIG_MEMFAULT_NRF_CONNECT_SDK ncs)
 
