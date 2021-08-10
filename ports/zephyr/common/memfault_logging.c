@@ -40,7 +40,13 @@ static void prv_log_put_sync_string(const struct log_backend *const backend,
                             struct log_msg_ids src_level, uint32_t timestamp,
                             const char *fmt, va_list ap);
 static void prv_log_panic(struct log_backend const *const backend);
-static void prv_log_init(void);
+
+
+// The function signature for struct log_backend_api init changed between Zephyr 2.5 and Zephyr 2.6
+// and we don't use any of the parameters so we leave the parameter list empty to mitigate
+// -Wincompatible-pointer-types between versions
+static void prv_log_init();
+
 static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt);
 const struct log_backend_api log_backend_mflt_api = {
   .put              = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_put,
@@ -115,7 +121,7 @@ static void prv_log_panic(struct log_backend const *const backend) {
 }
 
 // Zephyr will call our init function so we can establish some storage.
-static void prv_log_init(void) {
+static void prv_log_init() {
   // static RAM storage where logs will be stored. Storage can be any size
   // you want but you will want it to be able to hold at least a couple logs.
   static uint8_t s_mflt_log_buf_storage[CONFIG_MEMFAULT_LOGGING_RAM_SIZE];

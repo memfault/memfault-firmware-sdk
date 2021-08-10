@@ -76,7 +76,7 @@ config MEMFAULT_SHELL
 
 config MEMFAULT_HTTP_ENABLE
         bool "Enables support for using Memfault's HTTP APIs"
-        default y if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
+        default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
         help
           Enables support for querying the Memfault API for OTA updates
           and posting Memfault chunks
@@ -103,7 +103,7 @@ endif # MEMFAULT_LOGGING_ENABLE
 
 choice
     bool "Implementation used to store Memfault Root certificates"
-    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if BOARD_NRF9160DK_NRF9160NS || BOARD_THINGY91_NRF9160NS
+    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
     default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM

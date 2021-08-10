@@ -1,25 +1,55 @@
+### Changes between Memfault SDK 0.24.1 and SDK 0.24.0 - August 9, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Applied suggestions from @elliot-wdtl for the Zephyr ports
+  ([#15](https://github.com/memfault/memfault-firmware-sdk/pull/15)):
+  - Updated software watchdog port to make use of `MEMFAULT_SOFTWARE_WATCHDOG`
+    macro
+- Applied suggestions from @ioannisg & @mbolivar-nordic in
+  ([#14](https://github.com/memfault/memfault-firmware-sdk/pull/14)) to change
+  the KConfig options used to select `CONFIG_MEMFAULT_HTTP_ENABLE` &
+  `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM` &
+  `CONFIG_MEMFAULT_NRF_CONNECT_SDK` when using nRF91 targets.
+
+#### :house: Internal
+
+- Added `export` command to the demo cli to better mirror
+  [our suggested integration test commands](https://mflt.io/mcu-test-commands)
+
+#### :boom: Breaking Changes
+
+- If you are were using a custom nRF91 based board config (i.e neither
+  `BOARD_NRF9160DK_NRF9160NS` or `BOARD_THINGY91_NRF9160NS`), the following
+  KConfig options will now be enabled by default. The following can be added to
+  your `prj.conf` to restore the original behavior:
+  - `CONFIG_MEMFAULT_HTTP_ENABLE=n`
+  - `CONFIG_MEMFAULT_NRF_CONNECT_SDK=n`
+  - `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE=y`
+
 ### Changes between Memfault SDK 0.24.0 and SDK 0.23.0 - July 27, 2021
 
 #### :chart_with_upwards_trend: Improvements
 
-- Added "compact log" support to trace events. When enabled, the format string will be removed at
-  compile time from calls to `MEMFAULT_TRACE_EVENT_WITH_LOG` and an integer along with arguments
-  will be serialized instead. The actual string will recovered and formatted when it arrives in the
-  Memfault cloud. This leads to a massive reduction in space & bandwidth needed to send trace
+- Added "compact log" support to trace events. When enabled, the format string
+  will be removed at compile time from calls to `MEMFAULT_TRACE_EVENT_WITH_LOG`
+  and an integer along with arguments will be serialized instead. The actual
+  string will recovered and formatted when it arrives in the Memfault cloud.
+  This leads to a massive reduction in space & bandwidth needed to send trace
   events. For more details about how to set up,
   [check out this guide!](https://mflt.io/compact-logs)
 - Fixed a `-Wshadow` compiler error that would arise in
-[`memfault_coredump_regions_armv7.c`](components/panics/src/memfault_coredump_regions_armv7.c)  when
-`MEMFAULT_COLLECT_MPU_STATE` was enabled
+  [`memfault_coredump_regions_armv7.c`](components/panics/src/memfault_coredump_regions_armv7.c)
+  when `MEMFAULT_COLLECT_MPU_STATE` was enabled
 - Updated debug print utility in
-  [`memfault_coredump_storage_debug.c`](components/panics/src/memfault_coredump_storage_debug.c) to
-  guard against potentially printing an uninitialized string.
+  [`memfault_coredump_storage_debug.c`](components/panics/src/memfault_coredump_storage_debug.c)
+  to guard against potentially printing an uninitialized string.
 - Removed unnecessary extra argument from `MEMFAULT_SOFTWARE_WATCHDOG`
 
 #### :boom: Breaking Changes
 
-- If you were already using `MEMFAULT_SOFTWARE_WATCHDOG`, you will need to update your call site
-invocations to remove the argument being passed. i.e
+- If you were already using `MEMFAULT_SOFTWARE_WATCHDOG`, you will need to
+  update your call site invocations to remove the argument being passed. i.e
 
 ```diff
 -      MEMFAULT_SOFTWARE_WATCHDOG(0);

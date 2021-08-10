@@ -76,6 +76,10 @@ int memfault_demo_cli_cmd_system_reboot(int argc, char *argv[]);
 int memfault_demo_drain_chunk_data(int argc, char *argv[]);
 void user_transport_send_chunk_data(void *chunk_data, size_t chunk_data_len);
 
+//! Output base64 encoded chunks. Chunks can be uploaded via the Memfault CLI or
+//! manually via the Chunks Debug in the UI.
+int memfault_demo_cli_cmd_export(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif

@@ -14,6 +14,7 @@
 #include "memfault/core/math.h"
 #include "memfault/demo/cli.h"
 #include "memfault/core/compiler.h"
+#include "memfault/core/data_export.h"
 
 static int prv_panics_component_required(void) {
   MEMFAULT_LOG_RAW("Disabled. panics component integration required");
@@ -35,6 +36,12 @@ int memfault_demo_cli_cmd_crash(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *
   return prv_panics_component_required();
 }
 
+int memfault_demo_cli_cmd_export(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  memfault_data_export_dump_chunks();
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"get_core", memfault_demo_cli_cmd_get_core, "Get coredump info"},
   {"clear_core", memfault_demo_cli_cmd_clear_core, "Clear an existing coredump"},
@@ -44,6 +51,7 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"trace", memfault_demo_cli_cmd_trace_event_capture, "Capture an example trace event"},
   {"get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info"},
   {"reboot", memfault_demo_cli_cmd_system_reboot, "Reboot system and tracks it with a trace event"},
+  {"export", memfault_demo_cli_cmd_export, "Export base64-encoded chunks. To upload data see https://mflt.io/chunk-data-export"},
   {"help", memfault_shell_help_handler, "Lists all commands"},
 };
 
