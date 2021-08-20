@@ -2,30 +2,27 @@
 //!
 //! @brief
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <string.h>
-  #include <stddef.h>
-  #include <stdio.h>
-  #include <stdint.h>
+#include "memfault/core/data_packetizer.h"
+#include "memfault/core/data_packetizer_source.h"
+#include "memfault/core/data_source_rle.h"
+#include "memfault/core/math.h"
+#include "memfault/util/chunk_transport.h"
 
-  #include "memfault/core/data_packetizer.h"
-  #include "memfault/core/data_packetizer_source.h"
-  #include "memfault/core/data_source_rle.h"
-  #include "memfault/core/math.h"
-  #include "memfault/util/chunk_transport.h"
+static uint8_t s_fake_coredump[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa};
+static bool s_multi_call_chunking_enabled = false;
+static uint8_t s_fake_event[] = {0xa, 0xb, 0xc, 0xd};
+static const sMemfaultDataSourceImpl *s_active_rle_data_source = NULL;
 
-  static uint8_t s_fake_coredump[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
-  static bool s_multi_call_chunking_enabled = false;
-
-  static uint8_t s_fake_event[] = { 0xa, 0xb, 0xc, 0xd };
-
-  static const sMemfaultDataSourceImpl *s_active_rle_data_source = NULL;
-}
 
 //
 // Mocks & Fakes to exercise packetizer logic
@@ -125,7 +122,7 @@ void memfault_chunk_transport_get_chunk_info(sMfltChunkTransportCtx *ctx) {
   ctx->single_chunk_message_length = ctx->total_size;
 }
 
-static const char *log_scope = "log_data_source";
+static const char *s_log_scope = "log_data_source";
 
 TEST_GROUP(MemfaultDataPacketizer){
   void setup() {
@@ -136,7 +133,7 @@ TEST_GROUP(MemfaultDataPacketizer){
     mock().clear();
     s_multi_call_chunking_enabled = false;
     mock().strictOrder();
-    mock(log_scope).disable();
+    mock(s_log_scope).disable();
   }
   void teardown() {
     mock().checkExpectations();
@@ -501,7 +498,7 @@ TEST(MemfaultDataPacketizer, Test_BadArguments) {
 static const size_t LOG_SIZE = 1;
 
 static bool prv_has_logs(size_t *size) {
-  const bool has_logs = mock(log_scope).actualCall(__func__).returnBoolValueOrDefault(false);
+  const bool has_logs = mock(s_log_scope).actualCall(__func__).returnBoolValueOrDefault(false);
   if (has_logs) {
     *size = LOG_SIZE;
   }
@@ -511,12 +508,12 @@ static bool prv_has_logs(size_t *size) {
 static bool prv_logs_read(uint32_t offset, void *buf, size_t buf_len) {
   (void)offset;
   memset(buf, 'A', buf_len);
-  mock(log_scope).actualCall(__func__);
+  mock(s_log_scope).actualCall(__func__);
   return true;
 }
 
 static void prv_logs_mark_sent(void) {
-  mock(log_scope).actualCall(__func__);
+  mock(s_log_scope).actualCall(__func__);
 }
 
 const sMemfaultDataSourceImpl g_memfault_log_data_source  = {
@@ -528,15 +525,15 @@ const sMemfaultDataSourceImpl g_memfault_log_data_source  = {
 TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
   uint8_t packet[16];
 
-  mock(log_scope).enable();
+  mock(s_log_scope).enable();
 
   prv_setup_expect_coredump_call_expectations(false);
   mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
-  mock(log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
-  mock(log_scope).expectOneCall("prv_logs_read");
-  mock(log_scope).expectOneCall("prv_logs_mark_sent");
+  mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
+  mock(s_log_scope).expectOneCall("prv_logs_read");
+  mock(s_log_scope).expectOneCall("prv_logs_mark_sent");
 
   const bool data_expected = true;
   prv_begin_transfer(data_expected, LOG_SIZE);
@@ -550,4 +547,68 @@ TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
   // packet should be a log type
   BYTES_EQUAL(3, packet[0]);
   BYTES_EQUAL('A', packet[1]);
+}
+
+TEST(MemfaultDataPacketizer, Test_ActiveSources) {
+  uint8_t packet[16];
+
+  // changing the sources will abort any in-progress transmissions
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_None);
+  mock().checkExpectations();
+
+  size_t buf_len = sizeof(packet);
+  bool more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // exclusively enable coredumps and we should only see the coredump source get called
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_Coredump);
+
+  prv_setup_expect_coredump_call_expectations(false);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // exclusively enable events and we should only see the coredump source get called
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_Event);
+
+  mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // exclusively enabled logs and we should only see the log source get called
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_Log);
+
+  mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // events + logs enabled
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+
+  // note the cast to eMfltDataSourceMask
+  memfault_packetizer_set_active_sources(
+    (kMfltDataSourceMask_Event | kMfltDataSourceMask_Log));
+  mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
+  mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // if all sources are enabled, they should all be checked
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_All);
+
+  prv_setup_expect_coredump_call_expectations(false);
+  mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
+  mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
 }

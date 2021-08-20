@@ -123,7 +123,58 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
 //!
 //! @note This will cause any partially written pieces of data to be re-transmitted in their
 //! entirety (i.e coredump)
+//! @note This is a no-op when called and memfault_packetizer_get_next() is already returning
+//! kMemfaultPacketizerStatus_NoMoreData or memfault_packetizer_get_chunk() is already returning
+//! false
 void memfault_packetizer_abort(void);
+
+typedef enum {
+  kMfltDataSourceMask_None = (1 << 0),
+
+  // Coredumps recorded when the system crashes
+  kMfltDataSourceMask_Coredump = (1 << 1),
+
+  // All "events" collected by the SDK (reboot, traces, heartbeats)
+  kMfltDataSourceMask_Event = (1 << 2),
+  // Any "triggered" log captures: https://mflt.io/logging
+  kMfltDataSourceMask_Log = (1 << 3),
+
+  // A convenience mask which enables all active sources
+  kMfltDataSourceMask_All =
+    (kMfltDataSourceMask_Coredump | kMfltDataSourceMask_Event | kMfltDataSourceMask_Log)
+} eMfltDataSourceMask;
+
+//! Set the data sources which will be drained by the packetizer
+//!
+//! @param mask A mask representing the data sources to drain
+//!
+//! @note By default, all data sources are active.
+//!
+//! @note This API can be used to prioritize the data source drained from the packetizer.
+//! This can be useful for use cases such as:
+//!  - Devices with multi connectivity toplogies (i.e BLE & WiFi) For example, in this situation a
+//!    user in this situation could choose to only enable Event and Log transfer when connected to
+//!    BLE and enable all sources when connected to WiFi
+//!  - Devices with extended periods where there is no connection to the internet In this
+//!    situation, an end user may want to store data buffered in RAM (i.e events & logs) on flash
+//!    to minimize the RAM footprint and prevent data from being lost by an unexpected reset.
+//!    If an end user is already using a flash region to save coredumps, pre-encoded chunks
+//!    can of just events can be saved, i.e
+//!
+//!     1. Only enable draining of events with the following API call:
+//!        memfault_packetizer_set_active_sources(kMfltDataSourceMask_Event);
+//!     2. Using memfault_packetizer_get_chunk() API, now read out events and
+//!        save to flash or a filesystem (https://mflt.io/data-to-cloud)
+//!     3. When a connection becomes available
+//!       a) send pre-saved chunks from flash over your transport
+//!       b) call memfault_packetizer_get_chunk() and send data until no more data is available
+//!       c) re-enable all sources with memfault_packetizer_get_chunk(kMfltDataSourceMask_All) and
+//!          then call memfault_packetizer_get_chunk() to drain and send any data from other
+//!          sources that is now available (i.e coredumps)
+//!
+//! @note Calling this API invokes memfault_packetizer_abort(). This means any in-progress message
+//! packetization will be restarted when you next attempt to drain data.
+void memfault_packetizer_set_active_sources(uint32_t mask);
 
 #ifdef __cplusplus
 }

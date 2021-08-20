@@ -72,7 +72,18 @@ typedef enum {
   kMfltMessageType_Coredump = 1,
   kMfltMessageType_Event = 2,
   kMfltMessageType_Log = 3,
+  kMfltMessageType_NumTypes
 } eMfltMessageType;
+
+//! Make sure our externally facing types match the internal ones
+MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Coredump) == kMfltDataSourceMask_Coredump,
+                       "kMfltDataSourceMask_Coredump is incorrectly defined");
+MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Event) == kMfltDataSourceMask_Event,
+                       "kMfltDataSourceMask_Event, is incorrectly defined");
+MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Log) == kMfltDataSourceMask_Log,
+                       "kMfltDataSourceMask_Log is incorrectly defined");
+MEMFAULT_STATIC_ASSERT(kMfltMessageType_NumTypes == 4, "eMfltDataSourceMask needs to be updated");
+
 
 typedef struct MemfaultDataSource {
   eMfltMessageType type;
@@ -114,6 +125,13 @@ typedef MEMFAULT_PACKED_STRUCT {
 } sMfltPacketizerHdr;
 
 static sMfltTransportState s_mflt_packetizer_state;
+
+static eMfltDataSourceMask s_active_data_sources = kMfltDataSourceMask_All;
+
+void memfault_packetizer_set_active_sources(uint32_t mask) {
+  memfault_packetizer_abort();
+  s_active_data_sources = mask;
+}
 
 static void prv_reset_packetizer_state(void) {
   s_mflt_packetizer_state = (sMfltTransportState) {
@@ -167,6 +185,13 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
 static bool prv_get_source_with_data(size_t *total_size, sMemfaultDataSource *active_source) {
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_memfault_data_source); i++) {
     const sMemfaultDataSource *data_source = &s_memfault_data_source[i];
+
+    const bool disabled_source = (((1 << data_source->type) & s_active_data_sources) == 0);
+    if (disabled_source) {
+      // sdk user has disabled extraction of data for specified source
+      continue;
+    }
+
     const bool rle_enabled = data_source->use_rle &&
         memfault_data_source_rle_encoder_set_active(data_source->impl);
 

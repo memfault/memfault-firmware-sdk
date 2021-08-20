@@ -1,3 +1,15 @@
+### Changes between Memfault SDK 0.24.2 and SDK 0.24.1 - August 17, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a new utility API, `memfault_packetizer_set_active_sources`, to the
+  [data_packetizer](components/include/memfault/core/data_packetizer.h) module,
+  which let's one control the exact data sources that will get packetized. See
+  description in the header for more details
+- Port Improvements:
+  - NXP i.MX RT102x
+    - [rich reboot reason info derived from SRC_SRSR register](ports/nxp/rt1021/src_reboot_tracking.c)
+
 ### Changes between Memfault SDK 0.24.1 and SDK 0.24.0 - August 9, 2021
 
 #### :chart_with_upwards_trend: Improvements

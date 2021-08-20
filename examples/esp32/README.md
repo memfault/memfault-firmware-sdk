@@ -34,11 +34,11 @@ Make sure you have read the instructions in the `README.md` in the root of the
 SDK and performed the installation steps that are mentioned there.
 
 We assume you have a working setup for the
-[v3.3.5 SDK](https://docs.espressif.com/projects/esp-idf/en/v3.3.5/):
+[v4.2.2 SDK](https://docs.espressif.com/projects/esp-idf/en/v4.2.2/):
 
 - have a version of CMAKE installed
 - installed the xtensa
-  [toolchain](https://docs.espressif.com/projects/esp-idf/en/v3.3.5/get-started/index.html#setup-toolchain)
+  [toolchain](https://docs.espressif.com/projects/esp-idf/en/v4.2.2/get-started/index.html#setup-toolchain)
   and added it to your path
 
 <a name="adding-memfault"></a>
@@ -46,14 +46,15 @@ We assume you have a working setup for the
 ### Adding Memfault to the ESP-IDF SDK
 
 1. Delete the dummy esp-idf directory (if present) and clone a copy of the
-   v3.3.5 SDK.
+   v4.2.2 SDK.
 
    ```bash
    cd examples/esp32/
    rm -rf esp-idf
-   git clone -b v3.3.5 --recursive https://github.com/espressif/esp-idf.git esp-idf
+   git clone -b v4.2.2 --recursive https://github.com/espressif/esp-idf.git esp-idf
    cd esp-idf
    export IDF_TOOLS_PATH=$(pwd)
+   # you may need to install the sdk tools by running ./install.sh here
    source ./export.sh
    ```
 
