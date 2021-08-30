@@ -1,3 +1,34 @@
+### Changes between Memfault SDK 0.25.0 and SDK 0.24.2 - August 30, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a workaround to
+  [`event_storage.h`](components/include/memfault/core/event_storage.h)
+  to prevent compilation errors when using
+  [the unity test framework](http://www.throwtheswitch.org/unity) to generate
+  mocks.
+- Updated [`makefiles/MemfaultWorker.mk`](makefiles/MemfaultWorker.mk) to use
+  `sort` to guarantee a deterministic file list order irrespestive of
+  [make version](https://savannah.gnu.org/bugs/index.php?52076). A consistent
+  order is useful for
+  [reproducible builds](https://mflt.io/reproducible-builds).
+- Make use of `__has_include()` in Zephy port to remove the requirement of
+  always needing to create`memfault_platform_config.h`,
+  `memfault_metrics_heartbeat_config.def`, &
+  `memfault_trace_reason_user_config.def` for a build to compile. To force a
+  compile failure instead when any of these files do not exist, a user can set
+  [`CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL=n`](ports/zephyr/Kconfig)
+
+#### :house: Internal
+
+- The current version of the Memfault Firmware SDK can now be accessed
+  programmatically from the
+  [`memfault/version.h`](components/include/memfault/version.h).
+- Improved HTTP util parser when dealing with malformed status codes
+- Updated
+  [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app) to
+  be compatible with nRF Connect SDK 1.6
+
 ### Changes between Memfault SDK 0.24.2 and SDK 0.24.1 - August 17, 2021
 
 #### :chart_with_upwards_trend: Improvements

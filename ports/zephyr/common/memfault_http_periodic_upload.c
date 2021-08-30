@@ -43,9 +43,12 @@ K_TIMER_DEFINE(s_upload_timer, prv_timer_expiry_handler, NULL);
 static int prv_background_upload_init() {
   const uint32_t interval_secs = CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS;
 
-  // randomize the first post to spread out the reporting of
-  // information from a fleet of devices that all reboot at once
-  const uint32_t duration_secs = 60 + (sys_rand32_get() % interval_secs);
+  // Randomize the first post to spread out the reporting of
+  // information from a fleet of devices that all reboot at once.
+  // For very low values of CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
+  // cut minimum delay of first post for better testing/demoing experience.
+  const uint32_t duration_secs_minimum = interval_secs >= 60 ? 60 : 5;
+  const uint32_t duration_secs = duration_secs_minimum + (sys_rand32_get() % interval_secs);
 
   k_timer_start(&s_upload_timer, K_SECONDS(duration_secs), K_SECONDS(interval_secs));
 

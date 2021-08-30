@@ -30,6 +30,17 @@ config MEMFAULT_USER_CONFIG_ENABLE
           memfault_metrics_heartbeat_config.def
           memfault_trace_reason_user_config.def
 
+config MEMFAULT_USER_CONFIG_SILENT_FAIL
+        bool "Continue with build even if user configuration of Memfault SDK is missing"
+        default y
+        help
+          When enabled, __has_include is used to conditionally include the three Memfault
+          configuration files to a port if they exist instead of failing to compile if
+          they do not:
+          memfault_platform_config.h
+          memfault_metrics_heartbeat_config.def
+          memfault_trace_reason_user_config.def
+
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
         bool
         default n

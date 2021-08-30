@@ -5,10 +5,6 @@
 //!
 //! Entry point to Memfault Radio. In this file you will find:
 //!  1. Implementation for memfault_platform_get_device_info()
-//!    - The firmware version uses the Memfault integration with the GNU Build ID
-//!      (https://mflt.io/gnu-build-id) to guarantee dev builds always have a unique
-//!      version
-//!    - Looks up the IMEI and uses that as the device_serial
 //!  2. g_mflt_http_client_config dependency which needs to be filled in with your Project Key
 //!  3. A call to install the Root Certs used by Memfault on the nRF91 modem
 //!     (memfault_nrfconnect_port_install_root_certs())
@@ -74,7 +70,13 @@ static int prv_init_modem_lib(void) {
 static int prv_init_modem_lib(void) {
   return bsdlib_init();
 }
-#else /* nRF Connect SDK >= 1.5 */
+#elif (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR <= 5)
+#include <modem/nrf_modem_lib.h>
+static int prv_init_modem_lib(void) {
+  return nrf_modem_lib_init(NORMAL_MODE);
+}
+#else /* nRF Connect SDK >= 1.6 */
+#include "memfault_ncs.h"
 #include <modem/nrf_modem_lib.h>
 static int prv_init_modem_lib(void) {
   return nrf_modem_lib_init(NORMAL_MODE);
@@ -85,30 +87,27 @@ static int prv_init_modem_lib(void) {
 #include <dfu/mcuboot.h>
 #endif
 
+// Since the example app manages when the modem starts/stops, we manually configure the device
+// serial even when using nRF Connect SDKs including the Memfault integration (by using
+// CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
+#define IMEI_LEN 15
+static char s_device_serial[IMEI_LEN + 1 /* '\0' */] = "unknown";
+
+// A direct Memfault integration was added in 1.6
+#if (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 6)
+
+// Note: Starting with nRF Connect SDK 1.6, there is a direct integration of Memfault
+// and these dependencies are no longer needed!
+// See https://mflt.io/nrf-connect-sdk-lib for more details
+
+static char s_fw_version[16] = "1.0.0";
+
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = "<YOUR PROJECT KEY HERE>",
 };
 
-static char s_fw_version[16]="1.0.0+";
-
-#define IMEI_LEN 15
-static char s_device_serial[IMEI_LEN + 1 /* '\0' */];
-
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   static bool s_init = false;
-
-  if (!s_init) {
-    const size_t version_len = strlen(s_fw_version);
-    // We will use 6 characters of the build id to make our versions unique and
-    // identifiable between releases
-    const size_t build_id_chars = 6 + 1 /* '\0' */;
-
-    const size_t build_id_num_chars =
-        MEMFAULT_MIN(build_id_chars, sizeof(s_fw_version) - version_len - 1);
-
-    memfault_build_id_get_string(&s_fw_version[version_len], build_id_num_chars);
-    s_init = true;
-  }
 
   // platform specific version information
   *info = (sMemfaultDeviceInfo) {
@@ -118,6 +117,13 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     .hardware_version = "proto",
   };
 }
+
+// stub for function implemented in nRF Connect SDK >= 1.6
+static int memfault_ncs_device_id_set(const char *device_id, size_t len) {
+  return 0;
+}
+
+#endif
 
 static int query_modem(const char *cmd, char *buf, size_t buf_len) {
   enum at_cmd_state at_state;
@@ -143,6 +149,9 @@ static void prv_init_device_info(void) {
   strcat(s_device_serial, imei_buf);
 
   printk("Device Serial: %s\n", s_device_serial);
+
+  // register the device id with memfault port so it is used for reporting
+  memfault_ncs_device_id_set(s_device_serial, IMEI_LEN);
 }
 
 void main(void) {

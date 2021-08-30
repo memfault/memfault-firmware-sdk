@@ -38,10 +38,12 @@ if(CONFIG_MEMFAULT)
   # INTERFACE as the scope so users will pickup this define as expected.
   zephyr_compile_definitions(MEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_zephyr_platform_config.h\")
 
-  # We have some port-specific examples for Zepher so pull them in
-  # by overriding this #define. The Zephyr port def file will pull
-  # in the user's file via include directive.
+  # We automatically collect some Zephyr kernel metrics from a custom Zephyr port def file. The
+  # Zephyr port def file will pull in the user's file via include directive.
   zephyr_compile_definitions(MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_metrics_heartbeat_zephyr_port_config.def\")
+
+  # Zephyr specific port def for trace errors
+  zephyr_compile_definitions(MEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_zephyr_port_config.def\")
 
   if(${MEMFAULT_ZEPHYR_PORT_TARGET} MATCHES "^v2\.*")
     add_subdirectory(v2.x)

@@ -28,11 +28,18 @@ MEMFAULT_COMPONENTS_DIR := $(MEMFAULT_SDK_ROOT)/components
 
 MEMFAULT_COMPONENTS_INC_FOLDERS := $(MEMFAULT_COMPONENTS_DIR)/include
 
-MEMFAULT_COMPONENTS_SRCS = $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c))
+MEMFAULT_COMPONENTS_SRCS = \
+  $(foreach component, $(MEMFAULT_COMPONENTS), \
+    $(sort $(wildcard $(MEMFAULT_COMPONENTS_DIR)/$(component)/src/*.c)) \
+  )
 
 ifneq ($(filter demo,$(MEMFAULT_COMPONENTS)),)
 # The demo component is enabled so let's pick up component specific cli commands
-MEMFAULT_COMPONENTS_SRCS += $(foreach component, $(MEMFAULT_COMPONENTS), $(wildcard $(MEMFAULT_COMPONENTS_DIR)/demo/src/$(component)/*.c))
+MEMFAULT_COMPONENTS_SRCS += \
+  $(foreach component, $(MEMFAULT_COMPONENTS), \
+    $(sort $(wildcard $(MEMFAULT_COMPONENTS_DIR)/demo/src/$(component)/*.c)) \
+  )
 endif
 
-MEMFAULT_COMPONENTS_SRCS := $(patsubst %memfault_fault_handling_xtensa.c, , $(MEMFAULT_COMPONENTS_SRCS))
+MEMFAULT_COMPONENTS_SRCS := \
+  $(patsubst %memfault_fault_handling_xtensa.c, , $(MEMFAULT_COMPONENTS_SRCS))

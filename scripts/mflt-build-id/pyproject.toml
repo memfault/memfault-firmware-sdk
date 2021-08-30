@@ -3,6 +3,7 @@ name = "mflt-build-id"
 version = "0.0.3"
 description = "Memfault Build Id injector"
 authors = ["Memfault Inc <hello@memfault.com>"]
+repository = "https://github.com/memfault/memfault-firmware-sdk"
 packages = [
   { include = "mflt_build_id", from = "src" }
 ]

@@ -153,13 +153,13 @@ typedef enum {
 //! @note This API can be used to prioritize the data source drained from the packetizer.
 //! This can be useful for use cases such as:
 //!  - Devices with multi connectivity toplogies (i.e BLE & WiFi) For example, in this situation a
-//!    user in this situation could choose to only enable Event and Log transfer when connected to
-//!    BLE and enable all sources when connected to WiFi
-//!  - Devices with extended periods where there is no connection to the internet In this
+//!    user could choose to only enable Event and Log transfer when connected to BLE and enable all
+//!    sources when connected to WiFi.
+//!  - Devices with extended periods where there is no connection to the internet. In this
 //!    situation, an end user may want to store data buffered in RAM (i.e events & logs) on flash
 //!    to minimize the RAM footprint and prevent data from being lost by an unexpected reset.
-//!    If an end user is already using a flash region to save coredumps, pre-encoded chunks
-//!    can of just events can be saved, i.e
+//!    If an end user is already saving coredumps in a dedicated flash region, pre-encoded chunks
+//!    can of just events can be saved as follows:
 //!
 //!     1. Only enable draining of events with the following API call:
 //!        memfault_packetizer_set_active_sources(kMfltDataSourceMask_Event);

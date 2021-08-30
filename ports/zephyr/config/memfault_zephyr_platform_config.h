@@ -46,9 +46,28 @@ extern "C" {
 #define MEMFAULT_CACHE_FAULT_REGS 1
 #endif
 
+#if CONFIG_MEMFAULT_NRF_CONNECT_SDK
+
+#define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
+#define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
+
+#endif
+
 #if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
+
 // Pick up any user configuration overrides
+#if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+
+# if __has_include("memfault_platform_config.h")
+#   include "memfault_platform_config.h"
+# endif
+
+#else
+
 #include "memfault_platform_config.h"
+
+#endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */
+
 #else
 #define MEMFAULT_DISABLE_USER_TRACE_REASONS 1
 #endif

@@ -126,7 +126,7 @@ typedef MEMFAULT_PACKED_STRUCT {
 
 static sMfltTransportState s_mflt_packetizer_state;
 
-static eMfltDataSourceMask s_active_data_sources = kMfltDataSourceMask_All;
+static uint32_t s_active_data_sources = kMfltDataSourceMask_All;
 
 void memfault_packetizer_set_active_sources(uint32_t mask) {
   memfault_packetizer_abort();

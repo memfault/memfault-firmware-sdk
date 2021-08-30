@@ -22,6 +22,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// The unity test framework (http://www.throwtheswitch.org/unity) fails to generate mocks when
+// opaque pointers are used in a header.  To work around, the problem, we pull in the full internal
+// definition for "sMemfaultEventStorageImpl" when the unity framework is being used.
+#if defined(UNITY_INCLUDE_CONFIG_H)
+#include "memfault/core/event_storage_implementation.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

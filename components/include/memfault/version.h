@@ -2,6 +2,9 @@
 
 //! @file
 //!
+//! Copyright (c) Memfault, Inc.
+//! See License.txt for details
+//!
 //! Contains Memfault SDK version information.
 
 #ifdef __cplusplus
@@ -11,12 +14,12 @@ extern "C" {
 #include <stdint.h>
 
 typedef struct {
-  uint16_t major;
-  uint16_t minor;
-  uint16_t patch;
+  uint8_t major;
+  uint8_t minor;
+  uint8_t patch;
 } sMfltSdkVersion;
 
-#define MEMFAULT_SDK_VERSION   { .major = 0, .minor = 24, .patch = 2 }
+#define MEMFAULT_SDK_VERSION   { .major = 0, .minor = 25, .patch = 0 }
 
 #ifdef __cplusplus
 }

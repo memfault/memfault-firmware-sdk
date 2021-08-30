@@ -9,9 +9,11 @@
 //! Internal file that should never be included by a consumer of the SDK. See
 //! "memfault/core/build_info.h" for details on how to leverage the build id.
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +40,12 @@ typedef struct {
   uint8_t short_len;
   uint8_t rsvd;
   const void *storage;
+  const sMfltSdkVersion sdk_version;
 } sMemfaultBuildIdStorage;
+
+MEMFAULT_STATIC_ASSERT(((offsetof(sMemfaultBuildIdStorage, type) == 0) &&
+                        (offsetof(sMemfaultBuildIdStorage, short_len) == 2)),
+                       "be sure to update fw_build_id.py!");
 
 #if defined(MEMFAULT_UNITTEST)
 //! NB: For unit tests we want to be able to instrument the data in the test

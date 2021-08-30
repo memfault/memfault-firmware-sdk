@@ -21,5 +21,17 @@ MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
 
 // Pull in the user's heartbeat defs
 #if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
+
+#if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+
+# if __has_include("memfault_metrics_heartbeat_config.def")
+#   include "memfault_metrics_heartbeat_config.def"
+# endif
+
+#else
+
 #include "memfault_metrics_heartbeat_config.def"
+
+#endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */
+
 #endif
