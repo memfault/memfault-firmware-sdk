@@ -19,7 +19,7 @@ scripts_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, scripts_dir)
 
 
-@pytest.fixture
+@pytest.fixture()
 def gdb_base_fixture():
     gdb = MagicMock()
     gdb.Command = MagicMock
@@ -44,7 +44,7 @@ def gdb_base_fixture():
         yield gdb  # Let's yield gdb so we can easily extend the mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def gdb_frame_register_read_fixture(gdb_base_fixture):
     def _read_register(name):
         register = MagicMock()
@@ -62,18 +62,18 @@ def gdb_frame_register_read_fixture(gdb_base_fixture):
         return read_reg_mock
 
     gdb_base_fixture.newest_frame = _newest_frame
-    yield gdb_base_fixture
+    return gdb_base_fixture
 
 
-@pytest.fixture
+@pytest.fixture()
 def gdb_with_inferior_fixure(gdb_frame_register_read_fixture):
     inferior = MagicMock()
     inferior.threads.return_value = [MagicMock()]
     gdb_frame_register_read_fixture.selected_inferior.return_value = inferior
-    yield gdb_frame_register_read_fixture  # Let's yield gdb so we can easily extend the mock
+    return gdb_frame_register_read_fixture  # Let's return gdb so we can easily extend the mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_expect_request():
     http = MagicMock()
     connections = []
@@ -143,7 +143,7 @@ TEST_HW_VERSION = "DEVBOARD"
 TEST_PROJECT_KEY = "7f083342d30444b2b3bed65357f24a19"
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_config(gdb_base_fixture):
     """Updates MEMFAULT_CONFIG to contain TEST_... values"""
     from memfault_gdb import MEMFAULT_CONFIG
@@ -195,7 +195,7 @@ TEST_MAINTENANCE_INFO_SECTIONS_FIXTURE_FMT = """Exec file:
 """
 
 
-@pytest.fixture
+@pytest.fixture()
 def fake_elf():
     with NamedTemporaryFile() as fake_elf:
         fake_elf.write(b"ELF")
@@ -203,13 +203,13 @@ def fake_elf():
         yield fake_elf
 
 
-@pytest.fixture
+@pytest.fixture()
 def maintenance_info_sections_fixture(fake_elf):
     return TEST_MAINTENANCE_INFO_SECTIONS_FIXTURE_FMT.format(fake_elf.name)
 
 
 # Data from a GDB Server with register names that differ from the final names we use
-@pytest.fixture
+@pytest.fixture()
 def info_reg_all_fixture(fake_elf):
     return """
 r0             0x0	0
@@ -238,7 +238,7 @@ PSP            0x200046c8	536889032
 """
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def settings_fixture(gdb_for_coredump):
     from memfault_gdb import MEMFAULT_CONFIG, settings_save
 
@@ -247,20 +247,20 @@ def settings_fixture(gdb_for_coredump):
         yield settings_save
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def settings_coredump_allowed(settings_fixture):
-    yield settings_fixture({"coredump.allow": True})
+    return settings_fixture({"coredump.allow": True})
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def settings_coredump_disallowed(settings_fixture):
-    yield settings_fixture({"coredump.allow": False})
+    return settings_fixture({"coredump.allow": False})
 
 
 # We save the time in the coredump generated so each run of "memfault coredump" looks unique
 # Let's monkeypatch time so we get a reproducible time in out unit tests
-@pytest.fixture(scope="function", autouse=True)
-def patch_datetime_now(monkeypatch):
+@pytest.fixture(autouse=True)
+def _patch_datetime_now(monkeypatch):
     import time
 
     def overriden_wrapped_time():
@@ -428,7 +428,7 @@ def test_http_basic_auth(gdb_base_fixture):
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def gdb_for_coredump(gdb_with_inferior_fixure, maintenance_info_sections_fixture):
     import gdb
 
@@ -449,7 +449,7 @@ def gdb_for_coredump(gdb_with_inferior_fixure, maintenance_info_sections_fixture
         return b"A" * size  # Write 41 'A' for reads to memory regions
 
     inferior.read_memory = _read_memory
-    yield gdb
+    return gdb
 
 
 def test_coredump_command_no_target(gdb_base_fixture, capsys, settings_coredump_allowed):
@@ -523,8 +523,11 @@ def test_coredump_command_not_allowing(
 
 
 @pytest.mark.parametrize(
-    "expected_result,extra_cmd_args,expected_coredump_fn",
-    [(None, "", "fixture2.bin"), (None, "-r 0x600000 8 -r 0x800000 4", "fixture3.bin")],
+    ("expected_result", "extra_cmd_args", "expected_coredump_fn"),
+    [
+        (None, "", "fixture2.bin"),
+        (None, "-r 0x600000 8 -r 0x800000 4", "fixture3.bin"),
+    ],
 )
 def test_coredump_command_with_login_no_existing_release_or_symbols(
     gdb_for_coredump,
@@ -672,7 +675,7 @@ def test_login_command_with_all_options(gdb_base_fixture, http_expect_request):
 
 
 @pytest.mark.parametrize(
-    "expected_result,resp_status,resp_body",
+    ("expected_result", "resp_status", "resp_body"),
     [
         (
             True,

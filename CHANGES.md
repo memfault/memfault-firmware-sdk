@@ -1,10 +1,45 @@
+### Changes between Memfault SDK 0.26.0 and SDK 0.25.0 - Sept 15, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added preview of the Memfault Diagnostic GATT Service (MDS). This service can
+  be used to transparently forward data collected by the SDK to a Bluetooth Low
+  Energy gateway and proxied to the cloud. See
+  [ports/include/memfault/ports/ble/mds.h](ports/include/memfault/ports/ble/mds.h#L1)
+  for more details!
+  - Added reference port of MDS for the DA1469x SDK to
+    [ports/dialog/da1469x/memfault_diagnostic_service.c](ports/dialog/da1469x/memfault_diagnostic_service.c#L1)
+- Implemented [utility python script](scripts/eclipse_patch.py#L1) which can be
+  used for quickly adding a `memfault-firmware-sdk` port to an eclipse project.
+  For more details, run
+
+  ```bash
+  python scripts/eclipse_patch.py --help
+  ```
+
+- Added example project demonstrating integration of Memfault on Cypress'
+  [CY8CKIT-064S0S2-4343W](https://www.cypress.com/documentation/development-kitsboards/psoc-64-standard-secure-aws-wi-fi-bt-pioneer-kit-cy8ckit)
+  running [Amazon-FreeRTOS](https://github.com/aws/amazon-freertos) publishing
+  data using an
+  [AWS IoT MQTT broker](https://docs.aws.amazon.com/freertos/latest/userguide/getting_started_cypress_psoc64.html).
+  For more details about how to run the Memfault example, see
+  [examples/cypress/CY8CKIT-064S0S2-4343W/README.md](examples/cypress/CY8CKIT-064S0S2-4343W/README.md).
+- Fixed a compiler warning emitted when using TI's GCC Compiler as reported by
+  @albertskog in
+  [issue #18](https://github.com/memfault/memfault-firmware-sdk/issues/18)
+
+#### :house: Internal
+
+- Apply some suggestions emitted by `flake8-pytest-style` linter to
+  [scripts/tests/test_memfault_gdb.py](scripts/tests/test_memfault_gdb.py).
+
 ### Changes between Memfault SDK 0.25.0 and SDK 0.24.2 - August 30, 2021
 
 #### :chart_with_upwards_trend: Improvements
 
 - Added a workaround to
-  [`event_storage.h`](components/include/memfault/core/event_storage.h)
-  to prevent compilation errors when using
+  [`event_storage.h`](components/include/memfault/core/event_storage.h) to
+  prevent compilation errors when using
   [the unity test framework](http://www.throwtheswitch.org/unity) to generate
   mocks.
 - Updated [`makefiles/MemfaultWorker.mk`](makefiles/MemfaultWorker.mk) to use

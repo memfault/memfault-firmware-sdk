@@ -1,0 +1,4 @@
+//! Define custom error reasons that can be filtered & searched
+//! on in the Memfault UI.
+
+MEMFAULT_TRACE_REASON_DEFINE(critical_error)
