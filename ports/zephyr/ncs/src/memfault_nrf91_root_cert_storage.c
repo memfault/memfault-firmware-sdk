@@ -25,15 +25,23 @@
 #endif
 
 #include "memfault/core/debug_log.h"
+#include "memfault/ports/ncs/version.h"
+
 
 int memfault_root_cert_storage_add(
     eMemfaultRootCert cert_id, const char *cert, size_t cert_length) {
   bool exists;
-  uint8_t unused;
 
-  int err = modem_key_mgmt_exists(cert_id,
-                                  MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
+// Note: modem_key_mgmt_exists() signature changed between nRF Connect SDK 1.7 & 1.8
+//   https://github.com/nrfconnect/sdk-nrf/pull/5631
+#if MEMFAULT_NCS_VERSION_GT(1, 7)
+  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists);
+#else
+  uint8_t unused;
+  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
                                   &exists, &unused);
+#endif
+
   if (err != 0) {
     MEMFAULT_LOG_ERROR("Failed to install cert %d, rv=%d\n", cert_id, err);
     return err;

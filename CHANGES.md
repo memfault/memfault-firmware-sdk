@@ -1,3 +1,11 @@
+### Changes between Memfault SDK 0.26.1 and SDK 0.26.0 - Sept 20, 2021
+
+#### :house: Internal
+
+- Updated
+  [`modem_key_mgmt_exists`](ports/zephyr/ncs/src/memfault_nrf91_root_cert_storage.c)
+  API usage to be compatible with changes upcomming in nRF Connect SDK 1.8.
+
 ### Changes between Memfault SDK 0.26.0 and SDK 0.25.0 - Sept 15, 2021
 
 #### :chart_with_upwards_trend: Improvements

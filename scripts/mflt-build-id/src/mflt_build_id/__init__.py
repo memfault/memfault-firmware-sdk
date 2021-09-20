@@ -16,6 +16,7 @@ into a read-only struct defined in memfault/core/memfault_build_id.c to hold the
 import argparse
 import hashlib
 import struct
+from collections import defaultdict
 from enum import Enum
 
 try:
@@ -52,12 +53,62 @@ class ELFFileHelper:
         sh_flags = section["sh_flags"]
         return sh_flags & SH_FLAGS.SHF_ALLOC != 0
 
+    @staticmethod
+    def build_symbol_by_name_cache(symtab, little_endian):
+        # An optimized imlementation for building a cache for quick symbol info lookups
+        #
+        # Replacing implementation here:
+        #  https://github.com/eliben/pyelftools/blob/49ffaf4/elftools/elf/sections.py#L198-L210
+        #
+        # Two main performance optimizations
+        #   1) The "struct_parse" utility pyelftools relies on for decoding structures
+        #      is extremely slow. We will use Python's struct.unpack instead here
+        #   2) pyelftools passes around a file stream object while doing deserialization
+        #      which means there are a ton of disk seeks that get kicked off
+        #
+        # Empirically, seeing about 10x performance improvement
+        symtab_data = symtab.data()
+        symtab_entry_size = symtab["sh_entsize"]
+
+        symbol_name_map = defaultdict(list)
+
+        stringtable_data = symtab.stringtable.data()
+
+        def _get_string(start_offset):
+            end_offset = stringtable_data.find(b"\x00", start_offset)
+            if end_offset == -1:
+                return None
+            s = stringtable_data[start_offset:end_offset]
+            return s.decode("utf-8", errors="replace")
+
+        for idx in range(symtab.num_symbols()):
+            entry_offset = idx * symtab_entry_size
+            # The first word of a "Symbol Table Entry" is "st_name"
+            # For more details, see the "Executable and Linking Format" specification
+            symtab_entry_data = symtab_data[entry_offset : entry_offset + 4]
+
+            endianess_prefix = "<" if little_endian else ">"
+            st_name = struct.unpack("{}I".format(endianess_prefix), symtab_entry_data)[0]
+            name = _get_string(st_name)
+            symbol_name_map[name].append(idx)
+
+        return symbol_name_map
+
     @property
     def symtab(self):
         # Cache the SymbolTableSection, to avoid re-parsing
         if self._symtab:
             return self._symtab
         self._symtab = self.elf.get_section_by_name(".symtab")
+
+        # Pyelftools maintains a symbol_name to index cache (_symbol_name_map) which is extremely
+        # slow to build when there are many symbols present in an ELF so we build the cache here
+        # using an optimized implementation
+        if self._symtab:
+            self._symtab._symbol_name_map = self.build_symbol_by_name_cache(
+                self._symtab, little_endian=self.elf.little_endian
+            )
+
         return self._symtab
 
     def find_symbol_and_section(self, symbol_name):
