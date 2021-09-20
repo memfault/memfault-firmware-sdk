@@ -104,11 +104,11 @@ def test_memfault_id_populated(capsys, snapshot):
 
 def test_no_memfault_sdk_present():
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "no_memfault_symbols.elf")
-    with pytest.raises(
-        Exception, match="Could not locate 'g_memfault_build_id' symbol in provided ELF"
-    ):
-        with open(elf_fixture_filename, "rb") as elf_fixture_file:
-            b = BuildIdInspectorAndPatcher(elf_fixture_file)
+    with open(elf_fixture_filename, "rb") as elf_fixture_file:
+        b = BuildIdInspectorAndPatcher(elf_fixture_file)
+        with pytest.raises(
+            Exception, match="Could not locate 'g_memfault_build_id' symbol in provided ELF"
+        ):
             b.check_or_update_build_id()
 
 
@@ -116,9 +116,9 @@ def test_no_build_id_on_dump():
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
     )
-    with pytest.raises(Exception, match="No Build ID Found"):
-        with open(elf_fixture_filename, "rb") as elf_fixture_file:
-            b = BuildIdInspectorAndPatcher(elf_fixture_file)
+    with open(elf_fixture_filename, "rb") as elf_fixture_file:
+        b = BuildIdInspectorAndPatcher(elf_fixture_file)
+        with pytest.raises(Exception, match="No Build ID Found"):
             b.dump_build_info(num_chars=1)
 
 

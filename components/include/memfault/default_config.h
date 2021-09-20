@@ -353,6 +353,14 @@ extern "C" {
 #define MEMFAULT_HTTP_APIS_DEFAULT_PORT (443)
 #endif
 
+#ifndef MEMFAULT_HTTP_APIS_DEFAULT_SCHEME
+  #if (MEMFAULT_HTTP_APIS_DEFAULT_PORT == 80)
+    #define MEMFAULT_HTTP_APIS_DEFAULT_SCHEME "http"
+  #else
+    #define MEMFAULT_HTTP_APIS_DEFAULT_SCHEME "https"
+  #endif
+#endif
+
 //
 // Util Configuration Options
 //

@@ -1,0 +1,333 @@
+From 05af48609ae5887a55c1d8b396b8417132bd838d Mon Sep 17 00:00:00 2001
+From: Memfault Inc <hello@memfault.com>
+Date: Fri, 3 Sep 2021 13:03:59 -0400
+Subject: [PATCH] Integrate memfault with the aws_demos app
+
+Adds the necessary modifications to integrate the memfault example into
+the `aws_demos` app for the CY8CKIT_064S0S2_4343 board.
+---
+ demos/coreMQTT/CMakeLists.txt                 |  2 +-
+ demos/demo_runner/iot_demo_freertos.c         |  4 ++
+ demos/include/aws_clientcredential.h          |  5 ++
+ demos/include/iot_demo_runner.h               |  6 ++
+ .../TOOLCHAIN_GCC_ARM/cyb06xxa_cm4_dual.ld    | 30 +++++++-
+ .../aws_demos/application_code/main.c         | 68 ++++++++++++++++++-
+ .../aws_demos/config_files/FreeRTOSConfig.h   |  1 +
+ .../aws_demos/config_files/aws_demo_config.h  |  7 +-
+ 8 files changed, 115 insertions(+), 8 deletions(-)
+
+diff --git a/demos/coreMQTT/CMakeLists.txt b/demos/coreMQTT/CMakeLists.txt
+index 4ebe836af..9a0c949b4 100755
+--- a/demos/coreMQTT/CMakeLists.txt
++++ b/demos/coreMQTT/CMakeLists.txt
+@@ -14,7 +14,7 @@ afr_module_cmake_files(${AFR_CURRENT_MODULE}
+ afr_module_sources(
+     ${AFR_CURRENT_MODULE}
+     INTERFACE
+-        "${CMAKE_CURRENT_LIST_DIR}/mqtt_demo_mutual_auth.c"
++        "${CMAKE_CURRENT_LIST_DIR}/mqtt_demo_memfault.c"
+         # Add the header file added to the target's metadata so that it
+         # is available in code downloaded from the FreeRTOS console.
+         ${AFR_DEMOS_DIR}/include/aws_iot_metrics.h
+diff --git a/demos/demo_runner/iot_demo_freertos.c b/demos/demo_runner/iot_demo_freertos.c
+index 1d717ee3e..58b0ceaf7 100644
+--- a/demos/demo_runner/iot_demo_freertos.c
++++ b/demos/demo_runner/iot_demo_freertos.c
+@@ -40,6 +40,8 @@
+ #include "aws_demo.h"
+ #include "iot_init.h"
+ 
++#include "memfault/panics/assert.h"
++
+ static IotNetworkManagerSubscription_t subscription = IOT_NETWORK_MANAGER_SUBSCRIPTION_INITIALIZER;
+ 
+ /* Semaphore used to wait for a network to be available. */
+@@ -437,6 +439,8 @@ void runDemoTask( void * pArgument )
+         ( void ) xTask;
+         ( void ) pcTaskName;
+ 
++        MEMFAULT_ASSERT(0);
++
+         /* Loop forever */
+         for( ; ; )
+         {
+diff --git a/demos/include/aws_clientcredential.h b/demos/include/aws_clientcredential.h
+index c3bda361f..477c4335a 100644
+--- a/demos/include/aws_clientcredential.h
++++ b/demos/include/aws_clientcredential.h
+@@ -45,6 +45,11 @@
+  */
+ #define clientcredentialIOT_THING_NAME               ""
+ 
++/*
++ * @brief Memfault project key, used to forward chunk data to memfault.com
++ */
++#define clientcredentialMEMFAULT_PROJECT_KEY         ""
++
+ /*
+  * @brief Port number the MQTT broker is using.
+  */
+diff --git a/demos/include/iot_demo_runner.h b/demos/include/iot_demo_runner.h
+index b05338675..033331db7 100644
+--- a/demos/include/iot_demo_runner.h
++++ b/demos/include/iot_demo_runner.h
+@@ -48,6 +48,12 @@
+         #undef democonfigDEMO_PRIORITY
+         #define democonfigDEMO_PRIORITY     democonfigMQTT_ECHO_TASK_PRIORITY
+     #endif
++#elif defined( CONFIG_CORE_MQTT_MEMFAULT_DEMO_ENABLED )
++    #define DEMO_entryFUNCTION              RunCoreMqttMemfaultDemo
++    #undef democonfigDEMO_STACKSIZE
++    #define democonfigDEMO_STACKSIZE    democonfigMQTT_MEMFAULT_TASK_STACK_SIZE
++    #undef democonfigDEMO_PRIORITY
++    #define democonfigDEMO_PRIORITY     democonfigMQTT_MEMFAULT_TASK_PRIORITY
+ #elif defined( CONFIG_CORE_MQTT_AGENT_DEMO_ENABLED )
+     #define DEMO_entryFUNCTION              RunCoreMqttAgentDemo
+     #if defined( democonfigMQTT_ECHO_TASK_STACK_SIZE )
+diff --git a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/cy_code/COMPONENT_CM4/TOOLCHAIN_GCC_ARM/cyb06xxa_cm4_dual.ld b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/cy_code/COMPONENT_CM4/TOOLCHAIN_GCC_ARM/cyb06xxa_cm4_dual.ld
+index 2af75a607..232e3d98e 100644
+--- a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/cy_code/COMPONENT_CM4/TOOLCHAIN_GCC_ARM/cyb06xxa_cm4_dual.ld
++++ b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/cy_code/COMPONENT_CM4/TOOLCHAIN_GCC_ARM/cyb06xxa_cm4_dual.ld
+@@ -46,6 +46,13 @@ STACK_SIZE = 0x1000;
+ /* The size of the MCU boot header area at the start of FLASH */
+ BOOT_HEADER_SIZE = 0x400;
+ 
++/* The size of the coredumps storage at the end of FLASH, before signature */
++COREDUMPS_SIZE = 0x20000;
++
++/* The size of the application signature at the end of FLASH */
++CY_SIGNATURE_SIZE = 0x100;
++CY_SIGNATURE_PADDING = 0x200 - CY_SIGNATURE_SIZE;
++
+ /* Force symbol to be entered in the output file as an undefined symbol. Doing
+ * this may, for example, trigger linking of additional modules from standard
+ * libraries. You may list several symbols for each EXTERN, and you may use
+@@ -211,6 +218,12 @@ SECTIONS
+         __zero_table_end__ = .;
+     } > flash
+ 
++    .note.gnu.build-id :
++    {
++        __start_gnu_build_id_start = .;
++        KEEP(*(.note.gnu.build-id))
++    } > flash
++
+     __etext =  . ;
+ 
+ 
+@@ -259,13 +272,12 @@ SECTIONS
+ 
+     } > ram
+ 
+-
+     /* Place variables in the section that should not be initialized during the
+     *  device startup.
+     */
+     .noinit (NOLOAD) : ALIGN(8)
+     {
+-      KEEP(*(.noinit))
++      KEEP(*(.noinit*))
+     } > ram
+ 
+ 
+@@ -321,11 +333,23 @@ SECTIONS
+     /* Check if data + heap + stack exceeds RAM limit */
+     ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
+ 
++    /* Coredump storage region. */
++    .mflt_coredumps ORIGIN(flash) + LENGTH(flash) - (COREDUMPS_SIZE + CY_SIGNATURE_SIZE + CY_SIGNATURE_PADDING) :
++    {
++        . = ALIGN(512); /* Should be aligned, but make sure it is. */
++        __MfltCoredumpsStart = .;
++         KEEP(*(.mflt_coredumps))
++         . = ORIGIN(flash) + LENGTH(flash) - (CY_SIGNATURE_SIZE + CY_SIGNATURE_PADDING);
++        __MfltCoredumpsEnd = .;
++    } > flash
++
++    ASSERT(__MfltCoredumpsStart >= __etext, "Text overflows memfault coredumps region")
+ 
+     /* Used for the digital signature of the secure application and the Bootloader SDK application.
+     * The size of the section depends on the required data size. */
+-    .cy_app_signature ORIGIN(flash) + LENGTH(flash) - 256 :
++    .cy_app_signature ORIGIN(flash) + LENGTH(flash) - CY_SIGNATURE_SIZE :
+     {
++        __CyAppSignatureStart = .;
+         KEEP(*(.cy_app_signature))
+     } > flash
+ 
+diff --git a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/main.c b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/main.c
+index eb7441aa3..f1ac25a94 100755
+--- a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/main.c
++++ b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/application_code/main.c
+@@ -78,8 +78,15 @@
+ #include "tfm_ns_mailbox.h"
+ #endif
+ 
+-/* For Watchdog */
++#include "kvstore.h"
++
+ #include "cyhal_wdt.h"
++#include "cyhal_flash.h"
++
++#include <memfault/components.h>
++#include <memfault/ports/freertos.h>
++#include <memfault_platform_storage.h>
++#include <memfault_test.h>
+ 
+ /* Logging Task Defines. */
+ #define mainLOGGING_MESSAGE_QUEUE_LENGTH    ( 90 )
+@@ -93,7 +100,7 @@
+ #define mainTEST_RUNNER_TASK_STACK_SIZE     ( configMINIMAL_STACK_SIZE * 16 )
+ 
+ /* The name of the devices for xApplicationDNSQueryHook. */
+-#define mainDEVICE_NICK_NAME				"cypress_demo" /* FIX ME.*/
++#define mainDEVICE_NICK_NAME                "memfault-cypress-cy8ckit"
+ 
+ 
+ /* Static arrays for FreeRTOS-Plus-TCP stack initialization for Ethernet network
+@@ -179,6 +186,31 @@ void vApplicationDaemonTaskStartupHook( void );
+  */
+ static WIFIReturnCode_t prvWifiConnect( void );
+ 
++//
++// Test Platform Ports
++//
++
++int test_logging(int argc, char *argv[]) {
++  MEMFAULT_LOG_DEBUG("Debug log!");
++  MEMFAULT_LOG_INFO("Info log!");
++  MEMFAULT_LOG_WARN("Warning log!");
++  MEMFAULT_LOG_ERROR("Error log!");
++  return 0;
++}
++
++// Runs a sanity test to confirm coredump port is working as expected
++int test_coredump_storage(int argc, char *argv[]) {
++
++  // Note: Coredump saving runs from an ISR prior to reboot so should
++  // be safe to call with interrupts disabled, but disable just to be sure.
++  __disable_irq();
++  memfault_coredump_storage_debug_test_begin();
++  __enable_irq();
++
++  memfault_coredump_storage_debug_test_finish();
++  return 0;
++}
++
+ /**
+  * @brief Initializes the board.
+  */
+@@ -241,6 +273,7 @@ cy_rslt_t prvWatchdogTaskStart(void)
+     cy_rslt_t result;
+ 
+     configPRINTF(("Create Watchdog Timer\n"));
++
+     result = cyhal_wdt_init(&prvWatchdogTimerObj, CY_WATCHDOG_TIMER_MILLISECONDS);
+     if (result == CY_RSLT_WDT_ALREADY_INITIALIZED)
+     {
+@@ -335,6 +368,9 @@ static void prvMiscInitialization( void )
+     CY_ASSERT(CY_RSLT_SUCCESS == result);
+ }
+ 
++extern cyhal_flash_t flash_obj;
++extern cyhal_flash_info_t flash_obj_info;
++
+ /*-----------------------------------------------------------*/
+ void vApplicationDaemonTaskStartupHook( void )
+ {
+@@ -347,6 +383,28 @@ void vApplicationDaemonTaskStartupHook( void )
+     result = kvstore_init();
+     CY_ASSERT(CY_RSLT_SUCCESS == result);
+ 
++    cyhal_flash_init(&flash_obj);
++    cyhal_flash_get_info(&flash_obj, &flash_obj_info);
++
++    printf("Press \"1\" to simulate a fault and reboot,\n"
++            "\"2\" to generate heartbeat and continue,\n"
++            "\"3\" to generate a trace and continue,\n"
++            "Anything else to just continue.\n"
++            "(Confirm with enter)\n");
++
++    char c = getchar();
++
++    if (c == 0x31)
++        memfault_test_fault();
++    else if (c == 0x32)
++        memfault_test_heartbeat(0, NULL);
++    else if (c == 0x33)
++        memfault_test_trace(0, NULL);
++
++    printf("Running the demo app.\n");
++
++    memfault_platform_boot();
++
+ #ifdef CY_BOOT_USE_EXTERNAL_FLASH
+ #ifdef PDL_CODE
+     if (qspi_init_sfdp(1) < 0)
+@@ -382,7 +440,10 @@ void vApplicationDaemonTaskStartupHook( void )
+         {
+             printf( "Start Watchdog Task Failed.\r\n");
+         }
+-
++        else
++        {
++            printf( "Start Watchdog Task Success.\r\n");
++        }
+         /* Connect to the Wi-Fi before running the tests. */
+         if (prvWifiConnect() == eWiFiSuccess)
+         {
+@@ -649,6 +710,7 @@ void vAssertCalled(const char * pcFile,
+     * this function to be exited. */
+     taskDISABLE_INTERRUPTS();
+     {
++        MEMFAULT_ASSERT(0);
+         while (ulBlockVariable == 0UL)
+         {
+             vTaskDelay( pdMS_TO_TICKS( ulLongSleep ) );
+diff --git a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/FreeRTOSConfig.h b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/FreeRTOSConfig.h
+index ebc221e0c..e883a4186 100644
+--- a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/FreeRTOSConfig.h
++++ b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/FreeRTOSConfig.h
+@@ -48,6 +48,7 @@
+ #include <string.h>
+ #include <stdint.h>
+ #include "cycfg_system.h"
++#include "memfault/ports/freertos_trace.h"
+ 
+ extern uint32_t SystemCoreClock;
+ 
+diff --git a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/aws_demo_config.h b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/aws_demo_config.h
+index 1879447af..f2c3ab4a1 100644
+--- a/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/aws_demo_config.h
++++ b/vendors/cypress/boards/CY8CKIT_064S0S2_4343W/aws_demos/config_files/aws_demo_config.h
+@@ -34,6 +34,7 @@
+  *          CONFIG_CORE_HTTP_S3_DOWNLOAD_MULTITHREADED_DEMO_ENABLED
+  *          CONFIG_CORE_HTTP_S3_UPLOAD_DEMO_ENABLED
+  *          CONFIG_CORE_MQTT_MUTUAL_AUTH_DEMO_ENABLED
++ *          CONFIG_CORE_MQTT_MEMFAULT_DEMO_ENABLED
+  *          CONFIG_DEVICE_SHADOW_DEMO_ENABLED
+  *          CONFIG_DEVICE_DEFENDER_DEMO_ENABLED
+  *          CONFIG_JOBS_DEMO_ENABLED
+@@ -47,7 +48,7 @@
+  *
+  *  These defines are used in iot_demo_runner.h for demo selection */
+ 
+-#define CONFIG_CORE_MQTT_MUTUAL_AUTH_DEMO_ENABLED
++#define CONFIG_CORE_MQTT_MEMFAULT_DEMO_ENABLED
+ 
+ /* Default configuration for all demos. Individual demos can override these below */
+ #define democonfigDEMO_STACKSIZE                                     ( configMINIMAL_STACK_SIZE * 8 )
+@@ -63,6 +64,10 @@
+ #define democonfigMQTT_ECHO_TASK_STACK_SIZE                          ( configMINIMAL_STACK_SIZE * 8 )
+ #define democonfigMQTT_ECHO_TASK_PRIORITY                            ( tskIDLE_PRIORITY )
+ 
++#define democonfigMQTT_MEMFAULT_TLS_NEGOTIATION_TIMEOUT              pdMS_TO_TICKS( 12000 )
++#define democonfigMQTT_MEMFAULT_TASK_STACK_SIZE                      ( configMINIMAL_STACK_SIZE * 8 )
++#define democonfigMQTT_MEMFAULT_TASK_PRIORITY                        ( tskIDLE_PRIORITY )
++
+ /* Number of sub pub tasks that connect to a broker that is not using TLS. */
+ #define democonfigMQTT_SUB_PUB_NUM_UNSECURE_TASKS                    ( 1 )
+ /* Number of sub pub tasks that connect to a broker that is using TLS. */
+-- 
+2.33.0
+

@@ -21,7 +21,7 @@ extern "C" {
 #define MEMFAULT_PACKED_STRUCT struct MEMFAULT_PACKED
 #define MEMFAULT_NORETURN __attribute__((noreturn))
 #define MEMFAULT_NAKED_FUNC __attribute__((naked))
-#define MEMFAULT_UNREACHABLE
+#define MEMFAULT_UNREACHABLE while(1)
 #define MEMFAULT_NO_OPT
 
 
