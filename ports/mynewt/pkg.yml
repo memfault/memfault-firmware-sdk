@@ -17,7 +17,7 @@
 # under the License.
 #
 
-pkg.name: ports/mynewt
+pkg.name: memfault-firmware-sdk/ports/mynewt
 pkg.description: Memfault integration package (https://memfault.com/)
 pkg.author: "Apache Mynewt <dev@mynewt.apache.org>"
 pkg.homepage: "http://mynewt.apache.org/"
