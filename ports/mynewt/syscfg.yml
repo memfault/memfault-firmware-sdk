@@ -17,10 +17,6 @@
 #
 
 syscfg.defs:
-    SYS_MEMFAULT:
-        description: Memfault is enabled
-        value: 1
-    
     MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE:
         description: A name to represent the firmware running on the MCU.
         value: '"app-fw"'
