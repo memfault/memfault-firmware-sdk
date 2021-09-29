@@ -49,18 +49,19 @@ void memfault_platform_reboot(void) {
 }
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
-  // !FIXME: If the device tracks real time, update 'unix_timestamp_secs' with seconds since epoch
   // This will cause events logged by the SDK to be timestamped on the device rather than when they
   // arrive on the server
+  struct os_timeval tv;
+  os_gettimeofday(&tv, NULL);
+
   *time = (sMemfaultCurrentTime) {
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
     .info = {
-      .unix_timestamp_secs = 0
+      .unix_timestamp_secs = tv.tv_sec
     },
   };
 
-  // !FIXME: If device does not track time, return false, else return true if time is valid
-  return false;
+  return true;
 }
 
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
