@@ -24,6 +24,7 @@
 #include "memfault/core/platform/overrides.h"
 #include "memfault/util/circular_buffer.h"
 #include "memfault/util/crc16_ccitt.h"
+#include "memfault/core/compact_log_serializer.h"
 
 #include "memfault/config.h"
 
@@ -92,12 +93,6 @@ bool memfault_log_get_regions(sMemfaultLogRegions *regions) {
   };
   return true;
 }
-
-typedef enum {
-  kMemfaultLogRecordType_Preformatted = 0,
-
-  kMemfaultLogRecordType_NumTypes,
-} eMemfaultLogRecordType;
 
 static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRecordType type) {
   MEMFAULT_STATIC_ASSERT(kMemfaultPlatformLogLevel_NumLevels <= 8,
@@ -223,6 +218,7 @@ static bool prv_read_log_iter_callback(sMfltLogIterator *iter) {
 
   ctx->log->msg[iter->entry.len] = '\0';
   ctx->log->level = memfault_log_get_level_from_hdr(iter->entry.hdr);
+  ctx->log->type = memfault_log_get_type_from_hdr(iter->entry.hdr);
   ctx->log->msg_len = iter->entry.len;
   ctx->has_log = true;
   return false;
@@ -234,6 +230,7 @@ static bool prv_read_log(sMemfaultLog *log) {
     const int rv = snprintf(log->msg, sizeof(log->msg), "... %d messages dropped ...",
                                  (int)s_memfault_ram_logger.dropped_msg_count);
     log->msg_len = (rv <= 0)  ? 0 : MEMFAULT_MIN((uint32_t)rv, sizeof(log->msg) - 1);
+    log->type = kMemfaultLogRecordType_Preformatted;
     s_memfault_ram_logger.dropped_msg_count = 0;
     return true;
   }
@@ -300,6 +297,7 @@ void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_lis
   if (bytes_written >= available_space) {
     bytes_written = available_space - 1;
   }
+
   memfault_log_save_preformatted(level, log_buf, bytes_written);
 }
 
@@ -310,8 +308,10 @@ void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_end(args);
 }
 
-void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
-                                    const char *log, size_t log_len) {
+static void prv_log_save(eMemfaultPlatformLogLevel level,
+                         const void *log, size_t log_len,
+                         eMemfaultLogRecordType log_type) {
+
   if (!prv_should_log(level)) {
     return;
   }
@@ -326,7 +326,7 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
     if (space_free) {
         sMfltRamLogEntry entry = {
           .len = (uint8_t)truncated_log_len,
-          .hdr = prv_build_header(level, kMemfaultLogRecordType_Preformatted),
+          .hdr = prv_build_header(level, log_type),
         };
         memfault_circular_buffer_write(circ_bufp, &entry, sizeof(entry));
         memfault_circular_buffer_write(circ_bufp, log, truncated_log_len);
@@ -338,6 +338,41 @@ void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
   if (log_written) {
     memfault_log_handle_saved_callback();
   }
+}
+
+#if MEMFAULT_COMPACT_LOG_ENABLE
+
+static void prv_fill_compact_log_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
+  uint8_t *log = (uint8_t *)ctx;
+  memcpy(&log[offset], buf, buf_len);
+}
+
+void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
+                               uint32_t compressed_fmt, ...) {
+  char log_buf[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1];
+
+  sMemfaultCborEncoder encoder;
+  memfault_cbor_encoder_init(&encoder, prv_fill_compact_log_cb, log_buf, sizeof(log_buf));
+
+  va_list args;
+  va_start(args, compressed_fmt);
+  bool success = memfault_vlog_compact_serialize(&encoder, log_id, compressed_fmt, args);
+  va_end(args);
+
+  if (!success) {
+    return;
+  }
+
+  const size_t bytes_written = memfault_cbor_encoder_deinit(&encoder);
+  prv_log_save(level, log_buf, bytes_written, kMemfaultLogRecordType_Compact);
+}
+
+#endif /* MEMFAULT_COMPACT_LOG_ENABLE */
+
+
+void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
+                                    const char *log, size_t log_len) {
+  prv_log_save(level, log, log_len, kMemfaultLogRecordType_Preformatted);
 }
 
 bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {

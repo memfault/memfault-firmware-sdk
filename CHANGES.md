@@ -1,3 +1,26 @@
+### Changes between Memfault SDK 0.27.0 and SDK 0.26.1 - Oct 5, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added support for using [compact logs](https://mflt.io/compact-logs) with the
+  Memfault [log subsystem](https://mflt.io/logging).
+- Added port for mynewt RTOS to Memfault SDK. (Huge thanks to @t3zeng for the
+  help here!) See
+  [sdk/embedded/ports/mynewt](sdk/embedded/ports/mynewt/README.md) for more
+  details.
+- Added support for
+  [Zephyr 2.7](https://docs.zephyrproject.org/latest/releases/release-notes-2.7.html)
+  release.
+
+#### :house: Internal
+
+- Fixed a missing symbol linker error for `memfault_fault_handler` that could
+  arise when compiling with `-flto`.
+- Fixed a compiler error in `memfault_fault_handling_arm.c` that arose when
+  using certain versions of the Clang compiler.
+- Cleaned up python scripts after enabling additional PEP8 naming convention
+  linters.
+
 ### Changes between Memfault SDK 0.26.1 and SDK 0.26.0 - Sept 20, 2021
 
 #### :house: Internal

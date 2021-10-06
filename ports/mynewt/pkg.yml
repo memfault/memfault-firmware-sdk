@@ -1,0 +1,22 @@
+pkg.name: ports/mynewt
+pkg.description: Memfault integration package (https://memfault.com/)
+pkg.author: "Memfault Inc <hello@memfault.com>"
+pkg.homepage: "https://github.com/memfault/memfault-firmware-sdk/"
+pkg.keywords:
+pkg.type: sdk
+pkg.deps:
+    - "@apache-mynewt-core/kernel/os"
+    - "@apache-mynewt-core/sys/shell"
+    - "@apache-mynewt-core/sys/flash_map"
+    - "@apache-mynewt-core/hw/hal"
+    - "@apache-mynewt-core/mgmt/imgmgr"
+    - "@apache-mynewt-core/util/memfault_sdk"
+    - "@mcuboot/boot/bootutil"
+
+pkg.ign_dirs:
+pkg.include_dirs:
+    - "../../components/include"
+    - "../include"
+pkg.src_dirs:
+    - "src"
+    - "../../components/"

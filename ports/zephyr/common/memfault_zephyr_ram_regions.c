@@ -11,10 +11,12 @@
 #include <zephyr.h>
 #include <kernel.h>
 #include <kernel_structs.h>
+#include <version.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/ports/zephyr/version.h"
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 #define EMPTY_SLOT 0
@@ -140,11 +142,21 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
   }
 
   // Linker variables defined in linker.ld in Zephyr RTOS
-  extern uint32_t __data_ram_start[];
-  extern uint32_t __data_ram_end[];
+  // Data region name changed in v2.7 of the kernel
+#if MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
+#define ZEPHYR_DATA_REGION_START __data_region_start
+#define ZEPHYR_DATA_REGION_END __data_region_end
+#else
+#define ZEPHYR_DATA_REGION_START __data_ram_start
+#define ZEPHYR_DATA_REGION_END __data_ram_end
+#endif
 
-  const size_t size_to_collect = (uint32_t)__data_ram_end - (uint32_t)__data_ram_start;
-  regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(__data_ram_start, size_to_collect);
+  extern uint32_t ZEPHYR_DATA_REGION_START[];
+  extern uint32_t ZEPHYR_DATA_REGION_END[];
+
+  const size_t size_to_collect =
+    (uint32_t)ZEPHYR_DATA_REGION_END - (uint32_t)ZEPHYR_DATA_REGION_START;
+  regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(ZEPHYR_DATA_REGION_START, size_to_collect);
   return 1;
 }
 

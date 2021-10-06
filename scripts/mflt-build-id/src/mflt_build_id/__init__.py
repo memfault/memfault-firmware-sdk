@@ -126,7 +126,7 @@ class ELFFileHelper:
 
         section = self.find_section_for_address_range((symbol_start, symbol_start + symbol_size))
         if section is None:
-            raise BuildIdException("Could not locate a section with symbol {}".format(symbol_name))
+            raise BuildIdError("Could not locate a section with symbol {}".format(symbol_name))
         return (symbol, section)
 
     def find_section_for_address_range(self, addr_range):
@@ -183,7 +183,7 @@ class MemfaultBuildIdTypes(Enum):
     MEMFAULT_BUILD_ID_SHA1 = 3
 
 
-class BuildIdException(Exception):
+class BuildIdError(Exception):
     pass
 
 
@@ -234,7 +234,7 @@ class BuildIdInspectorAndPatcher:
         sdk_build_id_sym_name = "g_memfault_build_id"
         symbol, section = self._helper.find_symbol_and_section(sdk_build_id_sym_name)
         if symbol is None:
-            raise BuildIdException(
+            raise BuildIdError(
                 "Could not locate '{}' symbol in provided ELF".format(sdk_build_id_sym_name)
             )
 
@@ -251,7 +251,7 @@ class BuildIdInspectorAndPatcher:
         build_id_type = data[0]
         if build_id_type == MemfaultBuildIdTypes.GNU_BUILD_ID_SHA1.value:
             if gnu_build_id is None:
-                raise BuildIdException(
+                raise BuildIdError(
                     "Couldn't locate GNU Build ID but 'MEMFAULT_USE_GNU_BUILD_ID' is in use"
                 )
 
@@ -260,7 +260,7 @@ class BuildIdInspectorAndPatcher:
         derived_sym_name = "g_memfault_sdk_derived_build_id"
         sdk_build_id, sdk_build_id_section = self._helper.find_symbol_and_section(derived_sym_name)
         if sdk_build_id is None:
-            raise BuildIdException(
+            raise BuildIdError(
                 "Could not locate '{}' symbol in provided elf".format(derived_sym_name)
             )
 
@@ -274,7 +274,7 @@ class BuildIdInspectorAndPatcher:
             print("WARNING: Located a GNU build id but it's not being used by the Memfault SDK")
 
         if build_id_type != MemfaultBuildIdTypes.NONE.value:
-            raise BuildIdException("Unrecognized Build Id Type '{}'".format(build_id_type))
+            raise BuildIdError("Unrecognized Build Id Type '{}'".format(build_id_type))
 
         if dump_only:
             return MemfaultBuildIdTypes.NONE, None, None
@@ -309,14 +309,14 @@ class BuildIdInspectorAndPatcher:
     def dump_build_info(self, num_chars):
         build_type, build_id, _ = self._write_and_return_build_info(dump_only=True)
         if build_type is None or build_id is None:
-            raise BuildIdException("No Build ID Found")
+            raise BuildIdError("No Build ID Found")
 
         print(build_id[:num_chars])
 
     def get_build_info(self):
         try:
             return self._write_and_return_build_info(dump_only=True)
-        except BuildIdException:
+        except BuildIdError:
             return None, None, None
 
 

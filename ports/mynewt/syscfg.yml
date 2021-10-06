@@ -1,0 +1,37 @@
+syscfg.defs:
+    MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE:
+        description: A name to represent the firmware running on the MCU.
+        value: '"app-fw"'
+
+    MEMFAULT_DEVICE_INFO_SOFTWARE_VERS:
+        description: The version of the "software_type" currently running.
+        value: '"1.0.0"'
+
+    MEMFAULT_DEVICE_INFO_HARDWARE_VERS:
+        description: The revision of hardware for the device. This value must remain the same for a unique device.
+        value: '"mp"'
+
+    MEMFAULT_EVENT_STORAGE_SIZE:
+        description: Storage size for Memfault events
+        value: 1024
+
+    MEMFAULT_COREDUMP_CAPTURE_MINIMAL:
+        description: >
+            Enables a light coredump capture which includes active stack and
+            fault register state. The hal_bsp_core_dump() API is used to discover
+            valid memory regions to collect data from.
+        value: 1
+
+    MEMFAULT_METRICS_COMPONENT_ENABLE:
+        description: Enable metrics subsystem, https://mflt.io/embedded-metrics
+        value: 0
+
+    MEMFAULT_COREDUMP_MAX_AREA_COUNT:
+        description: Maximum number of RAM areas to include in a coredump capture
+        value: 3
+
+    MEMFAULT_USE_DEVICE_TIMESTAMP:
+        description: >
+          Use a timestamp from device when recording events. When disabled, events
+          will be timestamped when it arrives on the server side.
+        value: 0

@@ -109,6 +109,7 @@ void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
 }
 #endif /* MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM */
 
+MEMFAULT_USED
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   memfault_platform_fault_handler(regs, reason);
 
@@ -365,10 +366,10 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
       "mrsne r3, psp \n"                         \
       "push {r3-r11, lr} \n"                     \
       "mov r0, sp \n"                            \
-      "ldr r1, =%0 \n"                           \
+      "ldr r1, =%c0 \n"                          \
       "b memfault_fault_handler \n"              \
       :                                          \
-      : "i" (_x)                                 \
+      : "i" ((uint16_t)_x)                       \
    )
 #else
 #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \

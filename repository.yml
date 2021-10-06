@@ -1,0 +1,20 @@
+# In order for an SDK to be pulled into a mynewt project, there must be
+# a "repository.yml" in the root of the project.
+#
+# https://mynewt.apache.org/latest/tutorials/repo/add_repos.html#repo-descriptors
+
+repo.name: memfault-firmware-sdk
+repo.submodules: ""
+repo.versions:
+    "0.0.0": "master"
+    "0-dev": "0.0.0"        # master
+    "0.27.0": "0.27.0"      # native support for mynewt added
+
+repo.newt_compatibility:
+    # Allow all versions for 0.0.0.  This is a workaround to prevent a warning
+    # from being displayed when newt doesn't know which version of the repo is
+    # present.
+    0.0.0:
+        0.0.0: good
+    0.0.1:
+        0.0.1: good

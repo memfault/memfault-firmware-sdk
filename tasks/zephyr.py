@@ -27,8 +27,8 @@ def zephyr_project_ci_setup(ctx):
     if they don't already exist. This makes it easy to use pre-cached
     artifacts when running the job in CI
     """
-    ZEPHYR_CI_CFG_JSON = os.path.join(ZEPHYR_ROOT, ".ci-project-setup.json")
-    with open(ZEPHYR_CI_CFG_JSON, "rb") as json_file:
+    zephyr_ci_cfg_json = os.path.join(ZEPHYR_ROOT, ".ci-project-setup.json")
+    with open(zephyr_ci_cfg_json, "rb") as json_file:
         data = json.load(json_file)
         for project, info in data.items():
             dest_dir = os.path.join(ZEPHYR_ROOT, "build", project)

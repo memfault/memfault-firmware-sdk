@@ -24,8 +24,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
+#include "memfault/core/compact_log_compile_time_checks.h"
+#include "memfault/core/compact_log_helpers.h"
 #include "memfault/core/compiler.h"
-#include "memfault/core/platform/debug_log.h" // For eMemfaultPlatformLogLevel
+#include "memfault/core/platform/debug_log.h"  // For eMemfaultPlatformLogLevel
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +68,30 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 //! } while (0)
 #define MEMFAULT_LOG_SAVE(_level, ...) memfault_log_save(_level, __VA_ARGS__)
 
+#if MEMFAULT_COMPACT_LOG_ENABLE
+
+//! Same as MEMFAULT_LOG_SAVE except logs use Memfault's "compact" log strategy which offloads
+//! formatting to the Memfault cloud to reduce on device codespace and cpu consumption. See
+//! https://mflt.io/compact-logs for more details.
+#define MEMFAULT_COMPACT_LOG_SAVE(level, format, ...)                   \
+  do {                                                                  \
+    MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ## __VA_ARGS__);   \
+    MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ## __VA_ARGS__);         \
+    memfault_compact_log_save(level,                                    \
+                              MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY_PTR,   \
+                              MFLT_GET_COMPRESSED_LOG_FMT(__VA_ARGS__), \
+                              ## __VA_ARGS__);                          \
+  } while (0)
+
+
+//! Serializes the provided compact log and saves it to backing storage
+//!
+//! @note: Should only be called via MEMFAULT_COMPACT_LOG_SAVE macro
+void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
+                               uint32_t compressed_fmt, ...);
+
+#endif /* MEMFAULT_COMPACT_LOG_ENABLE */
+
 //! Function which can be called to save a log after it has been formatted
 //!
 //! Typically a user should be able to use the MEMFAULT_LOG_SAVE macro but if your platform does
@@ -81,15 +108,22 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level, const char *log,
                                     size_t log_len);
 
-//! Maximum length a log record can occupy
-#define MEMFAULT_LOG_MAX_LINE_SAVE_LEN 128
+typedef enum {
+  kMemfaultLogRecordType_Preformatted = 0,
+  kMemfaultLogRecordType_Compact = 1,
+  kMemfaultLogRecordType_NumTypes,
+} eMemfaultLogRecordType;
 
 typedef struct {
   // the level of the message
   eMemfaultPlatformLogLevel level;
+  // the log returned is a binary "compact log"
+  // See https://mflt.io/compact-logs for more details
+  eMemfaultLogRecordType type;
   // the length of the msg (not including NUL character)
   uint32_t msg_len;
-  // the message to print which will always be NUL terminated
+  // the message to print which will always be NUL terminated when a preformatted log is returned
+  // (so it is always safe to call printf without copying the log into another buffer yourself)
   char msg[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1 /* '\0' */];
 } sMemfaultLog;
 
@@ -116,7 +150,7 @@ typedef struct {
 //!   // .. RTOS code to wait for log read event ..
 //!   sMemfaultLog log = { 0 };
 //!   const bool log_found = memfault_log_read(&log);
-//!   if (log_found) {
+//!   if (log_found && (log.type == kMemfaultLogRecordType_Preformatted)) {
 //!       my_platform_uart_println(log.level, log, log.msg_len);
 //!   }
 bool memfault_log_read(sMemfaultLog *log);

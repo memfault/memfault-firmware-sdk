@@ -18,3 +18,7 @@ CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
+# Workaround for issue in ESP-IDF v4.2.2 python dependencies, see:
+# https://github.com/espressif/esp-idf/issues/7631#issuecomment-934212224
+# We only need the typical root certs, so this works for our app.
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN=y

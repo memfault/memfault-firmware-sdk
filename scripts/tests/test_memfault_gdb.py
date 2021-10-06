@@ -335,11 +335,11 @@ def test_armv7_get_used_ram_base_addresses(gdb_base_fixture):
         Section(0xE0000000, 10, "", read_only=True),
     )
 
-    COLLECTION_SIZE_ARM = 1 * 1024 * 1024  # 1MB
+    collection_size_arm = 1 * 1024 * 1024  # 1MB
     assert [
-        (0x20000000, COLLECTION_SIZE_ARM),
-        (0x60000000, COLLECTION_SIZE_ARM),
-        (0x80000000, COLLECTION_SIZE_ARM),
+        (0x20000000, collection_size_arm),
+        (0x60000000, collection_size_arm),
+        (0x80000000, collection_size_arm),
     ] == ArmCortexMCoredumpArch().guess_ram_regions(sections)
 
 
@@ -717,15 +717,15 @@ def test_has_uploaded_symbols(
 def test_post_chunk_data(gdb_base_fixture, http_expect_request):
     from memfault_gdb import _post_chunk_data
 
-    BASE_URI = "https://example.chunks.memfault.com"
-    CHUNK_DATA = bytearray([1, 2, 3, 4])
-    DEVICE_SERIAL = "GDB_TESTSERIAL"
+    base_uri = "https://example.chunks.memfault.com"
+    chunk_data = bytearray([1, 2, 3, 4])
+    device_serial = "GDB_TESTSERIAL"
 
     def _check_request_body(body_bytes):
-        assert body_bytes.hex() == CHUNK_DATA.hex(), body_bytes
+        assert body_bytes.hex() == chunk_data.hex(), body_bytes
 
     http_expect_request(
-        "{}/api/v0/chunks/GDB_TESTSERIAL".format(BASE_URI),
+        "{}/api/v0/chunks/GDB_TESTSERIAL".format(base_uri),
         "POST",
         _check_request_body,
         {"Content-Type": "application/octet-stream", "Memfault-Project-Key": TEST_PROJECT_KEY},
@@ -734,5 +734,5 @@ def test_post_chunk_data(gdb_base_fixture, http_expect_request):
     )
 
     _post_chunk_data(
-        CHUNK_DATA, project_key=TEST_PROJECT_KEY, chunks_uri=BASE_URI, device_serial=DEVICE_SERIAL
+        chunk_data, project_key=TEST_PROJECT_KEY, chunks_uri=base_uri, device_serial=device_serial
     )

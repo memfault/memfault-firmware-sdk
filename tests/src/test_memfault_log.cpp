@@ -16,13 +16,14 @@
 
 #include "memfault/core/log.h"
 #include "memfault/core/log_impl.h"
+#include "memfault/core/compact_log_serializer.h"
 
 #include "memfault_log_data_source_private.h"
 #include "memfault_log_private.h"
 
 static bool s_fake_data_source_has_been_triggered;
 bool memfault_log_data_source_has_been_triggered(void) {
-    return s_fake_data_source_has_been_triggered;
+  return s_fake_data_source_has_been_triggered;
 }
 
 TEST_GROUP(MemfaultLog) {
@@ -53,15 +54,23 @@ static void prv_run_header_check(uint8_t *log_entry,
 }
 
 static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
-                                   const char *expected_log, size_t expected_log_len) {
+                                   eMemfaultLogRecordType expected_type,
+                                   const void *expected_log, size_t expected_log_len) {
   sMemfaultLog log;
   // scribble a bad pattern to make sure memfault_log_read inits things
   memset(&log, 0xa5, sizeof(log));
   const bool found_log = memfault_log_read(&log);
   CHECK(found_log);
-  STRCMP_EQUAL(expected_log, log.msg);
   LONGS_EQUAL(expected_log_len, log.msg_len);
+
+  if (expected_type == kMemfaultLogRecordType_Preformatted) {
+    STRCMP_EQUAL((const char *)expected_log, log.msg);
+  } else {
+    MEMCMP_EQUAL(expected_log, log.msg, expected_log_len);
+  }
+
   LONGS_EQUAL(expected_level, log.level);
+  LONGS_EQUAL(expected_type, log.type);
 }
 
 TEST(MemfaultLog, Test_BadInit) {
@@ -85,6 +94,7 @@ TEST(MemfaultLog, Test_MemfaultLogBasic) {
   const char *my_log = "12345678";
   const size_t my_log_len = strlen(my_log);
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  eMemfaultLogRecordType type = kMemfaultLogRecordType_Preformatted;
   memfault_log_save_preformatted(level, my_log, my_log_len);
   // Write a second log, to exercise the s_memfault_ram_logger.log_read_offset
   // book-keeping:
@@ -94,8 +104,8 @@ TEST(MemfaultLog, Test_MemfaultLogBasic) {
   prv_run_header_check(&s_ram_log_store[10], level, my_log, my_log_len);
 
   // Read the two logs:
-  prv_read_log_and_check(level, my_log, my_log_len);
-  prv_read_log_and_check(level, my_log, my_log_len);
+  prv_read_log_and_check(level, type, my_log, my_log_len);
+  prv_read_log_and_check(level, type, my_log, my_log_len);
 
   // should be no more logs
   sMemfaultLog log;
@@ -113,10 +123,11 @@ TEST(MemfaultLog, Test_MemfaultLogOversize) {
   my_log[sizeof(my_log) - 1] = '\0';
 
   const eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  eMemfaultLogRecordType type = kMemfaultLogRecordType_Preformatted;
   memfault_log_save_preformatted(level, my_log, strlen(my_log));
 
   my_log[sizeof(my_log) - 2] = '\0';
-  prv_read_log_and_check(level, my_log, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
+  prv_read_log_and_check(level, type, my_log, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
 }
 
 void memfault_log_handle_saved_callback(void) {
@@ -269,21 +280,22 @@ TEST(MemfaultLog, Test_DroppedLogs) {
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  eMemfaultLogRecordType type = kMemfaultLogRecordType_Preformatted;
   const char *initial_log = "hi world!";
   const size_t initial_log_len = strlen(initial_log);
   memfault_log_save_preformatted(level, initial_log, initial_log_len);
-  prv_read_log_and_check(level, initial_log, initial_log_len);
+  prv_read_log_and_check(level, type, initial_log, initial_log_len);
 
   for (int i = 0; i < 6; i++) {
     MEMFAULT_LOG_SAVE(level, "MSG %d", i);
   }
 
   const char *expected_string = "... 5 messages dropped ...";
-  prv_read_log_and_check(kMemfaultPlatformLogLevel_Warning, expected_string,
+  prv_read_log_and_check(kMemfaultPlatformLogLevel_Warning, type, expected_string,
                          strlen(expected_string));
 
   const char *expected_msg5 = "MSG 5";
-  prv_read_log_and_check(level, expected_msg5, strlen(expected_msg5));
+  prv_read_log_and_check(level, type, expected_msg5, strlen(expected_msg5));
 }
 
 static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset,
@@ -341,3 +353,28 @@ TEST(MemfaultLog, Test_Iterate) {
 
   memfault_log_iterate(prv_iterate_callback, &iterator);
 }
+
+#if MEMFAULT_COMPACT_LOG_ENABLE
+
+static uint8_t s_fake_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+
+bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder,
+                                     MEMFAULT_UNUSED uint32_t log_id,
+                                     MEMFAULT_UNUSED uint32_t compressed_fmt,
+                                     MEMFAULT_UNUSED va_list args) {
+  return memfault_cbor_join(encoder, s_fake_compact_log, sizeof(s_fake_compact_log));
+}
+
+TEST(MemfaultLog, Test_CompactLog) {
+  uint8_t s_ram_log_store[20];
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  eMemfaultLogRecordType type = kMemfaultLogRecordType_Compact;
+  memfault_compact_log_save(level, 0, 0);
+
+  // Read the log:
+  prv_read_log_and_check(level, type, s_fake_compact_log, sizeof(s_fake_compact_log));
+}
+
+#endif

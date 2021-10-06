@@ -13,7 +13,7 @@ import glob
 import logging
 import os
 import re
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # noqa: N817
 
 
 def get_depth_from_parent(project_dir, memfault_dir):
@@ -144,61 +144,61 @@ def patch_project(
     tree = ET.parse(project_file)
     root = tree.getroot()
 
-    linkedResourcesRoots = root.findall(".//linkedResources")
-    if len(linkedResourcesRoots) == 0:
-        linkedResources = generate_linked_resources()
-        root.append(linkedResources)
-    elif len(linkedResourcesRoots) == 1:
-        linkedResources = linkedResourcesRoots[0]
+    linked_resources_roots = root.findall(".//linkedResources")
+    if len(linked_resources_roots) == 0:
+        linked_resources = generate_linked_resources()
+        root.append(linked_resources)
+    elif len(linked_resources_roots) == 1:
+        linked_resources = linked_resources_roots[0]
     else:
         raise Exception(
             "Located {} linked resources in Eclipse project file but expected 1".format(
-                len(linkedResourcesRoots)
+                len(linked_resources_roots)
             )
         )
 
     # We want this script to be idempotent so remove any "memfault_" sources already
     # added. We will just be adding them back below.
-    for link in linkedResources.findall("link"):
+    for link in linked_resources.findall("link"):
         name = link.find(".//name")
         if name is not None and "memfault_" in name.text:
-            linkedResources.remove(link)
+            linked_resources.remove(link)
 
-    COMP_FOLDER_NAME = "memfault_components"
+    comp_folder_name = "memfault_components"
 
-    linkedResources.append(
-        generate_link_element(COMP_FOLDER_NAME, "virtual:/virtual", path_type="2")
+    linked_resources.append(
+        generate_link_element(comp_folder_name, "virtual:/virtual", path_type="2")
     )
 
     for component in components:
         for ele in files_to_link(
             dir_glob="{}/components/{}/**/*.c".format(memfault_sdk_dir, component),
-            virtual_dir=COMP_FOLDER_NAME,
+            virtual_dir=comp_folder_name,
             common_prefix=common_prefix,
             parent_dir=parent_dir,
         ):
-            linkedResources.append(ele)
+            linked_resources.append(ele)
 
-    INCLUDE_FOLDER_NAME = "memfault_includes"
-    linkedResources.append(
-        generate_link_element(INCLUDE_FOLDER_NAME, "virtual:/virtual", path_type="2")
+    include_folder_name = "memfault_includes"
+    linked_resources.append(
+        generate_link_element(include_folder_name, "virtual:/virtual", path_type="2")
     )
     for inc_name in ["components", "ports"]:
         inc_path = os.path.join(memfault_sdk_dir, inc_name, "include")
         ele = get_file_element(
             file_name=inc_path,
-            virtual_dir=os.path.join(INCLUDE_FOLDER_NAME, inc_name),
+            virtual_dir=os.path.join(include_folder_name, inc_name),
             common_prefix=common_prefix,
             parent_dir=parent_dir,
             path_type="2",
         )
-        linkedResources.append(ele)
+        linked_resources.append(ele)
 
     if target_port is not None:
         port_folder_name = "_".join(os.path.split(target_port))
         port_folder_name = "memfault_{}".format(port_folder_name)
 
-        linkedResources.append(
+        linked_resources.append(
             generate_link_element(port_folder_name, "virtual:/virtual", path_type="2")
         )
 
@@ -208,7 +208,7 @@ def patch_project(
             common_prefix=common_prefix,
             parent_dir=parent_dir,
         ):
-            linkedResources.append(ele)
+            linked_resources.append(ele)
 
         # The DA1469x port also uses FreeRTOS so pick that up automatically when selected
         if target_port == "dialog/da1469x":
@@ -218,7 +218,7 @@ def patch_project(
                 common_prefix=common_prefix,
                 parent_dir=parent_dir,
             ):
-                linkedResources.append(ele)
+                linked_resources.append(ele)
 
     output_location = project_file if output_dir is None else os.path.join(output_dir, ".project")
     logging.info("Writing result to {}".format(output_location))

@@ -163,13 +163,13 @@ def check_and_patch_reglist_for_fault(register_list, analytics_props):
     # handlers and capturing the necessary registers. For the try script, we'll try to apply the
     # same logic
 
-    FAULT_START_PROMPT = """
+    fault_start_prompt = """
 We see you are trying out Memfault from a Fault handler. That's great!
 For the best results and to mirror the behavior of our firmware SDK,
 please run "memfault coredump" at exception entry before other code has run
 in the exception handler
 """
-    GDB_HOW_TO_FAULT_PROMPT = """
+    gdb_how_to_fault_prompt = """
 It's easy to halt at exception entry by installing a breakpoint from gdb.
 For example,
 (gdb) breakpoint HardFault_Handler
@@ -177,7 +177,7 @@ For example,
 
     exc_return = _get_register_value(register_list, "lr")
     if exc_return >> 28 != 0xF:
-        print("{} {}".format(FAULT_START_PROMPT, GDB_HOW_TO_FAULT_PROMPT))
+        print("{} {}".format(fault_start_prompt, gdb_how_to_fault_prompt))
         raise Exception("LR no longer set to EXC_RETURN value")
 
     # DCRS - armv8m only - only relevant when chaining secure and non-secure exceptions
@@ -192,11 +192,11 @@ For example,
         # hard to detect programmatically, let's check in with the user
         y = MEMFAULT_CONFIG.prompt(
             "{}\nAre you currently at the start of an exception handler [y/n]?".format(
-                FAULT_START_PROMPT
+                fault_start_prompt
             )
         )
         if "Y" not in y.upper():
-            print(GDB_HOW_TO_FAULT_PROMPT)
+            print(gdb_how_to_fault_prompt)
             raise Exception("User did not confirm being at beginning of exception")
     else:
         analytics_props["displayed_fault_prompt"] = False
@@ -406,7 +406,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         reg_val, _ = _read_register(cpuid)
         partno = (reg_val >> 4) & 0xFFF
 
-        CORTEX_M_CPUIDS = {
+        cortex_m_cpuids = {
             0xC20: "M0",
             0xC21: "M1",
             0xC23: "M3",
@@ -415,10 +415,10 @@ class ArmCortexMCoredumpArch(CoredumpArch):
             0xC60: "M0+",
         }
 
-        if partno not in CORTEX_M_CPUIDS:
+        if partno not in cortex_m_cpuids:
             return None
 
-        print("Cortex-{} detected".format(CORTEX_M_CPUIDS[partno]))
+        print("Cortex-{} detected".format(cortex_m_cpuids[partno]))
         mpu_type = 0xE000ED90
         mpu_ctrl = 0xE000ED94
         mpu_rnr = 0xE000ED98
@@ -515,11 +515,11 @@ def _add_reg_collection_error_analytic(arch, analytics_props, reg_name, error):
     if not _is_expected_reg(arch, reg_name):
         return
 
-    REG_COLLECTION_ERROR = "reg_collection_error"
-    if REG_COLLECTION_ERROR not in analytics_props:
-        analytics_props[REG_COLLECTION_ERROR] = {}
+    reg_collection_error = "reg_collection_error"
+    if reg_collection_error not in analytics_props:
+        analytics_props[reg_collection_error] = {}
 
-    analytics_props[REG_COLLECTION_ERROR][reg_name] = error
+    analytics_props[reg_collection_error][reg_name] = error
 
 
 def _try_read_register(arch, frame, lookup_name, register_list, analytics_props, result_name=None):
@@ -900,14 +900,14 @@ def http_upload_symbol_file(config, artifact_readable, software_type, software_v
 
 
 def http_get_software_version(config, software_type, software_version):
-    SOFTWARE_VERSION_URL = "/api/v0/organizations/{organization}/projects/{project}/software_types/{software_type}/software_versions/{software_version}".format(
+    software_version_url = "/api/v0/organizations/{organization}/projects/{project}/software_types/{software_type}/software_versions/{software_version}".format(
         organization=config.organization,
         project=config.project,
         software_type=software_type,
         software_version=software_version,
     )
 
-    status, reason, body = _http_api(config, "GET", SOFTWARE_VERSION_URL)
+    status, reason, body = _http_api(config, "GET", software_version_url)
     if status < 200 or status >= 300:
         return None
     return body["data"]
@@ -1668,7 +1668,7 @@ class AnalyticsTracker(Thread):
 
     def run(self):
         # uuid.getnode() is based on the mac address, so should be stable across multiple sessions on the same machine:
-        anonymousId = md5(uuid.UUID(int=uuid.getnode()).bytes).hexdigest()
+        anonymous_id = md5(uuid.UUID(int=uuid.getnode()).bytes).hexdigest()
         while True:
             try:
                 event_name, event_properties, user_id = self._queue.get()
@@ -1680,7 +1680,7 @@ class AnalyticsTracker(Thread):
                     event_properties = {}
                 conn = HTTPSConnection("api.segment.io")
                 body = {
-                    "anonymousId": anonymousId,
+                    "anonymousId": anonymous_id,
                     "event": event_name,
                     "properties": event_properties,
                 }

@@ -1,0 +1,5 @@
+//! @file
+
+# if __has_include("memfault_metrics_heartbeat_config.def")
+#   include "memfault_metrics_heartbeat_config.def"
+# endif

@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/log.h"
 #include "memfault/core/platform/debug_log.h"
 
 #ifdef __cplusplus
@@ -31,7 +32,7 @@ extern "C" {
 //  r = read (1 if the message has been read, 0 otherwise)
 //  s = sent (1 if the message has been sent, 0 otherwise)
 //  x = rsvd
-//  t = type (0 = formatted log)
+//  t = type (0 = formatted log, 1 = compact log)
 //  l = log level (eMemfaultPlatformLogLevel)
 
 #define MEMFAULT_LOG_HDR_LEVEL_POS  0
@@ -43,6 +44,10 @@ extern "C" {
 
 static inline eMemfaultPlatformLogLevel memfault_log_get_level_from_hdr(uint8_t hdr) {
   return (eMemfaultPlatformLogLevel)((hdr & MEMFAULT_LOG_HDR_LEVEL_MASK) >> MEMFAULT_LOG_HDR_LEVEL_POS);
+}
+
+static inline eMemfaultLogRecordType memfault_log_get_type_from_hdr(uint8_t hdr) {
+  return (eMemfaultLogRecordType)((hdr & MEMFAULT_LOG_HDR_TYPE_MASK) >> MEMFAULT_LOG_HDR_TYPE_POS);
 }
 
 typedef MEMFAULT_PACKED_STRUCT {

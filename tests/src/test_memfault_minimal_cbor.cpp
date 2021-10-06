@@ -303,7 +303,7 @@ static void prv_run_incremental_string_encoder_check(
   CHECK(success);
 
   for (size_t i = 0; i < strlen(str); ++i) {
-    CHECK(memfault_cbor_encode_string_add(&encoder, &str[i], 1));
+    CHECK(memfault_cbor_join(&encoder, &str[i], 1));
   }
 
   const size_t encoded_length = memfault_cbor_encoder_deinit(&encoder);

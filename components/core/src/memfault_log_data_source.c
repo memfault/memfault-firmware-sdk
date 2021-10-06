@@ -96,15 +96,29 @@ typedef struct {
 static bool prv_copy_msg_callback(sMfltLogIterator *iter, MEMFAULT_UNUSED size_t offset,
                                   const char *buf, size_t buf_len) {
   sMfltLogEncodingCtx *const ctx = (sMfltLogEncodingCtx *)iter->user_ctx;
-  return memfault_cbor_encode_string_add(&ctx->encoder, buf, buf_len);
+  return memfault_cbor_join(&ctx->encoder, buf, buf_len);
 }
 
 static bool prv_encode_current_log(sMemfaultCborEncoder *encoder, sMfltLogIterator *iter) {
-  return (
-    memfault_cbor_encode_unsigned_integer(encoder, memfault_log_get_level_from_hdr(iter->entry.hdr)) &&
-    memfault_cbor_encode_string_begin(encoder, iter->entry.len) &&
-    memfault_log_iter_copy_msg(iter, prv_copy_msg_callback)
-  );
+
+  if (!memfault_cbor_encode_unsigned_integer(encoder,
+                                             memfault_log_get_level_from_hdr(iter->entry.hdr))) {
+    return false;
+  }
+
+  eMemfaultLogRecordType type = memfault_log_get_type_from_hdr(iter->entry.hdr);
+  bool success;
+
+  // Note: We encode "preformatted" logs (i.e logs that have run through printf) as cbor text
+  // string and "compact" logs as a cbor byte array so we can differentiate between the two while
+  // decoding
+  if (type == kMemfaultLogRecordType_Preformatted) {
+    success = memfault_cbor_encode_string_begin(encoder, iter->entry.len);
+  } else { // kMemfaultLogRecordType_Compact
+    success = memfault_cbor_encode_byte_string_begin(encoder, iter->entry.len);
+  }
+
+  return (success && memfault_log_iter_copy_msg(iter, prv_copy_msg_callback));
 }
 
 static bool prv_log_iterate_encode_callback(sMfltLogIterator *iter) {

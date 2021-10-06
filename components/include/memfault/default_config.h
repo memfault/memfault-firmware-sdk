@@ -94,8 +94,15 @@ extern "C" {
 #define MEMFAULT_LOG_DATA_SOURCE_ENABLED 1
 #endif
 
-// Shouldn't typically be needed but allows for persisting of MEMFAULT_LOG_*'s
-// to be disabled via a CFLAG: CFLAGS += -DMEMFAULT_SDK_LOG_SAVE_DISABLE=1
+//! Maximum length a log record can occupy
+//!
+//! Structs holding this log may be allocated on the stack so care should be taken
+//! to make the size is not to large to blow through the allocated space for the stack.
+#ifndef MEMFAULT_LOG_MAX_LINE_SAVE_LEN
+#define MEMFAULT_LOG_MAX_LINE_SAVE_LEN 128
+#endif
+
+//! Control whether or automatic persisting of MEMFAULT_LOG_*'s is enabled
 #ifndef MEMFAULT_SDK_LOG_SAVE_DISABLE
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 0
 #endif
