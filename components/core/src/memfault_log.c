@@ -322,7 +322,7 @@ static void prv_log_save(eMemfaultPlatformLogLevel level,
   memfault_lock();
   {
     sMfltCircularBuffer *circ_bufp = &s_memfault_ram_logger.circ_buffer;
-    const bool space_free = prv_try_free_space(circ_bufp, bytes_needed);
+    const bool space_free = prv_try_free_space(circ_bufp, (int)bytes_needed);
     if (space_free) {
         sMfltRamLogEntry entry = {
           .len = (uint8_t)truncated_log_len,

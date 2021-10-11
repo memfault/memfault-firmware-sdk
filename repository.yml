@@ -9,6 +9,7 @@ repo.versions:
     "0.0.0": "master"
     "0-dev": "0.0.0"        # master
     "0.27.0": "0.27.0"      # native support for mynewt added
+    "0.27.1": "0.27.1"      # Added os_coredump_cb implementation for use with Memfault
 
 repo.newt_compatibility:
     # Allow all versions for 0.0.0.  This is a workaround to prevent a warning

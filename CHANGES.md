@@ -1,3 +1,17 @@
+### Changes between Memfault SDK 0.27.1 and SDK 0.27.0 - Oct 11, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Extended mynewt RTOS port to capture coredumps via a
+  [`os_coredump_cb`](ports/mynewt/src/memfault_platform_port.c) implementation
+  when `MEMFAULT_COREDUMP_CB=1`
+
+#### :house: Internal
+
+- Fixed a few compiler warnings emitted when compiling with clang
+- Improved documentation for
+  [coredump config with nRF5 SDK](ports/nrf5_sdk/nrf5_coredump_regions.c)
+
 ### Changes between Memfault SDK 0.27.0 and SDK 0.26.1 - Oct 5, 2021
 
 #### :chart_with_upwards_trend: Improvements

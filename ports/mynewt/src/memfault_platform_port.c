@@ -16,6 +16,8 @@
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
 
+#if MYNEWT_VAL(MEMFAULT_ENABLE)
+
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo) {
     // Note: serial number will be recovered from route used when posting
@@ -165,3 +167,47 @@ void memfault_platform_reboot_tracking_boot(void) {
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 }
+
+#if MYNEWT_VAL(MEMFAULT_COREDUMP_CB)
+
+
+static eMemfaultRebootReason s_reboot_reason = kMfltRebootReason_UnknownError;
+
+#if MYNEWT_VAL(MEMFAULT_ASSERT_CB)
+void os_assert_cb(void) {
+  s_reboot_reason = kMfltRebootReason_Assert;
+}
+#endif
+
+static eMemfaultRebootReason prv_resolve_reason_from_active_isr(void) {
+  // ARM Cortex-M have a standard set of exception numbers used for faults.
+  //
+  // The bottom byte of the XPSR register tells us which interrupt we are running from.
+  // See https://mflt.io/cortex-m-exc-numbering
+  uint32_t vect_active = __get_xPSR() & 0xff;
+  switch (vect_active) {
+    case 2:
+      return kMfltRebootReason_Nmi;
+    case 3:
+      return kMfltRebootReason_HardFault;
+    case 4:
+      return kMfltRebootReason_MemFault;
+    case 5:
+      return kMfltRebootReason_BusFault;
+    case 6:
+      return kMfltRebootReason_UsageFault;
+    default:
+      return kMfltRebootReason_HardFault;
+  }
+}
+
+void os_coredump_cb(void *tf) {
+  if (s_reboot_reason == kMfltRebootReason_UnknownError) {
+    s_reboot_reason = prv_resolve_reason_from_active_isr();
+  }
+
+  memfault_fault_handler(tf, s_reboot_reason);
+}
+#endif /* MYNEWT_VAL(MEMFAULT_COREDUMP_CB) */
+
+#endif /* MYNEWT_VAL(MEMFAULT_ENABLE) */

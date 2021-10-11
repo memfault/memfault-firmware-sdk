@@ -17,7 +17,7 @@
 
 #include "memfault/components.h"
 
-
+#if MYNEWT_VAL(MEMFAULT_ENABLE)
 
 const sMfltCoredumpRegion *
 memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
@@ -146,3 +146,5 @@ void memfault_platform_coredump_storage_clear(void) {
   const uint8_t clear_byte = 0x0;
   memfault_platform_coredump_storage_write(0, &clear_byte, sizeof(clear_byte));
 }
+
+#endif /* MYNEWT_VAL(MEMFAULT_ENABLE) */

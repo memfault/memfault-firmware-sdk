@@ -23,9 +23,9 @@ section of your `syscfg.yml` file:
 
 ```yaml
 syscfg.vals:
-    [...]
-    MEMFAULT_COREDUMP_CB: 1
+[...]
     MEMFAULT_ENABLE: 1
+    MEMFAULT_COREDUMP_CB: 1
     OS_COREDUMP: 1
     OS_COREDUMP_CB: 1
 ```

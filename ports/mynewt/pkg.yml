@@ -10,7 +10,6 @@ pkg.deps:
     - "@apache-mynewt-core/sys/flash_map"
     - "@apache-mynewt-core/hw/hal"
     - "@apache-mynewt-core/mgmt/imgmgr"
-    - "@apache-mynewt-core/util/memfault_sdk"
     - "@mcuboot/boot/bootutil"
 
 pkg.ign_dirs:

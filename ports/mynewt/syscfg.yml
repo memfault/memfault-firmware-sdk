@@ -1,4 +1,23 @@
 syscfg.defs:
+    MEMFAULT_ENABLE:
+        description: Enables Memfault SDK features
+        value: 0
+
+    MEMFAULT_COREDUMP_CB:
+        description: Enable custom memfault coredump handling cb
+        value: 0
+        restriction:
+            - 'OS_COREDUMP_CB if 1'
+
+    MEMFAULT_ASSERT_CB:
+        description: >
+            Enable custom assert handling callback to correctly capture that a reboot
+            was triggered via an assert.
+        value: 0
+        restriction:
+            - 'MEMFAULT_COREDUMP_CB if 1'
+            - 'OS_ASSERT_CB if 1'
+
     MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE:
         description: A name to represent the firmware running on the MCU.
         value: '"app-fw"'

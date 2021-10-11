@@ -262,7 +262,7 @@ static int prv_str_to_dec(const char *buf, size_t buf_len, int *value_out) {
   }
 
   *value_out = result;
-  return idx;
+  return (int)idx;
 }
 
 //! @return true if parsing was successful, false if a parse error occurred
@@ -456,7 +456,7 @@ static bool prv_find_first_occurrence(const char *line, size_t total_len,
 
 static bool prv_find_last_occurrence(const char *line, size_t total_len,
                                     char c, size_t *offset_out) {
-  for (int offset = total_len - 1; offset >= 0; offset--) {
+  for (int offset = (int)total_len - 1; offset >= 0; offset--) {
     if (line[offset] == c) {
       *offset_out = (size_t)offset;
       return true;

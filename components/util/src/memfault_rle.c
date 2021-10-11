@@ -26,7 +26,7 @@ static void prv_handle_rle_change(sMemfaultRleCtx *ctx) {
     .write_len = repeated_pattern ? 1 : ctx->seq_count,
   };
 
-  int32_t rle_size = repeated_pattern ? ctx->seq_count : -ctx->seq_count;
+  int32_t rle_size = (int)(repeated_pattern ? ctx->seq_count : -ctx->seq_count);
 
   ctx->write_info.header_len = memfault_encode_varint_si32(rle_size, &ctx->write_info.header[0]);
 

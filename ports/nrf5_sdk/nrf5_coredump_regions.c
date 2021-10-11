@@ -11,8 +11,10 @@
 //!  declare their own regions to collect.
 //!
 //!  MEMFAULT_PLATFORM_COREDUMP_CAPTURE_STACK_ONLY (default = 1)
-//!   This mode will collect just the stack that was active at the time of crash
-//!   The regions to be captured by adding the following to the projects .ld file:
+//!   This mode will collect just the stack that was active at the time of
+//!   crash. To capture more data, set this to 0 in memfault_platform_config.h.
+//!   The regions to be captured are specified by adding the following to the
+//!   project's .ld file:
 //!
 //!     __MemfaultCoredumpRamStart = ORIGIN(RAM);
 //!     __MfltCoredumpRamEnd = ORIGIN(RAM) + LENGTH(RAM);

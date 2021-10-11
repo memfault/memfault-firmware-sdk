@@ -3,8 +3,27 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
-//! Implements platform dependency functions required for saving coredumps
-//! to internal flash when using the NRF5 SDK.
+//! Implements platform dependency functions required for saving coredumps to
+//! internal flash when using the NRF5 SDK.
+//!
+//! To use, update your linker script (.ld file) to expose information about the
+//! location to use. For example, using a 256K region of the nRF52840 (1MB
+//! flash) would look something like this:
+//!
+//!   MEMORY
+//!   {
+//!     FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0x7B000
+//!     MEMFAULT_CORES (rw) : ORIGIN = 0xA1000, LENGTH = 0x40000
+//!     /* Note: most production apps would have a bootloader somewhere in this range! */
+//!     RSVD (rwx) : ORIGIN = 0xE1000, LENGTH = 0x1F000
+//!     RAM (rwx) :  ORIGIN = 0x200057b8, LENGTH = 0x3a848
+//!   }
+//!
+//!   __MemfaultCoreStorageStart = ORIGIN(MEMFAULT_CORES);
+//!   __MemfaultCoreStorageEnd = ORIGIN(MEMFAULT_CORES) + LENGTH(MEMFAULT_CORES);
+//!
+//! See also nrf5_coredump_regions.c for information on which areas are captured
+//! during a coredump.
 
 #include "memfault/panics/coredump.h"
 
