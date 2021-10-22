@@ -7,11 +7,12 @@
 
 #include <stdbool.h>
 
+#include "os/os.h"
 #include "bsp/bsp.h"
 #include "hal/hal_bsp.h"
 #include "hal/hal_system.h"
-#include "os/os.h"
 #include "sysinit/sysinit.h"
+#include "version.h"
 
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
