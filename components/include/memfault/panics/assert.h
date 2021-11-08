@@ -42,7 +42,7 @@ extern "C" {
   } while (0)
 
 #define MEMFAULT_ASSERT_RECORD(_extra) \
-  MEMFAULT_ASSERT_EXTRA_AND_REASON(kMfltRebootReason_Assert, _extra)
+  MEMFAULT_ASSERT_EXTRA_AND_REASON(_extra, kMfltRebootReason_Assert)
 
 #define MEMFAULT_ASSERT_EXTRA(exp, _extra) \
   do {                                     \

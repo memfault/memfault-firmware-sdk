@@ -70,3 +70,12 @@ And add the following **after** the `.text` in your targets linker script:
         KEEP(*(.note.gnu.build-id))
     } > FLASH
 ```
+
+## Enabling Memfault Demo Shell Commands
+
+The Memfault demo shell commands can be included in the mynewt shell (useful for
+testing various Memfault features). To enable:
+
+1. set `MEMFAULT_CLI: 1` in the target's `syscfg.yml`.
+2. enable the shell commands by calling `mflt_shell_init()` at the appropriate
+   point in the application initialization (eg after `sysinit()`).

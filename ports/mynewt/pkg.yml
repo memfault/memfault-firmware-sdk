@@ -15,6 +15,7 @@ pkg.deps:
 pkg.ign_dirs:
 pkg.include_dirs:
     - "../../components/include"
+    - "../../components/log/include"
     - "../include"
 pkg.src_dirs:
     - "src"

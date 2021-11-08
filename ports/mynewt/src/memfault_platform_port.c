@@ -10,11 +10,10 @@
 #include "bsp/bsp.h"
 #include "hal/hal_bsp.h"
 #include "hal/hal_system.h"
-#include "os/os.h"
-#include "sysinit/sysinit.h"
-
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
+#include "os/os.h"
+#include "sysinit/sysinit.h"
 
 #if MYNEWT_VAL(MEMFAULT_ENABLE)
 

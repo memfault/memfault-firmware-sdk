@@ -17,7 +17,10 @@ extern "C" {
 
 #define MEMFAULT_PACKED __attribute__((packed))
 #define MEMFAULT_PACKED_STRUCT struct MEMFAULT_PACKED
+//! MEMFAULT_NORETURN is only intended to be overridden in unit tests, if needed
+#if !defined(MEMFAULT_NORETURN)
 #define MEMFAULT_NORETURN __attribute__((noreturn))
+#endif
 #define MEMFAULT_NAKED_FUNC __attribute__((naked))
 #define MEMFAULT_UNREACHABLE __builtin_unreachable()
 #if defined(__clang__)

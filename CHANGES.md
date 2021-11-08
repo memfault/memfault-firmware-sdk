@@ -1,3 +1,26 @@
+### Changes between Memfault SDK 0.27.2 and SDK 0.27.1 - Nov 5, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- The Mynewt integration now supports the Memfault demo shell via
+  `mflt_shell_init()`, see the [Mynewt port README.md](ports/mynewt/README.md)
+  for details. Huge thanks to @t3zeng for providing this implementation!
+- Add support for ESP-IDF v4.3.1. This update should fix the bootlooping issue
+  seen when using the port with v4.3.1+ of ESP-IDF.
+- Add support for `LOG2` deferred mode on zephyr. This should fix bootloops when
+  enabling `LOG2`.
+- Fix flipped args passed from `MEMFAULT_ASSERT_RECORD()` to
+  `MEMFAULT_ASSERT_EXTRA_AND_REASON()` (regression in v0.23.0). This affected
+  the `_extra` additional context value passed via this macro.
+- Fix a typo in
+  [`ports/esp_idf/memfault/common/memfault_platform_http_client.c`](ports/esp_idf/memfault/common/memfault_platform_http_client.c)
+  which caused the OTA example to always return "OTA Update Available" when the
+  current version is already the latest.
+
+#### :house: Internal
+
+- Updated list of sample apps in (`examples/README.md`)[examples/README.md]
+
 ### Changes between Memfault SDK 0.27.1 and SDK 0.27.0 - Oct 11, 2021
 
 #### :chart_with_upwards_trend: Improvements

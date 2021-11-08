@@ -142,7 +142,7 @@ static int prv_build_latest_release_url(char *buf, size_t buf_len) {
   sMemfaultDeviceInfo device_info;
   memfault_platform_get_device_info(&device_info);
   return snprintf(buf, buf_len,
-                  "%s://%s/api/v0/releases/latest/url?device_serial=%s&hardware_version=%s&software_type=%s&software_version=%s",
+                  "%s://%s/api/v0/releases/latest/url?device_serial=%s&hardware_version=%s&software_type=%s&current_version=%s",
                   MEMFAULT_HTTP_GET_SCHEME(),
                   MEMFAULT_HTTP_GET_DEVICE_API_HOST(),
                   device_info.device_serial,

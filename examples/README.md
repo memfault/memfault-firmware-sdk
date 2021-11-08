@@ -12,6 +12,10 @@ Memfault SDK:
   (STM32F407G-DISC1)
 - WICED SDK / Cypress BCM943364WCD1
 - Zephyr / STMicroelectronics STM32L4 series (B-L475E-IOT01A Discovery kit)
+- Amazon FreeRTOS / Cypress PSoC 64 MCU (CY8CKIT-064S0S2-4343W)
+- Dialog DA145xx and DA1469x
+- Espressif ESP-IDF / ESP32 (ESP-WROVER-KIT)
+- nRF Connect SDK / Nordic nRF9160 (PCA10090)
 
 ## Using the Demo Application
 

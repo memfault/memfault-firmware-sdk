@@ -42,6 +42,12 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
     .name = "mflt"
   };
 
+  // Ignore return value; this function should be safe to call multiple times
+  // during system init, but needs to called before we create any timers.
+  // See implementation here (may change by esp-idf version!):
+  // https://github.com/espressif/esp-idf/blob/master/components/esp_timer/src/esp_timer.c#L431-L460
+  (void)esp_timer_init();
+
   esp_timer_handle_t periodic_timer;
   ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
