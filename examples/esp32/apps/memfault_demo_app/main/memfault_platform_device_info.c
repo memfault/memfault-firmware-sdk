@@ -8,9 +8,7 @@
 
 #include <stdio.h>
 
-#include "memfault/core/build_info.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/device_info.h"
+#include "memfault/components.h"
 
 #include "esp_system.h"
 
@@ -29,7 +27,6 @@
 #endif
 
 static char s_device_serial[32];
-static char s_fw_version[16] = MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION "+";
 
 // NOTE: Some versions of the esp-idf use locking when reading mac info
 // so this isn't safe to call from an interrupt
@@ -52,23 +49,13 @@ static void prv_get_device_serial(char *buf, size_t buf_len) {
 
 void memfault_platform_device_info_boot(void) {
   prv_get_device_serial(s_device_serial, sizeof(s_device_serial));
-
-  const size_t version_len = strlen(s_fw_version);
-
-  // We will use 6 characters of the build id to make our versions unique and
-  // identifiable between releases
-  const size_t build_id_chars = 6 + 1 /* '\0' */;
-  const size_t build_id_num_chars =
-      MEMFAULT_MIN(build_id_chars, sizeof(s_fw_version) - version_len - 1);
-
-  memfault_build_id_get_string(&s_fw_version[version_len], build_id_num_chars);
 }
 
 void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
   *info = (struct MemfaultDeviceInfo) {
     .device_serial = s_device_serial,
     .hardware_version = MEMFAULT_ESP32_HW_REVISION,
-    .software_version = s_fw_version,
+    .software_version = MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION "-dev",
     .software_type = MEMFAULT_ESP32_SOFTWARE_TYPE,
   };
 }

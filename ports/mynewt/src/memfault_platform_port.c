@@ -6,13 +6,16 @@
 //! A port of Memfault dependency functions to mynewt targets
 
 #include <stdbool.h>
+#include <syscfg/syscfg.h>
+
+//! Keep os.h above bsp.h; some bsp definitions require the MYNEWT_VAL definition
+#include "os/os.h"
 
 #include "bsp/bsp.h"
 #include "hal/hal_bsp.h"
 #include "hal/hal_system.h"
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
-#include "os/os.h"
 #include "sysinit/sysinit.h"
 
 #if MYNEWT_VAL(MEMFAULT_ENABLE)

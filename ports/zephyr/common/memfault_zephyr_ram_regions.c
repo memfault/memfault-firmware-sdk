@@ -143,14 +143,7 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
 
   // Linker variables defined in linker.ld in Zephyr RTOS
   // Data region name changed in v2.7 of the kernel
-  //
-  // Note: the nrf-connect fork of zephyr did not pick up this change in either
-  // the 2.6.99 or the later version selected in the nrf-connect v1.8 release,
-  // so we'll use the old naming scheme there. This may break in the future if
-  // Nordic picks up the change!
-  // https://github.com/zephyrproject-rtos/zephyr/commit/65a2de84a9d5c535167951bf1cf610c4f7967ea5
-  // https://github.com/zephyrproject-rtos/zephyr/pull/37938
-#if MEMFAULT_ZEPHYR_VERSION_GT(2, 6) && !CONFIG_MEMFAULT_NRF_CONNECT_SDK
+#if MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
 #define ZEPHYR_DATA_REGION_START __data_region_start
 #define ZEPHYR_DATA_REGION_END __data_region_end
 #else

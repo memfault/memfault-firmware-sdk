@@ -1,3 +1,21 @@
+### Changes between Memfault SDK 0.27.3 and SDK 0.27.2 - Nov 22, 2021
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix a build error for the Nordic Connect SDK v1.7.99 development version
+- Correct an error in header file include order in the Mynewt port
+- Update the esp32 and zephyr examples to use `1.0.0-dev` instead of
+  `1.0.0+<6 digits of build id>` for the version specifier. Build id is no
+  longer required for symbol file reconciliation and the `+` character is a
+  reserved character for URI schemes; this impacted OTA release requests. See
+  this document for
+  [Memfault's recommended versioning strategy](https://docs.memfault.com/docs/platform/software-version-hardware-version/#software-version)
+- Add a reboot reason port for the STM32F7xx family.
+
+#### :house: Internal
+
+- Re-run python `black` and `isort` formatters on python code
+
 ### Changes between Memfault SDK 0.27.2 and SDK 0.27.1 - Nov 5, 2021
 
 #### :chart_with_upwards_trend: Improvements

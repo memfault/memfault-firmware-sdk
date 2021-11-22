@@ -62,7 +62,7 @@ ns.add_task(fw_sdk_unit_test, name="test")
     ]
 )
 def build_all_demos(ctx):
-    """ Builds all demo apps (for CI purposes) """
+    """Builds all demo apps (for CI purposes)"""
     pass
 
 
