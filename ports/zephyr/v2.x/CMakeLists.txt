@@ -1,6 +1,6 @@
 # Make sure RAM based storage regions are not initialized on boot
 # by placing them in special linker sections
-zephyr_linker_sources(NOINIT memfault-no-init.ld)
+zephyr_linker_sources(SECTIONS memfault-no-init.ld)
 
 zephyr_linker_sources(SECTIONS memfault-build-id.ld)
 

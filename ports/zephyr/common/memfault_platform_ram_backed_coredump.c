@@ -15,7 +15,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump") MEMFAULT_ALIGNED(8)
+MEMFAULT_PUT_IN_SECTION(".memfault_noinit.mflt_coredump") MEMFAULT_ALIGNED(8)
 static uint8_t s_ram_backed_coredump_region[CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE];
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
