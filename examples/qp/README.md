@@ -14,25 +14,30 @@ SDK and performed the installation steps that are mentioned there.
 
 ### Setup
 
+_Note: these instructions reference the `$MEMFAULT_SDK_ROOT` variable for
+various paths. Either substitute the path to the Memfault SDK, or set it before
+running the snippets, i.e.
+`export MEMFAULT_SDK_ROOT=absolute/path/to/memfault/sdk`._
+
 1. Go into the demo app directory:
 
-```bash
-$ cd $MEMFAULT_SDK_ROOT/examples/qp/apps/memfault_demo_app
-```
+   ```bash
+   $ cd $MEMFAULT_SDK_ROOT/examples/qp/apps/memfault_demo_app
+   ```
 
 2. Clone the QP/C repo
 
-```bash
-$ git clone git@github.com:QuantumLeaps/qpc.git --branch v6.6.0+ qpc
-```
+   ```bash
+   $ git clone git@github.com:QuantumLeaps/qpc.git --branch v6.6.0+ qpc
+   ```
 
 3. Apply patches to integrate Memfault SDK
 
-```
-$ cd qpc
-$ patch include/qassert.h $MEMFAULT_SDK_ROOT/ports/qp/qassert.h.patch
-$ patch src/qf_pkg.h $MEMFAULT_SDK_ROOT/ports/qp/qf_pkg.h.patch
-```
+   ```bash
+   $ cd qpc
+   $ patch include/qassert.h $MEMFAULT_SDK_ROOT/ports/qp/qassert.h.patch
+   $ patch src/qf_pkg.h $MEMFAULT_SDK_ROOT/ports/qp/qf_pkg.h.patch
+   ```
 
 ### Memfault Project Key
 

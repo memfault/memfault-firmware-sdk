@@ -79,6 +79,18 @@ extern "C" {
 #  define MEMFAULT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
 #endif
 
+// Macro for disabling specific warnings. There must be quotes in the argument
+// to expand correctly to eg _Pragma("GCC diagnostic ignored \"warning-name\"")
+// Example:
+// MEMFAULT_DISABLE_WARNING("-Wunused-macros")
+#if defined(__clang__)
+#define MEMFAULT_PRAGMA_PREFIX clang
+#else
+#define MEMFAULT_PRAGMA_PREFIX GCC
+#endif
+#define MEMFAULT_DISABLE_WARNING(warning) \
+  _Pragma(MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PRAGMA_PREFIX diagnostic ignored warning))
+
 #ifdef __cplusplus
 }
 #endif

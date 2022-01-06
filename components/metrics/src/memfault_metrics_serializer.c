@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
@@ -44,6 +45,11 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
     case kMemfaultMetricType_Signed: {
       const int32_t value = state->compute_worst_case_size ? INT32_MIN : metric_info->val.i32;
       state->encode_success = memfault_cbor_encode_signed_integer(encoder, value);
+      break;
+    }
+    case kMemfaultMetricType_String: {
+      const char *value = metric_info->val.ptr;
+      state->encode_success = memfault_cbor_encode_string(encoder, value);
       break;
     }
     case kMemfaultMetricType_NumTypes: // silence error with -Wswitch-enum

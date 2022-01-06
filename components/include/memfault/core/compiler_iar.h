@@ -36,6 +36,8 @@ extern "C" {
 
 #define MEMFAULT_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
 
+#define MEMFAULT_DISABLE_WARNING(warning)
+
 #ifdef __cplusplus
 }
 #endif

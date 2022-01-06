@@ -291,7 +291,7 @@ def patch_cproject(
 
     ld_flag_options = filter(_find_linker_flags, options)
     for ld_flag_option in ld_flag_options:
-        value = ld_flag_option.get("value")
+        value = ld_flag_option.get("value", "")
         if "-Wl,--build-id" not in value:
             ld_flag_option.set("value", value + " -Wl,--build-id")
 

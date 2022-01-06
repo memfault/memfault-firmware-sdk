@@ -1034,15 +1034,14 @@ class MemfaultGdbCommand(gdb.Command):
         # Work-around for GDB-py not printing out the backtrace upon exceptions
         analytics_props = {}
         start_time = time()
-        config = MemfaultConfig()
         try:
-            self._invoke(arg, from_tty, analytics_props, config)
+            self._invoke(arg, from_tty, analytics_props, MEMFAULT_CONFIG)
         except Exception as e:
             print(traceback.format_exc())
             ANALYTICS.track("Exception", {"traceback": traceback.format_exc(), "args": arg})
             raise e  # Important, otherwise unit test failures may go undetected!
         analytics_props["duration_ms"] = int((time() - start_time) * 1000)
-        ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props, config.user_id)
+        ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props, MEMFAULT_CONFIG.user_id)
 
     def _invoke(self, unicode_args, from_tty, analytics_props, config):
         pass

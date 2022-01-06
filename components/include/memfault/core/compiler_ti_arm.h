@@ -72,6 +72,8 @@ static uint32_t __get_PSP(void) {
 #  define MEMFAULT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
 #endif
 
+#define MEMFAULT_DISABLE_WARNING(warning)
+
 #ifdef __cplusplus
 }
 #endif

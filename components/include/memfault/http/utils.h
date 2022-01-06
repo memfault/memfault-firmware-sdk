@@ -188,6 +188,24 @@ typedef struct {
 //! @return true if parse was successful and uri_info_out is populated, false  otherwise
 bool memfault_http_parse_uri(const char *uri, size_t uri_len, sMemfaultUriInfo *uri_info_out);
 
+//! Check if a string contains any characters that require URL escaping
+//!
+//! @param str the string to check
+//! @param len length of str
+//!
+//! @return true if any characters in str require URL escaping, false otherwise
+bool memfault_http_needs_escape(const char *str, size_t len);
+
+//! URL encode a string. See https://www.ietf.org/rfc/rfc3986.html#section-2.1
+//!
+//! @param inbuf String to encode; must be null-terminated
+//! @param[out] outbuf Endcoded string. Should be sized to fit possible encoding
+//! overhead, eg 3 * strlen(inbuf)
+//! @param outbuf_len Size of outbuf
+//!
+//! @return 0 if encoding was successful, non zero otherwise
+int memfault_http_urlencode(const char *inbuf, size_t inbuf_len, char *outbuf, size_t outbuf_len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,9 @@
 //! @file
 
 //! A fake set of heartbeat metrics we use for unit testing
+#if !defined(TEST_NO_CUSTOM_METRICS)
 MEMFAULT_METRICS_KEY_DEFINE(test_key_unsigned, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(test_key_signed, kMemfaultMetricType_Signed)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(test_key_timer, kMemfaultMetricType_Timer, 0, 3600000)
+MEMFAULT_METRICS_STRING_KEY_DEFINE(test_key_string, 16)
+#endif

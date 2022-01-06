@@ -8,6 +8,9 @@ MEMORY {
     RAM (xrw) : ORIGIN = 0x20000000, LENGTH = RAM_SIZE
 }
 
+PROVIDE(__sram_start = ORIGIN(RAM));
+PROVIDE(__sram_end = ORIGIN(RAM) + LENGTH(RAM));
+
 SECTIONS {
     .isr_vector : {
         KEEP(*(.isr_vector))

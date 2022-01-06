@@ -8,11 +8,7 @@
 #include "qf_port.h"
 #include "qf.h"
 
-// Product-specific Memfault dependencies
-#include "memfault/core/debug_log.h"
-#include "memfault/core/platform/device_info.h"
-#include "memfault/demo/shell.h"
-#include "memfault/http/http_client.h"
+#include "memfault/components.h"
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo) {
@@ -27,10 +23,29 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
     .api_key = "<YOUR PROJECT KEY HERE>",
 };
 
+size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
+  // These symbols are defined by the linker
+  extern uint32_t __sram_start;
+  extern uint32_t __sram_end;
+
+  uint32_t sram_start_address = (uint32_t) &__sram_start;
+  uint32_t sram_end_address = (uint32_t) &__sram_end;
+
+  if (((uint32_t)start_addr >= sram_start_address) && (sram_start_address < sram_end_address)) {
+    return MEMFAULT_MIN(desired_size, sram_end_address - sram_start_address);
+  }
+
+  return 0;
+}
+
 void main(void) {
   bsp_init();
 
   MEMFAULT_LOG_INFO("Memfault QP demo app started...");
+
+  memfault_build_info_dump();
+  memfault_device_info_dump();
+
   memfault_demo_shell_boot(&(sMemfaultShellImpl){
       .send_char = bsp_send_char_over_uart,
   });

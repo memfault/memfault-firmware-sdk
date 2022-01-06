@@ -14,17 +14,19 @@ extern "C" {
   #include "memfault/http/http_client.h"
   #include "memfault/http/utils.h"
 
-  void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
-    *info = (struct MemfaultDeviceInfo) {
+  const struct MemfaultDeviceInfo g_device_info_default = {
       .device_serial = "DEMOSERIAL",
       .software_type = "main",
       .software_version = "1.0.0",
       .hardware_version = "main-proto",
-    };
+  };
+  static struct MemfaultDeviceInfo g_device_info;
+
+  void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
+    *info = g_device_info;
   }
 
   sMfltHttpClientConfig g_mflt_http_client_config;
-
 }
 
 TEST_GROUP(MfltHttpClientUtils){
@@ -32,6 +34,7 @@ TEST_GROUP(MfltHttpClientUtils){
     g_mflt_http_client_config = (sMfltHttpClientConfig) {
       .api_key = "00112233445566778899aabbccddeeff",
     };
+    g_device_info = g_device_info_default;
 
     mock().strictOrder();
   }
@@ -146,6 +149,15 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrlWriteFailure) {
     CHECK(!success);
     mock().checkExpectations();
   }
+}
+
+TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrlEncodeFailure) {
+  mock().expectNCalls(1, "prv_http_write_cb");
+  sHttpWriteCtx ctx = { 0 };
+  g_device_info.device_serial = "++++++++++++++++";
+  bool success = memfault_http_get_latest_ota_payload_url(prv_http_write_cb, &ctx);
+  CHECK(!success);
+  mock().checkExpectations();
 }
 
 TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayload) {
@@ -571,4 +583,92 @@ TEST(MfltHttpClientUtils, Test_MfltParseUriWithOnlyScheme) {
   prv_check_result("http:/", NULL, NULL, expect_success, 0);
   prv_check_result("http://", NULL, NULL, expect_success, 0);
   prv_check_result("http:///", NULL, NULL, expect_success, 0);
+}
+
+TEST(MfltHttpClientUtils, Test_UrlEncode) {
+  const struct inputs {
+    const char *instring;
+    const char *outstring;
+  } input_vectors[] = {
+    {"a", "a"},
+    {"a b", "a%20b"},
+    {"a+b%", "a%2Bb%25"},
+    // reserved characters
+    {"!#$&'()*+,/:;=?@[]", "%21%23%24%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D"},
+    // unreserved characters
+    {"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~",
+     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~"},
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(input_vectors); i++) {
+    const char *instring = input_vectors[i].instring;
+    const char *outstring = input_vectors[i].outstring;
+    char result[strlen(outstring) + 1];
+    memset(result, '\0', sizeof(result));
+
+    int rv = memfault_http_urlencode(instring, strlen(instring), result, sizeof(result));
+
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL(outstring, result);
+  }
+
+  // test with a buffer that is too small
+  {
+    char result[2];
+    memset(result, 0xA5, sizeof(result));
+    int rv = memfault_http_urlencode("!", 1, result, sizeof(result));
+    LONGS_EQUAL(-1, rv);
+  }
+  // perfectly sized buffer
+  {
+    char result[5];
+    memset(result, 0xA5, sizeof(result));
+    int rv = memfault_http_urlencode("a!", 2, result, sizeof(result));
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL("a%21", result);
+  }
+  // buffer 1 char too small
+  {
+    char result[4];
+    memset(result, 0xA5, sizeof(result));
+    int rv = memfault_http_urlencode("a!", 2, result, sizeof(result));
+    LONGS_EQUAL(-1, rv);
+  }
+  {
+    char result[4];
+    memset(result, 0xA5, sizeof(result));
+    int rv = memfault_http_urlencode("!a", 2, result, sizeof(result));
+    LONGS_EQUAL(-1, rv);
+  }
+
+  // few more edge cases
+  {
+    int rv = memfault_http_urlencode("1", 1, NULL, 0);
+    LONGS_EQUAL(-1, rv);
+    rv = memfault_http_urlencode(NULL, 0, NULL, 1);
+    LONGS_EQUAL(-1, rv);
+  }
+}
+
+TEST(MfltHttpClientUtils, Test_UrlNeedsEscape) {
+  const struct inputs {
+    const char *instring;
+    bool needs_escape;
+  } input_vectors[] = {
+    {"", false},
+    {"a", false},
+    {"a b", true},
+    {"a+b%", true},
+    // reserved characters
+    {"!#$&'()*+,/:;=?@[]", true},
+    // unreserved characters
+    {"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~", false},
+  };
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(input_vectors); i++) {
+    const char *instring = input_vectors[i].instring;
+    const bool needs_escape = input_vectors[i].needs_escape;
+    const bool result = memfault_http_needs_escape(instring, strlen(instring));
+
+    CHECK_TEXT(needs_escape == result, instring);
+  }
 }

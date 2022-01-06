@@ -20,6 +20,7 @@ extern "C" {
 union MemfaultMetricValue {
   uint32_t u32;
   int32_t i32;
+  void *ptr;
 };
 
 typedef struct {

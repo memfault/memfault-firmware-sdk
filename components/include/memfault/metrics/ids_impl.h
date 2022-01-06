@@ -18,16 +18,23 @@ extern "C" {
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
+
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   extern const char * const g_memfault_metrics_id_##key_name;
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
 
 //! Generate an enum for all IDs (used for indexing into values)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
 
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
   kMfltMetricsIndex_##key_name,
@@ -37,11 +44,13 @@ typedef enum MfltMetricsIndex {
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
   #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+  #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
 } eMfltMetricsIndex;
 
-#define _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
+//! Stub define to detect accidental usage outside of the heartbeat config files
+#define MEMFAULT_METRICS_KEY_DEFINE_TRAP_() \
   MEMFAULT_STATIC_ASSERT(false, \
-    "MEMFAULT_METRICS_KEY_DEFINE should only be used in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE)
+    "MEMFAULT_METRICS_KEY_DEFINE should only be used in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE);
 
 //! NOTE: Access to a key should _always_ be made via the MEMFAULT_METRICS_KEY() macro to ensure source
 //! code compatibility with future APIs updates

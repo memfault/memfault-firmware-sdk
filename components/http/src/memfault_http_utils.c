@@ -8,13 +8,24 @@
 
 #include "memfault/http/utils.h"
 
+#include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/core/math.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/http_client.h"
+
+//! Default buffer size for the URL-encoded device info parameters. This may
+//! need to be set higher by the user if there are particularly long device info
+//! strings
+#ifndef MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN
+#define MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN (48)
+#endif
 
 static bool prv_write_msg(MfltHttpClientSendCb write_callback, void *ctx,
                           const char *msg, size_t msg_len, size_t max_len) {
@@ -153,19 +164,49 @@ bool memfault_http_get_latest_ota_payload_url(MfltHttpClientSendCb write_callbac
 
   #define MEMFAULT_STATIC_STRLEN(s) (sizeof(s) - 1)
 
-  if (!prv_write_qparam(write_callback, ctx,
-                        DEVICE_SERIAL_QPARAM, MEMFAULT_STATIC_STRLEN(DEVICE_SERIAL_QPARAM),
-                        device_info.device_serial) ||
-      !prv_write_qparam(write_callback, ctx,
-                        HARDWARE_VERSION_QPARAM, MEMFAULT_STATIC_STRLEN(HARDWARE_VERSION_QPARAM),
-                        device_info.hardware_version) ||
-      !prv_write_qparam(write_callback, ctx,
-                        SOFTWARE_TYPE_QPARAM, MEMFAULT_STATIC_STRLEN(SOFTWARE_TYPE_QPARAM),
-                        device_info.software_type) ||
-      !prv_write_qparam(write_callback, ctx,
-                        CURRENT_VERSION_QPARAM, MEMFAULT_STATIC_STRLEN(CURRENT_VERSION_QPARAM),
-                        device_info.software_version)) {
-    return false;
+  const struct qparam_values_s {
+    const char *name;
+    size_t name_strlen;
+    const char *value;
+  } qparam_values[] = {
+    {
+      DEVICE_SERIAL_QPARAM,
+      MEMFAULT_STATIC_STRLEN(DEVICE_SERIAL_QPARAM),
+      device_info.device_serial,
+    },
+    {
+      HARDWARE_VERSION_QPARAM,
+      MEMFAULT_STATIC_STRLEN(HARDWARE_VERSION_QPARAM),
+      device_info.hardware_version,
+    },
+    {
+      SOFTWARE_TYPE_QPARAM,
+      MEMFAULT_STATIC_STRLEN(SOFTWARE_TYPE_QPARAM),
+      device_info.software_type,
+    },
+    {
+      CURRENT_VERSION_QPARAM,
+      MEMFAULT_STATIC_STRLEN(CURRENT_VERSION_QPARAM),
+      device_info.software_version,
+    },
+  };
+
+  // URL encode the qparam values before writing them
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(qparam_values); i++) {
+    const struct qparam_values_s *qparam_value = &qparam_values[i];
+
+    char qparam_encoded_buffer[MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN];
+    int rv = memfault_http_urlencode(qparam_value->value, strlen(qparam_value->value),
+                                     qparam_encoded_buffer, sizeof(qparam_encoded_buffer));
+    if (rv != 0) {
+      MEMFAULT_LOG_ERROR("Failed to URL encode qparam value: %s", qparam_value->value);
+      return false;
+    }
+
+    if (!prv_write_qparam(write_callback, ctx, qparam_value->name, qparam_value->name_strlen,
+                          qparam_encoded_buffer)) {
+      return false;
+    }
   }
 
   #define LATEST_REQUEST_LINE_END " HTTP/1.1\r\n"
@@ -618,4 +659,51 @@ bool memfault_http_get_ota_payload(MfltHttpClientSendCb write_callback, void *ct
   }
 
   return prv_write_crlf(write_callback, ctx);
+}
+
+static bool prv_is_unreserved(char c) {
+  return isalnum((uint8_t)c) || c == '-' || c == '_' || c == '.' || c == '~';
+}
+
+bool memfault_http_needs_escape(const char *str, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    if (!prv_is_unreserved(str[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int memfault_http_urlencode(const char *inbuf, size_t inbuf_len, char *outbuf, size_t outbuf_len) {
+  // null check
+  if (!inbuf || !outbuf || !inbuf_len || !outbuf_len) {
+    return -1;
+  }
+
+  while (inbuf_len--) {
+    if (outbuf_len < 2) {
+      // ran out of room before encoding the full input, error. there needs to
+      // be 1 spare character for null term
+      return -1;
+    }
+    char c = *inbuf++;
+    if (prv_is_unreserved(c)) {
+      *outbuf++ = c;
+      outbuf_len--;
+    } else {
+      if (outbuf_len < 4) {
+        // not enough room for encoded character and null term
+        return -1;
+      }
+      // paste encoding (+ null term)
+      snprintf(outbuf, 4, "%%%02X", (uint8_t)c);
+      outbuf += 3;
+      outbuf_len -= 3;
+    }
+  }
+
+  // null terminate
+  *outbuf = '\0';
+
+  return 0;
 }

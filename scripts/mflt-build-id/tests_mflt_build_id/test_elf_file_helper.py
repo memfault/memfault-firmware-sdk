@@ -31,4 +31,4 @@ class TestELFFileHelper:
             assert symbol.name == "g_memfault_build_id"
 
             data = helper.get_symbol_data(symbol, section)
-            assert isinstance(data, bytes) or isinstance(data, bytearray)  # py2.7
+            assert isinstance(data, bytes)

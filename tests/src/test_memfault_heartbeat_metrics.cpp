@@ -300,6 +300,78 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerActiveWhenHeartbeatCollected) {
   LONGS_EQUAL(0, val);
 }
 
+TEST(MemfaultHeartbeatMetrics, Test_String) {
+  #define SAMPLE_STRING "0123456789abcdef"
+  static_assert(__builtin_strlen(SAMPLE_STRING) == 16,
+                "be sure to modify tests/stub_includes/memfault_metrics_heartbeat_config.def to "
+                "match exactly, so we can check for buffer overflows!");
+
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_string);
+
+  // just the correct size
+  {
+    int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING);
+    LONGS_EQUAL(0, rv);
+
+    char sample_string[strlen(SAMPLE_STRING) + 1];
+    memset(sample_string, 0, sizeof(sample_string));
+
+    rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL(SAMPLE_STRING, (const char *)sample_string);
+  }
+
+  // set too long a string
+  {
+    int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING "1");
+    LONGS_EQUAL(0, rv);
+
+    char sample_string[strlen(SAMPLE_STRING) + 1];
+    memset(sample_string, 0, sizeof(sample_string));
+
+    rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL(SAMPLE_STRING, (const char *)sample_string);
+  }
+
+  // read with bad destination buffer
+  {
+    int rv = memfault_metrics_heartbeat_read_string(key, NULL, 0);
+    CHECK(rv != 0);
+  }
+
+  // write with longer then shorter string and confirm readback is ok
+  {
+    int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING);
+    LONGS_EQUAL(0, rv);
+    #define SHORT_TEST_STRING "12"
+    rv = memfault_metrics_heartbeat_set_string(key, SHORT_TEST_STRING);
+    LONGS_EQUAL(0, rv);
+
+    char sample_string[strlen(SHORT_TEST_STRING) + 1];
+    memset(sample_string, 0, sizeof(sample_string));
+
+    rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL(SHORT_TEST_STRING, (const char *)sample_string);
+  }
+
+  // read with a buffer that's too small, and confirm it's a valid string
+  {
+    int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING);
+    LONGS_EQUAL(0, rv);
+
+    char sample_string[strlen(SAMPLE_STRING)];
+    memset(sample_string, 'a', sizeof(sample_string));
+
+    rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
+    LONGS_EQUAL(0, rv);
+    STRCMP_EQUAL("0123456789abcde", (const char *)sample_string);
+  }
+
+
+}
+
 TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
   sMemfaultMetricBootInfo info = { .unexpected_reboot_count = 1 };
 
@@ -330,6 +402,8 @@ TEST(MemfaultHeartbeatMetrics, Test_KeyDNE) {
   CHECK(rv != 0);
   rv = memfault_metrics_heartbeat_add(key, INT32_MIN);
   CHECK(rv != 0);
+  rv = memfault_metrics_heartbeat_set_string(key, NULL);
+  CHECK(rv != 0);
 
   rv = memfault_metrics_heartbeat_timer_start(key);
   CHECK(rv != 0);
@@ -350,6 +424,8 @@ TEST(MemfaultHeartbeatMetrics, Test_KeyDNE) {
   rv = memfault_metrics_heartbeat_timer_read(key, NULL);
   CHECK(rv != 0);
   rv = memfault_metrics_heartbeat_timer_read(key, &valu32);
+  CHECK(rv != 0);
+  rv = memfault_metrics_heartbeat_read_string(key, NULL, 0);
   CHECK(rv != 0);
 }
 

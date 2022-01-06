@@ -73,6 +73,7 @@ SRCS := \
 
 INCLUDES := \
 	$(SRC_DIR) \
+	$(SRC_DIR)/../config \
 	$(MEMFAULT_COMPONENTS_INC_FOLDERS) \
 	$(QP_INCLUDES)
 

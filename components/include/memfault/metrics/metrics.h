@@ -47,6 +47,8 @@ typedef enum MemfaultMetricValueType {
   kMemfaultMetricType_Signed,
   //! Tracks durations (i.e the time a certain task is running, or the time a MCU is in sleep mode)
   kMemfaultMetricType_Timer,
+  //! Set a string value for a metric
+  kMemfaultMetricType_String,
 
   //! Number of valid types. Must _always_ be last
   kMemfaultMetricType_NumTypes,
@@ -72,13 +74,25 @@ typedef enum MemfaultMetricValueType {
 //! This information is used in the Memfault cloud to normalize the data to a range of your choosing.
 //! Metrics will still be ingested _even_ if they are outside the range defined.
 //!
+//! @note The definitions here are used to catch accidental usage outside of the
+//! '*_heartbeat_config.def' files; 'MEMFAULT_METRICS_KEY_DEFINE_TRAP_' is a placeholder used to
+//! detect
+//! this.
+//!
 //! @note key_names must be unique
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
-  _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE' just with no range hints specified
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  _MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Declare a string metric for use in a heartbeat. 'max_length' is the maximum
+//! length of the string recorded to the metric (excluding null terminator).
+//! This declaration also reserves space to hold the string value when the
+//! metric is written.
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Uses a metric key. Before you can use a key, it should defined using MEMFAULT_METRICS_KEY_DEFINE
 //! in memfault_metrics_heartbeat_config.def.
@@ -121,6 +135,13 @@ int memfault_metrics_heartbeat_set_signed(MemfaultMetricId key, int32_t signed_v
 //! Same as @memfault_metrics_heartbeat_set_signed except for a unsigned integer metric
 int memfault_metrics_heartbeat_set_unsigned(MemfaultMetricId key, uint32_t unsigned_value);
 
+//! Set the value of a string metric.
+//! @param key The key of the metric. @see MEMFAULT_METRICS_KEY
+//! @param value The new value to set for the metric
+//! @return 0 on success, else error code
+//! @note The metric must be of type kMemfaultMetricType_String
+int memfault_metrics_heartbeat_set_string(MemfaultMetricId key, const char * value);
+
 //! Used to start a "timer" metric
 //!
 //! Timer metrics can be useful for tracking durations of events which take place while the
@@ -144,7 +165,12 @@ int memfault_metrics_heartbeat_timer_stop(MemfaultMetricId key);
 //! @note The metric must be of type kMemfaultMetricType_Counter
 int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 
-//! For debugging purposes: prints the current heartbeat values using MEMFAULT_LOG_DEBUG().
+//! For debugging purposes: prints the current heartbeat values using
+//! MEMFAULT_LOG_DEBUG(). Before printing, any active timer values are computed.
+//! Other metrics will print the current values. This can be called from the
+//! user-supplied memfault_metrics_heartbeat_collect_data() function to print
+//! values set there (use memfault_metrics_heartbeat_debug_trigger() to trigger
+//! a metrics collection).
 void memfault_metrics_heartbeat_debug_print(void);
 
 //! For debugging purposes: triggers the heartbeat data collection handler, as if the heartbeat timer
@@ -157,6 +183,7 @@ void memfault_metrics_heartbeat_debug_trigger(void);
 int memfault_metrics_heartbeat_read_unsigned(MemfaultMetricId key, uint32_t *read_val);
 int memfault_metrics_heartbeat_read_signed(MemfaultMetricId key, int32_t *read_val);
 int memfault_metrics_heartbeat_timer_read(MemfaultMetricId key, uint32_t *read_val);
+int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val, size_t read_val_len);
 
 #ifdef __cplusplus
 }

@@ -205,3 +205,89 @@ New coredumps are only written if the coredump storage area is not already
 occupied. Typically coredumps are cleared once they have been posted to the
 memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
 You can invoke this command from the cli by running `clear_core`.
+
+### Testing OTA
+
+The following steps can be used to exercise OTA functionality:
+
+1. Build and flash the default image per
+   [the instructions above](#getting-started). Confirm by running
+   `get_device_info` in the `idf.py monitor` console that the software version
+   is `1.0.0-dev`:
+
+   ```bash
+   esp32> get_device_info
+   I (8358) mflt: S/N: A8032AEBF8E4
+   I (8358) mflt: SW type: esp32-main
+   I (8358) mflt: SW version: 1.0.1-dev
+   I (8358) mflt: HW version: esp32-proto
+   ```
+
+2. If not already done, post some data from the device to register it in your
+   Memfault project's fleet:
+
+   ```bash
+   esp32> join <ssid> <password>
+   ...
+   I (294468) connect: Connected
+   esp32> post_chunks
+   D (26028) mflt: Posting Memfault Data
+   D (33288) mflt: Posting Memfault Data Complete!
+   I (33288) mflt: Result: 0
+   ```
+
+3. Change the `MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION` to `"1.0.1"` in
+   [`apps/memfault_demo_app/main/memfault_platform_device_info.c`](apps/memfault_demo_app/main/memfault_platform_device_info.c),
+   and rebuild (`idf.py build`), but don't load it to the device. We'll use this
+   build as our OTA payload!
+
+4. In the Memfault web app, go to "Software->OTA Releases" and create an OTA
+   release for `1.0.1-dev`. Click "Add OTA Payload to Release", select
+   `esp32-proto` as the "Hardware Version" ("Software Type" should auto fill to
+   `esp32-main`), and upload the
+   `apps/memfault_demo_app/build/memfault-esp32-demo-app.bin` file as the
+   payload (note: this step can also be done with the `memfault` cli, see
+   [here](https://mflt.io/release-mgmt) for more information)
+
+5. Deploy the release to your device; add it to a cohort under "Fleet->Cohorts",
+   and set the "Target Release" to the `1.0.1-dev` version just created.
+
+6. Back to the esp32 console, run `memfault_ota_check` to confirm the release is
+   available for our device:
+
+   ```bash
+   esp32> memfault_ota_check
+   D (274688) mflt: Checking for OTA Update
+   D (276338) mflt: OTA Update Available
+   D (276338) mflt: Up to date!
+   ```
+
+7. Now trigger the OTA release. The board will download the release and install
+   it to the inactive OTA slot, then reboot (example output below truncated for
+   brevity):
+
+   ```bash
+   esp32> memfault_ota_perform
+   D (1455118) mflt: Checking for OTA Update
+   D (1456618) mflt: OTA Update Available
+   I (1456628) mflt: Starting OTA download ...
+   I (1457798) esp_https_ota: Starting OTA...
+   I (1457798) esp_https_ota: Writing to partition subtype 16 at offset 0x1e0000
+   I (1476958) esp_https_ota: Connection closed
+   ...
+   I (1477758) mflt: OTA Update Complete, Rebooting System
+   ...
+   Rebooting...
+   ...
+   ```
+
+8. When the console is back up, confirm that the update was applied by checking
+   the Software Version:
+
+   ```bash
+   esp32> get_device_info
+   I (8358) mflt: S/N: A8032AEBF8E4
+   I (8358) mflt: SW type: esp32-main
+   I (8358) mflt: SW version: 1.0.1-dev
+   I (8358) mflt: HW version: esp32-proto
+   ```

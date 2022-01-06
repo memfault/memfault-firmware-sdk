@@ -1,3 +1,36 @@
+### Changes between Memfault SDK 0.28.0 and SDK 0.27.3 - Jan 4, 2022
+
+#### :rocket: New Features
+
+- Add support for setting string metrics, see
+  `memfault_metrics_heartbeat_set_string()` in
+  [`components/include/memfault/metrics/metrics.h`](components/include/memfault/metrics/metrics.h)
+  for the new API. See the [Memfault Docs](https://mflt.io/embedded-metrics) for
+  general information on using the metrics API.
+- Updated `memfault_metrics_heartbeat_debug_print()` to also print current timer
+  values, instead of showing `0`. See
+  [`components/include/memfault/metrics/metrics.h`](components/include/memfault/metrics/metrics.h)
+  for details
+
+#### :chart_with_upwards_trend: Improvements
+
+- Update the STM32 QP/C example ([`examples/qp`](examples/qp)) to compile and
+  run correctly now
+- Add intructions for exercising Memfault OTA in the ESP32 example, see the
+  "Testing OTA" section in
+  [`examples/esp32/README.md`](examples/esp32/README.md)
+- Update the Memfault HTTP client to URL-encode query params when checking for
+  OTA updates (in the case of Device properties containing reserved characters,
+  eg `+`). Update the ESP port to check for reserved characters in query params
+  and emit an error
+- Fix an outdated comment in `cmake/Memfault.cmake`, as reported in
+  [issue #21](https://github.com/memfault/memfault-firmware-sdk/issues/21)
+  (thank you @C47D !)
+
+#### :house: Internal
+
+- Update Python tests to use a mocked-out gdb instance
+
 ### Changes between Memfault SDK 0.27.3 and SDK 0.27.2 - Nov 22, 2021
 
 #### :chart_with_upwards_trend: Improvements
