@@ -28,7 +28,7 @@ extern "C" {
 //!
 //! @return true if no error was detected or error was successfully cleared,
 //!  false otherwise
-bool memfault_stm32cubel4_flash_clear_ecc_errors(
+bool memfault_stm32cubel4_flash_clear_ecc_error(
     uint32_t start_addr, uint32_t end_addr, uint32_t *corrupted_address);
 
 #ifdef __cplusplus
