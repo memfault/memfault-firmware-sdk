@@ -49,7 +49,9 @@ commands:
       - run:
           name: Install lcov 1.14
           command: |
-            wget http://downloads.sourceforge.net/ltp/lcov-1.14.tar.gz -O ~/lcov.tar.gz
+            LCOV_SHA256SUM=14995699187440e0ae4da57fe3a64adc0a3c5cf14feab971f8db38fb7d8f071a
+            wget https://github.com/linux-test-project/lcov/releases/download/v1.14/lcov-1.14.tar.gz -O ~/lcov.tar.gz
+            echo "${LCOV_SHA256SUM}  ${HOME}/lcov.tar.gz" | shasum --algorithm=256 --check
             cd ~ && tar zvxf ~/lcov.tar.gz
 
   prepare:
