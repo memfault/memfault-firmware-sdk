@@ -13,10 +13,13 @@
 #include <kernel_structs.h>
 #include <version.h>
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/math.h"
-#include "memfault/panics/platform/coredump.h"
+#include "memfault/components.h"
 #include "memfault/ports/zephyr/version.h"
+
+// Use this config flag to manually select the old data region names
+#if !defined(MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES)
+#define MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES 0
+#endif
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 #define EMPTY_SLOT 0
@@ -141,12 +144,19 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
     return 0;
   }
 
-  // Linker variables defined in linker.ld in Zephyr RTOS
-  // Data region name changed in v2.7 of the kernel
-#if MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
+  // These linker variables are defined in linker.ld in Zephyr RTOS. Note that
+  // the data region name changed in v2.7 of the kernel, so check the kernel
+  // version and set the name appropriately.
+  //
+  // Also check for a user override; this is necessary if NCS v1.7.1 is used
+  // with a Memfault SDK version >=0.27.3, because that NCS release used an
+  // intermediate Zephyr release, so the version number checking is not
+  // possible.
+#if !MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES && MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
 #define ZEPHYR_DATA_REGION_START __data_region_start
 #define ZEPHYR_DATA_REGION_END __data_region_end
 #else
+  // The old names are used in previous Zephyr versions (<=2.6)
 #define ZEPHYR_DATA_REGION_START __data_ram_start
 #define ZEPHYR_DATA_REGION_END __data_ram_end
 #endif

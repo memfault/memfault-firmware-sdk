@@ -1,3 +1,17 @@
+### Changes between Memfault SDK 0.28.1 and SDK 0.28.0 - Jan 20, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Add an optional override flag to control the name used for Zephyr data
+  regions- see
+  [`ports/zephyr/common/memfault_zephyr_ram_regions.c`](ports/zephyr/common/memfault_zephyr_ram_regions.c).
+  Only needed for unusual Zephyr + Memfault configurations prior to Zephyr v2.7
+  (for example, nRF Connect SDK v1.7.1 with Memfault SDK v0.27.3+)
+- Fix the STM32F7xx reboot reason port to correctly account for the internally
+  wired Pin Reset
+- Fix a function prototype mismatch in the STM32L4 flash port (thanks to
+  @schultetwin for reporting this in #22!)
+
 ### Changes between Memfault SDK 0.28.0 and SDK 0.27.3 - Jan 4, 2022
 
 #### :rocket: New Features

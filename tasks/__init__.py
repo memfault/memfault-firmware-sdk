@@ -42,11 +42,16 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
 
 
 ns = Collection()
+ns.add_task(fw_sdk_unit_test, name="test")
 ns.add_collection(mbed)
 ns.add_collection(nrf)
 ns.add_collection(wiced)
 ns.add_collection(esp32)
-ns.add_task(fw_sdk_unit_test, name="test")
+
+if os.environ.get("STM32_ENABLED"):
+    from . import stm32
+
+    ns.add_collection(stm32)
 
 
 @task(

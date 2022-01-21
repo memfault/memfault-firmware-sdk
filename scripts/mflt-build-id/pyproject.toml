@@ -12,13 +12,14 @@ packages = [
 mflt_build_id = 'mflt_build_id:main'
 
 [tool.poetry.dependencies]
-python = ">=3.6"
+python = ">=3.8"
 pyelftools = "^0.26.0"
 
 [tool.poetry.dev-dependencies]
+mflt-testing = { path = "../mflt-testing", develop = true }
 pytest = "^6"
 pytest-cov = "^2"
-snapshottest = "^0.5.1"
+snapshottest = "1.0.0a0"
 wasmer = "0.3.0"
 
 [tool.black]

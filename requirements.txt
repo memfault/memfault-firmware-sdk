@@ -1,4 +1,4 @@
-git+git://github.com/memfault/pyserial.git@master-memfault
+git+https://github.com/memfault/pyserial.git@master-memfault
 invoke==1.2.0
 mbed-cli==1.10.1
 pyftdi==0.29.4
