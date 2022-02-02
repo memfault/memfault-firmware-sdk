@@ -24,25 +24,10 @@
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/http_client.h"
 #include "memfault/nrfconnect_port/http.h"
+#include "memfault/ports/ncs/version.h"
+#include <modem/modem_info.h>
 
-// NCS Version was introduced in nRF SDK >= 1.4
-#if __has_include("ncs_version.h")
-
-#include "ncs_version.h"
-
-#elif __has_include("modem/bsdlib.h")
-
-#define NCS_VERSION_MAJOR 1
-#define NCS_VERSION_MINOR 3
-
-#else
-
-// A nrf connect sdk version < 1.3
-#define NCS_VERSION_MAJOR 1
-#define NCS_VERSION_MINOR 0
-
-#endif
-
+// nRF Connect SDK < 1.3
 #if (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 3)
 
 #include <lte_lc.h>
@@ -51,12 +36,19 @@
 #include <modem_key_mgmt.h>
 #include <net/bsdlib.h>
 
-#else /* nRF Connect SDK >= 1.3 */
+// nRF Connect SDK < 1.9
+#elif (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 9) && (NCS_PATCHLEVEL < 99)
 
 #include <modem/lte_lc.h>
 #include <modem/at_cmd.h>
 #include <modem/at_notif.h>
 #include <modem/modem_key_mgmt.h>
+
+// nRF Connect SDK >= 1.9
+#else
+
+#include <modem/lte_lc.h>
+#include <nrf_modem_at.h>
 
 #endif
 
@@ -107,8 +99,6 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 };
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-  static bool s_init = false;
-
   // platform specific version information
   *info = (sMemfaultDeviceInfo) {
     .device_serial = s_device_serial,
@@ -125,30 +115,46 @@ static int memfault_ncs_device_id_set(const char *device_id, size_t len) {
 
 #endif
 
+#if !MEMFAULT_NCS_VERSION_GT(1, 8)
 static int query_modem(const char *cmd, char *buf, size_t buf_len) {
   enum at_cmd_state at_state;
   int ret = at_cmd_write(cmd, buf, buf_len, &at_state);
-
   if (ret != 0) {
-    printk("at_cmd_write [%s] error:%d, at_state: %d",
-            cmd, ret, at_state);
+    printk("at_cmd_write [%s] error: %d, at_state: %d\n", cmd, ret, at_state);
   }
 
   return ret;
 }
+#endif
+
+static int prv_get_imei(char *buf, size_t buf_len) {
+#if MEMFAULT_NCS_VERSION_GT(1, 8)
+  // use the cached modem info to fetch the IMEI
+  int err = modem_info_init();
+  if (err != 0) {
+    printk("Modem info Init error: %d\n", err);
+  } else {
+    modem_info_string_get(MODEM_INFO_IMEI, buf, buf_len);
+  }
+  return err;
+#else
+  // use an AT command to read IMEI
+  return query_modem("AT+CGSN", buf, buf_len);
+#endif
+}
 
 static void prv_init_device_info(void) {
   // we'll use the IMEI as the device serial
-  char imei_buf[IMEI_LEN + 2 /* for \r\n */ + 1 /* \0 */];
-  if (query_modem("AT+CGSN", imei_buf, sizeof(imei_buf)) != 0) {
-    strcat(s_device_serial, "Unknown");
-    return;
+  char modem_info[MODEM_INFO_MAX_RESPONSE_SIZE];
+
+  int ret = prv_get_imei(modem_info, sizeof(modem_info));
+  if (ret != 0) {
+    printk("Failed to get IMEI\n\r");
+  } else {
+    modem_info[IMEI_LEN] = '\0';
+    strcpy(s_device_serial, modem_info);
+    printk("IMEI: %s\n", s_device_serial);
   }
-
-  imei_buf[IMEI_LEN] = '\0';
-  strcat(s_device_serial, imei_buf);
-
-  printk("Device Serial: %s\n", s_device_serial);
 
   // register the device id with memfault port so it is used for reporting
   memfault_ncs_device_id_set(s_device_serial, IMEI_LEN);
@@ -169,10 +175,12 @@ void main(void) {
 
   int err = prv_init_modem_lib();
   if (err) {
-    printk("Failed to initialize bsdlib!");
+    printk("Failed to initialize modem!");
     return;
   }
 
+  // These libraries were removed in ncs 1.9
+#if !MEMFAULT_NCS_VERSION_GT(1, 8)
   err = at_cmd_init();
   if (err) {
     printk("Failed to initialize AT commands, err %d\n", err);
@@ -184,6 +192,7 @@ void main(void) {
     printk("Failed to initialize AT notifications, err %d\n", err);
     return;
   }
+#endif
 
   // requires AT modem interface to be up
   prv_init_device_info();

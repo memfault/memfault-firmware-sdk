@@ -37,6 +37,24 @@ if (NCS_VERSION_MAJOR)
 
     set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
   endif()
+
+  # These were removed in NCS 1.9, but are needed prior to that.
+  if (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 9 AND ${NCS_VERSION_PATCH} LESS 99)
+    set(CONFIG_BSD_LIBRARY y CACHE INTERNAL "")
+    set(CONFIG_BSD_LIBRARY_SYS_INIT n CACHE INTERNAL "")
+    # ^ Note: CONFIG_BSD_ were renamed to _NRF_MODEM_ in
+    # nRF Connect SDK v1.5. We use the legacy names for now
+    # so this app can continue to compile on older targets
+    #
+    # CONFIG_NRF_MODEM_LIB
+    # CONFIG_NRF_MODEM_LIB_SYS_INIT
+
+    # For nRF Connect SDK v1.5 default value changed here
+    set(CONFIG_AT_CMD_SYS_INIT n CACHE INTERNAL "")
+  else()
+    # in v1.9+, use the modem_info library to get the IMEI for device_serial
+    set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
+  endif()
 endif()
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})

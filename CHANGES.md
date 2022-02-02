@@ -1,3 +1,13 @@
+### Changes between Memfault SDK 0.28.2 and SDK 0.28.1 - Feb 1, 2022
+
+#### :house: Internal
+
+- Updated
+  [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app) to
+  be compatible with nRF Connect SDK 1.9 release
+- Updated python scripts to be compatible with new flake8 linter options
+- Updated where `lcov` is sourced from when running unit tests in CI
+
 ### Changes between Memfault SDK 0.28.1 and SDK 0.28.0 - Jan 20, 2022
 
 #### :chart_with_upwards_trend: Improvements

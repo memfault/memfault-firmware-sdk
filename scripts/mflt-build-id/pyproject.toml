@@ -24,7 +24,7 @@ wasmer = "0.3.0"
 
 [tool.black]
 line-length = 100
-target-version = ['py36']
+target-version = ['py38']
 include = '\.pyi?$'
 
 [tool.isort]

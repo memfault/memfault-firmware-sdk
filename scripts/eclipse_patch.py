@@ -67,7 +67,7 @@ def get_file_element(file_name, virtual_dir, common_prefix, parent_dir, path_typ
 
     # Note: We replace '\' with '/' because eclipse on windows expects '/' for paths
     path = os.path.join(parent_dir, relative_path).replace("\\", "/")
-    logging.debug("Adding {}".format(name))
+    logging.debug("Adding %s", name)
     return generate_link_element(name, path, path_type=path_type)
 
 
@@ -137,9 +137,9 @@ def patch_project(
         parent_dir = os.path.join(location_prefix[0], relative_path)
 
     logging.debug("===Determined Path Information===")
-    logging.debug("Project Path:               {}".format(project_dir))
-    logging.debug("Memfault Firmware SDK Path: {}".format(memfault_sdk_dir))
-    logging.debug("Eclipse Memfault Root:      {}".format(parent_dir))
+    logging.debug("Project Path:               %s", project_dir)
+    logging.debug("Memfault Firmware SDK Path: %s", memfault_sdk_dir)
+    logging.debug("Eclipse Memfault Root:      %s", parent_dir)
 
     tree = ET.parse(project_file)
     root = tree.getroot()
@@ -221,7 +221,7 @@ def patch_project(
                 linked_resources.append(ele)
 
     output_location = project_file if output_dir is None else os.path.join(output_dir, ".project")
-    logging.info("Writing result to {}".format(output_location))
+    logging.info("Writing result to %s", output_location)
     tree.write(output_location)
 
 
@@ -301,7 +301,7 @@ def patch_cproject(
     #
 
     output_location = cproject_file if output_dir is None else os.path.join(output_dir, ".cproject")
-    logging.info("Writing result to {}".format(output_location))
+    logging.info("Writing result to %s", output_location)
     tree.write(output_location)
 
     with open(output_location, "r") as out_f:
