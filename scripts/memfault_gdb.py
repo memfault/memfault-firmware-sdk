@@ -54,7 +54,7 @@ except ImportError:
     error_str = """
     This script can only be run within gdb!
     """
-    raise Exception(error_str)
+    raise Exception(error_str)  # noqa: B904  (no raise-from in Python 2.7)
 
 
 # Note: not using `requests` but using the built-in http.client instead, so
@@ -1036,10 +1036,10 @@ class MemfaultGdbCommand(gdb.Command):
         start_time = time()
         try:
             self._invoke(arg, from_tty, analytics_props, MEMFAULT_CONFIG)
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc())
             ANALYTICS.track("Exception", {"traceback": traceback.format_exc(), "args": arg})
-            raise e  # Important, otherwise unit test failures may go undetected!
+            raise  # Important, otherwise unit test failures may go undetected!
         analytics_props["duration_ms"] = int((time() - start_time) * 1000)
         ANALYTICS.track("Command {}".format(self.GDB_CMD), analytics_props, MEMFAULT_CONFIG.user_id)
 

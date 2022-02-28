@@ -64,6 +64,15 @@ extern "C" {
 #define MEMFAULT_EVENT_INCLUDE_BUILD_ID 1
 #endif
 
+//! Controls whether or not the Build Id is encoded in coredumps
+//!
+//! The Build Id can be used by Memfault to reliably find the corresponding
+//! symbol file while processing a coredump. When disabled, the software version & type
+//! are used instead to find the symbol file.
+#ifndef MEMFAULT_COREDUMP_INCLUDE_BUILD_ID
+#define MEMFAULT_COREDUMP_INCLUDE_BUILD_ID 1
+#endif
+
 //! Controls the truncation of the Build Id that is encoded in events
 //!
 //! The full Build Id hash is 20 bytes, but is truncated by default to save space. The

@@ -19,7 +19,7 @@ SDK and performed the installation steps that are mentioned there.
 You must have the
 [GCC ARM](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads)
 toolchain and the
-[Mbed command line tools](https://os.mbed.com/docs/mbed-os/v5.14/tools/developing-mbed-cli.html)
+[Mbed command line tools](https://os.mbed.com/docs/mbed-os/v5.15/tools/developing-mbed-cli.html)
 installed before you begin.
 
 ### Downloading the demo app dependencies

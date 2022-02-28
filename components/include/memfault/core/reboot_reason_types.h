@@ -57,6 +57,14 @@ typedef enum MfltResetReason {
   // for example, if power to the clock is cut or the lock for the PLL is lost.
   kMfltRebootReason_ClockFailure = 0x8007,
 
+  // A software reset triggered when the OS or RTOS end-user code is running on top of identifies
+  // a fatal error condition.
+  kMfltRebootReason_KernelPanic = 0x8008,
+
+  // A reset triggered when an attempt to upgrade to a new OTA image has failed and a rollback
+  // to a previous version was initiated
+  kMfltRebootReason_FirmwareUpdateError = 0x8009,
+
   // Resets from Arm Faults
   kMfltRebootReason_BusFault = 0x9100,
   kMfltRebootReason_MemFault = 0x9200,

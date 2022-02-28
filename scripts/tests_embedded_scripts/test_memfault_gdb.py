@@ -67,8 +67,8 @@ def http_expect_request():
                     resp_status,
                     resp_body,
                 ) = expected_requests[len(connections)]
-            except IndexError:
-                raise Exception("Unexpected mock HTTPConnection created!")
+            except IndexError as e:
+                raise Exception("Unexpected mock HTTPConnection created!") from e
 
             def _request(method, path, body=None, headers=None):
                 nonlocal actual_request_count

@@ -243,6 +243,7 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
 
+#if MEMFAULT_COREDUMP_INCLUDE_BUILD_ID
   sMemfaultBuildInfo build_info;
   if (memfault_build_info_read(&build_info)) {
     if (!prv_write_non_memory_block(kMfltCoredumpRegionType_BuildId,
@@ -250,6 +251,7 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
       return false;
     }
   }
+#endif
 
   if (info.device_serial) {
     if (!prv_write_non_memory_block(kMfltCoredumpRegionType_DeviceSerial,

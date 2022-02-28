@@ -25,7 +25,6 @@
 #include "memfault/http/http_client.h"
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/ports/ncs/version.h"
-#include <modem/modem_info.h>
 
 // nRF Connect SDK < 1.3
 #if (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 3)
@@ -35,6 +34,7 @@
 #include <at_notif.h>
 #include <modem_key_mgmt.h>
 #include <net/bsdlib.h>
+#include <modem_info.h>
 
 // nRF Connect SDK < 1.9
 #elif (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 9) && (NCS_PATCHLEVEL < 99)
@@ -43,10 +43,11 @@
 #include <modem/at_cmd.h>
 #include <modem/at_notif.h>
 #include <modem/modem_key_mgmt.h>
+#include <modem/modem_info.h>
 
 // nRF Connect SDK >= 1.9
 #else
-
+#include <modem/modem_info.h>
 #include <modem/lte_lc.h>
 #include <nrf_modem_at.h>
 

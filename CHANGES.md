@@ -1,3 +1,37 @@
+### Changes between Memfault SDK 0.29.0 and SDK 0.28.2 - Feb 28, 2022
+
+#### :rocket: New Features
+
+- Added a port to Particle's Device OS. More details can be found in
+  [`ports/particle/README.md`](ports/particle/README.md).
+- Added several more
+  [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
+  - `kMfltRebootReason_KernelPanic` for explicitly tracking fatal resets from
+    within a OS or RTOS
+  - `kMfltRebootReason_FirmwareUpdateError` for explicitly tracking resets due
+    to firmware update failures or rollbacks
+
+#### :chart_with_upwards_trend: Improvements
+
+- Added a convenience utility function for base64 encoding data in place. See
+  [`memfault_base64_encode_inplace`](components/include/memfault/util/base64.h#L35)
+  for more details!
+- Fixed compiler error in ESP-IDF port when compiling for ESP32-S2 targets
+
+#### :house: Internal
+
+- Added configuration option,
+  [`MEMFAULT_COREDUMP_INCLUDE_BUILD_ID`](components/include/memfault/default_config.h#L1),
+  which can be used to disable storing the Build Id in a coredump.
+- Fixed stale link in Mbed example app [`README`](examples/mbed/README.md).
+- Added [utility script](scripts/create_arduino_library.py) that can be used to
+  "arduino-ify" the code in this repo.
+- Fixed linter errors in python scripts after addition of flake8-bugbear linter
+  in CI.
+- Fixed compiler error in
+  [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app)
+  when compiling with the nRF Connect SDK 1.2 release
+
 ### Changes between Memfault SDK 0.28.2 and SDK 0.28.1 - Feb 1, 2022
 
 #### :house: Internal

@@ -1,0 +1,2 @@
+// Custom user trace reasons can be defined here, i.e
+// MEMFAULT_TRACE_REASON(I2cError)

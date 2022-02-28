@@ -1,0 +1,28 @@
+#if MEMFAULT_PARTICLE_PORT_HEAP_METRICS_ENABLE
+
+// The total size of the heap. This value should only change with Device OS updates
+MEMFAULT_METRICS_KEY_DEFINE(Heap_TotalSize, kMemfaultMetricType_Unsigned)
+
+// The least amount of bytes free the heap has ever hit
+MEMFAULT_METRICS_KEY_DEFINE(Heap_MinBytesFree, kMemfaultMetricType_Unsigned)
+
+// The bytes free in the heap when sampled at a heartbeat interval
+MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
+
+// The largest size block free in the heap (if there is a lot of heap space free, and a small max
+// block size, this is a good indicator that the heap is suffering from fragmentation)
+MEMFAULT_METRICS_KEY_DEFINE(Heap_MaxBlockSize, kMemfaultMetricType_Unsigned)
+
+#endif
+
+#if MEMFAULT_PARTICLE_PORT_CLOUD_METRICS_ENABLE
+MEMFAULT_METRICS_KEY_DEFINE(Cloud_ConnectingTime, kMemfaultMetricType_Timer)
+MEMFAULT_METRICS_KEY_DEFINE(Cloud_ConnectedTime, kMemfaultMetricType_Timer)
+MEMFAULT_METRICS_KEY_DEFINE(Cloud_ConnectCount, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(Cloud_DisconnectCount, kMemfaultMetricType_Unsigned)
+#endif
+
+// Pull in any user heartbeat event reasons that have been defined
+# if __has_include("memfault_metrics_heartbeat_config.def")
+#   include "memfault_metrics_heartbeat_config.def"
+# endif

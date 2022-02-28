@@ -64,7 +64,11 @@ void prv_check4(void) {
 
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
   // Always clear the interrupt:
+  #if CONFIG_IDF_TARGET_ESP32
   TIMERG0.int_clr_timers.t0 = 1;
+  #elif CONFIG_IDF_TARGET_ESP32S2
+  TIMERG0.int_clr.t0 = 1;
+  #endif
 
   // Crash from ISR:
   ESP_ERROR_CHECK(-1);

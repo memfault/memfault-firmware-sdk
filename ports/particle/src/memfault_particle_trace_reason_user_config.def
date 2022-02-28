@@ -1,0 +1,4 @@
+// Pull in any user trace event reasons that have been defined
+# if __has_include("memfault_trace_reason_user_config.def")
+#   include "memfault_trace_reason_user_config.def"
+# endif

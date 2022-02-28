@@ -8,7 +8,12 @@
 //! @brief
 //! Thin wrapper around rom/uart which was refactored between the v3.x and v4.x esp-idf releases
 
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
