@@ -4,8 +4,6 @@ config MEMFAULT
         depends on CPU_CORTEX_M
         select RUNTIME_NMI
         select EXTRA_EXCEPTION_INFO
-        select DEBUG_THREAD_INFO
-        select OPENOCD_SUPPORT
         help
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets

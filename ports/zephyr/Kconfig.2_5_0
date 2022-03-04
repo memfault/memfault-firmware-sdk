@@ -1,0 +1,4 @@
+config MEMFAULT
+        select OPENOCD_SUPPORT
+
+rsource "Kconfig"

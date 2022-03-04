@@ -1,0 +1,4 @@
+config MEMFAULT
+        select DEBUG_THREAD_INFO
+
+rsource "Kconfig"
