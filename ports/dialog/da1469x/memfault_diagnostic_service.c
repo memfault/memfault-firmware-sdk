@@ -75,18 +75,32 @@ MEMFAULT_STATIC_ASSERT(configTIMER_TASK_STACK_DEPTH >= 256,
 #define MDS_DYNAMIC_ACCESS_CONTROL 0
 #endif
 
-#define MDS_VERSION 0x01
+//! Payload returned via a read to "MDS Supported Features Characteristic"
+const static uint8_t s_mds_supported_features[] = {
+  // no feature additions since the first spin of the profile
+  0x0
+};
 
-#define MDS_MAJOR_VERSION 0x01
-#define MDS_MINOR_VERSION 0x00
-#define MDS_PATCH_VERSION 0x00
+//! Valid SNs used when sending data are 0-31
+#define MDS_TOTAL_SEQ_NUMBERS 32
 
-const static uint8_t s_mds_version[] = { MDS_VERSION, MDS_MINOR_VERSION, MDS_PATCH_VERSION};
+typedef enum {
+  kMdsDataExportMode_StreamingDisabled = 0x00,
+  kMdsDataExportMode_FullStreamingEnabled = 0x01,
+} eMdsDataExportMode;
+
+
+typedef MEMFAULT_PACKED_STRUCT {
+  // bits 5-7: rsvd for future use
+  // bits 0-4: sequence number
+  uint8_t hdr;
+  uint8_t chunk[];
+} sMdsDataExportPayload;
 
 typedef struct {
   ble_service_t svc;
 
-  uint16_t version_h;
+  uint16_t supported_features_h;
   uint16_t data_uri_h;
   uint16_t auth_h;
   uint16_t device_id_h;
@@ -100,13 +114,13 @@ typedef struct {
   // second request will be ignored.
   struct {
     bool active;
+    eMdsDataExportMode mode;
+    uint8_t seq_num; // current sequence number to use
     uint16_t conn_idx;
   } subscriber;
 
-  struct {
-    void *buf;
-    size_t buf_len;
-  } chunk;
+  sMdsDataExportPayload *payload;
+  size_t chunk_len;
 
   TimerHandle_t timer;
 } md_service_t;
@@ -115,6 +129,7 @@ typedef enum {
   kMdsAppError_InvalidLength = ATT_ERROR_APPLICATION_ERROR,
   kMdsAppError_ClientAlreadySubscribed,
   kMdsAppError_InsufficientLength,
+  kMdsAppError_ClientNotSubscribed,
 } eMdsAppError;
 
 static md_service_t *s_mds;
@@ -135,6 +150,8 @@ static void prv_handle_disconnected_evt(ble_service_t *svc,
   if (mds->subscriber.active && (mds->subscriber.conn_idx == evt->conn_idx)) {
     mds->subscriber.active = false;
     mds->subscriber.conn_idx = 0;
+    mds->subscriber.seq_num = 0;
+    mds->subscriber.mode = kMdsDataExportMode_StreamingDisabled;
   }
 
   xTimerStop(mds->timer, 0);
@@ -147,29 +164,37 @@ static void prv_try_notify(md_service_t *mds, uint16_t conn_idx) {
     return;
   }
 
+  if (mds->subscriber.mode == kMdsDataExportMode_StreamingDisabled) {
+    // client has subscribed but not yet enabled data export
+    return;
+  }
+
   uint16_t mtu_size = 0;
   ble_error_t rv = ble_gattc_get_mtu(conn_idx, &mtu_size);
   if (rv != BLE_STATUS_OK) {
     return;
   }
 
-  if ((mds->chunk.buf == NULL) && memfault_packetizer_data_available()) {
-    mds->chunk.buf = OS_MALLOC(mtu_size - MDS_ATT_HEADER_OVERHEAD);
-    if (mds->chunk.buf != NULL) {
-      mds->chunk.buf_len = mtu_size - MDS_ATT_HEADER_OVERHEAD;
-      memfault_packetizer_get_chunk(mds->chunk.buf, &mds->chunk.buf_len);
+  if ((mds->payload == NULL) && memfault_packetizer_data_available()) {
+    mds->payload = OS_MALLOC(mtu_size - MDS_ATT_HEADER_OVERHEAD);
+    if (mds->payload != NULL) {
+      mds->payload->hdr = mds->subscriber.seq_num & 0x1f;
+      mds->chunk_len = mtu_size - MDS_ATT_HEADER_OVERHEAD - sizeof(*mds->payload);
+      memfault_packetizer_get_chunk(&mds->payload->chunk[0], &mds->chunk_len);
     }
   }
 
-  if (mds->chunk.buf_len != 0) {
+  if (mds->chunk_len != 0) {
+
     rv = ble_gatts_send_event(conn_idx, mds->chunk_val_h, GATT_EVENT_NOTIFICATION,
-                              mds->chunk.buf_len, mds->chunk.buf);
+                              mds->chunk_len + sizeof(*mds->payload), mds->payload);
     if (rv == BLE_STATUS_OK) {
+      mds->subscriber.seq_num = (mds->subscriber.seq_num + 1) % MDS_TOTAL_SEQ_NUMBERS;
       // Note: No need to schedule a retry since we will pump more data when the sent callback is
       // invoked for the current notification
-      OS_FREE(mds->chunk.buf);
-      mds->chunk.buf = NULL;
-      mds->chunk.buf_len = 0;
+      OS_FREE(mds->payload);
+      mds->payload = NULL;
+      mds->chunk_len = 0;
       return;
     }
   }
@@ -216,9 +241,9 @@ static void prv_handle_read_req(ble_service_t *svc,
   char uri[MDS_MAX_DATA_URI_LENGTH];
   struct MemfaultDeviceInfo info;
 
-  if (evt->handle == mds->version_h) {
-    value = &s_mds_version;
-    length = sizeof(s_mds_version);
+  if (evt->handle == mds->supported_features_h) {
+    value = &s_mds_supported_features;
+    length = sizeof(s_mds_supported_features);
   } else if (evt->handle == mds->data_uri_h) {
     memfault_platform_get_device_info(&info);
     strncpy(uri, MDS_URI_BASE, sizeof(uri) - 1);
@@ -282,7 +307,7 @@ static att_error_t prv_handle_cccd_write(md_service_t *mds, uint16_t conn_idx,
   const bool subscribe_for_notifs = ((cccd & GATT_CCC_NOTIFICATIONS) != 0);
   if (!mds->subscriber.active) {
     // NB: we expect caller to subscribe for notifications each time they connect
-    // so don't persist the state across disconnects _and_ we only allow one
+    // so don't persist the mode across disconnects _and_ we only allow one
     // active subscription at a time.
     mds->subscriber.active = subscribe_for_notifs;
     mds->subscriber.conn_idx = conn_idx;
@@ -294,6 +319,37 @@ static att_error_t prv_handle_cccd_write(md_service_t *mds, uint16_t conn_idx,
     // only one client can be subscribed at any given time
     return kMdsAppError_ClientAlreadySubscribed;
   }
+
+  return ATT_ERROR_OK;
+}
+
+static att_error_t prv_handle_data_export_write(md_service_t *mds, uint16_t conn_idx,
+                                                uint16_t offset, uint16_t length,
+                                                const uint8_t *value) {
+  if (offset != 0) {
+    return ATT_ERROR_ATTRIBUTE_NOT_LONG;
+  }
+
+  if (length != sizeof(uint8_t)) {
+    return kMdsAppError_InvalidLength;
+  }
+
+  if ((!mds->subscriber.active) || (mds->subscriber.conn_idx != conn_idx)) {
+    return kMdsAppError_ClientNotSubscribed;
+  }
+
+  const eMdsDataExportMode cmd = (eMdsDataExportMode)get_u8(value);
+
+  switch (cmd) {
+    case kMdsDataExportMode_StreamingDisabled:
+    case kMdsDataExportMode_FullStreamingEnabled:
+      break;
+    default:
+      return ATT_ERROR_REQUEST_NOT_SUPPORTED;
+  }
+
+  mds->subscriber.mode = cmd;
+  prv_try_notify(mds, conn_idx);
 
   return ATT_ERROR_OK;
 }
@@ -312,13 +368,9 @@ static void prv_handle_write_req(ble_service_t *svc,
   if (evt->handle == mds->chunk_cccd_h) {
     status = prv_handle_cccd_write(mds, evt->conn_idx, evt->offset, evt->length,
                                    evt->value);
-    if (status == ATT_ERROR_OK) {
-      // Empirically, sending a notification immediately will wind up getting flushed
-      // before the response for the CCCD write so we defer starting to send chunk
-      // notifications so they do not arrive out of order
-      xTimerChangePeriod(mds->timer, 10, 0);
-      xTimerStart(mds->timer, 0);
-    }
+  } else if (evt->handle == mds->chunk_val_h) {
+    status = prv_handle_data_export_write(mds, evt->conn_idx, evt->offset, evt->length,
+                                          evt->value);
   }
 
   ble_gatts_write_cfm(evt->conn_idx, evt->handle, status);
@@ -326,8 +378,8 @@ static void prv_handle_write_req(ble_service_t *svc,
 
 static void prv_cleanup_service(ble_service_t *svc) {
   md_service_t *mds = (md_service_t *)svc;
-  if (mds->chunk.buf != NULL) {
-    OS_FREE(mds->chunk.buf);
+  if (mds->payload != NULL) {
+    OS_FREE(mds->payload);
   }
   if (mds->timer != NULL) {
     xTimerDelete(mds->timer, portMAX_DELAY);
@@ -365,7 +417,7 @@ void *mds_boot(void) {
 
   ble_uuid_from_string("54220001-f6a5-4007-a371-722f4ebd8436", &uuid);
   ble_gatts_add_characteristic(&uuid, GATT_PROP_READ, ATT_PERM_RW, sizeof(uint8_t),
-                               GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->version_h);
+                               GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->supported_features_h);
 
   ble_uuid_from_string("54220002-f6a5-4007-a371-722f4ebd8436", &uuid);
   ble_gatts_add_characteristic(&uuid, GATT_PROP_READ, ATT_PERM_RW, sizeof(uint8_t),
@@ -380,13 +432,13 @@ void *mds_boot(void) {
                                GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->auth_h);
 
   ble_uuid_from_string("54220005-f6a5-4007-a371-722f4ebd8436", &uuid);
-  ble_gatts_add_characteristic(&uuid, GATT_PROP_NOTIFY, ATT_PERM_RW, sizeof(uint8_t),
+  ble_gatts_add_characteristic(&uuid, GATT_PROP_NOTIFY | GATT_PROP_WRITE, ATT_PERM_RW, sizeof(uint8_t),
                                GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->chunk_val_h);
 
   ble_uuid_create16(UUID_GATT_CLIENT_CHAR_CONFIGURATION, &uuid);
   ble_gatts_add_descriptor(&uuid, ATT_PERM_RW, 2, 0, &mds->chunk_cccd_h);
 
-  ble_gatts_register_service(&mds->svc.start_h, &mds->version_h, &mds->device_id_h,
+  ble_gatts_register_service(&mds->svc.start_h, &mds->supported_features_h, &mds->device_id_h,
                              &mds->data_uri_h, &mds->auth_h, &mds->chunk_val_h,
                              &mds->chunk_cccd_h, 0);
 

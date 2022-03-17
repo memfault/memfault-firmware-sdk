@@ -6,6 +6,7 @@
 import os
 import shlex
 import shutil
+import sys
 
 from invoke import Collection, task
 
@@ -42,6 +43,25 @@ def mbed_update(ctx):
     cmd = "mbed update"
     with ctx.cd(MBED_DEMO_APP_ROOT):
         ctx.run(cmd, pty=True)
+
+        # manually override some of the python packages that 'mbed update' installs.
+        pip_packages = (
+            # force installing a more recent version of intelhex that supports
+            # python >3.2 😠
+            "intelhex==2.3.0",
+            # A hack to work around version pinning issue with mbed-os and
+            # incompatibility with markupsafe 2.1.0 release
+            "markupsafe==2.0.1",
+        )
+        # explicitly run the version of pip installed to the _active_ python
+        # environment. in CI we auto load a specific venv in ~/.bashrc, which
+        # confuses invoke ☹️ and causes the wrong pip to be run. pty=True should
+        # fix this but doesn't seem to work. normally it's fine, but this
+        # command runs in a separate manually created venv so things are more
+        # delicate.
+        # https://github.com/memfault/memfault/blob/299e7ee7ceec81449fc12d3658fc1ed8d99ebf81/docker-images/ci/Dockerfile#L98
+        ctx.run("{} -m pip install {}".format(sys.executable, " ".join(pip_packages)), pty=True)
+
     print("Update finished.  Ignore warnings about source control above; do not run 'mbed new'.")
 
 

@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.29.1 and SDK 0.29.0 - Mar 16, 2022
+
+#### :house: Internal
+
+- Updated Memfault Diagnostic GATT Service (MDS) based on feedback. This service can
+  be used to transparently forward data collected by the SDK to a Bluetooth Low
+  Energy gateway and proxied to the cloud. See
+  [ports/include/memfault/ports/ble/mds.h](ports/include/memfault/ports/ble/mds.h#L1)
+- Updated Mbed OS invoke commands to be more resilient against python package conflicts
+
+#### :boom: Breaking Changes
+
+- If your project is based on Zephyr < 2.6, you now need to explicitly set
+  `CONFIG_OPENOCD_SUPPORT=y` in your `prj.conf`
+
 ### Changes between Memfault SDK 0.29.0 and SDK 0.28.2 - Feb 28, 2022
 
 #### :rocket: New Features

@@ -10,10 +10,10 @@ The library is compatible with all versions of
 [Device OS](https://github.com/particle-iot/device-os) greater than or equal to
 Device OS 3.0
 
-:exclamation: Note: The
+:exclamation: Note: Use the
 [particle-firmware-library](https://github.com/memfault/particle-firmware-library)
-to include this in your project. This repository is updated as part of the
-release process for the
+repository to add memfault support to an application. This repository is updated
+as part of the release process for the
 [memfault-firmware-sdk](https://github.com/memfault/memfault-firmware-sdk).
 
 ## Welcome to your library!
@@ -21,7 +21,7 @@ release process for the
 To get started, add the library to your particle application:
 
 ```bash
-$ git clone https://github.com/memfault/particle-firmware-library lib/memfault
+$ git submodule add https://github.com/memfault/particle-firmware-library lib/memfault
 ```
 
 ## Integration Steps

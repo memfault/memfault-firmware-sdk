@@ -13,10 +13,11 @@
 //!
 //! Memfault Diagnostic Service: (UUID 54220000-f6a5-4007-a371-722f4ebd8436)
 //!
-//!  MDS Version Characteristic:           (UUID 54220001-f6a5-4007-a371-722f4ebd8436)
-//!   read - (length: 3 bytes) returns the version of this profile where there is 1 byte for Major,
-//!    Minor, & Patch Version
-//!   Version 1.0.0 = Initial gatt service definition and prototype implementation
+//!  MDS Supported Features Characteristic: (UUID 54220001-f6a5-4007-a371-722f4ebd8436)
+//!   read - (length: variable*)
+//!   Octet 0:
+//!      bit 0-7: rsvd for future use
+//!    ...
 //!
 //!  MDS Device Identifier Characteristic: (UUID 54220002-f6a5-4007-a371-722f4ebd8436)
 //!   read - (length: variable*) returns the device identifier populated in the
@@ -30,11 +31,26 @@
 //!     "Memfault-Project-Key:YOUR_PROJECT_KEY"
 //!
 //!  MDS Data Export Characteristic:       (UUID 54220005-f6a5-4007-a371-722f4ebd8436)
-//!   notify
-//!    When subscribed to, streams any collected SDK data to listener as opaque packets.
-//!    Packets will be sized to fit within negotiated MTU. Listener is responsible
-//!    for forwarding chunks to the URI specified in the Data URI Characteristic using
-//!    the authorization scheme specified in the Authorization Characteristic.
+//!   notify - must be subscribed to in order for any collected SDK data to be streamed
+//!   write - (length: 1 byte) controls data export operation mode
+//!    0x00 - Streaming Disabled
+//!    0x01 - Streaming of any collected SDK data enabled
+//!    Other: reserved for future use
+//!
+//!    When subscribed to and when streaming mode has been enabled via a GATT Write with response,
+//!    packets will be sized to fit within negotiated MTU.
+//!    The format of a packet streamed is as follows:
+//!     byte 0:
+//!      bits 0-4: Sequence Number A sequentially increasing counter that can be used to detect
+//!       errors in the BLE stack. SN is reset to 0 anytime a disconnect takes place.
+//!       Errors client can check for:
+//!          - Packets are getting repeated when Last Sequence Number == Current Sequence Number
+//!          - Packets are getting dropped  when abs(Last Sequence Number - Current Sequence Number) != 1
+//!      bit 5-7: Reserved for future use
+//!
+//!     byte 1-N: opaque payload listener is responsible for forwarding to the URI specified in the Data URI
+//!        Characteristic using the authorization scheme specified in the Authorization Characteristic.
+//!
 //!   Client Characteristic Configuration Descriptor: (UUID 00002902-0000-1000-8000-00805f9b34fb)
 //!
 //! * If length exceeds negotiated MTU size, it is assumed that client has implemented support for
@@ -51,8 +67,8 @@
 //!
 //! Note 3: This GATT service is currently under development and subject to updates and
 //! enhancements in the future with no current guarantees for backward compatibility. Client
-//! implementations should read the MDS Version Characteristic and only attempt to use the service
-//! as it is currently defined if the Major Version == 1.
+//! implementations should read the MDS Supported Features Characteristic and only attempt to use
+//! the service as it is currently defined if the value is 0x00.
 
 #ifdef __cplusplus
 extern "C" {

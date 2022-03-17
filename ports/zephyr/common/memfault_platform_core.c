@@ -5,17 +5,31 @@
 
 #include "memfault/core/platform/core.h"
 
-#include <soc.h>
 #include <init.h>
+#include <soc.h>
 
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
-#include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/ports/reboot_reason.h"
+#include "memfault/ports/zephyr/version.h"
+
+#if !MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
+
+// Note: CONFIG_OPENOCD_SUPPORT was deprecated in Zephyr 2.6 and fully removed in the 3.x line. To
+// maintain backward compatibility with older versions of Zephyr we inline the check here.
+//
+// When support for Zephyr <= 2.5 is removed, we should adopt an approach like the following
+//  https://github.com/memfault/memfault-firmware-sdk/pull/26
+
+#if !CONFIG_OPENOCD_SUPPORT
+#error "CONFIG_OPENOCD_SUPPORT=y must be added to your prj.conf"
+#endif
+
+#endif
 
 #if CONFIG_MEMFAULT_METRICS
 #include "memfault/metrics/metrics.h"
