@@ -1,12 +1,28 @@
+### Changes between Memfault SDK 0.30.0 and SDK 0.29.1 - Mar 31, 2022
+
+#### :rocket: New Features
+
+- Added a Task Watchdog optional module. This can be used to monitor and trigger
+  a fault in the case of a task or thread that becomes stuck. See information in
+  [components/include/memfault/core/task_watchdog.h](components/include/memfault/core/task_watchdog.h)
+  for how to configure and use the module
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix compilation when building for a Zephyr target that does not have the
+  `CONFIG_ARM_MPU` flag enabled
+- Fix compilation errors to enable compatibility with Zephyr v3.0.0
+
 ### Changes between Memfault SDK 0.29.1 and SDK 0.29.0 - Mar 16, 2022
 
 #### :house: Internal
 
-- Updated Memfault Diagnostic GATT Service (MDS) based on feedback. This service can
-  be used to transparently forward data collected by the SDK to a Bluetooth Low
-  Energy gateway and proxied to the cloud. See
+- Updated Memfault Diagnostic GATT Service (MDS) based on feedback. This service
+  can be used to transparently forward data collected by the SDK to a Bluetooth
+  Low Energy gateway and proxied to the cloud. See
   [ports/include/memfault/ports/ble/mds.h](ports/include/memfault/ports/ble/mds.h#L1)
-- Updated Mbed OS invoke commands to be more resilient against python package conflicts
+- Updated Mbed OS invoke commands to be more resilient against python package
+  conflicts
 
 #### :boom: Breaking Changes
 

@@ -18,6 +18,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
+#include "memfault/core/task_watchdog.h"
 #include "memfault/esp_port/spi_flash.h"
 #include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16_ccitt.h"
@@ -214,6 +215,9 @@ static void prv_panic_safe_putstr(const char *str) {
 }
 
 bool memfault_platform_coredump_save_begin(void) {
+  // Update task watchdog bookkeeping, if it's enabled
+  memfault_task_watchdog_bookkeep();
+
   prv_panic_safe_putstr("Saving Memfault Coredump!\r\n");
   return (memfault_esp_spi_flash_coredump_begin() == 0);
 }

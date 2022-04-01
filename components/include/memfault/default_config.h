@@ -177,6 +177,10 @@ extern "C" {
 #define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS 0
 #endif
 
+//
+// Heap Statistics Configuration
+//
+
 //! When the FreeRTOS port is being used, controls whether or not heap
 //! allocation tracking is enabled.
 //! Note: When using this feature, MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 0
@@ -203,6 +207,33 @@ extern "C" {
 #define MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 1
 #endif
 
+//
+// Task Watchdog Configuration
+//
+
+//! Use this flag to enable the task watchdog component. See the header file at
+//! components/include/memfault/core/task_watchdog.h for usage details.
+#ifndef MEMFAULT_TASK_WATCHDOG_ENABLE
+#define MEMFAULT_TASK_WATCHDOG_ENABLE 0
+#endif
+
+//! Configure the task watchdog timeout value in milliseconds.
+#ifndef MEMFAULT_TASK_WATCHDOG_TIMEOUT_INTERVAL_MS
+#define MEMFAULT_TASK_WATCHDOG_TIMEOUT_INTERVAL_MS 1000
+#endif
+
+//! Enable this flag to collect the task watchdog information on coredump. Only
+//! needed if the entire memory contents are not already collected on coredump.
+#ifndef MEMFAULT_COREDUMP_COLLECT_TASK_WATCHDOG_REGION
+#define MEMFAULT_COREDUMP_COLLECT_TASK_WATCHDOG_REGION 0
+#endif
+
+//
+// Trace Configuration
+//
+
+//! Set the name for the user trace reason config file, which is where custom
+//! trace reasons can be defined
 #ifndef MEMFAULT_TRACE_REASON_USER_DEFS_FILE
 #define MEMFAULT_TRACE_REASON_USER_DEFS_FILE \
   "memfault_trace_reason_user_config.def"

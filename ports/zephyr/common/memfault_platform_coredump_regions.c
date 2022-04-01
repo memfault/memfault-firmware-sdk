@@ -14,6 +14,14 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 
+#include "memfault/ports/zephyr/version.h"
+
+#if MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#else
+#include <arch/arm/cortex_m/cmsis.h>
+#endif
+
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/ports/zephyr/coredump.h"

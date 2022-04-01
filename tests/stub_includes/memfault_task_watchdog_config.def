@@ -1,0 +1,5 @@
+//! @file
+
+//! A fake set of task watchdog channels for unit testing
+MEMFAULT_TASK_WATCHDOG_CHANNEL_DEFINE(task_1)
+MEMFAULT_TASK_WATCHDOG_CHANNEL_DEFINE(task_2)

@@ -9,6 +9,7 @@
 
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
+#include "memfault/ports/zephyr/version.h"
 
 static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 
@@ -35,7 +36,7 @@ static void prv_metrics_update_stats(void) {
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
   struct k_thread *me = k_current_get();
 
-#if defined(CONFIG_THREAD_STACK_INFO) && KERNEL_VERSION_MAJOR >= 2 && KERNEL_VERSION_MINOR >= 2
+#if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
   // k_thread_stack_space_get() introduced in v2.2.0
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);

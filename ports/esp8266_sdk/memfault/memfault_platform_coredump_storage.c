@@ -19,6 +19,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
+#include "memfault/core/task_watchdog.h"
 #include "memfault/esp8266_port/core.h"
 #include "memfault/util/crc16_ccitt.h"
 
@@ -122,6 +123,9 @@ bool memfault_platform_coredump_save_begin(void) {
   if (core_part == NULL) {
     return false;
   }
+
+  // Update task watchdog bookkeeping, if it's enabled
+  memfault_task_watchdog_bookkeep();
 
   MEMFAULT_ESP_PANIC_PRINTF("Saving Memfault Coredump!\r\n");
   return true;

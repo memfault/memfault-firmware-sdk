@@ -46,7 +46,6 @@ if sys.version_info < (3,):
         # type: (str) -> str
         return data.encode("hex")
 
-
 else:
 
     def hexlify(data):

@@ -21,15 +21,14 @@
 #include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/timers.h"
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/debug_log.h"
+#include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/core.h"
 #include "memfault/esp_port/http_client.h"
-#include "memfault/metrics/platform/timer.h"
-#include "memfault/metrics/metrics.h"
-#include "memfault/panics/assert.h"
 
 static const char* TAG = "example";
 
@@ -136,6 +135,83 @@ static void prv_poster_task(void *args) {
   }
 }
 
+// Example showing how to use the task watchdog
+#if MEMFAULT_TASK_WATCHDOG_ENABLE
+
+SemaphoreHandle_t g_example_task_lock;
+
+static void prv_example_task(void *args) {
+  (void)args;
+
+  // set up the semaphore used to programmatically make this task stuck
+#if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+  static StaticSemaphore_t s_memfault_lock_context;
+  g_example_task_lock = xSemaphoreCreateRecursiveMutexStatic(&s_memfault_lock_context);
+#else
+  g_example_task_lock = xSemaphoreCreateRecursiveMutex();
+#endif
+
+  MEMFAULT_ASSERT(g_example_task_lock != NULL);
+
+  // this task runs every 250ms and gets/puts a semaphore. if the semaphore is
+  // claimed, the task watchdog will eventually trip and mark this task as stuck
+  const uint32_t interval_ms = 250;
+
+  MEMFAULT_LOG_INFO("Task watchdog example task running every %ums.", interval_ms);
+  while (true) {
+    // enable the task watchdog
+    MEMFAULT_TASK_WATCHDOG_START(example_task);
+
+    // get the semaphore. if we can't get it, the task watchdog should
+    // eventually trip
+    xSemaphoreTakeRecursive(g_example_task_lock, portMAX_DELAY);
+    xSemaphoreGiveRecursive(g_example_task_lock);
+
+    // disable the task watchdog now that this task is done in this run
+    MEMFAULT_TASK_WATCHDOG_STOP(example_task);
+
+    vTaskDelay(250 / portTICK_PERIOD_MS);
+  }
+}
+
+static void prv_task_watchdog_timer_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
+  memfault_task_watchdog_check_all();
+}
+
+static void prv_initialize_task_watchdog(void) {
+  memfault_task_watchdog_init();
+
+  // create a timer that runs the watchdog check once a second
+  const char* const pcTimerName = "TaskWatchdogTimer";
+  const TickType_t xTimerPeriodInTicks = pdMS_TO_TICKS(1000);
+
+  TimerHandle_t timer;
+
+#if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+  static StaticTimer_t s_task_watchdog_timer_context;
+  timer = xTimerCreateStatic(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL,
+                             prv_task_watchdog_timer_callback, &s_task_watchdog_timer_context);
+#else
+  timer =
+    xTimerCreate(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL, prv_task_watchdog_timer_callback);
+#endif
+
+  MEMFAULT_ASSERT(timer != 0);
+
+  xTimerStart(timer, 0);
+
+  // create and start the example task
+  const portBASE_TYPE res = xTaskCreate(prv_example_task, "example_task",
+                                        ESP_TASK_MAIN_STACK, NULL,
+                                        ESP_TASK_MAIN_PRIO, NULL);
+  MEMFAULT_ASSERT(res == pdTRUE);
+}
+#else
+static void prv_initialize_task_watchdog(void) {
+  // task watchdog disabled, do nothing
+}
+#endif
+
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
   extern void memfault_platform_device_info_boot(void);
@@ -150,6 +226,8 @@ void app_main() {
 
   initialize_console();
 
+  prv_initialize_task_watchdog();
+
   // We need another task to post data since we block waiting for user
   // input in this task.
   const portBASE_TYPE res = xTaskCreate(prv_poster_task, "poster",
@@ -161,6 +239,7 @@ void app_main() {
   esp_console_register_help_command();
   register_system();
   register_wifi();
+  register_app();
 
   /* Prompt to be printed before each line.
    * This can be customized, made dynamic, etc.

@@ -105,6 +105,10 @@ MEMFAULT_NORETURN
 #endif
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info);
 
+//! Handler called in all system-specific fault_handlers, to perform generic
+//! bookkeeping or other operations shared by all fault handlers.
+void memfault_fault_handling_common(void);
+
 #ifdef __cplusplus
 }
 #endif

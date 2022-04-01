@@ -1,4 +1,5 @@
 set(COMPONENT_SRCS
+   cmd_app.c
    cmd_system.c
    cmd_wifi.c
    config.c

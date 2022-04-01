@@ -31,6 +31,7 @@
 
 #include "memfault/core/debug_log.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/core/task_watchdog.h"
 #include "memfault/panics/assert.h"
 #include "memfault/ports/watchdog.h"
 #include "memfault/util/crc16_ccitt.h"
@@ -158,6 +159,9 @@ bool memfault_platform_coredump_save_begin(void) {
   if (memfault_software_watchdog_feed() != 0) {
     return false;
   }
+
+  // Update task watchdog bookkeeping, if it's enabled
+  memfault_task_watchdog_bookkeep();
 
   // Signal to sys_power_mgr.c:pm_register_qspi_operation() that it should not
   // attempt to use deferred Flash ops at all from this point on.
