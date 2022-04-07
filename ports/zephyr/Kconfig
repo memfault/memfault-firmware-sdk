@@ -182,6 +182,13 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
           The first check will run between [1, 1+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS]
           Subsequent checks will run at MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
 
+config MEMFAULT_HTTP_USES_MBEDTLS
+        bool "Use mbedTLS for HTTP transport"
+        default y if !NET_SOCKETS_OFFLOAD_TLS
+        help
+          Configure Memfault HTTP for using mbedTLS- perform some sanity checks
+          at compile time that it is configured correctly.
+
 endif # MEMFAULT_HTTP_ENABLE
 
 config MEMFAULT_EVENT_STORAGE_SIZE

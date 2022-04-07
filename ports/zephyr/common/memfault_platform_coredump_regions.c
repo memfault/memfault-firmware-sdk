@@ -42,7 +42,7 @@ MEMFAULT_WEAK
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
 
-  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 3)) == 0;
+  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 2)) == 0;
   int region_idx = 0;
 
   size_t stack_size_to_collect = memfault_platform_sanitize_address_range(

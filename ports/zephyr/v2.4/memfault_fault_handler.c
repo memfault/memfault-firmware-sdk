@@ -46,8 +46,11 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
   const struct __extra_esf_info *extra_info = &esf->extra_info;
   const _callee_saved_t *callee_regs = extra_info->callee;
 
+  // Read the "SPSEL" bit where
+  //  0 = Main Stack Pointer in use prior to exception
+  //  1 = Process Stack Pointer in use prior to exception
   const uint32_t exc_return = extra_info->exc_return;
-  const bool msp_was_active = (exc_return & (1 << 3)) == 0;
+  const bool msp_was_active = (exc_return & (1 << 2)) == 0;
 
   sMfltRegState reg = {
     .exception_frame = (void *)(msp_was_active ? extra_info->msp : callee_regs->psp),

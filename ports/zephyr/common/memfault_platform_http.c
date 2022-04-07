@@ -28,7 +28,7 @@
 #include "memfault/http/utils.h"
 #include "memfault/panics/assert.h"
 
-#if CONFIG_MBEDTLS
+#if defined(CONFIG_MEMFAULT_HTTP_USES_MBEDTLS)
 
 // Sanity check that SNI extension is enabled when using Mbed TLS since as of 2.4 Zephyr doesn't
 // enable it by default
@@ -43,7 +43,7 @@
 #error "MBEDTLS_SSL_SERVER_NAME_INDICATION must be enabled for Memfault HTTPS. This can be done with CONFIG_MBEDTLS_USER_CONFIG_ENABLE/FILE"
 #endif
 
-#endif /* CONFIG_MBEDTLS */
+#endif /* CONFIG_MEMFAULT_HTTP_USES_MBEDTLS */
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 static void *prv_calloc(size_t count, size_t size) {

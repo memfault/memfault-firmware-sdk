@@ -90,6 +90,8 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-unknown-warning-option \
   -Wno-poison-system-directories \
   -Wno-suggest-override \
+  -Wno-declaration-after-statement \
+  -Wno-reserved-identifier \
 
 else
 

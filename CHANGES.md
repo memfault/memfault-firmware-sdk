@@ -1,3 +1,17 @@
+### Changes between Memfault SDK 0.30.1 and SDK 0.30.0 - April 6, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix stack selection when in ISR context in some Zephyr versions
+- Fix a build error when building Zephyr with `CONFIG_NORDIC_SECURITY_BACKEND`
+  enabled. New Kconfig flag `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS` can be used to
+  manually control this configuration if necessary (default should be set
+  correctly in most cases)
+
+#### :house: Internal
+
+- Fix CI unit test build error from older version of gcc
+
 ### Changes between Memfault SDK 0.30.0 and SDK 0.29.1 - Mar 31, 2022
 
 #### :rocket: New Features

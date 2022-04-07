@@ -27,13 +27,13 @@ extern "C" {
 #define MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS 15
 
 
-static void _run_printf_like_func_check(const char* format, ...)
+static void run_printf_like_func_check_(const char* format, ...)
     MEMFAULT_PRINTF_LIKE_FUNC(1, 2);
 
 //! Mark the function as used to prevent warnings in situations where this header is included but
 //! no logging is actually used
 MEMFAULT_USED
-static void _run_printf_like_func_check(MEMFAULT_UNUSED const char* format, ...) { }
+static void run_printf_like_func_check_(MEMFAULT_UNUSED const char* format, ...) { }
 
 //! Compilation time checks on log formatter
 //!
@@ -48,7 +48,7 @@ static void _run_printf_like_func_check(MEMFAULT_UNUSED const char* format, ...)
       " args > MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS ("                                   \
       MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS) ")!");             \
   if (false) {                                                                          \
-    _run_printf_like_func_check(format, ## __VA_ARGS__);                                \
+    run_printf_like_func_check_(format, ## __VA_ARGS__);                                \
   } \
 } while (0)
 
