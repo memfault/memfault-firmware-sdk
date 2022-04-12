@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.30.2 and SDK 0.30.1 - April 12, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix a build regression on nRF Connect SDK v1.2 caused by the new Kconfig flag
+  `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS`
+
 ### Changes between Memfault SDK 0.30.1 and SDK 0.30.0 - April 6, 2022
 
 #### :chart_with_upwards_trend: Improvements

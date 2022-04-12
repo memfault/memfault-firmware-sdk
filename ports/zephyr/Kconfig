@@ -184,7 +184,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
-        default y if !NET_SOCKETS_OFFLOAD_TLS
+        default y if !NET_SOCKETS_OFFLOAD_TLS && MBEDTLS
         help
           Configure Memfault HTTP for using mbedTLS- perform some sanity checks
           at compile time that it is configured correctly.
