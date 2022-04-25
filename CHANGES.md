@@ -1,6 +1,25 @@
-### Changes between Memfault SDK 0.30.2 and SDK 0.30.1 - April 12, 2022
+### Changes between Memfault SDK 0.30.3 and SDK 0.30.2 - April 25, 2022
 
 #### :chart_with_upwards_trend: Improvements
+
+- Particle's Device OS port improvements:
+  - A user initiated reboot will now be recorded as a User Shutdown instead of a
+    Low Power reset
+  - A custom hardware_version can now be specified using the `hardware_version`
+    argument when initializing the Memfault library
+  - Default hardware version now uses the `PLATFORM_NAME` macro instead of
+    `PRODUCT_SERIES` macro
+- Zephyr port improvements
+  - Exposed lower level APIs to Memfault's HTTP post implementation to allow
+    easier custom handling. See
+    [`ports/zephyr/include/memfault/ports/zephyr/http.h`](ports/zephyr/include/memfault/ports/zephyr/http.h)
+    for more details
+
+#### :house: Internal
+
+- Misc README documentation improvements
+
+### Changes between Memfault SDK 0.30.2 and SDK 0.30.1 - April 12, 2022
 
 - Fix a build regression on nRF Connect SDK v1.2 caused by the new Kconfig flag
   `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS`

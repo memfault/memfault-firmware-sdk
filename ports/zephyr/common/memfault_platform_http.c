@@ -558,39 +558,84 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 }
 
 int memfault_zephyr_port_post_data(void) {
-  int rv = -1;
+  sMemfaultHttpContext ctx = {0};
 
-  const char *host = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
-  const int port =  MEMFAULT_HTTP_GET_CHUNKS_API_PORT();
-
-  struct addrinfo *res = NULL;
-  const int sock_fd = prv_open_socket(&res, host, port);
-  if (sock_fd < 0) {
-    goto cleanup;
+  int rv = memfault_zephyr_port_http_open_socket(&ctx);
+  if (rv < 0) {
+    return rv;
   }
 
+  memfault_zephyr_port_http_upload_sdk_data(&ctx);
+
+  memfault_zephyr_port_http_close_socket(&ctx);
+
+  return 0;
+}
+
+int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
+  const char *host = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
+  const int port = MEMFAULT_HTTP_GET_CHUNKS_API_PORT();
+
+  memfault_zephyr_port_http_close_socket(ctx);
+
+  ctx->sock_fd = prv_open_socket(&(ctx->res), host, port);
+
+  if (ctx->sock_fd < 0) {
+    memfault_zephyr_port_http_close_socket(ctx);
+    return -1;
+  }
+
+  return 0;
+}
+
+void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
+  if (ctx->sock_fd > 0) {
+    close(ctx->sock_fd);
+  }
+  ctx->sock_fd = 0;
+
+  if (ctx->res != NULL) {
+    freeaddrinfo(ctx->res);
+    ctx->res = NULL;
+  }
+}
+
+bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) { return ctx->sock_fd > 0; }
+
+void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   int max_messages_to_send = 5;
 #if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE && CONFIG_MEMFAULT_RAM_BACKED_COREDUMP
   // The largest data type we will send is a coredump. If CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
   // is being used, make sure we issue enough HTTP POSTS such that an entire coredump will be sent.
-  max_messages_to_send = MEMFAULT_MAX(max_messages_to_send,
-                                      CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE);
+  max_messages_to_send =
+    MEMFAULT_MAX(max_messages_to_send,
+                 CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE);
 #endif
 
   while (max_messages_to_send-- > 0) {
-    if (!prv_send_next_msg(sock_fd)) {
+    if (!prv_send_next_msg(ctx->sock_fd)) {
       break;
     }
-    if (!prv_wait_for_http_response(sock_fd)) {
+    if (!prv_wait_for_http_response(ctx->sock_fd)) {
       break;
     }
   }
+}
 
-  close(sock_fd);
+int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len) {
+  if (!memfault_zephyr_port_http_is_connected(ctx)) {
+    return -1;
+  }
 
-  // if we got here, everything succeeded!
-  rv = 0;
-cleanup:
-  freeaddrinfo(res);
-  return rv;
+  memfault_http_start_chunk_post(prv_send_data, &(ctx->sock_fd), data_len);
+
+  if (!prv_try_send(ctx->sock_fd, p_data, data_len)) {
+    return -1;
+  }
+
+  if (!prv_wait_for_http_response(ctx->sock_fd)) {
+    return -1;
+  }
+
+  return 0;
 }

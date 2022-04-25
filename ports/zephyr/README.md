@@ -20,12 +20,16 @@ within Zephyr and a different release, the port may work there as well
 
 ## Integrating SDK
 
-1. Apply .patch in release directory to Zephyr Kernel
+1. Depending on Zephyr version, apply .patch in release directory to Zephyr
+   Kernel. Be sure to use the patch matching the Zephyr version in use.
 
 ```
 $ cd $ZEPHYR_ROOT_DIR/
 $ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v1.14|v2.0]/zephyr-integration.patch
 ```
+
+Note that `v2.x/coredump-support.patch` should be applied for Zephyr 2.2 and 2.3
+only.
 
 2. Clone (or symlink) memfault-firmware-sdk in Zephyr Project
 

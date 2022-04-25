@@ -13,6 +13,18 @@ snapshots = Snapshot()
 
 snapshots["test_build_id_dump 1"] = ["1", "16", "16e0fe39af176cfa4cf961321ccf51"]
 
+snapshots["test_crc_build_id_populated 1"] = [
+    "CRC32 Generated Build ID at 'g_example_crc32_build_id' to ELF already written: 0x8ac1e1ca"
+]
+
+snapshots["test_crc_build_id_unpopulated 1"] = [
+    "Added CRC32 Generated Build ID at 'g_example_crc32_build_id' to ELF: 0x8ac1e1ca"
+]
+
+snapshots["test_crc_build_id_unpopulated_dump_only 1"] = [
+    "CRC32 Build ID at 'g_example_crc32_build_id' is not written"
+]
+
 snapshots["test_gnu_build_id_in_use 1"] = [
     "Found GNU Build ID: 3d6f95306bbc5fda4183728b3829f88b30f7aa1c"
 ]

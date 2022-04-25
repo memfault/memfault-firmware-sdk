@@ -24,7 +24,10 @@ class Memfault {
   //!   See https://mflt.io/particle-versioning for more details
   //! @param build_metadata Additional build metadata (such as a git short SHA or timestamp)
   //!   to append to the "software_version" reported to Memfault.
-  explicit Memfault(const uint16_t product_version = 0, const char *build_metadata = NULL);
+  //! @param hardware_version When set, overrides the default strategy for reporting the
+  //!  hardware_version using the PLATFORM_NAME compiled against
+  explicit Memfault(const uint16_t product_version = 0, const char *build_metadata = NULL,
+                    const char *hardware_version = NULL);
 
   //! Should be called from your applications loop handler
   //!

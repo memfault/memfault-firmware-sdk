@@ -12,12 +12,17 @@ no action is taken.
 If no Build ID is found, this script will generate a unique ID by computing a SHA1 over the
 contents that will be in the final binary. Once computed, the build ID will be "patched"
 into a read-only struct defined in memfault/core/memfault_build_id.c to hold the info.
+
+If the --crc <symbol_holding_crc32> is used, instead of populating the Memfault Build ID structure,
+the symbol specified will be updated with a CRC32 computed over the contents that will be in the
+final binary.
 """
 
 import argparse
 import hashlib
 import struct
 import sys
+import zlib
 from collections import defaultdict
 from enum import Enum
 
@@ -345,6 +350,92 @@ class BuildIdInspectorAndPatcher:
 
         print(build_id[:num_chars])
 
+    def _generate_crc32_build_id(
+        self, crc32_symbol_section, crc32_symbol_section_offset, crc32_symbol_length=4
+    ):
+        # type: (Section, int, int) -> int
+        crc32 = 0
+
+        for section in self.elf.iter_sections():
+            if not self._helper.section_in_binary(section):
+                continue
+
+            sec_start = section["sh_addr"]
+            crc32 = zlib.crc32(struct.pack("<I", sec_start), crc32) & 0xFFFFFFFF
+
+            sec_type = self._helper.get_section_type(section)
+            if sec_type == SectionType.BSS:
+                # All zeros so just include the length of the section in our sha1
+                length = section["sh_size"]
+                crc32 = zlib.crc32(struct.pack("<I", length), crc32) & 0xFFFFFFFF
+            else:
+                data = section.data()
+
+                # Note: We don't include the crc32 symbol location in the CRC32 so that re-running
+                # this script on an ELF yields a stable result
+                if section["sh_addr"] == crc32_symbol_section["sh_addr"]:
+                    crc32 = zlib.crc32(data[:crc32_symbol_section_offset], crc32) & 0xFFFFFFFF
+                    crc32 = (
+                        zlib.crc32(data[crc32_symbol_section_offset + crc32_symbol_length :], crc32)
+                        & 0xFFFFFFFF
+                    )
+                else:
+                    crc32 = zlib.crc32(data, crc32) & 0xFFFFFFFF
+
+        return crc32
+
+    def check_or_update_crc_build_id(self, crc_symbol_name, dump_only=False):
+        # type: (str, bool) -> None
+        symbol, section = self._helper.find_symbol_and_section(crc_symbol_name)
+        if symbol is None or section is None:
+            raise BuildIdError(
+                "Could not locate '{}' CRC symbol in provided ELF".format(crc_symbol_name)
+            )
+
+        sec_type = self._helper.get_section_type(section)
+        if sec_type != SectionType.TEXT and sec_type != SectionType.DATA:
+            raise BuildIdError(
+                "CRC symbol '{}' in invalid Section '{}'".format(crc_symbol_name, sec_type)
+            )
+
+        section_offset = section["sh_offset"]
+        symbol_offset = self._helper.get_symbol_offset_in_sector(symbol, section)
+        symbol_length = 4
+
+        crc_build_id = self._generate_crc32_build_id(section, symbol_offset, symbol_length)
+
+        endianess_prefix = "<" if self.elf.little_endian else ">"
+        current_crc_build_id = struct.unpack(
+            "{}I".format(endianess_prefix),
+            section.data()[symbol_offset : symbol_offset + symbol_length],
+        )[0]
+
+        if current_crc_build_id == crc_build_id:
+            print(
+                "CRC32 Generated Build ID at '{}' to ELF already written: {}".format(
+                    crc_symbol_name, hex(crc_build_id)
+                )
+            )
+            return
+
+        if dump_only:
+            print("CRC32 Build ID at '{}' is not written".format(crc_symbol_name))
+            return
+
+        crc_build_id_bytes = struct.pack("{}I".format(endianess_prefix), crc_build_id)
+
+        with open(self.elf_file.name, "r+b") as fh:
+            derived_id_patch_offset = section_offset + symbol_offset
+
+            fh.seek(derived_id_patch_offset)
+            fh.write(crc_build_id_bytes)
+
+        print(
+            "Added CRC32 Generated Build ID at '{}' to ELF: {}".format(
+                crc_symbol_name, hex(crc_build_id)
+            )
+        )
+
     def get_build_info(self):
         # type: () -> Tuple[Optional[MemfaultBuildIdTypes], Optional[str], Optional[int]]
         try:
@@ -360,11 +451,17 @@ def main():
     )
     parser.add_argument("elf", action="store")
     parser.add_argument("--dump", nargs="?", const=7, type=int)
+    parser.add_argument("--crc", action="store")
+
     args = parser.parse_args()
+
     with open(args.elf, "rb") as elf_file:
         b = BuildIdInspectorAndPatcher(elf_file=elf_file)
-        if args.dump is None:
-            b.check_or_update_build_id()
+        if args.crc:
+            b.check_or_update_crc_build_id(args.crc, dump_only=args.dump)
+        elif args.dump is None:
+            if args.crc is None:
+                b.check_or_update_build_id()
         else:
             b.dump_build_info(args.dump)
 

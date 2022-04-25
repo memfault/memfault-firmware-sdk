@@ -8,8 +8,8 @@
 //! @brief
 //! Zephyr specific http utility for interfacing with Memfault HTTP utilities
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +56,6 @@ typedef struct {
   bool (*handle_download_complete)(void *user_ctx);
 } sMemfaultOtaUpdateHandler;
 
-
 //! Handler which can be used to run OTA update using Memfault's Release Mgmt Infra
 //! For more details see:
 //!  https://mflt.io/release-mgmt
@@ -90,6 +89,59 @@ int memfault_zephyr_port_get_download_url(char **download_url);
 
 //! Releases the memory returned from memfault_zephyr_port_get_download_url()
 int memfault_zephyr_port_release_download_url(char **download_url);
+
+//!
+//! Utility functions for manually posting memfault data.
+
+//! Context structure used to carry state information about the HTTP connection
+typedef struct {
+  int sock_fd;
+  struct addrinfo *res;
+} sMemfaultHttpContext;
+
+//! Open a socket to the Memfault chunks upload server
+//!
+//! @param ctx If the socket is opened successfully, this will be populated with
+//! the connection state for the other HTTP functions below
+//!
+//! @note After use, memfault_zephyr_port_http_close_socket() must be called
+//!  to close the socket and free any associated memory
+//!
+//! @return
+//!   0 : Success
+//! < 0 : Error
+int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx);
+
+//! Close a socket previously opened with
+//! memfault_zephyr_port_http_open_socket()
+void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx);
+
+//! Test if the socket is open
+bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx);
+
+//! Identical to memfault_zephyr_port_post_data() but uses the already-opened
+//! socket to send data
+//!
+//! @param ctx Connection context previously opened with
+//! memfault_zephyr_port_http_open_socket()
+void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx);
+
+//! Similar to memfault_zephyr_port_http_upload_sdk_data(), but instead of using
+//! the SDK packetizer functions under the hood, send the data passed into this
+//! function.
+//!
+//! Typically this function is used to send data from pre-packetized data; for
+//! example, data that may have been stored outside of the Memfault SDK
+//! internally-managed buffers, or data coming from an external source (another
+//! chip running the Memfault SDK).
+//!
+//! @param ctx Connection context previously opened with
+//! memfault_zephyr_port_http_open_socket()
+//!
+//! @return
+//!   0 : Success
+//! < 0 : Error
+int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len);
 
 #ifdef __cplusplus
 }

@@ -196,3 +196,69 @@ def test_get_build_info(fixture, expected_result):
         assert b.get_build_info() == expected_result
 
         assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
+
+
+def test_crc_build_id_unpopulated(capsys, snapshot):
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
+    result_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_populated.elf")
+
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        b.check_or_update_crc_build_id("g_example_crc32_build_id")
+
+        assert filecmp.cmp(elf_copy_file.name, result_fixture_filename)
+
+    out, _ = capsys.readouterr()
+    lines = out.splitlines()
+    snapshot.assert_match(lines)
+
+
+def test_crc_build_id_unpopulated_dump_only(capsys, snapshot):
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
+
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        b.check_or_update_crc_build_id("g_example_crc32_build_id", dump_only=True)
+
+        # in dump only mode, nothing should change even if there isn't a build id written
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
+
+    out, _ = capsys.readouterr()
+    lines = out.splitlines()
+    snapshot.assert_match(lines)
+
+
+def test_crc_build_id_populated(capsys, snapshot):
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_populated.elf")
+
+    with open_copy(elf_fixture_filename, mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        b.check_or_update_crc_build_id("g_example_crc32_build_id")
+
+        assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
+
+    out, _ = capsys.readouterr()
+    lines = out.splitlines()
+    snapshot.assert_match(lines)
+
+
+def test_crc_build_id_in_bss():
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
+    with open(elf_fixture_filename, "rb") as elf_fixture_file:
+        b = BuildIdInspectorAndPatcher(elf_fixture_file)
+        with pytest.raises(
+            Exception,
+            match="CRC symbol 'g_example_crc32_bss_build_id' in invalid Section 'SectionType.BSS'",
+        ):
+            b.check_or_update_crc_build_id("g_example_crc32_bss_build_id")
+
+
+def test_crc_build_id_symbol_dne():
+    elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
+    with open(elf_fixture_filename, "rb") as elf_fixture_file:
+        b = BuildIdInspectorAndPatcher(elf_fixture_file)
+        with pytest.raises(
+            Exception,
+            match="Could not locate 'g_nonexistent_bss_build_id' CRC symbol in provided ELF",
+        ):
+            b.check_or_update_crc_build_id("g_nonexistent_bss_build_id")

@@ -287,7 +287,7 @@ static void prv_memfault_reboot_reason_get(sResetBootupInfo *info) {
       break;
     case RESET_REASON_POWER_DOWN:
     case RESET_REASON_POWER_MANAGEMENT:
-      reset_reason = kMfltRebootReason_LowPower;
+      reset_reason = kMfltRebootReason_UserShutdown;
       break;
     case RESET_REASON_POWER_BROWNOUT:
       reset_reason = kMfltRebootReason_BrownOutReset;
@@ -497,7 +497,7 @@ void memfault_platform_reboot_tracking_boot(void) {
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_reason);
 }
 
-Memfault::Memfault(const uint16_t product_version, const char *build_metadata)
+Memfault::Memfault(const uint16_t product_version, const char *build_metadata, const char *hardware_version)
     : m_connected(false) {
 
   System.enableFeature(FEATURE_RESET_INFO);
@@ -506,10 +506,15 @@ Memfault::Memfault(const uint16_t product_version, const char *build_metadata)
   System.on(cloud_status, &Memfault::handle_cloud_connectivity_event, this);
 
   // Grab the revision of the particle board being used for a given product type.
-  uint32_t hw_version_id = 0;
-  hal_get_device_hw_version(&hw_version_id, NULL);
-  snprintf(s_hardware_version, sizeof(s_hardware_version), "%s-rev%d",
-           PRODUCT_SERIES, (int)hw_version_id);
+  if (hardware_version == NULL) {
+    // Use default hardware_version scheme
+    uint32_t hw_version_id = 0;
+    hal_get_device_hw_version(&hw_version_id, NULL);
+    snprintf(s_hardware_version, sizeof(s_hardware_version), "%s-rev%d",
+             MEMFAULT_EXPAND_AND_QUOTE(PLATFORM_NAME), (int)hw_version_id);
+  } else {
+    snprintf(s_hardware_version, sizeof(s_hardware_version), "%s", hardware_version);
+  }
 
   // Uniquely identifies a firmware version running on a device.
   //
