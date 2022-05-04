@@ -16,7 +16,7 @@ executors:
   memfault-ci:
     docker:
       # TODO: create separate docker image + public Dockerfile
-      - image: memfault/ci:3.2.0
+      - image: memfault/ci:3.2.3
     working_directory: ~/repo
 
 commands:

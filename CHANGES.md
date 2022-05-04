@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.30.4 and SDK 0.30.3 - May 4, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- minor updates to [`scripts/eclipse_patch.py`](scripts/eclipse_patch.py) to
+  support NXP's MCUXpresso IDE
+
 ### Changes between Memfault SDK 0.30.3 and SDK 0.30.2 - April 25, 2022
 
 #### :chart_with_upwards_trend: Improvements

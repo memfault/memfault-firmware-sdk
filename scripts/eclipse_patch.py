@@ -20,6 +20,15 @@ def get_depth_from_parent(project_dir, memfault_dir):
     common_prefix = os.path.commonprefix([memfault_dir, project_dir])
     depth = 1
     dirname = project_dir
+
+    # some projects are in the root of the project dir- if the memfault dir is
+    # in the same directory, return a PROJECT_LOC value of 0 for the link
+    # position
+    if dirname == common_prefix:
+        return dirname, 0
+
+    # for the normal case, walk the directory parents until we find the common
+    # parent for the project and memfault dirs
     while True:
         parent_dir = os.path.dirname(dirname)
         if os.path.samefile(parent_dir, common_prefix):
@@ -100,8 +109,9 @@ def files_to_link(dir_glob, virtual_dir, common_prefix, parent_dir):
         # Note:
         #  - xtensa targets (i.e ESP) use CMake/Make so no need to add to eclipse based projects
         #  - skip adding "memfault_demo_http" from demo component
-        if "xtensa" in file_name or "http" in file_name:
+        if "xtensa" in file_name or ("http" in os.path.relpath(file_name, start=common_prefix)):
             continue
+        logging.debug("Adding %s", file_name)
 
         yield get_file_element(file_name, virtual_dir, common_prefix, parent_dir)
 
@@ -257,7 +267,13 @@ def patch_cproject(
 
     def _find_include_nodes(option):
         return option.get("id", "").startswith(
-            "ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths"
+            (
+                # this is the element id used by Dialog's Smart Snippets Studio
+                # IDE (and possibly others)
+                "ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths",
+                # this is the element id used by NXP's MCUXpresso IDE
+                "gnu.c.compiler.option.include.paths",
+            )
         )
 
     memfault_sdk_include_paths = [
@@ -313,7 +329,11 @@ def patch_cproject(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        format="%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
+        datefmt="%Y-%m-%d:%H:%M:%S",
+        level=logging.INFO,
+    )
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""
@@ -344,7 +364,10 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
     parser.add_argument(
         "-l",
         "--location-prefix",
-        help="The default behavior will add memfault-firmware-sdk files to the eclipse project using paths relative to the project root. This can be used to control the root used instead",
+        help=(
+            "The default behavior will add memfault-firmware-sdk files to the eclipse project using"
+            " paths relative to the project root. This can be used to control the root used instead"
+        ),
     )
 
     parser.add_argument(
@@ -356,7 +379,10 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
 
     parser.add_argument(
         "--output",
-        help="The directory to output result to. By default, the .project/.cproject files for the project will be overwritten",
+        help=(
+            "The directory to output result to. By default, the .project/.cproject files for the"
+            " project will be overwritten"
+        ),
     )
     parser.add_argument(
         "--verbose",
@@ -399,5 +425,6 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
     )
 
     logging.info(
-        "Hurray, .project & .cproject have been succesfully patched! Be sure to 'Refresh' project to synchronize changes!"
+        "Hurray, .project & .cproject have been succesfully patched! Be sure to 'Refresh' project"
+        " to synchronize changes!"
     )

@@ -170,7 +170,7 @@ static void prv_example_task(void *args) {
     // disable the task watchdog now that this task is done in this run
     MEMFAULT_TASK_WATCHDOG_STOP(example_task);
 
-    vTaskDelay(250 / portTICK_PERIOD_MS);
+    vTaskDelay(interval_ms / portTICK_PERIOD_MS);
   }
 }
 
