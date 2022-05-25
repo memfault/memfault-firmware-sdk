@@ -162,3 +162,10 @@ the top for build & test coverage status of the `master` branch.
 
   - Don't hesitate to contact us for help! You can reach us through
     [support@memfault.com](mailto:support@memfault.com).
+
+# License
+
+Unless specifically indicated otherwise in a file, all memfault-firmware-sdk
+files are all licensed under the [Memfault License](/License.txt). (A few files
+in the [examples](/examples) and [ports](/ports) directory are licensed
+differently based on vendor requirements.)

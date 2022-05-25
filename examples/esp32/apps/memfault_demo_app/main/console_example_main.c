@@ -241,6 +241,10 @@ void app_main() {
   register_wifi();
   register_app();
 
+  #if MEMFAULT_COMPACT_LOG_ENABLE
+  MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
+  #endif
+
   /* Prompt to be printed before each line.
    * This can be customized, made dynamic, etc.
    */

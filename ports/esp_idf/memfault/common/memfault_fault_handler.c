@@ -10,6 +10,7 @@
 
 #include "esp_core_dump.h"
 #include "freertos/xtensa_api.h"
+#include "memfault/esp_port/version.h"
 #include "memfault/panics/arch/xtensa/xtensa.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
@@ -35,7 +36,15 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! @note This is a drop in replacement for the pre-existing flash coredump handler.
 //! The default implementation is replaced by leveraging GCCs --wrap feature
 //!    https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/panic.c#L620
+//!
+//! @note The signature for the wrapped function changed in esp-idf v4.3+,
+//! support that change with a version check (see static assert below)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,3,0)
+void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
+  XtExcFrame *fp = (void *)info->frame;
+#else
 void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
+#endif
   // Clear "EXCM" bit so we don't have to correct PS.OWB to get a good unwind This will also be
   // more reflective of the state of the register prior to the "panicHandler" being invoked
   const uint32_t corrected_ps = fp->ps & ~(PS_EXCM_MASK);
@@ -76,3 +85,8 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
 
   memfault_fault_handler(&regs, kMfltRebootReason_HardFault);
 }
+
+// Ensure the substituted function signature matches the original function
+_Static_assert(__builtin_types_compatible_p(__typeof__(&esp_core_dump_to_flash),
+                                            __typeof__(&__wrap_esp_core_dump_to_flash)),
+               "Error: core dump handler is not compatible with esp-idf's default implementation");

@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 0.30.5 and SDK 0.30.4 - May 24, 2022
+
+#### :rocket: New Features
+
+- ESP-IDF: add Memfault Compact Log example integration to the
+  [`examples/esp32`](examples/esp32) project
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF: Fix backtraces when using ESP-IDF v4.4+
+- nRF-Connect SDK: enable the Kconfig flag `MEMFAULT_NRF_CONNECT_SDK` by default
+  when targeting the nrf52 + nrf53 series SOCs (previously only enabled by
+  default for nrf91 series)
+
+#### :house: Internal
+
+Added clarifications around licensing in ports and examples folders. See
+[README](README.md) for more details.
+
 ### Changes between Memfault SDK 0.30.4 and SDK 0.30.3 - May 4, 2022
 
 #### :chart_with_upwards_trend: Improvements

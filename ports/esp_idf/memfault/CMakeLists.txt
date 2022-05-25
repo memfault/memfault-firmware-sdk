@@ -85,3 +85,11 @@ component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HT
 #   Much more flexibility in debug information collected (e.g. all RAM, just the current stack trace, select stacks and variables)
 #   Data can be posted directly from device to Memfault cloud for deduplication and analysis
 target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_core_dump_to_flash -Wl,--wrap=esp_core_dump_init -Wl,--wrap=esp_core_dump_image_get")
+
+# Include a linker script fragment to support compact logs, when enabled
+get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
+target_link_libraries(
+    ${this_component}
+    INTERFACE
+    -T ${compact_log_linker_script}
+)

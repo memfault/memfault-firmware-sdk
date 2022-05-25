@@ -27,6 +27,14 @@ $ west build -b nrf9160dk_nrf9160_ns memfault_demo_app
 Note that you will need to use `nrf9160dk_nrf9160ns` instead on
 versions of NCS based on Zephyr 2.6 and earlier.
 
+And on versions of NCS based on Zephyr 2.5 and earlier,
+`CONFIG_OPENOCD_SUPPORT=y` should be set, for example:
+
+```bash
+# NCS v1.4.0, which uses Zephyr 2.5, requires this build command
+$ BOARD=nrf9160dk_nrf9160ns west build -b nrf9160dk_nrf9160ns memfault_demo_app -- -DCONFIG_OPENOCD_SUPPORT=y
+```
+
 ## Testing the Integration
 
 Commands to test the integration are exposed under the `mflt` submenu in the CLI
