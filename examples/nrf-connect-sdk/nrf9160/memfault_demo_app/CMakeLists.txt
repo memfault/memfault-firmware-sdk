@@ -38,8 +38,10 @@ if (NCS_VERSION_MAJOR)
     set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
   endif()
 
-  # These were removed in NCS 1.9, but are needed prior to that.
-  if (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 9 AND ${NCS_VERSION_PATCH} LESS 99)
+  # These were removed in NCS 1.8.0, but are needed prior to that. Enable them
+  # if NCS version <1.7.99 (.99 patch version is used for the next revision's
+  # development series)
+  if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.7.99)
     set(CONFIG_BSD_LIBRARY y CACHE INTERNAL "")
     set(CONFIG_BSD_LIBRARY_SYS_INIT n CACHE INTERNAL "")
     # ^ Note: CONFIG_BSD_ were renamed to _NRF_MODEM_ in

@@ -3,16 +3,18 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-extern "C" {
-  #include <string.h>
-  #include <stddef.h>
+#include <string.h>
+#include <stddef.h>
 
-  #include "memfault/core/math.h"
-  #include "memfault/core/platform/debug_log.h"
-  #include "memfault/demo/cli.h"
-  #include "memfault/http/http_client.h"
-  #include "memfault/panics/platform/coredump.h"
-  #include "mocks/mock_memfault_coredump.h"
+#include "memfault/core/math.h"
+#include "memfault/core/platform/debug_log.h"
+#include "memfault/demo/cli.h"
+#include "memfault/http/http_client.h"
+#include "memfault/panics/platform/coredump.h"
+#include "mocks/mock_memfault_coredump.h"
+
+int memfault_http_client_post_chunk(void) {
+  return 0;
 }
 
 sMfltHttpClientConfig g_mflt_http_client_config = {

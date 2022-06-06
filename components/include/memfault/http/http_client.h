@@ -98,6 +98,12 @@ typedef enum {
 //! if no data was found or else an error code.
 int memfault_http_client_post_data(sMfltHttpClient *client);
 
+//! Create a http client, post a chunk of data and then teardown the connection
+//!
+//! @return kMfltPostDataStatus_Success on success, kMfltPostDataStatus_NoDataFound
+//! if no data was found or else an error code.
+int memfault_http_client_post_chunk(void);
+
 //! Waits until pending requests have been completed.
 //! @param client The http client.
 //! @return 0 on success, else error code

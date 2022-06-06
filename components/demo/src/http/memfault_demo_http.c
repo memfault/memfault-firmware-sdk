@@ -27,20 +27,5 @@ const char *memfault_demo_get_api_project_key(void) {
 int memfault_demo_cli_cmd_post_core(MEMFAULT_UNUSED int argc,
                                     MEMFAULT_UNUSED char *argv[]) {
   MEMFAULT_LOG_INFO("Posting Memfault Data...");
-  sMfltHttpClient *http_client = memfault_http_client_create();
-  if (!http_client) {
-    MEMFAULT_LOG_ERROR("Failed to create HTTP client");
-    return MemfaultInternalReturnCode_Error;
-  }
-
-  const int rv = memfault_http_client_post_data(http_client);
-  if ((eMfltPostDataStatus)rv == kMfltPostDataStatus_NoDataFound) {
-    MEMFAULT_LOG_INFO("No new data found");
-  } else {
-    MEMFAULT_LOG_INFO("Result: %d", rv);
-  }
-  const uint32_t timeout_ms = 30 * 1000;
-  memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);
-  memfault_http_client_destroy(http_client);
-  return rv;
+  return memfault_http_client_post_chunk();
 }

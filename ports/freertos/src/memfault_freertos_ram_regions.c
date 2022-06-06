@@ -15,10 +15,10 @@
 //!    {
 //!        _sbss = . ;
 //!        __bss_start__ = _sbss;
-//!        __memfault_capture_start = .;
+//!        __memfault_capture_bss_start = .;
 //!         *tasks.o(.bss COMMON .bss*)
 //!         *timers*.o(.bss COMMON .bss*)
-//!        __memfault_capture_end = .;
+//!        __memfault_capture_bss_end = .;
 //!
 //! 2) Add this file to your build and update FreeRTOSConfig.h to
 //!    include "memfault/ports/freertos_trace.h"
@@ -57,17 +57,21 @@
 //!          active_stack_size_to_collect));
 //!     region_idx++;
 //!
-//!     extern uint32_t __memfault_capture_start;
-//!     extern uint32_t __memfault_capture_end;
-//!     const size_t memfault_region_size = (uint32_t)&__memfault_capture_end -
-//!         (uint32_t)&__memfault_capture_start;
+//!     extern uint32_t __memfault_capture_bss_start;
+//!     extern uint32_t __memfault_capture_bss_end;
+//!     const size_t memfault_region_size = (uint32_t)&__memfault_capture_bss_end -
+//!         (uint32_t)&__memfault_capture_bss_start;
 //!
 //!     s_coredump_regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-//!        &__memfault_capture_start, memfault_region_size);
+//!        &__memfault_capture_bss_start, memfault_region_size);
 //!     region_idx++;
 //!
 //!     region_idx += memfault_freertos_get_task_regions(&s_coredump_regions[region_idx],
 //!         MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+//!
+//!     *num_regions = region_idx;
+//!     return &s_coredump_regions[0];
+//!   }
 
 #include "memfault/ports/freertos_coredump.h"
 
