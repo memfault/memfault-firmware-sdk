@@ -39,6 +39,16 @@ size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_
 //!  be <= num_regions
 size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num_regions);
 
+//! Run the Zephyr z_fatal_error function. This is used to execute the Zephyr
+//! error console prints, which are suppressed due to the Memfault fault handler
+//! replacing the z_fatal_error function at link time.
+//!
+//! This can be useful when locally debugging without a debug probe connected.
+//! It's called as part of the built-in implementation of
+//! memfault_platform_reboot(); if a user-implemented version of that function
+//! is used, this function can be called from there.
+void memfault_zephyr_z_fatal_error(void);
+
 #ifdef __cplusplus
 }
 #endif

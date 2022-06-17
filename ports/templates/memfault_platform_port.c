@@ -105,13 +105,18 @@ int memfault_platform_boot(void) {
   memfault_device_info_dump();
   memfault_platform_reboot_tracking_boot();
 
+  // initialize the event storage buffer
   static uint8_t s_event_storage[1024];
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+
+  // configure trace events to store into the buffer
   memfault_trace_event_boot(evt_storage);
 
+  // record the current reboot reason
   memfault_reboot_tracking_collect_reset_info(evt_storage);
 
+  // configure the metrics component to store into the buffer
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };

@@ -1,12 +1,30 @@
+### Changes between Memfault SDK 0.31.1 and SDK 0.31.0 - June 16, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Enable the Zephyr fault handler (including console fault prints) after
+  Memfault handler runs. Can be disabled by implementing
+  `memfault_platform_reboot()`. See details in
+  [ports/zephyr/include/memfault/ports/zephyr/coredump.h](ports/zephyr/include/memfault/ports/zephyr/coredump.h)
+
+#### :house: Internal
+
+- Fixed compiler error in
+  [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app)
+  when compiling with the nRF Connect SDK v2.0.0 release
+
 ### Changes between Memfault SDK 0.31.0 and SDK 0.30.5 - June 6, 2022
 
 #### :chart_with_upwards_trend: Improvements
 
-- Added reference port for [CAT1A (PSoC:tm: 6)](https://github.com/Infineon/mtb-pdl-cat1) based
-  MCUs using the
+- Added reference port for
+  [CAT1A (PSoC:tm: 6)](https://github.com/Infineon/mtb-pdl-cat1) based MCUs
+  using the
   [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
-  stack. For more details see [ports/cypress/psoc6](ports/cypress/psoc6) directory.
-- - Added a convenience utility function for posting chunks using the Memfault http client. See
+  stack. For more details see [ports/cypress/psoc6](ports/cypress/psoc6)
+  directory.
+- Added a convenience utility function for posting chunks using the Memfault
+  http client. See
   [`memfault_http_client_post_chunk`](components/include/memfault/http/http_client.h#L101)
   for more details!
 

@@ -6,20 +6,20 @@
 //! Example configuration of Zephyr hardware watchdog with Memfault software watchdog
 //! port such that a coredump is captured ahead of the hardware watchdog firing
 
-#include <zephyr.h>
-#include <device.h>
-#include <version.h>
+#include "memfault/ports/watchdog.h"
 
+#include <device.h>
 #include <drivers/watchdog.h>
+#include <version.h>
+#include <zephyr.h>
 
 #include "memfault/core/debug_log.h"
-#include "memfault/ports/watchdog.h"
 
 //! Note: The timeout must be large enough to give us enough time to capture a coredump
 //! before the system resets
 #define MEMFAULT_WATCHDOG_HW_TIMEOUT_SECS (MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS + 10)
 
-#define WDT_MAX_WINDOW  (MEMFAULT_WATCHDOG_HW_TIMEOUT_SECS * 1000)
+#define WDT_MAX_WINDOW (MEMFAULT_WATCHDOG_HW_TIMEOUT_SECS * 1000)
 
 #define WATCHDOG_TASK_STACK_SIZE 512
 K_THREAD_STACK_DEFINE(s_wdt_task_stack_area, WATCHDOG_TASK_STACK_SIZE);
@@ -32,10 +32,21 @@ static const struct device *s_wdt = NULL;
 #endif
 
 #if KERNEL_VERSION_MAJOR == 2 && KERNEL_VERSION_MINOR < 3
-#define WDT_DEV_NAME DT_WDT_0_NAME
+  #define WDT_DEV_NAME DT_WDT_0_NAME
 #else
-#define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
-#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
+  //! Watchdog device tree name changed in NCS v2.0.0 :
+  //! https://github.com/nrfconnect/sdk-zephyr/blob/12ee4d5f4b99acef542ce3977cb9078fcbb36d82/dts/arm/nordic/nrf9160_common.dtsi#L368
+  //! Pick the one that's available in the current SDK version.
+  #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
+    #define WDT_NODE_NAME nordic_nrf_wdt
+  #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
+    #define WDT_NODE_NAME nordic_nrf_watchdog
+  #else
+    #error "No compatible watchdog instance for this configuration!"
+  #endif
+
+  #define WDT_NODE DT_INST(0, WDT_NODE_NAME)
+  #define WDT_DEV_NAME DT_LABEL(WDT_NODE)
 #endif
 
 static int s_wdt_channel_id = -1;
@@ -51,8 +62,8 @@ void memfault_demo_app_watchdog_feed(void) {
 
 //! A basic watchdog implementation
 //!
-//! Once Zephyr has a Software & Task watchdog in place, the example will be updated to make use of that
-//! For more info about watchdog setup in general, see https://mflt.io/root-cause-watchdogs
+//! Once Zephyr has a Software & Task watchdog in place, the example will be updated to make use of
+//! that For more info about watchdog setup in general, see https://mflt.io/root-cause-watchdogs
 static void prv_wdt_task(void *arg1, void *arg2, void *arg3) {
   while (1) {
     k_sleep(K_SECONDS(1));
@@ -97,8 +108,6 @@ void memfault_demo_app_watchdog_boot(void) {
   // cause the watchdog to not be fed
   memfault_software_watchdog_enable();
   k_thread_create(&my_thread_data, s_wdt_task_stack_area,
-                  K_THREAD_STACK_SIZEOF(s_wdt_task_stack_area),
-                  prv_wdt_task,
-                  NULL, NULL, NULL,
+                  K_THREAD_STACK_SIZEOF(s_wdt_task_stack_area), prv_wdt_task, NULL, NULL, NULL,
                   K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 }
