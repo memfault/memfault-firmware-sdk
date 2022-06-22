@@ -96,7 +96,7 @@ int memfault_zephyr_port_release_download_url(char **download_url);
 //! Context structure used to carry state information about the HTTP connection
 typedef struct {
   int sock_fd;
-  struct addrinfo *res;
+  struct zsock_addrinfo *res;
 } sMemfaultHttpContext;
 
 //! Open a socket to the Memfault chunks upload server
