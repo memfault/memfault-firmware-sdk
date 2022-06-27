@@ -1,0 +1,40 @@
+From 4a4a13fa00ef0d04d9be239d145ddeb173ac72a1 Mon Sep 17 00:00:00 2001
+From: Memfault Inc <hello@memfault.com>
+Date: Thu, 23 Jun 2022 10:45:20 -0400
+Subject: [PATCH] Patch for stm32l4_disco wifi on Zephyr 2.5.1
+
+This patch is for Zephyr v2.5-branch
+(52e06334fbeabd5d764935c1fc47d7225216fff4), and fixes the
+eswifi driver for the Memfault demo app.
+---
+ drivers/wifi/eswifi/Kconfig.eswifi  | 2 +-
+ drivers/wifi/eswifi/eswifi_socket.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/wifi/eswifi/Kconfig.eswifi b/drivers/wifi/eswifi/Kconfig.eswifi
+index 6468b98113..5f80c918cd 100644
+--- a/drivers/wifi/eswifi/Kconfig.eswifi
++++ b/drivers/wifi/eswifi/Kconfig.eswifi
+@@ -9,7 +9,7 @@ menuconfig WIFI_ESWIFI
+ 	select WIFI_OFFLOAD
+ 	select NET_OFFLOAD
+ 	select NET_SOCKETS
+-	select NET_SOCKETS_OFFLOAD
++	imply NET_SOCKETS_OFFLOAD
+ 	select GPIO
+ 
+ if WIFI_ESWIFI
+diff --git a/drivers/wifi/eswifi/eswifi_socket.c b/drivers/wifi/eswifi/eswifi_socket.c
+index e31ca0eecd..a3705535ab 100644
+--- a/drivers/wifi/eswifi/eswifi_socket.c
++++ b/drivers/wifi/eswifi/eswifi_socket.c
+@@ -302,5 +302,6 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
+ 	socket->usage = 1;
+ 	LOG_DBG("Socket index %d", socket->index);
+ 
++	net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+ 	return socket->index;
+ }
+-- 
+2.36.1
+

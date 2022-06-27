@@ -26,55 +26,64 @@ Step-by-step instructions can be found in the
 
 1. Clone the repo
 
-```bash
-$ git clone git@github.com:zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
-```
+   ```bash
+   $ git clone git@github.com:zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
+   ```
 
 2. Create a virtual environment
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r zephyr/scripts/requirements.txt
-```
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r zephyr/scripts/requirements.txt
+   ```
 
 3. Initialize a new build environment:
 
-```bash
-$ west init -l zephyr/
-$ west update
-```
+   ```bash
+   $ west init -l zephyr/
+   $ west update
+   ```
 
 4. When using the STM32L4 discovery board, the following patch is also needed
    due to bugs in the stack:
 
-```diff
-diff --git a/drivers/wifi/eswifi/Kconfig.eswifi b/drivers/wifi/eswifi/Kconfig.eswifi
-index 6468b98113..5f80c918cd 100644
---- a/drivers/wifi/eswifi/Kconfig.eswifi
-+++ b/drivers/wifi/eswifi/Kconfig.eswifi
-@@ -9,7 +9,7 @@ menuconfig WIFI_ESWIFI
-        select WIFI_OFFLOAD
-        select NET_OFFLOAD
-        select NET_SOCKETS
--       select NET_SOCKETS_OFFLOAD
-+       imply NET_SOCKETS_OFFLOAD
-        select GPIO
+   ```diff
+   diff --git a/drivers/wifi/eswifi/Kconfig.eswifi b/drivers/wifi/eswifi/Kconfig.eswifi
+   index 6468b98113..5f80c918cd 100644
+   --- a/drivers/wifi/eswifi/Kconfig.eswifi
+   +++ b/drivers/wifi/eswifi/Kconfig.eswifi
+   @@ -9,7 +9,7 @@ menuconfig WIFI_ESWIFI
+           select WIFI_OFFLOAD
+           select NET_OFFLOAD
+           select NET_SOCKETS
+   -       select NET_SOCKETS_OFFLOAD
+   +       imply NET_SOCKETS_OFFLOAD
+           select GPIO
 
- if WIFI_ESWIFI
-diff --git a/drivers/wifi/eswifi/eswifi_socket.c b/drivers/wifi/eswifi/eswifi_socket.c
-index e31ca0eecd..119f55778d 100644
---- a/drivers/wifi/eswifi/eswifi_socket.c
-+++ b/drivers/wifi/eswifi/eswifi_socket.c
-@@ -301,6 +301,6 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
-        k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
-        socket->usage = 1;
-        LOG_DBG("Socket index %d", socket->index);
--
-+       net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
-        return socket->index;
- }
-```
+    if WIFI_ESWIFI
+   diff --git a/drivers/wifi/eswifi/eswifi_socket.c b/drivers/wifi/eswifi/eswifi_socket.c
+   index e31ca0eecd..119f55778d 100644
+   --- a/drivers/wifi/eswifi/eswifi_socket.c
+   +++ b/drivers/wifi/eswifi/eswifi_socket.c
+   @@ -301,6 +301,6 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
+           k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
+           socket->usage = 1;
+           LOG_DBG("Socket index %d", socket->index);
+   -
+   +       net_context_set_state(socket->context, NET_CONTEXT_CONNECTED);
+           return socket->index;
+    }
+   ```
+
+   You can find this patch at
+   [`stm32l4_disco_zephyr2.5_wifi.patch`](./stm32l4_disco_zephyr2.5_wifi.patch),
+   which can be applied by this command (assuming the `zephyr` repo is in the
+   current working directory):
+
+   ```bash
+   git -C zephyr apply < stm32l4_disco_zephyr2.5_wifi.patch
+   ```
 
 ### Memfault Project Key
 
@@ -87,7 +96,7 @@ https://app.memfault.com/, navigate to the project you want to use and select
 
 ### Building
 
-```
+```bash
 $ cd $MEMFAULT_SDK/examples/zephyr/
 $ west build -b disco_l475_iot1 apps/memfault_demo_app
 [...]
@@ -119,7 +128,7 @@ arm-none-eabi-gdb-py --eval-command="target remote localhost:2331"  --ex="mon re
 
 At this point, the application should be running and you can open a console:
 
-```
+```bash
 $ miniterm.py /dev/cu.usbmodem* 115200 --raw
 *** Booting Zephyr OS build zephyr-v2.5.0-56-gec0aa8331a65  ***
 <inf> <mflt>: GNU Build ID: c20cef04e29e3ae7784002c3650d48f3a0b7b07d

@@ -1,3 +1,14 @@
+### Changes between Memfault SDK 0.31.2 and SDK 0.31.1 - June 24, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fixed a :bug: in the
+  [Zephyr port HTTP implementation](ports/zephyr/common/memfault_platform_http.c),
+  where a socket file descriptor was leaked. This caused every HTTP operation
+  after the first to fail on Zephyr platforms.
+- Added an update to improve the quality of stack traces when using
+  `MEMFAULT_ASSERT` with the TI ARM Clang Compiler
+
 ### Changes between Memfault SDK 0.31.1 and SDK 0.31.0 - June 16, 2022
 
 #### :chart_with_upwards_trend: Improvements

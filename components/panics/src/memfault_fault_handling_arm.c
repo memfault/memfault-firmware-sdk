@@ -565,12 +565,24 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
 MEMFAULT_NO_OPT
 void memfault_fault_handling_assert(void *pc, void *lr) {
   prv_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
-  MEMFAULT_UNREACHABLE;
+
+#if (defined(__clang__) && defined(__ti__))
+  //! tiarmclang does not respect the no optimization request and will
+  //! strip the pushing callee saved registers making it impossible to recover
+  //! an accurate backtrace so we skip over providing the unreachable hint.
+#else
+    MEMFAULT_UNREACHABLE;
+#endif
 }
 MEMFAULT_NO_OPT
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   prv_fault_handling_assert(pc, lr, extra_info->assert_reason);
-  MEMFAULT_UNREACHABLE;
+
+#if (defined(__clang__) && defined(__ti__))
+  //! See comment in memfault_fault_handling_assert for more context
+#else
+    MEMFAULT_UNREACHABLE;
+#endif
 }
 
 #endif /* MEMFAULT_COMPILER_ARM */

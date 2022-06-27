@@ -191,8 +191,8 @@ static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
   return true;
 }
 
-static int prv_open_socket(struct addrinfo **res, const char *host, int port_num) {
-  struct addrinfo hints = {
+static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int port_num) {
+  struct zsock_addrinfo hints = {
     .ai_family = AF_INET,
     .ai_socktype = SOCK_STREAM,
   };
@@ -559,6 +559,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 
 int memfault_zephyr_port_post_data(void) {
   sMemfaultHttpContext ctx = {0};
+  ctx.sock_fd = -1;
 
   int rv = memfault_zephyr_port_http_open_socket(&ctx);
   if (rv < 0) {
@@ -589,10 +590,10 @@ int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
 }
 
 void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
-  if (ctx->sock_fd > 0) {
+  if (ctx->sock_fd >= 0) {
     close(ctx->sock_fd);
   }
-  ctx->sock_fd = 0;
+  ctx->sock_fd = -1;
 
   if (ctx->res != NULL) {
     freeaddrinfo(ctx->res);
@@ -600,7 +601,7 @@ void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
   }
 }
 
-bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) { return ctx->sock_fd > 0; }
+bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) { return ctx->sock_fd >= 0; }
 
 void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   int max_messages_to_send = 5;
@@ -630,11 +631,11 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
   memfault_http_start_chunk_post(prv_send_data, &(ctx->sock_fd), data_len);
 
   if (!prv_try_send(ctx->sock_fd, p_data, data_len)) {
-    return -1;
+    return -2;
   }
 
   if (!prv_wait_for_http_response(ctx->sock_fd)) {
-    return -1;
+    return -3;
   }
 
   return 0;
