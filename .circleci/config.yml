@@ -53,7 +53,12 @@ jobs:
     executor: memfault-ci
     steps:
       - prepare
+      # run the tests with the sanitizer enabled first
       - run: inv -e test --coverage
+      # now clean, and re-run with the sanitizer disabled- it adds extra
+      # branches that cannot be hit in a normal run, impacting coverage statistics
+      - run: git clean -dxff
+      - run: MEMFAULT_DISABLE_ASAN=1 inv -e test --coverage
       - run: curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN} -n ${CIRCLE_BUILD_NUM} -Z || echo 'Codecov upload failed'
 
 workflows:
