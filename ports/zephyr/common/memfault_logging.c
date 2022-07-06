@@ -41,10 +41,12 @@ static const uint32_t g_flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
 
 // Construct our backend API object. Might need to check how/if we want to support
 // put_sync_string() & dropped().
+#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
 static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg);
 static void prv_log_put_sync_string(const struct log_backend *const backend,
                             struct log_msg_ids src_level, uint32_t timestamp,
                             const char *fmt, va_list ap);
+#endif
 static void prv_log_panic(struct log_backend const *const backend);
 
 
@@ -67,10 +69,12 @@ const struct log_backend_api log_backend_mflt_api = {
 #if MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
   .process          = IS_ENABLED(CONFIG_LOG2) ? prv_log_process : NULL,
 #endif
+#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
   .put              = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_put,
   .put_sync_string  = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? prv_log_put_sync_string : NULL,
   // Note: We don't want to clutter Memfault circular buffer with hex dumps
   .put_sync_hexdump = NULL,
+#endif
   .panic            = prv_log_panic,
   .init             = prv_log_init,
   .dropped          = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_dropped,
@@ -89,6 +93,7 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   return (int) length;
 }
 
+#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
 static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephyr_level) {
   //     Map             From            To
   return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error
@@ -96,10 +101,12 @@ static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephy
        : zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info
        :              /* LOG_LEVEL_DBG */kMemfaultPlatformLogLevel_Debug;
 }
+#endif
 
 // *** Below are the implementations for the Zephyr backend API ***
 
 // Zephyr API function. I'm assuming <msg> has been validated by the time put() is called.
+#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
 static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg) {
   // Acquire, process (eventually calls prv_data_out()) and release the message.
   log_msg_get(msg);
@@ -127,6 +134,7 @@ static void prv_log_put_sync_string(const struct log_backend *const backend,
   eMemfaultPlatformLogLevel memfault_level = prv_map_zephyr_level_to_memfault(src_level.level);
   memfault_vlog_save(memfault_level, fmt, ap);
 }
+#endif
 
 static void prv_log_panic(struct log_backend const *const backend) {
   log_output_flush(&s_log_output_mflt);
