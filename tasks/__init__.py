@@ -37,8 +37,21 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
     if test_filter:
         env_dict["TEST_MAKEFILE_FILTER"] = test_filter
 
+    # Unit tests currently don't reliably pass when running Make in parallel 😢
+    cpus = 1
+    # if os.getenv("CIRCLECI"):
+    #     # getting the number of cpus available to the circleci executor from
+    #     # within the docker container is a hassle, so bail and use 2 cpus
+    #     cpus = 2
+    # else:
+    #     cpus = len(os.sched_getaffinity(0))
+
     with ctx.cd(test_dir):
-        ctx.run("make {}".format(rule), env=env_dict, pty=True)
+        ctx.run(
+            "make -j {} --output-sync=recurse {}".format(cpus, rule),
+            env=env_dict,
+            pty=True,
+        )
 
 
 ns = Collection()

@@ -1,10 +1,18 @@
 # Memfault for ESP32
 
-This example application shows an integration with the ESP-IDF v3.3.5 SDK where
+This example application shows an integration with the ESP-IDF v4.2.2 SDK where
 a saved coredump is posted to the Memfault cloud for analysis.
 
 If you already have an ESP-IDF project based on the v4.x or v3.x SDK, a step by
 step getting started guide can be found [here](https://mflt.io/esp-tutorial).
+
+The Memfault SDK has been tested to be compatible with these versions of
+ESP-IDF:
+
+- v3.x release series
+- v4.x release series through v4.4.1
+
+Other versions may be also be compatible but have not been verified by Memfault.
 
 The memfault SDK hooks into the pre-existing mechanism for
 [saving coredumps](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/core_dump.html).

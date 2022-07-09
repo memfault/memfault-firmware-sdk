@@ -15,8 +15,7 @@ version: 2.1
 executors:
   memfault-ci:
     docker:
-      # TODO: create separate docker image + public Dockerfile
-      - image: memfault/ci:3.2.3
+      - image: memfault/memfault-firmware-sdk-ci:0.0.1
     working_directory: ~/repo
 
 commands:
@@ -26,7 +25,6 @@ commands:
           name: Set environment variables and source virtualenv
           command: |
             if [ -f /circleci/.bashrc_circleci ]; then
-              touch .nvmrc
               cat /circleci/.bashrc_circleci >> $BASH_ENV
             fi
 
@@ -43,21 +41,9 @@ commands:
             - ~/venv
           key: v3-pip-dependencies-{{ checksum "requirements.txt" }}
 
-  # TODO: move into Dockerfile
-  lcov_install:
-    steps:
-      - run:
-          name: Install lcov 1.14
-          command: |
-            LCOV_SHA256SUM=14995699187440e0ae4da57fe3a64adc0a3c5cf14feab971f8db38fb7d8f071a
-            wget https://github.com/linux-test-project/lcov/releases/download/v1.14/lcov-1.14.tar.gz -O ~/lcov.tar.gz
-            echo "${LCOV_SHA256SUM}  ${HOME}/lcov.tar.gz" | shasum --algorithm=256 --check
-            cd ~ && tar zvxf ~/lcov.tar.gz
-
   prepare:
     steps:
       - checkout
-      - lcov_install
       - virtualenv_activate
       - pip_install
 
@@ -67,7 +53,12 @@ jobs:
     executor: memfault-ci
     steps:
       - prepare
-      - run: PATH=~/lcov-1.14/bin:$PATH inv test --coverage
+      # run the tests with the sanitizer enabled first
+      - run: inv -e test --coverage
+      # now clean, and re-run with the sanitizer disabled- it adds extra
+      # branches that cannot be hit in a normal run, impacting coverage statistics
+      - run: git clean -dxff
+      - run: MEMFAULT_DISABLE_ASAN=1 inv -e test --coverage
       - run: curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN} -n ${CIRCLE_BUILD_NUM} -Z || echo 'Codecov upload failed'
 
 workflows:

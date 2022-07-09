@@ -99,6 +99,8 @@ else
 COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness
 
+# Permit disabling the sanitizers via environment variable
+ifneq ($(MEMFAULT_DISABLE_ASAN),1)
 # Enable sanitizers, and crash on error (don't attempt to recover sanely) so the
 # test fails on sanitizer violation
 CPPUTEST_WARNINGFLAGS += \
@@ -110,6 +112,8 @@ CPPUTEST_LDFLAGS += \
   -fsanitize=address \
   -fsanitize=undefined \
   -fno-sanitize-recover=all
+endif
+
 
 endif
 

@@ -60,9 +60,9 @@ except ImportError:
 # Note: not using `requests` but using the built-in http.client instead, so
 # there will be no additional dependencies other than Python itself.
 try:
-    from httplib import HTTPConnection, HTTPSConnection
-    from Queue import Queue
-    from urlparse import urlparse, urlunparse
+    from httplib import HTTPConnection, HTTPSConnection  # noqa: I251
+    from Queue import Queue  # noqa: I251
+    from urlparse import urlparse, urlunparse  # noqa: I251
 except ImportError:
     from http.client import HTTPConnection, HTTPSConnection
     from queue import Queue

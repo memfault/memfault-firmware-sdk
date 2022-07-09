@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable=SC2034,SC2162,SC2086,SC2140
 # NOTE: This was copied from:
 #  https://github.com/cpputest/cpputest/blob/master/scripts/filterGcov.sh
 # It's supposed to be part of a CppUTest install but isn't part of what you get from brew :(
