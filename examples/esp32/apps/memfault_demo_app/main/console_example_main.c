@@ -214,6 +214,9 @@ static void prv_initialize_task_watchdog(void) {
 
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
+#if !CONFIG_MEMFAULT_AUTOMATIC_INIT
+  memfault_boot();
+#endif
   extern void memfault_platform_device_info_boot(void);
   memfault_platform_device_info_boot();
   g_unaligned_buffer = &s_my_buf[1];

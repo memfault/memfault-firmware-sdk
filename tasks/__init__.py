@@ -4,6 +4,7 @@
 #
 
 import os
+import pathlib
 
 from invoke import Collection, task
 
@@ -11,6 +12,7 @@ from . import esp32, mbed, nrf, nrfconnect, wiced, zephyr
 from .macos_ftdi import is_macos
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SDK_FW_TASKS_DIR = pathlib.Path(os.path.join(SDK_FW_ROOT, "tasks"))
 SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
 
 
@@ -60,11 +62,16 @@ ns.add_collection(mbed)
 ns.add_collection(nrf)
 ns.add_collection(wiced)
 ns.add_collection(esp32)
-
 if os.environ.get("STM32_ENABLED"):
     from . import stm32
 
     ns.add_collection(stm32)
+
+# Internal tasks are only included if they exist in the SDK
+if (SDK_FW_TASKS_DIR / "internal.py").exists():
+    from . import internal
+
+    ns.add_collection(internal)
 
 
 @task(

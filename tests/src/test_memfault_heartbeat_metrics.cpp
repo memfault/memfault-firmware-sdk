@@ -313,7 +313,7 @@ TEST(MemfaultHeartbeatMetrics, Test_String) {
     int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING);
     LONGS_EQUAL(0, rv);
 
-    char sample_string[strlen(SAMPLE_STRING) + 1];
+    char sample_string[sizeof(SAMPLE_STRING) + 1];
     memset(sample_string, 0, sizeof(sample_string));
 
     rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
@@ -326,7 +326,7 @@ TEST(MemfaultHeartbeatMetrics, Test_String) {
     int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING "1");
     LONGS_EQUAL(0, rv);
 
-    char sample_string[strlen(SAMPLE_STRING) + 1];
+    char sample_string[sizeof(SAMPLE_STRING) + 1];
     memset(sample_string, 0, sizeof(sample_string));
 
     rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
@@ -348,7 +348,7 @@ TEST(MemfaultHeartbeatMetrics, Test_String) {
     rv = memfault_metrics_heartbeat_set_string(key, SHORT_TEST_STRING);
     LONGS_EQUAL(0, rv);
 
-    char sample_string[strlen(SHORT_TEST_STRING) + 1];
+    char sample_string[sizeof(SHORT_TEST_STRING)];
     memset(sample_string, 0, sizeof(sample_string));
 
     rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));
@@ -361,7 +361,7 @@ TEST(MemfaultHeartbeatMetrics, Test_String) {
     int rv = memfault_metrics_heartbeat_set_string(key, SAMPLE_STRING);
     LONGS_EQUAL(0, rv);
 
-    char sample_string[strlen(SAMPLE_STRING)];
+    char sample_string[sizeof(SAMPLE_STRING) - 1];
     memset(sample_string, 'a', sizeof(sample_string));
 
     rv = memfault_metrics_heartbeat_read_string(key, sample_string, sizeof(sample_string));

@@ -1,3 +1,37 @@
+### Changes between Memfault SDK 0.31.4 and SDK 0.31.3 - July 19, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP32 port: add new Kconfig option, `CONFIG_MEMFAULT_AUTOMATIC_INIT`, that can
+  be explicitly set to `n` to skip automatically initializing the Memfault SDK
+  on boot. This can be useful if Memfault SDK initialization needs to be
+  deferred to application start.
+
+- Zephyr port: add Kconfig options,
+  `CONFIG_MEMFAULT_INIT_PRIORITY`/`CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL` for
+  controlling the Memfault SDK initialization level and priority. This can be
+  useful when needing Memfault to initialize earlier in the system startup
+  sequence, for example for diagnosing crashes in an early driver
+  initialization.
+
+- Partial support, still in progress, for NRF Connect SDK + Zephyr v3.1:
+  - Remove reference to the now-removed Kconfig symbol,
+    `NET_SOCKETS_OFFLOAD_TLS` to enable building without warnings. **NOTE:** if
+    mbedtls is enabled (`CONFIG_MBEDTLS=y`), but is _not_ being used for HTTP
+    transfers (eg, mbedtls is used for security functions, but the device does
+    not use HTTP for transferring data), it may be necessary to explicitly set
+    `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS=n`.
+
+#### :house: Internal
+
+- Zephyr port: remove an unused header file,
+  `ports/zephyr/common/memfault_zephyr_http.h`
+
+- Remove `memfault_demo_cli_cmd_print_chunk()` demo function.
+  `memfault_data_export_dump_chunks()` can be used instead, which is intended to
+  be used with the "Chunks Debug" UI in the Memfault web application- see
+  [here](https://mflt.io/chunk-data-export) for more details
+
 ### Changes between Memfault SDK 0.31.3 and SDK 0.31.2 - July 8, 2022
 
 #### :chart_with_upwards_trend: Improvements

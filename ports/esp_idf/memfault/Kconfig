@@ -26,4 +26,12 @@ menu "Memfault"
             defined in a partitions*.csv file. If the device has already
             been shipped and the partition table cannot be modified, an
             OTA slot can be used instead.
+
+    config MEMFAULT_AUTOMATIC_INIT
+        bool "Automatically initialize the SDK when the system is booted"
+        default y
+        help
+            By default, Memfault will automatically initialize the SDK
+            when the system is booted. This can be disabled if the user
+            wants to initialize the SDK manually.
 endmenu

@@ -2,7 +2,6 @@ NAME := MemfaultDemo
 
 $(NAME)_SOURCES := \
   src/http/memfault_demo_http.c \
-  src/memfault_demo_cli_print_chunk.c \
   src/memfault_demo_core.c \
   src/panics/memfault_demo_cli_aux.c \
   src/panics/memfault_demo_panics.c

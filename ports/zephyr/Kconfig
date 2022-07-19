@@ -184,10 +184,13 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
-        default y if !NET_SOCKETS_OFFLOAD_TLS && MBEDTLS
+        default y if MBEDTLS
         help
           Configure Memfault HTTP for using mbedTLS- perform some sanity checks
-          at compile time that it is configured correctly.
+          at compile time that it is configured correctly. Note that if MbedTLS
+          is used for purposes other than securing the TCP/IP sockets, i.e. if
+          TLS is offloaded to the underlying socket, this check is invalid, and
+          should be explicitly set to 'n'.
 
 endif # MEMFAULT_HTTP_ENABLE
 
@@ -274,6 +277,18 @@ config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
        int "The time, in seconds, to configure the software watchdog expiration for"
        default 15
 
+config MEMFAULT_INIT_PRIORITY
+        int "The priority of Memfault initialization on system start"
+        default KERNEL_INIT_PRIORITY_DEFAULT
+        help
+         The SYS_INIT relative priority for Memfault initialization.
+
+config MEMFAULT_INIT_LEVEL_POST_KERNEL
+        bool "Use POST_KERNEL init level for Memfault initialization"
+        default n
+        help
+         Set the Memfault initialization SYS_INIT priority level to
+         "POST_KERNEL". Default is "APPLICATION".
 
 rsource "ncs/Kconfig"
 

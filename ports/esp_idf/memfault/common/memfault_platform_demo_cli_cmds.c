@@ -252,12 +252,6 @@ void memfault_register_cli(void) {
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "print_chunk",
-      .help = "Get next Memfault data chunk to send and print as a curl command",
-      .hint = "curl | hex",
-      .func = memfault_demo_cli_cmd_print_chunk,
-  }));
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
       .command = "export",
       .help = "Can be used to dump chunks to console or post via GDB",
       .hint = NULL,
