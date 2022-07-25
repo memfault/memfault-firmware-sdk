@@ -8,14 +8,9 @@
 #include <init.h>
 #include <soc.h>
 
-#include "memfault/core/build_info.h"
-#include "memfault/core/compiler.h"
-#include "memfault/core/event_storage.h"
-#include "memfault/core/reboot_tracking.h"
-#include "memfault/core/trace_event.h"
-#include "memfault/panics/coredump.h"
+#include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
-#include "memfault/ports/zephyr/version.h"
+#include "zephyr_release_specific_headers.h"
 
 #if !MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
 
@@ -54,6 +49,23 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   return k_uptime_get();
 }
+
+//! Provide a strong implementation of assert_post_action for Zephyr's built-in
+//! __ASSERT() macro.
+#if CONFIG_MEMFAULT_CATCH_ZEPHYR_ASSERT
+#ifdef CONFIG_ASSERT_NO_FILE_INFO
+void assert_post_action(void)
+#else
+void assert_post_action(const char *file, unsigned int line)
+#endif
+{
+#ifndef CONFIG_ASSERT_NO_FILE_INFO
+  ARG_UNUSED(file);
+  ARG_UNUSED(line);
+#endif
+  MEMFAULT_ASSERT(0);
+}
+#endif
 
 // On boot-up, log out any information collected as to why the
 // reset took place

@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+#include <sys/__assert.h>
 #include <sys/printk.h>
 
 #ifdef __cplusplus

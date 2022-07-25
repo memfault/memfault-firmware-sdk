@@ -170,11 +170,6 @@
 			<locationURI>PARENT-6-PROJECT_LOC/components/demo/src/panics/memfault_demo_cli_aux.c</locationURI>
 		</link>
 		<link>
-			<name>memfault_components/memfault_demo_cli_print_chunk.c</name>
-			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/components/demo/src/memfault_demo_cli_print_chunk.c</locationURI>
-		</link>
-		<link>
 			<name>memfault_components/memfault_demo_cli_trace_event.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/components/demo/src/memfault_demo_cli_trace_event.c</locationURI>

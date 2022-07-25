@@ -12,8 +12,9 @@
 extern "C" {
 #endif
 
-#include <misc/reboot.h>
+#include <misc/__assert.h>
 #include <misc/printk.h>
+#include <misc/reboot.h>
 
 #ifdef __cplusplus
 }

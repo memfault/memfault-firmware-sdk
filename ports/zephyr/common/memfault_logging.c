@@ -66,9 +66,16 @@ static void prv_log_process(const struct log_backend *const backend, union log_m
 
 static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt);
 const struct log_backend_api log_backend_mflt_api = {
-#if MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
+// The CONFIG_LOG2/1 options were removed after the 3.1 release series, so we no
+// longer can use them to assign the correct backend. Luckily there's only one
+// log type now, so it can just be set directly.
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+  .process          = prv_log_process,
+#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
   .process          = IS_ENABLED(CONFIG_LOG2) ? prv_log_process : NULL,
 #endif
+
+// Old-style logging backend API
 #if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
   .put              = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_put,
   .put_sync_string  = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? prv_log_put_sync_string : NULL,
@@ -86,6 +93,12 @@ LOG_BACKEND_DEFINE(log_backend_mflt, log_backend_mflt_api, true);
 
 // Tie Memfault's log function to the Zephyr buffer sender. This is *the* connection to Memfault.
 static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
+  if (memfault_arch_is_inside_isr()) {
+    // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
+    // don't save info while in an ISR to avoid wrapping over the info we are collecting.
+    return (int) length;
+  }
+
   // Note: Context should always be populated. If it is not, flag the log as an _Error
   const eMemfaultPlatformLogLevel log_level = ctx != NULL ? *(eMemfaultPlatformLogLevel*)ctx :
                                                             kMemfaultPlatformLogLevel_Error;

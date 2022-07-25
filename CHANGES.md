@@ -1,3 +1,27 @@
+### Changes between Memfault SDK 0.31.5 and SDK 0.31.4 - July 22, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr port: enable proper backtraces for Zephyr `__ASSERT()` macro on
+  aarch32/cortex_m. Prior to this fix, crashes from `__ASSERT()` triggering
+  would show an incorrect PC/LR for the active thread.
+
+- Support for pre-release nRF Connect SDK v2.0.99 and Zephyr > v3.1:
+  - Upcoming nRF Connect SDK and Zephyr releases removed logging v1. Add build
+    support for these changes, and keep backwards compatibility for previous nRF
+    Connect SDK/Zephyr releases
+  - Correct an issue in the Memfault logging v2 backend, when the system was
+    invoked from an ISR context. This could happen due to a recent change, in
+    Memfault SDK v0.31.1, where the Zephyr fatal informational logs were output
+    from `memfault_platform_reboot()` by default. It did not impact the
+    collected backtrace, but it would show a nuisance `__ASSERT()` in the
+    console output, if `CONFIG_ASSERT=y`.
+
+#### :house: Internal
+
+- Fix a compilation issue in the Dialog example app from the removal of
+  `memfault_demo_cli_cmd_print_chunk()` in Memfault SDK release v0.31.4.
+
 ### Changes between Memfault SDK 0.31.4 and SDK 0.31.3 - July 19, 2022
 
 #### :chart_with_upwards_trend: Improvements

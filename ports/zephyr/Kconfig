@@ -290,6 +290,15 @@ config MEMFAULT_INIT_LEVEL_POST_KERNEL
          Set the Memfault initialization SYS_INIT priority level to
          "POST_KERNEL". Default is "APPLICATION".
 
+config MEMFAULT_CATCH_ZEPHYR_ASSERT
+        bool "Support backtrace through Zephyr __ASSERT() calls"
+        default y
+        help
+         When enabled, Memfault will support proper backtraces when a Zephyr
+         __ASSERT() trips. If disabled (i.e. user needs a custom implementation
+         of assert_post_action()), backtraces will not be correctly captured
+         from __ASSERT() macro call sites, unless assert_post_action() contains
+         a MEMFAULT_ASSERT() invocation.
 rsource "ncs/Kconfig"
 
 endif # MEMFAULT
