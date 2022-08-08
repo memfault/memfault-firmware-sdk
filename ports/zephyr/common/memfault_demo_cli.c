@@ -20,18 +20,6 @@ static int prv_get_core_cmd(const struct shell *shell, size_t argc, char **argv)
   return memfault_demo_cli_cmd_get_core(argc, argv);
 }
 
-static int prv_crash_example(const struct shell *shell, size_t argc, char **argv) {
-  return memfault_demo_cli_cmd_crash(argc, argv);
-}
-
-static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, char **argv) {
-#if !CONFIG_ASSERT
-  MEMFAULT_LOG_WARN("CONFIG_ASSERT was disabled in the build, this command will have no effect");
-#endif
-  __ASSERT(0, "test assert");
-  return 0;
-}
-
 static int prv_test_log(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_test_log(argc, argv);
 }
@@ -44,15 +32,10 @@ static int prv_get_device_info(const struct shell *shell, size_t argc, char **ar
   return memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
 
-static int prv_hang_example(const struct shell *shell, size_t argc, char **argv) {
-#if !CONFIG_WATCHDOG
-  MEMFAULT_LOG_WARN("No watchdog configured, this will hang forever");
-#else
-  MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
-#endif
-  while (1) {
-  }
-  return -1;
+//! Route the 'export' command to output via printk, so we don't drop messages
+//! from logging a big burst.
+void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
+  printk("%s\n", base64_chunk);
 }
 
 static int prv_chunk_data_export(const struct shell *shell, size_t argc, char **argv) {
@@ -154,26 +137,95 @@ static int prv_test_reboot(const struct shell *shell, size_t argc, char **argv) 
   return 0;  // should be unreachable
 }
 
+static int prv_memfault_assert_example(const struct shell *shell, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_assert(argc, argv);
+  return -1;
+}
+
+static int prv_hang_example(const struct shell *shell, size_t argc, char **argv) {
+#if !CONFIG_WATCHDOG
+  MEMFAULT_LOG_WARN("No watchdog configured, this will hang forever");
+#else
+  MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
+#endif
+  while (1) {
+  }
+  return -1;
+}
+
+static int prv_busfault_example(const struct shell *shell, size_t argc, char **argv) {
+  //! Note: The Zephyr fault handler dereferences the pc which triggers a fault
+  //! if the pc itself is from a bad pointer: https://github.com/zephyrproject-rtos/zephyr/blob/f400c94/arch/arm/core/aarch32/cortex_m/fault.c#L664
+  //!
+  //! We set the BFHFNMIGN bit to prevent a lockup from happening due to de-referencing the bad PC
+  //! which generated the fault in the first place
+  volatile uint32_t *ccr = (uint32_t *)0xE000ED14;
+  *ccr |= 0x1 << 8;
+
+  memfault_demo_cli_cmd_busfault(argc, argv);
+  return -1;
+}
+
+static int prv_hardfault_example(const struct shell *shell, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_hardfault(argc, argv);
+  return -1;
+}
+
+static int prv_usagefault_example(const struct shell *shell, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_usagefault(argc, argv);
+  return -1;
+}
+
+static int prv_memmanage_example(const struct shell *shell, size_t argc, char **argv) {
+  memfault_demo_cli_cmd_memmanage(argc, argv);
+  return -1;
+}
+
+static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, char **argv) {
+#if !CONFIG_ASSERT
+  MEMFAULT_LOG_WARN("CONFIG_ASSERT was disabled in the build, this command will have no effect");
+#endif
+  __ASSERT(0, "test assert");
+  return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
-  sub_memfault_cmds,
+  sub_memfault_crash_cmds,
+  //! different crash types that should result in a coredump being collected
+  SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
+  SHELL_CMD(busfault, NULL, "trigger a busfault", prv_busfault_example),
+  SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
+  SHELL_CMD(hardfault, NULL, "trigger a hardfault", prv_hardfault_example),
+  SHELL_CMD(memmanage, NULL, "trigger a memory management fault", prv_memmanage_example),
+  SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
+  SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
+
+  //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),
-  SHELL_CMD(get_core, NULL, "gets the core", prv_get_core_cmd),
-  SHELL_CMD(clear_core, NULL, "clear the core", prv_clear_core_cmd),
-  SHELL_CMD(crash, NULL, "trigger a crash", prv_crash_example),
-  SHELL_CMD(zephyr_assert, NULL, "trigger a zephyr __ASSERT", prv_zephyr_assert_example),
-  SHELL_CMD(test_log, NULL, "Writes test logs to log buffer", prv_test_log),
-  SHELL_CMD(trigger_logs, NULL, "Trigger capture of current log buffer contents", prv_trigger_logs),
-  SHELL_CMD(hang, NULL, "trigger a hang to test watchdog functionality", prv_hang_example),
+
+  //! memfault data source test commands
+  SHELL_CMD(heartbeat, NULL, "trigger an immediate capture of all heartbeat metrics",
+            prv_trigger_heartbeat),
+  SHELL_CMD(log_capture, NULL, "trigger capture of current log buffer contents", prv_trigger_logs),
+  SHELL_CMD(logs, NULL, "writes test logs to log buffer", prv_test_log),
+  SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),
+
+  SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+  sub_memfault_cmds, SHELL_CMD(clear_core, NULL, "clear coredump collected", prv_clear_core_cmd),
   SHELL_CMD(export, NULL,
             "dump chunks collected by Memfault SDK using https://mflt.io/chunk-data-export",
             prv_chunk_data_export),
-  SHELL_CMD(trace, NULL, "Capture an example trace event", prv_example_trace_event_capture),
+  SHELL_CMD(get_core, NULL, "check if coredump is stored and present", prv_get_core_cmd),
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
-  SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
-  SHELL_CMD(trigger_heartbeat, NULL, "Trigger an immediate capture of all heartbeat metrics",
-            prv_trigger_heartbeat),
   SHELL_CMD(get_latest_release, NULL, "checks to see if new ota payload is available",
             prv_check_and_fetch_ota_payload_cmd),
+  SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
+  SHELL_CMD(test, &sub_memfault_crash_cmds,
+            "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",
+            NULL),
   SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

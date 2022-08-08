@@ -5,7 +5,7 @@
 
 #include <zephyr.h>
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mflt, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(mflt_app, LOG_LEVEL_DBG);
 
 #include <string.h>
 

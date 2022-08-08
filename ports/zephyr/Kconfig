@@ -91,6 +91,16 @@ config MEMFAULT_HTTP_ENABLE
           Enables support for querying the Memfault API for OTA updates
           and posting Memfault chunks
 
+config MEMFAULT_ZEPHYR_FATAL_HANDLER
+        bool "Enable running the Zephyr fatal handler after Memfault coredump capture"
+        default y
+        help
+          This enables the Zephyr fatal handler to run after Memfault's fault
+          handler. It's useful to view the Zephyr fatal output (few breadcrumbs
+          about the crash) on the console when debugging with an attached
+          device. Explicitly disabling it can save a few dozen bytes of code
+          space.
+
 config MEMFAULT_LOGGING_ENABLE
         bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
         default n
@@ -111,10 +121,17 @@ config MEMFAULT_LOGGING_RAM_SIZE
 
 endif # MEMFAULT_LOGGING_ENABLE
 
+config MEMFAULT_ROOT_CERT_STORAGE
+        bool "Memfault TLS root certificate storage enabled"
+        default y if MEMFAULT_HTTP_ENABLE
+        help
+          Enables TLS root certificate storage for Memfault data upload
+
 choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
     bool "Implementation used to store Memfault Root certificates"
     default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
     default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
+    depends on MEMFAULT_ROOT_CERT_STORAGE
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
     bool "Uses the storage on the NRF9160 modem for storing root certificates"
@@ -299,6 +316,11 @@ config MEMFAULT_CATCH_ZEPHYR_ASSERT
          of assert_post_action()), backtraces will not be correctly captured
          from __ASSERT() macro call sites, unless assert_post_action() contains
          a MEMFAULT_ASSERT() invocation.
+
+module = MEMFAULT
+module-str = Memfault
+source "subsys/logging/Kconfig.template.log_config"
+
 rsource "ncs/Kconfig"
 
 endif # MEMFAULT

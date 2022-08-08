@@ -16,12 +16,33 @@
 extern "C" {
 #endif
 
+#include "memfault/core/compiler.h"
+
 //! Command to crash the device, for example, to trigger a coredump to be captured.
 //! It takes one number argument, which is the crash type:
 //! - 0: crash by MEMFAULT_ASSERT(0)
 //! - 1: crash by jumping to 0xbadcafe
 //! - 2: crash by unaligned memory store
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]);
+
+#if MEMFAULT_COMPILER_ARM
+
+//! Command which will generate a HardFault
+int memfault_demo_cli_cmd_hardfault(int argc, char *argv[]);
+
+//! Command which will generate a BusFault on Cortex-M hardware
+int memfault_demo_cli_cmd_busfault(int argc, char *argv[]);
+
+//! Command which will generate a Memory Management fault on Cortex-M hardware
+int memfault_demo_cli_cmd_memmanage(int argc, char *argv[]);
+
+//! Command which will generate a UsageFault on Cortex-M hardware
+int memfault_demo_cli_cmd_usagefault(int argc, char *argv[]);
+
+#endif /* MEMFAULT_COMPILER_ARM */
+
+//! Command which will generate an assert
+int memfault_demo_cli_cmd_assert(int argc, char *argv[]);
 
 //! Command to exercise the MEMFAULT_TRACE_EVENT API, capturing a
 //! Trace Event with the error reason set to "MemfaultDemoCli_Error".

@@ -1,3 +1,5 @@
+#pragma once
+
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
@@ -17,6 +19,10 @@ extern "C" {
 #define MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME ".mflt_coredump.noinit"
 
 #define MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE 8192
+
+//! Defines specific to PSOC6 Port
+//! Note that we include them last so an end user settings above override the defaults.
+#include "psoc6_default_config.h"
 
 #ifdef __cplusplus
 }

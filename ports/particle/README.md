@@ -28,40 +28,40 @@ $ git submodule add https://github.com/memfault/particle-firmware-library lib/me
 
 1. Add the following to your application
 
-```c
-#include "memfault.h"
-Memfault memfault;
+   ```c
+   #include "memfault.h"
+   Memfault memfault;
 
-void loop() {
-  // ...
-  memfault.process();
-  // ...
-}
-```
+   void loop() {
+     // ...
+     memfault.process();
+     // ...
+   }
+   ```
 
-2. Create a Memault Project Key at https://goto.memfault.com/create-key/particle
-   and copy it to your clipboard.
+2. Create a Memfault Project Key at
+   https://goto.memfault.com/create-key/particle and copy it to your clipboard.
 
 3. Navigate to the Integrations tab in the Particle Cloud UI and create a new
    "Custom Template" webhook. Be sure to replace `MEMFAULT_PROJECT_KEY` below
    with the one copied in step 2.
 
-```
-{
-    "event": "memfault-chunks",
-    "responseTopic": "",
-    "url": "https://chunks.memfault.com/api/v0/chunks/{{PARTICLE_DEVICE_ID}}",
-    "requestType": "POST",
-    "noDefaults": false,
-    "rejectUnauthorized": true,
-    "headers": {
-        "Memfault-Project-Key": "MEMFAULT_PROJECT_KEY",
-        "Content-Type": "application/octet-stream",
-        "Content-Encoding": "base64"
-    },
-    "body": "{{{PARTICLE_EVENT_VALUE}}}"
-}
-```
+   ```json
+   {
+     "event": "memfault-chunks",
+     "responseTopic": "",
+     "url": "https://chunks.memfault.com/api/v0/chunks/{{PARTICLE_DEVICE_ID}}",
+     "requestType": "POST",
+     "noDefaults": false,
+     "rejectUnauthorized": true,
+     "headers": {
+       "Memfault-Project-Key": "MEMFAULT_PROJECT_KEY",
+       "Content-Type": "application/octet-stream",
+       "Content-Encoding": "base64"
+     },
+     "body": "{{{PARTICLE_EVENT_VALUE}}}"
+   }
+   ```
 
 ## Example Usage
 

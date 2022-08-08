@@ -134,7 +134,7 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   int verify = REQUIRED;
   rv = setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
   if (rv) {
-    printk("Failed to setup peer verification, err %d\n", errno);
+    MEMFAULT_LOG_ERROR("Failed to setup peer verification, err %d\n", errno);
     return rv;
   }
 

@@ -1,3 +1,86 @@
+### Changes between Memfault SDK 0.32.0 and SDK 0.31.5 - Aug 7, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+  port updates
+  - Added heartbeat metrics for heap and Wi-Fi performance tracking when using
+    the default port for
+    [CAT1A (PSoC:tm: 6)](https://github.com/Infineon/mtb-pdl-cat1). See
+    [ports/cypress/psoc6/memfault_platform_core.c](ports/cypress/psoc6/memfault_platform_core.c)
+    for more details
+  - Fixed reboot reason reported when PSoC 6 is fully reset to report "Power On
+    Reset" instead of "Unknown"
+- Zephyr port updates
+  - Memfault logs (eg `MEMFAULT_LOG_DEBUG()` etc) are now routed to the Zephyr
+    logging infrastructure. The typical set of Kconfig options for Memfault logs
+    are available (`CONFIG_MEMFAULT_LOG_LEVEL_WRN` etc). See details in
+    "Breaking Changes" below for enabling logs in your project.
+  - Added a new Kconfig option, `MEMFAULT_ZEPHYR_FATAL_HANDLER`, which can be
+    used to disable the Zephyr fault handler print facilities.
+
+#### :boom: Breaking Changes
+
+- Users will no longer see internal Memfault log output by default, but will
+  have to enable it explicitly to see the output:
+
+  ```ini
+  # enable LOG
+  CONFIG_LOG=y
+  # not required- enabling the Memfault logging component enables including the
+  # log buffer in coredumps
+  CONFIG_MEMFAULT_LOGGING_ENABLE=y
+
+  # if on pre-v3.1.0 zephyr, you can choose either the default LOG v1
+  # implementation, or select a LOG2 mode to enable LOG2. on zephyr 3.1.0+, LOG
+  # v1 is removed and LOG v2 is now the only log implementation
+  # CONFIG_LOG2_MODE_DEFERRED=y
+
+  # make sure to select a log backend to see the output
+  CONFIG_LOG_BACKEND_UART=y
+  ```
+
+  The log statements affected by this change are likely only the internal
+  Memfault SDK logs (`MEMFAULT_LOG_DEBUG()` etc), unless those macros are used
+  in the user application.
+
+- Removed support for Zephyr LTS release 1.14 as it was superseded by
+  [LTS V2 almost a year ago now](https://www.zephyrproject.org/zephyr-lts-v2-release/).
+  A project using this release of Zephyr must target a memfault-firmware-sdk
+  release less than 0.32.0.
+
+#### :house: Internal
+
+- More logically grouped Kconfig settings in Zephyr example app's
+  [prj.conf](examples/zephyr/apps/memfault_demo_app/prj.conf)
+- Fixed a few typos in particle port documentation
+- Simplified compilation steps for the
+  [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app)
+  when compiling with older releases of the nRF Connect SDK and refreshed the
+  example to target the v2.0.2 release by default
+- Updated default demo CLI commands to better align with
+  [our suggested integration test commands](https://mflt.io/mcu-test-commands).
+  The default set now looks like this:
+
+  ```bash
+  mflt> help
+  clear_core: Clear an existing coredump
+  drain_chunks: Flushes queued Memfault data. To upload data see https://mflt.io/posting-chunks-with-gdb
+  export: Export base64-encoded chunks. To upload data see https://mflt.io/chunk-data-export
+  get_core: Get coredump info
+  get_device_info: Get device info
+  test_assert: Trigger memfault assert
+  test_busfault: Trigger a busfault
+  test_hardfault: Trigger a hardfault
+  test_memmanage: Trigger a memory management fault
+  test_usagefault: Trigger a usage fault
+  test_log: Writes test logs to log buffer
+  test_log_capture: Trigger capture of current log buffer contents
+  test_reboot: Force system reset and track it with a trace event
+  test_trace: Capture an example trace event
+  help: Lists all commands
+  ```
+
 ### Changes between Memfault SDK 0.31.5 and SDK 0.31.4 - July 22, 2022
 
 #### :chart_with_upwards_trend: Improvements

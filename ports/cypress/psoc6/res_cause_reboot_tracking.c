@@ -32,6 +32,13 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   MEMFAULT_PRINT_RESET_INFO("Reset Cause: ");
 
   switch (reset_cause) {
+    case 0:
+      // Per code comments indicates "POR, XRES, or BOD":
+      //  https://github.com/Infineon/mtb-pdl-cat1/blob/3c6aebd/personalities/platform/power-1.3.cypersonality#L205
+      MEMFAULT_PRINT_RESET_INFO(" POR, XRES, or BOD");
+      reset_reason = kMfltRebootReason_PowerOnReset;
+      break;
+
     case CY_SYSLIB_RESET_HWWDT:
       MEMFAULT_PRINT_RESET_INFO(" HW WDT");
       reset_reason = kMfltRebootReason_HardwareWatchdog;

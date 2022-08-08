@@ -6,10 +6,8 @@ SDK which includes a Memfault Integration!
 ## Setup
 
 An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
-project you want to use and select 'Settings'. Copy the 'Project Key' and paste
-it into [`src/main.c`](src/main.c), replacing `<YOUR PROJECT KEY HERE>` with
-your Project Key.
+with Memfault's web services. Provision a project and key from
+https://goto.memfault.com/create-key/nrf91
 
 ## Compiling
 
@@ -19,21 +17,13 @@ targetting the nRF52 PDK would look like:
 ```bash
 $ west init -l memfault_demo_app
 $ west update
-$ west build -b nrf9160dk_nrf9160_ns memfault_demo_app
+# Replace ${YOUR_PROJECT_KEY} with the Project Key from https://mflt.io/project-key
+$ west build -b nrf9160dk_nrf9160ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
 ...
 [181/181] Linking C executable zephyr/zephyr.elf
 ```
 
-Note that you will need to use `nrf9160dk_nrf9160ns` instead on
-versions of NCS based on Zephyr 2.6 and earlier.
-
-And on versions of NCS based on Zephyr 2.5 and earlier,
-`CONFIG_OPENOCD_SUPPORT=y` should be set, for example:
-
-```bash
-# NCS v1.4.0, which uses Zephyr 2.5, requires this build command
-$ BOARD=nrf9160dk_nrf9160ns west build -b nrf9160dk_nrf9160ns memfault_demo_app -- -DCONFIG_OPENOCD_SUPPORT=y
-```
+Note that the board argument (`-b`) for the nRF9160DK has changed across releases -- if you are targetting nRF Connect SDK <= 1.6, use, `-b nrf9160_pca10090ns`
 
 ## Testing the Integration
 
@@ -43,14 +33,15 @@ Commands to test the integration are exposed under the `mflt` submenu in the CLI
 uart:~$ mflt help
 mflt - Memfault Test Commands
 Subcommands:
-  get_core         :gets the core
-  clear_core       :clear the core
-  crash            :trigger a crash
-  export_data      :dump chunks collected by Memfault SDK using
-                    https://mflt.io/chunk-data-export
-  trace            :Capture an example trace event
-  get_device_info  :display device information
-  post_chunks      :Post Memfault data to cloud
+  clear_core          :clear coredump collected
+  export              :dump chunks collected by Memfault SDK using
+                       https://mflt.io/chunk-data-export
+  get_core            :check if coredump is stored and present
+  get_device_info     :display device information
+  get_latest_release  :checks to see if new ota payload is available
+  post_chunks         :Post Memfault data to cloud
+  test                :commands to verify memfault data collection
+                       (https://mflt.io/mcu-test-commands)
 ```
 
 ## Adding the Memfault SDK to your Project

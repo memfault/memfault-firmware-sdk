@@ -961,7 +961,7 @@ def upload_symbols_if_needed(config, elf_fn, software_type, software_version):
                 print("Failed to upload symbols: {}".format(e))
 
 
-# FIXME: Duped from tools/gdb_memfault.py
+# FIXME: Duped from mflt.tools/gdb_memfault.py
 class MemfaultGdbArgumentParseError(Exception):
     pass
 

@@ -16,7 +16,6 @@ the porting files were tested against. If no breaking API changes have been made
 within Zephyr and a different release, the port may work there as well
 
 - [v2.0](https://github.com/zephyrproject-rtos/zephyr/tree/v2.0-branch)
-- [v1.14.1](https://github.com/memfault/zephyr/tree/v1.14-branch)
 
 ## Integrating SDK
 
@@ -25,7 +24,7 @@ within Zephyr and a different release, the port may work there as well
 
 ```
 $ cd $ZEPHYR_ROOT_DIR/
-$ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v1.14|v2.0]/zephyr-integration.patch
+$ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v2.0]/zephyr-integration.patch
 ```
 
 Note that `v2.x/coredump-support.patch` should be applied for Zephyr 2.2 and 2.3

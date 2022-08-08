@@ -19,6 +19,14 @@ bool memfault_arch_is_inside_isr(void) {
   return ((*ICSR & 0xff) != 0x0);
 }
 
+void memfault_arch_disable_configurable_faults(void) {
+  // Clear MEMFAULTENA, BUSFAULTENA, USGFAULTENA, SECUREFAULTENA
+  //
+  // This will force all faults to be routed through the HardFault Handler
+  volatile uint32_t *SHCSR = (uint32_t*)0xE000ED24;
+  *SHCSR &= ~((uint32_t)0x000F0000);
+}
+
 MEMFAULT_WEAK
 void memfault_platform_halt_if_debugging(void) {
   volatile uint32_t *dhcsr = (volatile uint32_t *)0xE000EDF0;

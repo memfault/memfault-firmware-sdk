@@ -8,6 +8,7 @@ import os
 import sys
 from io import BufferedIOBase, BytesIO
 from json import dumps
+from typing import Any, List, Tuple
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
@@ -48,8 +49,8 @@ def _patch_datetime_now(mocker):
 
 @pytest.fixture()
 def http_expect_request():
-    connections = []
-    expected_requests = []
+    connections: List[MagicMock] = []
+    expected_requests: List[Tuple[Any, ...]] = []
     actual_request_count = 0
 
     def _http_expect_request(url, method, assert_body_fn, req_headers, resp_status, resp_body):
@@ -92,7 +93,7 @@ def http_expect_request():
                 None if resp_body is None else dumps(resp_body).encode("utf8")
             )
             connection.getresponse.return_value = response
-            connections.append(connections)
+            connections.append(connection)
             return connection
 
         return _connection_constructor
@@ -244,7 +245,7 @@ def test_read_current_registers(mocker, info_reg_all_fixture):
     frame.read_register.return_value = gdb_fake.Value(1, type=gdb_fake.Type(sizeof=4))
     mocker.patch.object(gdb_fake, "newest_frame", return_value=frame)
 
-    dummy_dict = {}
+    dummy_dict: dict = {}
     arch = ArmCortexMCoredumpArch()
     register_list = lookup_registers_from_list(arch, info_reg_all_fixture, dummy_dict)
     for reg in arch.register_collection_list:

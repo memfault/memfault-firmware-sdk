@@ -28,7 +28,12 @@ find_package(Ncs HINTS $ENV{ZEPHYR_BASE}/../nrf)
 # so we set the ones we need here using that:
 #   https://docs.zephyrproject.org/latest/guides/build/kconfig/setting.html#the-initial-configuration
 if (NCS_VERSION_MAJOR)
-  if (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 6 )
+  if (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 5 )
+    # Legacy name for CONFIG_DEBUG_THREAD_INFO needed for nRF Connect version <= 1.5
+    # due to the version of Zephyr included (pre v2.5)
+    set(CONFIG_OPENOCD_SUPPORT n CACHE INTERNAL "")
+
+  elseif (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 6 )
     # Required for logging to work from crash, deprecated in Zephyr included in NCS 1.6
     set(CONFIG_LOG_IMMEDIATE y CACHE INTERNAL "")
   elseif (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} GREATER_EQUAL 6 )
@@ -53,9 +58,13 @@ if (NCS_VERSION_MAJOR)
 
     # For nRF Connect SDK v1.5 default value changed here
     set(CONFIG_AT_CMD_SYS_INIT n CACHE INTERNAL "")
-  else()
-    # in v1.9+, use the modem_info library to get the IMEI for device_serial
+  else() # nRF Connect SDK Version >= 1.8.0
+    # in v1.8+, use the modem_info library to get the IMEI for device_serial
+    set(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME y CACHE INTERNAL "")
     set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
+
+    # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
+    set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
   endif()
 endif()
 

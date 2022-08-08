@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.1)
 
-# The Zephyr port to target (i.e "v1.14", "v2.0", "v2.4")
+# The Zephyr port to target (i.e "v2.0", "v2.4")
 if(NOT DEFINED ENV{MEMFAULT_ZEPHYR_PORT_TARGET})
   # Lar
   set(ENV{MEMFAULT_ZEPHYR_PORT_TARGET} v2.4)

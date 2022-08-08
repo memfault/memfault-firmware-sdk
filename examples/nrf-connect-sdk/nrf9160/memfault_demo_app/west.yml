@@ -1,16 +1,14 @@
 manifest:
-  remotes:
-    - name: nrf-connect-sdk
-      url-base: https://github.com/nrfconnect
   projects:
-    - name: sdk-nrf
-      remote: nrf-connect-sdk
-      path: nrf
-      revision: v1.4.0
+    - name: nrf
+      url: https://github.com/nrfconnect/sdk-nrf
+      revision: v2.0.2
       import: true
+      import:
+        path-blocklist: modules/lib/memfault-firmware-sdk
     - name: memfault-firmware-sdk
       url: https://github.com/memfault/memfault-firmware-sdk
-      path: modules/memfault-firmware-sdk
+      path: modules/lib/memfault-firmware-sdk
       revision: master
   self:
     path: memfault_demo_app

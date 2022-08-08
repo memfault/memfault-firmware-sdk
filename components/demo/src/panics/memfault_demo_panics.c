@@ -6,16 +6,16 @@
 //! @brief
 //! CLI commands which require integration of the "panic" component.
 
-#include "memfault/demo/cli.h"
-
 #include <stdlib.h>
 
+#include "memfault/core/arch.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/core/reboot_tracking.h"
+#include "memfault/demo/cli.h"
 #include "memfault/panics/assert.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
@@ -110,3 +110,53 @@ int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED c
   memfault_platform_coredump_storage_clear();
   return 0;
 }
+
+int memfault_demo_cli_cmd_assert(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  MEMFAULT_ASSERT(0);
+}
+
+#if MEMFAULT_COMPILER_ARM
+
+int memfault_demo_cli_cmd_hardfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  memfault_arch_disable_configurable_faults();
+
+  uint64_t *buf = g_memfault_unaligned_buffer;
+  *buf = 0xdeadbeef0000;
+
+  return -1;
+}
+
+int memfault_demo_cli_cmd_memmanage(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  // Per "Relation of the MPU to the system memory map" in ARMv7-M reference manual:
+  //
+  // "The MPU is restricted in how it can change the default memory map attributes associated with
+  //  System space, that is, for addresses 0xE0000000 and higher. System space is always marked as
+  //  XN, Execute Never."
+  //
+  // So we can trip a MemManage exception by simply attempting to execute any addresss >= 0xE000.0000
+  void (*bad_func)(void) = (void (*)(void))0xEEEEDEAD;
+  bad_func();
+
+  // We should never get here -- platforms MemManage or HardFault handler should be tripped
+  return -1;
+}
+
+int memfault_demo_cli_cmd_busfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  void (*unaligned_func)(void) = (void (*)(void))0x50000001;
+  unaligned_func();
+
+  // We should never get here -- platforms BusFault or HardFault handler should be tripped
+  // with a precise error due to unaligned execution
+  return -1;
+}
+
+int memfault_demo_cli_cmd_usagefault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  uint64_t *buf = g_memfault_unaligned_buffer;
+  *buf = 0xbadcafe0000;
+
+  // We should never get here -- platforms UsageFault or HardFault handler should be tripped due to
+  // unaligned access
+  return -1;
+}
+
+#endif /* MEMFAULT_COMPILER_ARM */
