@@ -1,4 +1,12 @@
-### Changes between Memfault SDK 0.32.0 and SDK 0.31.5 - Aug 7, 2022
+### Changes between Memfault SDK 0.32.1 and SDK 0.32.0 - Aug 8, 2022
+
+#### :house: Internal
+
+- Added default config header for PSoC 6 port
+  [ports/cypress/psoc6/psoc6_default_config.h](ports/cypress/psoc6/psoc6_default_config.h)
+  so user doesn't have to create it
+
+### Changes between Memfault SDK 0.32.0 and SDK 0.31.5 - Aug 8, 2022
 
 #### :chart_with_upwards_trend: Improvements
 
