@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.32.2 and SDK 0.32.1 - Aug 16, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr port: added a fix for upcoming Zephyr 3.2 compatibility, thanks
+  @nordicjm for the fix!
+
 ### Changes between Memfault SDK 0.32.1 and SDK 0.32.0 - Aug 8, 2022
 
 #### :house: Internal

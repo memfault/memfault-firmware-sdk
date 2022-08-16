@@ -55,9 +55,16 @@ static void prv_log_panic(struct log_backend const *const backend);
 // -Wincompatible-pointer-types between versions
 static void prv_log_init();
 
+
 // LOG2 was added in Zephyr 2.6:
 // https://github.com/zephyrproject-rtos/zephyr/commit/f1bb20f6b43b8b241e45f3f132f0e7bbfc65401b
-#if MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
+// LOG2 was moved to LOG in Zephyr 3.2
+// https://github.com/zephyrproject-rtos/zephyr/issues/46500
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+static void prv_log_process(const struct log_backend *const backend, union log_msg_generic *msg) {
+  log_output_msg_process(&s_log_output_mflt, &msg->log, g_flags);
+}
+#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
 // Additional processing for log2 output
 static void prv_log_process(const struct log_backend *const backend, union log_msg2_generic *msg) {
   log_output_msg2_process(&s_log_output_mflt, &msg->log, g_flags);
