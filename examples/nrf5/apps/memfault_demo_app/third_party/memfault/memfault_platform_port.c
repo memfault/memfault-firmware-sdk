@@ -44,27 +44,17 @@ static void prv_get_device_serial(char *buf, size_t buf_len) {
 
 void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
   static char s_device_serial[32];
-  static char s_fw_version[16] = "1.0.0+";
   static bool s_init = false;
 
   if (!s_init) {
     prv_get_device_serial(s_device_serial, sizeof(s_device_serial));
-    const size_t version_len = strlen(s_fw_version);
-    // We will use 6 characters of the build id to make our versions unique and
-    // identifiable between releases
-    const size_t build_id_chars = 6 + 1 /* '\0' */;
-
-    const size_t build_id_num_chars =
-        MEMFAULT_MIN(build_id_chars, sizeof(s_fw_version) - version_len - 1);
-
-    memfault_build_id_get_string(&s_fw_version[version_len], build_id_num_chars);
     s_init = true;
   }
 
   *info = (struct MemfaultDeviceInfo) {
     .device_serial = s_device_serial,
     .hardware_version = "pca10056",
-    .software_version = s_fw_version,
+    .software_version = "1.0.0-dev",
     .software_type = "nrf-main",
   };
 }
@@ -72,8 +62,6 @@ void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
 //! Last function called after a coredump is saved. Should perform
 //! any final cleanup and then reset the device
 void memfault_platform_reboot(void) {
-  memfault_platform_halt_if_debugging();
-
   NVIC_SystemReset();
   MEMFAULT_UNREACHABLE;
 }

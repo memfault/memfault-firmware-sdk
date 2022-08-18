@@ -33,32 +33,50 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   char *log_str = log_buf;
 
 #if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-  #if !defined(CONFIG_LOG2)
+  #if defined(CONFIG_LOG) && !defined(CONFIG_LOG2)
   // Before zephyr 3.1, LOG was a different option from LOG2 and required
-  // manually duplicating string argument values.
+  // manually duplicating string argument values. Only required if CONFIG_LOG is
+  // in use.
   log_str = log_strdup(log_buf);
   #endif
 #endif
 
+// If the user doesn't have logging enabled, optionally route Memfault logs to
+// printk, allowing the user to also disable that behavior if no Memfault logs
+// are desired.
+#if CONFIG_MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
+  #define MFT_LOG_DBG(fmt_, arg) printk("<dbg> mflt: " fmt_ "\n", arg)
+  #define MFT_LOG_INF(fmt_, arg) printk("<inf> mflt: " fmt_ "\n", arg)
+  #define MFT_LOG_WRN(fmt_, arg) printk("<wrn> mflt: " fmt_ "\n", arg)
+  #define MFT_LOG_ERR(fmt_, arg) printk("<err> mflt: " fmt_ "\n", arg)
+#else
+  // Either the user has logging enabled, or they don't want to use printk (in
+  // which case logs will be dropped via Zephyr log macros).
+  #define MFT_LOG_DBG(...) LOG_DBG(__VA_ARGS__)
+  #define MFT_LOG_INF(...) LOG_INF(__VA_ARGS__)
+  #define MFT_LOG_WRN(...) LOG_WRN(__VA_ARGS__)
+  #define MFT_LOG_ERR(...) LOG_ERR(__VA_ARGS__)
+#endif
+
   switch (level) {
     case kMemfaultPlatformLogLevel_Debug:
-      LOG_DBG("%s", log_str);
+      MFT_LOG_DBG("%s", log_str);
       break;
 
     case kMemfaultPlatformLogLevel_Info:
-      LOG_INF("%s", log_str);
+      MFT_LOG_INF("%s", log_str);
       break;
 
     case kMemfaultPlatformLogLevel_Warning:
-      LOG_WRN("%s", log_str);
+      MFT_LOG_WRN("%s", log_str);
       break;
 
     case kMemfaultPlatformLogLevel_Error:
-      LOG_ERR("%s", log_str);
+      MFT_LOG_ERR("%s", log_str);
       break;
 
     default:
-      LOG_ERR("??? %s", log_str);
+      MFT_LOG_ERR("??? %s", log_str);
       break;
   }
 

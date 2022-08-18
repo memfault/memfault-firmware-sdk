@@ -27,6 +27,7 @@ SRC_FILES += \
   $(MEMFAULT_NRF5_SDK_PORT_ROOT)/nrf5_coredump_regions.c \
   $(MEMFAULT_NRF5_SDK_PORT_ROOT)/nrf5_coredump_storage.c \
   $(MEMFAULT_NRF5_SDK_PORT_ROOT)/resetreas_reboot_tracking.c \
+  $(MEMFAULT_NRF5_SDK_PORT_ROOT)/software_watchdog.c \
   $(MEMFAULT_PORT_ROOT)/memfault_platform_port.c
 
 INC_FOLDERS += \
@@ -84,6 +85,8 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/hal/nrf_nvmc.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_wdt.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_rtc.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \

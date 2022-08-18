@@ -17,8 +17,7 @@ config MEMFAULT_FOTA
           is available, the binary will be downloaded and installed using the FOTA Download
           Client provided in the nRF Connect SDK.
 
-          Note: Enabling this feature currently requires the following update:
-          See https://mflt.io/nrf-fota for more details
+          See https://mflt.io/nrf-fota-setup for more details
 
 config MEMFAULT_NRF_SHELL
         bool "Enable Memfault NRF Shell"

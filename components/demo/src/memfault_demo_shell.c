@@ -28,6 +28,8 @@
 static struct MemfaultShellContext {
   int (*send_char)(char c);
   size_t rx_size;
+  // the char we will ignore when received end-of-line sequences
+  char eol_ignore_char;
   char rx_buffer[MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE];
 } s_mflt_shell;
 
@@ -43,7 +45,7 @@ static void prv_send_char(char c) {
 }
 
 static void prv_echo(char c) {
-  if ('\n' == c) {
+  if (c == '\n') {
     prv_send_char('\r');
     prv_send_char('\n');
   } else if ('\b' == c) {
@@ -129,19 +131,45 @@ static void prv_process(void) {
 }
 
 void memfault_demo_shell_boot(const sMemfaultShellImpl *impl) {
+  s_mflt_shell.eol_ignore_char = 0;
   s_mflt_shell.send_char = impl->send_char;
   prv_reset_rx_buffer();
   prv_echo_str("\n" MEMFAULT_SHELL_PROMPT);
 }
 
+//! Logic to deal with CR, LF, CRLF, or LFCR end-of-line (EOL) sequences
+//! @return true if the character should be ignored, false otherwise
+static bool prv_should_ignore_eol_char(char c) {
+  if (s_mflt_shell.eol_ignore_char != 0) {
+    return (c == s_mflt_shell.eol_ignore_char);
+  }
+
+  //
+  // First end of line character detected. We will use this character as our EOL delimiter and
+  // ignore the opposite character when we see it in the future.
+  //
+
+  if (c == '\r') {
+    s_mflt_shell.eol_ignore_char = '\n';
+  } else if (c == '\n') {
+    s_mflt_shell.eol_ignore_char = '\r';
+  }
+  return false;
+}
+
 void memfault_demo_shell_receive_char(char c) {
-  if (c == '\r' || prv_is_rx_buffer_full() || !prv_booted()) {
+  if (prv_should_ignore_eol_char(c) || prv_is_rx_buffer_full() || !prv_booted()) {
     return;
   }
 
   const bool is_backspace = (c == '\b');
   if (is_backspace && s_mflt_shell.rx_size == 0) {
     return; // nothing left to delete so don't echo the backspace
+  }
+
+  // CR are our EOL delimiter. Remap as a LF here since that's what internal handling logic expects
+  if (c == '\r') {
+    c = '\n';
   }
 
   prv_echo(c);

@@ -40,6 +40,9 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
         env_dict["TEST_MAKEFILE_FILTER"] = test_filter
 
     # Unit tests currently don't reliably pass when running Make in parallel 😢
+    #
+    # When we fix this we should also conditionally add (--output-sync=recurse) based on
+    # make version as 3.81 (macOS default) does not include this option
     cpus = 1
     # if os.getenv("CIRCLECI"):
     #     # getting the number of cpus available to the circleci executor from
@@ -50,7 +53,7 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
 
     with ctx.cd(test_dir):
         ctx.run(
-            "make -j {} --output-sync=recurse {}".format(cpus, rule),
+            "make -j {} {}".format(cpus, rule),
             env=env_dict,
             pty=True,
         )

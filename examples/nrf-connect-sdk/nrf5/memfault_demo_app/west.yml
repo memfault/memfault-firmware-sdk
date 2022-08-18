@@ -1,0 +1,18 @@
+manifest:
+  remotes:
+    - name: nrf-connect-sdk
+      url-base: https://github.com/nrfconnect
+  projects:
+    - name: nrf
+      url: https://github.com/nrfconnect/sdk-nrf
+      revision: v2.0.2
+      import: true
+
+    # Adding the memfault-firmware-sdk module here overrides the version the nRF
+    # Connect SDK would normally import above
+    - name: memfault-firmware-sdk
+      url: https://github.com/memfault/memfault-firmware-sdk
+      path: modules/lib/memfault-firmware-sdk
+      revision: master
+  self:
+    path: memfault_demo_app

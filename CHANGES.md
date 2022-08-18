@@ -1,3 +1,29 @@
+### Changes between Memfault SDK 0.33.0 and SDK 0.32.2 - Aug 18, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Extend [memfault demo shell](components/demo/src/memfault_demo_shell.c) to
+  support terminals that only emit CR for line endings
+- nRF5 SDK Updates:
+  - Added a [software watchdog](https://mflt.io/root-cause-watchdogs) reference
+    port for nRF5 SDK which makes use of the RTC Peripheral. See
+    [ports/nrf5_sdk/software_watchdog.c](ports/nrf5_sdk/software_watchdog.c) for
+    more details.
+  - Updated [nRF5 example app](examples/nrf5/apps/memfault_demo_app/) to make
+    use of hardware and new software watchdog port.
+- Zephyr Port Updates:
+  - Added Kconfig option to fallback to using `printk` by default when no
+    logging is enabled. This can be disabled by setting
+    `CONFIG_MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK=n`.
+- nRF Connect SDK Updates:
+  - Fixed a :bug: which could result in download errors when using
+    [Memfault nRF Connect SDK FOTA client](ports/nrf-connect-sdk/zephyr/include/memfault/nrfconnect_port/fota.h)
+    and enabled client in example application by default.
+  - Added new example application for trying Memfault with nRF53 & nRF52 based
+    development kits. See
+    [examples/nrf-connect-sdk/nrf5](examples/nrf-connect-sdk/nrf5) for more
+    details.
+
 ### Changes between Memfault SDK 0.32.2 and SDK 0.32.1 - Aug 16, 2022
 
 #### :chart_with_upwards_trend: Improvements

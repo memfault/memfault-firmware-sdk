@@ -90,7 +90,11 @@ static bool prv_handle_download_complete(void *user_ctx) {
 
 static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t argc,
                                                char **argv) {
-#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+#if MEMFAULT_NRF_CONNECT_SDK
+  // The nRF Connect SDK comes with a download client module that can be used to
+  // perform an actual e2e OTA so use that instead and don't link this code in at all!
+  shell_print(shell, "Use 'mflt_nrf fota' instead. See https://mflt.io/nrf-fota-setup for more details");
+#elif defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   uint8_t working_buf[256];
 
   sMemfaultShellOtaDownloadCtx user_ctx = {

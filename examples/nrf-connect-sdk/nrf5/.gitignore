@@ -1,0 +1,11 @@
+/bootloader
+/build
+/mbedtls
+/modules
+/nrf
+/nrfxlib
+/sparc
+/test
+/tools
+/.west
+/zephyr

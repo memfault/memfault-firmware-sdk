@@ -81,6 +81,12 @@ static void prv_coredump_storage_test_cmd(nrf_cli_t const *p_cli, size_t argc, c
   memfault_coredump_storage_debug_test_finish();
 }
 
+static void prv_hang_example(nrf_cli_t const *p_cli, size_t argc, char **argv) {
+  MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
+  while (1) {
+  }
+}
+
 NRF_CLI_CMD_REGISTER(crash, NULL, "trigger a crash", prv_crash_example);
 NRF_CLI_CMD_REGISTER(test_log, NULL, "writes test logs to log buffer", prv_test_log);
 NRF_CLI_CMD_REGISTER(trigger_logs, NULL, "trigger capture of current log buffer contents", prv_trigger_logs);
@@ -92,6 +98,7 @@ NRF_CLI_CMD_REGISTER(get_core, NULL, "gets the core", prv_get_core_cmd);
 NRF_CLI_CMD_REGISTER(get_device_info, NULL, "display device information", prv_get_device_info);
 NRF_CLI_CMD_REGISTER(reboot, NULL, "reboots system and tracks it with a trace event", prv_system_reboot_cmd);
 NRF_CLI_CMD_REGISTER(export, NULL, "Can be used to dump chunks to console or post via GDB", prv_export_data_cmd);
+NRF_CLI_CMD_REGISTER(hang, NULL, "Force a hang to test software watchdog functionality", prv_hang_example);
 
 // nrf_cli_help_print() doesn't work from the top level CLI so add a little shim 'help' function
 // for better discoverability of memfault added commands
@@ -106,6 +113,7 @@ static const nrf_cli_static_entry_t *s_avail_mflt_cmds[] = {
   &CONCAT_3(nrf_cli_, get_device_info, _raw),
   &CONCAT_3(nrf_cli_, reboot, _raw),
   &CONCAT_3(nrf_cli_, export, _raw),
+  &CONCAT_3(nrf_cli_, hang, _raw),
 };
 
 static void prv_help_cmd(nrf_cli_t const * p_cli, size_t argc, char **argv) {

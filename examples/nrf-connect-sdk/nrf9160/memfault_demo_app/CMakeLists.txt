@@ -32,7 +32,6 @@ if (NCS_VERSION_MAJOR)
     # Legacy name for CONFIG_DEBUG_THREAD_INFO needed for nRF Connect version <= 1.5
     # due to the version of Zephyr included (pre v2.5)
     set(CONFIG_OPENOCD_SUPPORT n CACHE INTERNAL "")
-
   elseif (${NCS_VERSION_MAJOR} LESS_EQUAL 1 AND ${NCS_VERSION_MINOR} LESS 6 )
     # Required for logging to work from crash, deprecated in Zephyr included in NCS 1.6
     set(CONFIG_LOG_IMMEDIATE y CACHE INTERNAL "")
@@ -41,6 +40,20 @@ if (NCS_VERSION_MAJOR)
     set(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME y CACHE INTERNAL "")
 
     set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
+  endif()
+
+  # Enable Memfault FOTA Support
+  #
+  # We enable conditionally because prior to NCS < 1.4 a small patch (https://mflt.io/nrf-fota) was
+  # needed in order for things to work
+  if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL 1.5.0)
+    set(CONFIG_MEMFAULT_FOTA y CACHE INTERNAL "")
+    set(CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE 400 CACHE INTERNAL "")
+    set(CONFIG_DOWNLOAD_CLIENT_STACK_SIZE 1600 CACHE INTERNAL "")
+
+    # Note: Can optionally be changed to =y to implement
+    # a custom event handler for FOTA events
+    # CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=n
   endif()
 
   # These were removed in NCS 1.8.0, but are needed prior to that. Enable them

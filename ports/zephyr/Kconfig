@@ -101,9 +101,18 @@ config MEMFAULT_ZEPHYR_FATAL_HANDLER
           device. Explicitly disabling it can save a few dozen bytes of code
           space.
 
+config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
+        bool "Fallback to printk for platform logging"
+        default y if ! LOG
+        help
+          When enabled, the platform logging implementation will fallback
+          to printk if Zephyr LOG is disabled. This is useful for testing when
+          Zephyr LOG is not enabled (eg due to code space limitations).
+
 config MEMFAULT_LOGGING_ENABLE
         bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
         default n
+        select LOG
         help
           Adds support for routing Zephyr logging calls to the Memfault
           logging backend.

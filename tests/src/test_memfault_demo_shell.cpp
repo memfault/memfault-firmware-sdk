@@ -88,6 +88,34 @@ TEST(MfltDemoShell, Test_MfltDemoShellEnter) {
   STRCMP_EQUAL("\r\nmflt> ", s_chars_sent_buffer);
 }
 
+TEST(MfltDemoShell, Test_MfltDemoShellEnterCR) {
+  memfault_demo_shell_receive_char('\r');
+  memfault_demo_shell_receive_char('\r');
+  STRCMP_EQUAL("\r\nmflt> \r\nmflt> ", s_chars_sent_buffer);
+}
+
+TEST(MfltDemoShell, Test_MfltDemoShellEnterCRLF) {
+  memfault_demo_shell_receive_char('\r');
+  memfault_demo_shell_receive_char('\n');
+  memfault_demo_shell_receive_char('\r');
+  memfault_demo_shell_receive_char('\n');
+  STRCMP_EQUAL("\r\nmflt> \r\nmflt> ", s_chars_sent_buffer);
+}
+
+TEST(MfltDemoShell, Test_MfltDemoShellEnterLF) {
+  memfault_demo_shell_receive_char('\n');
+  memfault_demo_shell_receive_char('\n');
+  STRCMP_EQUAL("\r\nmflt> \r\nmflt> ", s_chars_sent_buffer);
+}
+
+TEST(MfltDemoShell, Test_MfltDemoShellEnterLFCR) {
+  memfault_demo_shell_receive_char('\n');
+  memfault_demo_shell_receive_char('\r');
+  memfault_demo_shell_receive_char('\n');
+  memfault_demo_shell_receive_char('\r');
+  STRCMP_EQUAL("\r\nmflt> \r\nmflt> ", s_chars_sent_buffer);
+}
+
 TEST(MfltDemoShell, Test_MfltDemoShellUnknownCmd) {
   prv_receive_str("foo\n");
   STRCMP_EQUAL("foo\r\nUnknown command: foo\r\nType 'help' to list all commands\r\nmflt> ", s_chars_sent_buffer);

@@ -79,6 +79,20 @@
 #define NRF_CLI_RTT_TX_RETRY_DELAY_MS 1000
 #define NRF_CLI_VT100_COLORS_ENABLED 0
 
+//
+// Hardware & Software Watchdog configuration
+//
+
+#define RTC_ENABLED 1
+#define RTC2_ENABLED 1
+#define WDT_ENABLED 1
+
+// Note We've provisioned 256kB (64 pages) for coredumps and per Section "4.3.10 Electrical
+// specification" of the "nRF52840 Product Specification" manual, the maximum erase time of a page
+// is 85ms. This means we need 64 * 85ms = 5440ms to erase all flash pages. Let's use a watchdog
+// timeout above that so we do not have to feed the watchdog from the fault handlers.
+#define WDT_CONFIG_RELOAD_VALUE 10000 /* ms */
+
 // <h> Board Support
 
 //==========================================================
@@ -4574,6 +4588,7 @@
 #ifndef NRFX_WDT_ENABLED
 #define NRFX_WDT_ENABLED 0
 #endif
+
 // <o> NRFX_WDT_CONFIG_BEHAVIOUR  - WDT behavior in CPU SLEEP or HALT mode
 
 // <1=> Run in SLEEP, Pause in HALT

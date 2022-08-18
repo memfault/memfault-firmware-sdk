@@ -93,7 +93,7 @@ static char s_device_serial[IMEI_LEN + 1 /* '\0' */] = "unknown";
 // and these dependencies are no longer needed!
 // See https://mflt.io/nrf-connect-sdk-lib for more details
 
-static char s_fw_version[16] = "1.0.0";
+static char s_fw_version[16] = "1.0.0-dev";
 
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = "<YOUR PROJECT KEY HERE>",
@@ -105,7 +105,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     .device_serial = s_device_serial,
     .software_type = "nrf91ns-fw",
     .software_version = s_fw_version,
-    .hardware_version = "proto",
+    .hardware_version = "nrf9160dk",
   };
 }
 
