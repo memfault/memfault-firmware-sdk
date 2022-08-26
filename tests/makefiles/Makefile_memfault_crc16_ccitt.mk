@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_crc16_ccitt
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_crc16_ccitt.c
 

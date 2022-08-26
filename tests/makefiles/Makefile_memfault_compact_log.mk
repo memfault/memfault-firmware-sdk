@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_compact_log
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_log.c \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_minimal_cbor.c

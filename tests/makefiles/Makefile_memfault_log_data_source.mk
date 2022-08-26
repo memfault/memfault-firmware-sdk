@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_log_data_source
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_log.c \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_log_data_source.c \

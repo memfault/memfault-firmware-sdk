@@ -211,3 +211,50 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
   }
   LONGS_EQUAL(32, list_count);
 }
+
+//! Verify that an allocation that reuses a previously freed address is properly
+//! cleared from the stats list
+TEST(MemfaultHeapStats, Test_AddressReuse) {
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+  const sMfltHeapStatEntry expected_heap_stats[] = {
+    {
+      .lr = lr,
+      .ptr = (void *)0x12345679,
+      .info =
+        {
+          .size = 1234,
+          .in_use = 0,
+        },
+    },
+    {
+      .lr = lr,
+      .ptr = (void *)0x12345679,
+      .info =
+        {
+          .size = 1234,
+          .in_use = 0,
+        },
+    },
+  };
+
+  bool empty = memfault_heap_stats_empty();
+  CHECK(empty);
+  MEMFAULT_HEAP_STATS_MALLOC(expected_heap_stats[0].ptr, expected_heap_stats[0].info.size);
+  MEMFAULT_HEAP_STATS_FREE(expected_heap_stats[0].ptr);
+  MEMFAULT_HEAP_STATS_MALLOC(expected_heap_stats[1].ptr, expected_heap_stats[1].info.size);
+  MEMFAULT_HEAP_STATS_FREE(expected_heap_stats[1].ptr);
+  empty = memfault_heap_stats_empty();
+  CHECK(!empty);
+
+  size_t list_count = 0;
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+    sMfltHeapStatEntry *pthis = &g_memfault_heap_stats_pool[i];
+    if (pthis->info.size != 0) {
+      list_count++;
+      bool match = prv_heap_stat_equality(&expected_heap_stats[i], pthis);
+      CHECK(match);
+    }
+  }
+  LONGS_EQUAL(2, list_count);
+}

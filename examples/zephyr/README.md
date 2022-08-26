@@ -138,31 +138,54 @@ $ miniterm.py /dev/cu.usbmodem* 115200 --raw
 <inf> <mflt>: HW version: disco_l475_iot1
 [00:00:00.578,000] <inf> mflt: Memfault Demo App! Board disco_l475_iot1
 
-uart:~$
 uart:~$ mflt help
-mflt - Memfault Test Commands
 Subcommands:
-  reboot              :trigger a reboot and record it using memfault
-  get_core            :gets the core
-  clear_core          :clear the core
-  crash               :trigger a crash
-  hang                :trigger a hang to test watchdog functionality
+  clear_core          :clear coredump collected
   export              :dump chunks collected by Memfault SDK using
                        https://mflt.io/chunk-data-export
-  trace               :Capture an example trace event
+  get_core            :check if coredump is stored and present
   get_device_info     :display device information
-  post_chunks         :Post Memfault data to cloud
-  trigger_heartbeat   :Trigger an immediate capture of all heartbeat metrics
   get_latest_release  :checks to see if new ota payload is available
+  post_chunks         :Post Memfault data to cloud
+  test                :commands to verify memfault data collection
+                       (https://mflt.io/mcu-test-commands)
+  post_chunks         :Post Memfault data to cloud
+  get_latest_release  :checks to see if new ota payload is available
+```
+
+The `mflt test` subgroup contains commands for testing Memfault functionality:
+
+```bash
+uart:~$ mflt test help
+test - commands to verify memfault data collection
+       (https://mflt.io/mcu-test-commands)
+Subcommands:
+  assert       :trigger memfault assert
+  busfault     :trigger a busfault
+  hang         :trigger a hang
+  hardfault    :trigger a hardfault
+  memmanage    :trigger a memory management fault
+  usagefault   :trigger a usage fault
+  zassert      :trigger a zephyr assert
+  reboot       :trigger a reboot and record it using memfault
+  heartbeat    :trigger an immediate capture of all heartbeat metrics
+  log_capture  :trigger capture of current log buffer contents
+  logs         :writes test logs to log buffer
+  trace        :capture an example trace event
+```
+
+For example, to test the coredump functionality:
+
+1. run `mflt test hardfault` and wait for the board to reset
 ```
 
 ### Causing a crash
 
-Command `mflt crash 1` will trigger a hard fault due to a bad instruction fetch
+Command `mflt test hardfault` will trigger a hard fault due to a bad instruction fetch
 at a non-existing address, `0xbadcafe`:
 
 ```
-uart:~$ mflt crash 1
+uart:~$ mflt test hardfault
 ... etc ...
 ```
 
@@ -202,10 +225,10 @@ uart:~$
 
 #### Post data
 
-Once connected, type `mflt post_msg` and press enter. You should see:
+Once connected, type `mflt post_chunks` and press enter. You should see:
 
 ```
-uart:~$ mflt post_msg
+uart:~$ mflt post_chunks
 <dbg> <mflt>: Memfault Message Post Complete: Parse Status 0 HTTP Status 202!
 <dbg> <mflt>: Body: Accepted
 <dbg> <mflt>: Memfault Message Post Complete: Parse Status 0 HTTP Status 202!

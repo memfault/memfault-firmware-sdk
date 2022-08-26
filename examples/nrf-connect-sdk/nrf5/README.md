@@ -34,27 +34,44 @@ The console has several Memfault test commands available:
 
 ```bash
 uart:~$ mflt help
-mflt - Memfault Test Commands
 Subcommands:
-  reboot              :trigger a reboot and record it using memfault
-  get_core            :gets the core
-  clear_core          :clear the core
-  crash               :trigger a crash
-  test_log            :Writes test logs to log buffer
-  trigger_logs        :Trigger capture of current log buffer contents
-  hang                :trigger a hang to test watchdog functionality
+  clear_core          :clear coredump collected
   export              :dump chunks collected by Memfault SDK using
                        https://mflt.io/chunk-data-export
-  trace               :Capture an example trace event
+  get_core            :check if coredump is stored and present
   get_device_info     :display device information
-  post_chunks         :Post Memfault data to cloud
-  trigger_heartbeat   :Trigger an immediate capture of all heartbeat metrics
   get_latest_release  :checks to see if new ota payload is available
+  post_chunks         :Post Memfault data to cloud
+  test                :commands to verify memfault data collection
+                       (https://mflt.io/mcu-test-commands)
+  post_chunks         :Post Memfault data to cloud
+  get_latest_release  :checks to see if new ota payload is available
+```
+
+The `mflt test` subgroup contains commands for testing Memfault functionality:
+
+```bash
+uart:~$ mflt test help
+test - commands to verify memfault data collection
+       (https://mflt.io/mcu-test-commands)
+Subcommands:
+  assert       :trigger memfault assert
+  busfault     :trigger a busfault
+  hang         :trigger a hang
+  hardfault    :trigger a hardfault
+  memmanage    :trigger a memory management fault
+  usagefault   :trigger a usage fault
+  zassert      :trigger a zephyr assert
+  reboot       :trigger a reboot and record it using memfault
+  heartbeat    :trigger an immediate capture of all heartbeat metrics
+  log_capture  :trigger capture of current log buffer contents
+  logs         :writes test logs to log buffer
+  trace        :capture an example trace event
 ```
 
 For example, to test the coredump functionality:
 
-1. run `mflt crash` and wait for the board to reset
+1. run `mflt test hardfault` and wait for the board to reset
 2. run `mflt get_core` to confirm the coredump was saved
 3. run `mflt export` to print out the base-64 chunks:
 

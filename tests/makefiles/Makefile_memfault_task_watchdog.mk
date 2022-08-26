@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_task_watchdog
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_task_watchdog.c
 

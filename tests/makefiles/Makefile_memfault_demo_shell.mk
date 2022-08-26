@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_demo_shell
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/demo/src/memfault_demo_shell.c
 

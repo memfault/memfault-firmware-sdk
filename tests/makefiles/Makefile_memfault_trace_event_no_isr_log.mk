@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_trace_event
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_serializer_helper.c \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_trace_event.c \

@@ -122,11 +122,11 @@ is used as serial number. You can change this to match your requirements (see
 
 ### Causing a crash
 
-Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
+Command `test_hardfault` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`.
 
 ```
-mflt> crash 1
+mflt> test_hardfault
 ... etc ...
 ```
 

@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_base64
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_base64.c
 

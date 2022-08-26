@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_ram_reboot_tracking
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_ram_reboot_info_tracking.c
 

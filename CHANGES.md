@@ -1,3 +1,33 @@
+### Changes between Memfault SDK 0.33.0 and SDK 0.33.1 - Aug 26, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix a :bug: in the heap stats component (#32), thanks @christophgreen for
+  reporting it!
+- Zephyr port updates:
+  - add support for the newly namespaced Zephyr include path in upcoming Zephyr
+    v3.2 (`#include <zephyr.h>` → `#include <zephyr/zephyr.h>`). The includes
+    were moved
+    [prior to v3.1](https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350)
+    of Zephyr, but v3.2
+    [changes the backwards compatibility support to opt-in](https://github.com/zephyrproject-rtos/zephyr/commit/1ec0c6f5308937dc8e77acc2567d6f53cdd7a74e).
+    The Memfault SDK is now updated to support both.
+  - fix Zephyr Memfault log capture to have the correct prefix in the decoded
+    output when using LOG2 - previously all log lines regardless of level would
+    have an `E` prefix (regression introduced in Memfault SDK version 0.32.0)
+  - fix Zephyr Memfault log capture when in `CONFIG_LOG_MODE_IMMEDIATE` and
+    using LOG2 to capture the full log line instead of each logged character as
+    a separate line.
+
+#### :house: Internal
+
+- Zephyr port folder for `v2.x` migrated to `common`, now that Zephyr v1.14
+  support has been removed (done in v0.32.0 of the Memfault SDK)
+- Update README's for the example projects to match the new demo shell command
+  structure (`crash 1` → `test_hardfault`, etc).
+- Tidy up nrf9160 example app Kconfig setup
+- Fix parallel unit test invocation
+
 ### Changes between Memfault SDK 0.33.0 and SDK 0.32.2 - Aug 18, 2022
 
 #### :chart_with_upwards_trend: Improvements

@@ -1,5 +1,3 @@
-COMPONENT_NAME=assert
-
 SRC_FILES = \
 
 MOCK_AND_FAKE_SRC_FILES += \

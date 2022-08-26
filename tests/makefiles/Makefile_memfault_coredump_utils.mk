@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_coredump_utils
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/panics/src/memfault_coredump_utils.c
 

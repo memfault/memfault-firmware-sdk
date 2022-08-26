@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_serializer_helper_with_device_serial
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_serializer_helper.c \
 

@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_circular_buffer
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_circular_buffer.c
 

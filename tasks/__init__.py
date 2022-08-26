@@ -17,7 +17,14 @@ SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
 
 
 @task
-def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SDK_FW_TESTS_ROOT):
+def fw_sdk_unit_test(
+    ctx,
+    coverage=False,
+    rule="",
+    test_filter=None,
+    test_dir=SDK_FW_TESTS_ROOT,
+    extra_make_options="",
+):
     """Runs unit tests"""
     env_dict = {}
     if is_macos():
@@ -29,9 +36,8 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
 
     if "CPPUTEST_HOME" in os.environ:
         # override target platform so the test build system can locate the
-        # conda-installed cpputest libraries. the conda-forge linux installation
-        # puts the library under lib64 for some reason 🙄
-        env_dict["TARGET_PLATFORM"] = "lib" if is_macos() else "lib64"
+        # conda-installed cpputest libraries.
+        env_dict["TARGET_PLATFORM"] = "lib"
 
     if coverage:
         rule += " lcov"
@@ -39,21 +45,31 @@ def fw_sdk_unit_test(ctx, coverage=False, rule="", test_filter=None, test_dir=SD
     if test_filter:
         env_dict["TEST_MAKEFILE_FILTER"] = test_filter
 
-    # Unit tests currently don't reliably pass when running Make in parallel 😢
-    #
-    # When we fix this we should also conditionally add (--output-sync=recurse) based on
-    # make version as 3.81 (macOS default) does not include this option
+    make_options = []
+
+    # set output-sync option only if make supports it. macos uses a 12+ year old
+    # copy of make by default that doesn't have this option.
+    result = ctx.run("make --help", hide=True)
+    if "--output-sync" in result.stdout:
+        make_options.append("--output-sync=recurse")
+
+    if extra_make_options:
+        make_options.append(extra_make_options)
+
     cpus = 1
-    # if os.getenv("CIRCLECI"):
-    #     # getting the number of cpus available to the circleci executor from
-    #     # within the docker container is a hassle, so bail and use 2 cpus
-    #     cpus = 2
-    # else:
-    #     cpus = len(os.sched_getaffinity(0))
+    if os.getenv("CIRCLECI"):
+        # getting the number of cpus available to the circleci executor from
+        # within the docker container is a hassle, so bail and use 2 cpus
+        cpus = 2
+    else:
+        cpus = len(os.sched_getaffinity(0))
+    make_options.extend(["-j", str(cpus)])
+
+    env_dict["CPPUTEST_EXE_FLAGS"] = "-c"
 
     with ctx.cd(test_dir):
         ctx.run(
-            "make -j {} {}".format(cpus, rule),
+            "make {} {}".format(" ".join(make_options), rule),
             env=env_dict,
             pty=True,
         )

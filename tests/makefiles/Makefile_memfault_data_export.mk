@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_data_export
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_data_export.c
 

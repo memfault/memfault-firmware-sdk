@@ -93,7 +93,7 @@ void memfault_heap_stats_free(const void *ptr) {
 
     // if the pointer exists in the tracked stats, mark it as freed
     for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
-      if (g_memfault_heap_stats_pool[i].ptr == ptr) {
+      if ((g_memfault_heap_stats_pool[i].ptr == ptr) && g_memfault_heap_stats_pool[i].info.in_use) {
         g_memfault_heap_stats_pool[i].info.in_use = 0;
         break;
       }

@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_metrics_serializer
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/metrics/src/memfault_metrics_serializer.c
 

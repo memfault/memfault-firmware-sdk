@@ -95,8 +95,12 @@ static char s_device_serial[IMEI_LEN + 1 /* '\0' */] = "unknown";
 
 static char s_fw_version[16] = "1.0.0-dev";
 
+#ifndef MEMFAULT_NCS_PROJECT_KEY
+#define MEMFAULT_NCS_PROJECT_KEY "<YOUR PROJECT KEY HERE>"
+#endif
+
 sMfltHttpClientConfig g_mflt_http_client_config = {
-  .api_key = "<YOUR PROJECT KEY HERE>",
+  .api_key = MEMFAULT_NCS_PROJECT_KEY,
 };
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {

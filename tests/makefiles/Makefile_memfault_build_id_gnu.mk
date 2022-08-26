@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_build_id_gnu
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_build_id.c \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_core_utils.c

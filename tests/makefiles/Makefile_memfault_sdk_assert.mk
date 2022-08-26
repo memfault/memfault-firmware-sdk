@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_sdk_assert
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_sdk_assert.c
 

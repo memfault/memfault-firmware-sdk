@@ -87,7 +87,7 @@ endif
 	@echo See coverage output in file://$(abspath $(BUILD_DIR)/test_coverage/index.html)
 
 $(TEST_MAKEFILES):
-	$(MAKE) -f $@ $(CPPUTEST_BUILD_RULE)
+	$(MAKE) -f $@ $(CPPUTEST_BUILD_RULE) COMPONENT_NAME=$(patsubst makefiles/Makefile_%.mk,%,$@)
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_event_storage_batch_read
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_event_storage.c
 

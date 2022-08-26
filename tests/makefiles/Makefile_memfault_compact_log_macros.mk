@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_compact_log_macros
-
 SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_compact_log_c.c
 

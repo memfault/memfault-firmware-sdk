@@ -4,12 +4,10 @@
 //! See License.txt for details
 //!
 //! @brief
-//! Hooks the Memfault logging API to zephyr's logging system.
-//! This is different from the debug log.
+//! Hooks the Memfault logging API to zephyr's latest (V2) logging system.
+//! As of Zephyr 3.2, it's the only logging system that can be used.
 
-#include "memfault/config.h"
-#include "memfault/core/arch.h"
-#include "memfault/core/log.h"
+#include "memfault/components.h"
 #include "memfault/ports/zephyr/version.h"
 
 #include <logging/log.h>
@@ -21,6 +19,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// Deal with CONFIG_LOG_IMMEDIATE getting renamed to CONFIG_LOG_MODE_IMMEDIATE in v3.0.0 release:
+//  https://github.com/zephyrproject-rtos/zephyr/commit/262cc55609b73ea61b5f999c6c6daaba20bc5240
+#if defined(CONFIG_LOG_IMMEDIATE) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
+#define CONFIG_LOG_MODE_IMMEDIATE CONFIG_LOG_IMMEDIATE
+#endif
+
 // Can't be zero but should be reasonably sized. See ports/zephyr/Kconfig to change this size.
 BUILD_ASSERT(CONFIG_MEMFAULT_LOGGING_RAM_SIZE);
 
@@ -30,65 +34,89 @@ BUILD_ASSERT(CONFIG_MEMFAULT_LOGGING_RAM_SIZE);
 // e.g. struct log_output n and struct log_output_control_block n_control_block.
 // Within the log_output_control_block there is a void *ctx we can use to store
 // info we need when called by Zephyr by calling log_output_ctx_set().
-static uint8_t s_zephyr_render_buf[128];
+
 static int prv_log_out(uint8_t *data, size_t length, void *ctx);
+static uint8_t s_zephyr_render_buf[128];
 LOG_OUTPUT_DEFINE(s_log_output_mflt, prv_log_out, s_zephyr_render_buf, sizeof(s_zephyr_render_buf));
 
-// Copied flagging from Zephry's ring buffer (rb) implementation.
-static const uint32_t g_flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
-                                  ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL
-                                  : LOG_OUTPUT_FLAG_LEVEL;
+// Zephyr will call our init function so we can establish some storage.
+static void prv_log_init(const struct log_backend *const backend) {
+  // static RAM storage where logs will be stored. Storage can be any size
+  // you want but you will want it to be able to hold at least a couple logs.
+  static uint8_t s_mflt_log_buf_storage[CONFIG_MEMFAULT_LOGGING_RAM_SIZE];
+  memfault_log_boot(s_mflt_log_buf_storage, sizeof(s_mflt_log_buf_storage));
+}
 
-// Construct our backend API object. Might need to check how/if we want to support
-// put_sync_string() & dropped().
-#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg);
-static void prv_log_put_sync_string(const struct log_backend *const backend,
-                            struct log_msg_ids src_level, uint32_t timestamp,
-                            const char *fmt, va_list ap);
+static void prv_log_panic(struct log_backend const *const backend) {
+  log_output_flush(&s_log_output_mflt);
+}
+
+static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephyr_level) {
+  //     Map             From            To
+  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error
+       : zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning
+       : zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info
+       :              /* LOG_LEVEL_DBG */kMemfaultPlatformLogLevel_Debug;
+}
+
+typedef struct MfltLogProcessCtx {
+  eMemfaultPlatformLogLevel memfault_level;
+
+#if CONFIG_LOG_MODE_IMMEDIATE
+  int write_idx;
 #endif
-static void prv_log_panic(struct log_backend const *const backend);
 
-
-// The function signature for struct log_backend_api init changed between Zephyr 2.5 and Zephyr 2.6
-// and we don't use any of the parameters so we leave the parameter list empty to mitigate
-// -Wincompatible-pointer-types between versions
-static void prv_log_init();
-
+} sMfltLogProcessCtx;
 
 // LOG2 was added in Zephyr 2.6:
 // https://github.com/zephyrproject-rtos/zephyr/commit/f1bb20f6b43b8b241e45f3f132f0e7bbfc65401b
 // LOG2 was moved to LOG in Zephyr 3.2
 // https://github.com/zephyrproject-rtos/zephyr/issues/46500
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-static void prv_log_process(const struct log_backend *const backend, union log_msg_generic *msg) {
-  log_output_msg_process(&s_log_output_mflt, &msg->log, g_flags);
-}
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
-// Additional processing for log2 output
-static void prv_log_process(const struct log_backend *const backend, union log_msg2_generic *msg) {
-  log_output_msg2_process(&s_log_output_mflt, &msg->log, g_flags);
-}
-#endif
-
-static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt);
-const struct log_backend_api log_backend_mflt_api = {
-// The CONFIG_LOG2/1 options were removed after the 3.1 release series, so we no
-// longer can use them to assign the correct backend. Luckily there's only one
-// log type now, so it can just be set directly.
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-  .process          = prv_log_process,
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
-  .process          = IS_ENABLED(CONFIG_LOG2) ? prv_log_process : NULL,
-#endif
-
-// Old-style logging backend API
 #if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-  .put              = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_put,
-  .put_sync_string  = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? prv_log_put_sync_string : NULL,
-  // Note: We don't want to clutter Memfault circular buffer with hex dumps
-  .put_sync_hexdump = NULL,
+#define log_msg_generic log_msg2_generic
+#define log_output_msg_process log_output_msg2_process
+#define log_msg_get_level log_msg2_get_level
 #endif
+
+static void prv_log_process(const struct log_backend *const backend,
+                            union log_msg_generic *msg) {
+  // Copied flagging from Zephry's ring buffer (rb) implementation.
+  const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
+                       ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL
+                       : LOG_OUTPUT_FLAG_LEVEL;
+
+  // Note: This is going to trigger calls to our prv_log_out() handler
+
+  const uint32_t zephyr_level = log_msg_get_level(&msg->log);
+
+  // This only needs to stay in scope for this function since log_output_msg_process()
+  // calls prv_log_out() directly which is the only place we access the context
+  sMfltLogProcessCtx log_process_ctx = {
+    .memfault_level = prv_map_zephyr_level_to_memfault(zephyr_level),
+  };
+
+  // Immediate mode triggers log invocations directly from the thread doing the log. Since we are
+  // buffering the log in a shared buffer, s_zephyr_render_buf, we need to hold a lock while the
+  // operation is in progress.
+#if CONFIG_LOG_MODE_IMMEDIATE
+  memfault_lock();
+#endif
+
+  log_output_ctx_set(&s_log_output_mflt, &log_process_ctx);
+  log_output_msg_process(&s_log_output_mflt, &msg->log, flags);
+
+#if CONFIG_LOG_MODE_IMMEDIATE
+  memfault_unlock();
+#endif
+}
+
+static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt) {
+  ARG_UNUSED(backend);
+  log_output_dropped_process(&s_log_output_mflt, cnt);
+}
+
+const struct log_backend_api log_backend_mflt_api = {
+  .process          = prv_log_process,
   .panic            = prv_log_panic,
   .init             = prv_log_init,
   .dropped          = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_dropped,
@@ -106,69 +134,49 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
     return (int) length;
   }
 
-  // Note: Context should always be populated. If it is not, flag the log as an _Error
-  const eMemfaultPlatformLogLevel log_level = ctx != NULL ? *(eMemfaultPlatformLogLevel*)ctx :
-                                                            kMemfaultPlatformLogLevel_Error;
-  memfault_log_save_preformatted(log_level, data, length);
+  sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx*)ctx;
+  size_t save_length = length;
+
+#if CONFIG_LOG_MODE_IMMEDIATE
+
+  // A check to help us catch if behavior changes in a future release of Zephyr
+  MEMFAULT_SDK_ASSERT(length <= 1);
+
+  // A few notes about immediate mode:
+  //
+  //  1. We are going to re-purpose "s_zephyr_render_buf" as it is never actually used by the
+  //     Zephyr logging stack in immediate mode and we don't want to waste extra ram:
+  //       https://github.com/zephyrproject-rtos/zephyr/blob/15fdee04e3daf4d63064e4195aeeef6ccc52e694/subsys/logging/log_output.c#L105-L112
+  //
+  //  2. We will use length == 0 to determine that log has been entirely
+  //     flushed. log_output_msg_process() always calls log_output_flush() but in immediate mode
+  //     there is no buffer filled to be flushed so the length will be zero
+  if (length > 0 && mflt_ctx->write_idx < sizeof(s_zephyr_render_buf)) {
+      s_zephyr_render_buf[mflt_ctx->write_idx] = data[0];
+      mflt_ctx->write_idx++;
+  }
+
+  const bool flush = (length == 0);
+  if (!flush) {
+    return (int) length;
+  }
+
+  // Strip EOL characters at end of log since we are storing _lines_
+  save_length = mflt_ctx->write_idx;
+  while ((save_length - 1) > 0) {
+    char c = s_zephyr_render_buf[save_length - 1];
+    if ((c == '\r') || (c == '\n')) {
+      save_length--;
+      continue;
+    }
+    break;
+  }
+  data = &s_zephyr_render_buf[0];
+#endif
+
+  // Note: Context should always be populated via our call to log_output_ctx_set() above.
+  // Assert to catch any behavior changes in future versions of Zephyr
+  MEMFAULT_SDK_ASSERT(mflt_ctx != NULL);
+  memfault_log_save_preformatted(mflt_ctx->memfault_level, data, save_length);
   return (int) length;
-}
-
-#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephyr_level) {
-  //     Map             From            To
-  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error
-       : zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning
-       : zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info
-       :              /* LOG_LEVEL_DBG */kMemfaultPlatformLogLevel_Debug;
-}
-#endif
-
-// *** Below are the implementations for the Zephyr backend API ***
-
-// Zephyr API function. I'm assuming <msg> has been validated by the time put() is called.
-#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg) {
-  // Acquire, process (eventually calls prv_data_out()) and release the message.
-  log_msg_get(msg);
-  const uint32_t zephyr_level = log_msg_level_get(msg);
-  if (zephyr_level != LOG_LEVEL_NONE) {
-    // We might log so figure out if Memfault logging level for when Zephyr calls us back.
-    eMemfaultPlatformLogLevel memfault_level = prv_map_zephyr_level_to_memfault(zephyr_level);
-    log_output_ctx_set(&s_log_output_mflt, &memfault_level);
-    log_output_msg_process(&s_log_output_mflt, msg, g_flags);
-  }
-  log_msg_put(msg);
-}
-
-static void prv_log_put_sync_string(const struct log_backend *const backend,
-                                    struct log_msg_ids src_level, uint32_t timestamp,
-                                    const char *fmt, va_list ap) {
-  if (memfault_arch_is_inside_isr()) {
-    // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
-    // don't save info while in an ISR to avoid wrapping over the info we are collecting.
-    return;
-  }
-
-  // Note: Zephyr's log_output_string() API dumps 1 char at a time to put() so
-  // we use memfault logging directly instead
-  eMemfaultPlatformLogLevel memfault_level = prv_map_zephyr_level_to_memfault(src_level.level);
-  memfault_vlog_save(memfault_level, fmt, ap);
-}
-#endif
-
-static void prv_log_panic(struct log_backend const *const backend) {
-  log_output_flush(&s_log_output_mflt);
-}
-
-// Zephyr will call our init function so we can establish some storage.
-static void prv_log_init() {
-  // static RAM storage where logs will be stored. Storage can be any size
-  // you want but you will want it to be able to hold at least a couple logs.
-  static uint8_t s_mflt_log_buf_storage[CONFIG_MEMFAULT_LOGGING_RAM_SIZE];
-  memfault_log_boot(s_mflt_log_buf_storage, sizeof(s_mflt_log_buf_storage));
-}
-
-static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt) {
-  ARG_UNUSED(backend);
-  log_output_dropped_process(&s_log_output_mflt, cnt);
 }

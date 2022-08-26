@@ -96,7 +96,6 @@ TEST(MemfaultMinimalCbor, Test_All_InPlace) {
   // Fill in-out buffer with binary data to encode
   for (size_t i = 0; i < bin_len; i++) {
     in_out_buf[i] = i & 0xff;
-    printf(" [%d] %d\n", (int)i, in_out_buf[i]);
   }
 
   const char *expected_out_str =

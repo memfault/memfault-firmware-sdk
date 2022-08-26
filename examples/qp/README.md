@@ -112,11 +112,11 @@ Detach the debugger now and hard-reset the board. Otherwise, if the debugger is
 still attached while crashing, the demo application will pause at a breakpoint
 instruction.
 
-Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
+Command `test_hardfault` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`:
 
 ```
-mflt> mflt crash 1
+mflt> mflt test_hardfault
 Memfault QP demo app started...
 
 mflt>

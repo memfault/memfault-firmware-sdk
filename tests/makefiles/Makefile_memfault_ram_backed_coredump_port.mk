@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_ram_backed_coredump_port
-
 SRC_FILES = \
   $(MFLT_PORTS_DIR)/panics/src/memfault_platform_ram_backed_coredump.c
 

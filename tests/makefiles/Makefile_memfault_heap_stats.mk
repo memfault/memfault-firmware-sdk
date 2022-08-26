@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_heap_stats
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_heap_stats.c
 

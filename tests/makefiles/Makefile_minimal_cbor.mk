@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_minimal_cbor
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_minimal_cbor.c
 

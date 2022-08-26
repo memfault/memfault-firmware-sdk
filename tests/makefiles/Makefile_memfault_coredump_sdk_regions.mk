@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_sdk_regions
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/panics/src/memfault_coredump_sdk_regions.c
 

@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_heartbeat_metrics
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/metrics/src/memfault_metrics.c \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_serializer_helper.c \

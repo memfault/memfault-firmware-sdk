@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_http_client_util
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/http/src/memfault_http_utils.c \
 

@@ -145,8 +145,9 @@ static bool prv_should_ignore_eol_char(char c) {
   }
 
   //
-  // First end of line character detected. We will use this character as our EOL delimiter and
-  // ignore the opposite character when we see it in the future.
+  // Check to see if we have encountered our first newline character since the shell was booted
+  // (either a CR ('\r') or LF ('\n')). Once found, we will use this character as our EOL delimiter
+  // and ignore the opposite character if we see it in the future.
   //
 
   if (c == '\r') {

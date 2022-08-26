@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_varint
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_varint.c
 

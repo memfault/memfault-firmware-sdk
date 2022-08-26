@@ -27,8 +27,8 @@ $ cd $ZEPHYR_ROOT_DIR/
 $ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v2.0]/zephyr-integration.patch
 ```
 
-Note that `v2.x/coredump-support.patch` should be applied for Zephyr 2.2 and 2.3
-only.
+Note that `v2.2_v2.3/coredump-support.patch` should be applied for Zephyr 2.2
+and 2.3 only.
 
 2. Clone (or symlink) memfault-firmware-sdk in Zephyr Project
 

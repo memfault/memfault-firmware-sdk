@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_chunk_transport
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_chunk_transport.c
 

@@ -171,11 +171,11 @@ requirements (see
 
 ### Causing a crash
 
-Command `crash 1` will trigger a hard fault due to a bad instruction fetch at a
+Command `test_hardfault` will trigger a hard fault due to a bad instruction fetch at a
 non-existing address, `0xbadcafe`.
 
 ```
-> crash 1
+> test_hardfault
 ... etc ...
 ```
 

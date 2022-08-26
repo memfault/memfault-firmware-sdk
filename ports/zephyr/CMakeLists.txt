@@ -45,10 +45,6 @@ if(CONFIG_MEMFAULT)
   # Zephyr specific port def for trace errors
   zephyr_compile_definitions(MEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_zephyr_port_config.def\")
 
-  if(${MEMFAULT_ZEPHYR_PORT_TARGET} MATCHES "^v2\.*")
-    add_subdirectory(v2.x)
-  endif()
-
   # Pick up Zephyr specific port files
   add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
   add_subdirectory(common)
@@ -57,5 +53,15 @@ if(CONFIG_MEMFAULT)
   # Link Memfault Library
   zephyr_library_link_libraries(memfault)
   target_link_libraries(memfault INTERFACE zephyr_interface)
+
+  # The Zephyr includes moved from /include to /include/zephyr in Zephyr 3.2:
+  # https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350
+  # Add the old path for backwards compatibility. Note that Zephyr itself
+  # supports the Kconfig option 'CONFIG_LEGACY_INCLUDE_PATH' to enable the same
+  # compatibility behavior, but it's marked as deprecated and to be removed in
+  # the future, so just apply the compatibiltiy fix here.
+  if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99")
+    zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr)
+  endif()
 
 endif()

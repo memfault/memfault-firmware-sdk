@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_root_cert
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/http/src/memfault_root_certs_der.c
 

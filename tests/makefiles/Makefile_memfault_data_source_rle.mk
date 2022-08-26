@@ -1,5 +1,3 @@
-COMPONENT_NAME=memfault_data_source_rle
-
 SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_data_source_rle.c \
   $(MFLT_COMPONENTS_DIR)/util/src/memfault_rle.c \

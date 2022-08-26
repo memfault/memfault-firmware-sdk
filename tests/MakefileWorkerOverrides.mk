@@ -32,7 +32,7 @@ CPPUTEST_CPPFLAGS += $(MEMFAULT_EXTRA_INC_PATHS) \
 # memfault/core/compact_log_helpers.h makes use of the gnu expansion rules for ,## __VA_ARGS__. We
 # explicitly opt in unit tests that need this feature with different gnu standard args for these
 # tests
-ifneq (,$(findstring MEMFAULT_COMPACT_LOG_ENABLE=1=,$(CPPUTEST_CFLAGS)))
+ifeq (,$(findstring MEMFAULT_COMPACT_LOG_ENABLE=1,$(CPPUTEST_CPPFLAGS)))
 CPPUTEST_CXXFLAGS += -std=c++11
 else
 CPPUTEST_CFLAGS += -std=gnu11
