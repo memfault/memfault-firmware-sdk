@@ -113,6 +113,7 @@ config MEMFAULT_LOGGING_ENABLE
         bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
         default n
         select LOG
+        select LOG_OUTPUT
         help
           Adds support for routing Zephyr logging calls to the Memfault
           logging backend.
