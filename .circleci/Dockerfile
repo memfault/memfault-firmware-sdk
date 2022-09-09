@@ -1,3 +1,14 @@
+# This Docker image is used in CircleCI to build the SDK. It's published to
+# Docker Hub as "memfault/memfault-sdk-embedded-ci".
+#
+# It's built with the following command (assuming cwd is the directory
+# containing this Dockerfile):
+#
+# ❯ DOCKER_BUILDKIT=1 docker build -t memfault/memfault-firmware-sdk-ci:<tag> .
+#
+# And uploaded to Docker Hub:
+# ❯ docker push memfault/memfault-firmware-sdk-ci:<tag>
+
 FROM ubuntu:22.04
 
 # Some details based on this Dockerfile:

@@ -91,12 +91,12 @@ void memfault_platform_log_raw(const char *fmt, ...) {
   ((KERNEL_VERSION_MAJOR > (major)) ||   \
    ((KERNEL_VERSION_MAJOR == (major)) && (KERNEL_VERSION_MINOR >= (minor))))
 
-#if ZEPHYR_VERSION_GTE(3, 0)
   char log_buf[MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES];
   vsnprintf(log_buf, sizeof(log_buf), fmt, args);
-  LOG_PRINTK("%s", log_buf);
+#if ZEPHYR_VERSION_GTE(3, 0)
+  LOG_PRINTK("%s\n", log_buf);
 #else
-  log_printk("%s\n", args);
+  printk("%s\n", log_buf);
 #endif
 
   va_end(args);

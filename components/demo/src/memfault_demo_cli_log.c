@@ -16,6 +16,7 @@
 
 int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc,
                                    MEMFAULT_UNUSED char *argv[]) {
+  MEMFAULT_LOG_RAW("Raw log!");
   MEMFAULT_LOG_DEBUG("Debug log!");
   MEMFAULT_LOG_INFO("Info log!");
   MEMFAULT_LOG_WARN("Warning log!");

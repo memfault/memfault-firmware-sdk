@@ -13,6 +13,19 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
+//! wrapper to enclose logic around log_strdup
+char *prv_conditional_log_strdup(char *str) {
+#if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+  #if defined(CONFIG_LOG) && !defined(CONFIG_LOG2)
+  // Before zephyr 3.1, LOG was a different option from LOG2 and required
+  // manually duplicating string argument values. Only required if CONFIG_LOG is
+  // in use.
+  return log_strdup(str);
+  #endif
+#endif
+
+  return str;
+}
 static void prv_set_device_id(void) {
   uint8_t dev_id[16] = {0};
   char dev_id_str[sizeof(dev_id) * 2 + 1];
@@ -33,12 +46,14 @@ static void prv_set_device_id(void) {
     dev_str = dev_id_str;
   }
 
-  LOG_INF("Device ID: %s", dev_str);
+  LOG_INF("Device ID: %s", prv_conditional_log_strdup(dev_str));
 
   memfault_ncs_device_id_set(dev_str, length * 2);
 }
 
 void main(void) {
+  LOG_INF("Booting Memfault sample app!");
+
   // Set the device id based on the hardware UID
   prv_set_device_id();
 

@@ -109,7 +109,6 @@ static void prv_log_put(const struct log_backend *const backend, struct log_msg 
 static void prv_log_put_sync_string(const struct log_backend *const backend,
                                     struct log_msg_ids src_level, uint32_t timestamp,
                                     const char *fmt, va_list ap) {
-  printk("HERE WE GOOO\n");
   if (memfault_arch_is_inside_isr()) {
     // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
     // don't save info while in an ISR to avoid wrapping over the info we are collecting.

@@ -1,3 +1,15 @@
+### Changes between Memfault SDK 0.33.1 and SDK 0.33.2 - Sept 7, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr port updates:
+  - fix a few minor nuisance build warnings on niche Zephyr configurations
+  - enable `LOG_OUTPUT` when `MEMFAULT_LOGGING_ENABLE` is enabled- this fixes a
+    build error if all other log backends are disabled. thanks to @balaji-nordic
+    for this fix! closes #33
+- Add a debug cli test command to the nRF-Connect SDK port for printing the OTA
+  url
+
 ### Changes between Memfault SDK 0.33.0 and SDK 0.33.1 - Aug 26, 2022
 
 #### :chart_with_upwards_trend: Improvements
@@ -89,6 +101,9 @@
     "Breaking Changes" below for enabling logs in your project.
   - Added a new Kconfig option, `MEMFAULT_ZEPHYR_FATAL_HANDLER`, which can be
     used to disable the Zephyr fault handler print facilities.
+  - Streamline support for nRF-Connect SDK based applications that don't need
+    the Memfault root certificates (eg nRF53 or nRF52 devices), via a new
+    Kconfig option `MEMFAULT_ROOT_CERT_STORAGE`, to avoid a nuisance build error
 
 #### :boom: Breaking Changes
 
