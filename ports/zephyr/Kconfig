@@ -92,16 +92,6 @@ config MEMFAULT_HTTP_ENABLE
           Enables support for querying the Memfault API for OTA updates
           and posting Memfault chunks
 
-config MEMFAULT_ZEPHYR_FATAL_HANDLER
-        bool "Enable running the Zephyr fatal handler after Memfault coredump capture"
-        default y
-        help
-          This enables the Zephyr fatal handler to run after Memfault's fault
-          handler. It's useful to view the Zephyr fatal output (few breadcrumbs
-          about the crash) on the console when debugging with an attached
-          device. Explicitly disabling it can save a few dozen bytes of code
-          space.
-
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
         bool "Fallback to printk for platform logging"
         default y if ! LOG

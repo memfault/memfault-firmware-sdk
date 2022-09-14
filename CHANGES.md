@@ -1,3 +1,11 @@
+### Changes between Memfault SDK 0.33.2 and SDK 0.33.3 - Sept 14, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr port updates:
+  - Add a call to `LOG_PANIC()` before running the Memfault fault handler, to
+    flush any deferred logs before the reboot
+
 ### Changes between Memfault SDK 0.33.1 and SDK 0.33.2 - Sept 7, 2022
 
 #### :chart_with_upwards_trend: Improvements
