@@ -14,8 +14,8 @@ zephyr_include_directories(.)
 # Memfault fault handler which will collect a coredump.
 target_link_libraries(app INTERFACE "-Wl,--wrap=z_fatal_error")
 
-# We trace task creation so the task TCBs and stacks can be collected at the time
-# of a crash and all thread backtraces can be made available in the Memfault UI.
+# We trace task creation and deletion so the task TCBs and stacks can be collected at the time of a
+# crash and all thread backtraces can be made available in the Memfault UI.
 #
 # To do this we wrap the arch_new_thread() function call that is made from thread.c
 #
@@ -23,3 +23,4 @@ target_link_libraries(app INTERFACE "-Wl,--wrap=z_fatal_error")
 # Unfortunately, to override the macro, one must patch the Zephyr RTOS today.
 #   https://github.com/zephyrproject-rtos/zephyr/blob/390537b/include/tracing/tracing.h#L57-L61
 target_link_libraries(app INTERFACE "-Wl,--wrap=arch_new_thread")
+target_link_libraries(app INTERFACE "-Wl,--wrap=z_thread_abort")

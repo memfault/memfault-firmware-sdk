@@ -37,6 +37,12 @@ static bool prv_find_slot(size_t *idx, struct k_thread *desired_tcb) {
 
 // We intercept calls to arch_new_thread() so we can track when new tasks
 // are created
+//
+// It would be nice to use '__builtin_types_compatible_p' and '__typeof__' to
+// enforce strict abi matching in the wrapped functions, but the target
+// functions are declared in private zephyr ./kernel/include files, which are
+// not really supposed to be accessed from user code and would require some
+// dubious path hacks to get to.
 void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
                             char *stack_ptr, k_thread_entry_t entry,
                             void *p1, void *p2, void *p3);
@@ -54,6 +60,19 @@ void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
   }
 
   __real_arch_new_thread(thread, stack, stack_ptr, entry, p1, p2, p3);
+}
+
+void __wrap_z_thread_abort(struct k_thread *thread);
+void __real_z_thread_abort(struct k_thread *thread);
+
+void __wrap_z_thread_abort(struct k_thread *thread) {
+  size_t idx = 0;
+  const bool slot_found = prv_find_slot(&idx, thread);
+  if (slot_found) {
+    s_task_tcbs[idx] = EMPTY_SLOT;
+  }
+
+  __real_z_thread_abort(thread);
 }
 
 MEMFAULT_WEAK

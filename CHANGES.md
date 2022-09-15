@@ -1,3 +1,12 @@
+### Changes between Memfault SDK 0.33.3 and SDK 0.33.4 - Sept 15, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr port updates:
+  - Handle thread abort in the task stack capture hook. Previous to this change,
+    aborted tasks would remain on the captured task list, and restarting the
+    task would create a duplicate entry.
+
 ### Changes between Memfault SDK 0.33.2 and SDK 0.33.3 - Sept 14, 2022
 
 #### :chart_with_upwards_trend: Improvements
