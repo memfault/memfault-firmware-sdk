@@ -1,3 +1,24 @@
+### Changes between Memfault SDK 0.33.4 and SDK 0.33.5 - Oct 19, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect: Update the nRF9160 example application,
+  `examples/nrf-connect-sdk/nrf9160`, to build and run correctly with
+  nRF-Connect SDK v2.1.0
+- Zephyr: Add an example Zephyr application targeting the QEMU board
+- ESP-IDF:
+  - Add a configuration option for setting the ESP-IDF HTTP client timeout value
+  - Fix compilation for the ESP32-S3. _Note: coredumps are currently only
+    supported on the ESP32, not the ESP32-S2, -S3, or -C3. This change only
+    fixes compiling for the -S3 platform_
+  - Add support for ESP-IDF v4.2.3
+
+#### :house: Internal
+
+- Support building the unit tests with GCC 12
+- Miscellaneous fixes to unit test infrastructure to better support building in
+  Mac OSX
+
 ### Changes between Memfault SDK 0.33.3 and SDK 0.33.4 - Sept 15, 2022
 
 #### :chart_with_upwards_trend: Improvements

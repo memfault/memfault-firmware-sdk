@@ -10,7 +10,7 @@ The Memfault SDK has been tested to be compatible with these versions of
 ESP-IDF:
 
 - v3.x release series
-- v4.x release series through v4.4.1
+- v4.x release series through v4.4.2
 
 Other versions may be also be compatible but have not been verified by Memfault.
 
@@ -59,7 +59,7 @@ We assume you have a working setup for the
    ```bash
    cd examples/esp32/
    rm -rf esp-idf
-   git clone -b v4.2.2 --recursive https://github.com/espressif/esp-idf.git esp-idf
+   git clone -b v4.2.4 --recursive https://github.com/espressif/esp-idf.git esp-idf
    cd esp-idf
    export IDF_TOOLS_PATH=$(pwd)
    # you may need to install the sdk tools by running ./install.sh here

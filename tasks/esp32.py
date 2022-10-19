@@ -28,10 +28,19 @@ OPENOCD_GDB_PORT_DEFAULT = 3333
 
 
 def _run_idf_script(ctx, *args, **kwargs):
+    # allow selecting a specific python interpreter instead of the active one.
+    # this is necessary in CI, because the mbed build task modifies the python
+    # environment 😖, and idf.py runs a pkg_resources.require() which fails if
+    # the mbed task modified any deps in an incompatible way. it's better to
+    # keep the esp_idf environment isolated and just use it to run idf.py
+    python = os.getenv("ESP_IDF_PYTHON", sys.executable)
+
     with ctx.cd(ESP32_TEST_APP_ROOT):
         ctx.run(
-            "{idf} {args}".format(idf=ESP32_IDF_SCRIPT, args=" ".join(args)),
-            env={"IDF_PATH": ESP32_IDF_ROOT, "PYTHON": sys.executable},
+            "{python} {idf} {args}".format(
+                python=python, idf=ESP32_IDF_SCRIPT, args=" ".join(args)
+            ),
+            env={"IDF_PATH": ESP32_IDF_ROOT},
             **kwargs,
         )
 
@@ -59,7 +68,8 @@ def _esp32_guess_console_port():
                 return serial_device
 
         print(
-            "Cannot find ESP32 console /dev/... nor ftdi:// path, please specify it manually using --port"
+            "Cannot find ESP32 console /dev/... nor ftdi:// path, please specify it manually using"
+            " --port"
         )
         sys.exit(1)
 
@@ -98,6 +108,22 @@ def esp32_app_clean(ctx):
     _run_idf_script(ctx, "fullclean")
 
 
+@task(pre=[run_xtensa_toolchain_check])
+def esp32s2_app_build(ctx):
+    """Build the ESP32-S2 test app"""
+    # !NOTE! 'set-target' was added in ESP-IDF v4.1. If you are using an older
+    # version of ESP-IDF, building for the ESP32-S2 + ESP32-S3 won't work.
+    _run_idf_script(ctx, "set-target esp32s2")
+    _run_idf_script(ctx, "build")
+
+
+@task(pre=[run_xtensa_toolchain_check])
+def esp32s3_app_build(ctx):
+    """Build the ESP32-S3 test app"""
+    _run_idf_script(ctx, "set-target esp32s3")
+    _run_idf_script(ctx, "build")
+
+
 @task
 def esp32_app_flash(ctx, port=None):
     """Flash the ESP32 test app"""
@@ -128,7 +154,8 @@ def esp32_openocd(ctx):
     if "ESP32_OPENOCD" not in os.environ:
         print("Set ESP32_OPENOCD environment variable to point to openocd-esp32 root directory!")
         print(
-            "Download the openocd-esp32 binaries here: https://github.com/espressif/openocd-esp32/releases"
+            "Download the openocd-esp32 binaries here:"
+            " https://github.com/espressif/openocd-esp32/releases"
         )
         sys.exit(-1)
     with ctx.cd(os.environ["ESP32_OPENOCD"]):
@@ -155,6 +182,8 @@ ns = Collection("esp32")
 ns.add_task(esp32_console, name="console")
 ns.add_task(esp32_openocd, name="gdbserver")
 ns.add_task(esp32_app_build, name="build")
+ns.add_task(esp32s2_app_build, name="build-s2")
+ns.add_task(esp32s3_app_build, name="build-s3")
 ns.add_task(esp32_app_clean, name="clean")
 ns.add_task(esp32_app_flash, name="flash")
 ns.add_task(esp32_app_gdb, name="app-gdb")

@@ -37,9 +37,11 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! The default implementation is replaced by leveraging GCCs --wrap feature
 //!    https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/panic.c#L620
 //!
-//! @note The signature for the wrapped function changed in esp-idf v4.3+,
-//! support that change with a version check (see static assert below)
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,3,0)
+//! @note The signature for the wrapped function changed in esp-idf v4.3+, then
+//! later backported to the 4.2 branch in v4.2.3. Support that change with a
+//! version check (see static assert below for verifying the signature is
+//! correct)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,2,3)
 void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
   XtExcFrame *fp = (void *)info->frame;
 #else
@@ -78,6 +80,8 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
     .lcount = fp->lcount,
 #elif CONFIG_IDF_TARGET_ESP32S2
     // TODO implement fault capture for the ESP32-S2
+#elif CONFIG_IDF_TARGET_ESP32S3
+    // TODO implement fault capture for the ESP32-S3
 #endif
     .exccause = fp->exccause,
     .excvaddr = fp->excvaddr,

@@ -8,6 +8,8 @@ import pathlib
 
 from invoke import Collection, task
 
+from shutil import which
+
 from . import esp32, mbed, nrf, nrfconnect, wiced, zephyr
 from .macos_ftdi import is_macos
 
@@ -26,18 +28,24 @@ def fw_sdk_unit_test(
     extra_make_options="",
 ):
     """Runs unit tests"""
+
+    # Check if it's necessary to set the CPPUTEST_HOME variable; Macos (brew)
+    # and conda environment requires this
     env_dict = {}
     if is_macos():
-        # Search to see if CPPUTEST_HOME is already on the path (i.e in a conda environment)
-        # Otherwise, fallback to the default install location used with brew
-        env_dict["CPPUTEST_HOME"] = os.environ.get(
-            "CPPUTEST_HOME", "/usr/local/Cellar/cpputest/4.0"
-        )
+        # best effort- if brew exists, try to use it to source the cpputest
+        # install location
+        brew = which("brew")
+        if brew:
+            result = ctx.run("brew --prefix cpputest")
+            cpputest_home = result.stdout.strip()
 
+            env_dict["CPPUTEST_HOME"] = cpputest_home
+
+    # if this is already set in the host environment, use it- it's probably a
+    # conda environment
     if "CPPUTEST_HOME" in os.environ:
-        # override target platform so the test build system can locate the
-        # conda-installed cpputest libraries.
-        env_dict["TARGET_PLATFORM"] = "lib"
+        env_dict["CPPUTEST_HOME"] = os.environ["CPPUTEST_HOME"]
 
     if coverage:
         rule += " lcov"
@@ -62,7 +70,13 @@ def fw_sdk_unit_test(
         # within the docker container is a hassle, so bail and use 2 cpus
         cpus = 2
     else:
-        cpus = len(os.sched_getaffinity(0))
+        try:
+            # Only available on Linux, but it's better
+            cpus = len(os.sched_getaffinity(0))
+        except AttributeError:
+            # Available on Mac
+            cpus = int((os.cpu_count() or 4) / 2)
+
     make_options.extend(["-j", str(cpus)])
 
     env_dict["CPPUTEST_EXE_FLAGS"] = "-c"
@@ -103,6 +117,10 @@ if (SDK_FW_TASKS_DIR / "internal.py").exists():
         wiced.wiced_build,
         esp32.esp32_app_clean,
         esp32.esp32_app_build,
+        esp32.esp32_app_clean,
+        esp32.esp32s2_app_build,
+        esp32.esp32_app_clean,
+        esp32.esp32s3_app_build,
     ]
 )
 def build_all_demos(ctx):

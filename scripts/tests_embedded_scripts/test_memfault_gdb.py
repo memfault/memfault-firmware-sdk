@@ -593,11 +593,11 @@ def test_login_command_simple(http_expect_request, test_config):
 
 def test_login_command_with_all_options(http_expect_request, test_config):
 
-    test_api_uri = "http://dev-api.memfault.com:5000"
+    test_api_uri = "http://dev-api.memfault.com:8000"
     test_ingress_uri = "http://dev-ingress.memfault.com"
 
     http_expect_request(
-        "http://dev-api.memfault.com:5000/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
+        "http://dev-api.memfault.com:8000/auth/me", "GET", None, TEST_AUTH_HEADERS, 200, {"id": 123}
     )
 
     login = MemfaultLogin()

@@ -325,13 +325,6 @@ ifeq ($(CPPUTEST_MAP_FILE), Y)
 	CPPUTEST_LDFLAGS += -Wl,-map,$(TARGET_MAP)
 endif
 
-# Link with CppUTest lib
-CPPUTEST_LIB = $(CPPUTEST_LIB_LINK_DIR)/libCppUTest.a
-
-ifeq ($(CPPUTEST_USE_EXTENSIONS), Y)
-CPPUTEST_LIB += $(CPPUTEST_LIB_LINK_DIR)/libCppUTestExt.a
-endif
-
 ifdef CPPUTEST_STATIC_REALTIME
 	LD_LIBRARIES += -lrt
 endif

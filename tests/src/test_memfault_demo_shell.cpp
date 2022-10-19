@@ -26,7 +26,7 @@ static int prv_send_char(char c) {
 static int prv_test_handler(int argc, char **argv) {
   MockActualCall &m = mock().actualCall(__func__);
   for (int i = 0; i < argc; i++) {
-    char buffer[8] = {0};
+    char buffer[11] = {0};
     sprintf(buffer, "%d", i);
     m.withStringParameter(buffer, argv[i]);
   }

@@ -3,14 +3,15 @@
 #
 # For osx, the brew path will look something like /usr/local/Cellar/cpputest/3.8
 CPPUTEST_HOME ?= /usr
-TARGET_PLATFORM ?= lib/x86_64-linux-gnu
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_DIR := $(dir $(MKFILE_PATH))
 
-$(info Expected CppUTest Location: $(CPPUTEST_HOME)/$(TARGET_PLATFORM))
+$(info Expected CppUTest Location: $(CPPUTEST_HOME))
 
-LD_LIBRARIES = -L$(CPPUTEST_HOME)/$(TARGET_PLATFORM) -lCppUTest -lCppUTestExt
+# Explicitly insert the cpputest lib directory to search paths; this supports
+# the conda use case, where the libs are not set to the system linker
+LD_LIBRARIES = -L$(CPPUTEST_HOME)/lib -lCppUTest -lCppUTestExt
 
 TEST_SRC_FILES += \
   $(MFLT_TEST_COMMON_SRC_DIR)/AllTests.cpp

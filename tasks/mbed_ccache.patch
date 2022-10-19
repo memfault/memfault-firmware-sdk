@@ -1,0 +1,44 @@
+--- examples/mbed/apps/memfault_demo_app/mbed-os/tools/toolchains/gcc.py	2022-09-30 14:25:05.700256164 -0400
++++ examples/mbed/apps/memfault_demo_app/mbed-os/tools/toolchains/gcc-patched.py	2022-09-30 14:25:46.053695704 -0400
+@@ -121,9 +121,22 @@
+         self.asm = [main_cc] + self.flags['asm'] + self.flags["common"]
+         self.cc = [main_cc]
+         self.cppc = [main_cppc]
++
+         self.cc += self.flags['c'] + self.flags['common']
+         self.cppc += self.flags['cxx'] + self.flags['common']
+ 
++        try:
++            import subprocess
++            subprocess.check_call(
++                ["ccache", "--version"],
++                stderr=subprocess.DEVNULL,
++                stdout=subprocess.DEVNULL,
++            )
++            self.cc = ["ccache"] + self.cc
++            self.cppc = ["ccache"] + self.cppc
++        except:
++            print("Error: ccache not found. Please install ccache to speed up")
++
+         self.flags['ld'] += self.cpu
+         self.ld = [join(tool_path, "arm-none-eabi-gcc")] + self.flags['ld']
+         self.sys_libs = ["stdc++", "supc++", "m", "c", "gcc", "nosys"]
+@@ -219,7 +232,17 @@
+ 
+     def compile(self, cc, source, object, includes):
+         # Build compile command
+-        cmd = cc + self.get_compile_options(self.get_symbols(), includes)
++
++        #CCACHE_WORKAROUND_PRESENT
++        # from: https://visualgdb.com/tutorials/arm/mbed/ccache/
++        symbols = self.get_symbols()
++        symbols.sort()
++
++        extra_macros = [x for x in cc if x[0:2] == "-D"]
++        cc = [x for x in cc if x[0:2] != "-D"]
++        extra_macros.sort()
++
++        cmd = cc + extra_macros + self.get_compile_options(symbols, includes)
+ 
+         cmd.extend(self.get_dep_option(object))
+ 

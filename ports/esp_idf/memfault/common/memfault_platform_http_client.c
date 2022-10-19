@@ -113,6 +113,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     .event_handler = prv_http_event_handler,
 #endif
     .url = s_mflt_base_url_buffer,
+    .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = g_mflt_http_client_config.disable_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -320,6 +321,7 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 
   esp_http_client_config_t config = {
     .url = download_url,
+    .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
   };
 

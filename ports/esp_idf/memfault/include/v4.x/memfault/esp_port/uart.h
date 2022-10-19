@@ -12,6 +12,8 @@
 #include "esp32/rom/uart.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/uart.h"
 #endif
 
 

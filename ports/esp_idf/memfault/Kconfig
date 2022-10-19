@@ -34,4 +34,12 @@ menu "Memfault"
             By default, Memfault will automatically initialize the SDK
             when the system is booted. This can be disabled if the user
             wants to initialize the SDK manually.
+
+    config MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
+        int "The HTTP client timeout in milliseconds"
+        default 5000
+        help
+            The Memfault HTTP client timeout in milliseconds. This is the
+            maximum amount of time the HTTP client will wait for a response from
+            the server.
 endmenu

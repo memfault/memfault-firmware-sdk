@@ -71,6 +71,8 @@ LCOV_EXCLUDE_DIRS := \
   '*/tests/*' \
   '*/CppUTestExt/*'
 
+# set additional args for genhtml in environment var, like --dark-mode
+GENHTML_EXTRA_ARGS ?=
 LCOV_INFO_FILE = $(BUILD_DIR)/lcov.info
 lcov: $(TEST_MAKEFILES)
 ifeq ($(USE_LCOV),1)
@@ -83,7 +85,7 @@ else
 endif
 	genhtml --prefix $(PROJECT_DIR) --branch-coverage --highlight --legend \
 		-o test_coverage -t "coverage" --num-spaces 4 \
-		$(LCOV_INFO_FILE) -o $(BUILD_DIR)/test_coverage/
+		$(LCOV_INFO_FILE) -o $(BUILD_DIR)/test_coverage/ $(GENHTML_EXTRA_ARGS)
 	@echo See coverage output in file://$(abspath $(BUILD_DIR)/test_coverage/index.html)
 
 $(TEST_MAKEFILES):
