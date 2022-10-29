@@ -5,7 +5,6 @@ config MEMFAULT
         select RUNTIME_NMI
         select EXTRA_EXCEPTION_INFO
         select DEBUG_THREAD_INFO
-        select LEGACY_INCLUDE_PATH
         help
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets

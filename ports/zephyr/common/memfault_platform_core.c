@@ -5,7 +5,14 @@
 
 #include "memfault/core/platform/core.h"
 
-#include <init.h>
+
+#if CONFIG_LEGACY_INCLUDE_PATH
+  #include <init.h>
+#else
+  #include <zephyr/init.h>
+  #include <zephyr/kernel.h>  
+#endif
+
 #include <soc.h>
 
 #include "memfault/components.h"

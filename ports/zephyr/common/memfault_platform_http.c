@@ -12,12 +12,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <init.h>
-#include <kernel.h>
+#if CONFIG_LEGACY_INCLUDE_PATH
+  #include <init.h>
+  #include <kernel.h>
+  #include <zephyr.h>
+#else
+  #include <zephyr/init.h>
+  #include <zephyr/kernel.h>  
+#endif
 
 #include <net/socket.h>
 #include <net/tls_credentials.h>
-#include <zephyr.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"

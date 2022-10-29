@@ -8,9 +8,15 @@
 
 #include "memfault/ports/zephyr/coredump.h"
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#if CONFIG_LEGACY_INCLUDE_PATH
+  #include <zephyr.h>
+  #include <kernel.h>
+  #include <kernel_structs.h>
+#else
+  #include <zephyr/kernel.h>
+  #include <zephyr/kernel_structs.h>
+#endif
+
 #include <version.h>
 
 #include "memfault/components.h"

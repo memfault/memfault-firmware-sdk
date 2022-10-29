@@ -10,9 +10,13 @@
 #include "memfault/panics/platform/coredump.h"
 #include "memfault/panics/arch/arm/cortex_m.h"
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#if CONFIG_LEGACY_INCLUDE_PATH
+    #include <zephyr.h>
+    #include <kernel.h>
+    #include <kernel_structs.h>
+#else
+    #include <zephyr/kernel.h>  
+#endif
 
 #include "memfault/ports/zephyr/version.h"
 

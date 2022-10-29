@@ -3,7 +3,11 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <zephyr.h>
+#if CONFIG_LEGACY_INCLUDE_PATH
+  #include <zephyr.h>
+#else
+  #include <zephyr/kernel.h>
+#endif
 
 #include <stdbool.h>
 
