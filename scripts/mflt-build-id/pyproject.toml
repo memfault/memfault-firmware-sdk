@@ -19,7 +19,6 @@ pyelftools = ">=0.26,<=0.28"
 pytest = "^6"
 pytest-cov = "^2"
 pytest-timeout = "^2.0"
-snapshottest = {git = "https://github.com/memfault/snapshottest.git", rev = "1.0.0a0+memfault0"}
 wasmer = "0.3.0"
 
 [tool.black]

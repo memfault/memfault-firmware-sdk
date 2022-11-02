@@ -1,9 +1,7 @@
-# Copyright (c) 2021 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
+# Application Kconfig file
 #
-# This Kconfig file is picked by the Zephyr build system because it is defined
-# as the module Kconfig entry point (see zephyr/module.yml). You can browse
-# module options by going to Zephyr -> Modules in Kconfig.
+# This is loaded when building this directory with west.
+menu "Memfault Example Application Configuration"
 
 config ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
     bool "Example thread create + abort toggling every 10 seconds"
@@ -11,3 +9,6 @@ config ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
     help
       Enables creating and aborting an example thread every 10 seconds in the
       example app
+endmenu
+
+source "Kconfig.zephyr"

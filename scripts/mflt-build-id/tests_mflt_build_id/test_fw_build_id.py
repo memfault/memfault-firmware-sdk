@@ -35,7 +35,7 @@ def copy_file(tmp_path):
     return _copy_file
 
 
-def test_gnu_build_id_in_use(capsys, snapshot, copy_file):
+def test_gnu_build_id_in_use(capsys, copy_file):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "gnu_id_present_and_used.elf")
 
     with open(copy_file(elf_fixture_filename), mode="rb") as elf_copy_file:
@@ -46,10 +46,10 @@ def test_gnu_build_id_in_use(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == ["Found GNU Build ID: 3d6f95306bbc5fda4183728b3829f88b30f7aa1c"]
 
 
-def test_gnu_build_id_present_but_not_used(capsys, snapshot, copy_file):
+def test_gnu_build_id_present_but_not_used(capsys, copy_file):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "gnu_id_present_and_not_used.elf")
     result_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "memfault_id_used_gnu_id_present.elf")
 
@@ -61,10 +61,14 @@ def test_gnu_build_id_present_but_not_used(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == [
+        "WARNING: Located a GNU build id but it's not being used by the Memfault SDK",
+        "Added Memfault Generated Build ID to ELF: 028aa9800f0524c9b064711925df5ec403df6b16",
+        "Found Memfault Build Id: 028aa9800f0524c9b064711925df5ec403df6b16",
+    ]
 
 
-def test_memfault_id_unpopulated(capsys, snapshot, copy_file):
+def test_memfault_id_unpopulated(capsys, copy_file):
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
     )
@@ -80,10 +84,13 @@ def test_memfault_id_unpopulated(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == [
+        "Added Memfault Generated Build ID to ELF: 16e0fe39af176cfa4cf961321ccf5193c2590451",
+        "Found Memfault Build Id: 16e0fe39af176cfa4cf961321ccf5193c2590451",
+    ]
 
 
-def test_memfault_id_populated(capsys, snapshot, copy_file):
+def test_memfault_id_populated(capsys, copy_file):
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
     )
@@ -96,7 +103,7 @@ def test_memfault_id_populated(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == ["Found Memfault Build Id: 16e0fe39af176cfa4cf961321ccf5193c2590451"]
 
 
 def test_no_memfault_sdk_present():
@@ -119,7 +126,7 @@ def test_no_build_id_on_dump():
             b.dump_build_info(num_chars=1)
 
 
-def test_build_id_dump(capsys, snapshot, copy_file):
+def test_build_id_dump(capsys, copy_file):
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"
     )
@@ -133,7 +140,7 @@ def test_build_id_dump(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == ["1", "16", "16e0fe39af176cfa4cf961321ccf51"]
 
 
 @pytest.mark.parametrize(
@@ -195,7 +202,7 @@ def test_get_build_info(fixture, expected_result, copy_file):
         assert filecmp.cmp(elf_copy_file.name, elf_fixture_filename)
 
 
-def test_crc_build_id_unpopulated(capsys, snapshot, copy_file):
+def test_crc_build_id_unpopulated(capsys, copy_file):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
     result_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_populated.elf")
 
@@ -207,10 +214,12 @@ def test_crc_build_id_unpopulated(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == [
+        "Added CRC32 Generated Build ID at 'g_example_crc32_build_id' to ELF: 0x8ac1e1ca"
+    ]
 
 
-def test_crc_build_id_unpopulated_dump_only(capsys, snapshot, copy_file):
+def test_crc_build_id_unpopulated_dump_only(capsys, copy_file):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_unpopulated.elf")
 
     with open(copy_file(elf_fixture_filename), mode="rb") as elf_copy_file:
@@ -222,10 +231,10 @@ def test_crc_build_id_unpopulated_dump_only(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == ["CRC32 Build ID at 'g_example_crc32_build_id' is not written"]
 
 
-def test_crc_build_id_populated(capsys, snapshot, copy_file):
+def test_crc_build_id_populated(capsys, copy_file):
     elf_fixture_filename = os.path.join(ELF_FIXTURES_DIR, "crc32_build_id_populated.elf")
 
     with open(copy_file(elf_fixture_filename), mode="rb") as elf_copy_file:
@@ -236,7 +245,9 @@ def test_crc_build_id_populated(capsys, snapshot, copy_file):
 
     out, _ = capsys.readouterr()
     lines = out.splitlines()
-    snapshot.assert_match(lines)
+    assert lines == [
+        "CRC32 Generated Build ID at 'g_example_crc32_build_id' to ELF already written: 0x8ac1e1ca"
+    ]
 
 
 def test_crc_build_id_in_bss():

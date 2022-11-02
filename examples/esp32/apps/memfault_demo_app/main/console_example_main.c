@@ -219,6 +219,8 @@ void app_main() {
 #endif
   extern void memfault_platform_device_info_boot(void);
   memfault_platform_device_info_boot();
+  memfault_device_info_dump();
+
   g_unaligned_buffer = &s_my_buf[1];
 
   initialize_nvs();

@@ -13,11 +13,12 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: zephyr-v3.1.0
+      revision: zephyr-v3.2.0
       import: true
 
-    # The Memfault SDK
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk
-      revision: 0.32.1
       remote: memfault
+      # Note: normally this would be pinned to a specific SDK tag instead of
+      # master
+      revision: master

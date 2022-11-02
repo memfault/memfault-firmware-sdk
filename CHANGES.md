@@ -1,3 +1,34 @@
+### Changes between Memfault SDK 0.34.0 and SDK 0.33.5 - Nov 1, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Misc ESP32 [port](ports/esp_idf) &
+  [example app](examples/esp32/apps/memfault_demo_app) improvements
+  - Added diagnostic print line containing Build Id at boot up
+  - Improved messaging displayed when using `memfault_ota_check` test command
+  - Example app now prints device info on bootup
+  - Fix an issue where incremental build (`idf.py build && idf.py build`) would
+    report a nuisance failure.
+  - Flatten + simplify the directory structure of the QEMU based example project
+- A new [`ports/mbedtls`](ports/mbedtls) is available, which implements a basic
+  Mbed TLS client for performing Memfault data upload.
+- Zephyr: Collect sysheap stats using the
+  [Memfault Heap Tracking](https://mflt.io/mcu-heap-stats) component. This is
+  configured with the `CONFIG_MEMFAULT_HEAP_STATS` Kconfig option (enabled by
+  default), and will track allocations done with `k_malloc()`.
+- Fix an enum-mismatch warning in `memfault_metrics.c` when using the ARMCC v5
+  compiler.
+
+#### :boom: Breaking Changes
+
+- If you are using the ESP32 HTTP Client, the Memfault Project Key is now
+  configured directly via the
+  [ESP32 Project Configuration System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/kconfig.html).
+  You need to do the following:
+  1. Remove the `g_mflt_http_client_config` in your platform port
+  2. Add `CONFIG_MEMFAULT_PROJECT_KEY="YOUR_PROJECT_KEY"` to your projects
+     `sdkconfig.defaults`
+
 ### Changes between Memfault SDK 0.33.4 and SDK 0.33.5 - Oct 19, 2022
 
 #### :chart_with_upwards_trend: Improvements

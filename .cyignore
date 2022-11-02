@@ -6,6 +6,7 @@ ports/dialog
 ports/emlib
 ports/esp8266_sdk
 ports/esp_idf
+ports/mbedtls
 ports/mynewt
 ports/nrf5_sdk
 ports/nxp

@@ -74,7 +74,27 @@ We assume you have a working setup for the
 
 That's it! You should be good to go!
 
-### Building the demo app:
+### Memfault Project Key
+
+An API key will need to be configured for Memfault HTTP client to communicate
+with Memfault's web services. Go to https://app.memfault.com/, navigate to the
+project you want to use and select 'Settings'. Copy the 'Project Key', and
+configure it; either by running `idf.py menuconfig` and setting the
+`MEMFAULT_PROJECT_KEY` config value, or by inserting to `sdkconfig.defaults`:
+
+```kconfig
+CONFIG_MEMFAULT_PROJECT_KEY="<YOUR PROJECT KEY>"
+```
+
+> Note: when doing a clean build, or a build in CI, another option is to place
+> the Project Key in a second `sdkconfig.defaults` file, for example:
+>
+> ```bash
+> ❯ echo CONFIG_MEMFAULT_PROJECT_KEY=\"<YOUR PROJECT KEY>\" > sdkconfig.extra
+> ❯ idf.py build -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.extra"
+> ```
+
+### Building the demo app
 
 using pyinvoke:
 
@@ -183,8 +203,13 @@ I (77840) mflt: Has coredump with size: 768
 #### Uploading Symbols
 
 Memfault needs the symbols for the firmware in order to analyze the coredump.
-The ESP32 SDK demo app symbol file can be found at:
-`/path/to/examples/esp32/apps/memfault_demo_app/build/memfault-esp32-demo-app.elf`
+The ESP32 SDK demo app symbol file can be found in the build folder:
+
+`apps/memfault_demo_app/build/memfault-esp32-demo-app.elf.memfault_log_fmt`
+
+> Note: the file to be uploaded is
+> `memfault-esp32-demo-app.elf.memfault_log_fmt`, _not_
+> `memfault-esp32-demo-app.elf`, when using compact logs!
 
 This ELF file contains the symbols (debug information) amongst other things.
 

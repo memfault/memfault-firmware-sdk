@@ -30,7 +30,7 @@ static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t cur
 // Written as a function vs. in-line b/c we might want to extern this at some point?
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
 // where the metrics key names come from.
-static void prv_metrics_update_stats(void) {
+void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
@@ -66,7 +66,6 @@ static void prv_metrics_update_stats(void) {
 }
 
 static void prv_metrics_work_handler(struct k_work *work) {
-  prv_metrics_update_stats();
   if (s_metrics_timer_callback != NULL) {
     s_metrics_timer_callback();
   }

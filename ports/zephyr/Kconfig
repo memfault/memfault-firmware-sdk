@@ -78,6 +78,14 @@ config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
           of the coredump. If not enough space is available for all of
           the data, the coredump will be truncated.
 
+config MEMFAULT_HEAP_STATS
+        bool "Collect system heap stats with coredumps"
+        default y
+        help
+          When enabled, system heap stats are captured as part of the coredump.
+          The heap stats subsystem collects info on system heap
+          allocation/deallocation (k_malloc/k_free).
+
 config MEMFAULT_SHELL
         bool "MEMFAULT Shell"
         default y if SHELL

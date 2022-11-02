@@ -185,6 +185,15 @@ int memfault_metrics_heartbeat_read_signed(MemfaultMetricId key, int32_t *read_v
 int memfault_metrics_heartbeat_timer_read(MemfaultMetricId key, uint32_t *read_val);
 int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val, size_t read_val_len);
 
+//! Collect built-in metrics as part of default ports in memfault-firmware-sdk.
+//!
+//! It can (optionally) be overridden by a port to collect a set of built-in metrics
+//! as configured by the port/application.
+//!
+//! @note By default, a weak version of this function is implemented which is empty
+//! @note This API is for internal use only and should never be called by an end user
+void memfault_metrics_heartbeat_collect_sdk_data(void);
+
 #ifdef __cplusplus
 }
 #endif

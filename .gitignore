@@ -1,2 +1,4 @@
 build
+/examples/mbedtls
+/examples/modus
 __pycache__/

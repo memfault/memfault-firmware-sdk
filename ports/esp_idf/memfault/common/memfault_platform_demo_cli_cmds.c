@@ -163,11 +163,13 @@ static int prv_memfault_ota(sMemfaultOtaUserCtx *ctx) {
     .handle_download_complete = prv_handle_ota_download_complete,
   };
 
-  MEMFAULT_LOG_DEBUG("Checking for OTA Update");
+  MEMFAULT_LOG_INFO("Checking for OTA Update");
 
   int rv = memfault_esp_port_ota_update(&handler);
   if (rv == 0) {
-    MEMFAULT_LOG_DEBUG("Up to date!");
+    MEMFAULT_LOG_INFO("Up to date!");
+  } else if (rv == 1) {
+    MEMFAULT_LOG_INFO("Update available!");
   } else if (rv < 0) {
     MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
   }

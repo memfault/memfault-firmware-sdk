@@ -5,10 +5,9 @@
 
 import os
 import pathlib
+from shutil import which
 
 from invoke import Collection, task
-
-from shutil import which
 
 from . import esp32, mbed, nrf, nrfconnect, wiced, zephyr
 from .macos_ftdi import is_macos
@@ -100,11 +99,16 @@ if os.environ.get("STM32_ENABLED"):
 
     ns.add_collection(stm32)
 
-# Internal tasks are only included if they exist in the SDK
+# These tasks are only included if they exist in the SDK
 if (SDK_FW_TASKS_DIR / "internal.py").exists():
     from . import internal
 
     ns.add_collection(internal)
+
+if (SDK_FW_TASKS_DIR / "modus.py").exists():
+    from . import modus
+
+    ns.add_collection(modus)
 
 
 @task(

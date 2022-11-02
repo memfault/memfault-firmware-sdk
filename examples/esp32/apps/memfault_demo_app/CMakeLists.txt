@@ -21,15 +21,9 @@ add_custom_command(TARGET ${IDF_PROJECT_EXECUTABLE}
   # Compute and insert the build id
   COMMAND python ${memfault_firmare_sdk_dir}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
   # Save a copy of the ELF that includes the 'log_fmt' section
-  COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault
+  BYPRODUCTS ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+  COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+  COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
   # Remove the 'log_fmt' compact log section, which confuses elf2image
   COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
-)
-
-# Add a custom target to swap over the stashed complete elf above after
-# elf2image runs
-add_custom_target(swap_original_memfault_elf ALL
-  COMMAND ${CMAKE_COMMAND} -E rename ${IDF_PROJECT_EXECUTABLE}.memfault ${IDF_PROJECT_EXECUTABLE}
-  DEPENDS app
-  COMMENT "Copy over original ELF for Memfault uploading"
 )

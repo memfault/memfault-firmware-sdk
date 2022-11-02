@@ -1,9 +1,14 @@
 menu "Memfault"
 
+    config MEMFAULT_PROJECT_KEY
+        string "Memfault Project key"
+        default ""
+        help
+          API Key needed to communicate to Memfault. Obtain key at https://mflt.io/project-key
+
     config MEMFAULT_EVENT_STORAGE_RAM_SIZE
         int "The amount of RAM storage to reserve for Memfault Events"
         default 512
-
 
     config MEMFAULT_LOG_STORAGE_RAM_SIZE
         int "The amount of RAM storage to allocate for log storage"

@@ -6,14 +6,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/event_storage.h"
-#include "memfault/core/data_packetizer.h"
-#include "memfault/core/trace_event.h"
-#include "memfault/core/platform/core.h"
-#include "memfault/core/reboot_tracking.h"
-#include "memfault/core/sdk_assert.h"
+#include "memfault/components.h"
+
 #include "memfault/esp_port/cli.h"
 #include "memfault/metrics/metrics.h"
 
@@ -165,6 +159,8 @@ void memfault_boot(void) {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
+
+  memfault_build_info_dump();
 
 #if CONFIG_MEMFAULT_CLI_ENABLED
   // register CLI for easily testing Memfault

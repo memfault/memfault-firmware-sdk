@@ -156,7 +156,7 @@ typedef enum MfltMetricStringKeyToIndex {
 // Now generate a table mapping the canonical key ID to the index in s_memfault_heartbeat_values
 static const eMfltMetricStringKeyToIndex s_memfault_heartbeat_string_key_to_index[] = {
   #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-    0,  // 0 for the placeholder so it's safe to index with
+    (eMfltMetricStringKeyToIndex)0,  // 0 for the placeholder so it's safe to index with
   #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
     kMfltMetricStringKeyToIndex_##key_name,
 
@@ -260,6 +260,8 @@ static struct {
 MEMFAULT_WEAK
 void memfault_metrics_heartbeat_collect_data(void) { }
 
+MEMFAULT_WEAK
+void memfault_metrics_heartbeat_collect_sdk_data(void) { }
 
 // Returns NULL if not a timer type or out of bounds index.
 static sMemfaultMetricValueMetadata *prv_find_timer_metadatap(eMfltMetricsIndex metric_index) {
@@ -532,6 +534,7 @@ static void prv_heartbeat_timer_update(void) {
 //! Trigger an update of heartbeat metrics, serialize out to storage, and reset.
 static void prv_heartbeat_timer(void) {
   prv_heartbeat_timer_update();
+  memfault_metrics_heartbeat_collect_sdk_data();
   memfault_metrics_heartbeat_collect_data();
 
   memfault_metrics_heartbeat_serialize(s_memfault_metrics_ctx.storage_impl);

@@ -46,6 +46,12 @@ extern "C" {
 #define MEMFAULT_CACHE_FAULT_REGS 1
 #endif
 
+#if CONFIG_MEMFAULT_HEAP_STATS
+// Map Zephyr config to Memfault define to enable heap
+// tracing collection.
+#define MEMFAULT_COREDUMP_COLLECT_HEAP_STATS 1
+#endif
+
 #if CONFIG_MEMFAULT_NRF_CONNECT_SDK
 
 #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"

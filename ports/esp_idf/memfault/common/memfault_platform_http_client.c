@@ -40,6 +40,14 @@
 #define MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN (48)
 #endif
 
+MEMFAULT_STATIC_ASSERT(sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
+                       "Memfault Project Key not configured. Please visit https://mflt.io/project-key "
+                       "and add CONFIG_MEMFAULT_PROJECT_KEY=\"YOUR_KEY\" to sdkconfig.defaults");
+
+sMfltHttpClientConfig g_mflt_http_client_config = {
+  .api_key = CONFIG_MEMFAULT_PROJECT_KEY
+};
+
 #if MEMFAULT_HTTP_DEBUG
 static esp_err_t prv_http_event_handler(esp_http_client_event_t *evt) {
   switch (evt->event_id) {
@@ -316,6 +324,9 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 
   const bool perform_ota = handler->handle_update_available(handler->user_ctx);
   if (!perform_ota) {
+    // Client decided to abort the OTA but we still set the return code to 1 to indicate a new
+    // update is available.
+    rv = 1;
     goto cleanup;
   }
 

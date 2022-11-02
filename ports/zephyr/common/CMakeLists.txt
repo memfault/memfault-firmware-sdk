@@ -56,4 +56,9 @@ zephyr_linker_sources(SECTIONS memfault-build-id.ld)
 #   https://github.com/zephyrproject-rtos/zephyr/blob/d7ee114106eab485688223d97a49813d33b4cf21/cmake/linker/ld/target_base.cmake#L16
 zephyr_ld_options("-Wl,--build-id")
 
+if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
+  zephyr_ld_options(-Wl,--wrap=k_malloc)
+  zephyr_ld_options(-Wl,--wrap=k_free)
+endif()
+
 zephyr_include_directories(.)

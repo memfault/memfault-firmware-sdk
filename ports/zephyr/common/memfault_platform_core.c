@@ -112,6 +112,21 @@ static int prv_init_and_log_reboot() {
   return 0;
 }
 
+#if CONFIG_MEMFAULT_HEAP_STATS && CONFIG_HEAP_MEM_POOL_SIZE > 0
+extern void *__real_k_malloc(size_t size);
+extern void __real_k_free(void *ptr);
+
+void *__wrap_k_malloc(size_t size) {
+  void *ptr = __real_k_malloc(size);
+  MEMFAULT_HEAP_STATS_MALLOC(ptr, size);
+  return ptr;
+}
+void __wrap_k_free(void *ptr) {
+  MEMFAULT_HEAP_STATS_FREE(ptr);
+  __real_k_free(ptr);
+}
+#endif
+
 SYS_INIT(prv_init_and_log_reboot,
 #if CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL
          POST_KERNEL,
