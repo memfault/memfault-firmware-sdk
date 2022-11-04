@@ -7,7 +7,7 @@
 
 #include "memfault/core/platform/core.h"
 
-#include <init.h>
+#include <kernel.h>
 
 K_MUTEX_DEFINE(s_memfault_mutex);
 

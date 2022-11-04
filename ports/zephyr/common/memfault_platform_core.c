@@ -6,6 +6,7 @@
 #include "memfault/core/platform/core.h"
 
 #include <init.h>
+#include <kernel.h>
 #include <soc.h>
 
 #include "memfault/components.h"
