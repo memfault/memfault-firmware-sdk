@@ -11,6 +11,8 @@
 #include <memfault_ncs.h>
 #include <stdio.h>
 
+#include "memfault/ports/watchdog.h"
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 //! wrapper to enclose logic around log_strdup
@@ -51,6 +53,35 @@ static void prv_set_device_id(void) {
   memfault_ncs_device_id_set(dev_str, length * 2);
 }
 
+#define WD_FEED_THREAD_STACK_SIZE 500
+// set priority to lowest application thread; shell_uart, where the 'mflt test
+// hang' command runs from, uses the same priority by default, so this should
+// not preempt it and correctly trip the watchdog
+#if CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE
+  #error "Watchdog feed thread priority must be lower than shell thread priority"
+#endif
+#define WD_FEED_THREAD_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
+
+static void prv_wd_feed_thread_function(void *arg0, void *arg1, void *arg2) {
+  ARG_UNUSED(arg0);
+  ARG_UNUSED(arg1);
+  ARG_UNUSED(arg2);
+
+  while (1) {
+    memfault_software_watchdog_feed();
+    k_sleep(K_SECONDS(1));
+  }
+}
+K_THREAD_DEFINE(wd_feed_thread, WD_FEED_THREAD_STACK_SIZE, prv_wd_feed_thread_function, NULL, NULL,
+                NULL, WD_FEED_THREAD_PRIORITY, 0, 0);
+
+static void prv_start_watchdog_feed_thread(void) {
+  LOG_INF("starting watchdog feed thread 🐶");
+  memfault_software_watchdog_enable();
+  k_thread_name_set(wd_feed_thread, "wd_feed_thread");
+  k_thread_start(wd_feed_thread);
+}
+
 void main(void) {
   LOG_INF("Booting Memfault sample app!");
 
@@ -58,4 +89,6 @@ void main(void) {
   prv_set_device_id();
 
   memfault_device_info_dump();
+
+  prv_start_watchdog_feed_thread();
 }

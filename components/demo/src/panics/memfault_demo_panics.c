@@ -111,8 +111,13 @@ int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED c
   return 0;
 }
 
-int memfault_demo_cli_cmd_assert(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  MEMFAULT_ASSERT(0);
+int memfault_demo_cli_cmd_assert(int argc, char *argv[]) {
+  // permit running with a user-provided "extra" value for testing that path
+  if (argc > 1) {
+    MEMFAULT_ASSERT_RECORD(atoi(argv[1]));
+  } else {
+    MEMFAULT_ASSERT(0);
+  }
 }
 
 #if MEMFAULT_COMPILER_ARM

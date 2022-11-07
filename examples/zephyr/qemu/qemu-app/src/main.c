@@ -8,12 +8,29 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
+#include <shell/shell.h>
 #include <logging/log.h>
 #include <zephyr.h>
 
 #include "memfault/components.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+//! Size of memory to allocate on main stack
+//! This requires a larger allocation due to the method used to measure stack usage
+#define STACK_ALLOCATION_SIZE (CONFIG_MAIN_STACK_SIZE >> 2)
+//! Size of memory to allocate on system heap
+#define HEAP_ALLOCATION_SIZE (CONFIG_HEAP_MEM_POOL_SIZE >> 3)
+//! Value to sleep for observing metrics changes
+#define METRICS_OBSERVE_PERIOD MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
+
+//! Array of heap pointers
+static void *heap_ptrs[4] = {NULL};
+
+//! Keep a reference to the main thread for stack info
+static struct k_thread *s_main_thread = NULL;
+#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
 
 // Blink code taken from the zephyr/samples/basic/blinky example.
 static void blink_forever(void) {
@@ -98,9 +115,98 @@ static void prv_init_test_thread_timer(void) {
 static void prv_init_test_thread_timer(void) {}
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
 
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+
+//! Helper function to collect metric value on main thread stack usage.
+static void prv_collect_main_thread_stack_free(void) {
+  if (s_main_thread == NULL) {
+    return;
+  }
+
+  size_t unused = 0;
+  int rc = k_thread_stack_space_get(s_main_thread, &unused);
+  if (rc == 0) {
+    rc = memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(MainStack_MinBytesFree), unused);
+    if (rc) {
+      LOG_ERR("Error[%d] setting MainStack_MinBytesFree", rc);
+    }
+  } else {
+    LOG_ERR("Error getting thread stack usage[%d]", rc);
+  }
+}
+
+//! Shell function to exercise example memory metrics
+//!
+//! This function demonstrates the change in stack and heap memory metrics
+//! as memory is allocated and deallocated from these regions.
+//!
+//! @warning This code uses `memfault_metrics_heartbeat_debug_trigger` which is not intended
+//! to be used in production code. This functions use here is solely to demonstrate the metrics
+//! values changing. Production applications should rely on the heartbeat timer to trigger
+//! collection
+static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc, char **argv) {
+  ARG_UNUSED(shell);
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  if (s_main_thread == NULL) {
+    return 0;
+  }
+
+  // Next two loops demonstrate heap usage metric
+  for (size_t i = 0; i < ARRAY_SIZE(heap_ptrs); i++) {
+    heap_ptrs[i] = k_malloc(HEAP_ALLOCATION_SIZE);
+  }
+
+  // Collect data after allocation
+  memfault_metrics_heartbeat_debug_trigger();
+
+  for (size_t i = 0; i < ARRAY_SIZE(heap_ptrs); i++) {
+    k_free(heap_ptrs[i]);
+    heap_ptrs[i] = NULL;
+  }
+
+  // Collect data after deallocation
+  memfault_metrics_heartbeat_debug_trigger();
+  return 0;
+}
+
+SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from application", prv_run_example_memory_metrics);
+
+// Override function to collect the app metric MainStack_MinBytesFree
+// and print current metric values
+void memfault_metrics_heartbeat_collect_data(void) {
+  prv_collect_main_thread_stack_free();
+  memfault_metrics_heartbeat_debug_print();
+}
+
+//! Helper function to demonstrate changes in stack metrics
+static void prv_run_stack_metrics_example(void) {
+  volatile uint8_t stack_array[STACK_ALLOCATION_SIZE];
+  memset((uint8_t *)stack_array, 0, STACK_ALLOCATION_SIZE);
+}
+#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+
 void main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
+
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+  s_main_thread = k_current_get();
+
+  // @warning This code uses `memfault_metrics_heartbeat_debug_trigger` which is not intended
+  // to be used in production code. This functions use here is solely to demonstrate the metrics
+  // values changing. Production applications should rely on the heartbeat timer to trigger
+  // collection
+
+  // Collect a round of metrics to show initial stack usage
+  memfault_metrics_heartbeat_debug_trigger();
+
+  prv_run_stack_metrics_example();
+
+  // Collect another round to show change in stack metrics
+  memfault_metrics_heartbeat_debug_trigger();
+#endif
 
   prv_init_test_thread_timer();
 

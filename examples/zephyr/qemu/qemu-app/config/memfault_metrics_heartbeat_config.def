@@ -1,0 +1,1 @@
+MEMFAULT_METRICS_KEY_DEFINE(MainStack_MinBytesFree, kMemfaultMetricType_Unsigned)

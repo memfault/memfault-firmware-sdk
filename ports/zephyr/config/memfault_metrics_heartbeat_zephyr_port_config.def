@@ -14,6 +14,10 @@ MEMFAULT_METRICS_KEY_DEFINE(TimerTaskCpuUsage, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
 #endif
 
+#if CONFIG_SYS_HEAP_RUNTIME_STATS
+MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
+#endif
+
 #endif
 
 #if CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE

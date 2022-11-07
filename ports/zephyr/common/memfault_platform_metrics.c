@@ -13,6 +13,11 @@
 
 static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 
+#if CONFIG_SYS_HEAP_RUNTIME_STATS
+//! _system_heap is the heap used by k_malloc/k_free
+extern struct sys_heap _system_heap;
+#endif  /* CONFIG_SYS_HEAP_RUNTIME_STATS */
+
 #if CONFIG_THREAD_RUNTIME_STATS
 static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t curr_cycles,
                                               uint64_t *prev_cycles) {
@@ -62,6 +67,20 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #endif
 
 #endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */
+
+#if CONFIG_SYS_HEAP_RUNTIME_STATS
+
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+  // struct sys_memory_stats introduced in v3.2
+  struct sys_memory_stats stats = {0};
+#else
+  struct sys_heap_runtime_stats stats = {0};
+#endif
+
+  sys_heap_runtime_stats_get(&_system_heap, &stats);
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_BytesFree), stats.free_bytes);
+#endif /* defined(CONFIG_SYS_HEAP_RUNTIME_STATS) */
+
 #endif /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
 }
 

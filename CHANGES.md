@@ -1,3 +1,21 @@
+### Changes between Memfault SDK 0.34.1 and SDK 0.34.0 - Nov 7, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect:
+  - Updates for Zephyr upmerge 2022.11.03 (see #35 + #36)
+  - Fix watchdog test (`mflt test hang`) in
+    [`examples/nrf-connect-sdk/nrf5/`](examples/nrf-connect-sdk/nrf5/)
+- Zephyr:
+  - Set `CONFIG_QEMU_ICOUNT=n` in
+    [`examples/zephyr/qemu/`](examples/zephyr/qemu/), which fixes the emulated
+    target execution speed
+  - Add heap free and stack usage Metrics to
+    [`examples/zephyr/qemu/`](examples/zephyr/qemu/)
+- Update the `memfault_demo_cli_cmd_assert()` test command to take a single arg,
+  which is used in `MEMFAULT_ASSERT_RECORD()`. This enables testing that assert
+  variant from the CLI.
+
 ### Changes between Memfault SDK 0.34.0 and SDK 0.33.5 - Nov 1, 2022
 
 #### :chart_with_upwards_trend: Improvements

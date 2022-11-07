@@ -9,6 +9,12 @@ config ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
     help
       Enables creating and aborting an example thread every 10 seconds in the
       example app
+
+config ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+    bool "Use metrics to monitor memory usage in the example app"
+    default y
+    depends on MEMFAULT
+
 endmenu
 
 source "Kconfig.zephyr"

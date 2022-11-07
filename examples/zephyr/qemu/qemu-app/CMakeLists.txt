@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 target_sources(app PRIVATE src/main.c)
+zephyr_include_directories(config)
 project(qemu-app LANGUAGES C VERSION 1.0.0)
 
 # Generate a git hash that's used as part of the software_version, eg
