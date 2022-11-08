@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 0.34.2 and SDK 0.34.1 - Nov 8, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+  - Updates SDK for compatibility with MTB 3.0
+
 ### Changes between Memfault SDK 0.34.1 and SDK 0.34.0 - Nov 7, 2022
 
 #### :chart_with_upwards_trend: Improvements

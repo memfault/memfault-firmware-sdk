@@ -24,5 +24,4 @@ $(SEARCH_memfault-firmware-sdk)/components/include/memfault/http
 $(SEARCH_memfault-firmware-sdk)/components/include/memfault/metrics
 $(SEARCH_memfault-firmware-sdk)/components/include/memfault/panics
 $(SEARCH_memfault-firmware-sdk)/components/include/memfault/util
-$(SEARCH_memfault-firmware-sdk)/ports/include/memfault/ports/ble
-$(SEARCH_memfault-firmware-sdk)/ports/include/memfault/ports/stm32cube
+$(SEARCH_memfault-firmware-sdk)/ports/include/memfault
