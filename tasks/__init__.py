@@ -25,6 +25,7 @@ def fw_sdk_unit_test(
     test_filter=None,
     test_dir=SDK_FW_TESTS_ROOT,
     extra_make_options="",
+    verbose=False,
 ):
     """Runs unit tests"""
 
@@ -45,9 +46,6 @@ def fw_sdk_unit_test(
     # conda environment
     if "CPPUTEST_HOME" in os.environ:
         env_dict["CPPUTEST_HOME"] = os.environ["CPPUTEST_HOME"]
-
-    if coverage:
-        rule += " lcov"
 
     if test_filter:
         env_dict["TEST_MAKEFILE_FILTER"] = test_filter
@@ -78,14 +76,37 @@ def fw_sdk_unit_test(
 
     make_options.extend(["-j", str(cpus)])
 
+    # force colorized cpputest output
     env_dict["CPPUTEST_EXE_FLAGS"] = "-c"
 
+    # force compiler colored output; it detects as running in a non-tty but the
+    # color output is useful
+    env_dict["COMPILER_SPECIFIC_WARNINGS"] = "-fdiagnostics-color=always " + os.environ.get(
+        "COMPILER_SPECIFIC_WARNINGS", ""
+    )
+
     with ctx.cd(test_dir):
-        ctx.run(
-            "make {} {}".format(" ".join(make_options), rule),
-            env=env_dict,
-            pty=True,
-        )
+        # The main unit tests (in the 'tests' directory) use a test.py file to
+        # drive the test run. The internal tests, in the 'internal/tests' directory,
+        # use a Make-based test runner, so support both.
+        if os.path.exists(os.path.join(test_dir, "test.py")):
+            # run the tests with pytest
+            test_cmd = "pytest --numprocesses=auto {verbose} test.py".format(
+                verbose="-v" if verbose else ""
+            )
+        else:
+            # run normal make-based tests
+            test_cmd = "make {} {}".format(" ".join(make_options), rule)
+
+        ctx.run(test_cmd, env=env_dict, pty=True)
+
+        if coverage:
+            # run lcov to generate coverage report
+            ctx.run(
+                "make --no-print-directory SILENCE=@ {} lcov".format(" ".join(make_options)),
+                env=env_dict,
+                pty=True,
+            )
 
 
 ns = Collection()

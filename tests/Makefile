@@ -43,6 +43,10 @@ all: $(TEST_MAKEFILES)
 compile: CPPUTEST_BUILD_RULE=start
 compile: $(TEST_MAKEFILES)
 
+.PHONY: print-makefiles
+print-makefiles:
+	@echo $(TEST_MAKEFILES)
+
 # if you are building with alternate compilers, be sure gcov is compatible. you
 # may need to do something like this, for example:
 # > CC=gcc-8 CXX=g++-8 GCOV_TOOL=gcov-8 make lcov
@@ -89,7 +93,7 @@ endif
 	@echo See coverage output in file://$(abspath $(BUILD_DIR)/test_coverage/index.html)
 
 $(TEST_MAKEFILES):
-	$(MAKE) -f $@ $(CPPUTEST_BUILD_RULE) COMPONENT_NAME=$(patsubst makefiles/Makefile_%.mk,%,$@)
+	$(SILENCE)$(MAKE) -f $@ $(CPPUTEST_BUILD_RULE) COMPONENT_NAME=$(patsubst makefiles/Makefile_%.mk,%,$@)
 
 clean:
 	rm -rf $(BUILD_DIR)
