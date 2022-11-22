@@ -439,6 +439,28 @@ extern "C" {
 #endif
 
 //
+// Custom Data Recording configuration options [EXPERIMENTAL]
+//
+
+//! Controls whether or not publishing Custom Data Recordings is enabled.
+//! For severely constrained environments, this option can be disabled to save
+//! a little flash/data space.
+#ifndef MEMFAULT_CDR_ENABLE
+#define MEMFAULT_CDR_ENABLE 0
+#endif
+
+//! Controls the maximum number of Custom Data Recording sources a project can register.
+//! The overhead per allocation is 4 bytes (size of a pointer)
+#ifndef MEMFAULT_CDR_MAX_DATA_SOURCES
+#define MEMFAULT_CDR_MAX_DATA_SOURCES 4
+#endif
+
+//! Controls the maximum space budgeted for a Custom Data Recording header.
+#ifndef MEMFAULT_CDR_MAX_ENCODED_METADATA_LEN
+#define MEMFAULT_CDR_MAX_ENCODED_METADATA_LEN 128
+#endif
+
+//
 // Port Configuration Options
 //
 

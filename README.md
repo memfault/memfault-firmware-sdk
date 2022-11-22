@@ -28,8 +28,8 @@ The platform header files describe the interfaces which the component relies on
 that you must implement.
 
 For some of the platform dependencies we have provided ports that can be linked
-into your system without modification. You can find them in the
-[`ports`](ports/) folder.
+into your system directly, or used as a template for further customization. You
+can find them in the [`ports`](ports/) folder.
 
 For some of the popular MCUs & vendor SDKs, we have already provided a reference
 implementation for platform dependencies which can be found in the

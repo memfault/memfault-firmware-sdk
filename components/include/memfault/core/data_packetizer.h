@@ -139,9 +139,12 @@ typedef enum {
   // Any "triggered" log captures: https://mflt.io/logging
   kMfltDataSourceMask_Log = (1 << 3),
 
+  // Any Custom Data Recording captured
+  kMfltDataSourceMask_Cdr = (1 << 4),
+
   // A convenience mask which enables all active sources
   kMfltDataSourceMask_All =
-    (kMfltDataSourceMask_Coredump | kMfltDataSourceMask_Event | kMfltDataSourceMask_Log)
+    (kMfltDataSourceMask_Coredump | kMfltDataSourceMask_Event | kMfltDataSourceMask_Log | kMfltDataSourceMask_Cdr)
 } eMfltDataSourceMask;
 
 //! Set the data sources which will be drained by the packetizer

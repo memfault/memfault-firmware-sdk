@@ -27,7 +27,11 @@
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_RAM_SIZE];
 static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
 
-static __NOINIT_ATTR uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+// The default '.noninit' section is placed at the end of DRAM, which can easily
+// move abosolute position if there's any change in the size of that section (eg
+// through OTA update). To better preserve the absolute position of the reboot
+// tracking data, we place it in the RTC noinit section '.rtc_noinit'
+static RTC_NOINIT_ATTR uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 MEMFAULT_WEAK
 bool memfault_esp_port_data_available(void) {

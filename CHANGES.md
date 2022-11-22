@@ -1,3 +1,25 @@
+### Changes between Memfault SDK 0.35.0 and SDK 0.34.2 - Nov 22, 2022
+
+#### :rocket: New Features
+
+- **Experimental** Custom Data Recording API
+  - Allows sending custom data collected over the course of a recording period
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+  - Modify heap stats to only collect info during allocations/deallocations from
+    threads
+- ESP-IDF:
+  - ESP32 reboot tracking into RTC noinit
+- nRF5 SDK:
+  - NRF5 coredump regions -Wunused-macros, fixes warning for unused macros
+
+#### :house: Internal
+
+- Experiment: pytest as fw test frontend
+- README: Add additional details on port integration
+
 ### Changes between Memfault SDK 0.34.2 and SDK 0.34.1 - Nov 8, 2022
 
 #### :chart_with_upwards_trend: Improvements

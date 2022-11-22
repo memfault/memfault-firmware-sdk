@@ -68,6 +68,10 @@ extern const sMemfaultDataSourceImpl g_memfault_event_data_source;
 //! Logging data source provided as part of "core" component (memfault/core/log.h)
 extern const sMemfaultDataSourceImpl g_memfault_log_data_source;
 
+//! Custom Data Recording (CDR) source provided as part of "core" component
+//! (memfault/core/custom_data_recording.h)
+extern const sMemfaultDataSourceImpl g_memfault_cdr_source;
+
 #ifdef __cplusplus
 }
 #endif

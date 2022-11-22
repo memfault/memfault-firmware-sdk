@@ -60,6 +60,12 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_log_data_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
+MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_cdr_source = {
+  .has_more_msgs_cb = prv_data_source_has_event_stub,
+  .read_msg_cb = prv_data_source_read_stub,
+  .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
+};
+
 MEMFAULT_WEAK
 bool memfault_data_source_rle_encoder_set_active(
     MEMFAULT_UNUSED const sMemfaultDataSourceImpl *active_source) {
@@ -72,6 +78,7 @@ typedef enum {
   kMfltMessageType_Coredump = 1,
   kMfltMessageType_Event = 2,
   kMfltMessageType_Log = 3,
+  kMfltMessageType_Cdr = 4,
   kMfltMessageType_NumTypes
 } eMfltMessageType;
 
@@ -82,7 +89,9 @@ MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Event) == kMfltDataSourceMask_Even
                        "kMfltDataSourceMask_Event, is incorrectly defined");
 MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Log) == kMfltDataSourceMask_Log,
                        "kMfltDataSourceMask_Log is incorrectly defined");
-MEMFAULT_STATIC_ASSERT(kMfltMessageType_NumTypes == 4, "eMfltDataSourceMask needs to be updated");
+MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Cdr) == kMfltDataSourceMask_Cdr,
+                       "kMfltDataSourceMask_Cdr is incorrectly defined");
+MEMFAULT_STATIC_ASSERT(kMfltMessageType_NumTypes == 5, "eMfltMessageType needs to be updated");
 
 
 typedef struct MemfaultDataSource {
@@ -106,6 +115,14 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
     .type = kMfltMessageType_Log,
     .use_rle = false,
     .impl = &g_memfault_log_data_source,
+  },
+  // NB: We may want to enable RLE in the future here (probably a lot of repeat patterns). The one
+  // thing to keep in mind is that when the encoder is enabled, it requires a lot more short reads
+  // to take place on the data source which can be a slow operation for flash based filesystems.
+  {
+    .type =  kMfltMessageType_Cdr,
+    .use_rle = false,
+    .impl = &g_memfault_cdr_source,
   }
 };
 

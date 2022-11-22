@@ -440,7 +440,17 @@ RANLIB = ranlib
 # Targets
 
 .PHONY: all
-all: start $(TEST_TARGET)
+all: start $(TEST_TARGET).run
+
+# Using the sin of 'touch' in makefiles- this is to prevent re-running the tests
+# if they've already run successfully in a previous invocation. Use the 'run'
+# phony target to re-run.
+$(TEST_TARGET).run: $(TEST_TARGET)
+	$(RUN_TEST_TARGET)
+	touch $@
+
+.PHONY: run
+run: $(TEST_TARGET)
 	$(RUN_TEST_TARGET)
 
 .PHONY: start

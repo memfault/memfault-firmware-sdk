@@ -6,3 +6,5 @@ west==0.13.0
 pyyaml==5.4
 colorama==0.4.3
 fastcov==1.14
+pytest==7.0.1
+pytest-xdist==3.0.2

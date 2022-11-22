@@ -119,11 +119,21 @@ extern void __real_k_free(void *ptr);
 
 void *__wrap_k_malloc(size_t size) {
   void *ptr = __real_k_malloc(size);
-  MEMFAULT_HEAP_STATS_MALLOC(ptr, size);
+
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, size);
+  }
+
   return ptr;
 }
 void __wrap_k_free(void *ptr) {
-  MEMFAULT_HEAP_STATS_FREE(ptr);
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_FREE(ptr);
+  }
   __real_k_free(ptr);
 }
 #endif

@@ -35,6 +35,7 @@ typedef enum {
   kMemfaultEventType_Trace = 2,
   kMemfaultEventType_LogError = 3,
   kMemfaultEventType_Logs = 4,
+  kMemfaultEventType_Cdr = 5,
 } eMemfaultEventType;
 
 //! EventInfo dictionary keys for events with type kMemfaultEventType_Heartbeat.
@@ -62,6 +63,14 @@ typedef enum {
 
 //! For events with type kMemfaultEventType_Logs, the EventInfo contains a single array containing
 //! all logs: [lvl1, msg1, lvl2, msg2, ...]
+
+//! EventInfo dictionary keys for events with type kMemfaultEventType_Cdr.
+typedef enum {
+  kMemfaultCdrInfoKey_DurationMs = 1,
+  kMemfaultCdrInfoKey_Mimetypes = 2,
+  kMemfaultCdrInfoKey_Reason = 3,
+  kMemfaultCdrInfoKey_Data = 4,
+} eMemfaultCdrInfoKey;
 
 #ifdef __cplusplus
 }

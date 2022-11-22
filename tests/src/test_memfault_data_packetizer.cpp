@@ -123,6 +123,7 @@ void memfault_chunk_transport_get_chunk_info(sMfltChunkTransportCtx *ctx) {
 }
 
 static const char *s_log_scope = "log_data_source";
+static const char *s_cdr_scope = "cdr_source";
 
 TEST_GROUP(MemfaultDataPacketizer){
   void setup() {
@@ -134,6 +135,7 @@ TEST_GROUP(MemfaultDataPacketizer){
     s_multi_call_chunking_enabled = false;
     mock().strictOrder();
     mock(s_log_scope).disable();
+    mock(s_cdr_scope).disable();
   }
   void teardown() {
     mock().checkExpectations();
@@ -549,6 +551,59 @@ TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
   BYTES_EQUAL('A', packet[1]);
 }
 
+static const uint8_t s_cdr_payload[] = { 0x1, 0x2, 0x3, 0x4 };
+
+static bool prv_has_cdr(size_t *size) {
+  const bool has_cdr = mock(s_cdr_scope).actualCall(__func__).returnBoolValueOrDefault(false);
+  if (has_cdr) {
+    *size = sizeof(s_cdr_payload);
+  }
+  return has_cdr;
+}
+
+static bool prv_cdr_read(uint32_t offset, void *buf, size_t buf_len) {
+  memcpy(buf, &s_cdr_payload[offset], buf_len);
+  mock(s_cdr_scope).actualCall(__func__);
+  return true;
+}
+
+static void prv_cdr_mark_sent(void) {
+  mock(s_cdr_scope).actualCall(__func__);
+}
+
+const sMemfaultDataSourceImpl g_memfault_cdr_source  = {
+  .has_more_msgs_cb = prv_has_cdr,
+  .read_msg_cb = prv_cdr_read,
+  .mark_msg_read_cb = prv_cdr_mark_sent,
+};
+
+TEST(MemfaultDataPacketizer, Test_CdrSourceIsHookedUp) {
+  uint8_t packet[16];
+
+  mock(s_cdr_scope).enable();
+
+  prv_setup_expect_coredump_call_expectations(false);
+  mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+
+  mock(s_cdr_scope).expectOneCall("prv_has_cdr").andReturnValue(true);
+  mock(s_cdr_scope).expectOneCall("prv_cdr_read");
+  mock(s_cdr_scope).expectOneCall("prv_cdr_mark_sent");
+
+  const bool data_expected = true;
+  prv_begin_transfer(data_expected, sizeof(s_cdr_payload));
+
+  size_t buf_len = sizeof(packet);
+  eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet, &buf_len);
+  LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
+
+  // the fake chunker has 0 overhead
+  LONGS_EQUAL(sizeof(s_cdr_payload) + 1 /* hdr */, buf_len);
+  // packet should be a log type
+  BYTES_EQUAL(4, packet[0]);
+  MEMCMP_EQUAL(s_cdr_payload, &packet[1], sizeof(s_cdr_payload));
+}
+
 TEST(MemfaultDataPacketizer, Test_ActiveSources) {
   uint8_t packet[16];
 
@@ -585,6 +640,15 @@ TEST(MemfaultDataPacketizer, Test_ActiveSources) {
   memfault_packetizer_set_active_sources(kMfltDataSourceMask_Log);
 
   mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
+  more_data = memfault_packetizer_get_chunk(packet, &buf_len);
+  CHECK(!more_data);
+  mock().checkExpectations();
+
+  // exclusively enabled cdr and we should only see the log source get called
+  mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
+  memfault_packetizer_set_active_sources(kMfltDataSourceMask_Cdr);
+
+  mock(s_log_scope).expectOneCall("prv_has_cdr").andReturnValue(true);
   more_data = memfault_packetizer_get_chunk(packet, &buf_len);
   CHECK(!more_data);
   mock().checkExpectations();
