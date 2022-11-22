@@ -9,9 +9,15 @@
 #include <stdlib.h>
 
 #include "esp_core_dump.h"
-#include "freertos/xtensa_api.h"
-#include "memfault/esp_port/version.h"
+#ifdef __XTENSA__
+#include "xtensa/xtensa_api.h"
+#include "xt_utils.h"
 #include "memfault/panics/arch/xtensa/xtensa.h"
+#elif __riscv
+#include "riscv/rvruntime-frames.h"
+#include "memfault/panics/arch/riscv/riscv.h"
+#endif
+#include "memfault/esp_port/version.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
 
@@ -43,10 +49,16 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! correct)
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,2,3)
 void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
+#ifdef __XTENSA__
   XtExcFrame *fp = (void *)info->frame;
+#elif __riscv
+  RvExcFrame *fp = (void *)info->frame;
+#endif
 #else
 void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
 #endif
+
+#ifdef __XTENSA__
   // Clear "EXCM" bit so we don't have to correct PS.OWB to get a good unwind This will also be
   // more reflective of the state of the register prior to the "panicHandler" being invoked
   const uint32_t corrected_ps = fp->ps & ~(PS_EXCM_MASK);
@@ -86,6 +98,54 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
     .exccause = fp->exccause,
     .excvaddr = fp->excvaddr,
   };
+#elif __riscv
+  sMfltRegState regs = {
+    .collection_type = (uint32_t)kMemfaultEsp32RegCollectionType_ActiveWindow,
+    .mepc = fp->mepc,
+    .ra = fp->ra,
+    .sp = fp->sp,
+    .gp = fp->gp,
+    .tp = fp->tp,
+    .t = {
+      fp->t0,
+      fp->t1,
+      fp->t2,
+      fp->t3,
+      fp->t4,
+      fp->t5,
+      fp->t6,
+    },
+    .s = {
+      fp->s0,
+      fp->s1,
+      fp->s2,
+      fp->s3,
+      fp->s4,
+      fp->s5,
+      fp->s6,
+      fp->s7,
+      fp->s8,
+      fp->s9,
+      fp->s10,
+      fp->s11,
+    },
+    .a = {
+      fp->a0,
+      fp->a1,
+      fp->a2,
+      fp->a3,
+      fp->a4,
+      fp->a5,
+      fp->a6,
+      fp->a7,
+    },
+    .mstatus = fp->mstatus,
+    .mtvec = fp->mtvec,
+    .mcause = fp->mcause,
+    .mtval = fp->mtval,
+    .mhartid = fp->mhartid,
+  };
+#endif
 
   memfault_fault_handler(&regs, kMfltRebootReason_HardFault);
 }

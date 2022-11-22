@@ -3,7 +3,7 @@ set(MEMFAULT_SDK_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)
 include(${MEMFAULT_SDK_ROOT}/cmake/Memfault.cmake)
 memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
-  MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ARCH_XTENSA)
+  MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS)
 
 # v4.0 and greater expose the IDF_VERSION in cmake. If we can't find
 # it, we assume the end user is on v3.x

@@ -233,7 +233,10 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
   # else
     return kMfltCoredumpMachineType_XtensaLx106;
   # endif
-# else
+#  elif defined(__riscv)
+#    warning "TODO: Need machine type assigned for RISC-V"
+  return kMfltCoredumpMachineType_None;
+#  else
 #    error "Coredumps are not supported for target architecture"
 #  endif
 #endif
