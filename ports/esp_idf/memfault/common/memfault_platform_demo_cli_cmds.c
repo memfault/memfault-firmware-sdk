@@ -12,6 +12,10 @@
 #include "esp_err.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "esp_private/esp_clk.h"
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
+#include "soc/timer_periph.h"
+#endif
 
 #include "memfault/config.h"
 #include "memfault/core/data_export.h"
@@ -26,8 +30,8 @@
 #include "memfault/panics/assert.h"
 #include "memfault/panics/platform/coredump.h"
 
-#define TIMER_DIVIDER         16  //  Hardware timer clock divider
-#define TIMER_SCALE_TICKS_PER_MS    ((TIMER_BASE_CLK / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
+#define TIMER_DIVIDER  (16)  //  Hardware timer clock divider
+#define TIMER_SCALE_TICKS_PER_MS(_baseFrequency)  (((_baseFrequency) / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -49,26 +53,31 @@ void prv_check1(const void *buf) {
 
 void prv_check2(const void *buf) {
   uint8_t buf2[200];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   prv_check1(buf2);
+#pragma GCC diagnostic pop
 }
 
 void prv_check3(const void *buf) {
   uint8_t buf3[300];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   prv_check2(buf3);
+#pragma GCC diagnostic pop
 }
 
 void prv_check4(void) {
   uint8_t buf4[400];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
   prv_check3(buf4);
+#pragma GCC diagnostic pop
 }
 
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
   // Always clear the interrupt:
-  #if CONFIG_IDF_TARGET_ESP32
-  TIMERG0.int_clr_timers.t0 = 1;
-  #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
   TIMERG0.int_clr_timers.t0_int_clr = 1;
-  #endif
 
   // Crash from ISR:
   ESP_ERROR_CHECK(-1);
@@ -83,6 +92,7 @@ static void prv_timer_init(void)
       .alarm_en = TIMER_ALARM_EN,
       .intr_type = TIMER_INTR_LEVEL,
       .auto_reload = false,
+      .clk_src = TIMER_SRC_CLK_DEFAULT,
   };
   timer_init(TIMER_GROUP_0, TIMER_0, &config);
   timer_enable_intr(TIMER_GROUP_0, TIMER_0);
@@ -90,8 +100,9 @@ static void prv_timer_init(void)
 }
 
 static void prv_timer_start(uint32_t timer_interval_ms) {
+  uint32_t clock_hz = esp_clk_apb_freq();
   timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_interval_ms * TIMER_SCALE_TICKS_PER_MS);
+  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }

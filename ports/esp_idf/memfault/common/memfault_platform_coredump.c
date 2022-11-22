@@ -12,8 +12,13 @@
 #include <stdint.h>
 
 #include "esp_partition.h"
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
+#include "spi_flash_mmap.h"
+#include "soc/uart_reg.h"
+#else
 #include "esp_spi_flash.h"
 #include "soc/soc.h"
+#endif
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
@@ -110,7 +115,7 @@ void __wrap_esp_core_dump_init(void) {
 
   MEMFAULT_LOG_INFO("Coredumps will be saved to '%s' partition",
                     core_part->label);
-  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08X",
+  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08lX",
                     core_part, core_part->address);
 
   s_esp32_coredump_partition_info = (sEspIdfCoredumpPartitionInfo) {
@@ -230,7 +235,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   }
 
   const size_t address = core_part->address + offset;
-  const esp_err_t err = spi_flash_write(address, data, data_len);
+  const esp_err_t err = memfault_esp_spi_flash_write(address, data, data_len);
   if (err != ESP_OK) {
     prv_panic_safe_putstr("coredump write failed");
   }
