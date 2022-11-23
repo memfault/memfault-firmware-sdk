@@ -19,6 +19,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/semphr.h"
+#include "esp_idf_version.h"
 #if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
 #include "esp_cpu.h"
 #else

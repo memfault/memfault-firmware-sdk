@@ -14,6 +14,7 @@
 
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include "esp_idf_version.h"
 #include "esp_wifi.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"

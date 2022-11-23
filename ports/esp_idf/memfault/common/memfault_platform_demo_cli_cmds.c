@@ -6,15 +6,18 @@
 //! @brief
 //! ESP32 CLI implementation for demo application
 
-#include "driver/periph_ctrl.h"
+// TODO: Migrate to "driver/gptimer.h" to fix warning
 #include "driver/timer.h"
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_private/esp_clk.h"
+#include "esp_idf_version.h"
 #if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
 #include "soc/timer_periph.h"
+#else
+#include "driver/periph_ctrl.h"
 #endif
 
 #include "memfault/config.h"

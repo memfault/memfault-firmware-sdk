@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "esp_partition.h"
+#include "esp_idf_version.h"
 #if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
 #include "spi_flash_mmap.h"
 #include "soc/uart_reg.h"
