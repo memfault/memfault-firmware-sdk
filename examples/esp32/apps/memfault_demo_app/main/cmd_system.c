@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -71,7 +72,7 @@ static void register_restart()
 
 static int free_mem(int argc, char** argv)
 {
-  printf("%d\n", esp_get_free_heap_size());
+  printf("%" PRIu32 "\n", esp_get_free_heap_size());
   return 0;
 }
 

@@ -19,7 +19,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/semphr.h"
+#include "esp_idf_version.h"
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
+#include "esp_cpu.h"
+#else
 #include "soc/cpu.h"
+#endif
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_log.h"
@@ -59,7 +64,11 @@ MEMFAULT_NORETURN void memfault_sdk_assert_func_noreturn(void) {
 }
 
 void memfault_platform_halt_if_debugging(void) {
+#if defined(ESP_IDF_VERSION_MAJOR) && ESP_IDF_VERSION_MAJOR >= 5
+  if (esp_cpu_dbgr_is_attached()) {
+#else
   if (esp_cpu_in_ocd_debug_mode()) {
+#endif
     MEMFAULT_BREAKPOINT();
   }
 }

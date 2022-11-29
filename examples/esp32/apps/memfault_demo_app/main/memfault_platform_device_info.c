@@ -11,6 +11,7 @@
 #include "memfault/components.h"
 
 #include "esp_system.h"
+#include "esp_mac.h"
 
 #include <string.h>
 

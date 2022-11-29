@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include "esp_system.h"
@@ -126,7 +127,7 @@ static void prv_poster_task(void *args) {
   const uint32_t interval_sec = 60;
   const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
 
-  MEMFAULT_LOG_INFO("Data poster task up and running every %us.", interval_sec);
+  MEMFAULT_LOG_INFO("Data poster task up and running every %" PRIu32 "s.", interval_sec);
   while (true) {
     MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
     memfault_esp_port_http_client_post_data();
@@ -157,7 +158,7 @@ static void prv_example_task(void *args) {
   // claimed, the task watchdog will eventually trip and mark this task as stuck
   const uint32_t interval_ms = 250;
 
-  MEMFAULT_LOG_INFO("Task watchdog example task running every %ums.", interval_ms);
+  MEMFAULT_LOG_INFO("Task watchdog example task running every %" PRIu32 "ms.", interval_ms);
   while (true) {
     // enable the task watchdog
     MEMFAULT_TASK_WATCHDOG_START(example_task);
