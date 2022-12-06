@@ -1,3 +1,21 @@
+### Changes between Memfault SDK 0.34.2 and SDK 0.35.0 - Dec 6, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Add support for
+    [just-released ESP-IDF v5](https://github.com/espressif/esp-idf/releases/tag/v5.0)
+    🎉!
+  - Add an auto-OTA (and auto-WiFi-join) feature to the
+    [ESP32 example app](examples/esp32)- enabled by default but can be disabled
+    with Kconfig
+
+- The [Heap Stats tracing component](https://mflt.io/mcu-heap-stats) has been
+  revamped to make more efficient usage of the bookeeping structure. Usage
+  should be the same as before, but now should provide more data without
+  significantly expanding the memory utilization.
+
 ### Changes between Memfault SDK 0.35.0 and SDK 0.34.2 - Nov 22, 2022
 
 #### :rocket: New Features

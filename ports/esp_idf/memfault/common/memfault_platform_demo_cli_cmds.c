@@ -6,28 +6,31 @@
 //! @brief
 //! ESP32 CLI implementation for demo application
 
-#include "driver/periph_ctrl.h"
+// TODO: Migrate to "driver/gptimer.h" to fix warning
 #include "driver/timer.h"
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "memfault/esp_port/version.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  #include "esp_private/esp_clk.h"
+  #include "soc/timer_periph.h"
+#else
+  #include "driver/periph_ctrl.h"
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
+    #include "esp32/clk.h"
+  #else
+    #include "esp_clk.h"
+  #endif
+#endif
 
-#include "memfault/config.h"
-#include "memfault/core/data_export.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/debug_log.h"
-#include "memfault/demo/cli.h"
+#include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"
-#include "memfault/http/platform/http_client.h"
-#include "memfault/metrics/metrics.h"
-#include "memfault/panics/assert.h"
-#include "memfault/panics/platform/coredump.h"
 
-#define TIMER_DIVIDER         16  //  Hardware timer clock divider
-#define TIMER_SCALE_TICKS_PER_MS    ((TIMER_BASE_CLK / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
+#define TIMER_DIVIDER  (16)  //  Hardware timer clock divider
+#define TIMER_SCALE_TICKS_PER_MS(_baseFrequency)  (((_baseFrequency) / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -48,27 +51,31 @@ void prv_check1(const void *buf) {
 }
 
 void prv_check2(const void *buf) {
-  uint8_t buf2[200];
+  uint8_t buf2[200] = { 0 };
   prv_check1(buf2);
 }
 
 void prv_check3(const void *buf) {
-  uint8_t buf3[300];
+  uint8_t buf3[300] = { 0 };
   prv_check2(buf3);
 }
 
 void prv_check4(void) {
-  uint8_t buf4[400];
+  uint8_t buf4[400] = { 0 };
   prv_check3(buf4);
 }
 
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
-  // Always clear the interrupt:
-  #if CONFIG_IDF_TARGET_ESP32
-  TIMERG0.int_clr_timers.t0 = 1;
-  #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+// Always clear the interrupt:
+#if CONFIG_IDF_TARGET_ESP32
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   TIMERG0.int_clr_timers.t0_int_clr = 1;
+  #else
+  TIMERG0.int_clr_timers.t0 = 1;
   #endif
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+  TIMERG0.int_clr_timers.t0_int_clr = 1;
+#endif
 
   // Crash from ISR:
   ESP_ERROR_CHECK(-1);
@@ -77,12 +84,15 @@ static void IRAM_ATTR prv_timer_group0_isr(void *para) {
 static void prv_timer_init(void)
 {
   const timer_config_t config = {
-      .divider = TIMER_DIVIDER,
-      .counter_dir = TIMER_COUNT_UP,
-      .counter_en = TIMER_PAUSE,
-      .alarm_en = TIMER_ALARM_EN,
-      .intr_type = TIMER_INTR_LEVEL,
-      .auto_reload = false,
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    .clk_src = TIMER_SRC_CLK_DEFAULT,
+#endif
+    .divider = TIMER_DIVIDER,
+    .counter_dir = TIMER_COUNT_UP,
+    .counter_en = TIMER_PAUSE,
+    .alarm_en = TIMER_ALARM_EN,
+    .intr_type = TIMER_INTR_LEVEL,
+    .auto_reload = false,
   };
   timer_init(TIMER_GROUP_0, TIMER_0, &config);
   timer_enable_intr(TIMER_GROUP_0, TIMER_0);
@@ -90,8 +100,9 @@ static void prv_timer_init(void)
 }
 
 static void prv_timer_start(uint32_t timer_interval_ms) {
+  uint32_t clock_hz = esp_clk_apb_freq();
   timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_interval_ms * TIMER_SCALE_TICKS_PER_MS);
+  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }

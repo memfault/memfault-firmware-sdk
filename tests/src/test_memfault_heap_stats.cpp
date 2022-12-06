@@ -69,6 +69,10 @@ TEST(MemfaultHeapStats, Test_Basic) {
 
   bool empty = memfault_heap_stats_empty();
   CHECK(empty);
+
+  // Check initial list head points to empty
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_LIST_END, g_memfault_heap_stats.stats_pool_head);
+
   MEMFAULT_HEAP_STATS_MALLOC(expected_heap_stats[0].ptr, expected_heap_stats[0].info.size);
   empty = memfault_heap_stats_empty();
   CHECK(!empty);
@@ -143,6 +147,10 @@ TEST(MemfaultHeapStats, Test_Free) {
     }
   }
   LONGS_EQUAL(2, list_count);
+
+  // Test correct state after freeing last entry
+  MEMFAULT_HEAP_STATS_FREE(expected_heap_stats[0].ptr);
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_LIST_END, g_memfault_heap_stats.stats_pool_head);
 }
 
 TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
@@ -184,15 +192,13 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
     MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats[0].ptr + i),
                                expected_heap_stats[0].info.size + i);
   }
-  LONGS_EQUAL(32, g_memfault_heap_stats.in_use_block_count);
-  LONGS_EQUAL(32, g_memfault_heap_stats.max_in_use_block_count);
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_MAX_COUNT, g_memfault_heap_stats.in_use_block_count);
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_MAX_COUNT, g_memfault_heap_stats.max_in_use_block_count);
 
   // work over the list, FIFO, confirming that everything matches expected
   size_t list_count = 0;
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
-    size_t current_idx = (g_memfault_heap_stats.stats_pool_head + i) %
-                         MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool);
-    sMfltHeapStatEntry *pthis = &g_memfault_heap_stats_pool[current_idx];
+    sMfltHeapStatEntry *pthis = &g_memfault_heap_stats_pool[i];
     sMfltHeapStatEntry expected = {
       .lr = lr,
       .ptr = (void *)(0x12345679 + i),
@@ -209,7 +215,7 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
       CHECK(match);
     }
   }
-  LONGS_EQUAL(32, list_count);
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_MAX_COUNT, list_count);
 }
 
 //! Verify that an allocation that reuses a previously freed address is properly
@@ -256,5 +262,131 @@ TEST(MemfaultHeapStats, Test_AddressReuse) {
       CHECK(match);
     }
   }
-  LONGS_EQUAL(2, list_count);
+  LONGS_EQUAL(1, list_count);
+}
+
+//! Verifies logic for reusing heap stat entries.
+//!
+//! Heap stats should first look for free entries, then overwrite the oldest entry
+//! if none are free
+TEST(MemfaultHeapStats, Test_Reuse) {
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+  const sMfltHeapStatEntry expected_heap_stats = {
+    .lr = lr,
+    .ptr = (void *)0x12345679,
+    .info = {
+      .size = 1234,
+      .in_use = 1,
+    },
+  };
+
+  const sMfltHeapStatEntry middle_entry = {
+    .lr = lr,
+    .ptr = (void *)0x87654321,
+    .info = {
+      .size = 4321,
+      .in_use = 1,
+    },
+  };
+
+  const sMfltHeapStatEntry final_entry = {
+    .lr = lr,
+    .ptr = (void *)0x111111111,
+    .info = {
+      .size = 1111,
+      .in_use = 1,
+    },
+  };
+
+  // Offset to unique entry in middle of heap stats
+  size_t middle_offset = MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool) >> 1;
+
+  // Fill up the heap stats pool
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+    MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + i),
+                               expected_heap_stats.info.size + i);
+  }
+
+  // Free entry in middle of array, then malloc again
+  MEMFAULT_HEAP_STATS_FREE((void *)((uintptr_t)expected_heap_stats.ptr + middle_offset));
+  MEMFAULT_HEAP_STATS_MALLOC(middle_entry.ptr, middle_entry.info.size);
+
+  // Check latest entry is list head
+  LONGS_EQUAL(middle_offset, g_memfault_heap_stats.stats_pool_head);
+  prv_heap_stat_equality(&middle_entry,
+                         &g_memfault_heap_stats_pool[g_memfault_heap_stats.stats_pool_head]);
+
+  // Check next recent is end of heap stats pool
+  sMfltHeapStatEntry *entry = &g_memfault_heap_stats_pool[g_memfault_heap_stats.stats_pool_head];
+  prv_heap_stat_equality(&g_memfault_heap_stats_pool[MEMFAULT_HEAP_STATS_MAX_COUNT - 1],
+                         &g_memfault_heap_stats_pool[entry->info.next_entry_index]);
+
+  // Allocate another, should overwrite first entry (current oldest)
+  MEMFAULT_HEAP_STATS_MALLOC(final_entry.ptr, final_entry.info.size);
+  LONGS_EQUAL(0, g_memfault_heap_stats.stats_pool_head);
+  prv_heap_stat_equality(g_memfault_heap_stats_pool,
+                         &g_memfault_heap_stats_pool[g_memfault_heap_stats.stats_pool_head]);
+
+  // walk the other entries and confirm correct values
+  size_t list_count = 0;
+  for (size_t i = 1; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+    if (i == middle_offset) {
+      continue;
+    }
+
+    sMfltHeapStatEntry *pthis = &g_memfault_heap_stats_pool[i];
+    sMfltHeapStatEntry expected = {
+      .lr = lr,
+      .ptr = (void *)(0x12345679 + i),
+      .info =
+        {
+          .size = 1234 + (uint32_t)i,
+          .in_use = 1,
+        },
+    };
+
+    if (pthis->info.size != 0) {
+      list_count++;
+      bool match = prv_heap_stat_equality(&expected, pthis);
+      if (!match) {
+        fprintf(stderr, "Mismatch at index %zu\n", i);
+      }
+      CHECK(match);
+    }
+  }
+
+  // We skipped two entries from the pool
+  LONGS_EQUAL(MEMFAULT_HEAP_STATS_MAX_COUNT - 2, list_count);
+}
+
+//! Tests handling freeing the most recent allocation (list head)
+TEST(MemfaultHeapStats, Test_FreeMostRecent) {
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+
+  const sMfltHeapStatEntry expected_heap_stats = {
+    .lr = lr,
+    .ptr = (void *)0x12345679,
+    .info = {
+      .size = 1234,
+      .in_use = 1,
+    },
+  };
+
+  size_t end_offset = MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool) - 1;
+
+  // Fill up the heap stats pool
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+    MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + i),
+                               expected_heap_stats.info.size + i);
+  }
+
+  // Remove most recent entry (last in pool)
+  MEMFAULT_HEAP_STATS_FREE((void *)((uintptr_t)expected_heap_stats.ptr + end_offset));
+
+  // Check that most recent entry is second to last, check entry contents
+  LONGS_EQUAL(end_offset - 1, g_memfault_heap_stats.stats_pool_head);
+  prv_heap_stat_equality(&expected_heap_stats,
+                         &g_memfault_heap_stats_pool[g_memfault_heap_stats.stats_pool_head]);
 }

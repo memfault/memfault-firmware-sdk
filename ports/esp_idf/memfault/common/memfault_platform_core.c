@@ -9,6 +9,7 @@
 #include "memfault/components.h"
 
 #include "memfault/esp_port/cli.h"
+#include "memfault/esp_port/version.h"
 #include "memfault/metrics/metrics.h"
 
 #ifndef ESP_PLATFORM
@@ -19,7 +20,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/semphr.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#include "esp_cpu.h"
+#else
 #include "soc/cpu.h"
+#endif
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_log.h"
@@ -59,7 +64,11 @@ MEMFAULT_NORETURN void memfault_sdk_assert_func_noreturn(void) {
 }
 
 void memfault_platform_halt_if_debugging(void) {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  if (esp_cpu_dbgr_is_attached()) {
+#else
   if (esp_cpu_in_ocd_debug_mode()) {
+#endif
     MEMFAULT_BREAKPOINT();
   }
 }

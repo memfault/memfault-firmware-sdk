@@ -11,15 +11,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-// Register system functions
+// Register system console commands
 void register_system(void);
 
-// Register WiFi functions
+// Register WiFi console commands
 void register_wifi(void);
 
-// Register app-specific functions
+// Attempt to join a wifi network
+bool wifi_join(const char* ssid, const char* pass);
+void wifi_load_creds(char** ssid, char** password);
+
+// Register app-specific console commands
+void register_app(void);
 
 // This semaphore is used to control the Task Watchdog example task
 extern SemaphoreHandle_t g_example_task_lock;
-
-void register_app(void);

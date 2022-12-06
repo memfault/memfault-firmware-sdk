@@ -160,7 +160,7 @@ As a sanity check, let's request the device info from the debug console, enter
 esp32> get_device_info
 I (55239) mflt: S/N: 30AEA44AFF28
 I (55239) mflt: SW type: esp32-main
-I (55239) mflt: SW version: 1.0.0
+I (55239) mflt: SW version: 1.0.0-dev
 I (55239) mflt: HW version: esp32-proto
 ```
 
@@ -269,9 +269,9 @@ The following steps can be used to exercise OTA functionality:
    I (33288) mflt: Result: 0
    ```
 
-3. Change the `MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION` to `"1.0.1"` in
-   [`apps/memfault_demo_app/main/memfault_platform_device_info.c`](apps/memfault_demo_app/main/memfault_platform_device_info.c),
-   and rebuild (`idf.py build`), but don't load it to the device. We'll use this
+3. Use `idf.py menuconfig` to change the value of
+   `MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION` config variable to `"1.0.1"`, and
+   rebuild (`idf.py build`), but don't load it to the device. We'll use this
    build as our OTA payload!
 
 4. In the Memfault web app, go to "Software->OTA Releases" and create an OTA

@@ -9,7 +9,7 @@
 //! Provide some esp-idf version identifiers that work across esp-idf versions.
 //!
 
-#include "esp_system.h"
+#include "esp_idf_version.h"
 
 #ifdef __cplusplus
 extern "C" {

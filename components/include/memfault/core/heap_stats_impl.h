@@ -22,6 +22,10 @@ extern "C" {
 //! Number of regions used by heap stats
 #define MEMFAULT_HEAP_STATS_NUM_RAM_REGIONS 2
 
+//! Value used to indicate entry is the end of the list
+#define MEMFAULT_HEAP_STATS_LIST_END UINT16_MAX
+
+typedef struct MfltHeapStatEntry sMfltHeapStatEntry;
 
 //! The heap stats data structure, which is exported when capturing a core.
 typedef struct MfltHeapStatEntry {
@@ -37,9 +41,10 @@ typedef struct MfltHeapStatEntry {
     uint32_t size : 31;
     // 1 bit indicating whether this entry is still in use or has been freed
     uint32_t in_use : 1;
+    // Index to next oldest entry in heap stats entry array,
+    uint16_t next_entry_index;
   } info;
 } sMfltHeapStatEntry;
-
 
 typedef struct MfltHeapStats {
   uint8_t version;
@@ -51,7 +56,7 @@ typedef struct MfltHeapStats {
   uint32_t max_in_use_block_count;
 
   // Allocation entry list pointer
-  size_t stats_pool_head;
+  uint16_t stats_pool_head;
 } sMfltHeapStats;
 
 extern sMfltHeapStats g_memfault_heap_stats;

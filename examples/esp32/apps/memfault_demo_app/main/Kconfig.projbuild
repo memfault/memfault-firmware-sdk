@@ -1,4 +1,4 @@
-menu "Example Configuration"
+menu "Memfault App Configuration"
 
 config STORE_HISTORY
     bool "Store command history in flash"
@@ -7,5 +7,25 @@ config STORE_HISTORY
         Linenoise line editing library provides functions to save and load
         command history. If this option is enabled, initalizes a FAT filesystem
         and uses it to store command history.
+
+config MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION
+    string "Main firmware version"
+    default "1.0.0-dev"
+    help
+        The version of the main firmware. Used when the device reports in as
+        well as for OTA checks.
+
+config MEMFAULT_APP_OTA
+    bool "Enable automatic periodic check+update for OTA"
+    default y
+    help
+        Enables the Memfault OTA subsystem. This will periodically check for
+        updates and apply them if available.
+
+config MEMFAULT_APP_WIFI_AUTOJOIN
+    bool "Enable automatic WiFi connection"
+    default y
+    help
+        Automatically join if credentials are configured.
 
 endmenu

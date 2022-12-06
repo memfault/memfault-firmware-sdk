@@ -9,21 +9,22 @@
 #include <stdio.h>
 
 #include "memfault/components.h"
-
-#include "esp_system.h"
+#include "memfault/esp_port/version.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  #include "esp_mac.h"
+#endif
 
 #include <string.h>
 
-#ifndef MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION
-#  define MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION "1.0.0"
-#endif
+#include "esp_system.h"
+#include "memfault/components.h"
 
 #ifndef MEMFAULT_ESP32_SOFTWARE_TYPE
-#  define MEMFAULT_ESP32_SOFTWARE_TYPE "esp32-main"
+  #define MEMFAULT_ESP32_SOFTWARE_TYPE "esp32-main"
 #endif
 
 #ifndef MEMFAULT_ESP32_HW_REVISION
-#  define MEMFAULT_ESP32_HW_REVISION "esp32-proto"
+  #define MEMFAULT_ESP32_HW_REVISION "esp32-proto"
 #endif
 
 static char s_device_serial[32];
@@ -41,7 +42,7 @@ static void prv_get_device_serial(char *buf, size_t buf_len) {
     int bytes_written = snprintf(&buf[curr_idx], space_left, "%02X", (int)mac[i]);
     if (bytes_written < space_left) {
       curr_idx += bytes_written;
-    } else { // we are out of space, return what we got, it's NULL terminated
+    } else {  // we are out of space, return what we got, it's NULL terminated
       return;
     }
   }
@@ -52,10 +53,10 @@ void memfault_platform_device_info_boot(void) {
 }
 
 void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
-  *info = (struct MemfaultDeviceInfo) {
+  *info = (struct MemfaultDeviceInfo){
     .device_serial = s_device_serial,
     .hardware_version = MEMFAULT_ESP32_HW_REVISION,
-    .software_version = MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION "-dev",
+    .software_version = CONFIG_MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION,
     .software_type = MEMFAULT_ESP32_SOFTWARE_TYPE,
   };
 }

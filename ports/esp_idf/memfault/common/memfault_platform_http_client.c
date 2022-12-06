@@ -15,19 +15,10 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "esp_wifi.h"
-#include "memfault/core/data_packetizer.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/errors.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/debug_log.h"
-#include "memfault/core/platform/device_info.h"
+#include "memfault/components.h"
 #include "memfault/esp_port/core.h"
 #include "memfault/esp_port/http_client.h"
-#include "memfault/http/http_client.h"
-#include "memfault/http/platform/http_client.h"
-#include "memfault/http/root_certs.h"
-#include "memfault/http/utils.h"
-#include "memfault/panics/assert.h"
+#include "memfault/esp_port/version.h"
 
 #ifndef MEMFAULT_HTTP_DEBUG
 #define MEMFAULT_HTTP_DEBUG (0)
@@ -330,11 +321,25 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
     goto cleanup;
   }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  esp_https_ota_config_t config = {
+    .http_config = &(esp_http_client_config_t) {
+      .url = download_url,
+      .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
+      .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
+    },
+    .http_client_init_cb = NULL,
+    .bulk_flash_erase = false,
+    .partial_http_download = false,
+    .max_http_request_size = 0,
+  };
+#else
   esp_http_client_config_t config = {
     .url = download_url,
     .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
   };
+#endif
 
   const esp_err_t err = esp_https_ota(&config);
   if (err != ESP_OK) {
