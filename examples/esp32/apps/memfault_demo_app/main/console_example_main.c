@@ -37,6 +37,12 @@
 #define GREEN_LED 2
 #define BLUE_LED 4
 
+// System state LED color:
+// Red:   System is running, has not checked in to memfault (wifi might be bad)
+// Green: System is running, has checked in to memfault
+// Blue:  System is performing an OTA update
+static int s_led_color = RED_LED;
+
 static const char *TAG = "example";
 
 /* Console command history can be stored to and loaded from a file.
@@ -128,7 +134,7 @@ void *g_unaligned_buffer;
 
 static bool prv_handle_ota_upload_available(void *user_ctx) {
   // set blue when performing update
-  gpio_set_level(BLUE_LED, 1);
+  s_led_color = BLUE_LED;
 
   MEMFAULT_LOG_INFO("Starting OTA download ...");
   return true;
@@ -166,15 +172,15 @@ static void prv_memfault_ota(void) {
 
   MEMFAULT_LOG_INFO("Checking for OTA Update");
 
-  // clear ota-in-progress indicator
-  gpio_set_level(BLUE_LED, 0);
   int rv = memfault_esp_port_ota_update(&handler);
   if (rv == 0) {
     MEMFAULT_LOG_INFO("Up to date!");
+    s_led_color = GREEN_LED;
   } else if (rv == 1) {
     MEMFAULT_LOG_INFO("Update available!");
   } else if (rv < 0) {
     MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
+    s_led_color = RED_LED;
   }
 }
 #else
@@ -213,7 +219,7 @@ static void prv_poster_task(void *args) {
     int err = memfault_esp_port_http_client_post_data();
     // if the check-in succeeded, set green, otherwise clear.
     // gives a quick eyeball check that the app is alive and well
-    gpio_set_level(GREEN_LED, err == 0);
+    s_led_color = (err == 0) ? GREEN_LED : RED_LED;
 
     memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(PosterTaskNumSchedules), 1);
     memfault_esp_port_wifi_autojoin();
@@ -298,6 +304,20 @@ static void prv_initialize_task_watchdog(void) {
 }
 #endif
 
+static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
+  static bool s_led_state = false;
+  s_led_state = !s_led_state;
+
+  const gpio_num_t leds[] = {RED_LED, GREEN_LED, BLUE_LED};
+  for (size_t i = 0; i < sizeof(leds) / sizeof(leds[0]); i++) {
+    if (leds[i] == s_led_color) {
+      gpio_set_level(s_led_color, s_led_state);
+    } else {
+      gpio_set_level(leds[i], 0);
+    }
+  }
+}
+
 static void led_init(void) {
   const gpio_num_t leds[] = {RED_LED, GREEN_LED, BLUE_LED};
 
@@ -306,6 +326,24 @@ static void led_init(void) {
     gpio_set_direction(leds[i], GPIO_MODE_OUTPUT);
     gpio_set_level(leds[i], 0);
   }
+
+  // create a timer that blinks the LED, indicating the app is alive
+  const char *const pcTimerName = "HeartbeatLED";
+  const TickType_t xTimerPeriodInTicks = pdMS_TO_TICKS(500);
+
+  TimerHandle_t timer;
+
+#if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+  static StaticTimer_t s_heartbeat_led_timer_context;
+  timer = xTimerCreateStatic(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL,
+                             prv_heartbeat_led_callback, &s_heartbeat_led_timer_context);
+#else
+  timer = xTimerCreate(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL, prv_heartbeat_led_callback);
+#endif
+
+  MEMFAULT_ASSERT(timer != 0);
+
+  xTimerStart(timer, 0);
 }
 
 // This task started by cpu_start.c::start_cpu0_default().

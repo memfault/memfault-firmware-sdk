@@ -5,7 +5,9 @@ list(APPEND
    console_example_main.c
    memfault_platform_device_info.c
 )
-if("${IDF_VERSION_MAJOR}" VERSION_GREATER_EQUAL 4)
+
+# the 'cmd_wifi.c' implementation is different for ESP-IDF v5+
+if("${IDF_VERSION_MAJOR}" VERSION_GREATER_EQUAL 5)
    list(APPEND
       COMPONENT_SRCS
       cmd_wifi.c

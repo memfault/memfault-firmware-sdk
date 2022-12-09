@@ -1,4 +1,12 @@
-### Changes between Memfault SDK 0.34.2 and SDK 0.35.0 - Dec 6, 2022
+### Changes between Memfault SDK 0.36.1 and SDK 0.36.0 - Dec 9, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+  - Fix a bug 🐛 in the [ESP32 example app](examples/esp32), where wifi join
+    fails when using versions of ESP-IDF prior to 5.0
+
+### Changes between Memfault SDK 0.36.0 and SDK 0.35.0 - Dec 6, 2022
 
 #### :chart_with_upwards_trend: Improvements
 
@@ -6,7 +14,8 @@
 
   - Add support for
     [just-released ESP-IDF v5](https://github.com/espressif/esp-idf/releases/tag/v5.0)
-    🎉!
+    🎉! Thanks to @jlubawy and the patch supplied in #39 for this, very much
+    appreciated!
   - Add an auto-OTA (and auto-WiFi-join) feature to the
     [ESP32 example app](examples/esp32)- enabled by default but can be disabled
     with Kconfig

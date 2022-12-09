@@ -16,7 +16,6 @@
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "memfault/esp_port/version.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -32,12 +31,6 @@ static char s_wifi_ssid[WIFI_CREDS_MAX_SIZE];
 static char s_wifi_pass[WIFI_CREDS_MAX_SIZE];
 
 #define EXAMPLE_ESP_MAXIMUM_RETRY 10 // CONFIG_ESP_MAXIMUM_RETRY
-
-// this type changed in ESP-IDF v4.0, to 'nvs_handle_t'; add a backwards-compat
-// typedef
-#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4, 0, 0)
-typedef nvs_handle nvs_handle_t;
-#endif
 
 #if CONFIG_ESP_WIFI_AUTH_OPEN
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
