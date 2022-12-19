@@ -7,6 +7,7 @@
 //! Adds a basic set of commands for interacting with Memfault SDK
 
 #include <shell/shell.h>
+#include <stdlib.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
@@ -193,6 +194,11 @@ static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, cha
   return 0;
 }
 
+static int prv_zephyr_load_32bit_address(const struct shell *shell, size_t argc, char **argv) {
+  return memfault_demo_cli_loadaddr(argc, argv);
+}
+
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
   //! different crash types that should result in a coredump being collected
@@ -203,6 +209,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(memmanage, NULL, "trigger a memory management fault", prv_memmanage_example),
   SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
+  SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
 
   //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),

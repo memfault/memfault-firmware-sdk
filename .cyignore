@@ -1,5 +1,8 @@
 cmake
+components/_feature_stubs
+components/_sortme
 examples
+internal
 makefile
 ports/atmel
 ports/dialog

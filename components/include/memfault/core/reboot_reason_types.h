@@ -13,6 +13,9 @@ extern "C" {
 #endif
 
 typedef enum MfltResetReason {
+  // A reboot reason was not determined either by hardware or a previously marked reboot reason
+  // This reason is classified as an unexpected reboot when used by the built-in metric
+  // MemfaultSdkMetric_UnexpectedRebootDidOccur
   kMfltRebootReason_Unknown = 0x0000,
 
   //

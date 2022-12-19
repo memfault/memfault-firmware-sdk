@@ -49,7 +49,7 @@ TEST_GROUP(MemfaultHeartbeatMetricsNoCustom){
 //! Confirm compilation and metric count is correct
 TEST(MemfaultHeartbeatMetricsNoCustom, Test_CompileAndMetricCount) {
   size_t num_metrics = memfault_metrics_heartbeat_get_num_metrics();
-  LONGS_EQUAL(2, num_metrics);
+  LONGS_EQUAL(3, num_metrics);
 }
 
 //! Confirm we can boot without any issues (eg writing to unpopulated key
@@ -61,6 +61,14 @@ TEST(MemfaultHeartbeatMetricsNoCustom, Test_Boot) {
 
   mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
       .andReturnValue(0);
+
+  // Mock an initial reboot reason for initial metric setup
+  bool unexpected_reboot = true;
+  mock()
+    .expectOneCall("memfault_reboot_tracking_get_unexpected_reboot_occurred")
+    .withOutputParameterReturning("unexpected_reboot_occurred", &unexpected_reboot,
+                                  sizeof(unexpected_reboot))
+    .andReturnValue(0);
 
   static uint8_t s_storage[1000];
 

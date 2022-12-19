@@ -28,6 +28,9 @@ typedef struct MfltResetReasonInfo {
 //! Clears any crash information which was stored
 void memfault_reboot_tracking_clear_reset_info(void);
 
+//! Clears stored reboot reason stored at bootup
+void memfault_reboot_tracking_clear_reboot_reason(void);
+
 bool memfault_reboot_tracking_read_reset_info(sMfltResetReasonInfo *info);
 
 #ifdef __cplusplus

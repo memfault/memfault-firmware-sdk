@@ -1,3 +1,34 @@
+### Changes between Memfault SDK 0.37.0 and SDK 0.36.1 - Dec 16, 2022
+
+#### :chart_with_upwards_trend: Improvements
+
+- Built-in Metrics
+
+  - Add `MemfaultSdkMetric_UnexpectedRebootDidOccur` metric. This metric uses
+    the platform's reboot register and any reasons by the SDK function
+    `memfault_reboot_tracking_mark_reset_imminent` to classify a reboot. When
+    reboot tracking determines a reboot is unexpected, this metric is set to 1.
+    Otherwise this metric is 0.
+
+- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+
+  - Add log capture during coredump to port
+
+- Demo CLI
+  - Add `mflt test loadaddr` command. This comamnd is used to test specific
+    faults due to protected regions
+
+#### :boom: Breaking Changes
+
+- Built-in Metrics
+  - The built-in metric, `MemfaultSdkMetric_UnexpectedRebootDidOccur`,
+    classifies all reboot reasons greater than or equal to
+    `kMfltRebootReason_UnknownError` **or** equal to `kMfltRebootReason_Unknown`
+    as "unexpected reboots". It is recommended to ensure your platform's
+    implementation of `memfault_reboot_reason_get` classifies the reboot
+    register values as accurately and precisely as possible to avoid incorrect
+    metric values.
+
 ### Changes between Memfault SDK 0.36.1 and SDK 0.36.0 - Dec 9, 2022
 
 #### :chart_with_upwards_trend: Improvements

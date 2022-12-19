@@ -16,6 +16,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/core/serializer_helper.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/overrides.h"
@@ -777,6 +778,18 @@ void memfault_metrics_heartbeat_debug_trigger(void) {
   prv_heartbeat_timer();
 }
 
+static int prv_init_unexpected_reboot_metric(void) {
+  bool unexpected_reboot = false;
+  int rv = memfault_reboot_tracking_get_unexpected_reboot_occurred(&unexpected_reboot);
+  if (rv != 0) {
+    MEMFAULT_LOG_ERROR("Invalid reset reason read");
+    return -1;
+  }
+
+  return memfault_metrics_heartbeat_set_unsigned(
+    MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootDidOccur), unexpected_reboot ? 1 : 0);
+}
+
 int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
                           const sMemfaultMetricBootInfo *info) {
   if (storage_impl == NULL || info == NULL) {
@@ -805,6 +818,11 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
 
   rv = memfault_metrics_heartbeat_set_unsigned(
       MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootCount), info->unexpected_reboot_count);
+  if (rv != 0) {
+    return rv;
+  }
+
+  rv = prv_init_unexpected_reboot_metric();
   if (rv != 0) {
     return rv;
   }

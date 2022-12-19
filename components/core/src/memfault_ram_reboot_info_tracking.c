@@ -58,6 +58,19 @@ MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) == MEMFAULT_REBOOT_TRACKING_REGIO
 
 static sMfltRebootInfo *s_mflt_reboot_info;
 
+//! Struct to retrieve reboot reason data from. Matches the fields of sMfltRebootReason
+//! as documented in reboot_tracking.h
+typedef struct {
+  eMemfaultRebootReason reboot_reg_reason;
+  eMemfaultRebootReason prior_stored_reason;
+  bool is_valid;
+} sMfltRebootReasonData;
+
+// Private struct to store reboot reason after reboot tracking is initialized
+static sMfltRebootReasonData s_reboot_reason_data = {
+  .is_valid = false,
+};
+
 static bool prv_check_or_init_struct(void) {
   if (s_mflt_reboot_info == NULL) {
     return false;
@@ -93,11 +106,50 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   return true;
 }
 
+//! Records reboot reasons from reboot register and prior saved reboot
+//!
+//! Stores both the new reboot reason derived from a platform's reboot register and
+//! any previously saved reboot reason. If there is no previously stored reboot reason,
+//! the reboot register reason is used.
+//!
+//! @param reboot_reg_reason New reboot reason from this boot
+//! @param prior_stored_reason Prior reboot reason stored in s_mflt_reboot_info
+static void prv_record_reboot_reason(eMemfaultRebootReason reboot_reg_reason,
+                                     eMemfaultRebootReason prior_stored_reason) {
+  s_reboot_reason_data.reboot_reg_reason = reboot_reg_reason;
+
+  if (prior_stored_reason != (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
+    s_reboot_reason_data.prior_stored_reason = prior_stored_reason;
+  } else {
+    s_reboot_reason_data.prior_stored_reason = reboot_reg_reason;
+  }
+
+  s_reboot_reason_data.is_valid = true;
+}
+
+static bool prv_get_unexpected_reboot_occurred(void) {
+  // Check prior_stored_reason, reboot is unexpected if prior reason is set and in error range or
+  // unknown
+  if (s_reboot_reason_data.prior_stored_reason !=
+      (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
+    if (s_reboot_reason_data.prior_stored_reason == kMfltRebootReason_Unknown ||
+        s_reboot_reason_data.prior_stored_reason >= kMfltRebootReason_UnknownError) {
+      return true;
+    }
+  }
+
+  // Check reboot_reg_reason second, reboot is unexpected if in error range or unknown
+  return (s_reboot_reason_data.reboot_reg_reason == kMfltRebootReason_Unknown ||
+          s_reboot_reason_data.reboot_reg_reason >= kMfltRebootReason_UnknownError);
+}
+
 static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
                                     const sMfltRebootTrackingRegInfo *reg) {
-  if (reboot_reason >= kMfltRebootReason_UnknownError) {
-    s_mflt_reboot_info->crash_count++;
-  }
+  // Store both the new reason reported by hardware and the current recorded reason
+  // The combination of these will be used to determine if the bootup was expected
+  // by the metrics subsystem
+  // s_mflt_reboot_info can be cleared by any call to memfault_reboot_tracking_collect_reset_info
+  prv_record_reboot_reason(reboot_reason, s_mflt_reboot_info->last_reboot_reason);
 
   if (s_mflt_reboot_info->last_reboot_reason != MEMFAULT_REBOOT_REASON_NOT_SET) {
     // we are already tracking a reboot. We don't overwrite this because generally the first reboot
@@ -132,6 +184,10 @@ void memfault_reboot_tracking_boot(
   }
 
   prv_record_reboot_event(reset_reason, NULL);
+
+  if (prv_get_unexpected_reboot_occurred()) {
+    s_mflt_reboot_info->crash_count++;
+  }
 }
 
 void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_reason,
@@ -189,4 +245,32 @@ void memfault_reboot_tracking_mark_coredump_saved(void) {
   }
 
   s_mflt_reboot_info->coredump_saved = 1;
+}
+
+int memfault_reboot_tracking_get_reboot_reason(sMfltRebootReason *reboot_reason) {
+  if (reboot_reason == NULL || !s_reboot_reason_data.is_valid) {
+    return -1;
+  }
+
+  *reboot_reason = (sMfltRebootReason){
+    .reboot_reg_reason = s_reboot_reason_data.reboot_reg_reason,
+    .prior_stored_reason = s_reboot_reason_data.prior_stored_reason,
+  };
+
+  return 0;
+}
+
+int memfault_reboot_tracking_get_unexpected_reboot_occurred(bool *unexpected_reboot_occurred) {
+  if (unexpected_reboot_occurred == NULL || !s_reboot_reason_data.is_valid) {
+    return -1;
+  }
+
+  *unexpected_reboot_occurred = prv_get_unexpected_reboot_occurred();
+  return 0;
+}
+
+void memfault_reboot_tracking_clear_reboot_reason(void) {
+  s_reboot_reason_data = (sMfltRebootReasonData){
+    .is_valid = false,
+  };
 }

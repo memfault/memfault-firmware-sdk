@@ -6,6 +6,7 @@
 //! @brief
 //! CLI commands which require integration of the "panic" component.
 
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include "memfault/core/arch.h"
@@ -138,7 +139,8 @@ int memfault_demo_cli_cmd_memmanage(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED ch
   //  System space, that is, for addresses 0xE0000000 and higher. System space is always marked as
   //  XN, Execute Never."
   //
-  // So we can trip a MemManage exception by simply attempting to execute any addresss >= 0xE000.0000
+  // So we can trip a MemManage exception by simply attempting to execute any addresss >=
+  // 0xE000.0000
   void (*bad_func)(void) = (void (*)(void))0xEEEEDEAD;
   bad_func();
 
@@ -162,6 +164,18 @@ int memfault_demo_cli_cmd_usagefault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED c
   // We should never get here -- platforms UsageFault or HardFault handler should be tripped due to
   // unaligned access
   return -1;
+}
+
+int memfault_demo_cli_loadaddr(int argc, char *argv[]) {
+  if (argc < 2) {
+    MEMFAULT_LOG_ERROR("Usage: loadaddr <addr>");
+    return -1;
+  }
+  uint32_t addr = (uint32_t)strtoul(argv[1], NULL, 0);
+  uint32_t val = *(uint32_t *)addr;
+
+  MEMFAULT_LOG_INFO("Read 0x%08" PRIx32 " from 0x%08" PRIx32, val, (uint32_t)(uintptr_t)addr);
+  return 0;
 }
 
 #endif /* MEMFAULT_COMPILER_ARM */

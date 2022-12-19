@@ -25,6 +25,10 @@
 #define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
 #endif
 
+#ifndef MEMFAULT_LOG_STORAGE_RAM_SIZE
+  #define MEMFAULT_LOG_STORAGE_RAM_SIZE 512
+#endif
+
 #if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
 static cy_wcm_wlan_statistics_t s_last_wlan_statistics = { 0 };
 #endif
@@ -169,6 +173,7 @@ int memfault_platform_boot(void) {
   memfault_platform_reboot_tracking_boot();
 
   static uint8_t s_event_storage[MEMFAULT_EVENT_STORAGE_RAM_SIZE];
+  static uint8_t s_log_storage[MEMFAULT_LOG_STORAGE_RAM_SIZE];
   const sMemfaultEventStorageImpl *evt_storage =
       memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
@@ -179,6 +184,8 @@ int memfault_platform_boot(void) {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
+
+  memfault_log_boot(s_log_storage, sizeof(s_log_storage));
 
   MEMFAULT_LOG_INFO("Memfault Initialized!");
 

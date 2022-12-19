@@ -50,6 +50,21 @@ typedef struct BootupInfo {
   eMemfaultRebootReason reset_reason;
 } sResetBootupInfo;
 
+//! Helper structure for storing/retrieving the device's reboot reason
+typedef struct MfltRebootType {
+  //! Stores the reboot reason determined from hardware during the current boot
+  eMemfaultRebootReason reboot_reg_reason;
+  //! Stores the reboot reason as read from s_mflt_reboot_info. This could be set in
+  //! the prior boot from either:
+  //! * the application using memfault_reboot_tracking_mark_reset_imminent (fault handler, firmware
+  //! update, etc)
+  //! * a reason determined from the reboot register at bootup
+  eMemfaultRebootReason prior_stored_reason;
+} sMfltRebootReason;
+
+//! Value used to determine state of reboot tracking data
+#define MEMFAULT_REBOOT_REASON_NOT_SET 0xffffffff
+
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 64
 
 //! Sets the memory region used for reboot tracking.
@@ -125,6 +140,25 @@ void memfault_reboot_tracking_reset_crash_count(void);
 //! never need to be called by an end user directly
 void memfault_reboot_tracking_mark_coredump_saved(void);
 
+//! Get the reported reboot reason from boot
+//!
+//! Each time the device boots, the reboot reason mapped from the platform reboot register is
+//! stored. This can be used either by other subsystems or users of the SDK.
+//!
+//! @param reboot_reason Pointer to store the reboot reason from boot
+//! @return 0 on success or 1 if the reboot reason is invalid
+//! or the input parameter is NULL
+
+int memfault_reboot_tracking_get_reboot_reason(sMfltRebootReason *reboot_reason);
+
+//! Returns a boolean representing whether an unexpected reboot occurred from boot
+//!
+//! This function uses a reboot reason from a reboot register and the prior reboot reason (if
+//! present) to determine if a reboot was unexpected.
+//!
+//! @param unexpected_reboot_occurred Pointer to store boolean marking an unexpected reboot
+//! @return 0 on success, or 1 if the result is invalid or the input parameter is NULL
+int memfault_reboot_tracking_get_unexpected_reboot_occurred(bool *unexpected_reboot_occurred);
 
 #ifdef __cplusplus
 }

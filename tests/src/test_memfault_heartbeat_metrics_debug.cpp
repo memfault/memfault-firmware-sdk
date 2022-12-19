@@ -80,6 +80,18 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     memfault_events_storage_boot(&s_storage, sizeof(s_storage));
   mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
 
+  // Mock an initial reboot reason for initial metric setup, use UnknownError to observe metric is
+  // reset after collection
+  // The metric MemfaultSdkMetric_UnexpectedRebootDidOccur should start as 1 to indicate an error,
+  // Still show as 1 before the metric has been reset by the heartbeat
+  // Finally show as 0 at next heartbeat
+  bool unexpected_reboot = true;
+  mock()
+    .expectOneCall("memfault_reboot_tracking_get_unexpected_reboot_occurred")
+    .withOutputParameterReturning("unexpected_reboot_occurred", &unexpected_reboot,
+                                  sizeof(unexpected_reboot))
+    .andReturnValue(0);
+
   sMemfaultMetricBootInfo boot_info = {.unexpected_reboot_count = 1};
   int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(0, rv);
@@ -91,6 +103,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "Heartbeat keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 1",
+    "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 1",
     "  test_key_unsigned: 0",
     "  test_key_signed: 0",
     "  test_key_timer: 0",
@@ -110,6 +123,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "Heartbeat keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 5678",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 1",
+    "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 1",
     "  test_key_unsigned: 1234",
     "  test_key_signed: -100",
     "  test_key_timer: 5000",
@@ -126,6 +140,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "Heartbeat keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 0",
+    "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 0",
     "  test_key_unsigned: 0",
     "  test_key_signed: 0",
     "  test_key_timer: 0",

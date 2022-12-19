@@ -14,11 +14,36 @@ extern "C" {
 
 #include <stdio.h>
 
-#define MEMFAULT_LOG_DEBUG(fmt, ...) printf( "[D] " fmt "\n", ## __VA_ARGS__)
-#define MEMFAULT_LOG_INFO(fmt, ...)  printf( "[I] " fmt "\n", ## __VA_ARGS__)
-#define MEMFAULT_LOG_WARN(fmt, ...)  printf( "[W] " fmt "\n", ## __VA_ARGS__)
-#define MEMFAULT_LOG_ERROR(fmt, ...) printf( "[E] " fmt "\n", ## __VA_ARGS__)
-#define MEMFAULT_LOG_RAW(fmt, ...) printf( fmt "\n", ## __VA_ARGS__)
+#include "memfault/core/log.h"
+
+#define MEMFAULT_LOG_DEBUG(fmt, ...)                                        \
+  do {                                                                      \
+    MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Debug, fmt, ##__VA_ARGS__); \
+    printf("[D] " fmt "\n", ##__VA_ARGS__);                                 \
+  } while (0)
+
+#define MEMFAULT_LOG_INFO(fmt, ...)                                        \
+  do {                                                                     \
+    MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, fmt, ##__VA_ARGS__); \
+    printf("[I] " fmt "\n", ##__VA_ARGS__);                                \
+  } while (0)
+
+#define MEMFAULT_LOG_WARN(fmt, ...)                                           \
+  do {                                                                        \
+    MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Warning, fmt, ##__VA_ARGS__); \
+    printf("[W] " fmt "\n", ##__VA_ARGS__);                                   \
+  } while (0)
+
+#define MEMFAULT_LOG_ERROR(fmt, ...)                                        \
+  do {                                                                      \
+    MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Error, fmt, ##__VA_ARGS__); \
+    printf("[E] " fmt "\n", ##__VA_ARGS__);                                 \
+  } while (0)
+
+#define MEMFAULT_LOG_RAW(fmt, ...)   \
+  do {                               \
+    printf(fmt "\n", ##__VA_ARGS__); \
+  } while (0)
 
 #ifdef __cplusplus
 }

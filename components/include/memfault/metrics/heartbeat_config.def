@@ -6,3 +6,4 @@
 MEMFAULT_METRICS_KEY_DEFINE(MemfaultSdkMetric_IntervalMs, kMemfaultMetricType_Timer)
 // The number of reboots that have taken place since the last heartbeat was collected
 MEMFAULT_METRICS_KEY_DEFINE(MemfaultSdkMetric_UnexpectedRebootCount, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(MemfaultSdkMetric_UnexpectedRebootDidOccur, kMemfaultMetricType_Unsigned, 0, 1)

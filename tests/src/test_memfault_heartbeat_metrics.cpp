@@ -2,18 +2,18 @@
 //!
 //! @brief
 
+#include <stddef.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <stddef.h>
-#include <string.h>
-
 #include "fakes/fake_memfault_platform_metrics_locking.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/overrides.h"
 #include "memfault/metrics/platform/timer.h"
@@ -78,6 +78,14 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
         &s_storage, sizeof(s_storage));
     mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
 
+    // Mock an initial reboot reason for initial metric setup
+    bool unexpected_reboot = true;
+    mock()
+      .expectOneCall("memfault_reboot_tracking_get_unexpected_reboot_occurred")
+      .withOutputParameterReturning("unexpected_reboot_occurred", &unexpected_reboot,
+                                    sizeof(unexpected_reboot))
+      .andReturnValue(0);
+
     sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 7 };
     int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
     LONGS_EQUAL(0, rv);
@@ -89,8 +97,13 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
         MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootCount), &logged_crash_count);
     LONGS_EQUAL(boot_info.unexpected_reboot_count, logged_crash_count);
 
-    // IntervalMs & RebootCount
-    const size_t num_memfault_sdk_metrics = 2;
+    uint32_t logged_reboot_did_occur = 0;
+    memfault_metrics_heartbeat_read_unsigned(
+      MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootDidOccur), &logged_reboot_did_occur);
+    LONGS_EQUAL(1, logged_reboot_did_occur);
+
+    // IntervalMs & RebootCount & ResetDidOccur
+    const size_t num_memfault_sdk_metrics = 3;
 
     // We should test all the types of available metrics so if this
     // fails it means there's a new type we aren't yet covering
