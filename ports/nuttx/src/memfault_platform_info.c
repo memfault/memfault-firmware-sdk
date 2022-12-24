@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <sys/boardctl.h>
 
+#include <nuttx/config.h>
+
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -70,11 +72,11 @@
  * @param val 
  * @return char 
  */
-
+#ifdef CONFIG_BOARDCTL_UNIQUEID
 static char prv_int_to_ascii_hex(uint8_t val) {
   return val < 10 ? (char)val + '0' : (char)(val - 10) + 'A';
 }
-
+#endif
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

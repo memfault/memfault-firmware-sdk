@@ -69,7 +69,7 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_val) {
 
   time_t seconds_since_epoch;
 
-  if(time(&seconds_since_epoch) != OK)
+  if(time(&seconds_since_epoch) == (time_t)ERROR)
     {
       MEMFAULT_LOG_ERROR("Current calendar time is not available.");
       return false;

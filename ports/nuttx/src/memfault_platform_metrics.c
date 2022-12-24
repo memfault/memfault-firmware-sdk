@@ -153,7 +153,7 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   }
 
   // Start the POSIX timer
-  timer.it_value.tv_sec = (period_sec);
+  timer.it_value.tv_sec = (10);
   timer.it_value.tv_nsec = (0);
   timer.it_interval.tv_sec = (period_sec);
   timer.it_interval.tv_nsec = (0);

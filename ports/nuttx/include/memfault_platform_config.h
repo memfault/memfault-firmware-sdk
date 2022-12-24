@@ -37,6 +37,8 @@ extern "C" {
 
 #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 1
 
+#define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS 600
+
 #ifdef __cplusplus
 }
 #endif
