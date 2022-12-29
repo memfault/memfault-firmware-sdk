@@ -39,13 +39,12 @@ extern "C" {
 
 #define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS 600
 
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH 1
+
 #ifdef __cplusplus
 }
 #endif
 
-/****************************************************************************
- * Preprocessor Definitions
- ****************************************************************************/
 
 /****************************************************************************
  * Private Types
