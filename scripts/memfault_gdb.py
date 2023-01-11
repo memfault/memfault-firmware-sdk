@@ -491,7 +491,12 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         #
         # NOTE: We use the "all" argument below because on some versions of gdb "msp, psp, etc" are not considered part of them
         # core set. This will also dump all the fpu registers which we don't collect but thats fine
-        info_reg_all_list = gdb.execute("info reg all", to_string=True)
+        try:
+            info_reg_all_list = gdb.execute("info reg all", to_string=True)
+        except gdb.error:
+            # Some versions of gdb don't support 'all' and return an error
+            info_reg_all_list = gdb.execute("info reg", to_string=True)
+
         return (lookup_registers_from_list(self, info_reg_all_list, analytics_props),)
 
 
