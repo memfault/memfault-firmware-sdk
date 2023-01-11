@@ -1438,7 +1438,10 @@ Proceed? [y/n]
         )
 
         def _auto_int(x):
-            return int(x, 0)
+            try:
+                return int(x, 0)
+            except ValueError:
+                return int(gdb.parse_and_eval(x))
 
         parser.add_argument(
             "--region",
