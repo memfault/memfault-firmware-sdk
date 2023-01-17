@@ -87,17 +87,22 @@
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
 #endif
 
-
-#if tskKERNEL_VERSION_MAJOR <= 8
-//! Note: What we want here is sizeof(TCB_t) but that is a private declaration in FreeRTOS
-//! tasks.c. Since the static declaration doesn't exist for FreeRTOS kernel <= 8, fallback to a
-//! generous size that will include the entire TCB. A user of the SDK can tune the size by adding
-//! MEMFAULT_FREERTOS_TCB_SIZE to memfault_platform_config.h
-#if !defined(MEMFAULT_FREERTOS_TCB_SIZE)
-#define MEMFAULT_FREERTOS_TCB_SIZE 200
-#endif
+// If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is not already set, apply a default to
+// MEMFAULT_FREERTOS_TCB_SIZE here. This value can be overriden by setting
+// MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE in memfault_platform_config.h. See
+// include/memfault/default_config.h for more information.
+#if MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE
+  #define MEMFAULT_FREERTOS_TCB_SIZE MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE
 #else
-#define MEMFAULT_FREERTOS_TCB_SIZE sizeof(StaticTask_t)
+  #if tskKERNEL_VERSION_MAJOR <= 8
+    //! Note: What we want here is sizeof(TCB_t) but that is a private declaration in FreeRTOS
+    //! tasks.c. Since the static declaration doesn't exist for FreeRTOS kernel <= 8, fallback to a
+    //! generous size that will include the entire TCB. A user of the SDK can tune the size by
+    //! adding MEMFAULT_FREERTOS_TCB_SIZE to memfault_platform_config.h
+    #define MEMFAULT_FREERTOS_TCB_SIZE 200
+  #else
+    #define MEMFAULT_FREERTOS_TCB_SIZE sizeof(StaticTask_t)
+  #endif
 #endif
 
 //! The maximum number

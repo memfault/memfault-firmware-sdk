@@ -44,11 +44,13 @@ def mbed_update(ctx):
     with ctx.cd(MBED_DEMO_APP_ROOT):
         ctx.run(cmd, pty=True)
 
-        # manually override some of the python packages that 'mbed update' installs.
+        # 'mbed update' above installs some pretty out-of-date python packages
+        # into the current python environment. Update them to more recent
+        # versions that are compatible with python3.10.
         pip_packages = (
-            # force installing a more recent version of intelhex that supports
-            # python >3.2 😠
+            "future==0.18.2",
             "intelhex==2.3.0",
+            "pyelftools==0.29",
             # A hack to work around version pinning issue with mbed-os and
             # incompatibility with markupsafe 2.1.0 release
             "markupsafe==2.0.1",

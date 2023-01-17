@@ -3,7 +3,8 @@ list(APPEND
    cmd_app.c
    cmd_system.c
    console_example_main.c
-   memfault_platform_device_info.c
+   led.c
+   memfault/memfault_platform_device_info.c
 )
 
 # the 'cmd_wifi.c' implementation is different for ESP-IDF v5+
@@ -19,6 +20,9 @@ else()
    )
 endif()
 
-set(COMPONENT_ADD_INCLUDEDIRS .)
+set(COMPONENT_ADD_INCLUDEDIRS
+   .
+   memfault
+)
 
 register_component()

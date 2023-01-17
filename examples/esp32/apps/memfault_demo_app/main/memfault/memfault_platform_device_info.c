@@ -24,7 +24,7 @@
 #endif
 
 #ifndef MEMFAULT_ESP32_HW_REVISION
-  #define MEMFAULT_ESP32_HW_REVISION "esp32-proto"
+  #define MEMFAULT_ESP32_HW_REVISION CONFIG_IDF_TARGET "-proto"
 #endif
 
 static char s_device_serial[32];

@@ -1,3 +1,19 @@
+### Changes between Memfault SDK 0.37.1 and SDK 0.37.0 - Jan 17, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- FreeRTOS
+  - Add support for collecting truncated TCBs. This is particularly useful with
+    limited coredump space. Enable by defining
+    `MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE` in `memfault_platform_config.h".
+- ESP-IDF
+  - Add support for esp32s2/s3 platforms to the esp32 example application
+
+#### :house: Internal
+
+- Fixup some documentation typos/errors
+- Add support for Python 3.10
+
 ### Changes between Memfault SDK 0.37.0 and SDK 0.36.1 - Dec 16, 2022
 
 #### :chart_with_upwards_trend: Improvements

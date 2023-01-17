@@ -5,6 +5,16 @@ cmake_minimum_required(VERSION 3.5)
 set(PROJECT_NAME memfault-esp32-demo-app)
 set(CMAKE_PROJECT_NAME ${PROJECT_NAME})
 
+include($ENV{IDF_PATH}/tools/cmake/version.cmake OPTIONAL)
+
+# This contains the implementation for the led_strip driver. In ESP-IDF v5 it
+# moved to a "managed component" and no longer needs to be manually added.
+if(DEFINED IDF_VERSION_MAJOR)
+  if(IDF_VERSION_MAJOR VERSION_LESS 5)
+    set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/led_strip)
+  endif()
+endif()
+
 get_filename_component(memfault_firmare_sdk_dir ../../../../ ABSOLUTE)
 include(${memfault_firmare_sdk_dir}/ports/esp_idf/memfault.cmake)
 

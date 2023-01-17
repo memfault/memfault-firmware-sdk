@@ -545,6 +545,17 @@ extern "C" {
 #define MEMFAULT_PLATFORM_COREDUMP_STORAGE_REGIONS_CUSTOM 0
 #endif
 
+//! Override the size of TCB memory to collect set by the FreeRTOS port. Default
+//! behavior is to collect the entire TCB structure. This option is useful when using
+//! FreeRTOS and coredump space is limited. In certain configurations, such as using
+//! configUSE_NEWLIB_REENTRANT, FreeRTOS TCBs contain extra fields that are not required when
+//! decoding coredumps. Using this option can free up coredump space for other memory regions if
+//! needed. If `MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE` is set to 0, a default value for the TCB size
+//! is used. Please see ports/freertos/src/memfault_freertos_ram_regions.c for more info
+#ifndef MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE
+  #define MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE 0
+#endif
+
 #ifdef __cplusplus
 }
 #endif

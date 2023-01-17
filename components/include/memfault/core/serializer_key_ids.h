@@ -33,7 +33,7 @@ typedef enum {
 typedef enum {
   kMemfaultEventType_Heartbeat = 1,
   kMemfaultEventType_Trace = 2,
-  kMemfaultEventType_LogError = 3,
+  // Deprecated: kMemfaultEventType_LogError = 3, use trace_with_log feature instead
   kMemfaultEventType_Logs = 4,
   kMemfaultEventType_Cdr = 5,
 } eMemfaultEventType;

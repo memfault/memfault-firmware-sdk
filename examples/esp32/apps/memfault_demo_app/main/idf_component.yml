@@ -1,0 +1,12 @@
+# This file is required as of ESP-IDF v5.0 to use the led_strip component (which
+# used to be just located inside the ESP-IDF repository).
+#
+# See here for more information:
+# https://github.com/espressif/idf-component-manager/tree/dd6f5452a835342429ca5f3ec813bce4f9de6308#defining-dependencies-in-the-manifest
+
+dependencies:
+  espressif/led_strip:
+    version: "^2.0.0"
+    rules: # will add dependency only when all if clauses are True
+      - if: "idf_version >=5.0" # supports all SimpleSpec grammars (https://python-semanticversion.readthedocs.io/en/latest/reference.html#semantic_version.SimpleSpec)
+      - if: "target in [esp32s2, esp32s3]" # supports boolean operator ==, !=, in, not in.

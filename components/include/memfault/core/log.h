@@ -56,7 +56,7 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 //! For example, if your platform already has something like this
 //!
 //! #define YOUR_PLATFORM_LOG_ERROR(...)
-//!   my_platform_log_error(__VA_ARGS__)
+//!   your_platform_log_error(__VA_ARGS__)
 //!
 //! the error data could be automatically recorded by making the
 //! following modification
