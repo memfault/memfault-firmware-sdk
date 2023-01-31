@@ -15,7 +15,7 @@ test_dir = os.path.dirname(os.path.realpath(__file__))
 script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
 
-from mflt_build_id import ELFFileHelper  # noqa isort:skip
+from mflt_build_id import ELFFileHelper  # noqa: E402 # isort:skip
 
 
 class TestELFFileHelper:

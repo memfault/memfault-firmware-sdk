@@ -123,7 +123,10 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
 
 int memfault_platform_http_client_destroy(sMfltHttpClient *_client) {
   esp_http_client_handle_t client = (esp_http_client_handle_t)_client;
-  esp_err_t err = esp_http_client_cleanup(client);
+  esp_err_t err = esp_http_client_close(client);
+  if (err == ESP_OK) {
+    err = esp_http_client_cleanup(client);
+  }
   if (err == ESP_OK) {
     return 0;
   }

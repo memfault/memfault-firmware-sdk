@@ -18,7 +18,9 @@ if os.path.exists(bundled_mflt_build_id_src_dir):
     # Released SDK:
     sys.path.insert(0, bundled_mflt_build_id_src_dir)
 
-from mflt_build_id import *  # noqa
+from mflt_build_id import *  # noqa: E402,F401,F403,M900
 
 if __name__ == "__main__":
-    main()  # noqa
+    from mflt_build_id import main  # noqa: M900
+
+    main()

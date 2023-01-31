@@ -189,10 +189,10 @@ void memfault_esp_port_wifi_autojoin(void) {
     MEMFAULT_LOG_DEBUG("No WiFi credentials found");
     return;
   }
-  MEMFAULT_LOG_INFO("Starting WiFi Autojoin ...");
+  MEMFAULT_LOG_DEBUG("Starting WiFi Autojoin ...");
   bool result = wifi_join(ssid, pass);
   if (!result) {
-    MEMFAULT_LOG_ERROR("Failed to join WiFi network");
+    MEMFAULT_LOG_DEBUG("Failed to join WiFi network");
   }
 }
 
@@ -204,16 +204,26 @@ static void prv_poster_task(void *args) {
   const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
 
   MEMFAULT_LOG_INFO("Data poster task up and running every %" PRIu32 "s.", interval_sec);
-  while (true) {
-    MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
-    int err = memfault_esp_port_http_client_post_data();
-    // if the check-in succeeded, set green, otherwise clear.
-    // gives a quick eyeball check that the app is alive and well
-    led_set_color((err == 0) ? kLedColor_Green : kLedColor_Red);
 
+  while (true) {
+    // count the number of times this task has run
     memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(PosterTaskNumSchedules), 1);
+    // attempt to autojoin wifi, if configured
     memfault_esp_port_wifi_autojoin();
+
+    // if connected, post any memfault data
+    if (memfault_esp_port_wifi_connected()) {
+      MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
+      int err = memfault_esp_port_http_client_post_data();
+      // if the check-in succeeded, set green, otherwise clear.
+      // gives a quick eyeball check that the app is alive and well
+      led_set_color((err == 0) ? kLedColor_Green : kLedColor_Red);
+    }
+
+    // check for OTA update
     prv_memfault_ota();
+
+    // sleep
     vTaskDelay(delay_ms);
   }
 }

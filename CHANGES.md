@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 0.37.2 and SDK 0.37.1 - Jan 31, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+  - Support building with `CONFIG_POSIX_API=y` in the Zephyr port HTTP client
+- ESP-IDF:
+  - Reduce the spamminess of the esp32 example app logging
+- Update [`scripts/memfault_gdb.py`](scripts/memfault_gdb.py):
+  - When explicitly listing a region to insert into the coredump via
+    `memfault coredump --region x y`, now support parseable GDB expressions for
+    the range arguments instead of requiring integer values. Thanks to @alvarop
+    for this patch
+    [#43](https://github.com/memfault/memfault-firmware-sdk/pull/43) !
+  - Use the `info all-registers` command when dumping registers, instead of the
+    deprecated `info registers all` command, which works better on certain
+    arch/monitor setups. Thanks to @alvarop for this patch
+    [#44](https://github.com/memfault/memfault-firmware-sdk/pull/44) !
+
 ### Changes between Memfault SDK 0.37.1 and SDK 0.37.0 - Jan 17, 2023
 
 #### :chart_with_upwards_trend: Improvements

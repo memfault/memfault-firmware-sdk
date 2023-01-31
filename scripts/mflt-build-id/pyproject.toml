@@ -12,7 +12,7 @@ packages = [
 mflt_build_id = 'mflt_build_id:main'
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6" # must match memfault-cli
 pyelftools = ">=0.26,<=0.28"
 
 [tool.poetry.dev-dependencies]
@@ -23,7 +23,7 @@ wasmer = "0.3.0"
 
 [tool.black]
 line-length = 100
-target-version = ['py38']
+target-version = ['py36']
 include = '\.pyi?$'
 
 [tool.isort]

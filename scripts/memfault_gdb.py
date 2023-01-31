@@ -60,9 +60,9 @@ except ImportError:
 # Note: not using `requests` but using the built-in http.client instead, so
 # there will be no additional dependencies other than Python itself.
 try:
-    from httplib import HTTPConnection, HTTPSConnection  # noqa: I251
-    from Queue import Queue  # noqa: I251
-    from urlparse import urlparse, urlunparse  # noqa: I251
+    from httplib import HTTPConnection, HTTPSConnection
+    from Queue import Queue
+    from urlparse import urlparse, urlunparse
 except ImportError:
     from http.client import HTTPConnection, HTTPSConnection
     from queue import Queue
@@ -145,7 +145,7 @@ def _pc_in_vector_table(register_list, exception_number, analytics_props):
         exc_handler, _ = _read_register(0x0 + vtor + (exception_number * 4))
         exc_handler &= ~0x1  # Clear thumb bit
         return exc_handler == curr_pc
-    except Exception:  # noqa
+    except Exception:
         analytics_props["pc_in_vtor_check_error"] = {"traceback": traceback.format_exc()}
         return False
 
@@ -347,7 +347,7 @@ class XtensaCoredumpArch(CoredumpArch):
         try:
             for core_id in range(0, self.num_cores):
                 result.append(self._read_registers(core_id, gdb_thread, analytics_props))
-        except Exception:  # noqa
+        except Exception:
             analytics_props["core_reg_collection_error"] = {"traceback": traceback.format_exc()}
 
         return result
@@ -458,7 +458,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
                 section.data = inferior.read_memory(section.addr, section.size)
                 cd_writer.add_section(section)
                 analytics_props["{}_ok".format(short_name)] = True
-            except Exception:  # noqa
+            except Exception:
                 analytics_props["{}_collection_error".format(short_name)] = {
                     "traceback": traceback.format_exc()
                 }
@@ -466,7 +466,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         try:
             cd_writer.armv67_mpu = self._try_collect_mpu_settings()
             print("Collected MPU config")
-        except Exception:  # noqa
+        except Exception:
             analytics_props["mpu_collection_error"] = {"traceback": traceback.format_exc()}
 
     def guess_ram_regions(self, elf_sections):
@@ -489,9 +489,19 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         # best way. Call this, rip out the first element in each row...that's the register name
 
         #
-        # NOTE: We use the "all" argument below because on some versions of gdb "msp, psp, etc" are not considered part of them
-        # core set. This will also dump all the fpu registers which we don't collect but thats fine
-        info_reg_all_list = gdb.execute("info reg all", to_string=True)
+        # NOTE: Using the 'all-registers' command below, because on some
+        # versions of gdb "msp, psp, etc" are not considered part of them core
+        # set. This will also dump all the fpu registers which we don't collect
+        # but thats fine. 'info all-registers' is the preferred command, where
+        # 'info reg [all]' is arch-specific, see:
+        # https://sourceware.org/gdb/onlinedocs/gdb/Registers.html
+        try:
+            info_reg_all_list = gdb.execute("info all-registers", to_string=True)
+        except gdb.error:
+            # Some versions of gdb don't support 'all' and return an error, fall
+            # back to 'info reg'
+            info_reg_all_list = gdb.execute("info reg", to_string=True)
+
         return (lookup_registers_from_list(self, info_reg_all_list, analytics_props),)
 
 
@@ -539,7 +549,7 @@ def _try_read_register(arch, frame, lookup_name, register_list, analytics_props,
             _add_reg_collection_error_analytic(
                 arch, analytics_props, lookup_name, "<unavailable> value"
             )
-    except Exception:  # noqa
+    except Exception:
         _add_reg_collection_error_analytic(
             arch, analytics_props, lookup_name, traceback.format_exc()
         )
@@ -600,7 +610,7 @@ def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
     # if we can't patch the registers, we'll just fallback to the active state
     try:
         check_and_patch_reglist_for_fault(register_list, analytics_props)
-    except Exception:  # noqa
+    except Exception:
         analytics_props["fault_register_recover_error"] = {"traceback": traceback.format_exc()}
         pass
 
@@ -786,7 +796,7 @@ def _http(method, base_uri, path, headers=None, body=None):
     body = response.read()
     try:
         json_body = loads(body)
-    except Exception:  # noqa
+    except Exception:
         json_body = None
     conn.close()
     return status, reason, json_body
@@ -1063,7 +1073,7 @@ def settings_load():
     try:
         with open(MEMFAULT_CONFIG.json_path, "rb") as f:
             return load(f)
-    except Exception:  # noqa
+    except Exception:
         return {}
 
 
@@ -1438,7 +1448,10 @@ Proceed? [y/n]
         )
 
         def _auto_int(x):
-            return int(x, 0)
+            try:
+                return int(x, 0)
+            except ValueError:
+                return int(gdb.parse_and_eval(x))
 
         parser.add_argument(
             "--region",
@@ -1696,7 +1709,7 @@ class AnalyticsTracker(Thread):
                 # Throttle a bit
                 sleep(0.2)
 
-            except Exception:  # noqa
+            except Exception:
                 pass  # Never fail due to analytics requests erroring out
 
 
@@ -1711,12 +1724,12 @@ def _track_script_sourced():
         from platform import mac_ver
 
         mac_version = mac_ver()[0]
-    except Exception:  # noqa
+    except Exception:
         mac_version = ""
 
     try:
         gdb_version = gdb.execute("show version", to_string=True).strip().split("\n")[0]
-    except Exception:  # noqa
+    except Exception:
         gdb_version = ""
 
     ANALYTICS.track(

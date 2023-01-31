@@ -17,7 +17,10 @@ script_dir = os.path.dirname(test_dir)
 sys.path.append(script_dir)
 
 
-from mflt_build_id import BuildIdInspectorAndPatcher, MemfaultBuildIdTypes  # noqa isort:skip
+from mflt_build_id import (  # noqa: E402 # isort:skip
+    BuildIdInspectorAndPatcher,
+    MemfaultBuildIdTypes,
+)
 
 
 @pytest.fixture()

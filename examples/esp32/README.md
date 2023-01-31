@@ -10,7 +10,8 @@ The Memfault SDK has been tested to be compatible with these versions of
 ESP-IDF:
 
 - v3.x release series
-- v4.x release series through v4.4.2
+- v4.x release series
+  v5.x release series through v5.0
 
 Other versions may be also be compatible but have not been verified by Memfault.
 

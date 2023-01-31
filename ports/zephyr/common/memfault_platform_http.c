@@ -4,19 +4,13 @@
 //! See License.txt for details
 //!
 
-#include "memfault/ports/zephyr/http.h"
-#include "memfault/ports/zephyr/root_cert_storage.h"
-
 #include <errno.h>
+#include <init.h>
+#include <kernel.h>
+#include <net/tls_credentials.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <init.h>
-#include <kernel.h>
-
-#include <net/socket.h>
-#include <net/tls_credentials.h>
 #include <zephyr.h>
 
 #include "memfault/core/compiler.h"
@@ -27,6 +21,17 @@
 #include "memfault/http/root_certs.h"
 #include "memfault/http/utils.h"
 #include "memfault/panics/assert.h"
+#include "memfault/ports/zephyr/http.h"
+#include "memfault/ports/zephyr/root_cert_storage.h"
+
+#if defined(CONFIG_POSIX_API)
+  #include <posix/netdb.h>
+  #include <posix/poll.h>
+  #include <posix/sys/socket.h>
+  #include <posix/unistd.h>
+#else
+  #include <net/socket.h>
+#endif
 
 #if defined(CONFIG_MEMFAULT_HTTP_USES_MBEDTLS)
 
