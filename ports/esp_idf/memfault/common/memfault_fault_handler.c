@@ -74,14 +74,12 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
       fp->a15,
     },
     .sar = fp->sar,
-#if CONFIG_IDF_TARGET_ESP32
+    // the below registers are not available on the esp32s2; leave them zeroed
+    // in the coredump
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
     .lbeg = fp->lbeg,
     .lend = fp->lend,
     .lcount = fp->lcount,
-#elif CONFIG_IDF_TARGET_ESP32S2
-    // TODO implement fault capture for the ESP32-S2
-#elif CONFIG_IDF_TARGET_ESP32S3
-    // TODO implement fault capture for the ESP32-S3
 #endif
     .exccause = fp->exccause,
     .excvaddr = fp->excvaddr,

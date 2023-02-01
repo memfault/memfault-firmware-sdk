@@ -85,9 +85,22 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[1];
 
+  // The ESP32S2 + S3 have a different memory map than the ESP32; IRAM and DRAM
+  // share the same pysical SRAM, but are mapped at different addresses. We need
+  // to account for the placement of IRAM data, which offsets the start of
+  // placed DRAM.
+  //
+  // https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf#subsubsection.3.3.2
+  // https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf#subsubsection.4.3.2
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32S2)
+  // use this symbol defined by the linker to find the start of DRAM
+  extern uint32_t _data_start;
+  const uint32_t esp32_dram_start_addr = (uint32_t)&_data_start;
+#else
   const uint32_t esp32_dram_start_addr = SOC_DMA_LOW;
+#endif
 
-  size_t dram_collection_len = SOC_DMA_HIGH - SOC_DMA_LOW;
+  size_t dram_collection_len = SOC_DMA_HIGH - esp32_dram_start_addr;
   const esp_partition_t *core_part = prv_get_core_partition();
   if (core_part != NULL) {
     // NB: Leave some space in storage for other regions collected by the SDK

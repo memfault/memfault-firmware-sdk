@@ -1,3 +1,9 @@
+### Changes between Memfault SDK 0.38.0 and SDK 0.37.2 - Feb 1, 2023
+
+#### :rocket: New Features
+
+- Enable coredumps on the ESP32-S2 and ESP32-S3 chips.
+
 ### Changes between Memfault SDK 0.37.2 and SDK 0.37.1 - Jan 31, 2023
 
 #### :chart_with_upwards_trend: Improvements
