@@ -1,3 +1,18 @@
+### Changes between Memfault SDK 0.39.0 and SDK 0.38.0 - Feb 3, 2023
+
+#### :boom: Breaking Changes
+
+- Breaking changes to the
+  [`memfault_freertos_get_task_regions()`](ports/freertos/src/memfault_freertos_ram_regions.c)
+  function, which can be used to capture FreeRTOS tasks when coredumps are sized
+  smaller than all available RAM. The function will now, by default, capture a
+  truncated copy of each FreeRTOS TCB, instead of the complete structure. This
+  makes better use of coredump storage space; the TCB structures can be very
+  large (>1kB), but Memfault only needs the first few fields for coredump
+  decoding. The configuration flag `MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE` (see
+  [`default_config.h`](components/include/memfault/default_config.h)) can be set
+  to `0` in `memfault_platform_config.h` to return to the previous behavior.
+
 ### Changes between Memfault SDK 0.38.0 and SDK 0.37.2 - Feb 1, 2023
 
 #### :rocket: New Features

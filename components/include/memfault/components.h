@@ -61,6 +61,7 @@ extern "C" {
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
 #include "memfault/panics/platform/coredump.h"
+#include "memfault/util/banner.h"
 #include "memfault/util/base64.h"
 #include "memfault/util/cbor.h"
 #include "memfault/util/circular_buffer.h"

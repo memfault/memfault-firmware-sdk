@@ -87,8 +87,8 @@
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
 #endif
 
-// If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is not already set, apply a default to
-// MEMFAULT_FREERTOS_TCB_SIZE here. This value can be overriden by setting
+// If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is set to 0, apply a default
+// to MEMFAULT_FREERTOS_TCB_SIZE here. This value can be overriden by setting
 // MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE in memfault_platform_config.h. See
 // include/memfault/default_config.h for more information.
 #if MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE

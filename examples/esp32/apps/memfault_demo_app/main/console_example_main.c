@@ -348,11 +348,8 @@ void app_main() {
    */
   const char *prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
 
-  const char banner[] = "\n\n"
-                        "▙▗▌       ▗▀▖      ▜▐   \e[36m  ▄▄▀▀▄▄ \e[0m\n"
-                        "▌▘▌▞▀▖▛▚▀▖▐  ▝▀▖▌ ▌▐▜▀  \e[36m █▄    ▄█\e[0m\n"
-                        "▌ ▌▛▀ ▌▐ ▌▜▀ ▞▀▌▌ ▌▐▐ ▖ \e[36m ▄▀▀▄▄▀▀▄\e[0m\n"
-                        "▘ ▘▝▀▘▘▝ ▘▐  ▝▀▘▝▀▘ ▘▀  \e[36m  ▀▀▄▄▀▀ \e[0m\n";
+  const char banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
+
   puts(banner);
 
   /* Figure out if the terminal supports escape sequences */
