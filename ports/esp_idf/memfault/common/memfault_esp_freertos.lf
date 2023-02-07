@@ -1,0 +1,45 @@
+# This linker fragment should yield a similar snippet in
+# <build_dir>/esp-idf/esp_system/ld/sections.ld
+# The important lines are EXCLUDE_FILE and the symbols surrounding the
+# task and timer rules
+#/* Shared RAM */
+#  .dram0.bss (NOLOAD) :
+#  {
+#    . = ALIGN (8);
+#    _bss_start = ABSOLUTE(.);
+#
+#    ...
+#    *(EXCLUDE_FILE(*libfreertos.a:tasks.* *libfreertos.a:timers.*) .bss EXCLUDE_FILE(*libfreertos.a:tasks.* *libfreertos.a:timers.*) .bss.*)
+#    *(EXCLUDE_FILE(*libfreertos.a:tasks.* *libfreertos.a:timers.*) COMMON)
+#    ...
+#
+#    ...
+#    _memfault_capture_tasks_start = ABSOLUTE(.);
+#    *libfreertos.a:tasks.*(.bss .bss.* COMMON)
+#    _memfault_capture_tasks_end = ABSOLUTE(.);
+#    _memfault_capture_timers_start = ABSOLUTE(.);
+#    *libfreertos.a:timers.*(.bss .bss.* COMMON)
+#    _memfault_capture_timers_end = ABSOLUTE(.);
+#    ...
+#  } > dram0_0_seg
+
+# Create a scheme to describe input sections to an output section
+[scheme:memfault]
+entries:
+    common -> dram0_bss
+    bss -> dram0_bss
+
+# Create a mapping using the defined scheme. Add linker symbols around
+# to capture start and end of task and timer location.
+# Note: ldgen does not properly generate rules for section fragments that include multiple
+# input sections. To work around this, we duplicate a rule for both bss and common section
+# fragments
+[mapping:memfault_freertos]
+archive: libfreertos.a
+entries:
+    timers (memfault);
+        bss-> dram0_bss SURROUND(memfault_timers_bss),
+        common -> dram0_bss SURROUND(memfault_timers_common)
+    tasks (memfault);
+        bss -> dram0_bss SURROUND(memfault_tasks_bss),
+        common -> dram0_bss SURROUND(memfault_tasks_common)

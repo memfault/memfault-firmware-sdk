@@ -50,7 +50,7 @@ typedef enum MfltResetReason {
   kMfltRebootReason_WatchdogDeprecated = 0x8002,
 
   kMfltRebootReason_BrownOutReset = 0x8003,
-  kMfltRebootReason_Nmi = 0x8004, // Non-Maskable Interrupt
+  kMfltRebootReason_Nmi = 0x8004,  // Non-Maskable Interrupt
 
   // More details about nomenclature in https://mflt.io/root-cause-watchdogs
   kMfltRebootReason_HardwareWatchdog = 0x8005,
@@ -67,6 +67,9 @@ typedef enum MfltResetReason {
   // A reset triggered when an attempt to upgrade to a new OTA image has failed and a rollback
   // to a previous version was initiated
   kMfltRebootReason_FirmwareUpdateError = 0x8009,
+
+  // A software reset triggered due to a dynamic memory (heap) allocation failure.
+  kMfltRebootReason_OutOfMemory = 0x800A,
 
   // Resets from Arm Faults
   kMfltRebootReason_BusFault = 0x9100,

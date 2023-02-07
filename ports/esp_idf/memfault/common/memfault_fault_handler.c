@@ -21,9 +21,13 @@
 
 // Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
 // chip reboot so we just piggback off of that
-void memfault_fault_handling_assert(void *pc, void *lr) { abort(); }
+void memfault_fault_handling_assert(void *pc, void *lr) {
+  memfault_xtensa_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
+  abort();
+}
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
+  memfault_xtensa_fault_handling_assert(pc, lr, extra_info->assert_reason);
   abort();
 }
 

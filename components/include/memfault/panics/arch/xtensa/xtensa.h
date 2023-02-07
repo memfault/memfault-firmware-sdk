@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/reboot_reason_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,12 @@ MEMFAULT_PACKED_STRUCT MfltRegState {
   uint32_t excvaddr;
 };
 
+//! Called by platform assertion handlers to save info before triggering fault handling
+//!
+//! @param pc Pointer to address of assertion location
+//! @param lr Pointer to return address of assertion location
+//! @param reason Reboot reason for the assertion
+void memfault_xtensa_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason);
 
 #ifdef __cplusplus
 }

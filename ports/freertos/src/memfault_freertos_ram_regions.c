@@ -80,8 +80,21 @@
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
+// Espressif's esp-idf project uses a forked and modified version of FreeRTOS to handle MCUs with
+// multiple cores. We check here to adjust the port accordingly to accommodate that.
+#ifdef ESP_PLATFORM
+  #include "freertos/FreeRTOS.h"
+  #include "freertos/task.h"
+
+  #define CRITICAL_SECTION_ENTER() vTaskTakeEventListLock()
+  #define CRITICAL_SECTION_EXIT() vTaskReleaseEventListLock()
+#else  // ESP_PLATFORM
+  #include "FreeRTOS.h"
+  #include "task.h"
+
+  #define CRITICAL_SECTION_ENTER() portENTER_CRITICAL()
+  #define CRITICAL_SECTION_EXIT() portEXIT_CRITICAL()
+#endif  // ESP_PLATFORM
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
@@ -126,12 +139,12 @@ void memfault_freertos_trace_task_create(void *tcb) {
   // For a typical workload, tasks are created as part of the boot process and never after
   // the scheduler has been started but we add a critical section to cover the off-chance
   // that two tasks are creating other tasks at exactly the same time.
-  portENTER_CRITICAL();
+  CRITICAL_SECTION_ENTER();
   const bool slot_found = prv_find_slot(&idx, EMPTY_SLOT);
   if (slot_found) {
     s_task_tcbs[idx] = tcb;
   }
-  portEXIT_CRITICAL();
+  CRITICAL_SECTION_EXIT();
 
   if (!slot_found) {
     MEMFAULT_LOG_ERROR("Task registry full (%d)", MEMFAULT_PLATFORM_MAX_TRACKED_TASKS);

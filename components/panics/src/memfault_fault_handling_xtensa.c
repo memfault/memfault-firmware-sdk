@@ -22,6 +22,15 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 
 static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
+void memfault_xtensa_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
+  sMfltRebootTrackingRegInfo info = {
+    .pc = (uint32_t)pc,
+    .lr = (uint32_t)lr,
+  };
+  s_crash_reason = reason;
+  memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+}
+
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {

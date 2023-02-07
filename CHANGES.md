@@ -1,3 +1,20 @@
+### Changes between Memfault SDK 0.39.1 and SDK 0.38.0 - Feb 3, 2023
+
+#### :rocket: New Features
+
+- **Experimental**
+  - CMSIS-Pack support
+  - Out Of Memory reboot reason added
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+  - The default implementation of `memfault_platform_coredump_get_regions` is
+    changed to collect the current active stack, .bss, .data, and .heap regions.
+    Additionally if you are using ESP-IDF >= 4.4.0, the SDK will prioritize
+    collecting FreeRTOS regions containing task TCB and stack data.
+  - Assert coredumps are now labeled with the Assert reason
+
 ### Changes between Memfault SDK 0.39.0 and SDK 0.38.0 - Feb 3, 2023
 
 #### :boom: Breaking Changes

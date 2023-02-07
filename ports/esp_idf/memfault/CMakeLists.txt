@@ -52,6 +52,28 @@ list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
    $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
 )
 
+# For version >= 4.4.0, we can collect smaller coredumps by default
+# by prioritizing active stack and FreeRTOS regions first. ESP-IDF <= 4.4.0
+# uses a simpler scheme collecting all of DRAM. See
+# common/memfault_platform_coredump.c for more info.
+# Note: CMake does not short-circuit logic statements, nested ifs required
+# Note: ENV{IDF_VERSION} added in esp-idf 4.4.0
+if (DEFINED ENV{IDF_VERSION})
+  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.0")
+    list(APPEND MEMFAULT_COMPONENTS_SRCS
+      ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_freertos_ram_regions.c
+    )
+
+    list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
+      ${MEMFAULT_SDK_ROOT}/ports/include/
+    )
+
+    # Add a linker fragment to place FreeRTOS timers and task objects in the same area of dram0.bss
+    set(COMPONENT_ADD_LDFRAGMENTS "${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_esp_freertos.lf")
+  endif()
+endif()
+
+
 # Register Memfault SDK Component
 set(COMPONENT_SRCS ${MEMFAULT_COMPONENTS_SRCS})
 set(COMPONENT_ADD_INCLUDEDIRS ${MEMFAULT_COMPONENTS_INC_FOLDERS})
@@ -94,3 +116,30 @@ target_link_libraries(
     INTERFACE
     -T ${compact_log_linker_script}
 )
+
+# Link required libraries and add compiler flags to enable FreeRTOS region collection
+# in >= 4.4.0. Note: CMake does not short-circuit logic statements, nested ifs required
+# Note: ENV{IDF_VERSION} added in esp-idf 4.4.0
+if(DEFINED ENV{IDF_VERSION})
+  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.0")
+    # Policy change requires CMake v3.13+
+    cmake_minimum_required(VERSION 3.13)
+
+    # First set new policy for target_link_libraries, this resolves a warning when using on
+    # targets not created in this directory
+    cmake_policy(SET CMP0079 NEW)
+
+    # Get the name of the ESP FreeRTOS target/library
+    idf_component_get_property(freertos_lib freertos COMPONENT_LIB)
+
+    # Link this component to FreeRTOS, use INTERFACE because we're only sharing headers
+    target_link_libraries(${freertos_lib} INTERFACE ${this_component})
+
+    # Lastly ensure that our FreeRTOS trace hooks are defined first by adding this
+    # compile option to the FreeRTOS target to include with all source
+    # This method is an alternative to #include within FreeRTOSConfig.h which esp-idf
+    # makes very difficult to do.
+    get_filename_component(freertos_trace_header ${MEMFAULT_SDK_ROOT}/ports/include/memfault/ports/freertos_trace.h ABSOLUTE)
+    target_compile_options(${freertos_lib} INTERFACE -include ${freertos_trace_header})
+  endif()
+endif()

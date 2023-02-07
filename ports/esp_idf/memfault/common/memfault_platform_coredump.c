@@ -30,6 +30,11 @@
 #include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16_ccitt.h"
 
+// Needed for >= v4.4.0 default coredump collection
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  #include "memfault/ports/freertos_coredump.h"
+#endif
+
 // Factor out issues with Espressif's ESP32 to ESP conversion in sdkconfig
 #define COREDUMPS_ENABLED \
   (CONFIG_ESP32_ENABLE_COREDUMP || CONFIG_ESP_COREDUMP_ENABLE)
@@ -53,6 +58,17 @@
   esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
 #endif
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  // Memory regions used for esp-idf >= 4.4.0
+  // Active stack (1) + task/timer and bss/common regions (4) +
+  // freertos tasks (MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + bss(1) + data(1) + heap(1)
+  #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1)
+#else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  // Memory regions for esp-idf < 4.4.0
+  // Active stack (1) + bss(1) + data(1) + heap(1)
+  #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 1 + 1 + 1)
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+
 typedef struct {
   uint32_t magic;
   esp_partition_t partition;
@@ -60,6 +76,8 @@ typedef struct {
 } sEspIdfCoredumpPartitionInfo;
 
 static sEspIdfCoredumpPartitionInfo s_esp32_coredump_partition_info;
+static const uintptr_t esp32_dram_start_addr = SOC_DRAM_LOW;
+static const uintptr_t esp32_dram_end_addr = SOC_DRAM_HIGH;
 
 static uint32_t prv_get_partition_info_crc(void) {
   return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
@@ -75,42 +93,121 @@ static const esp_partition_t *prv_get_core_partition(void) {
   return &s_esp32_coredump_partition_info.partition;
 }
 
-//! By default, we attempt to collect all of internal RAM as part of a Coredump
+// We use two different default coredump collection methods
+// due to differences in esp-idf versions. The following helper
+// is only used for esp-idf >= 4.4.0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+//! Helper function to get bss and common sections of task and timer objects
+size_t prv_get_freertos_bss_common(sMfltCoredumpRegion *regions, size_t num_regions) {
+  if (regions == NULL || num_regions == 0) {
+    return 0;
+  }
+
+  size_t region_index = 0;
+  extern uint32_t _memfault_timers_bss_start;
+  extern uint32_t _memfault_timers_bss_end;
+  extern uint32_t _memfault_timers_common_start;
+  extern uint32_t _memfault_timers_common_end;
+  extern uint32_t _memfault_tasks_bss_start;
+  extern uint32_t _memfault_tasks_bss_end;
+  extern uint32_t _memfault_tasks_common_start;
+  extern uint32_t _memfault_tasks_common_end;
+
+  // ldgen has a bug that does not exclude rules matching multiple input sections at the
+  // same time. To work around this, we instead emit a symbol for each section we're attempting
+  // to collect. This means 8 symbols (tasks/timers + bss/common). If this is ever fixed we
+  // can remove the need to collect 4 separate regions.
+  size_t timers_bss_length =
+    (uintptr_t)&_memfault_timers_bss_end - (uintptr_t)&_memfault_timers_bss_start;
+  size_t timers_common_length =
+    (uintptr_t)&_memfault_timers_common_end - (uintptr_t)&_memfault_timers_common_start;
+  size_t tasks_bss_length =
+    (uintptr_t)&_memfault_tasks_bss_end - (uintptr_t)&_memfault_tasks_bss_start;
+  size_t tasks_common_length =
+    (uintptr_t)&_memfault_tasks_common_end - (uintptr_t)&_memfault_tasks_common_start;
+
+  regions[region_index++] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_timers_bss_start, timers_bss_length);
+  regions[region_index++] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_timers_common_start, timers_common_length);
+  regions[region_index++] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_tasks_bss_start, tasks_bss_length);
+  regions[region_index++] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_tasks_common_start, tasks_common_length);
+
+  return region_index;
+}
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+
+//! Simple implementation to ensure address is in SRAM range.
+//!
+//! @note The function is intentionally defined as weak so someone can
+//! easily override the port defaults by re-defining a non-weak version of
+//! the function in another file
+MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
+                                                              size_t desired_size) {
+  const uintptr_t start_addr_int = (uintptr_t)start_addr;
+  const uintptr_t end_addr_int = start_addr_int + desired_size;
+
+  if ((start_addr_int < esp32_dram_start_addr) || (start_addr_int > esp32_dram_end_addr)) {
+    return 0;
+  }
+
+  if (end_addr_int > esp32_dram_end_addr) {
+    return esp32_dram_end_addr - start_addr_int;
+  }
+
+  return desired_size;
+}
+
+//! By default we prioritize collecting active stack, bss, data, and heap.
+//!
+//! In esp-idf >= 4.4.0, we additionally collect bss and stack regions for
+//! FreeRTOS tasks.
 //!
 //! @note The function is intentionally defined as weak so someone can
 //! easily override the port defaults by re-defining a non-weak version of
 //! the function in another file
 MEMFAULT_WEAK
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
-  static sMfltCoredumpRegion s_coredump_regions[1];
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_ESP_PORT_NUM_REGIONS];
+  int region_idx = 0;
 
-  // The ESP32S2 + S3 have a different memory map than the ESP32; IRAM and DRAM
-  // share the same pysical SRAM, but are mapped at different addresses. We need
-  // to account for the placement of IRAM data, which offsets the start of
-  // placed DRAM.
-  //
-  // https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf#subsubsection.3.3.2
-  // https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf#subsubsection.4.3.2
-#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32S2)
-  // use this symbol defined by the linker to find the start of DRAM
+  const size_t stack_size = memfault_platform_sanitize_address_range(
+    crash_info->stack_address, MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT);
+
+  // First, capture the active stack
+  s_coredump_regions[region_idx++] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(crash_info->stack_address, stack_size);
+
+  // Second, capture the task regions, if esp-idf >= 4.4.0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  region_idx += memfault_freertos_get_task_regions(
+    &s_coredump_regions[region_idx], MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+
+  // Third, capture the FreeRTOS-specific bss regions
+  region_idx += prv_get_freertos_bss_common(&s_coredump_regions[region_idx],
+                                            MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+
+  // Next, capture all of .bss + .data that we can fit.
   extern uint32_t _data_start;
-  const uint32_t esp32_dram_start_addr = (uint32_t)&_data_start;
-#else
-  const uint32_t esp32_dram_start_addr = SOC_DMA_LOW;
-#endif
+  extern uint32_t _data_end;
+  extern uint32_t _bss_start;
+  extern uint32_t _bss_end;
+  extern uint32_t _heap_start;
 
-  size_t dram_collection_len = SOC_DMA_HIGH - esp32_dram_start_addr;
-  const esp_partition_t *core_part = prv_get_core_partition();
-  if (core_part != NULL) {
-    // NB: Leave some space in storage for other regions collected by the SDK
-    dram_collection_len = MEMFAULT_MIN((core_part->size * 7) / 8,
-                                       dram_collection_len);
-  }
+  s_coredump_regions[region_idx++] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+    &_bss_start, (uint32_t)((uintptr_t)&_bss_end - (uintptr_t)&_bss_start));
+  s_coredump_regions[region_idx++] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+    &_data_start, (uint32_t)((uintptr_t)&_data_end - (uintptr_t)&_data_start));
+  // Finally, capture as much of the heap as we can fit
+  s_coredump_regions[region_idx++] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+    &_heap_start, (uint32_t)(esp32_dram_end_addr - (uintptr_t)&_heap_start));
 
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-      (void *)esp32_dram_start_addr, dram_collection_len);
-  *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
+  *num_regions = region_idx;
+
   return &s_coredump_regions[0];
 }
 
