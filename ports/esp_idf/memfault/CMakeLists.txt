@@ -1,3 +1,12 @@
+if (CONFIG_MEMFAULT_AUTOMATIC_INIT)
+  message(FATAL_ERROR "CONFIG_MEMFAULT_AUTOMATIC_INIT has been deprecated.
+    Please complete the following steps:
+    1. Remove CONFIG_MEMFAULT_AUTOMATIC_INIT=y from sdkconfig.default if present
+    2. Delete your project's generated sdkconfig (be sure to save any in-progress changes)
+    3. Update your application to call memfault_boot during initialization
+    For more information please see https://docs.memfault.com/docs/mcu/esp32-guide")
+endif()
+
 set(MEMFAULT_SDK_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
 list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)

@@ -40,13 +40,7 @@ bool memfault_esp_port_data_available(void);
 //! @return true if the buffer was filled, false otherwise
 bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len);
 
-//! Intializes the Memfault system, and should be called one time at boot.
-//!
-//! Note: by default this is called from the system initialization sequence-
-//! it's placed into the global constructor table during compilation, and
-//! executed by the esp-idf initialization code. Optionally it can instead be
-//! explictly called during application startup by setting
-//! 'CONFIG_MEMFAULT_AUTOMATIC_INIT=n' in the project Kconfig options.
+//! Intializes the Memfault system, and should be called one time by the application during boot.
 void memfault_boot(void);
 
 #ifdef __cplusplus

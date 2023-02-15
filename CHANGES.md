@@ -1,3 +1,14 @@
+### Changes between Memfault SDK 0.40.1 and SDK 0.39.1 - Feb 15, 2023
+
+#### :bomb: Breaking Changes
+
+- ESP-IDF:
+  - The Kconfig `CONFIG_MEMFAULT_AUTOMATIC_INIT` has been deprecated and is no
+    longer supported. Users of this Kconfig should refactor their application to
+    call `memfault_boot` during initialization. Use of this Kconfig now results
+    in a build error. For more information please see
+    https://docs.memfault.com/docs/mcu/esp32-guide#initializing-memfault
+
 ### Changes between Memfault SDK 0.39.1 and SDK 0.38.0 - Feb 3, 2023
 
 #### :rocket: New Features
