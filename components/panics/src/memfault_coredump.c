@@ -90,6 +90,7 @@ typedef enum MfltCoredumpMachineType {
   kMfltCoredumpMachineType_XtensaLx106 = MEMFAULT_MACHINE_TYPE_XTENSA_LX106,
   kMfltCoredumpMachineType_XtensaLx7 = MEMFAULT_MACHINE_TYPE_XTENSA_LX7,
   kMfltCoredumpMachineType_XtensaLx7Dual = MEMFAULT_MACHINE_TYPE_XTENSA_LX7_DUAL,
+  kMfltCoredumpMachineType_RiscV = 243,
 } eMfltCoredumpMachineType;
 
 typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
@@ -252,6 +253,8 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
 #elif defined(__XTENSA__)
     // finally, ESP8266
     kMfltCoredumpMachineType_XtensaLx106
+#elif defined(__riscv)
+    kMfltCoredumpMachineType_RiscV
 #else
   #error "Coredumps are not supported for target architecture"
 #endif

@@ -8,7 +8,6 @@
 #
 # ❯docker run --privileged --rm -i -t -v"$PWD":/hostdir memfault/memfault-firmware-sdk-ci /hostdir/.circleci/runas.sh
 
-
 set -euo pipefail
 
 BASE_DIR=/hostdir
@@ -20,8 +19,8 @@ sudo mount -t tmpfs tmpfs /tmp/overlay
 mkdir /tmp/overlay/{up,work}
 sudo mkdir "$FINAL_DIR"
 sudo mount -t overlay overlay \
-    -o lowerdir="$BASE_DIR,upperdir=/tmp/overlay/up/,workdir=/tmp/overlay/work/" \
-    "$FINAL_DIR"
+  -o lowerdir="$BASE_DIR,upperdir=/tmp/overlay/up/,workdir=/tmp/overlay/work/" \
+  "$FINAL_DIR"
 sudo chown -R "$USER:$USER $FINAL_DIR"
 
 exec bash

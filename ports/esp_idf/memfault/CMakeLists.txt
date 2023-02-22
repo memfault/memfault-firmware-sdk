@@ -9,10 +9,34 @@ endif()
 
 set(MEMFAULT_SDK_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..)
 
-list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)
 include(${MEMFAULT_SDK_ROOT}/cmake/Memfault.cmake)
+
+# Select RISCV or XTENSA architecture, depending on target chip
+if(DEFINED IDF_VERSION_MAJOR)
+  # idf_build_get_property was added in 4.0. RISC-V chips weren't added until
+  # v4.3, but we can rely on the build target for figuring out the architecture.
+  if(IDF_VERSION_MAJOR VERSION_GREATER_EQUAL 4)
+    # Get target architecture to pass to the memfault_library initialization.
+    # IDF_TARGET_ARCH was added in 5.0, so use the older IDF_TARGET variable.
+    idf_build_get_property(target IDF_TARGET)
+    if("${target}" STREQUAL "esp32" OR "${target}" STREQUAL "esp32s2" OR "${target}" STREQUAL "esp32s3")
+      set(ESP_ARCH "ARCH_XTENSA")
+    else()
+      set(ESP_ARCH "ARCH_RISCV")
+    endif()
+  else()
+    # For older versions of esp-idf, we assume the architecture is XTENSA
+    set(ESP_ARCH "ARCH_XTENSA")
+  endif()
+else()
+  # If the IDF_VERSION_MAJOR variable is not defined, we assume the architecture is XTENSA- this is
+  # a pretty old version of esp-idf, much earlier than when RISC-V support was added.
+  set(ESP_ARCH "ARCH_XTENSA")
+endif()
+
+list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)
 memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
-  MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ARCH_XTENSA)
+  MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ${ESP_ARCH})
 
 # v4.0 and greater expose the IDF_VERSION in cmake. If we can't find
 # it, we assume the end user is on v3.x

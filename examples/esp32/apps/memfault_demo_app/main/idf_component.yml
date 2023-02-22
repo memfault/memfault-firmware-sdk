@@ -9,4 +9,4 @@ dependencies:
     version: "^2.0.0"
     rules: # will add dependency only when all if clauses are True
       - if: "idf_version >=5.0" # supports all SimpleSpec grammars (https://python-semanticversion.readthedocs.io/en/latest/reference.html#semantic_version.SimpleSpec)
-      - if: "target in [esp32s2, esp32s3]" # supports boolean operator ==, !=, in, not in.
+      - if: "target in [esp32s2, esp32s3, esp32c3]" # supports boolean operator ==, !=, in, not in.

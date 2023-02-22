@@ -8,18 +8,25 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
+// non-module headers below
+
 #include <inttypes.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "esp_partition.h"
 #include "memfault/esp_port/version.h"
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-#include "spi_flash_mmap.h"
+
+// The include order below, especially 'soc/uart_reg.h' and 'soc/soc.h', is
+// significant to support the various ESP-IDF versions, where the definitions
+// moved around. It's possible it could be tidied up but this configuration
+// does work across the supported ESP-IDF versions.
 #include "soc/uart_reg.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  #include "spi_flash_mmap.h"
 #else
-#include "esp_spi_flash.h"
-#include "soc/soc.h"
+  #include "esp_spi_flash.h"
+  #include "soc/soc.h"
 #endif
 
 #include "memfault/core/compiler.h"

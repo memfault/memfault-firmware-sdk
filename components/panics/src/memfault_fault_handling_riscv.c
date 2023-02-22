@@ -3,15 +3,18 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
+//! Copyright (c) Memfault, Inc.
+//! See License.txt for details
+//!
 //! @brief
-//! Fault handling for Xtensa based architectures
+//! Fault handling for RISC-V based architectures
 
-#if defined(__XTENSA__)
+#if defined(__riscv)
 
   #include "memfault/core/compiler.h"
   #include "memfault/core/platform/core.h"
   #include "memfault/core/reboot_tracking.h"
-  #include "memfault/panics/arch/xtensa/xtensa.h"
+  #include "memfault/panics/arch/riscv/riscv.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/panics/coredump_impl.h"
 
@@ -37,8 +40,9 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
-    // skip LR saving here.
-    prv_fault_handling_assert((void *)regs->pc, (void *)0, reason);
+    // TODO confirm this works correctly- we should have the correct
+    // pre-exception reg set here
+    prv_fault_handling_assert((void *)regs->mepc, (void *)regs->ra, reason);
   }
 
   sMemfaultCoredumpSaveInfo save_info = {
@@ -47,21 +51,8 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     .trace_reason = s_crash_reason,
   };
 
-  // Check out "Windowed Procedure-Call Protocol" in the Xtensa ISA Reference Manual: Some data is
-  // stored "below the stack pointer (since they are infrequently referenced), leaving the limited
-  // range of the ISA’s load/store offsets available for more frequently referenced locals."
-  //
-  // Processor saves callers a0..a3 in the 16 bytes below the "sp"
-  // The next 48 bytes beneath that are from a _WindowOverflow12 on exception
-  // capturing callers a4 - a15
-  //
-  // For the windowed ABI, a1 always holds the current "sp":
-  //   https://github.com/espressif/esp-idf/blob/v4.0/components/freertos/readme_xtensa.txt#L421-L428
-  const uint32_t windowed_abi_spill_size = 64;
-  const uint32_t sp_prior_to_exception = regs->a[1] - windowed_abi_spill_size;
-
   sCoredumpCrashInfo info = {
-    .stack_address = (void *)sp_prior_to_exception,
+    .stack_address = (void *)regs->sp,
     .trace_reason = save_info.trace_reason,
     .exception_reg_state = regs,
   };
@@ -93,4 +84,4 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
-#endif /* __XTENSA__ */
+#endif  // __riscv

@@ -1,3 +1,12 @@
+### Changes between Memfault SDK 0.41.0 and SDK 0.40.0 - Feb 22, 2023
+
+#### :rocket: New Features
+
+- ESP-IDF:
+  - Added coredump support for the ESP32-C3 (RISC-V) chip. Thank you to @jlubawy
+    for your work on this in
+    [#42](https://github.com/memfault/memfault-firmware-sdk/pull/42) 🎉!
+
 ### Changes between Memfault SDK 0.40.1 and SDK 0.39.1 - Feb 15, 2023
 
 #### :bomb: Breaking Changes
