@@ -69,6 +69,11 @@ LOG_BACKEND_DEFINE(log_backend_mflt, log_backend_mflt_api, true);
 
 // Tie Memfault's log function to the Zephyr buffer sender. This is *the* connection to Memfault.
 static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
+  if (memfault_arch_is_inside_isr()) {
+    // We can't safely log from an ISR, so just drop the message
+    return (int)length;
+  }
+
   // Note: Context should always be populated. If it is not, flag the log as an _Error
   const eMemfaultPlatformLogLevel log_level = ctx != NULL ? *(eMemfaultPlatformLogLevel*)ctx :
                                                             kMemfaultPlatformLogLevel_Error;

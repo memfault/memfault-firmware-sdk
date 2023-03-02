@@ -37,8 +37,8 @@
 #include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16_ccitt.h"
 
-// Needed for >= v4.4.0 default coredump collection
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+// Needed for >= v4.4.3 default coredump collection
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   #include "memfault/ports/freertos_coredump.h"
 #endif
 
@@ -65,16 +65,16 @@
   esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
 #endif
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-  // Memory regions used for esp-idf >= 4.4.0
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
+  // Memory regions used for esp-idf >= 4.4.3
   // Active stack (1) + task/timer and bss/common regions (4) +
   // freertos tasks (MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + bss(1) + data(1) + heap(1)
   #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1)
-#else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-  // Memory regions for esp-idf < 4.4.0
+#else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
+  // Memory regions for esp-idf < 4.4.3
   // Active stack (1) + bss(1) + data(1) + heap(1)
   #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 1 + 1 + 1)
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 
 typedef struct {
   uint32_t magic;
@@ -102,8 +102,8 @@ static const esp_partition_t *prv_get_core_partition(void) {
 
 // We use two different default coredump collection methods
 // due to differences in esp-idf versions. The following helper
-// is only used for esp-idf >= 4.4.0
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+// is only used for esp-idf >= 4.4.3
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 //! Helper function to get bss and common sections of task and timer objects
 size_t prv_get_freertos_bss_common(sMfltCoredumpRegion *regions, size_t num_regions) {
   if (regions == NULL || num_regions == 0) {
@@ -144,7 +144,7 @@ size_t prv_get_freertos_bss_common(sMfltCoredumpRegion *regions, size_t num_regi
 
   return region_index;
 }
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 
 //! Simple implementation to ensure address is in SRAM range.
 //!
@@ -169,7 +169,7 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
 
 //! By default we prioritize collecting active stack, bss, data, and heap.
 //!
-//! In esp-idf >= 4.4.0, we additionally collect bss and stack regions for
+//! In esp-idf >= 4.4.3, we additionally collect bss and stack regions for
 //! FreeRTOS tasks.
 //!
 //! @note The function is intentionally defined as weak so someone can
@@ -188,15 +188,15 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
   s_coredump_regions[region_idx++] =
     MEMFAULT_COREDUMP_MEMORY_REGION_INIT(crash_info->stack_address, stack_size);
 
-  // Second, capture the task regions, if esp-idf >= 4.4.0
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+  // Second, capture the task regions, if esp-idf >= 4.4.3
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   region_idx += memfault_freertos_get_task_regions(
     &s_coredump_regions[region_idx], MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 
   // Third, capture the FreeRTOS-specific bss regions
   region_idx += prv_get_freertos_bss_common(&s_coredump_regions[region_idx],
                                             MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 
   // Next, capture all of .bss + .data that we can fit.
   extern uint32_t _data_start;

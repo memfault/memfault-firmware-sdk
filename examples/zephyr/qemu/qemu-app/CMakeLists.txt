@@ -2,6 +2,10 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+# The default board for this example is the qemu_cortex_m3, but can be
+# overridden by passing --board=<board> to west or -DBOARD=<board> to cmake
+set(BOARD qemu_cortex_m3)
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 target_sources(app PRIVATE src/main.c)

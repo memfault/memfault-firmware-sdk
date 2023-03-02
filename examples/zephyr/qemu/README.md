@@ -3,6 +3,10 @@
 Based on https://github.com/zephyrproject-rtos/example-application , this
 provides a minimal reference for Memfault integration.
 
+> Note: this example can also target other boards and should work normally- for
+> example `nrf52840dk_nrf52840`. It's primarily tested on the `qemu_cortex_m3`
+> board, which is also the default.
+
 ## Usage
 
 After setting up a zephyr development environment
@@ -11,12 +15,12 @@ the following commands to test the application:
 
 ```shell
 # initialize this project
-❯ west init -l qemu-app
+❯ west init --local qemu-app
 ❯ west update
 
-# build the target program
-❯ west build -b qemu_cortex_m3 --pristine=always qemu-app
-❯ west build -t run
+# build and run the target program
+❯ west build qemu-app
+❯ west build --target run
 
 *** Booting Zephyr OS build zephyr-v3.2.0  ***
 [00:00:00.000,000] <inf> mflt: GNU Build ID: 4ffb5879ed5923582035133086015bbf65504364

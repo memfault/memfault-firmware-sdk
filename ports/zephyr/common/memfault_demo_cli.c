@@ -198,6 +198,19 @@ static int prv_zephyr_load_32bit_address(const struct shell *shell, size_t argc,
   return memfault_demo_cli_loadaddr(argc, argv);
 }
 
+static int prv_cli_cmd_double_free(const struct shell *shell, size_t argc, char **argv) {
+  (void)shell;
+  (void)argc;
+  (void)argv;
+
+  uint8_t *ptr = k_malloc(100);
+  k_free(ptr);
+  k_free(ptr);
+
+  shell_print(shell, "Double free should have crashed the app! 🤯 Make sure CONFIG_ASSERT=y");
+
+  return -1;
+}
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
@@ -210,6 +223,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
+  SHELL_CMD(double_free, NULL, "Trigger a double free error", prv_cli_cmd_double_free),
 
   //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),

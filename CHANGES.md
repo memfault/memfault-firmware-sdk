@@ -1,3 +1,21 @@
+### Changes between Memfault SDK 0.41.1 and SDK 0.41.0 - Mar 1, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr / nRF-Connect SDk:
+
+  - Fix a bug 🐛 in the Memfault Logging backend, that causes coredump saving to
+    fail when building with Zephyr versions before 3.0 (nRF-Connect SDK < 2.0).
+    This regression was introduced in Memfault Firmware SDK **0.33.3**.
+
+- ESP-IDF:
+  - Updated the [ESP32 example app](examples/esp32) for the ESP32-C3 on ESP-IDF
+    v5.0.1 to use size optimizations, to more closely mirror real world
+    environments and codesize.
+  - Fix a compilation error in the [ESP32 example app](examples/esp32) when
+    targeting ESP-IDF >=4.4,<4.4.3 . This regression was introduced in Memfault
+    Firmware SDK **0.39.1**.
+
 ### Changes between Memfault SDK 0.41.0 and SDK 0.40.0 - Feb 22, 2023
 
 #### :rocket: New Features
@@ -7,7 +25,7 @@
     for your work on this in
     [#42](https://github.com/memfault/memfault-firmware-sdk/pull/42) 🎉!
 
-### Changes between Memfault SDK 0.40.1 and SDK 0.39.1 - Feb 15, 2023
+### Changes between Memfault SDK 0.40.0 and SDK 0.39.1 - Feb 15, 2023
 
 #### :bomb: Breaking Changes
 
@@ -18,7 +36,7 @@
     in a build error. For more information please see
     https://docs.memfault.com/docs/mcu/esp32-guide#initializing-memfault
 
-### Changes between Memfault SDK 0.39.1 and SDK 0.38.0 - Feb 3, 2023
+### Changes between Memfault SDK 0.39.1 and SDK 0.39.0 - Feb 3, 2023
 
 #### :rocket: New Features
 

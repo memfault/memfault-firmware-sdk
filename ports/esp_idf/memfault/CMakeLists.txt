@@ -85,14 +85,14 @@ list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
    $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
 )
 
-# For version >= 4.4.0, we can collect smaller coredumps by default
-# by prioritizing active stack and FreeRTOS regions first. ESP-IDF <= 4.4.0
+# For version >= 4.4.3, we can collect smaller coredumps by default
+# by prioritizing active stack and FreeRTOS regions first. ESP-IDF < 4.4.3
 # uses a simpler scheme collecting all of DRAM. See
 # common/memfault_platform_coredump.c for more info.
 # Note: CMake does not short-circuit logic statements, nested ifs required
-# Note: ENV{IDF_VERSION} added in esp-idf 4.4.0
+# Note: ENV{IDF_VERSION} added in esp-idf 4.4.3
 if (DEFINED ENV{IDF_VERSION})
-  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.0")
+  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.3")
     list(APPEND MEMFAULT_COMPONENTS_SRCS
       ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_freertos_ram_regions.c
     )
@@ -151,10 +151,10 @@ target_link_libraries(
 )
 
 # Link required libraries and add compiler flags to enable FreeRTOS region collection
-# in >= 4.4.0. Note: CMake does not short-circuit logic statements, nested ifs required
+# in >= 4.4.3. Note: CMake does not short-circuit logic statements, nested ifs required
 # Note: ENV{IDF_VERSION} added in esp-idf 4.4.0
 if(DEFINED ENV{IDF_VERSION})
-  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.0")
+  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.3")
     # Policy change requires CMake v3.13+
     cmake_minimum_required(VERSION 3.13)
 
