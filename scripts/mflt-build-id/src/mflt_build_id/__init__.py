@@ -4,18 +4,29 @@
 #
 
 # This file needs to be Python 2.7 compatible (i.e. type annotations must remain in comments).
+# Note: The snippet should be kept in sync with the "Example Usage" section of the README
 """Inspects provided ELF for a Build ID and when missing adds one if possible.
 
 If a pre-existing Build ID is found (either a GNU Build ID or a Memfault Build ID),
 no action is taken.
 
 If no Build ID is found, this script will generate a unique ID by computing a SHA1 over the
-contents that will be in the final binary. Once computed, the build ID will be "patched"
-into a read-only struct defined in memfault/core/memfault_build_id.c to hold the info.
+contents that will be in the final binary. Once computed, the build ID will be "patched" into a
+read-only struct defined in memfault-firmware-sdk/components/core/src/memfault_build_id.c to hold
+the info.
 
-If the --crc <symbol_holding_crc32> is used, instead of populating the Memfault Build ID structure,
-the symbol specified will be updated with a CRC32 computed over the contents that will be in the
-final binary.
+If the --crc <symbol_holding_crc32> argument is used, instead of populating the Memfault Build ID
+structure, the symbol specified will be updated with a CRC32 computed over the contents that will
+be in the final binary.
+
+If the --sha1 <symbol_holding_sha> argument is used, instead of populating the Memfault Build ID
+structure, the symbol specified will be updated directly with Memfault SHA1 using the same strategy
+discussed above. The only expectation in this mode is that a global symbol has been defined as follow:
+
+const uint8_t g_your_symbol_build_id[20] = { 0x1, };
+
+For further reading about Build Ids in general see:
+  https://mflt.io//symbol-file-build-ids
 """
 
 import argparse
@@ -56,6 +67,9 @@ else:
     def hexlify(data):
         # type: (bytes) -> str
         return data.hex()
+
+
+SHA1_BUILD_ID_SIZE_BYTES = 20
 
 
 class SectionType(Enum):
@@ -231,8 +245,8 @@ class BuildIdInspectorAndPatcher:
         self.elf = elf or ELFFile(elf_file)
         self._helper = ELFFileHelper(self.elf)
 
-    def _generate_build_id(self):
-        # type: () -> hashlib._Hash
+    def _generate_build_id(self, sha1_symbol_section=None, sha1_symbol_section_offset=0):
+        # type: (Optional[Section], int) -> hashlib._Hash
         build_id = hashlib.sha1()
         for section in self.elf.iter_sections():
             if not self._helper.section_in_binary(section):
@@ -247,7 +261,17 @@ class BuildIdInspectorAndPatcher:
                 length = section["sh_size"]
                 build_id.update(struct.pack("<I", length))
             else:
-                build_id.update(section.data())
+                data = section.data()
+                if sha1_symbol_section and sha1_symbol_section["sh_addr"] == section["sh_addr"]:
+                    build_id.update(data[:sha1_symbol_section_offset])
+                    # NB: When a Memfault Build ID is generated as part of a memfault-firmware-sdk
+                    # integration we SHA1 over the compile time state of
+                    # "g_memfault_sdk_derived_build_id"... simulate the same behavior when updating
+                    # a SHA1 symbol directly.
+                    build_id.update(bytearray([1] + [0] * 19))
+                    build_id.update(data[sha1_symbol_section_offset + SHA1_BUILD_ID_SIZE_BYTES :])
+                else:
+                    build_id.update(data)
 
         return build_id
 
@@ -265,6 +289,50 @@ class BuildIdInspectorAndPatcher:
                 return note.n_desc
 
         return None
+
+    def check_or_update_sha1_build_id(self, sha1_sym_name, dump_only):
+        symbol, section = self._helper.find_symbol_and_section(sha1_sym_name)
+        if symbol is None or section is None:
+            raise BuildIdError("Could not locate '{}' symbol in provided ELF".format(sha1_sym_name))
+
+        if symbol["st_size"] != SHA1_BUILD_ID_SIZE_BYTES:
+            raise BuildIdError(
+                "A build ID should be {} bytes in size".format(SHA1_BUILD_ID_SIZE_BYTES)
+            )
+
+        current_sha1_bytes = bytearray(self._helper.get_symbol_data(symbol, section))
+
+        symbol_offset = self._helper.get_symbol_offset_in_sector(symbol, section)
+
+        sha1_hash = self._generate_build_id(
+            sha1_symbol_section=section, sha1_symbol_section_offset=symbol_offset
+        )
+        sha1_hash_bytes = sha1_hash.digest()
+
+        if current_sha1_bytes == sha1_hash_bytes:
+            print(
+                "Memfault Generated SHA1 Build ID at '{}': {}".format(
+                    sha1_sym_name, sha1_hash.hexdigest()
+                )
+            )
+            return sha1_hash
+
+        if dump_only:
+            print("Memfault Build ID at '{}' is not written".format(sha1_sym_name))
+            return sha1_hash
+
+        with open(self.elf_file.name, "r+b") as fh:
+            derived_id_patch_offset = section[
+                "sh_offset"
+            ] + self._helper.get_symbol_offset_in_sector(symbol, section)
+
+            fh.seek(derived_id_patch_offset)
+            fh.write(sha1_hash_bytes)
+
+        print("Added Memfault Generated SHA1 Build ID to ELF: {}".format(sha1_hash.hexdigest()))
+
+        # Return the sha1 computed in case someone wants to run this as a library
+        return sha1_hash
 
     def _write_and_return_build_info(self, dump_only):
         # type: (bool) -> Tuple[MemfaultBuildIdTypes, Optional[str], Optional[int]]
@@ -330,6 +398,7 @@ class BuildIdInspectorAndPatcher:
 
             fh.seek(derived_id_patch_offset)
             fh.write(build_id_hash.digest())
+
         build_id = build_id_hash.hexdigest()
         print("Added Memfault Generated Build ID to ELF: {}".format(build_id))
         return MemfaultBuildIdTypes.MEMFAULT_BUILD_ID_SHA1, build_id, short_len
@@ -452,13 +521,20 @@ def main():
     parser.add_argument("elf", action="store")
     parser.add_argument("--dump", nargs="?", const=7, type=int)
     parser.add_argument("--crc", action="store")
+    parser.add_argument("--sha1", action="store")
 
     args = parser.parse_args()
 
+    if args.sha1 and args.crc:
+        raise Exception("Only one of 'crc' or 'sha1' can be specified")
+
     with open(args.elf, "rb") as elf_file:
         b = BuildIdInspectorAndPatcher(elf_file=elf_file)
-        if args.crc:
-            b.check_or_update_crc_build_id(args.crc, dump_only=args.dump)
+
+        if args.sha1:
+            b.check_or_update_sha1_build_id(args.sha1, dump_only=args.dump)
+        elif args.crc:
+            b.check_or_update_crc_build_id(args.sha1, dump_only=args.dump)
         elif args.dump is None:
             if args.crc is None:
                 b.check_or_update_build_id()

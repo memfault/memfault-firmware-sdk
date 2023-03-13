@@ -16,7 +16,7 @@
 //!        _sbss = . ;
 //!        __bss_start__ = _sbss;
 //!        __memfault_capture_bss_start = .;
-//!         *tasks.o(.bss COMMON .bss*)
+//!         *tasks*.o(.bss COMMON .bss*)
 //!         *timers*.o(.bss COMMON .bss*)
 //!        __memfault_capture_bss_end = .;
 //!

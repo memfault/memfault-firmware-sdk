@@ -80,6 +80,15 @@ typedef struct MfltLogProcessCtx {
 
 static void prv_log_process(const struct log_backend *const backend,
                             union log_msg_generic *msg) {
+  // This can be called in IMMEDIATE mode from an ISR, so in that case,
+  // immediately bail. We currently can't safely serialize to the Memfault
+  // buffer from ISR context
+#if CONFIG_LOG_MODE_IMMEDIATE
+  if (memfault_arch_is_inside_isr()) {
+    return;
+  }
+#endif
+
   // Copied flagging from Zephry's ring buffer (rb) implementation.
   const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
                        ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL

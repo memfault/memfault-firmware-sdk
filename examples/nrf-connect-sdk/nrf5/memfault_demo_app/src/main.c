@@ -28,6 +28,7 @@ char *prv_conditional_log_strdup(char *str) {
 
   return str;
 }
+
 static void prv_set_device_id(void) {
   uint8_t dev_id[16] = {0};
   char dev_id_str[sizeof(dev_id) * 2 + 1];
@@ -52,6 +53,18 @@ static void prv_set_device_id(void) {
 
   memfault_ncs_device_id_set(dev_str, length * 2);
 }
+
+#if CONFIG_MEMFAULT_APP_CAPTURE_ALL_RAM
+// capture *ALL* of ram
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  static sMfltCoredumpRegion s_regions[] = {
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(CONFIG_PM_SRAM_BASE, CONFIG_PM_SRAM_SIZE),
+  };
+  *num_regions = ARRAY_SIZE(s_regions);
+  return s_regions;
+}
+#endif  // CONFIG_MEMFAULT_APP_CAPTURE_ALL_RAM
 
 #define WD_FEED_THREAD_STACK_SIZE 500
 // set priority to lowest application thread; shell_uart, where the 'mflt test

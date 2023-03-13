@@ -93,6 +93,65 @@ def test_memfault_id_unpopulated(capsys, copy_file):
     ]
 
 
+def test_memfault_sha1_unpopulated(capsys, copy_file):
+    elf_fixture_filename = os.path.join(
+        ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
+    )
+
+    with open(copy_file(elf_fixture_filename), mode="rb") as elf_copy_file:
+        # attempt to dump build id before it has been written
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        sha1 = b.check_or_update_sha1_build_id("g_memfault_sdk_derived_build_id", dump_only=True)
+        assert sha1.hexdigest() == "16e0fe39af176cfa4cf961321ccf5193c2590451"
+
+        # actually write the build id
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        sha1 = b.check_or_update_sha1_build_id("g_memfault_sdk_derived_build_id", dump_only=False)
+        assert sha1.hexdigest() == "16e0fe39af176cfa4cf961321ccf5193c2590451"
+
+        # We've updated the file -- force a reload of anything that is cached
+        elf_copy_file.flush()
+
+        # confirm that patching the SHA1 build id is idempotent
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        sha1 = b.check_or_update_sha1_build_id("g_memfault_sdk_derived_build_id", dump_only=False)
+        assert sha1.hexdigest() == "16e0fe39af176cfa4cf961321ccf5193c2590451"
+
+        # confirm once build id is written we dump the info correctly
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+        sha1 = b.check_or_update_sha1_build_id("g_memfault_sdk_derived_build_id", dump_only=True)
+        assert sha1.hexdigest() == "16e0fe39af176cfa4cf961321ccf5193c2590451"
+
+    out, _ = capsys.readouterr()
+    lines = out.splitlines()
+
+    assert lines == [
+        "Memfault Build ID at 'g_memfault_sdk_derived_build_id' is not written",
+        "Added Memfault Generated SHA1 Build ID to ELF: 16e0fe39af176cfa4cf961321ccf5193c2590451",
+        "Memfault Generated SHA1 Build ID at 'g_memfault_sdk_derived_build_id': 16e0fe39af176cfa4cf961321ccf5193c2590451",
+        "Memfault Generated SHA1 Build ID at 'g_memfault_sdk_derived_build_id': 16e0fe39af176cfa4cf961321ccf5193c2590451",
+    ]
+
+
+def test_memfault_sha1_wrong_symbol(capsys, copy_file):
+    elf_fixture_filename = os.path.join(
+        ELF_FIXTURES_DIR, "memfault_build_id_present_and_unpopulated.elf"
+    )
+
+    with open(copy_file(elf_fixture_filename), mode="rb") as elf_copy_file:
+        b = BuildIdInspectorAndPatcher(elf_copy_file)
+
+        # test symbol does not exist case
+        with pytest.raises(
+            Exception, match="Could not locate 'g_wrong_symbol_name' symbol in provided ELF"
+        ):
+            b.check_or_update_sha1_build_id("g_wrong_symbol_name", dump_only=False)
+
+        # test symbol exists but it's the wrong size
+        with pytest.raises(Exception, match="A build ID should be 20 bytes in size"):
+            b.check_or_update_sha1_build_id("g_memfault_build_id", dump_only=False)
+
+
 def test_memfault_id_populated(capsys, copy_file):
     elf_fixture_filename = os.path.join(
         ELF_FIXTURES_DIR, "memfault_build_id_present_and_populated.elf"

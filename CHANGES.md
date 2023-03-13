@@ -1,8 +1,18 @@
+### Changes between Memfault SDK 0.41.2 and SDK 0.41.1 - Mar 10, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr / nRF-Connect SDK:
+  - Improve compatibility with Zephyr pre-3.0 deferred logging, when using the
+    Memfault backend
+  - Add an option to the [examples/nrf-connect/nrf5](examples/nrf-connect/nrf5)
+    to enable capturing all of RAM in a coredump.
+
 ### Changes between Memfault SDK 0.41.1 and SDK 0.41.0 - Mar 1, 2023
 
 #### :chart_with_upwards_trend: Improvements
 
-- Zephyr / nRF-Connect SDk:
+- Zephyr / nRF-Connect SDK:
 
   - Fix a bug 🐛 in the Memfault Logging backend, that causes coredump saving to
     fail when building with Zephyr versions before 3.0 (nRF-Connect SDK < 2.0).

@@ -1,0 +1,31 @@
+
+menu "MEMFAULT_APP"
+
+config MEMFAULT_APP_CAPTURE_ALL_RAM
+    bool "Capture all RAM"
+    help
+      Capture all RAM regions. This is useful for debugging purposes, but
+      will increase the amount of data captured by the Memfault SDK.
+
+# If MEMFAULT_APP_CAPTURE_ALL_RAM is enabled, increase the configured space
+# for the Memfault storage partition to accommodate the larger coredump.
+#
+# This overrides the default setting, which can be found here:
+# https://github.com/nrfconnect/sdk-nrf/blob/96f97684565fbf711f1ceb7da061fed0bfe7b60b/modules/memfault-firmware-sdk/Kconfig#L170-L172
+#
+# Expanded into the template here:
+# https://github.com/nrfconnect/sdk-nrf/blob/96f97684565fbf711f1ceb7da061fed0bfe7b60b/subsys/partition_manager/Kconfig.template.partition_size
+#
+# Keep 'source "Kconfig.zephyr"' at the end of this file so this default takes
+# precendence.
+config PM_PARTITION_SIZE_MEMFAULT_STORAGE
+    hex "Size of the Memfault storage partition"
+    # The default size is set to one page above the total RAM size on the
+    # NRF52840 SOC, which provides room for the coredump header and NVIC and CPU
+    # registers. This size needs to be flash page-aligned ("minimum eraseable
+    # unit").
+    default 0x41000 if MEMFAULT_APP_CAPTURE_ALL_RAM
+
+endmenu
+
+source "Kconfig.zephyr"

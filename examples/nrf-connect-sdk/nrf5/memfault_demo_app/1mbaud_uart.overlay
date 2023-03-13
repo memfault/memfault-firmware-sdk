@@ -1,0 +1,4 @@
+/* gotta go fast 🐎 */
+&uart0 {
+	current-speed = <1000000>;
+};
