@@ -11,7 +11,7 @@
 #include "memfault/panics/assert.h"
 #include "memfault/ports/watchdog.h"
 
-#include <zephyr.h>
+#include <kernel.h>
 
 static void prv_software_watchdog_timeout(struct k_timer *dummy) {
   MEMFAULT_SOFTWARE_WATCHDOG();

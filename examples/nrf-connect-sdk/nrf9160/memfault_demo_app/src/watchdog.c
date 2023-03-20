@@ -11,7 +11,7 @@
 #include <device.h>
 #include <drivers/watchdog.h>
 #include <version.h>
-#include <zephyr.h>
+#include <kernel.h>
 
 #include "memfault/components.h"
 

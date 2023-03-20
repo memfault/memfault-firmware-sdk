@@ -11,7 +11,6 @@
 #include <init.h>
 #include <kernel.h>
 #include <random/rand32.h>
-#include <zephyr.h>
 
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(

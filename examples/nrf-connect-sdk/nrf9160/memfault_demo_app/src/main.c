@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include <zephyr.h>
+#include <kernel.h>
 #include <device.h>
 #include <sys/printk.h>
 

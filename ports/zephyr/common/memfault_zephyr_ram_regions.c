@@ -8,7 +8,6 @@
 
 #include "memfault/ports/zephyr/coredump.h"
 
-#include <zephyr.h>
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <version.h>

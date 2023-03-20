@@ -10,7 +10,7 @@
 #include <drivers/gpio.h>
 #include <shell/shell.h>
 #include <logging/log.h>
-#include <zephyr.h>
+#include <kernel.h>
 
 #include "memfault/components.h"
 
