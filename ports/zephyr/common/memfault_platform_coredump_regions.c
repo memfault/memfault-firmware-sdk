@@ -7,13 +7,11 @@
 //! The default regions to collect on Zephyr when a crash takes place.
 //! Function is defined as weak so an end user can override it.
 
-#include "memfault/panics/platform/coredump.h"
-#include "memfault/panics/arch/arm/cortex_m.h"
-
-#include <zephyr.h>
 #include <kernel.h>
 #include <kernel_structs.h>
 
+#include "memfault/panics/arch/arm/cortex_m.h"
+#include "memfault/panics/platform/coredump.h"
 #include "memfault/ports/zephyr/version.h"
 
 #if MEMFAULT_ZEPHYR_VERSION_GT(2, 1)

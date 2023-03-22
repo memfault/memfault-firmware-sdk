@@ -3,7 +3,7 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <zephyr.h>
+#include <kernel.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mflt_app, LOG_LEVEL_DBG);
 

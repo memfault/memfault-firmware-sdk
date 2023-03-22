@@ -11,6 +11,8 @@
 //! @note A user of the Memfault SDK should _never_ call any
 //! of these routines directly
 
+#include <stdbool.h>
+
 #include "memfault/metrics/metrics.h"
 
 #ifdef __cplusplus
@@ -26,6 +28,7 @@ union MemfaultMetricValue {
 typedef struct {
   MemfaultMetricId key;
   eMemfaultMetricType type;
+  bool is_set;
   union MemfaultMetricValue val;
 } sMemfaultMetricInfo;
 

@@ -14,7 +14,7 @@ mflt_build_id = 'mflt_build_id:main'
 
 [tool.poetry.dependencies]
 python = "^3.6" # must match memfault-cli
-pyelftools = ">=0.26,<=0.28"
+pyelftools = ">=0.26,<=0.29"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6"

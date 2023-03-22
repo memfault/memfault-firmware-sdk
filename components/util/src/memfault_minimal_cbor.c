@@ -22,10 +22,23 @@ typedef enum CborMajorType {
   kCborMajorType_SimpleType = 7,
 } eCborMajorType;
 
+// Definitions for Additional Info for Simple Values can be found here:
+// https://www.rfc-editor.org/rfc/rfc7049#section-2.3
+typedef enum CborAddInfoSimpleVals {
+  kCborAddInfoSimpleVals_False = 20,
+  kCborAddInfoSimpleVals_True = 21,
+  kCborAddInfoSimpleVals_Null = 22,
+  kCborAddInfoSimpleVals_Undefined = 23,
+} eCborAddInfoSimpleVals;
+
 // A CBOR payload is composed of a stream of "data items"
 // The main type of each "data item" is known as the CBOR Major Type
 // and populates the upper 3 bits of the first byte of each "data item"
-#define CBOR_SERIALIZE_MAJOR_TYPE(mt) ((uint8_t) ((mt & 0x7) << 5))
+#define CBOR_SERIALIZE_MAJOR_TYPE(mt) ((uint8_t)((mt & 0x7) << 5))
+
+// CBOR NULL is formed by using a major type of SimpleValue and the assigned value of null
+#define CBOR_NULL \
+  (CBOR_SERIALIZE_MAJOR_TYPE(kCborMajorType_SimpleType) | kCborAddInfoSimpleVals_Null)
 
 void memfault_cbor_encoder_init(sMemfaultCborEncoder *encoder, MemfaultCborWriteCallback write_cb,
                                 void *write_cb_ctx, size_t buf_len) {
@@ -183,4 +196,9 @@ bool memfault_cbor_encode_dictionary_begin(
 bool memfault_cbor_encode_array_begin(
     sMemfaultCborEncoder *encoder, size_t num_elements) {
   return prv_encode_unsigned_integer(encoder, kCborMajorType_Array, num_elements);
+}
+
+bool memfault_cbor_encode_null(sMemfaultCborEncoder *encoder) {
+  uint8_t tmp_buf[] = {CBOR_NULL};
+  return prv_add_to_result_buffer(encoder, tmp_buf, sizeof(tmp_buf));
 }

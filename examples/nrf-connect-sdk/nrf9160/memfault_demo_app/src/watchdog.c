@@ -10,11 +10,10 @@
 
 #include <device.h>
 #include <drivers/watchdog.h>
+#include <kernel.h>
 #include <version.h>
-#include <zephyr.h>
 
 #include "memfault/components.h"
-
 #include "memfault/ports/zephyr/version.h"
 
 //! Note: The timeout must be large enough to give us enough time to capture a coredump

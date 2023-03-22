@@ -8,9 +8,9 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
-#include <shell/shell.h>
+#include <kernel.h>
 #include <logging/log.h>
-#include <zephyr.h>
+#include <shell/shell.h>
 
 #include "memfault/components.h"
 

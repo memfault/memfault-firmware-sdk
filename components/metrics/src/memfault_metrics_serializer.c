@@ -30,21 +30,41 @@ typedef struct {
   bool encode_success;
 } sMemfaultSerializerState;
 
+static bool prv_metric_heartbeat_write_integer(sMemfaultSerializerState *state,
+                                               sMemfaultCborEncoder *encoder,
+                                               const sMemfaultMetricInfo *metric_info) {
+  if (!metric_info->is_set && !state->compute_worst_case_size) {
+    return memfault_cbor_encode_null(encoder);
+  }
+
+  if (metric_info->type == kMemfaultMetricType_Unsigned) {
+    const uint32_t value = state->compute_worst_case_size ? UINT32_MAX : metric_info->val.u32;
+    return memfault_cbor_encode_unsigned_integer(encoder, value);
+  }
+
+  if (metric_info->type == kMemfaultMetricType_Signed) {
+    const int32_t value = state->compute_worst_case_size ? INT32_MIN : metric_info->val.i32;
+    return memfault_cbor_encode_signed_integer(encoder, value);
+  }
+
+  // Should be unreachable
+  return false;
+}
+
 static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *metric_info) {
   sMemfaultSerializerState *state = (sMemfaultSerializerState *)ctx;
   sMemfaultCborEncoder *encoder = &state->encoder;
 
   // encode the value
   switch (metric_info->type) {
-    case kMemfaultMetricType_Timer:
-    case kMemfaultMetricType_Unsigned: {
+    case kMemfaultMetricType_Timer: {
       const uint32_t value = state->compute_worst_case_size ? UINT32_MAX : metric_info->val.u32;
       state->encode_success = memfault_cbor_encode_unsigned_integer(encoder, value);
       break;
     }
+    case kMemfaultMetricType_Unsigned:
     case kMemfaultMetricType_Signed: {
-      const int32_t value = state->compute_worst_case_size ? INT32_MIN : metric_info->val.i32;
-      state->encode_success = memfault_cbor_encode_signed_integer(encoder, value);
+      state->encode_success = prv_metric_heartbeat_write_integer(state, encoder, metric_info);
       break;
     }
     case kMemfaultMetricType_String: {

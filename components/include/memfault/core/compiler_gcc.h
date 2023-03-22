@@ -26,7 +26,11 @@ extern "C" {
 #if defined(__clang__)
 #define MEMFAULT_NO_OPT __attribute__((optnone))
 #else
-#define MEMFAULT_NO_OPT __attribute__((optimize("O0")))
+// GCC 12 changed to no longer enable the var-tracking debug option when
+// compiling without optimizations. Explicitly enable it so we always get a nice
+// variable loading experience in GDB, even when the function prologue hasn't
+// run yet. This is required when using the memfault_gdb.py hook to upload data.
+#define MEMFAULT_NO_OPT __attribute__((optimize("O0", "var-tracking", "var-tracking-assignments")))
 #endif
 
 #define MEMFAULT_ALIGNED(x) __attribute__((aligned(x)))

@@ -3,8 +3,7 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <zephyr.h>
-
+#include <kernel.h>
 #include <stdbool.h>
 
 #include "memfault/metrics/metrics.h"

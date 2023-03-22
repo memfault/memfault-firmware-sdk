@@ -474,8 +474,8 @@ TEST(MemfaultHeartbeatMetrics, Test_HeartbeatCollection) {
   mock().checkExpectations();
 
   // values should all be reset
-  memfault_metrics_heartbeat_read_signed(keyi32, &vali32);
-  memfault_metrics_heartbeat_read_unsigned(keyu32, &valu32);
-  LONGS_EQUAL(vali32, 0);
-  LONGS_EQUAL(valu32, 0);
+  rv = memfault_metrics_heartbeat_read_signed(keyi32, &vali32);
+  CHECK(rv != 0);
+  rv = memfault_metrics_heartbeat_read_unsigned(keyu32, &valu32);
+  CHECK(rv != 0);
 }

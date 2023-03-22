@@ -150,7 +150,6 @@ if (SDK_FW_TASKS_DIR / "modus.py").exists():
 )
 def build_all_demos(ctx):
     """Builds all demo apps (for CI purposes)"""
-    pass
 
 
 ci = Collection("~ci")

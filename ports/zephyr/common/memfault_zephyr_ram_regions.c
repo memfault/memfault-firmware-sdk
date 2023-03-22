@@ -6,14 +6,12 @@
 //! Implements convenience APIs that can be used when building the set of
 //! RAM regions to collect as part of a coredump. See header for more details/
 
-#include "memfault/ports/zephyr/coredump.h"
-
-#include <zephyr.h>
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <version.h>
 
 #include "memfault/components.h"
+#include "memfault/ports/zephyr/coredump.h"
 #include "memfault/ports/zephyr/version.h"
 
 // Use this config flag to manually select the old data region names
@@ -129,19 +127,34 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       continue;
     }
 
-    void *sp = (void*)thread->callee_saved.psp;
+    // When capturing full thread stacks, also include the active thread. Note
+    // that the active stack may already be partially collected in a previous
+    // region, so we might be duplicating it here; it's a little wasteful, but
+    // it's good to always prioritize the currently running stack, in case the
+    // coredump is truncated due to lack of space.
+#if !CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
     if ((uintptr_t)_kernel.cpus[0].current == (uintptr_t)thread) {
-      // thread context is only valid when task is _not_ running so we skip collecting it
+      // when collecting partial stacks, thread context is only valid when task is _not_ running so we skip collecting it
       continue;
     }
+#endif
+
+    void *sp = (void *)thread->callee_saved.psp;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
     // We know where the top of the stack is. Use that information to shrink
     // the area we need to collect if less than CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
     // is in use
     const uint32_t stack_top = thread->stack_info.start + thread->stack_info.size;
+
+    #if CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
+      // Capture the entire stack for this thread
+      size_t stack_size_to_collect = thread->stack_info.size;
+      sp = thread->stack_info.start;
+    #else
     size_t stack_size_to_collect =
         MEMFAULT_MIN(stack_top - (uint32_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
+    #endif
 #else
     size_t stack_size_to_collect = CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT;
 #endif

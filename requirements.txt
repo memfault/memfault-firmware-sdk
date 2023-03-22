@@ -8,3 +8,5 @@ colorama==0.4.3
 fastcov==1.14
 pytest==7.0.1
 pytest-xdist==3.0.2
+pytest-mock==3.10.0
+snapshottest==0.6.0

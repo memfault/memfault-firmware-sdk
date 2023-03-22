@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <zephyr.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"

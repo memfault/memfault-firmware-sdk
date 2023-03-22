@@ -553,7 +553,6 @@ def _try_read_register(arch, frame, lookup_name, register_list, analytics_props,
         _add_reg_collection_error_analytic(
             arch, analytics_props, lookup_name, traceback.format_exc()
         )
-        pass
 
 
 def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
@@ -612,7 +611,6 @@ def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
         check_and_patch_reglist_for_fault(register_list, analytics_props)
     except Exception:
         analytics_props["fault_register_recover_error"] = {"traceback": traceback.format_exc()}
-        pass
 
     return register_list
 
@@ -640,11 +638,11 @@ class MemfaultCoredumpBlockType(object):  # (IntEnum):  # trying to be python2.7
 
 
 class MemfaultCoredumpWriter(object):
-    def __init__(self, arch):
-        self.device_serial = "DEMOSERIALNUMBER"
-        self.software_version = "1.0.0"
-        self.software_type = "main"
-        self.hardware_revision = "DEVBOARD"
+    def __init__(self, arch, device_serial, software_type, software_version, hardware_revision):
+        self.device_serial = device_serial
+        self.software_version = software_version
+        self.software_type = software_type
+        self.hardware_revision = hardware_revision
         self.trace_reason = 5  # Debugger Halted
         self.regs = {}
         self.sections = []
@@ -1185,7 +1183,7 @@ class GdbMemfaultPostChunkBreakpoint(gdb.Breakpoint):
         if status != 202:
             print("Chunk Post Failed with Http Status Code {}".format(status))
             print("Reason: {}".format(reason))
-            print("ERROR: Disabling Memfault GDB Chunk Handler and Halting" "")
+            print("ERROR: Disabling Memfault GDB Chunk Handler and Halting")
             self.enabled = False
             return True
 
@@ -1319,6 +1317,12 @@ class MemfaultPostChunk(MemfaultGdbCommand):
 class MemfaultCoredump(MemfaultGdbCommand):
     """Captures a coredump from the target and uploads it to Memfault for analysis"""
 
+    ALPHANUM_SLUG_DOTS_COLON_REGEX = r"^[-a-zA-Z0-9_\.\+:]+$"
+    ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_REGEX = r"^[-a-zA-Z0-9_\.\+: \(\)\[\]/]+$"
+    DEFAULT_CORE_DUMP_HARDWARE_REVISION = "DEVBOARD"
+    DEFAULT_CORE_DUMP_SERIAL_NUMBER = "DEMOSERIALNUMBER"
+    DEFAULT_CORE_DUMP_SOFTWARE_TYPE = "main"
+    DEFAULT_CORE_DUMP_SOFTWARE_VERSION = "1.0.0"
     GDB_CMD = "memfault coredump"
 
     def _check_permission(self, analytics_props):
@@ -1382,7 +1386,7 @@ Proceed? [y/n]
             ANALYTICS.error("Missing login or key")
             return
 
-        cd_writer, elf_fn = self.build_coredump_writer(parsed_args.region, analytics_props)
+        cd_writer, elf_fn = self.build_coredump_writer(parsed_args, analytics_props)
         if not cd_writer:
             return
 
@@ -1390,7 +1394,7 @@ Proceed? [y/n]
 
         # TODO: try calling memfault_platform_get_device_info() and use returned info if present
         # Populate the version based on hash of the .elf for now:
-        software_version = "1.0.0-md5+{}".format(elf_hash[:8])
+        software_version = cd_writer.software_version + "-md5+{}".format(elf_hash[:8])
         cd_writer.software_version = software_version
 
         if not parsed_args.no_symbols:
@@ -1464,6 +1468,54 @@ Proceed? [y/n]
             nargs=2,
             action="append",
         )
+
+        def _character_check(regex, name):
+            def _check_inner(input):
+                pattern = re.compile(regex)
+                if not pattern.match(input):
+                    raise argparse.ArgumentTypeError(
+                        "Invalid characters in {}: {}.".format(name, input)
+                    )
+
+                return input
+
+            return _check_inner
+
+        parser.add_argument(
+            "--device-serial",
+            type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "device serial"),
+            help="Overrides the device serial that will be reported in the core dump. (default: {})".format(
+                self.DEFAULT_CORE_DUMP_SERIAL_NUMBER
+            ),
+            default=self.DEFAULT_CORE_DUMP_SERIAL_NUMBER,
+        )
+        parser.add_argument(
+            "--software-type",
+            type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "software type"),
+            help="Overrides the software type that will be reported in the core dump. (default: {})".format(
+                self.DEFAULT_CORE_DUMP_SOFTWARE_TYPE
+            ),
+            default=self.DEFAULT_CORE_DUMP_SOFTWARE_TYPE,
+        )
+        parser.add_argument(
+            "--software-version",
+            type=_character_check(
+                self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_REGEX, "software version"
+            ),
+            help="Overrides the software version that will be reported in the core dump. (default: {})".format(
+                self.DEFAULT_CORE_DUMP_SOFTWARE_VERSION
+            ),
+            default=self.DEFAULT_CORE_DUMP_SOFTWARE_VERSION,
+        )
+        parser.add_argument(
+            "--hardware-revision",
+            type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "hardware revision"),
+            help="Overrides the hardware revision that will be reported in the core dump. (default: {})".format(
+                self.DEFAULT_CORE_DUMP_HARDWARE_REVISION
+            ),
+            default=self.DEFAULT_CORE_DUMP_HARDWARE_REVISION,
+        )
+
         return populate_config_args_and_parse_args(parser, unicode_args, config)
 
     @staticmethod
@@ -1477,7 +1529,7 @@ Proceed? [y/n]
             analytics_props["xtensa_target"] = target
         return None
 
-    def build_coredump_writer(self, regions, analytics_props):
+    def build_coredump_writer(self, parsed_args, analytics_props):
         # inferior.architecture() is a relatively new API, so let's use "show arch" instead:
         show_arch_output = gdb.execute("show arch", to_string=True).lower()
         current_arch_matches = re.search("currently ([^)]+)", show_arch_output)
@@ -1551,11 +1603,18 @@ This command requires that you use the 'load' command to load a binary/symbol (.
                 "Hints: did you compile with -g or similar flags? did you inadvertently strip the binary?"
             )
 
-        cd_writer = MemfaultCoredumpWriter(arch)
+        cd_writer = MemfaultCoredumpWriter(
+            arch,
+            parsed_args.device_serial,
+            parsed_args.software_type,
+            parsed_args.software_version,
+            parsed_args.hardware_revision,
+        )
         cd_writer.regs = arch.get_current_registers(thread, analytics_props)
 
         arch.add_platform_specific_sections(cd_writer, inferior, analytics_props)
 
+        regions = parsed_args.region
         if regions is None:
             print(
                 "No capturing regions were specified; will default to capturing the first 1MB for each used RAM address range."

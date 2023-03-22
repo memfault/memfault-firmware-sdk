@@ -234,6 +234,18 @@ config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
         The larger the size, the more stack frames Memfault can recover for tasks. The
         default setting typically allows for 4 or more frames to be recovered.
 
+config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
+       bool "Collect full thread stacks in coredumps"
+       default n
+       depends on THREAD_STACK_INFO
+       help
+        When enabled, Memfault will collect the full thread stack in
+        coredumps. This will likely increase the size of coredumps, and there
+        will no longer be a strict ceiling on the coredump task region sizes.
+        This is provided as an alternative when capturing all of RAM is not
+        viable but full thread stack analysis (watermarking, stack overflow
+        tagging) is desired.
+
 config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
        int "Maximum amount of tasks to collect in a coredump"
        default 32

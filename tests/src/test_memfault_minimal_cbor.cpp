@@ -478,3 +478,14 @@ TEST(MemfaultMinimalCbor, Test_BufTooSmall) {
   const bool success = memfault_cbor_encode_string(&encoder, "a");
   CHECK(!success);
 }
+
+TEST(MemfaultMinimalCbor, Test_Null) {
+  sMemfaultCborEncoder encoder;
+  uint8_t result[1];
+  memfault_cbor_encoder_init(&encoder, prv_write_cb, result, MEMFAULT_ARRAY_SIZE(result));
+
+  const bool success = memfault_cbor_encode_null(&encoder);
+  CHECK(success);
+
+  LONGS_EQUAL(0xF6, result[0]);
+}

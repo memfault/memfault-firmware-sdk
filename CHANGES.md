@@ -1,3 +1,30 @@
+### Changes between Memfault SDK 0.42.0 and 0.41.2 - Mar 22, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add option to capture full thread stacks for classifying stack overflows and
+    determining stack high watermarks. This feature is enabled by setting
+    `CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS=y`
+  - Remove usage of the `zephyr.h` header in preparation for Zephyr v3.4.0
+
+- `memfault_gdb.py`:
+  - Add support for exporting data from GCC 12 compiled symbol files
+  - Add arguments to override device serial ID, software type, software version,
+    and hardware revision
+
+#### :boom: Breaking Changes
+
+- Metrics:
+  - Integer type metrics (signed/unsigned) will reset to NULL when not set
+    during a heartbeat interval. This NULL value will be discarded by Memfault
+    when received. The previous behavior was to reset to 0 which makes
+    discarding values difficult as 0 is a valid value for these types. For more
+    info please see the
+    [Metrics](https://docs.memfault.com/docs/mcu/metrics-api#setting-metric-values)
+    docs.
+
 ### Changes between Memfault SDK 0.41.2 and SDK 0.41.1 - Mar 10, 2023
 
 #### :chart_with_upwards_trend: Improvements

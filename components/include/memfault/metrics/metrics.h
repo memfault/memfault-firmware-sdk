@@ -116,7 +116,10 @@ typedef struct MemfaultMetricsBootInfo {
 } sMemfaultMetricBootInfo;
 
 //! Initializes the metric events API.
-//! All heartbeat values will be initialized to 0.
+//! All heartbeat values will be initialized to their reset values.
+//! Integer types will be reset to unset/null.
+//! Timer metrics will be reset to 0.
+//! String metrics will be reset to empty strings.
 //! @param storage_impl The storage location to serialize metrics out to
 //! @param boot_info Info added to metrics to facilitate computing aggregate statistics in
 //!  the Memfault cloud
@@ -126,6 +129,9 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
                           const sMemfaultMetricBootInfo *boot_info);
 
 //! Set the value of a signed integer metric.
+//!
+//! Integer metrics that are unset during a heartbeat interval
+//! are sent as null and dropped when received.
 //! @param key The key of the metric. @see MEMFAULT_METRICS_KEY
 //! @param value The new value to set for the metric
 //! @return 0 on success, else error code
@@ -162,7 +168,7 @@ int memfault_metrics_heartbeat_timer_stop(MemfaultMetricId key);
 //! @param key The key of the metric. @see MEMFAULT_METRICS_KEY
 //! @param inc The amount to increment the metric by
 //! @return 0 on success, else error code
-//! @note The metric must be of type kMemfaultMetricType_Counter
+//! @note The metric must be of type kMemfaultMetricType_Unsigned or kMemfaultMetricType_Signed
 int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 
 //! For debugging purposes: prints the current heartbeat values using

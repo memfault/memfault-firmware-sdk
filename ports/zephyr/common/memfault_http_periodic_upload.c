@@ -3,15 +3,13 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/ports/zephyr/http.h"
-
-#include "memfault/core/data_packetizer.h"
-#include "memfault/core/debug_log.h"
-
 #include <init.h>
 #include <kernel.h>
 #include <random/rand32.h>
-#include <zephyr.h>
+
+#include "memfault/core/data_packetizer.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/ports/zephyr/http.h"
 
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(

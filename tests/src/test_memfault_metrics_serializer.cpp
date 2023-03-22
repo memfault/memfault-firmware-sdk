@@ -19,7 +19,7 @@
 #include "memfault/metrics/utils.h"
 
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
-#define FAKE_EVENT_STORAGE_SIZE 54
+#define FAKE_EVENT_STORAGE_SIZE 56
 
 TEST_GROUP(MemfaultMetricsSerializer){
   void setup() {
@@ -35,7 +35,8 @@ TEST_GROUP(MemfaultMetricsSerializer){
 
 //
 // For the purposes of our serialization test, we will
-// just serialize 1 of each supported type
+// just serialize 1 of each supported type plus two unset
+// integers (signed + unsigned) for 6 total metrics
 //
 
 void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void *ctx) {
@@ -44,10 +45,20 @@ void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void 
 
   info.type = kMemfaultMetricType_Unsigned;
   info.val.u32 = 1000;
+  info.is_set = true;
+  cb(ctx, &info);
+
+  // Test an unset unsigned metric
+  info.is_set = false;
   cb(ctx, &info);
 
   info.type = kMemfaultMetricType_Signed;
   info.val.i32 = -1000;
+  info.is_set = true;
+  cb(ctx, &info);
+
+  // Test an unset signed metric
+  info.is_set = false;
   cb(ctx, &info);
 
   info.type = kMemfaultMetricType_Timer;
@@ -68,7 +79,9 @@ size_t memfault_metrics_heartbeat_get_num_metrics(void) {
   // if this fails, it means we need to add add a report for the new type
   // to the fake "memfault_metrics_heartbeat_iterate"
   LONGS_EQUAL(kMemfaultMetricType_NumTypes, 4);
-  return kMemfaultMetricType_NumTypes;
+
+  // Additionally we test that unset integers (signed + unsigned) are set to null
+  return kMemfaultMetricType_NumTypes + 2;
 }
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
@@ -84,18 +97,14 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
   // "9": "1.2.3",
   // "6": "evt_24",
   // "4": {
-  //  "1": [ 1000, -1000, 1234, "123456789abcde" ]
+  //  "1": [ 1000, null, -1000, null, 1234, "123456789abcde" ]
   //  }
   // }
   const uint8_t expected_serialization[] = {
-    0xa6,
-    0x02, 0x01,
-    0x03, 0x01,
-    0x0a, 0x64, 'm', 'a', 'i', 'n',
-    0x09, 0x65, '1', '.', '2', '.', '3',
-    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-    0x04, 0xa1, 0x01, 0x84, 0x19, 0x03, 0xe8, 0x39, 0x03, 0xe7, 0x19, 0x04, 0xd2, 0x6e,
-      '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
+    0xa6, 0x02, 0x01, 0x03, 0x01, 0x0a, 0x64, 'm',  'a',  'i',  'n',  0x09, 0x65, '1',
+    '.',  '2',  '.',  '3',  0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4',  0x04, 0xa1,
+    0x01, 0x86, 0x19, 0x03, 0xe8, 0xf6, 0x39, 0x03, 0xe7, 0xf6, 0x19, 0x04, 0xd2, 0x6e,
+    '1',  '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  'a',  'b',  'c',  'd',  'e',
   };
 
   fake_event_storage_assert_contents_match(expected_serialization, sizeof(expected_serialization));
@@ -103,7 +112,7 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerializeWorstCaseSize) {
   const size_t worst_case_storage = memfault_metrics_heartbeat_compute_worst_case_storage_size();
-  LONGS_EQUAL(60, worst_case_storage);
+  LONGS_EQUAL(70, worst_case_storage);
 }
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerializeOutOfSpace) {

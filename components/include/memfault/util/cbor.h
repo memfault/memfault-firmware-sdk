@@ -155,6 +155,11 @@ bool memfault_cbor_encode_uint64_as_double(sMemfaultCborEncoder *encoder, uint64
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_long_signed_integer(sMemfaultCborEncoder *encoder, int64_t value);
 
+//! Encode a CBOR null value
+//!
+//! @param encoder The encoder context to use
+//! @return true on success, false otherwise
+bool memfault_cbor_encode_null(sMemfaultCborEncoder *encoder);
 
 //! NOTE: For internal use only, included in the header so it's easy for a caller to statically
 //! allocate the structure

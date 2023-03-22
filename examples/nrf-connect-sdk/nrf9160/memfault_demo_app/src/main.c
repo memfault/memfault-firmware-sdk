@@ -10,12 +10,9 @@
 //!     (memfault_nrfconnect_port_install_root_certs())
 //!  4. Start of the LTE modem & AT interface
 
-#include "memfault_demo_app.h"
-
-#include <string.h>
-
-#include <zephyr.h>
 #include <device.h>
+#include <kernel.h>
+#include <string.h>
 #include <sys/printk.h>
 
 #include "memfault/core/build_info.h"
@@ -25,6 +22,7 @@
 #include "memfault/http/http_client.h"
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/ports/ncs/version.h"
+#include "memfault_demo_app.h"
 
 // nRF Connect SDK < 1.3
 #if (NCS_VERSION_MAJOR == 1) && (NCS_VERSION_MINOR < 3)

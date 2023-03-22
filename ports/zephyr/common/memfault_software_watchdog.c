@@ -8,10 +8,10 @@
 //! The implementation uses the k_timer_ module. When the timer expires,
 //! the implementation will assert so a coredump of the system state is captured.
 
+#include <kernel.h>
+
 #include "memfault/panics/assert.h"
 #include "memfault/ports/watchdog.h"
-
-#include <zephyr.h>
 
 static void prv_software_watchdog_timeout(struct k_timer *dummy) {
   MEMFAULT_SOFTWARE_WATCHDOG();

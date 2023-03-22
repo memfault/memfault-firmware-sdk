@@ -104,8 +104,8 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 1",
     "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 1",
-    "  test_key_unsigned: 0",
-    "  test_key_signed: 0",
+    "  test_key_unsigned: null",
+    "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
@@ -139,10 +139,10 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   const char *heartbeat_debug_print_reset[] = {
     "Heartbeat keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
-    "  MemfaultSdkMetric_UnexpectedRebootCount: 0",
+    "  MemfaultSdkMetric_UnexpectedRebootCount: null",
     "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 0",
-    "  test_key_unsigned: 0",
-    "  test_key_signed: 0",
+    "  test_key_unsigned: null",
+    "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
