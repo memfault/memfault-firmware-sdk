@@ -138,8 +138,6 @@ if (SDK_FW_TASKS_DIR / "modus.py").exists():
         mbed.mbed_build,
         nrf.nrf_clean,
         nrf.nrf_build,
-        wiced.wiced_clean,
-        wiced.wiced_build,
         esp32.esp32_app_clean,
         esp32.esp32_app_build,
         esp32.esp32_app_clean,

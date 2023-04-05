@@ -34,6 +34,7 @@ if MEMFAULT
 
     config MEMFAULT_CLI_ENABLED
         bool "Enables the Memfault debug CLI"
+        depends on USING_ESP_CONSOLE
         default y
         help
             By default, Memfault will register CLI commands for easily exercising the SDK

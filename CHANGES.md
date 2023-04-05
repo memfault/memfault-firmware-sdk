@@ -1,3 +1,20 @@
+### Changes between Memfault SDK 0.42.1 and 0.42.0 - April 4, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Remove `LEGACY_CONFIG_PATH` Kconfig selection, now that the `zephyr.h`
+    header is no longer used as of Memfault SDK `0.42.0`. This option no longer
+    exists after Zephyr v3.3.0. Fixes
+    [#48](https://github.com/memfault/memfault-firmware-sdk/issues/48)
+
+- Minor changes to the [ESP8266 port](ports/esp8266_sdk) to improve
+  out-of-the-box compilation
+- Add new functionality to output buffered log data via
+  `memfault_log_export_logs()`. See the
+  [`log.h` header](components/include/memfault/core/log.h) for detailed usage.
+
 ### Changes between Memfault SDK 0.42.0 and 0.41.2 - Mar 22, 2023
 
 #### :chart_with_upwards_trend: Improvements
@@ -7,7 +24,8 @@
   - Add option to capture full thread stacks for classifying stack overflows and
     determining stack high watermarks. This feature is enabled by setting
     `CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS=y`
-  - Remove usage of the `zephyr.h` header in preparation for Zephyr v3.4.0
+  - Remove usage of the `zephyr.h` header in preparation for Zephyr v3.4.0.
+    Thanks to @jfischer-no for the patch!
 
 - `memfault_gdb.py`:
   - Add support for exporting data from GCC 12 compiled symbol files
@@ -32,8 +50,9 @@
 - Zephyr / nRF-Connect SDK:
   - Improve compatibility with Zephyr pre-3.0 deferred logging, when using the
     Memfault backend
-  - Add an option to the [examples/nrf-connect/nrf5](examples/nrf-connect/nrf5)
-    to enable capturing all of RAM in a coredump.
+  - Add an option to the
+    [examples/nrf-connect-sdk/nrf5](examples/nrf-connect-sdk/nrf5) to enable
+    capturing all of RAM in a coredump.
 
 ### Changes between Memfault SDK 0.41.1 and SDK 0.41.0 - Mar 1, 2023
 

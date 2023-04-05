@@ -114,11 +114,6 @@ static void prv_try_get_cdr_source_with_data(sMfltCdrSourceCtx *ctx) {
   }
 }
 
-static void prv_fill_header_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-  uint8_t *header_buf = (uint8_t *)ctx;
-  memcpy(&header_buf[offset], buf, buf_len);
-}
-
 static bool prv_has_cdr(size_t *total_size) {
   sMfltCdrSourceCtx *cdr_ctx = &s_memfault_cdr_source_ctx;
 
@@ -128,7 +123,8 @@ static bool prv_has_cdr(size_t *total_size) {
   }
 
   sMemfaultCborEncoder encoder;
-  memfault_cbor_encoder_init(&encoder, prv_fill_header_cb, cdr_ctx->encoded_metadata.data,
+  memfault_cbor_encoder_init(&encoder, memfault_cbor_encoder_memcpy_write,
+                             cdr_ctx->encoded_metadata.data,
                              sizeof(cdr_ctx->encoded_metadata.data));
 
   if (!prv_encode_cdr_metadata(&encoder, cdr_ctx)) {

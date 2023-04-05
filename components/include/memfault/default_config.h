@@ -103,6 +103,13 @@ extern "C" {
 #define MEMFAULT_LOG_DATA_SOURCE_ENABLED 1
 #endif
 
+//! Maximum length of a compact log export chunk.
+//!
+//! Controls the maximum chunk length when exporting compact logs with memfault_log_export.
+#ifndef MEMFAULT_LOG_EXPORT_CHUNK_MAX_LEN
+  #define MEMFAULT_LOG_EXPORT_CHUNK_MAX_LEN 80
+#endif
+
 //! Maximum length a log record can occupy
 //!
 //! Structs holding this log may be allocated on the stack so care should be taken

@@ -2,22 +2,21 @@
 //!
 //! @brief
 
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
+#include <setjmp.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_platform_metrics_locking.h"
-
+#include "memfault/core/compact_log_serializer.h"
 #include "memfault/core/log.h"
 #include "memfault/core/log_impl.h"
-#include "memfault/core/compact_log_serializer.h"
-
+#include "memfault/core/sdk_assert.h"
 #include "memfault_log_data_source_private.h"
 #include "memfault_log_private.h"
 
@@ -354,15 +353,48 @@ TEST(MemfaultLog, Test_Iterate) {
   memfault_log_iterate(prv_iterate_callback, &iterator);
 }
 
-#if MEMFAULT_COMPACT_LOG_ENABLE
+TEST(MemfaultLog, Test_LogsExport) {
+  uint8_t s_ram_log_store[128] = {0};
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
-static uint8_t s_fake_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  const char *log0 = "Normal Log";
+  const size_t log0_len = strlen(log0);
+  memfault_log_save_preformatted(level, log0, log0_len);
+
+  mock().enable();
+  mock().expectOneCall("memfault_platform_log_raw").withStringParameter("output", log0);
+
+  memfault_log_export_logs();
+  mock().checkExpectations();
+}
+
+static jmp_buf s_assert_jmp_buf;
+
+void memfault_sdk_assert_func(void) {
+  // we make use of longjmp because this is a noreturn function
+  longjmp(s_assert_jmp_buf, -1);
+}
+
+TEST(MemfaultLog, Test_LogExportNullLog) {
+  uint8_t s_ram_log_store[128] = {0};
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  if (setjmp(s_assert_jmp_buf) == 0) {
+    memfault_log_export_log(NULL);
+  }
+}
+
+#if MEMFAULT_COMPACT_LOG_ENABLE
 
 bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder,
                                      MEMFAULT_UNUSED uint32_t log_id,
                                      MEMFAULT_UNUSED uint32_t compressed_fmt,
                                      MEMFAULT_UNUSED va_list args) {
-  return memfault_cbor_join(encoder, s_fake_compact_log, sizeof(s_fake_compact_log));
+  uint8_t *mock_compact_log = (uint8_t *)mock().getData("mock_compact_log").getPointerValue();
+  size_t mock_compact_log_len = mock().getData("mock_compact_log_len").getUnsignedIntValue();
+
+  return memfault_cbor_join(encoder, mock_compact_log, mock_compact_log_len);
 }
 
 TEST(MemfaultLog, Test_CompactLog) {
@@ -371,10 +403,74 @@ TEST(MemfaultLog, Test_CompactLog) {
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
   eMemfaultLogRecordType type = kMemfaultLogRecordType_Compact;
+  uint8_t mock_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+
+  mock().enable();
+
+  // Set mock data for log serialization
+  mock().setData("mock_compact_log", mock_compact_log);
+  mock().setData("mock_compact_log_len", (int)sizeof(mock_compact_log));
+  mock().ignoreOtherCalls();
+
   memfault_compact_log_save(level, 0, 0);
 
   // Read the log:
-  prv_read_log_and_check(level, type, s_fake_compact_log, sizeof(s_fake_compact_log));
+  prv_read_log_and_check(level, type, mock_compact_log, sizeof(mock_compact_log));
+}
+
+TEST(MemfaultLog, Test_CompactLogsExport) {
+  uint8_t s_ram_log_store[40] = {0};
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  uint8_t mock_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+
+  mock().enable();
+
+  // Set mock data for log serialization
+  mock().setData("mock_compact_log", mock_compact_log);
+  mock().setData("mock_compact_log_len", (int)sizeof(mock_compact_log));
+
+  // Verify that compact log chunk is output
+  mock().expectOneCall("memfault_platform_log_raw").withStringParameter("output", "ML:AQIDBA==:");
+  mock().ignoreOtherCalls();
+
+  memfault_compact_log_save(level, 0, 0, 0);
+
+  memfault_log_export_logs();
+  mock().checkExpectations();
+}
+
+TEST(MemfaultLog, Test_CompactLogsExportMultiChunk) {
+  uint8_t s_ram_log_store[40] = {0};
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  // Initialize mock log data twice the size of max chunk to ensure two log chunks
+  uint8_t multi_chunk_compact_log[MEMFAULT_LOG_EXPORT_CHUNK_MAX_LEN * 2];
+  for (uint8_t i = 0; i < sizeof(multi_chunk_compact_log); i++) {
+    multi_chunk_compact_log[i] = i;
+  }
+
+  mock().enable();
+
+  // Set mock data for log serialization
+  mock().setData("mock_compact_log", multi_chunk_compact_log);
+  mock().setData("mock_compact_log_len", (int)sizeof(multi_chunk_compact_log));
+
+  // Verify two compact log chunks are output with correct payload
+  mock()
+    .expectOneCall("memfault_platform_log_raw")
+    .withStringParameter("output", "ML:AAECAwQFBgcICQ==:");
+  mock()
+    .expectOneCall("memfault_platform_log_raw")
+    .withStringParameter("output", "ML:CgsMDQ4PEBESEw==:");
+  mock().ignoreOtherCalls();
+
+  memfault_compact_log_save(level, 0, 0, 0);
+
+  memfault_log_export_logs();
+  mock().checkExpectations();
 }
 
 #endif

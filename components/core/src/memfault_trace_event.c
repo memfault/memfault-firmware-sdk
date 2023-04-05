@@ -245,11 +245,6 @@ int memfault_trace_event_with_log_capture(
 
 #else
 
-static void prv_fill_compact_log_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-  uint8_t *log = (uint8_t *)ctx;
-  memcpy(&log[offset], buf, buf_len);
-}
-
 int memfault_trace_event_with_compact_log_capture(
     eMfltTraceReasonUser reason, void *lr_addr,
     uint32_t log_id, uint32_t compressed_fmt, ...) {
@@ -266,7 +261,7 @@ int memfault_trace_event_with_compact_log_capture(
   uint8_t log[MEMFAULT_TRACE_EVENT_MAX_LOG_LEN] = { 0 };
 
   sMemfaultCborEncoder encoder;
-  memfault_cbor_encoder_init(&encoder, prv_fill_compact_log_cb, log, sizeof(log));
+  memfault_cbor_encoder_init(&encoder, memfault_cbor_encoder_memcpy_write, log, sizeof(log));
   memfault_vlog_compact_serialize(&encoder, log_id, compressed_fmt, args);
   size_t log_len = memfault_cbor_encoder_deinit(&encoder);
 

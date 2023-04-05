@@ -161,6 +161,15 @@ bool memfault_cbor_encode_long_signed_integer(sMemfaultCborEncoder *encoder, int
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_null(sMemfaultCborEncoder *encoder);
 
+//! Helper utility to copy a given buffer to the output buffer at the given offset using memcpy.
+//!
+//! @param ctx Output buffer
+//! @param offset Offset data is copied to in output buffer
+//! @param buf Input buffer to be copied
+//! @param buf_len Length of input buffer
+void memfault_cbor_encoder_memcpy_write(void *ctx, uint32_t offset, const void *buf,
+                                        size_t buf_len);
+
 //! NOTE: For internal use only, included in the header so it's easy for a caller to statically
 //! allocate the structure
 struct MemfaultCborEncoder {

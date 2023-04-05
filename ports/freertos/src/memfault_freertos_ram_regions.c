@@ -82,19 +82,26 @@
 
 // Espressif's esp-idf project uses a forked and modified version of FreeRTOS to handle MCUs with
 // multiple cores. We check here to adjust the port accordingly to accommodate that.
-#ifdef ESP_PLATFORM
+#if defined(ESP_PLATFORM)
+  #include "sdkconfig.h"
+  #if !defined(CONFIG_IDF_TARGET_ESP8266)
+    #define MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
+  #endif
+#endif
+
+#if defined(MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION)
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
 
   #define CRITICAL_SECTION_ENTER() vTaskTakeEventListLock()
   #define CRITICAL_SECTION_EXIT() vTaskReleaseEventListLock()
-#else  // ESP_PLATFORM
+#else  // MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
   #include "FreeRTOS.h"
   #include "task.h"
 
   #define CRITICAL_SECTION_ENTER() portENTER_CRITICAL()
   #define CRITICAL_SECTION_EXIT() portEXIT_CRITICAL()
-#endif  // ESP_PLATFORM
+#endif  // MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"

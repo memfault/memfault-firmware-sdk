@@ -9,16 +9,30 @@
 #include <stddef.h>
 
 #include "memfault/core/build_info.h"
+#include "memfault/core/device_info.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault_build_id_private.h"
 
+static bool s_valid_device_info = false;
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-  memset(info, 0x0, sizeof(*info));
+  if (s_valid_device_info) {
+    static const sMemfaultDeviceInfo devinfo = {
+      .device_serial = "1234567890",
+      .software_type = "test",
+      .software_version = "1.0.0",
+      .hardware_version = "1.0.0",
+    };
+    *info = devinfo;
+  }
+  else{
+    memset(info, 0x0, sizeof(*info));
+  }
 }
 
 TEST_GROUP(MemfaultBuildInfo) {
   void setup() {
+    s_valid_device_info = false;
   }
 
   void teardown() {
@@ -190,3 +204,10 @@ TEST(MemfaultBuildInfo, Test_MemfaultBuildId) {
 }
 
 #endif /* MEMFAULT_USE_GNU_BUILD_ID */
+
+TEST(MemfaultBuildInfo, Test_MfltCoredumpUtil_DeviceInfoDump) {
+  mock().ignoreOtherCalls();
+  memfault_device_info_dump();
+  s_valid_device_info = true;
+  memfault_device_info_dump();
+}

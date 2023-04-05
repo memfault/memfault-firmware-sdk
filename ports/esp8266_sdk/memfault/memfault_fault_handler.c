@@ -7,6 +7,7 @@
 
 #include "memfault/panics/arch/xtensa/xtensa.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/panics/fault_handling.h"
 #include "memfault/esp8266_port/core.h"
 
 #include "FreeRTOS.h"

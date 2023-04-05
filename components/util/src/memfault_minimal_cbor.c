@@ -202,3 +202,9 @@ bool memfault_cbor_encode_null(sMemfaultCborEncoder *encoder) {
   uint8_t tmp_buf[] = {CBOR_NULL};
   return prv_add_to_result_buffer(encoder, tmp_buf, sizeof(tmp_buf));
 }
+
+void memfault_cbor_encoder_memcpy_write(void *ctx, uint32_t offset, const void *buf,
+                                        size_t buf_len) {
+  uint8_t *out_buf = (uint8_t *)ctx;
+  memcpy(&out_buf[offset], buf, buf_len);
+}

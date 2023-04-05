@@ -7,26 +7,25 @@
 //! is collected using the panics component, the logs will be decoded and displayed in the Memfault
 //! cloud UI.
 
-#include "memfault/core/log.h"
-#include "memfault/core/log_impl.h"
-#include "memfault_log_private.h"
-
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "memfault/config.h"
+#include "memfault/core/compact_log_serializer.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/log.h"
+#include "memfault/core/log_impl.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/sdk_assert.h"
+#include "memfault/util/base64.h"
 #include "memfault/util/circular_buffer.h"
 #include "memfault/util/crc16_ccitt.h"
-#include "memfault/core/compact_log_serializer.h"
-
-#include "memfault/config.h"
+#include "memfault_log_private.h"
 
 #if MEMFAULT_LOG_DATA_SOURCE_ENABLED
 #include "memfault_log_data_source_private.h"
@@ -262,6 +261,61 @@ bool memfault_log_read(sMemfaultLog *log) {
   return found_unread_log;
 }
 
+MEMFAULT_WEAK void memfault_log_export_msg(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
+                                           const char *msg, MEMFAULT_UNUSED size_t msg_len) {
+  memfault_platform_log_raw("%s", msg);
+}
+
+void memfault_log_export_log(sMemfaultLog *log) {
+  MEMFAULT_SDK_ASSERT(log != NULL);
+
+  char base64[MEMFAULT_LOG_EXPORT_BASE64_CHUNK_MAX_LEN];
+  size_t log_read_offset = 0;
+
+  switch (log->type) {
+    case kMemfaultLogRecordType_Compact:
+      while (log_read_offset < log->msg_len) {
+        memcpy(base64, MEMFAULT_LOG_EXPORT_BASE64_CHUNK_PREFIX,
+               MEMFAULT_LOG_EXPORT_BASE64_CHUNK_PREFIX_LEN);
+
+        size_t log_read_len =
+          MEMFAULT_MIN(log->msg_len - log_read_offset, MEMFAULT_LOG_EXPORT_CHUNK_MAX_LEN);
+        size_t write_offset = MEMFAULT_LOG_EXPORT_BASE64_CHUNK_PREFIX_LEN;
+
+        memfault_base64_encode(&log->msg[log_read_offset], log_read_len, &base64[write_offset]);
+        log_read_offset += log_read_len;
+        write_offset += MEMFAULT_BASE64_ENCODE_LEN(log_read_len);
+
+        memcpy(&base64[write_offset], MEMFAULT_LOG_EXPORT_BASE64_CHUNK_SUFFIX,
+               MEMFAULT_LOG_EXPORT_BASE64_CHUNK_SUFFIX_LEN);
+        write_offset += MEMFAULT_LOG_EXPORT_BASE64_CHUNK_SUFFIX_LEN;
+
+        base64[write_offset] = '\0';
+
+        memfault_log_export_msg(log->level, base64, write_offset);
+      }
+      break;
+    case kMemfaultLogRecordType_Preformatted:
+      memfault_log_export_msg(log->level, log->msg, log->msg_len);
+      break;
+    case kMemfaultLogRecordType_NumTypes:  // silences -Wswitch-enum
+    default:
+      break;
+  }
+}
+
+void memfault_log_export_logs(void) {
+  while (1) {
+    sMemfaultLog log = {0};
+    const bool log_found = memfault_log_read(&log);
+    if (!log_found) {
+      break;
+    }
+
+    memfault_log_export_log(&log);
+  }
+}
+
 static bool prv_should_log(eMemfaultPlatformLogLevel level) {
   if (!s_memfault_ram_logger.enabled) {
     return false;
@@ -342,17 +396,13 @@ static void prv_log_save(eMemfaultPlatformLogLevel level,
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
-static void prv_fill_compact_log_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-  uint8_t *log = (uint8_t *)ctx;
-  memcpy(&log[offset], buf, buf_len);
-}
-
 void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
                                uint32_t compressed_fmt, ...) {
   char log_buf[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1];
 
   sMemfaultCborEncoder encoder;
-  memfault_cbor_encoder_init(&encoder, prv_fill_compact_log_cb, log_buf, sizeof(log_buf));
+  memfault_cbor_encoder_init(&encoder, memfault_cbor_encoder_memcpy_write, log_buf,
+                             sizeof(log_buf));
 
   va_list args;
   va_start(args, compressed_fmt);

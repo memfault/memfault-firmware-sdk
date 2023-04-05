@@ -43,8 +43,17 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   printf("[%s] %s\n", prv_severity_level_to_str(level), log_buf);
 }
 
+void memfault_platform_log_raw(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+
+  char log_buf[128];
+  vsnprintf(log_buf, sizeof(log_buf), fmt, args);
+
+  printf("%s", log_buf);
+}
+
 void memfault_platform_hexdump(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
-                               MEMFAULT_UNUSED const void *data,
-                               MEMFAULT_UNUSED size_t data_len) {
+                               MEMFAULT_UNUSED const void *data, MEMFAULT_UNUSED size_t data_len) {
   // No fake impl yet!
 }
