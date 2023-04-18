@@ -20,6 +20,11 @@
 #endif
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
+
+static struct MfltTaskWatermarks {
+  uint32_t high_watermark;
+} s_task_watermarks[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
+
 #define EMPTY_SLOT 0
 
 static bool prv_find_slot(size_t *idx, struct k_thread *desired_tcb) {
@@ -89,6 +94,22 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
   }
 
   return 0;
+}
+
+//! Compute the high watermark of a task's stack. This is the amount of stack
+//! that has been written to since the task was created.
+static size_t prv_find_high_watermark(void *stack_start, size_t stack_size) {
+  const uint8_t *stack_ptr = (const uint8_t *)stack_start;
+
+  for (size_t i = 0; i < stack_size; i++) {
+    if (*stack_ptr != 0xAA) {
+      break;
+    }
+    stack_ptr++;
+  }
+
+  const uint8_t *stack_end = (const uint8_t *)stack_start + stack_size;
+  return stack_end - stack_ptr;
 }
 
 size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
@@ -164,9 +185,19 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       continue;
     }
 
+    // compute high watermarks for each task
+    s_task_watermarks[i].high_watermark = prv_find_high_watermark(sp, stack_size_to_collect);
+
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(sp, stack_size_to_collect);
     region_idx++;
   }
+
+  regions[region_idx] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_watermarks, sizeof(s_task_watermarks));
+  region_idx++;
+
+  regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
+  region_idx++;
 
   return region_idx;
 }

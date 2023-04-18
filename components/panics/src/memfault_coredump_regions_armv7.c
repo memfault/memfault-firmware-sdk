@@ -13,7 +13,7 @@
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
-#if MEMFAULT_COMPILER_ARM
+#if MEMFAULT_COMPILER_ARM_CORTEX_M
 
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
@@ -224,4 +224,4 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
   return &s_coredump_regions[0];
 }
 
-#endif /* MEMFAULT_COMPILER_ARM */
+#endif /* MEMFAULT_COMPILER_ARM_CORTEX_M */

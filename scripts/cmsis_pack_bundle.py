@@ -69,7 +69,7 @@ def get_file_element(file_name, common_prefix):
         common_prefix,
     )
     logging.debug("Adding %s", relative_path)
-    ele = ET.fromstring(
+    ele = ET.fromstring(  # noqa: S314
         """<file category="source" name="{PATH}"></file>""".format(PATH=relative_path)
     )
     ele.tail = "\n          "
@@ -132,7 +132,7 @@ def build_cmsis_pack(
     sdk_version = get_current_sdk_version(memfault_sdk_dir)
 
     tree = ET.ElementTree(
-        ET.fromstring(
+        ET.fromstring(  # noqa: S314
             PDSC_TEMPLATE.format(
                 SDK_VERSION=sdk_version, SDK_DATE=datetime.date.today().strftime("%Y-%m-%d")
             )

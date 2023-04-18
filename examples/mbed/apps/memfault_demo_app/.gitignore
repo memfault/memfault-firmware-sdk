@@ -1,5 +1,3 @@
-.mbed
 mbed-os/
 mbed-client-cli/
 mbed_config.h
-

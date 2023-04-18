@@ -24,7 +24,7 @@ typedef struct MemfaultAssertInfo {
   eMemfaultRebootReason assert_reason;
 } sMemfaultAssertInfo;
 
-#if MEMFAULT_COMPILER_ARM
+#if MEMFAULT_COMPILER_ARM_CORTEX_M
 
 //! Function prototypes for fault handlers
 

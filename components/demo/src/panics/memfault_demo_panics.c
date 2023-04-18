@@ -121,7 +121,7 @@ int memfault_demo_cli_cmd_assert(int argc, char *argv[]) {
   }
 }
 
-#if MEMFAULT_COMPILER_ARM
+#if MEMFAULT_COMPILER_ARM_CORTEX_M
 
 int memfault_demo_cli_cmd_hardfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   memfault_arch_disable_configurable_faults();
@@ -178,4 +178,25 @@ int memfault_demo_cli_loadaddr(int argc, char *argv[]) {
   return 0;
 }
 
-#endif /* MEMFAULT_COMPILER_ARM */
+#endif  // MEMFAULT_COMPILER_ARM_CORTEX_M
+
+#if MEMFAULT_COMPILER_ARM_V7_A_R
+
+int memfault_demo_cli_cmd_dataabort(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  // try to write to a read-only address
+  volatile int explode = *(int *)0xFFFFFFFF;
+
+  return explode | 1;
+}
+
+int memfault_demo_cli_cmd_prefetchabort(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  // We can trip a PrefetchAbort exception by simply attempting to execute any addresss >=
+  // 0xE000.0000
+  void (*bad_func)(void) = (void (*)(void))0xEEEEDEAD;
+  bad_func();
+
+  // We should never get here -- platforms PrefetchAbort handler should be tripped
+  return -1;
+}
+
+#endif  // MEMFAULT_COMPILER_ARM_V7_A_R

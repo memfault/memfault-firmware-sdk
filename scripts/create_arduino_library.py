@@ -42,7 +42,7 @@ def download_memfault_library(working_dir: str, tag: str):
     release_artifact_filepath = os.path.join(working_dir, release_artifact_filename)
     logging.debug("Downloading %s ...", release_artifact_filename)
     try:
-        urllib.request.urlretrieve(
+        urllib.request.urlretrieve(  # noqa: S310
             f"{MEMFAULT_RELEASE_PATH}/{release_artifact_filename}", release_artifact_filepath
         )
     except HTTPError as err:

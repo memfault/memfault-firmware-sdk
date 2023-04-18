@@ -25,7 +25,7 @@ extern "C" {
 //! - 2: crash by unaligned memory store
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]);
 
-#if MEMFAULT_COMPILER_ARM
+#if MEMFAULT_COMPILER_ARM_CORTEX_M
 
 //! Command which will generate a HardFault
 int memfault_demo_cli_cmd_hardfault(int argc, char *argv[]);
@@ -43,7 +43,16 @@ int memfault_demo_cli_cmd_usagefault(int argc, char *argv[]);
 //! specific faults due to protected regions
 int memfault_demo_cli_loadaddr(int argc, char *argv[]);
 
-#endif /* MEMFAULT_COMPILER_ARM */
+#endif  // MEMFAULT_COMPILER_ARM_CORTEX_M
+
+#if MEMFAULT_COMPILER_ARM_V7_A_R
+//! Trigger a data abort on an ARMv7-A/R chip
+int memfault_demo_cli_cmd_dataabort(int argc, char *argv[]);
+
+//! Trigger a prefetch abort on an ARMv7-A/R chip
+int memfault_demo_cli_cmd_prefetchabort(int argc, char *argv[]);
+
+#endif  // MEMFAULT_COMPILER_ARM_V7_A_R
 
 //! Command which will generate an assert
 int memfault_demo_cli_cmd_assert(int argc, char *argv[]);

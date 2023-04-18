@@ -306,7 +306,19 @@ void memfault_log_export_log(sMemfaultLog *log) {
 
 void memfault_log_export_logs(void) {
   while (1) {
+    // the TI ARM compiler warns about enumerated type mismatch in this
+    // zero-initializer, but we depend on the C99 spec (vs. the gcc extension,
+    // empty brace {}), so suppress the diagnostic here. Clang throws an invalid
+    // -Wmissing-field-initializers warning if we just cast, unfortunately.
+    #if defined(__TI_ARM__)
+      #pragma diag_push
+      #pragma diag_remark 190
+    #endif
     sMemfaultLog log = {0};
+    #if defined(__TI_ARM__)
+      #pragma diag_pop
+    #endif
+
     const bool log_found = memfault_log_read(&log);
     if (!log_found) {
       break;

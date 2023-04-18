@@ -6,6 +6,7 @@
 //! @brief
 //! Example STM32H7 specific routines for populating version data.
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -48,17 +48,17 @@ void prv_check1(const void *buf) {
 }
 
 void prv_check2(const void *buf) {
-  uint8_t buf2[200];
+  uint8_t buf2[200] = { 0 };
   prv_check1(buf2);
 }
 
 void prv_check3(const void *buf) {
-  uint8_t buf3[300];
+  uint8_t buf3[300] = { 0 };
   prv_check2(buf3);
 }
 
 void prv_check4(void) {
-  uint8_t buf4[400];
+  uint8_t buf4[400] = { 0 };
   prv_check3(buf4);
 }
 

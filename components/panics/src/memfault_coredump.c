@@ -65,6 +65,8 @@ typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
 // NB: We use the upper 16 bits of the MachineType TLV pair in the coredump to
 // encode additional metadata about the architecture being targeted
 
+#define MEMFAULT_MACHINE_TYPE_ARM 40
+
 #define MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET 16
 
 //! ESP32
@@ -82,15 +84,20 @@ typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
 #define MEMFAULT_MACHINE_TYPE_XTENSA_LX7_DUAL \
   ((3 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_XTENSA)
 
+//! Cortex-R
+#define MEMFAULT_MACHINE_TYPE_CORTEX_R \
+  ((1 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_ARM)
+
 typedef enum MfltCoredumpMachineType {
   kMfltCoredumpMachineType_None = 0,
-  kMfltCoredumpMachineType_ARM = 40,
+  kMfltCoredumpMachineType_ARM = MEMFAULT_MACHINE_TYPE_ARM,
   kMfltCoredumpMachineType_Aarch64 = 183,
   kMfltCoredumpMachineType_Xtensa = MEMFAULT_MACHINE_TYPE_XTENSA,
   kMfltCoredumpMachineType_XtensaLx106 = MEMFAULT_MACHINE_TYPE_XTENSA_LX106,
   kMfltCoredumpMachineType_XtensaLx7 = MEMFAULT_MACHINE_TYPE_XTENSA_LX7,
   kMfltCoredumpMachineType_XtensaLx7Dual = MEMFAULT_MACHINE_TYPE_XTENSA_LX7_DUAL,
   kMfltCoredumpMachineType_RiscV = 243,
+  kMfltCoredumpMachineType_ARM_Cortex_R = MEMFAULT_MACHINE_TYPE_CORTEX_R,
 } eMfltCoredumpMachineType;
 
 typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
@@ -236,8 +243,10 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
   return
 #if defined(MEMFAULT_UNITTEST)
     kMfltCoredumpMachineType_None
-#elif MEMFAULT_COMPILER_ARM
+#elif MEMFAULT_COMPILER_ARM_CORTEX_M
     kMfltCoredumpMachineType_ARM
+#elif MEMFAULT_COMPILER_ARM_V7_A_R
+    kMfltCoredumpMachineType_ARM_Cortex_R
 #elif defined(__aarch64__)
     kMfltCoredumpMachineType_Aarch64
 #elif defined(__XTENSA__) && defined(__XTENSA_WINDOWED_ABI__) && defined(__XTENSA_SOFT_FLOAT__)

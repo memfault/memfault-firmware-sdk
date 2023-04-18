@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 0.43.0 and 0.42.1 - April 18, 2023
+
+#### :rocket: New Features
+
+- Add coredump support for Cortex-R chips (ARMv7-R)
+
+#### :chart_with_upwards_trend: Improvements
+
+- Add a QEMU-based FreeRTOS example project, find it under
+  [examples/freertos](examples/freertos)
+- Switch `printf` function attribute to use `__printf__`, to avoid collision
+  with user code that redefines the `printf` token
+
+- Zephyr:
+
+  - Compute thread stack high watermark values on-target when capturing a
+    coredump. This enables showing high watermark information in the Memfault
+    coredump analysis view without capturing the full stack for a thread
+
 ### Changes between Memfault SDK 0.42.1 and 0.42.0 - April 4, 2023
 
 #### :chart_with_upwards_trend: Improvements

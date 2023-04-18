@@ -7,6 +7,7 @@
 #include "memfault/core/platform/debug_log.h"
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 

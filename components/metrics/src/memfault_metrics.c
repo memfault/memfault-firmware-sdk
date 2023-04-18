@@ -133,7 +133,7 @@ static const eMfltMetricKeyToValueIndex s_memfault_heartbeat_key_to_valueindex[]
   #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
     kMfltMetricKeyToValueIndex_##key_name,
   #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-    0,  // 0 for the placeholder so it's safe to index with
+    (eMfltMetricKeyToValueIndex) 0,  // 0 for the placeholder so it's safe to index with
 
   #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE

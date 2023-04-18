@@ -115,11 +115,11 @@ static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
 //! @param reboot_reg_reason New reboot reason from this boot
 //! @param prior_stored_reason Prior reboot reason stored in s_mflt_reboot_info
 static void prv_record_reboot_reason(eMemfaultRebootReason reboot_reg_reason,
-                                     eMemfaultRebootReason prior_stored_reason) {
+                                     uint32_t prior_stored_reason) {
   s_reboot_reason_data.reboot_reg_reason = reboot_reg_reason;
 
   if (prior_stored_reason != (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
-    s_reboot_reason_data.prior_stored_reason = prior_stored_reason;
+    s_reboot_reason_data.prior_stored_reason = (eMemfaultRebootReason)prior_stored_reason;
   } else {
     s_reboot_reason_data.prior_stored_reason = reboot_reg_reason;
   }

@@ -8,7 +8,7 @@
 
 #include "memfault/core/compiler.h"
 
-#if MEMFAULT_COMPILER_ARM
+#if MEMFAULT_COMPILER_ARM_CORTEX_M
 
 #include "memfault/panics/fault_handling.h"
 
@@ -585,4 +585,4 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 #endif
 }
 
-#endif /* MEMFAULT_COMPILER_ARM */
+#endif /* MEMFAULT_COMPILER_ARM_CORTEX_M */

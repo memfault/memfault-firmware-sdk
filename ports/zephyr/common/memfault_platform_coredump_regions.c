@@ -28,6 +28,8 @@ static sMfltCoredumpRegion s_coredump_regions[
     MEMFAULT_COREDUMP_MAX_TASK_REGIONS
     + 2 /* active stack(s) */
     + 1 /* _kernel variable */
+    + 1 /* s_task_watermarks */
+    + 1 /* s_task_tcbs */
 #if CONFIG_MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
     + 1
 #endif

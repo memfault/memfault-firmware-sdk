@@ -40,7 +40,7 @@ def get_depth_from_parent(project_dir, memfault_dir):
 
 
 def generate_link_element(name, path, path_type="1"):
-    ele = ET.fromstring(
+    ele = ET.fromstring(  # noqa: S314
         """
 \t<link>
 \t\t<name>{NAME}</name>
@@ -56,7 +56,7 @@ def generate_link_element(name, path, path_type="1"):
 
 
 def generate_linked_resources():
-    ele = ET.fromstring(
+    ele = ET.fromstring(  # noqa: S314
         """
 \t<linkedResources>
 </linkedResources>
@@ -151,7 +151,7 @@ def patch_project(
     logging.debug("Memfault Firmware SDK Path: %s", memfault_sdk_dir)
     logging.debug("Eclipse Memfault Root:      %s", parent_dir)
 
-    tree = ET.parse(project_file)
+    tree = ET.parse(project_file)  # noqa: S314
     root = tree.getroot()
 
     linked_resources_roots = root.findall(".//linkedResources")
@@ -244,7 +244,7 @@ def patch_cproject(
     if not os.path.isfile(cproject_file):
         raise Exception("Could not location project file at {}".format(cproject_file))
 
-    tree = ET.parse(cproject_file)
+    tree = ET.parse(cproject_file)  # noqa: S314
     root = tree.getroot()
 
     with open(cproject_file) as cproject_xml:

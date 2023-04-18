@@ -13,7 +13,7 @@ config ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
 config ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
     bool "Use metrics to monitor memory usage in the example app"
     default y
-    depends on MEMFAULT
+    depends on MEMFAULT && THREAD_STACK_INFO
 
 endmenu
 

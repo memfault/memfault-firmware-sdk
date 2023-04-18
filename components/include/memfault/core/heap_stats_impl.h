@@ -25,8 +25,6 @@ extern "C" {
 //! Value used to indicate entry is the end of the list
 #define MEMFAULT_HEAP_STATS_LIST_END UINT16_MAX
 
-typedef struct MfltHeapStatEntry sMfltHeapStatEntry;
-
 //! The heap stats data structure, which is exported when capturing a core.
 typedef struct MfltHeapStatEntry {
   // LR at time of allocation
