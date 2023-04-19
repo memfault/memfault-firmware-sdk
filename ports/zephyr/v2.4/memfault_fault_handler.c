@@ -28,8 +28,8 @@
 // Since we don't use the arguments we match anything with () to avoid
 // compiler warnings and share the same bootup logic
 static int prv_install_nmi_handler() {
-  extern void z_NmiHandlerSet(void (*pHandler)(void));
-  z_NmiHandlerSet(MEMFAULT_EXC_HANDLER_NMI);
+  extern void z_arm_nmi_set_handler(void (*pHandler)(void));
+  z_arm_nmi_set_handler(MEMFAULT_EXC_HANDLER_NMI);
   return 0;
 }
 
