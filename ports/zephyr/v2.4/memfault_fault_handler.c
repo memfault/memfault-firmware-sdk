@@ -18,6 +18,17 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
+#include "memfault/ports/zephyr/version.h"
+
+// Starting in v3.4, the handler set function was renamed and the declaration
+// added to a public header
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
+  #include <arch/arm/aarch32/nmi.h>
+  #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_arm_nmi_set_handler
+#else
+  #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_NmiHandlerSet
+extern void MEMFAULT_ZEPHYR_NMI_HANDLER_SET(void (*pHandler)(void));
+#endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
 
 // By default, the Zephyr NMI handler is an infinite loop. Instead
 // let's register the Memfault Exception Handler
@@ -28,8 +39,7 @@
 // Since we don't use the arguments we match anything with () to avoid
 // compiler warnings and share the same bootup logic
 static int prv_install_nmi_handler() {
-  extern void z_NmiHandlerSet(void (*pHandler)(void));
-  z_NmiHandlerSet(MEMFAULT_EXC_HANDLER_NMI);
+  MEMFAULT_ZEPHYR_NMI_HANDLER_SET(MEMFAULT_EXC_HANDLER_NMI);
   return 0;
 }
 

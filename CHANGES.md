@@ -1,3 +1,14 @@
+### Changes between Memfault SDK 0.43.1 and 0.43.0 - April 26, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - The `z_NmiHandlerSet` function is renamed for the upcoming Zephyr 3.4.
+    Support the new name. Fixes
+    [#49](https://github.com/memfault/memfault-firmware-sdk/issues/49). Thanks
+    @mbolivar-nordic for filing this issue!
+
 ### Changes between Memfault SDK 0.43.0 and 0.42.1 - April 18, 2023
 
 #### :rocket: New Features

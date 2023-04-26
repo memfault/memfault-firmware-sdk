@@ -27,7 +27,7 @@ static int prv_test_handler(int argc, char **argv) {
   MockActualCall &m = mock().actualCall(__func__);
   for (int i = 0; i < argc; i++) {
     char buffer[11] = {0};
-    sprintf(buffer, "%d", i);
+    snprintf(buffer, MEMFAULT_ARRAY_SIZE(buffer), "%d", i);
     m.withStringParameter(buffer, argv[i]);
   }
   return 0;

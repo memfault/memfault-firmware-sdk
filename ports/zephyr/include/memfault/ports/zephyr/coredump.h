@@ -17,10 +17,31 @@ extern "C" {
 //! For each task, we will collect the TCB and the portion of the stack where context is saved
 #define MEMFAULT_COREDUMP_MAX_TASK_REGIONS (CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS * 2)
 
-//! Helper to collect minimal RAM needed for backtraces of non-running FreeRTOS tasks
+//! Define base number of regions to collect (active stack(s)[2] + _kernel[1] + s_task_watermarks[1]
+//! + s_task_tcbs[1])
+#define MEMFAULT_ZEPHYR_BASE_COREDUMP_REGIONS (5)
+
+//! Define the total regions to collect
+#define MEMFAULT_ZEPHYR_COREDUMP_REGIONS                                        \
+  (MEMFAULT_ZEPHYR_BASE_COREDUMP_REGIONS + MEMFAULT_COREDUMP_MAX_TASK_REGIONS + \
+   IS_ENABLED(CONFIG_MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS) +                   \
+   IS_ENABLED(CONFIG_MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS))
+
+//! Helper to collect regions required to decode Zephyr state
+//!
+//! These regions include the active task, the kernel state, other tasks in the system,
+//! and bss/data regions if enabled.
+//!
+//! @param crash_info Contains info regarding the location and state of the crash
+//! @param regions Pointer to save region info into
+//! @param num_regions The number of entries in the 'regions' array
+size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
+                                            sMfltCoredumpRegion *regions, size_t num_regions);
+
+//! Helper to collect minimal RAM needed for backtraces of non-running Zephyr tasks
 //!
 //! @param[out] regions Populated with the regions that need to be collected in order
-//!  for task and stack state to be recovered for non-running FreeRTOS tasks
+//!  for task and stack state to be recovered for non-running Zephyr tasks
 //! @param[in] num_regions The number of entries in the 'regions' array
 //!
 //! @return The number of entries that were populated in the 'regions' argument. Will always

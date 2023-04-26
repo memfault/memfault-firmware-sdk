@@ -1,6 +1,10 @@
 
 menu "MEMFAULT_APP"
 
+# Set Memfault fw_version to the same as the mcuboot image version
+config MEMFAULT_NCS_FW_VERSION
+    default MCUBOOT_IMAGE_VERSION
+
 config MEMFAULT_APP_CAPTURE_ALL_RAM
     bool "Capture all RAM"
     help

@@ -36,7 +36,11 @@ static char *prv_der_to_pem(const uint8_t *der, size_t der_len) {
   char *pem = (char *)calloc(1, pem_len);
   CHECK(pem != NULL);
 
-  int pem_idx = sprintf(pem, "%s", cert_header);
+  int result = snprintf(pem, pem_len, "%s", cert_header);
+  CHECK(result > 0);
+
+  // Convert result to size_t as this will be used to index into pem
+  size_t pem_idx = (size_t)result;
 
   // encode the pem
   char *pem_body = (char *)calloc(1, encode_len);
@@ -52,7 +56,7 @@ static char *prv_der_to_pem(const uint8_t *der, size_t der_len) {
   }
   free(pem_body);
 
-  sprintf(&pem[pem_idx], "%s", cert_footer);
+  snprintf(&pem[pem_idx], pem_len - pem_idx, "%s", cert_footer);
   return pem;
 }
 
