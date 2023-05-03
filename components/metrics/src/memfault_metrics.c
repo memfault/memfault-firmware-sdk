@@ -649,6 +649,9 @@ int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount) {
   memfault_lock();
   {
     rv = prv_find_key_and_add(key, amount);
+    if(rv == 0) {
+        prv_read_write_is_value_set(key, true);
+    }
   }
   memfault_unlock();
   return rv;

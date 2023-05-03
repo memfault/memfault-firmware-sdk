@@ -1,3 +1,11 @@
+### Changes between Memfault SDK 0.43.2 and 0.43.1 - May 3, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Fix a bug 🐛 where metrics accumulated with `memfault_metrics_heartbeat_add()`
+  would no longer be included in the serialized heartbeat data. This regression
+  occurred in `0.42.0`.
+
 ### Changes between Memfault SDK 0.43.1 and 0.43.0 - April 26, 2023
 
 #### :chart_with_upwards_trend: Improvements

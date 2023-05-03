@@ -150,4 +150,23 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
                                MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_reset));
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
+
+  // Finally test that memfault_metrics_heartbeat_add by itself sets the metric
+  // to is_set
+  const char *heartbeat_add_non_null[] = {
+    "Heartbeat keys/values:",
+    "  MemfaultSdkMetric_IntervalMs: 0",
+    "  MemfaultSdkMetric_UnexpectedRebootCount: null",
+    "  MemfaultSdkMetric_UnexpectedRebootDidOccur: 0",
+    "  test_key_unsigned: 123",
+    "  test_key_signed: null",
+    "  test_key_timer: 0",
+    "  test_key_string: \"\"",
+  };
+  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Debug, heartbeat_add_non_null,
+                               MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));
+  // call add on this metric alone and confirm it is set
+  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(test_key_unsigned), 123);
+  memfault_metrics_heartbeat_debug_print();
+  mock().checkExpectations();
 }
