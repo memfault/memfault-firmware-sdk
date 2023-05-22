@@ -31,8 +31,10 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
     return 0;
   }
 
-  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 2)) == 0;
   size_t region_idx = 0;
+
+#if CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
+  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 2)) == 0;
 
   size_t stack_size_to_collect = memfault_platform_sanitize_address_range(
     crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
@@ -53,11 +55,16 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(psp, stack_size_to_collect);
     region_idx++;
   }
+#endif
 
+#if CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
   regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_kernel, sizeof(_kernel));
   region_idx++;
+#endif
 
+#if CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS
   region_idx += memfault_zephyr_get_task_regions(&regions[region_idx], num_regions - region_idx);
+#endif
 
   //
   // Now that we have captured all the task state, we will

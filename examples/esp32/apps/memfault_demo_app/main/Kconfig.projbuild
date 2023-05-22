@@ -33,7 +33,7 @@ config MEMFAULT_APP_WIFI_AUTOJOIN
 
 choice BLINK_LED
     prompt "Blink LED type"
-    default BLINK_LED_GPIO if IDF_TARGET_ESP32
+    default BLINK_LED_GPIO if IDF_TARGET_ESP32 || !SOC_RMT_SUPPORTED
     default BLINK_LED_RMT
     help
         Defines the default peripheral for blink example
@@ -50,6 +50,7 @@ config BLINK_LED_RMT_CHANNEL
     range 0 7
     default 0
     help
+        Note: this is only used if ESP-IDF version is < 5.0. See led.c.
         Set the RMT peripheral channel.
         ESP32 RMT channel from 0 to 7
         ESP32-S2 RMT channel from 0 to 3
@@ -59,16 +60,16 @@ config BLINK_LED_RMT_CHANNEL
 config BLINK_GPIO
     int "Blink GPIO number"
     range 0 48
-    default 8 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2
+    default 5 if IDF_TARGET_ESP32
     default 18 if IDF_TARGET_ESP32S2
     default 48 if IDF_TARGET_ESP32S3
-    default 5
+    default 8
     help
         GPIO number (IOxx) to blink on and off or the RMT signal for the addressable LED.
         Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
 
 # esp32c3 specific settings
-if IDF_TARGET_ESP32C3
+if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
     # Default optimize for size due to increase in binary size
     # This can be changed in root -> Compiler Options
     # The choice and prompt lines are required and must match the esp-idf definition

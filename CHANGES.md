@@ -1,3 +1,28 @@
+### Changes between Memfault SDK 0.43.3 and 0.43.2 - May 22, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add more granular Kconfig settings to control what's collected in
+    [`memfault_zephyr_coredump_get_regions()`](ports/zephyr/common/memfault_platform_coredump_regions.c).
+    Default settings are identical to before this change.
+
+    - `CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS`
+    - `CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION`
+    - `CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS`
+
+  - Fix a build error when an application is configured without
+    `CONFIG_HEAP_MEM_POOL_SIZE=y` (i.e. no `kmalloc` in use).
+
+- Fix a build error when building the
+  [nRF9160 example](examples/nrf-connect-sdk/nrf9160) on nRF-Connect SDK v2.3.0.
+
+- ESP-IDF:
+
+  - Add support for upcoming v5.1 release of the ESP-IDF SDK
+  - Add support in the [ESP32 example app](examples/esp32) for the ESP32-C6 chip
+
 ### Changes between Memfault SDK 0.43.2 and 0.43.1 - May 3, 2023
 
 #### :chart_with_upwards_trend: Improvements

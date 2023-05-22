@@ -16,8 +16,12 @@
 //!        _sbss = . ;
 //!        __bss_start__ = _sbss;
 //!        __memfault_capture_bss_start = .;
-//!         *tasks*.o(.bss COMMON .bss*)
-//!         *timers*.o(.bss COMMON .bss*)
+//!        /* Place all objects from the FreeRTOS timers and tasks modules here.
+//!           Note that some build systems will use 'timers.o' as the object
+//!           file name, and some may use variations of 'timers.c.o' or
+//!           'timers.obj' etc. This pattern should capture all of them. */
+//!         *tasks*.o*(.bss COMMON .bss*)
+//!         *timers*.o*(.bss COMMON .bss*)
 //!        __memfault_capture_bss_end = .;
 //!
 //! 2) Add this file to your build and update FreeRTOSConfig.h to
@@ -80,28 +84,21 @@
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
 
-// Espressif's esp-idf project uses a forked and modified version of FreeRTOS to handle MCUs with
-// multiple cores. We check here to adjust the port accordingly to accommodate that.
+// Espressif's esp-idf project uses a different include directory by default.
 #if defined(ESP_PLATFORM)
   #include "sdkconfig.h"
   #if !defined(CONFIG_IDF_TARGET_ESP8266)
-    #define MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
+    #define MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
   #endif
 #endif
 
-#if defined(MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION)
+#if defined(MEMFAULT_USE_ESP32_FREERTOS_INCLUDE)
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
-
-  #define CRITICAL_SECTION_ENTER() vTaskTakeEventListLock()
-  #define CRITICAL_SECTION_EXIT() vTaskReleaseEventListLock()
-#else  // MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
+#else  // MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
   #include "FreeRTOS.h"
   #include "task.h"
-
-  #define CRITICAL_SECTION_ENTER() portENTER_CRITICAL()
-  #define CRITICAL_SECTION_EXIT() portEXIT_CRITICAL()
-#endif  // MEMFAULT_USE_ESP32_FREERTOS_CRITICAL_SECTION
+#endif  // MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
@@ -140,18 +137,18 @@ static bool prv_find_slot(size_t *idx, void *desired_tcb) {
   return false;
 }
 
+// We're not locking around the 'memfault_freertos_trace_task_create()' /
+// 'memfault_freertos_trace_task_delete()' operations, since they are expected
+// to be called as part of the FreeRTOS kernel trace hooks ('traceTASK_CREATE()'
+// / 'traceTASK_DELETE()'), which are already serialized with a kernel lock or
+// port critical section
 void memfault_freertos_trace_task_create(void *tcb) {
   size_t idx = 0;
 
-  // For a typical workload, tasks are created as part of the boot process and never after
-  // the scheduler has been started but we add a critical section to cover the off-chance
-  // that two tasks are creating other tasks at exactly the same time.
-  CRITICAL_SECTION_ENTER();
   const bool slot_found = prv_find_slot(&idx, EMPTY_SLOT);
   if (slot_found) {
     s_task_tcbs[idx] = tcb;
   }
-  CRITICAL_SECTION_EXIT();
 
   if (!slot_found) {
     MEMFAULT_LOG_ERROR("Task registry full (%d)", MEMFAULT_PLATFORM_MAX_TRACKED_TASKS);
@@ -165,8 +162,6 @@ void memfault_freertos_trace_task_delete(void *tcb) {
     return;
   }
 
-  // NB: aligned 32 bit writes are atomic and the same task can't be deleted twice
-  // so no need for a critical section here
   s_task_tcbs[idx] = EMPTY_SLOT;
 }
 

@@ -92,10 +92,14 @@ else() # nRF Connect SDK Version >= 1.8.0
   # in v1.8+, use the modem_info library to get the IMEI for device_serial
   set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
 
-  # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
-  set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
-  # Explicitly set SPM=y because as of nRF Connect >= 2.1.0 it is marked as deprecated and no longer enabled by default
-  set(CONFIG_SPM y CACHE INTERNAL "")
+  # pre-2.3.0, SPM (Secure Partition Manager) can be used instead of the default
+  # TFM, and results in nicer backtraces in certain cases, so select it here.
+  if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.2.99)
+    # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
+    set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
+    # Explicitly set SPM=y because as of nRF Connect >= 2.1.0 it is marked as deprecated and no longer enabled by default
+    set(CONFIG_SPM y CACHE INTERNAL "")
+  endif()
 endif()
 
 # Required for app to compile against nRF Connect SDK <= v1.2

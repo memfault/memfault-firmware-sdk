@@ -14,8 +14,10 @@ import fnmatch
 import glob
 import logging
 import os
+import pathlib
 import re
 import shutil
+import sys
 import tempfile
 import xml.etree.ElementTree as ET  # noqa: N817
 
@@ -34,27 +36,25 @@ PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
     <keyword>Memfault Firmware SDK</keyword>
   </keywords>
   <components>
-    <bundle Cbundle="Memfault" Cclass="Memfault" Cversion="{SDK_VERSION}">
+    <bundle Cbundle="Memfault" Cclass="Utility" Cversion="{SDK_VERSION}">
       <description></description>
       <doc>https://docs.memfault.com/</doc>
-      <component Cclass="Memfault" Cgroup="FW SDK" Cversion="{SDK_VERSION}">
+      <component Cgroup="Memfault" Cversion="{SDK_VERSION}">
         <description>Release Version "{SDK_VERSION}"</description>
-        <Pre_Include_Global_h></Pre_Include_Global_h>
         <files>
-          <file category="include" name="components/include/memfault/"></file>
-          <file category="include" name="ports/include/memfault/"></file>
+          <file category="include" name="components/include/"></file>
+          <file category="include" name="ports/include/"></file>
         </files>
       </component>
       <!-- Template files end user is responsible for filling in -->
-      <component Cclass="Memfault Platform Port" Cgroup="FW SDK" Cversion="{SDK_VERSION}">
+      <component Cgroup="Memfault Platform Port" Cversion="{SDK_VERSION}">
         <description>Release version {SDK_VERSION}</description>
-        <Pre_Include_Global_h></Pre_Include_Global_h>
         <files>
-          <file attr="config" category="header" name="ports/templates/memfault_metrics_heartbeat_config.def" version="1.0.0"></file>
-          <file attr="config" category="header" name="ports/templates/memfault_platform_config.h" version="1.0.0"></file>
-          <file attr="config" category="header" name="ports/templates/memfault_platform_log_config.h" version="1.0.0"></file>
-          <file attr="config" category="source" name="ports/templates/memfault_platform_port.c" version="1.0.0"></file>
-          <file attr="config" category="header" name="ports/templates/memfault_trace_reason_user_config.def" version="1.0.0"></file>
+          <file attr="template" select="Metric keys config" category="other" name="ports/templates/memfault_metrics_heartbeat_config.def" version="1.0.0"></file>
+          <file attr="template" select="SDK config" category="header" name="ports/templates/memfault_platform_config.h" version="1.0.0"></file>
+          <file attr="template" select="Log config" category="header" name="ports/templates/memfault_platform_log_config.h" version="1.0.0"></file>
+          <file attr="template" select="Platform port" category="source" name="ports/templates/memfault_platform_port.c" version="1.0.0"></file>
+          <file attr="template" select="Trace reason keys config" category="other" name="ports/templates/memfault_trace_reason_user_config.def" version="1.0.0"></file>
         </files>
       </component>
     </bundle>
@@ -68,6 +68,8 @@ def get_file_element(file_name, common_prefix):
         file_name,
         common_prefix,
     )
+    # convert to posix style paths as required by CMSIS-Pack spec
+    relative_path = pathlib.PureWindowsPath(relative_path).as_posix()
     logging.debug("Adding %s", relative_path)
     ele = ET.fromstring(  # noqa: S314
         """<file category="source" name="{PATH}"></file>""".format(PATH=relative_path)
@@ -119,11 +121,16 @@ def build_cmsis_pack(
     components,
     target_port,
     output_file,
+    just_print,
 ):
     if not os.path.isdir(memfault_sdk_dir) or not os.path.isfile(
         "{}/VERSION".format(memfault_sdk_dir)
     ):
-        raise Exception("Could not locate memfault-firmware-sdk at {}".format(memfault_sdk_dir))
+        raise Exception(
+            "Invalid path to memfault-firmware-sdk (missing VERSION file) at {}".format(
+                memfault_sdk_dir
+            )
+        )
     common_prefix = memfault_sdk_dir
 
     logging.debug("===Determined Path Information===")
@@ -148,7 +155,7 @@ def build_cmsis_pack(
     component_nodes = root.findall(".//component")
     memfault_component = None
     for component_node in component_nodes:
-        cclass = component_node.get("Cclass", "")
+        cclass = component_node.get("Cgroup", "")
         if cclass == "Memfault":
             memfault_component = component_node
 
@@ -180,6 +187,11 @@ def build_cmsis_pack(
                 common_prefix=common_prefix,
             ):
                 file_resources.append(ele)
+
+    if just_print:
+        # use sys.stdout.buffer to write raw bytes
+        tree.write(sys.stdout.buffer, encoding="utf-8", xml_declaration=True)
+        return
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tree.write(f"{tmpdir_str}/{psdc_file_name}", encoding="utf-8", xml_declaration=True)
@@ -221,10 +233,21 @@ $ python cmsis_pack_bundle.py --memfault-sdk-dir /path/to/memfault-firmware-sdk
         default="core,demo,util,metrics,panics",
     )
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--output-file",
         help="The output file to write the pack to",
         default="memfault_firmware_sdk.pack",
+    )
+
+    group.add_argument(
+        "--print-pdsc",
+        default=False,
+        action="store_true",
+        help=(
+            "Print the generated pdsc file to stdout, instead of generating the pack. Useful for"
+            " debugging."
+        ),
     )
 
     parser.add_argument(
@@ -251,6 +274,5 @@ $ python cmsis_pack_bundle.py --memfault-sdk-dir /path/to/memfault-firmware-sdk
         components=components,
         target_port=args.target_port,
         output_file=args.output_file,
+        just_print=args.print_pdsc,
     )
-
-    logging.info("Hurray, memfault.pack successfully generated!")

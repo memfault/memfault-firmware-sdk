@@ -77,9 +77,35 @@ config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
           of the coredump. If not enough space is available for all of
           the data, the coredump will be truncated.
 
+config MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
+        bool "Include active stack region in coredump"
+        default y
+        help
+          When enabled, the stack region will be captured as part
+          of the coredump. If disabled, no backtrace will be possible.
+
+config MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
+        bool "Include kernel region in coredump"
+        default y
+        help
+          When enabled, the kernel region will be captured as part
+          of the coredump. The kernel region holds data structures required to
+          parse Zephyr thread state from the coredump data, so thread awareness
+          will not be possible if this region is omitted.
+
+config MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS
+        bool "Include tasks region in coredump"
+        default y
+        depends on MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
+        help
+          When enabled, Zephyr thread stacks will be captured as part of the
+          coredump. Disabling this will disable non-active-thread backtrace.
+
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
         default y
+        select SYS_HEAP_RUNTIME_STATS
+        depends on HEAP_MEM_POOL_SIZE > 0
         help
           When enabled, system heap stats are captured as part of the coredump.
           The heap stats subsystem collects info on system heap

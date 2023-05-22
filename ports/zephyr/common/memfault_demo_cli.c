@@ -203,11 +203,16 @@ static int prv_cli_cmd_double_free(const struct shell *shell, size_t argc, char 
   (void)argc;
   (void)argv;
 
+#if !CONFIG_MEMFAULT_HEAP_STATS
+  MEMFAULT_LOG_WARN(
+    "CONFIG_MEMFAULT_HEAP_STATS was disabled in the build, this command will have no effect");
+#else
   uint8_t *ptr = k_malloc(100);
   k_free(ptr);
   k_free(ptr);
 
   shell_print(shell, "Double free should have crashed the app! 🤯 Make sure CONFIG_ASSERT=y");
+#endif
 
   return -1;
 }

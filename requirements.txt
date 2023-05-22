@@ -1,9 +1,9 @@
 git+https://github.com/memfault/pyserial.git@master-memfault
-invoke==1.2.0
+invoke==2.1.1
 mbed-cli==1.10.1
 pyftdi==0.29.4
 west==0.13.0
-pyyaml==5.4
+pyyaml==6.0
 colorama==0.4.3
 fastcov==1.14
 pytest==7.0.1

@@ -61,7 +61,8 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo){
     .device_serial = "DEMOSERIAL",
     .software_type = "zephyr-app",
-    .software_version = "1.0.0+" ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1,
+    .software_version =
+      CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_SOFTWARE_VERSION "+" ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1,
     .hardware_version = CONFIG_BOARD,
   };
 }

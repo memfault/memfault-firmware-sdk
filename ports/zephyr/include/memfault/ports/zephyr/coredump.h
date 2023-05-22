@@ -17,9 +17,16 @@ extern "C" {
 //! For each task, we will collect the TCB and the portion of the stack where context is saved
 #define MEMFAULT_COREDUMP_MAX_TASK_REGIONS (CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS * 2)
 
-//! Define base number of regions to collect (active stack(s)[2] + _kernel[1] + s_task_watermarks[1]
-//! + s_task_tcbs[1])
-#define MEMFAULT_ZEPHYR_BASE_COREDUMP_REGIONS (5)
+//! Define base number of regions to collect
+#define MEMFAULT_ZEPHYR_BASE_COREDUMP_REGIONS                       \
+  (/* active stack(s) [2] */                                        \
+   (IS_ENABLED(CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS) * 2) \
+                                                                    \
+   /* _kernel [1] */                                                \
+   + IS_ENABLED(CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION)     \
+                                                                    \
+   /* s_task_watermarks + s_task_tcbs [2] */                        \
+   + (IS_ENABLED(CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS) * 2))
 
 //! Define the total regions to collect
 #define MEMFAULT_ZEPHYR_COREDUMP_REGIONS                                        \

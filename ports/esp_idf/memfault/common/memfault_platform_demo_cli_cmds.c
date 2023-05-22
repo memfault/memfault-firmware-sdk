@@ -37,6 +37,11 @@ static void IRAM_ATTR prv_recursive_crash(int depth) {
     MEMFAULT_ASSERT_RECORD(depth);
   }
 
+  if (depth == 15) {
+    // unreachable; this is to silence -Winfinite-recursion
+    return;
+  }
+
   // an array to create some stack depth variability
   int dummy_array[depth + 1];
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(dummy_array); i++) {
