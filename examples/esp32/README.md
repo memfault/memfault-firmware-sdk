@@ -228,7 +228,7 @@ I (116450) connect: Connecting to '<SSID>'
 Then post the data:
 
 ```plaintext
-esp32> post_core
+esp32> post_chunks
 I (12419) mflt: Posting Memfault Data...
 I (12419) mflt: Result: 0
 ```
