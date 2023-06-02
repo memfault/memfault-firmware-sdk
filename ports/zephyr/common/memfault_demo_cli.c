@@ -149,7 +149,7 @@ static int prv_memfault_assert_example(const struct shell *shell, size_t argc, c
 
 static int prv_hang_example(const struct shell *shell, size_t argc, char **argv) {
 #if !CONFIG_WATCHDOG
-  MEMFAULT_LOG_WARN("No watchdog configured, this will hang forever");
+  shell_print(shell, "No watchdog configured, this will hang forever");
 #else
   MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
 #endif
@@ -188,7 +188,7 @@ static int prv_memmanage_example(const struct shell *shell, size_t argc, char **
 
 static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, char **argv) {
 #if !CONFIG_ASSERT
-  MEMFAULT_LOG_WARN("CONFIG_ASSERT was disabled in the build, this command will have no effect");
+  shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command will have no effect");
 #endif
   __ASSERT(0, "test assert");
   return 0;
@@ -204,7 +204,8 @@ static int prv_cli_cmd_double_free(const struct shell *shell, size_t argc, char 
   (void)argv;
 
 #if !CONFIG_MEMFAULT_HEAP_STATS
-  MEMFAULT_LOG_WARN(
+  shell_print(
+    shell,
     "CONFIG_MEMFAULT_HEAP_STATS was disabled in the build, this command will have no effect");
 #else
   uint8_t *ptr = k_malloc(100);

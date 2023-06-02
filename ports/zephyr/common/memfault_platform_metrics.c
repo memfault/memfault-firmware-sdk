@@ -10,6 +10,10 @@
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/ports/zephyr/version.h"
 
+#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+#include <fs/fs.h>
+#endif
+
 static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 
 #if CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -79,6 +83,19 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   sys_heap_runtime_stats_get(&_system_heap, &stats);
   memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_BytesFree), stats.free_bytes);
 #endif /* defined(CONFIG_SYS_HEAP_RUNTIME_STATS) */
+
+#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+  {
+    struct fs_statvfs fs_stats;
+    int retval = fs_statvfs("/" CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH, &fs_stats);
+    if (retval == 0) {
+      // compute free bytes
+      uint32_t bytes_free = fs_stats.f_frsize * fs_stats.f_bfree;
+      memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(FileSystem_BytesFree),
+                                              bytes_free);
+    }
+  }
+#endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
 
 #endif /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
 }

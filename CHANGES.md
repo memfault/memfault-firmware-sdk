@@ -1,3 +1,27 @@
+### Changes between Memfault SDK 1.0.0 and 0.43.3 - June 1, 2023
+
+🎉🎉🎉
+
+The Memfault Firmware SDK is now version `1.0.0` as of this release! Note that
+this is just a procedural change, there are no breaking backwards-incompatible
+changes in this release. We forgot to update our major version back in 2019, but
+better late than never 😅! Hopefully the remaining 281,474,976,710,656 versions
+are enough 🤞.
+
+🎉🎉🎉
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add a new built-in metric `FileSystem_BytesFree` for tracking VFS bytes
+    free. This is enabled automatically when `CONFIG_FILE_SYSTEM=y`. Use the
+    Kconfig option `MEMFAULT_FS_BYTES_FREE_VFS_PATH` to set the VFS mount point
+    to monitor utilization (default value is `/lfs1`). The Kconfig option
+    `MEMFAULT_FS_BYTES_FREE_METRIC` can be used to disable the metric.
+  - Update a few spots in the Zephyr demo CLI to use `shell_print` instead of
+    `MEMFAULT_LOG` for command usage errors
+
 ### Changes between Memfault SDK 0.43.3 and 0.43.2 - May 22, 2023
 
 #### :chart_with_upwards_trend: Improvements

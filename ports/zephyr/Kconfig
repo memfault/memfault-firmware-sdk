@@ -324,6 +324,19 @@ config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
         metrics collected, see ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def
         When disabled, no default metrics will be collected.
 
+config MEMFAULT_FS_BYTES_FREE_METRIC
+        bool "Enable collection of a metric for the amount of free space on the filesystem"
+        default y
+        depends on FILE_SYSTEM
+
+config MEMFAULT_FS_BYTES_FREE_VFS_PATH
+        string "Path to the mount point to collect free space metrics for"
+        default "lfs1"
+        depends on FILE_SYSTEM && MEMFAULT_FS_BYTES_FREE_METRIC
+        help
+         The path to the virtual filesystem mount point to collect free space
+         metrics for, omitting the leading '/'.
+
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM

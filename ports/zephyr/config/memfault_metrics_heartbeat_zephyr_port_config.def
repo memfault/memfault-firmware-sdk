@@ -18,7 +18,11 @@ MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
 #endif
 
+#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+MEMFAULT_METRICS_KEY_DEFINE(FileSystem_BytesFree, kMemfaultMetricType_Unsigned)
 #endif
+
+#endif  /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
 
 #if CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE
 #include "memfault_metrics_heartbeat_extra.def"
