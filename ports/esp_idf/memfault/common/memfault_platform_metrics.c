@@ -9,13 +9,16 @@
 //! by using the following CFLAG:
 //!   -DMEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=15
 
+#include "esp_timer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 
-#include "esp_timer.h"
+#if CONFIG_MEMFAULT_LWIP_METRICS
+  #include "memfault/ports/lwip/metrics.h"
+#endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
 MEMFAULT_WEAK
 void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
@@ -55,4 +58,10 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, period_sec * us_per_sec));
 
   return true;
+}
+
+void memfault_metrics_heartbeat_collect_sdk_data(void) {
+#if CONFIG_MEMFAULT_LWIP_METRICS
+  memfault_lwip_heartbeat_collect_data();
+#endif  // CONFIG_MEMFAULT_LWIP_METRICS
 }

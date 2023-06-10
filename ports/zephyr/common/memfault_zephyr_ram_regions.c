@@ -8,6 +8,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
+#include <sys/types.h>
 #include <version.h>
 
 #include "memfault/components.h"
@@ -21,9 +22,16 @@
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 
+#if CONFIG_THREAD_STACK_INFO
+#if CONFIG_STACK_GROWS_UP
+    #error \
+      "Only full-descending stacks are supported by this implementation. Please contact support@memfault.com."
+#endif
+
 static struct MfltTaskWatermarks {
   uint32_t high_watermark;
 } s_task_watermarks[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
+#endif
 
 #define EMPTY_SLOT 0
 
@@ -98,18 +106,25 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
 
 //! Compute the high watermark of a task's stack. This is the amount of stack
 //! that has been written to since the task was created.
-static size_t prv_find_high_watermark(void *stack_start, size_t stack_size) {
-  const uint8_t *stack_ptr = (const uint8_t *)stack_start;
-
-  for (size_t i = 0; i < stack_size; i++) {
-    if (*stack_ptr != 0xAA) {
-      break;
-    }
-    stack_ptr++;
+static ssize_t prv_stack_bytes_unused(uintptr_t stack_start, size_t stack_size) {
+  // First confirm that it's safe to traverse the stack region. If the TCB has
+  // been corrupted, we don't want to trigger a memory error.
+  if (memfault_platform_sanitize_address_range((void *)stack_start, stack_size) != stack_size) {
+    return -1;
   }
 
-  const uint8_t *stack_end = (const uint8_t *)stack_start + stack_size;
-  return stack_end - stack_ptr;
+  // This algorithm assumes the stack is full-descending. Start at the lowest
+  // address (highest stack index) and go up in addresses (down in the stack),
+  // looking for the first address that contains something other than the stack
+  // painting pattern, 0xAA.
+  const uint8_t *stack_max = (const uint8_t *)stack_start;
+  const uint8_t * const stack_bottom = (const uint8_t * const)(stack_start + stack_size);
+
+  for (; (stack_max < stack_bottom) && (*stack_max == 0xAA); stack_max++) {
+  }
+
+  // return the "bytes unused" count for the stack
+  return (uintptr_t)stack_max - stack_start;
 }
 
 size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
@@ -155,7 +170,13 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     // coredump is truncated due to lack of space.
 #if !CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
     if ((uintptr_t)_kernel.cpus[0].current == (uintptr_t)thread) {
-      // when collecting partial stacks, thread context is only valid when task is _not_ running so we skip collecting it
+      // when collecting partial stacks, thread context is only valid when task
+      // is _not_ running so we skip collecting it. just update the watermark
+      // for the thread
+      #if CONFIG_THREAD_STACK_INFO
+      s_task_watermarks[i].high_watermark =
+        prv_stack_bytes_unused(thread->stack_info.start, thread->stack_info.size);
+      #endif
       continue;
     }
 #endif
@@ -185,16 +206,21 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       continue;
     }
 
+#if defined(CONFIG_THREAD_STACK_INFO)
     // compute high watermarks for each task
-    s_task_watermarks[i].high_watermark = prv_find_high_watermark(sp, stack_size_to_collect);
+    s_task_watermarks[i].high_watermark =
+      prv_stack_bytes_unused(thread->stack_info.start, thread->stack_info.size);
+#endif
 
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(sp, stack_size_to_collect);
     region_idx++;
   }
 
+#if defined(CONFIG_THREAD_STACK_INFO)
   regions[region_idx] =
     MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_watermarks, sizeof(s_task_watermarks));
   region_idx++;
+#endif
 
   regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
   region_idx++;

@@ -1,0 +1,13 @@
+#include "lwip/stats.h"
+
+#if TCP_STATS
+MEMFAULT_METRICS_KEY_DEFINE(Tcp_Tx_Count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(Tcp_Rx_Count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(Tcp_Drop_Count, kMemfaultMetricType_Unsigned)
+#endif  // TCP_STATS
+
+#if UDP_STATS
+MEMFAULT_METRICS_KEY_DEFINE(Udp_Tx_Count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(Udp_Rx_Count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(Udp_Drop_Count, kMemfaultMetricType_Unsigned)
+#endif  // UDP_STATS

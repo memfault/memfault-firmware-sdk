@@ -14,7 +14,10 @@ manifest:
     - name: zephyr
       remote: zephyrproject-rtos
       revision: v3.3.0
-      import: true
+      import:
+        # Limit the Zephyr modules to the required set
+        name-allowlist:
+            - cmsis
 
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk

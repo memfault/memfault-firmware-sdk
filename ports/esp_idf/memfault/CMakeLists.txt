@@ -82,8 +82,15 @@ list(APPEND MEMFAULT_COMPONENTS_SRCS
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
    include
    include/${MEMFAULT_ESP_IDF_PORT}
+   ${MEMFAULT_SDK_ROOT}/ports/include
    $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
+   config
 )
+
+if (CONFIG_MEMFAULT_LWIP_METRICS)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/lwip/memfault_lwip_metrics.c)
+  list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/lwip/config)
+endif()
 
 # For version >= 4.4.3, we can collect smaller coredumps by default
 # by prioritizing active stack and FreeRTOS regions first. ESP-IDF < 4.4.3
@@ -95,10 +102,6 @@ if (DEFINED ENV{IDF_VERSION})
   if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.3")
     list(APPEND MEMFAULT_COMPONENTS_SRCS
       ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_freertos_ram_regions.c
-    )
-
-    list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
-      ${MEMFAULT_SDK_ROOT}/ports/include/
     )
 
     # Add a linker fragment to place FreeRTOS timers and task objects in the same area of dram0.bss
@@ -122,6 +125,10 @@ list(APPEND COMPONENT_REQUIRES
     driver
 )
 
+if(CONFIG_MEMFAULT_LWIP_METRICS)
+  list(APPEND COMPONENT_REQUIRES lwip)
+endif()
+
 if($ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
 list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota)
 endif()
@@ -133,6 +140,7 @@ get_filename_component(this_directory_name ${this_directory_name} NAME)
 mflt_esp32_component_get_target(this_component ${this_directory_name})
 
 component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
+component_compile_options(-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_esp_metrics_heartbeat_config.def")
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 # and run the Memfault Fault Handler instead.

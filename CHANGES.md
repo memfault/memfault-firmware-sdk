@@ -1,3 +1,22 @@
+### Changes between Memfault SDK 1.0.1 and 1.0.0 - June 9, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Improve the quality of Zephyr stack usage detection when capturing less than
+    the full stack contents for each thread. This feature was originally
+    released in SDK `0.43.0`.
+
+- ESP-IDF:
+
+  - Add Memfault Metrics tracking LwIP runtime statistics (packet counts). A new
+    Kconfig flag `CONFIG_MEMFAULT_LWIP_METRICS` controls this feature, which is
+    enabled by default. The LwIP metrics helper is available for non-ESP-IDF
+    projects using LwIP, see
+    [`ports/lwip/memfault_lwip_metrics.c`](ports/lwip/memfault_lwip_metrics.c)
+    for details
+
 ### Changes between Memfault SDK 1.0.0 and 0.43.3 - June 1, 2023
 
 🎉🎉🎉
