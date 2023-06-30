@@ -76,8 +76,19 @@ list(APPEND MEMFAULT_COMPONENTS_SRCS
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client_buffer.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_metrics.c
 )
+
+# Add a legacy metrics file for now. To be removed in the near future when v3.x
+# support is dropped.
+if(IDF_VERSION_MAJOR VERSION_EQUAL 3)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT}/memfault_platform_metrics_legacy.c
+  )
+else()
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_metrics.c
+  )
+endif()
 
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
    include
@@ -90,6 +101,16 @@ list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
 if (CONFIG_MEMFAULT_LWIP_METRICS)
   list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/lwip/memfault_lwip_metrics.c)
   list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/lwip/config)
+endif()
+
+if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_sdk_metrics_freertos.c)
+  list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/freertos/config)
+endif()
+
+if (CONFIG_MEMFAULT_MBEDTLS_METRICS)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/mbedtls/memfault_mbedtls_metrics.c)
+  list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/mbedtls/config)
 endif()
 
 # For version >= 4.4.3, we can collect smaller coredumps by default
@@ -128,9 +149,12 @@ list(APPEND COMPONENT_REQUIRES
 if(CONFIG_MEMFAULT_LWIP_METRICS)
   list(APPEND COMPONENT_REQUIRES lwip)
 endif()
+if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
+  list(APPEND COMPONENT_REQUIRES mbedtls)
+endif()
 
 if($ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
-list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota)
+  list(APPEND COMPONENT_REQUIRES esp_http_client)
 endif()
 register_component()
 
@@ -138,6 +162,24 @@ register_component()
 get_filename_component(this_directory_name . ABSOLUTE DIRECTORY)
 get_filename_component(this_directory_name ${this_directory_name} NAME)
 mflt_esp32_component_get_target(this_component ${this_directory_name})
+
+# The below compilation options need to be set after register_component().
+if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
+  # MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API should be explicitly set to 1
+  # for ESP-IDF. The API in question, 'ulTaskGetIdleRunTimeCounter', was added
+  # in ESP-IDF v4.3, but didn't have backwards compatibility with the original
+  # name 'xTaskGetIdleRunTimeCounter' until ESP-IDF v4.4 (because ESP-IDF pulled
+  # a non-release upstream FreeRTOS in the interim). The old name
+  # 'xTaskGetIdleRunTimeCounter' was never used in any version of ESP-IDF.
+  #
+  # 'xTaskGetIdleRunTimeCounter' was added in FreeRTOS V10.2.0, renamed to
+  # 'ulTaskGetIdleRunTimeCounter'in V10.3.0, with backwards compatibility
+  # included in mainline FreeRTOS V10.3.0.
+  #
+  # Task runtime stats are disabled on FreeRTOS <10.2.0 entirely, so on earlier
+  # ESP-IDF SDK versions, this is unused.
+  component_compile_options(-DMEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API=1)
+endif()
 
 component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
 component_compile_options(-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_esp_metrics_heartbeat_config.def")
@@ -150,6 +192,14 @@ component_compile_options(-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_
 #   Much more flexibility in debug information collected (e.g. all RAM, just the current stack trace, select stacks and variables)
 #   Data can be posted directly from device to Memfault cloud for deduplication and analysis
 target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_core_dump_to_flash -Wl,--wrap=esp_core_dump_init -Wl,--wrap=esp_core_dump_image_get")
+
+# Wrap the esp-idf assert handler to capture assert info
+target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=_esp_error_check_failed")
+
+# Wrap allocator functions to capture mbedTLS metrics
+if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
+  target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=mbedtls_calloc -Wl,--wrap=mbedtls_free")
+endif()
 
 # Include a linker script fragment to support compact logs, when enabled
 get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)

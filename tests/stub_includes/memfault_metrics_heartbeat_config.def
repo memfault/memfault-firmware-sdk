@@ -11,3 +11,11 @@ MEMFAULT_METRICS_STRING_KEY_DEFINE(test_key_string, 16)
 #ifdef TEST_LWIP_METRICS
 #include "memfault_lwip_metrics_heartbeat_config.def"
 #endif  // TEST_LWIP_METRICS
+
+#ifdef TEST_FREERTOS_METRICS
+#include "memfault_metrics_heartbeat_freertos_task_runtime_config.def"
+#endif  // TEST_FREERTOS_METRICS
+
+#ifdef TEST_MBEDTLS_METRICS
+#include "memfault_mbedtls_metrics_heartbeat_config.def"
+#endif  // TEST_MBEDTLS_METRICS

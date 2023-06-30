@@ -1,3 +1,44 @@
+### Changes between Memfault SDK 1.0.1 and 1.1.0 - June 29, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- New built-in metrics 🎉 !
+
+  - FreeRTOS Idle Task runtime percentage metric: `idle_task_run_time_percent`.
+    This is automatically enabled for FreeRTOS builds with the correct tracing
+    options enabled, see
+    [ports/include/memfault/ports/freertos/metrics.h](ports/include/memfault/ports/freertos/metrics.h)
+    for details on how to enable or disable this metric.
+  - MbedTLS metrics for maximum and current memory used: `mbedtls_mem_max_bytes`
+    and `mbedtls_mem_used_bytes`. These are automatically enabled for ESP-IDF
+    projects, see
+    [ports/mbedtls/memfault_mbedtls_metrics.c](ports/mbedtls/memfault_mbedtls_metrics.c)
+    for usage details
+  - Renamed the built-in LwIP metrics added in SDK version 1.0.1 from
+    `Tcp_Drop_Count`/`Tcp_Rx_Count`/`Tcp_Tx_Count`,
+    `Udp_Drop_Count`/`Udp_Rx_Count`/`Udp_Tx_Count` to be all lowercase
+    `tcp_drop_count`/`tcp_rx_count`/`tcp_tx_count`,
+    `udp_drop_count`/`udp_rx_count`/`udp_tx_count`
+  - Add the following automatically enabled WiFi performance metrics to the
+    ESP-IDF port:
+    - `wifi_connected_time_ms`
+    - `wifi_disconnect_count`
+    - `wifi_sta_min_rssi`
+
+- Fix a bug in the [mbedtls port](ports/mbedtls/) causing an infinite loop under
+  certain error conditions on TLS handshake
+
+- Zephyr:
+
+  - Improve log flushing in the Memfault log backend during fault when deferred
+    logging is enabled. This ensures the latest log statements are included in
+    the coredump log data, when the `CONFIG_MEMFAULT_LOGGING_ENABLE=y`
+
+- ESP-IDF:
+
+  - `ESP_ERROR_CHECK()` assert coredumps will now correctly show as assert in
+    the Memfault coredump analysis view, instead of "Hard Fault"
+
 ### Changes between Memfault SDK 1.0.1 and 1.0.0 - June 9, 2023
 
 #### :chart_with_upwards_trend: Improvements

@@ -105,7 +105,8 @@ struct MfltHttpClient {
 };
 
 typedef struct MfltHttpResponse {
-  uint32_t status_code;
+  // HTTP status code or negative error code
+  int status_code;
 } sMfltHttpResponse;
 
 static sMfltHttpClient s_client;
@@ -188,12 +189,14 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
       break;
     }
 
+    MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", -ret);
     if ((ret == MBEDTLS_ERR_SSL_WANT_READ) || (ret == MBEDTLS_ERR_SSL_WANT_WRITE)) {
       continue;
+    } else {
+      // all other errors are fatal
+      goto cleanup;
     }
-    MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", -ret);
   } while (1);
-
 
   s_client.active = true;
   return &s_client;
@@ -204,7 +207,7 @@ cleanup:
 }
 
 int memfault_platform_http_client_destroy(sMfltHttpClient *client) {
-  if (!client->active) {
+  if (!client || !client->active) {
     return -1;
   }
 
@@ -225,7 +228,7 @@ static bool prv_try_send(sMfltHttpClient *client, const uint8_t *buf, size_t buf
   while (idx != buf_len) {
     int rv = mbedtls_ssl_write(&client->ssl, (const unsigned char *)buf, buf_len);
     if (rv >= 0) {
-      idx += rv;
+      idx += (size_t)rv;
       continue;
     }
 
@@ -251,7 +254,7 @@ static bool prv_read_socket_data(sMfltHttpClient *client, void *buf, size_t *buf
     return false;
   }
 
-  *buf_len = rv;
+  *buf_len = (size_t)rv;
   return true;
 }
 
@@ -333,6 +336,6 @@ int memfault_platform_http_client_post_data(
 int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
   MEMFAULT_SDK_ASSERT(response != NULL);
 
-  *status_out = response->status_code;
+  *status_out = (uint32_t)response->status_code;
   return 0;
 }

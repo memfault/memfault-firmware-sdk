@@ -97,7 +97,7 @@ bool wifi_join(const char *ssid, const char *pass) {
 
     ESP_ERROR_CHECK(esp_netif_init());
 
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -149,6 +149,10 @@ bool wifi_join(const char *ssid, const char *pass) {
   }
 
   return false;
+}
+
+static int wifi_disconnect() {
+  return esp_wifi_disconnect();
 }
 
 /** Arguments used by 'join' function */
@@ -355,4 +359,11 @@ void register_wifi(void) {
                                         .func = &wifi_creds_set,
                                         .argtable = &wifi_creds_args};
   ESP_ERROR_CHECK(esp_console_cmd_register(&config_cmd));
+
+  const esp_console_cmd_t disconnect_cmd = {.command = "wifi_disconnect",
+                                            .help = "Disconnect from WiFi AP",
+                                            .hint = NULL,
+                                            .func = &wifi_disconnect,
+                                            .argtable = NULL};
+  ESP_ERROR_CHECK(esp_console_cmd_register(&disconnect_cmd));
 }

@@ -1,0 +1,2 @@
+MEMFAULT_METRICS_KEY_DEFINE(mbedtls_mem_used_bytes, kMemfaultMetricType_Signed)
+MEMFAULT_METRICS_KEY_DEFINE(mbedtls_mem_max_bytes, kMemfaultMetricType_Unsigned)

@@ -232,7 +232,7 @@ def should_capture_section(section):
     if is_debug_info_section(section):
         return False
     # Sometimes these get flagged incorrectly as READONLY:
-    if filter(lambda n: n in section.name, (".heap", ".bss", ".data", ".stack")):
+    if any(filter(lambda n: n in section.name, (".heap", ".bss", ".data", ".stack"))):
         return True
     # Only grab non-readonly stuff:
     return not section.read_only
@@ -469,16 +469,40 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         except Exception:
             analytics_props["mpu_collection_error"] = {"traceback": traceback.format_exc()}
 
+    @staticmethod
+    def _merge_memory_regions(regions):
+        """Take a set of memory regions and merge any overlapping regions"""
+        regions.sort(key=lambda x: x.addr)  # Sort the regions based on starting address
+        merged_regions = []
+
+        for region in regions:
+            if not merged_regions:
+                merged_regions.append(region)
+            else:
+                prev_region = merged_regions[-1]
+                if region.addr <= prev_region.addr + prev_region.size:
+                    prev_region.size = max(
+                        prev_region.size, region.addr + region.size - prev_region.addr
+                    )
+                else:
+                    merged_regions.append(region)
+
+        return merged_regions
+
     def guess_ram_regions(self, elf_sections):
         capturable_elf_sections = list(filter(should_capture_section, elf_sections))
 
         def _is_ram(base_addr):
             # See Table B3-1 ARMv7-M address map in "ARMv7-M Architecture Reference Manual"
-            return base_addr in (0x20000000, 0x60000000, 0x80000000)
+            return (base_addr & 0xF0000000) in (0x20000000, 0x30000000, 0x60000000, 0x80000000)
 
-        capture_size = 1024 * 1024  # Capture up to 1MB
-        base_addrs = map(lambda section: section.addr & 0xE0000000, capturable_elf_sections)
-        filtered_addrs = set(filter(_is_ram, base_addrs))
+        capture_size = 1024 * 1024  # Capture up to 1MB per section
+        for section in capturable_elf_sections:
+            section.size = capture_size
+
+        # merge any overlapping sections to make the core a little more efficient
+        capturable_elf_sections = self._merge_memory_regions(capturable_elf_sections)
+        filtered_addrs = set(filter(_is_ram, (s.addr for s in capturable_elf_sections)))
         # Capture up to 1MB for each region
         return [(addr, capture_size) for addr in filtered_addrs]
 
@@ -727,6 +751,15 @@ class Section(object):
             and self.data == other.data
         )
 
+    def __str__(self):
+        return "Section(addr=0x%x, size=0x%x, name='%s', read_only=%s, data_len=%d)" % (
+            self.addr,
+            self.size,
+            self.name,
+            self.read_only,
+            len(self.data),
+        )
+
 
 def parse_maintenance_info_sections(output):
     fn_match = re.search(r"`([^']+)', file type", output)
@@ -759,7 +792,8 @@ def read_memory_until_error(inferior, start, size, read_size=4 * 1024):
     try:
         for addr in range(start, end, read_size):
             data += bytes(inferior.read_memory(addr, min(read_size, end - addr)))
-    except Exception as e:  # Catch gdbserver read exceptions -- not sure what exception classes can get raised here
+    except Exception as e:
+        # Catch gdbserver read exceptions -- not sure what exception classes can get raised here
         print(e)
     return data
 
@@ -1346,8 +1380,8 @@ Memfault will never share your data, coredumps, binary files (.elf)
 or other proprietary information with other companies or anyone else.
 
 Proceed? [y/n]
-"""  # This last newline is important! If it's not here, the last line is not shown on Windows!
-        )
+"""
+        )  # This last newline is important! If it's not here, the last line is not shown on Windows!
         if "Y" not in y.upper():
             print("Aborting...")
             analytics_props["user_input"] = y
@@ -1437,7 +1471,10 @@ Proceed? [y/n]
         parser = MemfaultGdbArgumentParser(description=MemfaultCoredump.__doc__)
         parser.add_argument(
             "source",
-            help="Source of coredump: 'live' (default) or 'storage' (target's live RAM or stored coredump)",
+            help=(
+                "Source of coredump: 'live' (default) or 'storage' (target's live RAM or stored"
+                " coredump)"
+            ),
             default="live",
             choices=["live", "storage"],
             nargs="?",
@@ -1460,10 +1497,12 @@ Proceed? [y/n]
         parser.add_argument(
             "--region",
             "-r",
-            help="Specify memory region and size in bytes to capture. This option can be passed multiple times."
-            " Example: `-r 0x20000000 1024 0x80000000 512` will capture 1024 bytes starting at 0x20000000."
-            " When no regions are passed, the command will attempt to infer what to"
-            " capture based on the sections in the loaded .elf.",
+            help=(
+                "Specify memory region and size in bytes to capture. This option can be passed"
+                " multiple times. Example: `-r 0x20000000 1024 0x80000000 512` will capture 1024"
+                " bytes starting at 0x20000000. When no regions are passed, the command will"
+                " attempt to infer what to capture based on the sections in the loaded .elf."
+            ),
             type=_auto_int,
             nargs=2,
             action="append",
@@ -1484,16 +1523,20 @@ Proceed? [y/n]
         parser.add_argument(
             "--device-serial",
             type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "device serial"),
-            help="Overrides the device serial that will be reported in the core dump. (default: {})".format(
-                self.DEFAULT_CORE_DUMP_SERIAL_NUMBER
+            help=(
+                "Overrides the device serial that will be reported in the core dump. (default: {})".format(
+                    self.DEFAULT_CORE_DUMP_SERIAL_NUMBER
+                )
             ),
             default=self.DEFAULT_CORE_DUMP_SERIAL_NUMBER,
         )
         parser.add_argument(
             "--software-type",
             type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "software type"),
-            help="Overrides the software type that will be reported in the core dump. (default: {})".format(
-                self.DEFAULT_CORE_DUMP_SOFTWARE_TYPE
+            help=(
+                "Overrides the software type that will be reported in the core dump. (default: {})".format(
+                    self.DEFAULT_CORE_DUMP_SOFTWARE_TYPE
+                )
             ),
             default=self.DEFAULT_CORE_DUMP_SOFTWARE_TYPE,
         )
@@ -1502,16 +1545,18 @@ Proceed? [y/n]
             type=_character_check(
                 self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_REGEX, "software version"
             ),
-            help="Overrides the software version that will be reported in the core dump. (default: {})".format(
-                self.DEFAULT_CORE_DUMP_SOFTWARE_VERSION
+            help=(
+                "Overrides the software version that will be reported in the core dump."
+                " (default: {})".format(self.DEFAULT_CORE_DUMP_SOFTWARE_VERSION)
             ),
             default=self.DEFAULT_CORE_DUMP_SOFTWARE_VERSION,
         )
         parser.add_argument(
             "--hardware-revision",
             type=_character_check(self.ALPHANUM_SLUG_DOTS_COLON_REGEX, "hardware revision"),
-            help="Overrides the hardware revision that will be reported in the core dump. (default: {})".format(
-                self.DEFAULT_CORE_DUMP_HARDWARE_REVISION
+            help=(
+                "Overrides the hardware revision that will be reported in the core dump."
+                " (default: {})".format(self.DEFAULT_CORE_DUMP_HARDWARE_REVISION)
             ),
             default=self.DEFAULT_CORE_DUMP_HARDWARE_REVISION,
         )
@@ -1600,7 +1645,8 @@ This command requires that you use the 'load' command to load a binary/symbol (.
         if not has_debug_info:
             print("WARNING: no debug info sections found!")
             print(
-                "Hints: did you compile with -g or similar flags? did you inadvertently strip the binary?"
+                "Hints: did you compile with -g or similar flags? did you inadvertently strip the"
+                " binary?"
             )
 
         cd_writer = MemfaultCoredumpWriter(
@@ -1617,10 +1663,12 @@ This command requires that you use the 'load' command to load a binary/symbol (.
         regions = parsed_args.region
         if regions is None:
             print(
-                "No capturing regions were specified; will default to capturing the first 1MB for each used RAM address range."
+                "No capturing regions were specified; will default to capturing the first 1MB for"
+                " each used RAM address range."
             )
             print(
-                "Tip: optionally, you can use `--region <addr> <size>` to manually specify capturing regions and increase capturing speed."
+                "Tip: optionally, you can use `--region <addr> <size>` to manually specify"
+                " capturing regions and increase capturing speed."
             )
 
             regions = arch.guess_ram_regions(sections)

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "esp_core_dump.h"
+#include "esp_err.h"
 #ifdef __XTENSA__
   #include "freertos/xtensa_api.h"
   #include "memfault/panics/arch/xtensa/xtensa.h"
@@ -24,11 +25,32 @@
 #endif
 
 // Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
-// chip reboot so we just piggback off of that
+// chip reboot so we just piggyback off of that
 void memfault_fault_handling_assert(void *pc, void *lr) {
   memfault_arch_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
   abort();
 }
+
+// This wrapper is for instances of the "ESP_ERROR_CHECK()" macro
+void __real__esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function,
+                                    const char *expression);
+
+__attribute__((noreturn)) void __wrap__esp_error_check_failed(esp_err_t rc, const char *file,
+                                                              int line, const char *function,
+                                                              const char *expression) {
+  void *pc;
+  MEMFAULT_GET_PC(pc);
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+
+  memfault_arch_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
+  __real__esp_error_check_failed(rc, file, line, function, expression);
+  __builtin_unreachable();
+}
+// Ensure the substituted function signature matches the original function
+_Static_assert(__builtin_types_compatible_p(__typeof__(&_esp_error_check_failed),
+                                            __typeof__(&__wrap__esp_error_check_failed)),
+               "Error: esp abort handler wrapper is not compatible with esp-idf implementation");
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   memfault_arch_fault_handling_assert(pc, lr, extra_info->assert_reason);

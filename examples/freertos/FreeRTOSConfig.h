@@ -82,6 +82,11 @@ extern void vAssertCalled(const char* file, int line);
 #define configUSE_TIMERS 1
 #define configTIMER_TASK_STACK_DEPTH (configMINIMAL_STACK_SIZE * 2)
 
+#define configGENERATE_RUN_TIME_STATS 1
+#define configUSE_TRACE_FACILITY 1
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  // unused
+#define portGET_RUN_TIME_COUNTER_VALUE() ulGetRunTimeCounterValue()
+
 #define INCLUDE_vTaskPrioritySet 1
 #define INCLUDE_uxTaskPriorityGet 1
 #define INCLUDE_vTaskDelete 1

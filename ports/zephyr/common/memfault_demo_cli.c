@@ -190,6 +190,9 @@ static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, cha
 #if !CONFIG_ASSERT
   shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command will have no effect");
 #endif
+  // Fire off a last-ditch log message to show how logs are flushed prior to
+  // crash, in the case of deferred logging mode
+  MEMFAULT_LOG_ERROR("About to crash in %s!", __func__);
   __ASSERT(0, "test assert");
   return 0;
 }

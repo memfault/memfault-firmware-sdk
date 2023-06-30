@@ -52,4 +52,30 @@ menu "Memfault"
         bool "Collect TCP/UDP metrics from LwIP"
         default y
         select LWIP_STATS
+
+    config MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+        bool "Enables the collection of freeRTOS task runtime stats as Memfault metrics"
+        default y
+        select FREERTOS_GENERATE_RUN_TIME_STATS
+        select FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+        help
+            Collects the idle thread runtime metric as a percentage of total runtime.
+            This metric is only available when using esp_timer for runtime stats to
+            avoid issues with counter overflow. Note for FreeRTOS versions < 10.2.0
+            this will be a no-op.
+
+    config MEMFAULT_MBEDTLS_METRICS
+        bool "Collect metrics from mbedTLS"
+        default y
+        depends on ESP_TLS_USING_MBEDTLS && !MBEDTLS_CUSTOM_MEM_ALLOC
+        help
+            Collects metrics measuring current and maximum bytes allocated on the heap
+            during the current heartbeat interval.
+
+    config MEMFAULT_ESP_WIFI_METRICS
+        bool "Collect metrics from ESP WiFi"
+        default y
+        help
+            Collects Memfault metrics measuring the minimum RSSI, time connected to
+            WiFi, and the number of WiFi disconnects.
 endmenu

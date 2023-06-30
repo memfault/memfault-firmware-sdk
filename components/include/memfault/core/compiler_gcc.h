@@ -38,6 +38,7 @@ extern "C" {
 #define MEMFAULT_USED __attribute__((used))
 #define MEMFAULT_WEAK __attribute__((weak))
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b) __attribute__ ((format (__printf__, a, b)))
+#define MEMFAULT_ALIGNOF(x) (__alignof__(x))
 
 //! From https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html,
 //!  If x is 0, the result is undefined.

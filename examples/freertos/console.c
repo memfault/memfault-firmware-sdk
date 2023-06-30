@@ -32,6 +32,10 @@ static void prv_console_input_task(MEMFAULT_UNUSED void *pvParameters) {
     char c;
     if (read(0, &c, sizeof(c))) {
       memfault_demo_shell_receive_char((char)c);
+    } else {
+      // sleep a bit if we didn't just receive a character, to prevent 100% CPU
+      // utilization in this thread.
+      vTaskDelay((10) / portTICK_PERIOD_MS);
     }
   }
 }

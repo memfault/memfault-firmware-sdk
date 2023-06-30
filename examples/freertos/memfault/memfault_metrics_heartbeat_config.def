@@ -1,3 +1,5 @@
 // Add application custom metrics
 MEMFAULT_METRICS_KEY_DEFINE(Example_HeapFreeBytes, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(Example_HeapMinFreeBytes, kMemfaultMetricType_Unsigned)
+
+#include "ports/freertos/config/memfault_metrics_heartbeat_freertos_task_runtime_config.def"

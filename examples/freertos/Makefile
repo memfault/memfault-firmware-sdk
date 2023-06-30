@@ -16,6 +16,12 @@ ARM_CC ?= arm-none-eabi-gcc
 ifeq ($(origin CC),default)
 CC := $(ARM_CC)
 endif
+# use ccache if available
+CCACHE := $(shell command -v ccache 2> /dev/null)
+ifdef CCACHE
+CC := ccache $(CC)
+endif
+OBJCOPY ?= $(shell $(CC) -print-prog-name=objcopy)
 
 # Check if FreeRTOS location set, add rule to download if not
 ifeq ($(FREERTOS_DIR),)
@@ -56,14 +62,13 @@ MEMFAULT_SDK_ROOT := ../..
 MEMFAULT_COMPONENTS := core util panics metrics demo
 include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
 
-# Add additional SDK sources to project for FreeRTOS and RAM-backed coredump
+# Add additional SDK sources to project for FreeRTOS and RAM-backed coredump.
+# Intentionally using a wildcard to trap any new features added- it's nice to
+# have them enabled in this example app.
 SRCS += \
 	$(MEMFAULT_COMPONENTS_SRCS) \
-	$(MEMFAULT_SDK_ROOT)/ports/freertos/src/memfault_core_freertos.c \
-	$(MEMFAULT_SDK_ROOT)/ports/freertos/src/memfault_freertos_ram_regions.c \
-	$(MEMFAULT_SDK_ROOT)/ports/freertos/src/memfault_metrics_freertos.c \
-	$(MEMFAULT_SDK_ROOT)/ports/freertos/src/memfault_panics_freertos.c \
-	$(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
+	$(wildcard $(MEMFAULT_SDK_ROOT)/ports/freertos/src/*.c) \
+		$(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
 
 # Fixup build path for objects of the Memfault SDK, all build output kept within build/
 OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%.c=$(BUILD_DIR)/%.o))
@@ -74,6 +79,7 @@ INCLUDE_PATHS += \
   -I./memfault \
   -I$(MEMFAULT_COMPONENTS_INC_FOLDERS) \
   -I$(MEMFAULT_SDK_ROOT)/ports/include \
+  -I$(MEMFAULT_SDK_ROOT) \
   -I$(FREERTOS_DIR)/portable/GCC/$(FREERTOS_PORT) \
 
 # generic (non-arch-specific) CFLAGS
@@ -115,9 +121,14 @@ $(BUILD_DIR)/%.o: %.c
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
-$(ELF): $(OBJS)
+$(ELF).uncompressed: $(OBJS)
 	$(info Linking $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
+
+$(ELF): $(ELF).uncompressed
+	echo -n 'Compressing debug info... '
+	$(OBJCOPY) --compress-debug-sections $^ $@
+	echo From $$(stat --printf="%s" $^) to $$(stat --printf="%s" $@) bytes
 
 -include $(OBJS:.o=.d)
 

@@ -271,7 +271,13 @@ def test_should_capture_section():
 
 def test_armv7_get_used_ram_base_addresses():
     sections = (
+        # Sections must meet the guess criteria:
+        # 1. within an allowed region
+        # 2. not read-only OR contain `.data`/`.bss` etc in the name
+        Section(0x21000000, 10, "", read_only=False),
         Section(0x30000000, 10, "", read_only=True),
+        Section(0x3F000000, 10, ".data.etc", read_only=True),
+        Section(0x40000000, 10, "", read_only=True),
         Section(0x70000000, 10, "", read_only=True),
         Section(0x90000000, 10, "", read_only=True),
         Section(0x00000000, 10, "", read_only=True),
@@ -280,9 +286,8 @@ def test_armv7_get_used_ram_base_addresses():
 
     collection_size_arm = 1 * 1024 * 1024  # 1MB
     assert [
-        (0x20000000, collection_size_arm),
-        (0x60000000, collection_size_arm),
-        (0x80000000, collection_size_arm),
+        (0x21000000, collection_size_arm),
+        (0x3F000000, collection_size_arm),
     ] == ArmCortexMCoredumpArch().guess_ram_regions(sections)
 
 
@@ -335,12 +340,12 @@ def test_coredump_writer(snapshot):
             "r7": 4 * b"\x07",
             "r8": 4 * b"\x08",
             "r9": 4 * b"\x09",
-            "r10": 4 * b"\x0A",
-            "r11": 4 * b"\x0B",
-            "r12": 4 * b"\x0C",
-            "sp": 4 * b"\x0D",
-            "lr": 4 * b"\x0E",
-            "pc": 4 * b"\x0F",
+            "r10": 4 * b"\x0a",
+            "r11": 4 * b"\x0b",
+            "r12": 4 * b"\x0c",
+            "sp": 4 * b"\x0d",
+            "lr": 4 * b"\x0e",
+            "pc": 4 * b"\x0f",
             "xpsr": 4 * b"\x10",
             "msp": 4 * b"\x11",
             "psp": 4 * b"\x12",
@@ -487,7 +492,8 @@ def test_coredump_all_overrides(http_expect_request, test_config, mocker):
 
     cmd = MemfaultCoredump()
     cmd.invoke(
-        "--project-key {} --hardware-revision {} --software-version {} --software-type {} --device-serial {}".format(
+        "--project-key {} --hardware-revision {} --software-version {} --software-type {}"
+        " --device-serial {}".format(
             TEST_PROJECT_KEY, hardware_revision, software_version, software_type, device_serial
         ),
         True,

@@ -9,12 +9,12 @@
 static MemfaultMetricIdsComparator s_metric_id_comparator;
 struct mock_stats lwip_stats = {0};
 
-static MemfaultMetricId s_tcp_tx_count_id = MEMFAULT_METRICS_KEY(Tcp_Tx_Count);
-static MemfaultMetricId s_tcp_rx_count_id = MEMFAULT_METRICS_KEY(Tcp_Rx_Count);
-static MemfaultMetricId s_tcp_drop_count_id = MEMFAULT_METRICS_KEY(Tcp_Drop_Count);
-static MemfaultMetricId s_udp_tx_count_id = MEMFAULT_METRICS_KEY(Udp_Tx_Count);
-static MemfaultMetricId s_udp_rx_count_id = MEMFAULT_METRICS_KEY(Udp_Rx_Count);
-static MemfaultMetricId s_udp_drop_count_id = MEMFAULT_METRICS_KEY(Udp_Drop_Count);
+static MemfaultMetricId s_tcp_tx_count_id = MEMFAULT_METRICS_KEY(tcp_tx_count);
+static MemfaultMetricId s_tcp_rx_count_id = MEMFAULT_METRICS_KEY(tcp_rx_count);
+static MemfaultMetricId s_tcp_drop_count_id = MEMFAULT_METRICS_KEY(tcp_drop_count);
+static MemfaultMetricId s_udp_tx_count_id = MEMFAULT_METRICS_KEY(udp_tx_count);
+static MemfaultMetricId s_udp_rx_count_id = MEMFAULT_METRICS_KEY(udp_rx_count);
+static MemfaultMetricId s_udp_drop_count_id = MEMFAULT_METRICS_KEY(udp_drop_count);
 
 static void prv_set_metrics(unsigned int value) {
   lwip_stats.tcp.xmit = value;

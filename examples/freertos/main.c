@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/times.h>
 
 #include "FreeRTOS.h"
 #include "console.h"
@@ -98,6 +99,13 @@ static void prv_heap_task(void) {
     &heap_task_tcb);
 }
 
+unsigned long ulGetRunTimeCounterValue(void) {
+  struct tms xTimes;
+  times(&xTimes);
+
+  return (unsigned long)xTimes.tms_utime;
+}
+
 static void prv_run_metrics_task(MEMFAULT_UNUSED void* pvParameters) {
   while (true) {
     HeapStats_t stats = {0};
@@ -120,6 +128,14 @@ static void prv_metrics_task(void) {
     tskIDLE_PRIORITY,                        /* Priority at which the task is created. */
     metrics_task_stack,                      /* Array to use as the task's stack. */
     &metrics_task_tcb);
+}
+
+void memfault_metrics_heartbeat_collect_sdk_data(void) {
+  MEMFAULT_STATIC_ASSERT(
+    MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS <= (60 * 60),
+    "Heartbeat must be an hour or less for runtime metrics to mitigate counter overflow");
+
+  memfault_freertos_port_task_runtime_metrics();
 }
 
 int main(void) {

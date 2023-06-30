@@ -121,6 +121,10 @@ void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
 void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level, const char *log,
                                     size_t log_len);
 
+//! As above, but do not acquire a lock internally.
+void memfault_log_save_preformatted_nolock(eMemfaultPlatformLogLevel level, const char *log,
+                                           size_t log_len);
+
 typedef enum {
   kMemfaultLogRecordType_Preformatted = 0,
   kMemfaultLogRecordType_Compact = 1,

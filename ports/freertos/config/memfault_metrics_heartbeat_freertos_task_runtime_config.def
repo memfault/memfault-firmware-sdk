@@ -1,0 +1,8 @@
+#include "memfault/ports/freertos/metrics.h"
+
+#if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
+    MEMFAULT_METRICS_KEY_DEFINE(idle0_task_run_time_percent, kMemfaultMetricType_Unsigned)
+    MEMFAULT_METRICS_KEY_DEFINE(idle1_task_run_time_percent, kMemfaultMetricType_Unsigned)
+#elif MEMFAULT_FREERTOS_RUN_TIME_STATS_SINGLE_CORE
+    MEMFAULT_METRICS_KEY_DEFINE(idle_task_run_time_percent, kMemfaultMetricType_Unsigned)
+#endif

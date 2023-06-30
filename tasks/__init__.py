@@ -29,6 +29,11 @@ def fw_sdk_unit_test(
 ):
     """Runs unit tests"""
 
+    if rule == "clean":
+        builddir = os.path.abspath(os.path.join(test_dir, "build"))
+        ctx.run(f"rm -rf {builddir}")
+        return
+
     # Check if it's necessary to set the CPPUTEST_HOME variable; Macos (brew)
     # and conda environment requires this
     env_dict = {}

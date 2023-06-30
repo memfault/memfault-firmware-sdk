@@ -66,11 +66,18 @@ static int prv_init_modem_lib(void) {
 static int prv_init_modem_lib(void) {
   return nrf_modem_lib_init(NORMAL_MODE);
 }
-#else /* nRF Connect SDK >= 1.6 */
+#elif !MEMFAULT_NCS_VERSION_GT(2, 3)
+/* nRF Connect SDK >= 1.6 || <= 2.3 */
 #include "memfault_ncs.h"
 #include <modem/nrf_modem_lib.h>
 static int prv_init_modem_lib(void) {
   return nrf_modem_lib_init(NORMAL_MODE);
+}
+#else /* nRF Connect SDK >= 2.4 */
+#include "memfault_ncs.h"
+#include <modem/nrf_modem_lib.h>
+static int prv_init_modem_lib(void) {
+  return nrf_modem_lib_init();
 }
 #endif
 

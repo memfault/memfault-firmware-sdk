@@ -8,5 +8,21 @@
 #include "memfault_lwip_metrics_heartbeat_config.def"
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
+#if CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+#include "memfault_metrics_heartbeat_freertos_task_runtime_config.def"
+#endif // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+
+#if CONFIG_MEMFAULT_MBEDTLS_METRICS
+#include "memfault_mbedtls_metrics_heartbeat_config.def"
+#endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
+
+#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+    MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
+    #endif // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
+#endif // CONFIG_MEMFAULT_ESP_WIFI_METRICS
+
 // Include user metrics
 #include "memfault_metrics_heartbeat_config.def"

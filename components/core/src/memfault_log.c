@@ -374,10 +374,8 @@ void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   va_end(args);
 }
 
-static void prv_log_save(eMemfaultPlatformLogLevel level,
-                         const void *log, size_t log_len,
-                         eMemfaultLogRecordType log_type) {
-
+static void prv_log_save(eMemfaultPlatformLogLevel level, const void *log, size_t log_len,
+                         eMemfaultLogRecordType log_type, bool should_lock) {
   if (!prv_should_log(level)) {
     return;
   }
@@ -385,7 +383,9 @@ static void prv_log_save(eMemfaultPlatformLogLevel level,
   bool log_written = false;
   const size_t truncated_log_len = MEMFAULT_MIN(log_len, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
   const size_t bytes_needed = sizeof(sMfltRamLogEntry) + truncated_log_len;
-  memfault_lock();
+  if (should_lock) {
+    memfault_lock();
+  }
   {
     sMfltCircularBuffer *circ_bufp = &s_memfault_ram_logger.circ_buffer;
     const bool space_free = prv_try_free_space(circ_bufp, (int)bytes_needed);
@@ -399,7 +399,9 @@ static void prv_log_save(eMemfaultPlatformLogLevel level,
         log_written = true;
     }
   }
-  memfault_unlock();
+  if (should_lock) {
+    memfault_unlock();
+  }
 
   if (log_written) {
     memfault_log_handle_saved_callback();
@@ -426,7 +428,7 @@ void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
   }
 
   const size_t bytes_written = memfault_cbor_encoder_deinit(&encoder);
-  prv_log_save(level, log_buf, bytes_written, kMemfaultLogRecordType_Compact);
+  prv_log_save(level, log_buf, bytes_written, kMemfaultLogRecordType_Compact, true);
 }
 
 #endif /* MEMFAULT_COMPACT_LOG_ENABLE */
@@ -434,7 +436,12 @@ void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
 
 void memfault_log_save_preformatted(eMemfaultPlatformLogLevel level,
                                     const char *log, size_t log_len) {
-  prv_log_save(level, log, log_len, kMemfaultLogRecordType_Preformatted);
+  prv_log_save(level, log, log_len, kMemfaultLogRecordType_Preformatted, true);
+}
+
+void memfault_log_save_preformatted_nolock(eMemfaultPlatformLogLevel level, const char *log,
+                                           size_t log_len) {
+  prv_log_save(level, log, log_len, kMemfaultLogRecordType_Preformatted, false);
 }
 
 bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {

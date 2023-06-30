@@ -7,10 +7,12 @@
 
 #include <init.h>
 #include <kernel.h>
+#include <logging/log_ctrl.h>
 #include <soc.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
+#include "memfault/ports/zephyr/log_backend.h"
 #include "zephyr_release_specific_headers.h"
 
 #if !MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
@@ -37,6 +39,18 @@
 // so we can preserve the pristine fault register values.
 void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
                         _callee_saved_t *callee_regs) {
+  #if MEMFAULT_ZEPHYR_VERSION_GT(3, 1) || defined(CONFIG_LOG2)
+  // Trigger a LOG_PANIC() early to flush any buffered logs, then disable the
+  // Memfault log backend to prevent any further logs from being captured
+  // (primarily the Zephyr fault logs, which can fill up the Memfault log
+  // buffer). Note that this approach won't work if the user has Logs enabled
+  // but CONFIG_MEMFAULT_CACHE_FAULT_REGS=n, and the fault messages will end up
+  // in the log buffer. That should be an unusual configuration, since the fault
+  // register capture disable is a very small size optimization, and logs are
+  // likely not used on devices with space constraints.
+  LOG_PANIC();
+  memfault_zephyr_log_backend_disable();
+  #endif
 
   memfault_coredump_cache_fault_regs();
 
