@@ -1,3 +1,10 @@
+### Changes between Memfault SDK 1.1.0 and 1.1.1 - June 30, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Reduce the amount of error logs emitted by the MbedTLS port HTTP client while
+  polling for session established. This regressed in SDK version 1.1.0.
+
 ### Changes between Memfault SDK 1.0.1 and 1.1.0 - June 29, 2023
 
 #### :chart_with_upwards_trend: Improvements

@@ -189,11 +189,11 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
       break;
     }
 
-    MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", -ret);
     if ((ret == MBEDTLS_ERR_SSL_WANT_READ) || (ret == MBEDTLS_ERR_SSL_WANT_WRITE)) {
       continue;
     } else {
       // all other errors are fatal
+      MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", -ret);
       goto cleanup;
     }
   } while (1);
