@@ -23,7 +23,9 @@ MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id = {
   .type = kMemfaultBuildIdType_GnuBuildIdSha1,
   .len = sizeof(sMemfaultElfNoteSection),
   .short_len = MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES,
+#ifndef MEMFAULT_GNU_BUILD_ID_CUSTOM
   .storage = __start_gnu_build_id_start,
+#endif
   .sdk_version = MEMFAULT_SDK_VERSION,
 };
 #else

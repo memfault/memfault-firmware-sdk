@@ -22,9 +22,13 @@ static const void *prv_get_build_id_start_pointer(void) {
     case kMemfaultBuildIdType_MemfaultBuildIdSha1:
       return g_memfault_build_id.storage;
     case kMemfaultBuildIdType_GnuBuildIdSha1: {
+#if MEMFAULT_GNU_BUILD_ID_CUSTOM
+      return memfault_gnu_build_id_get();
+#else
       const sMemfaultElfNoteSection *elf =
           (const sMemfaultElfNoteSection *)g_memfault_build_id.storage;
       return &elf->namedata[elf->namesz]; // Skip over { 'G', 'N', 'U', '\0' }
+#endif
     }
     case kMemfaultBuildIdType_None:
     default:

@@ -25,6 +25,12 @@ extern "C" {
 // enables the Memfault cloud to identify and surface when this happens! Below
 // requires the "-Wl,--build-id" flag.
 #define MEMFAULT_USE_GNU_BUILD_ID 1
+
+#if CONFIG_MEMFAULT_GNU_BUILD_ID_CUSTOM
+// The build system already generates the GNU build ID.
+// Link it to Memfault via the memfault_gnu_build_id_get() call.
+#define MEMFAULT_GNU_BUILD_ID_CUSTOM 1
+#endif
 #endif
 
 // We need to define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1 for the logs to

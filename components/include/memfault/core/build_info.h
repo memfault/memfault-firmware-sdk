@@ -47,6 +47,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,6 +85,11 @@ bool memfault_build_id_get_string(char *out_buf, size_t buf_len);
 //!   Memfault Build ID: 000102030405060708090a0b0c0d0e0f10111213
 //!   GNU Build ID: 58faeeb01696afbfb4f790c63b77c80f89972989
 void memfault_build_info_dump(void);
+
+#ifdef MEMFAULT_GNU_BUILD_ID_CUSTOM
+//! Invoked by memfault library to query the GNU build ID when MEMFAULT_GNU_BUILD_ID_CUSTOM
+const void *memfault_gnu_build_id_get(void);
+#endif
 
 #ifdef __cplusplus
 }

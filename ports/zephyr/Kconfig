@@ -40,6 +40,12 @@ config MEMFAULT_USER_CONFIG_SILENT_FAIL
           memfault_metrics_heartbeat_config.def
           memfault_trace_reason_user_config.def
 
+config MEMFAULT_GNU_BUILD_ID_CUSTOM
+        bool "Provide a custom pointer for GNU build ID through memfault_gnu_build_id_get()"
+        help
+          When enabled the application is expected to provide the GNU build ID
+          through memfault_gnu_build_id_get.
+
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
         bool
         default n
