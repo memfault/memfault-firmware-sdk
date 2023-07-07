@@ -177,8 +177,10 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     memfault_reboot_tracking_mark_coredump_saved();
   }
 
+#if !MEMFAULT_FAULT_HANDLER_RETURN
   memfault_platform_reboot();
   MEMFAULT_UNREACHABLE;
+#endif
 }
 
 

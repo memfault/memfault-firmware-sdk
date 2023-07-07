@@ -78,6 +78,11 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
   };
 
   memfault_fault_handler(&reg, kMfltRebootReason_HardFault);
+
+#if MEMFAULT_FAULT_HANDLER_RETURN
+  void __real_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+  __real_z_fatal_error(reason, esf);
+#endif
 }
 
 MEMFAULT_WEAK
