@@ -36,7 +36,7 @@ if(CONFIG_MEMFAULT)
   # Be sure to use the Zephyr override config file if config'd in. This file
   # will include the base config file. zephyr_compile_definitions() use
   # INTERFACE as the scope so users will pickup this define as expected.
-  zephyr_compile_definitions(MEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_zephyr_platform_config.h\")
+  zephyr_compile_definitions(MEMFAULT_PLATFORM_CONFIG_FILE=CONFIG_MEMFAULT_PLATFORM_CONFIG)
 
   # We automatically collect some Zephyr kernel metrics from a custom Zephyr port def file. The
   # Zephyr port def file will pull in the user's file via include directive.

@@ -11,6 +11,12 @@ config MEMFAULT
 
 if MEMFAULT
 
+config MEMFAULT_PLATFORM_CONFIG
+        string "Platform configuration file"
+        default "memfault_zephyr_platform_config.h"
+        help
+          Select the Memfault configuration file to use
+
 config MEMFAULT_CACHE_FAULT_REGS
         bool "MEMFAULT Cache ARM fault registers"
         default y
