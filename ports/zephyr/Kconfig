@@ -46,6 +46,13 @@ config MEMFAULT_USER_CONFIG_SILENT_FAIL
           memfault_metrics_heartbeat_config.def
           memfault_trace_reason_user_config.def
 
+config MEMFAULT_GNU_BUILD_ID_EXTERNAL
+        bool "GNU build ID is already being linked externally"
+        help
+          When enabled the application is already configuring the linker to generate
+          a GNU build ID. The expected symbol name can be set in the platform config
+          with MEMFAULT_GNU_BUILD_ID_SYMBOL.
+
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
         bool
         default n
