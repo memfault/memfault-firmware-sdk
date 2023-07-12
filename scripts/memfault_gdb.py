@@ -54,7 +54,7 @@ except ImportError:
     error_str = """
     This script can only be run within gdb!
     """
-    raise Exception(error_str)  # noqa: B904  (no raise-from in Python 2.7)
+    raise ImportError(error_str)  # noqa: B904  (no raise-from in Python 2.7)
 
 
 # Note: not using `requests` but using the built-in http.client instead, so
@@ -144,7 +144,7 @@ def _pc_in_vector_table(register_list, exception_number, analytics_props):
         curr_pc = _get_register_value(register_list, "pc")
         exc_handler, _ = _read_register(0x0 + vtor + (exception_number * 4))
         exc_handler &= ~0x1  # Clear thumb bit
-        return exc_handler == curr_pc
+        return exc_handler == curr_pc  # noqa: TRY300
     except Exception:
         analytics_props["pc_in_vtor_check_error"] = {"traceback": traceback.format_exc()}
         return False
@@ -178,12 +178,12 @@ For example,
     exc_return = _get_register_value(register_list, "lr")
     if exc_return >> 28 != 0xF:
         print("{} {}".format(fault_start_prompt, gdb_how_to_fault_prompt))
-        raise Exception("LR no longer set to EXC_RETURN value")
+        raise RuntimeError("LR no longer set to EXC_RETURN value")
 
     # DCRS - armv8m only - only relevant when chaining secure and non-secure exceptions
     # so pretty unlikely to be hit in a try test scenario
     if exc_return & (1 << 5) == 0:
-        raise Exception("DCRS exception unwinding unimplemented")
+        raise RuntimeError("DCRS exception unwinding unimplemented")
 
     if not _pc_in_vector_table(register_list, exception_number, analytics_props):
         analytics_props["displayed_fault_prompt"] = True
@@ -197,7 +197,7 @@ For example,
         )
         if "Y" not in y.upper():
             print(gdb_how_to_fault_prompt)
-            raise Exception("User did not confirm being at beginning of exception")
+            raise RuntimeError("User did not confirm being at beginning of exception")
     else:
         analytics_props["displayed_fault_prompt"] = False
 
@@ -801,7 +801,7 @@ def read_memory_until_error(inferior, start, size, read_size=4 * 1024):
 def _create_http_connection(base_uri):
     url = urlparse(base_uri)
     if url.hostname is None:
-        raise Exception("Invalid base URI, must be http(s)://hostname")
+        raise RuntimeError("Invalid base URI, must be http(s)://hostname")
     if url.scheme == "http":
         conn_class = HTTPConnection
         default_port = 80
@@ -1233,7 +1233,7 @@ class MemfaultPostChunk(MemfaultGdbCommand):
     """
 
     GDB_CMD = "memfault install_chunk_handler"
-    USER_TRANSPORT_SEND_CHUNK_HANDLER = [
+    USER_TRANSPORT_SEND_CHUNK_HANDLER = [  # noqa: RUF012
         "memfault_data_export_chunk",
         "user_transport_send_chunk_data",
     ]
@@ -1816,7 +1816,7 @@ class AnalyticsTracker(Thread):
                 # Throttle a bit
                 sleep(0.2)
 
-            except Exception:
+            except Exception:  # noqa: S110
                 pass  # Never fail due to analytics requests erroring out
 
 

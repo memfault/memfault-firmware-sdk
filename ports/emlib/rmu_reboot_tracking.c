@@ -12,18 +12,19 @@
 
 #include "memfault/ports/reboot_reason.h"
 
-#include "em_rmu.h"
+// non-module headers below
+#include "em_device.h"
 #include "em_emu.h"
-
+#include "em_rmu.h"
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 #if defined(_RMU_RSTCAUSE_MASK)
@@ -36,21 +37,21 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   if (reset_cause & RMU_RSTCAUSE_PORST) {
     MEMFAULT_PRINT_RESET_INFO(" Power on Reset");
     return kMfltRebootReason_PowerOnReset;
-#if defined(RMU_RSTCAUSE_AVDDBOD)
+  #if defined(RMU_RSTCAUSE_AVDDBOD)
   } else if (reset_cause & RMU_RSTCAUSE_AVDDBOD) {
     MEMFAULT_PRINT_RESET_INFO(" AVDD Brown Out");
     return kMfltRebootReason_BrownOutReset;
-#endif
-#if defined(RMU_RSTCAUSE_DVDDBOD)
+  #endif
+  #if defined(RMU_RSTCAUSE_DVDDBOD)
   } else if (reset_cause & RMU_RSTCAUSE_DVDDBOD) {
     MEMFAULT_PRINT_RESET_INFO(" DVDD Brown Out");
     return kMfltRebootReason_BrownOutReset;
-#endif
-#if defined(RMU_RSTCAUSE_DECBOD)
+  #endif
+  #if defined(RMU_RSTCAUSE_DECBOD)
   } else if (reset_cause & RMU_RSTCAUSE_DECBOD) {
     MEMFAULT_PRINT_RESET_INFO(" DEC Brown Out");
     return kMfltRebootReason_BrownOutReset;
-#endif
+  #endif
   } else if (reset_cause & RMU_RSTCAUSE_LOCKUPRST) {
     MEMFAULT_PRINT_RESET_INFO(" Lockup");
     return kMfltRebootReason_Lockup;
@@ -60,11 +61,11 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   } else if (reset_cause & RMU_RSTCAUSE_WDOGRST) {
     MEMFAULT_PRINT_RESET_INFO(" Watchdog");
     return kMfltRebootReason_HardwareWatchdog;
-#if defined(RMU_RSTCAUSE_EM4WURST)
+  #if defined(RMU_RSTCAUSE_EM4WURST)
   } else if (reset_cause & RMU_RSTCAUSE_EM4RST) {
     MEMFAULT_PRINT_RESET_INFO(" EM4 Wakeup");
     return kMfltRebootReason_DeepSleep;
-#endif
+  #endif
   } else if (reset_cause & RMU_RSTCAUSE_EXTRST) {
     MEMFAULT_PRINT_RESET_INFO(" Pin Reset");
     return kMfltRebootReason_ButtonReset;
@@ -94,7 +95,7 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   } else if (reset_cause & EMU_RSTCAUSE_DVDDBOD) {
     MEMFAULT_PRINT_RESET_INFO(" DVDD Brown Out");
     return kMfltRebootReason_BrownOutReset;
-  } else if (reset_cause &  EMU_RSTCAUSE_DVDDLEBOD) {
+  } else if (reset_cause & EMU_RSTCAUSE_DVDDLEBOD) {
     MEMFAULT_PRINT_RESET_INFO(" DVDDLE Brown Out");
     return kMfltRebootReason_BrownOutReset;
   } else if (reset_cause & EMU_RSTCAUSE_DECBOD) {
@@ -118,12 +119,26 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   } else if (reset_cause & EMU_RSTCAUSE_SETAMPER) {
     MEMFAULT_PRINT_RESET_INFO(" SE Tamper");
     return kMfltRebootReason_UnknownError;
+  #if defined(EMU_RSTCAUSE_SESYSREQ)
   } else if (reset_cause & EMU_RSTCAUSE_SESYSREQ) {
-    MEMFAULT_PRINT_RESET_INFO(" SE Software Reset");
+    MEMFAULT_PRINT_RESET_INFO(" SE System Reset");
     return kMfltRebootReason_SoftwareReset;
+  #endif
+  #if defined(EMU_RSTCAUSE_SYSREQ)
+  } else if (reset_cause & EMU_RSTCAUSE_SYSREQ) {
+    MEMFAULT_PRINT_RESET_INFO("Software Reset");
+    return kMfltRebootReason_SoftwareReset;
+  #endif
+  #if defined(EMU_RSTCAUSE_SELOCKUP)
   } else if (reset_cause & EMU_RSTCAUSE_SELOCKUP) {
-    MEMFAULT_PRINT_RESET_INFO(" SE Lockup");
+    MEMFAULT_PRINT_RESET_INFO("SE Lockup");
     return kMfltRebootReason_Lockup;
+  #endif
+  #if defined(EMU_RSTCAUSE_LOCKUP)
+  } else if (reset_cause & EMU_RSTCAUSE_LOCKUP) {
+    MEMFAULT_PRINT_RESET_INFO("Lockup");
+    return kMfltRebootReason_Lockup;
+  #endif
   } else if (reset_cause & EMU_RSTCAUSE_PIN) {
     MEMFAULT_PRINT_RESET_INFO(" SE Pin Reset");
     return kMfltRebootReason_PinReset;
@@ -133,7 +148,7 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   return kMfltRebootReason_Unknown;
 }
 #else
-#error "Unexpected RSTCTRL configuration"
+  #error "Unexpected RSTCTRL configuration"
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -154,7 +169,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   RMU_ResetCauseClear();
 #endif
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

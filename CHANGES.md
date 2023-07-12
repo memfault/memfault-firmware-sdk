@@ -1,3 +1,19 @@
+### Changes between Memfault SDK 1.1.1 and 1.1.2 - July 11, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Improve compatibility in
+  [reboot reason tracking](ports/emlib/rmu_reboot_tracking.c) and
+  [watchdog implementation](ports/emlib/wdog_software_watchdog.c) on Silicon
+  Labs Series 2 MCUs
+
+- Zephyr:
+  - Fix a build error when `CONFIG_MEMFAULT_LOGGING=n`, see
+    [#56](https://github.com/memfault/memfault-firmware-sdk/issues/56). Thanks
+    to @JordanYates for reporting this issue!
+  - Fix a potential bug in the Memfault Log Backend when
+    `CONFIG_LOG_MODE_IMMEDIATE=y` when flushing of fault logs during a crash
+
 ### Changes between Memfault SDK 1.1.0 and 1.1.1 - June 30, 2023
 
 #### :chart_with_upwards_trend: Improvements

@@ -152,12 +152,22 @@ LOG_BACKEND_DEFINE(log_backend_mflt, log_backend_mflt_api, true);
 
 // Tie Memfault's log function to the Zephyr buffer sender. This is *the* connection to Memfault.
 static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
-  sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx*)ctx;
-  size_t save_length = length;
+  // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
+  // don't save info while in an ISR to avoid wrapping over the info we are collecting.
+  // This function may also be run from LOG_PANIC. We also want to skip saving data in this case
+  // because the context object uses local stack memory which may not be valid when run from
+  // LOG_PANIC
+  if (memfault_arch_is_inside_isr()) {
+    return (int)length;
+  }
 
+  // Ensure we have control over logging context, drop data if we cannot obtain control
   if (prv_sem_take() != 0) {
     return (int)length;
   }
+
+  sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx *)ctx;
+  size_t save_length = length;
 
 #if CONFIG_LOG_MODE_IMMEDIATE
   // A check to help us catch if behavior changes in a future release of Zephyr

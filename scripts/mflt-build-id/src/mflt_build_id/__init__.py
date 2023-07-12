@@ -48,7 +48,7 @@ try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import NoteSection, Section, Symbol, SymbolTableSection
 except ImportError:
-    raise Exception(  # noqa: B904  (no raise-from in Python 2.7)
+    raise ImportError(  # noqa: B904  (no raise-from in Python 2.7)
         """
     Script depends on pyelftools. Add it to your requirements.txt or run:
     $ pip install pyelftools
@@ -526,7 +526,7 @@ def main():
     args = parser.parse_args()
 
     if args.sha1 and args.crc:
-        raise Exception("Only one of 'crc' or 'sha1' can be specified")
+        raise RuntimeError("Only one of 'crc' or 'sha1' can be specified")
 
     with open(args.elf, "rb") as elf_file:
         b = BuildIdInspectorAndPatcher(elf_file=elf_file)

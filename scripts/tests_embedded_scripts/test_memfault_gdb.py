@@ -69,7 +69,7 @@ def http_expect_request():
                     resp_body,
                 ) = expected_requests[len(connections)]
             except IndexError as e:
-                raise Exception("Unexpected mock HTTPConnection created!") from e
+                raise AssertionError("Unexpected mock HTTPConnection created!") from e
 
             def _request(method, path, body=None, headers=None):
                 nonlocal actual_request_count
@@ -310,7 +310,7 @@ def test_read_memory_until_error_after_10k():
         nonlocal total_size
         total_size += _size
         if total_size > _size * 10:
-            raise Exception()
+            raise ValueError()
         return b"A" * _size
 
     inferior.read_memory.side_effect = _read_memory_raise_after_10k

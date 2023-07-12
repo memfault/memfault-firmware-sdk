@@ -126,7 +126,7 @@ def build_cmsis_pack(
     if not os.path.isdir(memfault_sdk_dir) or not os.path.isfile(
         "{}/VERSION".format(memfault_sdk_dir)
     ):
-        raise Exception(
+        raise ValueError(
             "Invalid path to memfault-firmware-sdk (missing VERSION file) at {}".format(
                 memfault_sdk_dir
             )
@@ -141,7 +141,8 @@ def build_cmsis_pack(
     tree = ET.ElementTree(
         ET.fromstring(  # noqa: S314
             PDSC_TEMPLATE.format(
-                SDK_VERSION=sdk_version, SDK_DATE=datetime.date.today().strftime("%Y-%m-%d")
+                SDK_VERSION=sdk_version,
+                SDK_DATE=datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y-%m-%d"),
             )
         )
     )

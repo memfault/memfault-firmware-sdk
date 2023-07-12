@@ -4,6 +4,7 @@
 #
 
 import os
+import sys
 from glob import glob
 
 from invoke import Collection, task
@@ -37,7 +38,7 @@ def _wiced_guess_console_port():
         print(
             "Cannot find WICED console /dev/... nor ftdi:// path, please specify it manually using --port"
         )
-        exit(1)
+        sys.exit(1)
 
     port = _wiced_find_console_port()
     print("No --port specified, using console port {port}".format(port=port))

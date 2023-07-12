@@ -39,7 +39,7 @@
 // so we can preserve the pristine fault register values.
 void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
                         _callee_saved_t *callee_regs) {
-  #if MEMFAULT_ZEPHYR_VERSION_GT(3, 1) || defined(CONFIG_LOG2)
+  #if CONFIG_MEMFAULT_LOGGING && (MEMFAULT_ZEPHYR_VERSION_GT(3, 1) || defined(CONFIG_LOG2))
   // Trigger a LOG_PANIC() early to flush any buffered logs, then disable the
   // Memfault log backend to prevent any further logs from being captured
   // (primarily the Zephyr fault logs, which can fill up the Memfault log

@@ -34,7 +34,9 @@ def get_depth_from_parent(project_dir, memfault_dir):
         if os.path.samefile(parent_dir, common_prefix):
             return common_prefix, depth
         elif parent_dir == dirname:
-            raise Exception("Couldn't compute depth, aborting at directory {}".format(parent_dir))
+            raise RuntimeError(
+                "Couldn't compute depth, aborting at directory {}".format(parent_dir)
+            )
         depth += 1
         dirname = parent_dir
 
@@ -127,12 +129,12 @@ def patch_project(
     project_file = "{}/.project".format(project_dir)
 
     if not os.path.isfile(project_file):
-        raise Exception("Could not location project file at {}".format(project_file))
+        raise RuntimeError("Could not location project file at {}".format(project_file))
 
     if not os.path.isdir(memfault_sdk_dir) or not os.path.isfile(
         "{}/VERSION".format(memfault_sdk_dir)
     ):
-        raise Exception("Could not locate memfault-firmware-sdk at {}".format(memfault_sdk_dir))
+        raise RuntimeError("Could not locate memfault-firmware-sdk at {}".format(memfault_sdk_dir))
 
     if location_prefix is None:
         # No prefix was given so paths will be generated relative to project root
@@ -161,7 +163,7 @@ def patch_project(
     elif len(linked_resources_roots) == 1:
         linked_resources = linked_resources_roots[0]
     else:
-        raise Exception(
+        raise RuntimeError(
             "Located {} linked resources in Eclipse project file but expected 1".format(
                 len(linked_resources_roots)
             )
@@ -242,7 +244,7 @@ def patch_cproject(
     cproject_file = "{}/.cproject".format(project_dir)
 
     if not os.path.isfile(cproject_file):
-        raise Exception("Could not location project file at {}".format(cproject_file))
+        raise RuntimeError("Could not location project file at {}".format(cproject_file))
 
     tree = ET.parse(cproject_file)  # noqa: S314
     root = tree.getroot()
@@ -398,12 +400,12 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
     components = args.components.split(",")
 
     if args.output and not os.path.isdir(args.output):
-        raise Exception("Output directory does not exist: {}".format(args.output))
+        raise RuntimeError("Output directory does not exist: {}".format(args.output))
 
     if args.location_prefix:
         location_prefix = args.location_prefix.split("=")
         if len(location_prefix) != 2:
-            raise Exception("Location Prefix must be of form 'VAR=/path/'")
+            raise RuntimeError("Location Prefix must be of form 'VAR=/path/'")
     else:
         location_prefix = None
 

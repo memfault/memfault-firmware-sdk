@@ -18,7 +18,7 @@ def gdb_find(prefix=None):
         gdb = which(name)
         if gdb:
             return gdb
-    raise Exception("Cannot find {}".format(" or ".join(ordered_names)))
+    raise FileNotFoundError("Cannot find {}".format(" or ".join(ordered_names)))
 
 
 def gdb_build_cmd(extra_args, elf, gdb_port, reset=True, gdb_prefix=None):

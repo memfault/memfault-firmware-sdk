@@ -93,7 +93,7 @@ def run_xtensa_toolchain_check(ctx):
             )
         )
 
-        raise Exception(msg)
+        raise FileNotFoundError(msg)
 
 
 @task(pre=[run_xtensa_toolchain_check])
