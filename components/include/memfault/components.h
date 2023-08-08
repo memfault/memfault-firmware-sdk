@@ -68,6 +68,7 @@ extern "C" {
 #include "memfault/util/crc16_ccitt.h"
 #include "memfault/util/rle.h"
 #include "memfault/util/varint.h"
+#include "memfault/version.h"
 
 #ifdef __cplusplus
 }

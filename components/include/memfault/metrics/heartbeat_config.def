@@ -2,6 +2,9 @@
 //! default health statistics for the fleet. All other metrics are provided by the user
 //! of the sdk via the MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE file
 
+// Memfault SDK Version String
+#include "memfault/version.h"
+MEMFAULT_METRICS_STRING_KEY_DEFINE(MemfaultSdkMetric_sdk_version, sizeof(MEMFAULT_SDK_VERSION_STR) - 1)
 // The time since the last heartbeat was collected in ms
 MEMFAULT_METRICS_KEY_DEFINE(MemfaultSdkMetric_IntervalMs, kMemfaultMetricType_Timer)
 // The number of reboots that have taken place since the last heartbeat was collected

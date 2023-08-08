@@ -22,14 +22,14 @@ import tempfile
 import xml.etree.ElementTree as ET  # noqa: N817
 
 PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
-<package schemaVersion="1.4" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="PACK.xsd">
+<package schemaVersion="1.4" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/v1.7.20/schema/PACK.xsd">
   <vendor>Memfault</vendor>
   <name>FirmwareSDK</name>
   <description>Memfault SDK</description>
   <url>https://github.com/memfault/memfault-firmware-sdk/</url>
   <supportContact>hello@memfault.com</supportContact>
   <releases>
-    <release version="{SDK_VERSION}" date="{SDK_DATE}">Memfault CMSIS Pack based on Memfault Firmware SDK {SDK_VERSION}</release>
+    <release version="{SDK_VERSION}" date="{SDK_DATE}">Memfault CMSIS Pack for Memfault Firmware SDK {SDK_VERSION}</release>
   </releases>
   <keywords>
     <keyword>Memfault</keyword>
@@ -37,24 +37,30 @@ PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
   </keywords>
   <components>
     <bundle Cbundle="Memfault" Cclass="Utility" Cversion="{SDK_VERSION}">
-      <description></description>
+      <description>Memfault Firmware SDK</description>
       <doc>https://docs.memfault.com/</doc>
-      <component Cgroup="Memfault" Cversion="{SDK_VERSION}">
-        <description>Release Version "{SDK_VERSION}"</description>
+      <component Cgroup="Memfault Core" Cversion="{SDK_VERSION}">
+        <description>Memfault core components</description>
         <files>
           <file category="include" name="components/include/"></file>
           <file category="include" name="ports/include/"></file>
         </files>
       </component>
+      <component Cgroup="Memfault Coredump RAM Backend" Cversion="{SDK_VERSION}">
+        <description>RAM backed coredump implementation</description>
+        <files>
+          <file category="sourceC" name="ports/panics/src/memfault_platform_ram_backed_coredump.c" version="{SDK_VERSION}"></file>
+        </files>
+      </component>
       <!-- Template files end user is responsible for filling in -->
       <component Cgroup="Memfault Platform Port" Cversion="{SDK_VERSION}">
-        <description>Release version {SDK_VERSION}</description>
+        <description>Template files for Memfault Platform implementation</description>
         <files>
-          <file attr="template" select="Metric keys config" category="other" name="ports/templates/memfault_metrics_heartbeat_config.def" version="1.0.0"></file>
-          <file attr="template" select="SDK config" category="header" name="ports/templates/memfault_platform_config.h" version="1.0.0"></file>
-          <file attr="template" select="Log config" category="header" name="ports/templates/memfault_platform_log_config.h" version="1.0.0"></file>
-          <file attr="template" select="Platform port" category="source" name="ports/templates/memfault_platform_port.c" version="1.0.0"></file>
-          <file attr="template" select="Trace reason keys config" category="other" name="ports/templates/memfault_trace_reason_user_config.def" version="1.0.0"></file>
+          <file attr="config" category="other" name="ports/templates/memfault_metrics_heartbeat_config.def" version="{SDK_VERSION}"></file>
+          <file attr="config" category="header" name="ports/templates/memfault_platform_config.h" version="{SDK_VERSION}"></file>
+          <file attr="config" category="header" name="ports/templates/memfault_platform_log_config.h" version="{SDK_VERSION}"></file>
+          <file attr="config" category="sourceC" name="ports/templates/memfault_platform_port.c" version="{SDK_VERSION}"></file>
+          <file attr="config" category="other" name="ports/templates/memfault_trace_reason_user_config.def" version="{SDK_VERSION}"></file>
         </files>
       </component>
     </bundle>
@@ -63,7 +69,7 @@ PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
-def get_file_element(file_name, common_prefix):
+def get_file_element(file_name, common_prefix, sdk_version):
     relative_path = os.path.relpath(
         file_name,
         common_prefix,
@@ -72,7 +78,9 @@ def get_file_element(file_name, common_prefix):
     relative_path = pathlib.PureWindowsPath(relative_path).as_posix()
     logging.debug("Adding %s", relative_path)
     ele = ET.fromstring(  # noqa: S314
-        """<file category="source" name="{PATH}"></file>""".format(PATH=relative_path)
+        """<file category="sourceC" name="{PATH}" version="{SDK_VERSION}"></file>""".format(
+            PATH=relative_path, SDK_VERSION=sdk_version
+        )
     )
     ele.tail = "\n          "
     return ele
@@ -96,7 +104,7 @@ def recursive_glob_backport(dir_glob):
                 yield file_path
 
 
-def files_to_link(dir_glob, common_prefix):
+def files_to_link(dir_glob, common_prefix, sdk_version):
     try:
         files = glob.glob(dir_glob, recursive=True)
     except TypeError:
@@ -104,16 +112,7 @@ def files_to_link(dir_glob, common_prefix):
         files = recursive_glob_backport(dir_glob)
     files = recursive_glob_backport(dir_glob)
     for file_name in files:
-        yield get_file_element(file_name, common_prefix)
-
-
-def get_current_sdk_version(memfault_sdk_dir):
-    with open(f"{memfault_sdk_dir}/components/include/memfault/version.h", "r") as f:
-        contents = f.read()
-
-    match = re.search(r".major = (\d+), .minor = (\d+), .patch = (\d+)", contents, re.MULTILINE)
-    assert match
-    return f"{match.group(1)}.{match.group(2)}.{match.group(3)}"
+        yield get_file_element(file_name, common_prefix, sdk_version)
 
 
 def build_cmsis_pack(
@@ -123,6 +122,8 @@ def build_cmsis_pack(
     output_file,
     just_print,
 ):
+    common_prefix = memfault_sdk_dir
+
     if not os.path.isdir(memfault_sdk_dir) or not os.path.isfile(
         "{}/VERSION".format(memfault_sdk_dir)
     ):
@@ -131,12 +132,16 @@ def build_cmsis_pack(
                 memfault_sdk_dir
             )
         )
-    common_prefix = memfault_sdk_dir
 
     logging.debug("===Determined Path Information===")
     logging.debug("Memfault Firmware SDK Path: %s", memfault_sdk_dir)
 
-    sdk_version = get_current_sdk_version(memfault_sdk_dir)
+    with open(f"{memfault_sdk_dir}/components/include/memfault/version.h", "r") as f:
+        contents = f.read()
+
+    match = re.search(r".major = (\d+), .minor = (\d+), .patch = (\d+)", contents, re.MULTILINE)
+    assert match
+    sdk_version = f"{match.group(1)}.{match.group(2)}.{match.group(3)}"
 
     tree = ET.ElementTree(
         ET.fromstring(  # noqa: S314
@@ -156,8 +161,8 @@ def build_cmsis_pack(
     component_nodes = root.findall(".//component")
     memfault_component = None
     for component_node in component_nodes:
-        cclass = component_node.get("Cgroup", "")
-        if cclass == "Memfault":
+        cgroup = component_node.get("Cgroup", "")
+        if cgroup == "Memfault Core":
             memfault_component = component_node
 
     assert memfault_component
@@ -168,6 +173,7 @@ def build_cmsis_pack(
         for ele in files_to_link(
             dir_glob="{}/components/{}/**/*.c".format(memfault_sdk_dir, component),
             common_prefix=common_prefix,
+            sdk_version=sdk_version,
         ):
             file_resources.append(ele)
 
@@ -178,6 +184,7 @@ def build_cmsis_pack(
         for ele in files_to_link(
             dir_glob="{}/ports/{}/*.c".format(memfault_sdk_dir, target_port),
             common_prefix=common_prefix,
+            sdk_version=sdk_version,
         ):
             file_resources.append(ele)
 
@@ -186,6 +193,7 @@ def build_cmsis_pack(
             for ele in files_to_link(
                 dir_glob="{}/ports/freertos/**/*.c".format(memfault_sdk_dir),
                 common_prefix=common_prefix,
+                sdk_version=sdk_version,
             ):
                 file_resources.append(ele)
 
@@ -193,6 +201,12 @@ def build_cmsis_pack(
         # use sys.stdout.buffer to write raw bytes
         tree.write(sys.stdout.buffer, encoding="utf-8", xml_declaration=True)
         return
+
+    # Set the correct default output file name based on the psdc values. See
+    # https://open-cmsis-pack.github.io/Open-CMSIS-Pack-Spec/main/html/createPackPublish.html#cp_WebDownload
+    # for details.
+    if output_file is None:
+        output_file = f"{psdc_vendor}.{psdc_name}.{sdk_version}.pack"
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tree.write(f"{tmpdir_str}/{psdc_file_name}", encoding="utf-8", xml_declaration=True)
@@ -238,7 +252,6 @@ $ python cmsis_pack_bundle.py --memfault-sdk-dir /path/to/memfault-firmware-sdk
     group.add_argument(
         "--output-file",
         help="The output file to write the pack to",
-        default="memfault_firmware_sdk.pack",
     )
 
     group.add_argument(

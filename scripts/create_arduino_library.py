@@ -114,6 +114,10 @@ def arduinoify_memfault_sdk(sdk_root_dir: str, result_dir: str, port: str):
 
     files_to_patch = glob.glob(f"{sdk_root_dir}/**/*.c", recursive=True)
     files_to_patch.extend(glob.glob(f"{sdk_root_dir}/**/*.h", recursive=True))
+    # also the memfault/metrics/heartbeat_config.def file
+    files_to_patch.extend(
+        glob.glob(f"{sdk_root_dir}/**/include/memfault/metrics/heartbeat_config.def")
+    )
 
     logging.debug("Patching headers ...")
 

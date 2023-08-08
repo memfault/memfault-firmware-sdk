@@ -81,17 +81,28 @@ static uint16_t prv_get_previous_entry(uint16_t search_entry_index) {
 
 //! Return the next entry index to write new data to
 //!
-//! First searches for unused entries
-//! If none are found then traverses list to oldest (last) entry
+//! First searches for never-used entries, then unused (used + freed) entries.
+//! If none are found then traverses list to oldest (last) entry.
 static uint16_t prv_get_new_entry_index(void) {
   sMfltHeapStatEntry *entry;
+  uint16_t unused_index = MEMFAULT_HEAP_STATS_LIST_END;
 
   for (uint16_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
     entry = &g_memfault_heap_stats_pool[i];
 
     if (!entry->info.in_use) {
-      return i;  // favor unused entries
+      if (entry->info.size == 0) {
+        return i;  // favor never used entries
+      }
+      // save the first inactive entry found
+      if (unused_index == MEMFAULT_HEAP_STATS_LIST_END) {
+        unused_index = i;
+      }
     }
+  }
+
+  if (unused_index != MEMFAULT_HEAP_STATS_LIST_END) {
+    return unused_index;
   }
 
   // No unused entry found, return the oldest (entry with next index of

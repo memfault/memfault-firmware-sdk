@@ -462,7 +462,7 @@ class BuildIdInspectorAndPatcher:
             )
 
         sec_type = self._helper.get_section_type(section)
-        if sec_type != SectionType.TEXT and sec_type != SectionType.DATA:
+        if sec_type not in {SectionType.TEXT, SectionType.DATA}:
             raise BuildIdError(
                 "CRC symbol '{}' in invalid Section '{}'".format(crc_symbol_name, sec_type)
             )

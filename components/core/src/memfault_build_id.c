@@ -17,13 +17,13 @@
 #if MEMFAULT_USE_GNU_BUILD_ID
 
 // Note: This variable is emitted by the linker script
-extern uint8_t __start_gnu_build_id_start[];
+extern uint8_t MEMFAULT_GNU_BUILD_ID_SYMBOL[];
 
 MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id = {
   .type = kMemfaultBuildIdType_GnuBuildIdSha1,
   .len = sizeof(sMemfaultElfNoteSection),
   .short_len = MEMFAULT_EVENT_INCLUDED_BUILD_ID_SIZE_BYTES,
-  .storage = __start_gnu_build_id_start,
+  .storage = MEMFAULT_GNU_BUILD_ID_SYMBOL,
   .sdk_version = MEMFAULT_SDK_VERSION,
 };
 #else

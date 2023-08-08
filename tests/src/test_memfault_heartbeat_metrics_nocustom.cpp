@@ -49,7 +49,7 @@ TEST_GROUP(MemfaultHeartbeatMetricsNoCustom){
 //! Confirm compilation and metric count is correct
 TEST(MemfaultHeartbeatMetricsNoCustom, Test_CompileAndMetricCount) {
   size_t num_metrics = memfault_metrics_heartbeat_get_num_metrics();
-  LONGS_EQUAL(3, num_metrics);
+  LONGS_EQUAL(4, num_metrics);
 }
 
 //! Confirm we can boot without any issues (eg writing to unpopulated key

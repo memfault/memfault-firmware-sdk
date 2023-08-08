@@ -118,6 +118,39 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   return (rv == data_len);
 }
 
+static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int port_num) {
+  struct zsock_addrinfo hints = {
+    .ai_family = AF_INET,
+    .ai_socktype = SOCK_STREAM,
+  };
+
+  char port[10] = {0};
+  snprintf(port, sizeof(port), "%d", port_num);
+
+  int rv = getaddrinfo(host, port, &hints, res);
+  if (rv != 0) {
+    MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
+  }
+
+  return rv;
+}
+
+static int prv_create_socket(struct addrinfo **res, const char *host, int port_num) {
+  const int protocol = g_mflt_http_client_config.disable_tls ? IPPROTO_TCP : IPPROTO_TLS_1_2;
+
+  int rv = prv_getaddrinfo(res, host, port_num);
+  if (rv) {
+    return rv;
+  }
+
+  int fd = socket((*res)->ai_family, (*res)->ai_socktype, protocol);
+  if (fd < 0) {
+    MEMFAULT_LOG_ERROR("Failed to open socket, errno=%d", errno);
+  }
+
+  return fd;
+}
+
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
   const sec_tag_t sec_tag_opt[] = {
     kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_DigicertRootCa,
@@ -146,34 +179,27 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
-static int prv_configure_socket(struct addrinfo *res, int fd, const char *host) {
-  int rv;
+static int prv_configure_socket(int fd, const char *host) {
+  int rv = 0;
   if (!g_mflt_http_client_config.disable_tls) {
     rv = prv_configure_tls_socket(fd, host);
     if (rv < 0) {
-      MEMFAULT_LOG_ERROR("Failed to configure tls, errno=%d", errno);
-      return rv;
+      MEMFAULT_LOG_ERROR("Failed to configure tls w/ host, errno=%d", errno);
     }
   }
 
-  return connect(fd, res->ai_addr, res->ai_addrlen);
+  return rv;
 }
 
-static int prv_open_and_configure_socket(struct addrinfo *res, const char *host) {
-  const int protocol = g_mflt_http_client_config.disable_tls ? IPPROTO_TCP : IPPROTO_TLS_1_2;
+static int prv_connect_socket(int fd, struct addrinfo *res) {
+  int rv = connect(fd, res->ai_addr, res->ai_addrlen);
 
-  int fd = socket(res->ai_family, res->ai_socktype, protocol);
-  if (fd < 0) {
-    MEMFAULT_LOG_ERROR("Failed to open socket, errno=%d", errno);
-    return fd;
-  }
-
-  int rv = prv_configure_socket(res, fd, host);
   if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Failed to connect socket, errno=%d", errno);
     close(fd);
-    return rv;
   }
-  return fd;
+
+  return rv;
 }
 
 static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
@@ -196,24 +222,19 @@ static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
 }
 
 static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int port_num) {
-  struct zsock_addrinfo hints = {
-    .ai_family = AF_INET,
-    .ai_socktype = SOCK_STREAM,
-  };
-
-  char port[10] = { 0 };
-  snprintf(port, sizeof(port), "%d", port_num);
-
-  int rv = getaddrinfo(host, port, &hints, res);
-  if (rv != 0) {
-    MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
+  const int sock_fd = prv_create_socket(res, host, port_num);
+  if (sock_fd < 0) {
     return -1;
   }
 
-  const int sock_fd = prv_open_and_configure_socket(*res, host);
-  if (sock_fd < 0) {
-    MEMFAULT_LOG_ERROR("Failed to connect to %s, errno=%d",
-                       host, errno);
+  int rv = prv_configure_socket(sock_fd, host);
+  if (rv < 0) {
+    close(sock_fd);
+    return -1;
+  }
+
+  rv = prv_connect_socket(sock_fd, *res);
+  if (rv < 0) {
     return -1;
   }
   return sock_fd;
@@ -515,7 +536,9 @@ cleanup:
     close(sock_fd);
   }
 
-  freeaddrinfo(res);
+  if (res) {
+    freeaddrinfo(res);
+  }
   return success;
 }
 
@@ -591,6 +614,42 @@ int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
   }
 
   return 0;
+}
+
+int memfault_zephyr_port_http_create_socket(sMemfaultHttpContext *ctx) {
+  const char *host = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
+  const int port = MEMFAULT_HTTP_GET_CHUNKS_API_PORT();
+
+  memfault_zephyr_port_http_close_socket(ctx);
+
+  ctx->sock_fd = prv_create_socket(&(ctx->res), host, port);
+
+  if (ctx->sock_fd < 0) {
+    memfault_zephyr_port_http_close_socket(ctx);
+    return -1;
+  }
+
+  return 0;
+}
+
+int memfault_zephyr_port_http_configure_socket(sMemfaultHttpContext *ctx) {
+  const char *host = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
+
+  int rv = prv_configure_socket(ctx->sock_fd, host);
+  if (rv < 0) {
+    memfault_zephyr_port_http_close_socket(ctx);
+  }
+
+  return rv;
+}
+
+int memfault_zephyr_port_http_connect_socket(sMemfaultHttpContext *ctx) {
+  int rv = prv_connect_socket(ctx->sock_fd, ctx->res);
+  if (rv < 0) {
+    memfault_zephyr_port_http_close_socket(ctx);
+  }
+
+  return rv;
 }
 
 void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {

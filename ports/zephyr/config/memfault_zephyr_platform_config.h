@@ -15,16 +15,16 @@ extern "C" {
 
 // Note that pre-v2.0 Zephyr did not create the section allocation needed to support
 // our Gnu build ID usage.
-#if KERNEL_VERSION_MAJOR >= 2
-// Add a unique identifier to the firmware build
-//
-// It is very common, especially during development, to not change the firmware
-// version between editing and compiling the code. This will lead to issues when
-// recovering backtraces or symbol information because the debug information in
-// the symbol file may be out of sync with the actual binary. Tracking a build id
-// enables the Memfault cloud to identify and surface when this happens! Below
-// requires the "-Wl,--build-id" flag.
-#define MEMFAULT_USE_GNU_BUILD_ID 1
+#if KERNEL_VERSION_MAJOR >= 2 && CONFIG_MEMFAULT_USE_GNU_BUILD_ID
+  // Add a unique identifier to the firmware build
+  //
+  // It is very common, especially during development, to not change the firmware
+  // version between editing and compiling the code. This will lead to issues when
+  // recovering backtraces or symbol information because the debug information in
+  // the symbol file may be out of sync with the actual binary. Tracking a build id
+  // enables the Memfault cloud to identify and surface when this happens! Below
+  // requires the "-Wl,--build-id" flag.
+  #define MEMFAULT_USE_GNU_BUILD_ID 1
 #endif
 
 // We need to define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1 for the logs to

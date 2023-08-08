@@ -186,8 +186,7 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
   LONGS_EQUAL(0, g_memfault_heap_stats.in_use_block_count);
   LONGS_EQUAL(1, g_memfault_heap_stats.max_in_use_block_count);
 
-  // now allocate enough entries to fill the stats completely, overwriting the
-  // existing entry
+  // now allocate enough entries to fill the stats completely
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
     MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats[0].ptr + i),
                                expected_heap_stats[0].info.size + i);
@@ -199,12 +198,22 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
   size_t list_count = 0;
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
     sMfltHeapStatEntry *pthis = &g_memfault_heap_stats_pool[i];
+    size_t offset;
+    if (i == 0) {
+      // the first entry is the most recently added, since we wrapped around
+      // ex:
+      // [ 9, 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+      offset = MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool) - 1;
+    } else {
+      // the start of the allocations is at the second position in the array
+      offset = i - 1;
+    }
     sMfltHeapStatEntry expected = {
       .lr = lr,
-      .ptr = (void *)(0x12345679 + i),
+      .ptr = (void *)(0x12345679 + offset),
       .info =
         {
-          .size = 1234 + (uint32_t)i,
+          .size = 1234 + (uint32_t)offset,
           .in_use = 1,
         },
     };
@@ -262,7 +271,9 @@ TEST(MemfaultHeapStats, Test_AddressReuse) {
       CHECK(match);
     }
   }
-  LONGS_EQUAL(1, list_count);
+  // 2 entries will be populated (though in_use==0 for each), since "never-used"
+  // entries are always used before "unused" (freed) entries
+  LONGS_EQUAL(2, list_count);
 }
 
 //! Verifies logic for reusing heap stat entries.
@@ -389,4 +400,64 @@ TEST(MemfaultHeapStats, Test_FreeMostRecent) {
   LONGS_EQUAL(end_offset - 1, g_memfault_heap_stats.stats_pool_head);
   prv_heap_stat_equality(&expected_heap_stats,
                          &g_memfault_heap_stats_pool[g_memfault_heap_stats.stats_pool_head]);
+}
+
+//! Tests that "never-used" entries are used before "unused" (freed) entries
+TEST(MemfaultHeapStats, Test_NeverUsedVsUnused) {
+  void *lr;
+  MEMFAULT_GET_LR(lr);
+
+  const sMfltHeapStatEntry expected_heap_stats = {
+    .lr = lr,
+    .ptr = (void *)0x12345678,
+    .info = {
+      .size = 1234,
+      .in_use = 1,
+    },
+  };
+  // reference pool. fill this up with matching entries as the heap stats pool
+  // during the allocation calls below. this is breaking the abstraction a bit,
+  // but we need to check what the heap stats pool should look like at the end.
+  sMfltHeapStatEntry reference_pool[MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool)];
+
+  // Fill up the heap stats pool, but leave the last entry unused
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool) - 1; i++) {
+    MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + i),
+                               expected_heap_stats.info.size + i);
+    reference_pool[i] = g_memfault_heap_stats_pool[i];
+  }
+
+  // Remove the first allocation
+  MEMFAULT_HEAP_STATS_FREE(expected_heap_stats.ptr);
+  // Unfortunately this peeks into the implementation. The data in
+  // 'g_memfault_heap_stats_pool' is actually part of its public contract, since
+  // we parse it in the backend, so we need to keep it consistent.
+  reference_pool[0].info.in_use = 0;
+
+  // Allocate again, should use the never-used entry
+  size_t end_offset = MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool) - 1;
+  MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + end_offset),
+                             expected_heap_stats.info.size + end_offset);
+  reference_pool[end_offset] = g_memfault_heap_stats_pool[end_offset];
+
+  // walk the allocated entries and confirm correct values
+  for (size_t i = 1; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+      bool match = prv_heap_stat_equality(&reference_pool[i], &g_memfault_heap_stats_pool[i]);
+      if (!match) {
+        fprintf(stderr, "Mismatch at index %zu\n", i);
+      }
+      CHECK(match);
+  }
+  // Now allocate again, and confirm the "unused" entry is used now.
+  MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + end_offset + 1),
+                             expected_heap_stats.info.size + end_offset + 1);
+  const sMfltHeapStatEntry expected = {
+    .lr = lr,
+    .ptr = (void *)(0x12345678 + end_offset + 1),
+    .info = {
+      .size = 1234 + (uint32_t)end_offset + 1,
+      .in_use = 1,
+    },
+  };
+  CHECK(prv_heap_stat_equality(&expected, &g_memfault_heap_stats_pool[0]));
 }

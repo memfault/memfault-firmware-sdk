@@ -170,6 +170,12 @@ static void prv_memfault_ota(void) {
     MEMFAULT_LOG_INFO("Update available!");
   } else if (rv < 0) {
     MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
+
+    // record a Trace Event when this happens, and freeze the log buffer to be
+    // uploaded for diagnosis
+    MEMFAULT_TRACE_EVENT_WITH_LOG(ota_install_failure, "error code=%d", rv);
+    memfault_log_trigger_collection();
+
     led_set_color(kLedColor_Red);
   }
 }
@@ -202,6 +208,8 @@ void memfault_esp_port_wifi_autojoin(void) {
 static void prv_poster_task(void *args) {
   const uint32_t interval_sec = 60;
   const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
+  const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
+  TickType_t ota_last_check_time = xTaskGetTickCount() - ota_check_interval;
 
   MEMFAULT_LOG_INFO("Data poster task up and running every %" PRIu32 "s.", interval_sec);
 
@@ -218,10 +226,13 @@ static void prv_poster_task(void *args) {
       // if the check-in succeeded, set green, otherwise clear.
       // gives a quick eyeball check that the app is alive and well
       led_set_color((err == 0) ? kLedColor_Green : kLedColor_Red);
-    }
 
-    // check for OTA update
-    prv_memfault_ota();
+      // Check for OTA hourly
+      if ((xTaskGetTickCount() - ota_last_check_time) >= ota_check_interval) {
+        prv_memfault_ota();
+        ota_last_check_time = xTaskGetTickCount();
+      }
+    }
 
     // sleep
     vTaskDelay(delay_ms);

@@ -26,6 +26,11 @@ extern "C" {
 #define MEMFAULT_USE_GNU_BUILD_ID 0
 #endif
 
+//! Controls the name used to reference the GNU build ID data
+#ifndef MEMFAULT_GNU_BUILD_ID_SYMBOL
+  #define MEMFAULT_GNU_BUILD_ID_SYMBOL __start_gnu_build_id_start
+#endif
+
 //! Allows users to dial in the correct amount of storage for their
 //! software version + build ID string.
 #ifndef MEMFAULT_UNIQUE_VERSION_MAX_LEN

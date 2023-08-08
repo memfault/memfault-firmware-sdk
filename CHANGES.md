@@ -1,3 +1,29 @@
+### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- Set Memfault SDK version in a string metric on device boot, for easier
+  tracking of SDK versions in the Memfault UI
+- Support using a different identifier for the GNU build id symbol (previously
+  was fixed to `__start_gnu_build_id_start`). Use the
+  `MEMFAULT_GNU_BUILD_ID_SYMBOL` define in `memfault_platform_config.h` to
+  override the default. For Zephyr, the Kconfig option
+  `CONFIG_MEMFAULT_GNU_BUILD_ID_SOURCE_BUILTIN` can be used to override the
+  builtin section specifier + linker fragment for the GNU build ID. Thanks to
+  @JordanYates for posting this change in
+  [#60](https://github.com/memfault/memfault-firmware-sdk/pull/60) 🎉
+- Improvements to the ARMv7-R exception handling when the supervisor processor
+  mode is active
+
+- Zephyr:
+  - Add an optional mode to create and open the HTTP socket in separate function
+    calls, if the user needs to set additional socket options before connecting.
+    See
+    [ports/zephyr/include/memfault/ports/zephyr/http.h](ports/zephyr/include/memfault/ports/zephyr/http.h)
+    for details. Fixes
+    [#52](https://github.com/memfault/memfault-firmware-sdk/issues/52)- thanks
+    to @anicare-tero for posting this 🎉
+
 ### Changes between Memfault SDK 1.1.1 and 1.1.2 - July 11, 2023
 
 #### :chart_with_upwards_trend: Improvements

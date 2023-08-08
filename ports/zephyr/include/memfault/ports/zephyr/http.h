@@ -101,16 +101,69 @@ typedef struct {
 
 //! Open a socket to the Memfault chunks upload server
 //!
+//! This function is the simplest way to connect to Memfault. Internally this function combines the
+//! required socket operations into a single function call. See the other socket functions for
+//! advanced usage.
+//!
 //! @param ctx If the socket is opened successfully, this will be populated with
 //! the connection state for the other HTTP functions below
 //!
 //! @note After use, memfault_zephyr_port_http_close_socket() must be called
-//!  to close the socket and free any associated memory
+//!  to close the socket and free any associated memory.
+//! @note In the case of an error, it is not required to call memfault_zephyr_port_http_close_socket
 //!
 //! @return
 //!   0 : Success
 //! < 0 : Error
 int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx);
+
+//! Creates a socket to the Memfault chunks upload server
+//!
+//! @param ctx If the socket is created successfully, this will be populated with
+//! the connection state for the other HTTP functions below
+//!
+//! @note This function only creates the socket. The user should also configure the socket with
+//! desired options before calling memfault_zephyr_port_http_configure_socket and
+//! memfault_zephyr_port_http_connect_socket.
+//!
+//! @note After use, memfault_zephyr_port_http_close_socket() must be called
+//!  to close the socket and free any associated memory
+//! @note In the case of an error, it is not required to call memfault_zephyr_port_http_close_socket
+//!
+//! @return
+//!   0 : Success
+//! < 0 : Error
+int memfault_zephyr_port_http_create_socket(sMemfaultHttpContext *ctx);
+
+//! Configures a socket to the Memfault chunks upload server
+//!
+//! @param ctx Current HTTP context containing the socket to configure.
+//!
+//! @note This function only configures the socket TLS options for use with Memfault. The user
+//! should also configure the socket with desired options before calling
+//! memfault_zephyr_port_http_connect_socket.
+//!
+//! @note After use, memfault_zephyr_port_http_close_socket() must be called
+//!  to close the socket and free any associated memory
+//! @note In the case of an error, it is not required to call memfault_zephyr_port_http_close_socket
+//!
+//! @return
+//!   0 : Success
+//! < 0 : Error
+int memfault_zephyr_port_http_configure_socket(sMemfaultHttpContext *ctx);
+
+//! Connect the socket to the chunks upload server
+//!
+//! @param ctx Current HTTP context containing the socket to connect with.
+//!
+//! @note After use, memfault_zephyr_port_http_close_socket() must be called
+//!  to close the socket and free any associated memory
+//! @note In the case of an error, it is not required to call memfault_zephyr_port_http_close_socket
+//!
+//! @return
+//!   0 : Success
+//! < 0 : Error
+int memfault_zephyr_port_http_connect_socket(sMemfaultHttpContext *ctx);
 
 //! Close a socket previously opened with
 //! memfault_zephyr_port_http_open_socket()

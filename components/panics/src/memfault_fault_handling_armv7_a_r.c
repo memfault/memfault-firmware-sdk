@@ -75,6 +75,7 @@ bool memfault_arch_is_inside_isr(void) {
   // Reference Manual section "B1.3.1 ARM processor modes" for these values.
   #define CPSR_MODE_msk 0x1f
   #define CPSR_USER_msk 0x10
+  #define CPSR_SUPERVISOR_msk 0x13
   #define CPSR_SYSTEM_msk 0x1f
 
   uint32_t cpsr;
@@ -84,8 +85,9 @@ bool memfault_arch_is_inside_isr(void) {
 
   const bool in_user_mode = (mode == CPSR_USER_msk);
   const bool in_system_mode = (mode == CPSR_SYSTEM_msk);
+  const bool in_supervisor_mode = (mode == CPSR_SUPERVISOR_msk);
 
-  return !(in_user_mode || in_system_mode);
+  return !(in_user_mode || in_system_mode || in_supervisor_mode);
 }
 
 #if defined(__GNUC__)
@@ -237,6 +239,9 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 // Processor mode values, used when saving LR and SPSR to the appropriate stack.
 // From https://developer.arm.com/documentation/dui0801/a/CHDEDCCD
 // Defined as strings for macro concatenation below
+#define CPU_MODE_FIQ_STR "0x11"
+#define CPU_MODE_IRQ_STR "0x12"
+#define CPU_MODE_SUPERVISOR_STR "0x13"
 #define CPU_MODE_ABORT_STR "0x17"
 #define CPU_MODE_UNDEFINED_STR "0x1b"
 #define CPU_MODE_SYSTEM_STR "0x1f"
@@ -281,7 +286,28 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
     /* push user mode regs at point of fault, including sp + lr */ \
     "mov r8, r1 \n" \
     "mov r1, sp \n" \
+    /* Save SPSR and mask mode bits */ \
+    "mrs r9, spsr \n" \
+    "and r9, #0x1f \n" \
+    /* Check each applicable mode and set current mode on a match */ \
+    "cmp r9, #" CPU_MODE_IRQ_STR " \n" \
+    "bne fiq_mode_%= \n" \
+    "cps #" CPU_MODE_IRQ_STR " \n" \
+    "b store_regs_%= \n" \
+    "fiq_mode_%=: \n" \
+    "cmp r9, #" CPU_MODE_FIQ_STR " \n" \
+    "bne supervisor_mode_%= \n" \
+    "cps #" CPU_MODE_FIQ_STR " \n" \
+    "b store_regs_%= \n" \
+    "supervisor_mode_%=: \n" \
+    "cmp r9, #" CPU_MODE_SUPERVISOR_STR " \n" \
+    "bne system_mode_%= \n" \
+    "cps #" CPU_MODE_SUPERVISOR_STR " \n" \
+    "b store_regs_%= \n" \
+    /* Fall back to system mode if no match */ \
+    "system_mode_%=: \n" \
     "cps #" CPU_MODE_SYSTEM_STR " \n" \
+    "store_regs_%=: \n" \
     "stmfd r1!, {r8-r12, sp, lr} \n"\
     "cps #" _mode_string" \n" \
     /* save active registers in exception frame */ \
