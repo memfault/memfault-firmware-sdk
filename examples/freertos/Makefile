@@ -4,6 +4,14 @@ MAKEFLAGS=--warn-undefined-variables
 # Default to a silent build. Run make with --trace for a verbose build.
 .SILENT:
 
+
+# Mac and Linux stat have different options required, set them up here
+ifeq ($(shell uname), Darwin)
+  STAT = "stat -f '%z'"
+else
+  STAT = "stat -c '%s'"
+endif
+
 BOARD ?= qemu_mps2_an385
 BOARD_DIR := boards/$(BOARD)
 
@@ -128,7 +136,7 @@ $(ELF).uncompressed: $(OBJS)
 $(ELF): $(ELF).uncompressed
 	echo -n 'Compressing debug info... '
 	$(OBJCOPY) --compress-debug-sections $^ $@
-	echo From $$(stat --printf="%s" $^) to $$(stat --printf="%s" $@) bytes
+	echo From $$("$(STAT)" $^) to $$("$(STAT)" $@) bytes
 
 -include $(OBJS:.o=.d)
 

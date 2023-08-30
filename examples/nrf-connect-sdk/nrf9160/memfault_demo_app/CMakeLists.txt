@@ -102,6 +102,15 @@ else() # nRF Connect SDK Version >= 1.8.0
   endif()
 endif()
 
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL 2.4.0)
+  # In Zephyr v3.4 release, FLASH_MAP and STREAM_FLASH must be specified manually
+  #  https://github.com/zephyrproject-rtos/zephyr/commit/c3bfe7a6baf7e47d8ad70e38ffdea313f3ec62ce
+  #
+  # These are required for NCS >= 2.4
+  set(CONFIG_FLASH_MAP y CACHE INTERNAL "")
+  set(CONFIG_STREAM_FLASH y CACHE INTERNAL "")
+endif()
+
 # Required for app to compile against nRF Connect SDK <= v1.2
 # Must be included after updating Kconfig settings in CMake Cache above
 if(DEFINED ENV{MEMFAULT_INCLUDE_ZEPHYR_BOILERPLATE})

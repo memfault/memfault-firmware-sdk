@@ -7,10 +7,11 @@
 //! Hooks the Memfault logging API to zephyr's latest (V2) logging system.
 //! As of Zephyr 3.2, it's the only logging system that can be used.
 
-#include <kernel.h>
-#include <logging/log.h>
-#include <logging/log_backend.h>
-#include <logging/log_output.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log_backend.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log_output.h)
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -19,6 +20,7 @@
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/log_backend.h"
 #include "memfault/ports/zephyr/version.h"
+// clang-format on
 
 // Deal with CONFIG_LOG_IMMEDIATE getting renamed to CONFIG_LOG_MODE_IMMEDIATE in v3.0.0 release:
 //  https://github.com/zephyrproject-rtos/zephyr/commit/262cc55609b73ea61b5f999c6c6daaba20bc5240
@@ -152,6 +154,7 @@ LOG_BACKEND_DEFINE(log_backend_mflt, log_backend_mflt_api, true);
 
 // Tie Memfault's log function to the Zephyr buffer sender. This is *the* connection to Memfault.
 static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
+#if defined(CONFIG_LOG_MODE_IMMEDIATE)
   // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
   // don't save info while in an ISR to avoid wrapping over the info we are collecting.
   // This function may also be run from LOG_PANIC. We also want to skip saving data in this case
@@ -160,6 +163,7 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   if (memfault_arch_is_inside_isr()) {
     return (int)length;
   }
+#endif
 
   // Ensure we have control over logging context, drop data if we cannot obtain control
   if (prv_sem_take() != 0) {

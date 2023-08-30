@@ -6,10 +6,11 @@
 //! Implements convenience APIs that can be used when building the set of
 //! RAM regions to collect as part of a coredump. See header for more details/
 
-#include <kernel.h>
-#include <kernel_structs.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel_structs.h)
 #include <sys/types.h>
-#include <version.h>
+// clang-format on
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/coredump.h"

@@ -5,14 +5,18 @@
 //!
 //! Example app main
 
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <shell/shell.h>
+// clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
+#include MEMFAULT_ZEPHYR_INCLUDE(device.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(devicetree.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(drivers/gpio.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
 #include "memfault/components.h"
+// clang-format on
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

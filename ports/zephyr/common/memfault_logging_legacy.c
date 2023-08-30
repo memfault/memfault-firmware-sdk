@@ -7,17 +7,19 @@
 //! Hooks the Memfault logging API to zephyr's "V1" logging system.
 //! which was completely deprecated after the Zephyr 3.1 release.
 
+// clang-format off
 #include "memfault/config.h"
 #include "memfault/components.h"
 
-#include <logging/log.h>
-#include <logging/log_backend.h>
-#include <logging/log_output.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log_backend.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log_output.h)
 
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+// clang-format on
 
 // Deal with CONFIG_LOG_IMMEDIATE getting renamed to CONFIG_LOG_MODE_IMMEDIATE in v3.0.0 release:
 //  https://github.com/zephyrproject-rtos/zephyr/commit/262cc55609b73ea61b5f999c6c6daaba20bc5240

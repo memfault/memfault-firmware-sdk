@@ -8,14 +8,15 @@
 
 #include "memfault/core/platform/debug_log.h"
 
-//
+// clang-format off
 
-#include <logging/log.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
 #include <stdio.h>
 
 #include "memfault/config.h"
 #include "memfault/ports/zephyr/version.h"
 #include "zephyr_release_specific_headers.h"
+// clang-format on
 
 LOG_MODULE_REGISTER(mflt, CONFIG_MEMFAULT_LOG_LEVEL);
 

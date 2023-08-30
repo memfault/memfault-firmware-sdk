@@ -3,7 +3,8 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <kernel.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include <stdbool.h>
 
 #include "memfault/metrics/metrics.h"
@@ -11,8 +12,9 @@
 #include "memfault/ports/zephyr/version.h"
 
 #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
-#include <fs/fs.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(fs/fs.h)
 #endif
+// clang-format on
 
 static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 

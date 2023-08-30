@@ -57,7 +57,6 @@ menu "Memfault"
         bool "Enables the collection of freeRTOS task runtime stats as Memfault metrics"
         default y
         select FREERTOS_GENERATE_RUN_TIME_STATS
-        select FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
         help
             Collects the idle thread runtime metric as a percentage of total runtime.
             This metric is only available when using esp_timer for runtime stats to

@@ -59,6 +59,11 @@ CLANG_STR = clang
 ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
   USE_LCOV = 1
   # use llvm-cov
+  LLVM_COV ?= llvm-cov
+  # terminate early if LLVM_COV is not on the path
+  ifeq (,$(shell command -v $(LLVM_COV)))
+    $(error $(LLVM_COV) not found. Check your llvm install and path for $(LLVM_COV))
+  endif
   GCOV_TOOL = $(abspath $(MFLT_TEST_ROOT)/llvm-cov-wrapper.sh)
 else
   # if the compiler is gcc < 9, use lcov. gcc 9+ will use fastcov

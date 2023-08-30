@@ -7,7 +7,9 @@
 
 #include "memfault/ports/zephyr/root_cert_storage.h"
 
-#include <net/tls_credentials.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(net/tls_credentials.h)
+// clang-format on
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"

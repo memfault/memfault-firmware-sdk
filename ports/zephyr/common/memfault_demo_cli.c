@@ -6,12 +6,14 @@
 //! @brief
 //! Adds a basic set of commands for interacting with Memfault SDK
 
-#include <shell/shell.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 #include <stdlib.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
 #include "zephyr_release_specific_headers.h"
+// clang-format on
 
 static int prv_clear_core_cmd(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_clear_core(argc, argv);
@@ -36,6 +38,13 @@ static int prv_get_device_info(const struct shell *shell, size_t argc, char **ar
 //! Route the 'export' command to output via printk, so we don't drop messages
 //! from logging a big burst.
 void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
+#if defined(CONFIG_LOG_PRINTK) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
+  // printk is configured to pass through the deferred logging subsystem,
+  // which can result in dropped Memfault chunk messages
+  #warning "CONFIG_LOG_PRINTK is enabled, but CONFIG_LOG_MODE_IMMEDIATE is not. " \
+    "Exported Memfault chunk messages may be dropped. " \
+    "Consider disabling CONFIG_LOG_PRINTK or enabling CONFIG_LOG_MODE_IMMEDIATE."
+#endif
   printk("%s\n", base64_chunk);
 }
 

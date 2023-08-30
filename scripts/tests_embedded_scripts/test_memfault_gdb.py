@@ -22,7 +22,7 @@ scripts_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, scripts_dir)
 
 
-from memfault_gdb import (  # noqa: E402
+from memfault_gdb import (  # noqa: E402  # type: ignore[import]
     ArmCortexMCoredumpArch,
     MemfaultConfig,
     MemfaultCoredump,

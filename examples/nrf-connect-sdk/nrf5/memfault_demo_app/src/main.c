@@ -5,13 +5,17 @@
 //!
 //! Example console main
 
-#include <drivers/hwinfo.h>
-#include <logging/log.h>
+// clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
+#include MEMFAULT_ZEPHYR_INCLUDE(drivers/hwinfo.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
 #include <memfault/components.h>
 #include <memfault_ncs.h>
 #include <stdio.h>
 
 #include "memfault/ports/watchdog.h"
+// clang-format on
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 

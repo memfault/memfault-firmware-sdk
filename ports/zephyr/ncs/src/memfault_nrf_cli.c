@@ -3,11 +3,13 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <shell/shell.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
 #include "memfault/core/debug_log.h"
 #include "memfault/nrfconnect_port/fota.h"
 #include "memfault/ports/zephyr/http.h"
+// clang-format on
 
 static int prv_mflt_fota(const struct shell *shell, size_t argc, char **argv) {
 #if CONFIG_MEMFAULT_FOTA_CLI_CMD

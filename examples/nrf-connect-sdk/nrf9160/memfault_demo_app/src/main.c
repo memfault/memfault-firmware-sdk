@@ -10,10 +10,13 @@
 //!     (memfault_nrfconnect_port_install_root_certs())
 //!  4. Start of the LTE modem & AT interface
 
-#include <device.h>
-#include <kernel.h>
+// clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
+#include MEMFAULT_ZEPHYR_INCLUDE(device.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 #include <string.h>
-#include <sys/printk.h>
 
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
@@ -82,8 +85,9 @@ static int prv_init_modem_lib(void) {
 #endif
 
 #if CONFIG_DFU_TARGET_MCUBOOT
-#include <dfu/mcuboot.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(dfu/mcuboot.h)
 #endif
+// clang-format on
 
 // Since the example app manages when the modem starts/stops, we manually configure the device
 // serial even when using nRF Connect SDKs including the Memfault integration (by using
@@ -170,7 +174,7 @@ static void prv_init_device_info(void) {
   memfault_ncs_device_id_set(s_device_serial, IMEI_LEN);
 }
 
-void main(void) {
+int main(void) {
   printk("Memfault Demo App Started!\n");
 
   memfault_demo_app_watchdog_boot();
@@ -186,7 +190,7 @@ void main(void) {
   int err = prv_init_modem_lib();
   if (err) {
     printk("Failed to initialize modem!");
-    return;
+    goto cleanup;
   }
 
   // These libraries were removed in ncs 1.9
@@ -194,13 +198,13 @@ void main(void) {
   err = at_cmd_init();
   if (err) {
     printk("Failed to initialize AT commands, err %d\n", err);
-    return;
+    goto cleanup;
   }
 
   err = at_notif_init();
   if (err) {
     printk("Failed to initialize AT notifications, err %d\n", err);
-    return;
+    goto cleanup;
   }
 #endif
 
@@ -211,14 +215,17 @@ void main(void) {
   // in order to use them
   err = memfault_nrfconnect_port_install_root_certs();
   if (err) {
-    return;
+    goto cleanup;
   }
 
   printk("Waiting for network...\n");
   err = lte_lc_init_and_connect();
   if (err) {
     printk("Failed to connect to the LTE network, err %d\n", err);
-    return;
+    goto cleanup;
   }
   printk("OK\n");
+
+cleanup:
+  return err;
 }

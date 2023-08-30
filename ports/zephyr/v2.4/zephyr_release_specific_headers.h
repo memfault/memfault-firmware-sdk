@@ -12,8 +12,10 @@
 extern "C" {
 #endif
 
-#include <sys/__assert.h>
-#include <sys/printk.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
+// clang-format on
 
 #ifdef __cplusplus
 }

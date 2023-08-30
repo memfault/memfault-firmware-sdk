@@ -7,22 +7,24 @@
 //! The default regions to collect on Zephyr when a crash takes place.
 //! Function is defined as weak so an end user can override it.
 
-#include <kernel.h>
-#include <kernel_structs.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel_structs.h)
 
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/platform/coredump.h"
 #include "memfault/ports/zephyr/version.h"
 
 #if MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
-  #include <arch/arm/aarch32/cortex_m/cmsis.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/cortex_m/cmsis.h)
 #else
-  #include <arch/arm/cortex_m/cmsis.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/cortex_m/cmsis.h)
 #endif
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/ports/zephyr/coredump.h"
+// clang-format on
 
 size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
                                             sMfltCoredumpRegion *regions, size_t num_regions) {

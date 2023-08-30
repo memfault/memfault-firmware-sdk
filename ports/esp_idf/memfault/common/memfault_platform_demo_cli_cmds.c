@@ -7,17 +7,18 @@
 //! ESP32 CLI implementation for demo application
 
 // TODO: Migrate to "driver/gptimer.h" to fix warning
-#include "driver/timer.h"
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "memfault/esp_port/version.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  #include "driver/gptimer.h"
   #include "esp_private/esp_clk.h"
   #include "soc/timer_periph.h"
 #else
   #include "driver/periph_ctrl.h"
+  #include "driver/timer.h"
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
     #include "esp32/clk.h"
   #else
@@ -70,6 +71,39 @@ void prv_check4(void) {
   prv_check3(buf4);
 }
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+static bool IRAM_ATTR prv_timer_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata,
+                                   void *user_ctx) {
+  (void)timer, (void)edata, (void)user_ctx;
+  // Crash from ISR:
+  ESP_ERROR_CHECK(-1);
+  return true;
+}
+
+static gptimer_handle_t s_gptimer = NULL;
+static void prv_timer_init(void) {
+  gptimer_config_t timer_config = {
+    .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+    .direction = GPTIMER_COUNT_UP,
+    .resolution_hz = 1000000,  // 1MHz, 1 tick=ums
+  };
+  ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &s_gptimer));
+
+  gptimer_event_callbacks_t cbs = {
+    .on_alarm = prv_timer_cb,
+  };
+  ESP_ERROR_CHECK(gptimer_register_event_callbacks(s_gptimer, &cbs, NULL));
+  ESP_ERROR_CHECK(gptimer_enable(s_gptimer));
+}
+
+static void prv_timer_start(uint32_t timer_interval_ms) {
+  gptimer_alarm_config_t alarm_config = {
+    .alarm_count = timer_interval_ms * 1000,
+  };
+  ESP_ERROR_CHECK(gptimer_set_alarm_action(s_gptimer, &alarm_config));
+  ESP_ERROR_CHECK(gptimer_start(s_gptimer));
+}
+#else
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
 // Always clear the interrupt:
 #if CONFIG_IDF_TARGET_ESP32
@@ -111,6 +145,7 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }
+#endif
 
 static int prv_esp32_crash_example(int argc, char** argv) {
   int crash_type =  0;

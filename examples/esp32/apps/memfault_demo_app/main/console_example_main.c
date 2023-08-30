@@ -47,7 +47,13 @@ static const char *TAG = "example";
 static void initialize_filesystem() {
   static wl_handle_t wl_handle;
   const esp_vfs_fat_mount_config_t mount_config = {.max_files = 4, .format_if_mount_failed = true};
-  esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+  esp_err_t err =
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    esp_vfs_fat_spiflash_mount_rw_wl
+  #else
+    esp_vfs_fat_spiflash_mount
+  #endif
+    (MOUNT_PATH, "storage", &mount_config, &wl_handle);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
     return;
@@ -74,10 +80,17 @@ static void initialize_console() {
   setvbuf(stdin, NULL, _IONBF, 0);
   setvbuf(stdout, NULL, _IONBF, 0);
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+  /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+  esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
+  /* Move the caret to the beginning of the next line on '\n' */
+  esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+#else
   /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
   esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
   /* Move the caret to the beginning of the next line on '\n' */
   esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+#endif
 
   /* Install UART driver for interrupt-driven reads and writes */
   ESP_ERROR_CHECK(uart_driver_install(CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));

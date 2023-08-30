@@ -1,0 +1,25 @@
+#if MEMFAULT_PORT_MEMORY_TRACKING_ENABLED
+  MEMFAULT_METRICS_KEY_DEFINE(Heap_TotalSize, kMemfaultMetricType_Unsigned)
+  MEMFAULT_METRICS_KEY_DEFINE(Heap_MinBytesFree, kMemfaultMetricType_Unsigned)
+  MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
+#endif
+
+#if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_ConnectingTime, kMemfaultMetricType_Timer)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_ConnectedTime, kMemfaultMetricType_Timer)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_ConnectCount, kMemfaultMetricType_Unsigned)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_ReconnectCount, kMemfaultMetricType_Unsigned)
+
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_ConnectFailureCount, kMemfaultMetricType_Unsigned)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_DisconnectCount, kMemfaultMetricType_Unsigned)
+
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_SignalStrength, kMemfaultMetricType_Signed)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_Channel, kMemfaultMetricType_Unsigned)
+
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_TxBytes, kMemfaultMetricType_Unsigned)
+  MEMFAULT_METRICS_KEY_DEFINE(Wifi_RxBytes, kMemfaultMetricType_Unsigned)
+#endif
+
+#if __has_include("memfault_metrics_heartbeat_config.def")
+  #include "memfault_metrics_heartbeat_config.def"
+#endif

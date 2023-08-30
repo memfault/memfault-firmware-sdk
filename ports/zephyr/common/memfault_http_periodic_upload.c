@@ -3,13 +3,15 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <init.h>
-#include <kernel.h>
-#include <random/rand32.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(init.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(random/rand32.h)
 
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/ports/zephyr/http.h"
+// clang-format on
 
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(

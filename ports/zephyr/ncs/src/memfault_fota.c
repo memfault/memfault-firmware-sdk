@@ -3,6 +3,7 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
+// clang-format off
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/nrfconnect_port/fota.h"
 
@@ -14,7 +15,8 @@
 #include "net/download_client.h"
 #include "net/fota_download.h"
 
-#include <shell/shell.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
+// clang-format on
 
 //! Note: A small patch is needed to nrf in order to enable
 //! as of the latest SDK release (nRF Connect SDK v1.4.x)

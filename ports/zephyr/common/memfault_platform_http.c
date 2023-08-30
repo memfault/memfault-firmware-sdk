@@ -4,13 +4,14 @@
 //! See License.txt for details
 //!
 
+// clang-format off
 #include <errno.h>
-#include <init.h>
-#include <kernel.h>
-#include <net/tls_credentials.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(init.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/tls_credentials.h)
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
@@ -24,13 +25,14 @@
 #include "memfault/ports/zephyr/root_cert_storage.h"
 
 #if defined(CONFIG_POSIX_API)
-  #include <posix/netdb.h>
-  #include <posix/poll.h>
-  #include <posix/sys/socket.h>
-  #include <posix/unistd.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(posix/netdb.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(posix/poll.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(posix/sys/socket.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(posix/unistd.h)
 #else
-  #include <net/socket.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 #endif
+// clang-format on
 
 #if defined(CONFIG_MEMFAULT_HTTP_USES_MBEDTLS)
 

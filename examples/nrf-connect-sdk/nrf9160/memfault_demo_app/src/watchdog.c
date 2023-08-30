@@ -6,15 +6,19 @@
 //! Example configuration of Zephyr hardware watchdog with Memfault software watchdog
 //! port such that a coredump is captured ahead of the hardware watchdog firing
 
+// clang-format off
 #include "memfault/ports/watchdog.h"
 
-#include <device.h>
-#include <drivers/watchdog.h>
-#include <kernel.h>
+#include "memfault/ports/zephyr/include_compatibility.h"
+
+#include MEMFAULT_ZEPHYR_INCLUDE(device.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(drivers/watchdog.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include <version.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/version.h"
+// clang-format on
 
 //! Note: The timeout must be large enough to give us enough time to capture a coredump
 //! before the system resets

@@ -45,6 +45,12 @@ if(CONFIG_MEMFAULT)
   # Zephyr specific port def for trace errors
   zephyr_compile_definitions(MEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_zephyr_port_config.def\")
 
+  # WORKAROUND: Add the macros defined in our compatibility header into library scope
+  # This scope allows our library access to the macros but not applications or other zephyr modules
+  # which is good for minimizing the workaround reach
+  # Remove this line when removing support for < Zephyr v3.2
+  zephyr_library_compile_options(-imacros ${CMAKE_CURRENT_LIST_DIR}/include/memfault/ports/zephyr/include_compatibility.h)
+
   # Pick up Zephyr specific port files
   add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
   add_subdirectory(common)

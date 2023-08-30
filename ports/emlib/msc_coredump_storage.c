@@ -51,6 +51,7 @@ extern uint32_t __MemfaultCoreStorageEnd[];
 // Call the reboot handler which will halt the device if a debugger is attached and then reboot
 MEMFAULT_NO_OPT
 static void prv_coredump_writer_assert_and_reboot(int error_code) {
+  (void)error_code;
   memfault_platform_halt_if_debugging();
   memfault_platform_reboot();
 }

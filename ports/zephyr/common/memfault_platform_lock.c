@@ -7,7 +7,7 @@
 
 #include "memfault/core/platform/core.h"
 
-#include <kernel.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 
 K_MUTEX_DEFINE(s_memfault_mutex);
 

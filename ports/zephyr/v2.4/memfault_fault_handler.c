@@ -5,11 +5,12 @@
 //!
 //!
 
-#include <arch/cpu.h>
-#include <fatal.h>
-#include <init.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
+// clang-format off
+#include MEMFAULT_ZEPHYR_INCLUDE(arch/cpu.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(init.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log_ctrl.h)
 #include <soc.h>
 
 #include "memfault/core/compiler.h"
@@ -23,12 +24,13 @@
 // Starting in v3.4, the handler set function was renamed and the declaration
 // added to a public header
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-  #include <arch/arm/aarch32/nmi.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/nmi.h)
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_arm_nmi_set_handler
 #else
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_NmiHandlerSet
 extern void MEMFAULT_ZEPHYR_NMI_HANDLER_SET(void (*pHandler)(void));
 #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
+// clang-format on
 
 // By default, the Zephyr NMI handler is an infinite loop. Instead
 // let's register the Memfault Exception Handler

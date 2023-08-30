@@ -1,3 +1,20 @@
+### Changes between Memfault SDK 1.1.3 and 1.2.0 - Aug 30, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+  - Eliminate several build warnings for our example app
+- FreeRTOS:
+  - Fix a build error in our QEMU example when building on macOS
+- nRF Connect SDK:
+  - Enable mcuboot & NCS 1.4 with our example apps
+- Silicon Labs:
+  - Add a demo CLI component for the emblib port. Check out our [Simplicity Studio example app](https://github.com/memfault/simplicity-studio-example) for usage
+  - Fix a build warning in emblib port flash storage (MSC) module
+- Zephyr:
+  - Fix a :bug: when building with LOG_MODE_DEFERRED that prevent log messages from flushing during a coredump
+  - Fix a :bug: and warnings involving older Zephyr header paths. Resolves [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks @JordanYates and @YHusain1 for reporting these issues.
+
 ### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
 
 #### :chart_with_upwards_trend: Improvements

@@ -1,6 +1,5 @@
 //! @file
 
-#include "version.h"
 #include "memfault/ports/zephyr/version.h"
 
 #if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
