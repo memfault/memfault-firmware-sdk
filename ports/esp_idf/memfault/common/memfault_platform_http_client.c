@@ -420,6 +420,7 @@ int memfault_esp_port_http_client_post_data(void) {
 
   // Check for data available first as nothing else matters if not.
   if (!memfault_esp_port_data_available()) {
+    MEMFAULT_LOG_INFO("No new data found");
     return 0;
   }
 

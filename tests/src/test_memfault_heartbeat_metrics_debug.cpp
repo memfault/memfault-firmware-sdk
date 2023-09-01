@@ -109,7 +109,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Debug, heartbeat_debug_print_on_boot,
+  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_on_boot,
                                MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_on_boot));
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
@@ -130,7 +130,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 5000",
     "  test_key_string: \"heyo!\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Debug, heartbeat_debug_print_after_collected,
+  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_after_collected,
                                MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_after_collected));
   mock().expectOneCall("memfault_metrics_heartbeat_serialize");
   memfault_metrics_heartbeat_debug_trigger();
@@ -148,7 +148,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Debug, heartbeat_debug_print_reset,
+  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_reset,
                                MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_reset));
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
@@ -166,7 +166,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Debug, heartbeat_add_non_null,
+  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_add_non_null,
                                MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));
   // call add on this metric alone and confirm it is set
   memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(test_key_unsigned), 123);

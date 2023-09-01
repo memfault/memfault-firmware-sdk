@@ -74,8 +74,13 @@ extern "C" {
 
 #endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */
 
-#else
+#else /* ! CONFIG_MEMFAULT_USER_CONFIG_ENABLE */
 #define MEMFAULT_DISABLE_USER_TRACE_REASONS 1
+#endif /* CONFIG_MEMFAULT_USER_CONFIG_ENABLE */
+
+// Pick up any extra configuration settings
+#if defined(CONFIG_MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE)
+#include "memfault_platform_config_extra.h"
 #endif
 
 #ifdef __cplusplus

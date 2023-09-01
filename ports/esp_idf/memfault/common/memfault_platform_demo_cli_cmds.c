@@ -167,6 +167,11 @@ static int prv_esp32_crash_example(int argc, char** argv) {
   return 0;
 }
 
+static int prv_esp32_memfault_heartbeat(int argc, char **argv) {
+  memfault_metrics_heartbeat_debug_trigger();
+  return 0;
+}
+
 static int prv_esp32_memfault_heartbeat_dump(int argc, char** argv) {
   memfault_metrics_heartbeat_debug_print();
   return 0;
@@ -309,6 +314,13 @@ void memfault_register_cli(void) {
       .help = "Can be used to dump chunks to console or post via GDB",
       .hint = NULL,
       .func = prv_chunk_data_export,
+  }));
+
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "heartbeat",
+    .help = "trigger an immediate capture of all heartbeat metrics",
+    .hint = NULL,
+    .func = prv_esp32_memfault_heartbeat,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {

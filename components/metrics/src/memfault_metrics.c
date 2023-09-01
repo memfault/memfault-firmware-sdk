@@ -814,29 +814,29 @@ static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
 
   switch (metric_info->type) {
     case kMemfaultMetricType_Timer:
-      MEMFAULT_LOG_DEBUG("  %s: %" PRIu32, key_name, value->u32);
+      MEMFAULT_LOG_INFO("  %s: %" PRIu32, key_name, value->u32);
       break;
     case kMemfaultMetricType_Unsigned:
       if (metric_info->is_set) {
-        MEMFAULT_LOG_DEBUG("  %s: %" PRIu32, key_name, value->u32);
+        MEMFAULT_LOG_INFO("  %s: %" PRIu32, key_name, value->u32);
       } else {
-        MEMFAULT_LOG_DEBUG("  %s: null", key_name);
+        MEMFAULT_LOG_INFO("  %s: null", key_name);
       }
       break;
     case kMemfaultMetricType_Signed:
       if (metric_info->is_set) {
-        MEMFAULT_LOG_DEBUG("  %s: %" PRIi32, key_name, value->i32);
+        MEMFAULT_LOG_INFO("  %s: %" PRIi32, key_name, value->i32);
       } else {
-        MEMFAULT_LOG_DEBUG("  %s: null", key_name);
+        MEMFAULT_LOG_INFO("  %s: null", key_name);
       }
       break;
     case kMemfaultMetricType_String:
-      MEMFAULT_LOG_DEBUG("  %s: \"%s\"", key_name, (const char *)value->ptr);
+      MEMFAULT_LOG_INFO("  %s: \"%s\"", key_name, (const char *)value->ptr);
       break;
 
     case kMemfaultMetricType_NumTypes: // To silence -Wswitch-enum
     default:
-      MEMFAULT_LOG_DEBUG("  %s: <unknown type>", key_name);
+      MEMFAULT_LOG_INFO("  %s: <unknown type>", key_name);
       break;
   }
 
@@ -845,7 +845,7 @@ static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
 
 void memfault_metrics_heartbeat_debug_print(void) {
   prv_heartbeat_timer_update();
-  MEMFAULT_LOG_DEBUG("Heartbeat keys/values:");
+  MEMFAULT_LOG_INFO("Heartbeat keys/values:");
   memfault_metrics_heartbeat_iterate(prv_heartbeat_debug_print, NULL);
 }
 

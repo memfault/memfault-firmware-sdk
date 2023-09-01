@@ -376,6 +376,14 @@ config MEMFAULT_CATCH_ZEPHYR_ASSERT
          from __ASSERT() macro call sites, unless assert_post_action() contains
          a MEMFAULT_ASSERT() invocation.
 
+config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
+       bool "Enable inclusion of additional platform config file"
+       default n
+       help
+        Enables inclusion of an additional platform config file,
+        'memfault_platform_config_extra.h'. This can be useful for third party
+        libraries that want to include additional default platform configs.
+
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         default y
         bool "Use a GNU build ID in an image"

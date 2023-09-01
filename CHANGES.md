@@ -1,3 +1,20 @@
+### Changes between Memfault SDK 1.2.0 and 1.2.1 - Sept 1, 2023
+
+#### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+  - Add a `heartbeat` cli command to the ESP-IDF port that does the same thing
+    as in Memfault's default demo console + Zephyr's console.
+- Zephyr:
+  - Add a new Kconfig option to the Zephyr port,
+    `CONFIG_MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE=y`, which causes
+    `memfault_platform_config_extra.h` to be included in platform
+    configurations. This can be utilized by a third party consumer of Zephyr to
+    more easily extend the platform configurations set by Zephyr and avoid
+    potentially losing a user's platform configurations set in
+    `memfault_platform_config.h`, which
+    [happened in the nRF Connect SDK recently](https://devzone.nordicsemi.com/f/nordic-q-a/103188/memfault-sdk-integration-missing-user-memfault_platform_config).
+
 ### Changes between Memfault SDK 1.1.3 and 1.2.0 - Aug 30, 2023
 
 #### :chart_with_upwards_trend: Improvements
@@ -6,14 +23,24 @@
   - Eliminate several build warnings for our example app
 - FreeRTOS:
   - Fix a build error in our QEMU example when building on macOS
+- Modus Toolbox:
+  - Update port to handle user override of SDK configs, metrics, trace_reasons,
+    etc
+  - Update port to fix errors when disabling built-in WiFi metrics
 - nRF Connect SDK:
   - Enable mcuboot & NCS 1.4 with our example apps
 - Silicon Labs:
-  - Add a demo CLI component for the emblib port. Check out our [Simplicity Studio example app](https://github.com/memfault/simplicity-studio-example) for usage
+  - Add a demo CLI component for the emblib port. Check out our
+    [Simplicity Studio example app](https://github.com/memfault/simplicity-studio-example)
+    for usage
   - Fix a build warning in emblib port flash storage (MSC) module
 - Zephyr:
-  - Fix a :bug: when building with LOG_MODE_DEFERRED that prevent log messages from flushing during a coredump
-  - Fix a :bug: and warnings involving older Zephyr header paths. Resolves [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks @JordanYates and @YHusain1 for reporting these issues.
+  - Fix a :bug: when building with LOG_MODE_DEFERRED that prevent log messages
+    from flushing during a coredump
+  - Fix a :bug: and warnings involving older Zephyr header paths. Resolves
+    [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and
+    [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks
+    @JordanYates and @YHusain1 for reporting these issues.
 
 ### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
 
