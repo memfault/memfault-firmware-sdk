@@ -235,15 +235,16 @@ class BuildIdError(Exception):
 
 
 class BuildIdInspectorAndPatcher:
-    def __init__(self, elf_file, elf=None):
-        # type: (IO[bytes], Optional[ELFFile]) -> None
+    def __init__(self, elf_file, elf=None, elf_helper=None):
+        # type: (IO[bytes], Optional[ELFFile], Optional[ELFFileHelper]) -> None
         """
         :param elf_file: file object with the ELF to inspect and/or patch
         :param elf: optional, already instantiated ELFFile
+        :param elf_helper: optional, already instantiated ELFFileHelper
         """
         self.elf_file = elf_file
-        self.elf = elf or ELFFile(elf_file)
-        self._helper = ELFFileHelper(self.elf)
+        self.elf = (elf_helper.elf if elf_helper else elf) or ELFFile(elf_file)
+        self._helper = elf_helper or ELFFileHelper(self.elf)
 
     def _generate_build_id(self, sha1_symbol_section=None, sha1_symbol_section_offset=0):
         # type: (Optional[Section], int) -> hashlib._Hash

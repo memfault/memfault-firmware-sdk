@@ -187,7 +187,16 @@ if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
 endif()
 
 component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
-component_compile_options(-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_esp_metrics_heartbeat_config.def")
+# Set the heartbeat config file to use the ESP-IDF port file, which will bring
+# in the user's heartbeat config automatically. Set it as a global compiler
+# option so it properly affects both component compilation and when the metric
+# keys are used in the application.
+if (IDF_VERSION_MAJOR VERSION_EQUAL 3)
+  # On pre-v4 of ESP-IDF, insert the compiler flag to the global CMAKE_C_FLAGS
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\\\"memfault_esp_metrics_heartbeat_config.def\\\"" CACHE STRING "Global C Flags" FORCE)
+else()
+  idf_build_set_property(COMPILE_OPTIONS -DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_esp_metrics_heartbeat_config.def" APPEND)
+endif()
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 # and run the Memfault Fault Handler instead.

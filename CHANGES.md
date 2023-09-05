@@ -1,3 +1,14 @@
+# Memfault Firmware SDK Changelog
+
+## 1.2.2 - Sept 5, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+  - Correct the heartbeat metrics key definition include configuration to
+    generate a consistent key index across the application. This regressed in
+    version 1.0.1 of the SDK.
+
 ### Changes between Memfault SDK 1.2.0 and 1.2.1 - Sept 1, 2023
 
 #### :chart_with_upwards_trend: Improvements
