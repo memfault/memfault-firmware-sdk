@@ -1,6 +1,14 @@
 # Memfault Firmware SDK Changelog
 
+## 1.2.4 - Sept 12, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- Fix a unit test failure introduced in 1.2.3. No on-target code was impacted.
+
 ## 1.2.3 - Sept 12, 2023
+
+### :chart_with_upwards_trend: Improvements
 
 - General:
   - Include the current MCU SDK version in the http client user agent header
