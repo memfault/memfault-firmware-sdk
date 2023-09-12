@@ -33,7 +33,7 @@
 static cy_wcm_wlan_statistics_t s_last_wlan_statistics = { 0 };
 #endif
 
-void memfault_metrics_heartbeat_port_collect_data(void) {
+void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if MEMFAULT_PORT_MEMORY_TRACKING_ENABLED
 #if defined(__GNUC__) && !defined(__ARMCC_VERSION)
 
@@ -80,7 +80,6 @@ void memfault_metrics_heartbeat_port_collect_data(void) {
   }
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
 }
-
 
 #if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
 
@@ -134,11 +133,6 @@ void memfault_wcm_metrics_boot(void) {
 }
 
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
-
-void memfault_metrics_heartbeat_collect_data(void) {
-  memfault_metrics_heartbeat_port_collect_data();
-}
-
 
 MEMFAULT_WEAK
 void memfault_platform_reboot(void) {

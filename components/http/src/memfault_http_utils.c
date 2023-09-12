@@ -19,6 +19,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/http_client.h"
+#include "memfault/version.h"
 
 //! Default buffer size for the URL-encoded device info parameters. This may
 //! need to be set higher by the user if there are particularly long device info
@@ -60,7 +61,7 @@ static bool prv_write_host_hdr(MfltHttpClientSendCb write_callback, void *ctx,
 }
 
 static bool prv_write_user_agent_hdr(MfltHttpClientSendCb write_callback, void *ctx) {
-  #define USER_AGENT_HDR "User-Agent:MemfaultSDK/0.4.2\r\n"
+  #define USER_AGENT_HDR "User-Agent:MemfaultSDK/" MEMFAULT_SDK_VERSION_STR "\r\n"
   const size_t user_agent_hdr_len = MEMFAULT_STATIC_STRLEN(USER_AGENT_HDR);
   return write_callback(USER_AGENT_HDR, user_agent_hdr_len, ctx);
 }

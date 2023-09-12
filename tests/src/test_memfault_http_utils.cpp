@@ -97,7 +97,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientPost) {
   const char *expected_string =
       "POST /api/v0/chunks/DEMOSERIAL HTTP/1.1\r\n"
       "Host:chunks.memfault.com\r\n"
-      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "User-Agent:MemfaultSDK/0.0.0\r\n"
       "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
       "Content-Type:application/octet-stream\r\n"
       "Content-Length:123\r\n\r\n";
@@ -129,7 +129,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrl) {
   const char *expected_string =
       "GET /api/v0/releases/latest/url?&device_serial=DEMOSERIAL&hardware_version=main-proto&software_type=main&current_version=1.0.0 HTTP/1.1\r\n"
       "Host:device.memfault.com\r\n"
-      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "User-Agent:MemfaultSDK/0.0.0\r\n"
       "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
       "\r\n";
 
@@ -172,7 +172,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayload) {
   const char *expected_string =
       "GET /path/to/ota/payload/yay HTTP/1.1\r\n"
       "Host:example.ota.payload.com\r\n"
-      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "User-Agent:MemfaultSDK/0.0.0\r\n"
       "\r\n";
 
   STRCMP_EQUAL(expected_string, ctx.buf);
@@ -190,7 +190,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadNoPath) {
   const char *expected_string =
       "GET / HTTP/1.1\r\n"
       "Host:example.ota.payload.com\r\n"
-      "User-Agent:MemfaultSDK/0.4.2\r\n"
+      "User-Agent:MemfaultSDK/0.0.0\r\n"
       "\r\n";
 
   STRCMP_EQUAL(expected_string, ctx.buf);

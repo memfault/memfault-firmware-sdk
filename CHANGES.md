@@ -1,5 +1,16 @@
 # Memfault Firmware SDK Changelog
 
+## 1.2.3 - Sept 12, 2023
+
+- General:
+  - Include the current MCU SDK version in the http client user agent header
+- Zephyr:
+  - Update include paths for CMSIS headers for upcoming Zephyr support. Thanks
+    @gmarull for the patch!
+- Modus Toolbox:
+  - Allow a user application to override
+    `memfault_metrics_heartbeat_collect_data`.
+
 ## 1.2.2 - Sept 5, 2023
 
 ### :chart_with_upwards_trend: Improvements
