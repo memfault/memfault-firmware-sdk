@@ -1,5 +1,11 @@
 # Memfault Firmware SDK Changelog
 
+## 1.2.5 - Sept 18, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- Add MQTT transport to esp32 example app
+
 ## 1.2.4 - Sept 12, 2023
 
 ### :chart_with_upwards_trend: Improvements

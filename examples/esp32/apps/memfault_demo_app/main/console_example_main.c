@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "app_memfault_transport.h"
 #include "argtable3/argtable3.h"
 #include "cmd_decl.h"
 #include "driver/uart.h"
@@ -224,6 +225,8 @@ static void prv_poster_task(void *args) {
   const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
   TickType_t ota_last_check_time = xTaskGetTickCount() - ota_check_interval;
 
+  app_memfault_transport_init();
+
   MEMFAULT_LOG_INFO("Data poster task up and running every %" PRIu32 "s.", interval_sec);
 
   while (true) {
@@ -235,7 +238,7 @@ static void prv_poster_task(void *args) {
     // if connected, post any memfault data
     if (memfault_esp_port_wifi_connected()) {
       MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
-      int err = memfault_esp_port_http_client_post_data();
+      int err = app_memfault_transport_send_chunks();
       // if the check-in succeeded, set green, otherwise clear.
       // gives a quick eyeball check that the app is alive and well
       led_set_color((err == 0) ? kLedColor_Green : kLedColor_Red);

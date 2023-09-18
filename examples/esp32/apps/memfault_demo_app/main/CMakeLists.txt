@@ -7,6 +7,12 @@ list(APPEND
    memfault/memfault_platform_device_info.c
 )
 
+if (CONFIG_APP_MEMFAULT_TRANSPORT_HTTP)
+   list(APPEND COMPONENT_SRCS app_memfault_transport_http.c)
+elseif(CONFIG_APP_MEMFAULT_TRANSPORT_MQTT)
+   list(APPEND COMPONENT_SRCS app_memfault_transport_mqtt.c)
+endif()
+
 # the 'cmd_wifi.c' implementation is different for ESP-IDF v5+
 if("${IDF_VERSION_MAJOR}" VERSION_GREATER_EQUAL 5)
    list(APPEND

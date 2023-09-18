@@ -28,6 +28,22 @@ config MEMFAULT_APP_WIFI_AUTOJOIN
     help
         Automatically join if credentials are configured.
 
+choice APP_MEMFAULT_TRANSPORT
+    prompt "Protocol to send chunks over"
+    default APP_MEMFAULT_TRANSPORT_HTTP
+
+    config APP_MEMFAULT_TRANSPORT_HTTP
+        bool "HTTP"
+    config APP_MEMFAULT_TRANSPORT_MQTT
+        bool "MQTT"
+        select MQTT_PROTOCOL_5
+endchoice
+
+config MEMFAULT_APP_SOFTWARE_TYPE
+    string "Software version for the application"
+    default "esp32-main-mqtt" if APP_MEMFAULT_TRANSPORT_MQTT
+    default "esp32-main"
+
 # These LED settings are taken from ESP-IDF:
 # examples/get-started/blink/main/blink_example_main.c
 

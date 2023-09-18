@@ -19,10 +19,6 @@
 #include "esp_system.h"
 #include "memfault/components.h"
 
-#ifndef MEMFAULT_ESP32_SOFTWARE_TYPE
-  #define MEMFAULT_ESP32_SOFTWARE_TYPE "esp32-main"
-#endif
-
 #ifndef MEMFAULT_ESP32_HW_REVISION
   #define MEMFAULT_ESP32_HW_REVISION CONFIG_IDF_TARGET "-proto"
 #endif
@@ -57,6 +53,6 @@ void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
     .device_serial = s_device_serial,
     .hardware_version = MEMFAULT_ESP32_HW_REVISION,
     .software_version = CONFIG_MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION,
-    .software_type = MEMFAULT_ESP32_SOFTWARE_TYPE,
+    .software_type = CONFIG_MEMFAULT_APP_SOFTWARE_TYPE,
   };
 }
