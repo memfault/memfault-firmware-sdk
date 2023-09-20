@@ -23,7 +23,7 @@
 // Starting in v3.4, the handler set function was renamed and the declaration
 // added to a public header
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-  #include <arch/arm/aarch32/nmi.h>
+  #include <cmsis_core.h>
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_arm_nmi_set_handler
 #else
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_NmiHandlerSet

@@ -15,7 +15,7 @@
 #include "memfault/ports/zephyr/version.h"
 
 #if MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
-  #include <arch/arm/aarch32/cortex_m/cmsis.h>
+  #include <cmsis_core.h>
 #else
   #include <arch/arm/cortex_m/cmsis.h>
 #endif
