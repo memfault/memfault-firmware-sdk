@@ -1,5 +1,20 @@
 # Memfault Firmware SDK Changelog
 
+## 1.3.0 - Sept 20, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+  - Remove an unused root certificate and adjust the order of certs to minimize
+    additional TLS handshakes; DigiCert G2 is the most likely root cert so it is
+    now the first one attempted in every place certificates are used. This
+    update is trickled down from
+    [DigiCert's pivot in March 2023](https://knowledge.digicert.com/generalinformation/digicert-root-and-intermediate-ca-certificate-updates-2023.html)
+    to their G2 root cert as their default certificate.
+- Zephyr:
+  - Add support for the new location of the `nmi.h` header which
+    [moved recently](https://github.com/zephyrproject-rtos/zephyr/pull/60031).
+
 ## 1.2.5 - Sept 18, 2023
 
 ### :chart_with_upwards_trend: Improvements

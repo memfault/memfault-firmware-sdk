@@ -192,7 +192,7 @@ static void prv_run_stack_metrics_example(void) {
 }
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
 
-void main(void) {
+int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
 
@@ -216,4 +216,6 @@ void main(void) {
   prv_init_test_thread_timer();
 
   blink_forever();
+
+  return 0;
 }

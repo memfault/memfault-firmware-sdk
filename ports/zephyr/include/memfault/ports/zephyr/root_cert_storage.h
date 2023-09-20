@@ -18,10 +18,9 @@ extern "C" {
 typedef enum {
   // arbitrarily high base so as not to conflict with id used for other certs in use by the system
   kMemfaultRootCert_Base = 1000,
-  kMemfaultRootCert_DigicertRootCa,
   kMemfaultRootCert_DigicertRootG2,
-  kMemfaultRootCert_CyberTrustRoot,
   kMemfaultRootCert_AmazonRootCa1,
+  kMemfaultRootCert_DigicertRootCa,
   // Must be last, used to track number of root certs in use
   kMemfaultRootCert_MaxIndex,
 } eMemfaultRootCert;

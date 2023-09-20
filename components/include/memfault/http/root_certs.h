@@ -68,30 +68,6 @@ extern "C" {
   "MrY=\n"                                                             \
   "-----END CERTIFICATE-----\n"
 
-//! Baltimore CyberTrust Root. Valid until 2025-05-12.
-#define MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT                  \
-  "-----BEGIN CERTIFICATE-----\n"                                      \
-  "MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n" \
-  "RTESMBAGA1UEChMJQmFsdGltb3JlMRMwEQYDVQQLEwpDeWJlclRydXN0MSIwIAYD\n" \
-  "VQQDExlCYWx0aW1vcmUgQ3liZXJUcnVzdCBSb290MB4XDTAwMDUxMjE4NDYwMFoX\n" \
-  "DTI1MDUxMjIzNTkwMFowWjELMAkGA1UEBhMCSUUxEjAQBgNVBAoTCUJhbHRpbW9y\n" \
-  "ZTETMBEGA1UECxMKQ3liZXJUcnVzdDEiMCAGA1UEAxMZQmFsdGltb3JlIEN5YmVy\n" \
-  "VHJ1c3QgUm9vdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMEuyKr\n" \
-  "mD1X6CZymrV51Cni4eiVgLGw41uOKymaZN+hXe2wCQVt2yguzmKiYv60iNoS6zjr\n" \
-  "IZ3AQSsBUnuId9Mcj8e6uYi1agnnc+gRQKfRzMpijS3ljwumUNKoUMMo6vWrJYeK\n" \
-  "mpYcqWe4PwzV9/lSEy/CG9VwcPCPwBLKBsua4dnKM3p31vjsufFoREJIE9LAwqSu\n" \
-  "XmD+tqYF/LTdB1kC1FkYmGP1pWPgkAx9XbIGevOF6uvUA65ehD5f/xXtabz5OTZy\n" \
-  "dc93Uk3zyZAsuT3lySNTPx8kmCFcB5kpvcY67Oduhjprl3RjM71oGDHweI12v/ye\n" \
-  "jl0qhqdNkNwnGjkCAwEAAaNFMEMwHQYDVR0OBBYEFOWdWTCCR1jMrPoIVDaGezq1\n" \
-  "BE3wMBIGA1UdEwEB/wQIMAYBAf8CAQMwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\n" \
-  "DQEBBQUAA4IBAQCFDF2O5G9RaEIFoN27TyclhAO992T9Ldcw46QQF+vaKSm2eT92\n" \
-  "9hkTI7gQCvlYpNRhcL0EYWoSihfVCr3FvDB81ukMJY2GQE/szKN+OMY3EU/t3Wgx\n" \
-  "jkzSswF07r51XgdIGn9w/xZchMB5hbgF/X++ZRGjD8ACtPhSNzkE1akxehi/oCr0\n" \
-  "Epn3o0WC4zxe9Z2etciefC7IpJ5OCBRLbf1wbWsaY71k5h+3zvDyny67G7fyUIhz\n" \
-  "ksLi4xaNmjICq44Y3ekQEe5+NauQrz4wlHrQMz2nZQ/1/I6eYs9HRCwBXbsdtTLS\n" \
-  "R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n"                             \
-  "-----END CERTIFICATE-----\n"
-
 //! Amazon Root CA 1. Valid until 2038-01-17.
 #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1                            \
   "-----BEGIN CERTIFICATE-----\n"                                      \
@@ -115,19 +91,17 @@ extern "C" {
   "rqXRfboQnoZsG4q5WTP468SQvvG5\n"                                     \
   "-----END CERTIFICATE-----\n"
 
-#define MEMFAULT_ROOT_CERTS_PEM                 \
-  MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA   \
-  MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2   \
-  MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT \
-  MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+// In decreasing order of likelihood of success
+#define MEMFAULT_ROOT_CERTS_PEM               \
+  MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2 \
+  MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1         \
+  MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
 
 // The certs are also available in their binary DER format via
 extern const uint8_t g_memfault_cert_digicert_global_root_ca[];
 extern const size_t g_memfault_cert_digicert_global_root_ca_len;
 extern const uint8_t g_memfault_cert_digicert_global_root_g2[];
 extern const size_t g_memfault_cert_digicert_global_root_g2_len;
-extern const uint8_t g_memfault_cert_baltimore_cybertrust_root[];
-extern const size_t g_memfault_cert_baltimore_cybertrust_root_len;
 extern const uint8_t g_memfault_cert_amazon_root_ca1[];
 extern const size_t g_memfault_cert_amazon_root_ca1_len;
 

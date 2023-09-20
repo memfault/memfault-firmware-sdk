@@ -62,8 +62,8 @@ int memfault_fota_start(void) {
 
   // Note: The nordic FOTA API only supports passing one root CA today. So we cycle through the
   // list of required Root CAs in use by Memfault to find the appropriate one
-  const int certs[] = { kMemfaultRootCert_AmazonRootCa1, kMemfaultRootCert_DigicertRootCa,
-                        kMemfaultRootCert_CyberTrustRoot, kMemfaultRootCert_DigicertRootG2 };
+  const int certs[] = { kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_AmazonRootCa1,
+                       kMemfaultRootCert_DigicertRootCa };
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(certs); i++) {
 
 #if MEMFAULT_NCS_VERSION_GT(1, 7)

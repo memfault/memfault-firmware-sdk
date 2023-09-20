@@ -99,7 +99,7 @@ static void prv_start_watchdog_feed_thread(void) {
   k_thread_start(wd_feed_thread);
 }
 
-void main(void) {
+int main(void) {
   LOG_INF("Booting Memfault sample app!");
 
   // Set the device id based on the hardware UID
@@ -108,4 +108,6 @@ void main(void) {
   memfault_device_info_dump();
 
   prv_start_watchdog_feed_thread();
+
+  return 0;
 }

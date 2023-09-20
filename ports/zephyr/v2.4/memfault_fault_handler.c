@@ -24,7 +24,14 @@
 // Starting in v3.4, the handler set function was renamed and the declaration
 // added to a public header
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/nmi.h)
+  // The nmi.h header was moved after Zephyr v3.4. Support both locations.
+  #if __has_include(MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/nmi.h))
+    #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/nmi.h)
+  #elif __has_include(MEMFAULT_ZEPHYR_INCLUDE(arch/arm/nmi.h))
+    #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/nmi.h)
+  #else
+    #error "Missing Zephyr nmi.h header"
+  #endif
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_arm_nmi_set_handler
 #else
   #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_NmiHandlerSet

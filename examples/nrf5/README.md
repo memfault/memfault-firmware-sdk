@@ -273,10 +273,10 @@ look like and has been tested with nRF SDK v15.2.0.
 ```
 // main.c
 
-void main(void) {
+int main(void) {
   [... other initialization code ...]
   memfault_platform_boot();
-}
+  [... application code ...]
 ```
 
 - If your project doesn't already include them you may need to add a few files

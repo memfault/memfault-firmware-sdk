@@ -29,8 +29,10 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   };
 }
 
-void main(void) {
+int main(void) {
   LOG_INF("Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
   memfault_zephyr_port_install_root_certs();
+
+  return 0;
 }

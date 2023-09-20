@@ -120,9 +120,8 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
 
   const char *memfault_root_certs[] = {
     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2,
-    MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA,
-    MEMFAULT_ROOT_CERTS_BALTIMORE_CYBERTRUST_ROOT,
-    MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+    MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1,
+    MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
   };
 
   esp_http_client_handle_t client = NULL;
