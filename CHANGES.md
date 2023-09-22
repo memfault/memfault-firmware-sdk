@@ -1,5 +1,14 @@
 # Memfault Firmware SDK Changelog
 
+## 1.3.1 - Sept 21, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+  - Add a new Kconfig, `CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE`, to
+    control whether thread stack usage is computed and collected on device
+    during a coredump.
+
 ## 1.3.0 - Sept 20, 2023
 
 ### :chart_with_upwards_trend: Improvements

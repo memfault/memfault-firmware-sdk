@@ -101,6 +101,13 @@ config MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS
           When enabled, Zephyr thread stacks will be captured as part of the
           coredump. Disabling this will disable non-active-thread backtrace.
 
+config MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+        bool "Compute thread stack usage on device"
+        default y
+        depends on THREAD_STACK_INFO && !STACK_GROWS_UP && INIT_STACKS
+        help
+          Adds thread stack usage computed during fault handling into a coredump.
+
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
         default y
