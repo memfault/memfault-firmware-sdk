@@ -27,10 +27,6 @@
 
 #include "memfault/config.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
 #include "memfault/core/compiler.h"
@@ -43,16 +39,52 @@ extern "C" {
 
 #ifdef __cplusplus
 
+// C++ implementation of the type promotion logic
+//
+// Note: the C++ implementation requires the use of C++11 features and the GNU
+// "##" variadic arg extension. Memfault Compact Logs in C++ require the
+// compiler flag '--std=gnu++-11' or newer.
 
-#ifdef MEMFAULT_UNITTEST
-  //! Note: For trace_event Memfault CppUTest tests, we pick up this header but do not actually use
-  //! the helpers defined so let's silence the warning generated
-#else
-#  error "Compact logs not yet available when using CPP"
-#endif
+#include <type_traits>
+
+// Default integer type is int64
+template <typename T, typename E = void>
+struct MemfaultLogArgPromotionType
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_INT64> {};
+
+// If sizeof(T) <= 32, then it's int32
+template <typename T>
+struct MemfaultLogArgPromotionType<
+    T, typename std::enable_if<sizeof(T) <= 4>::type>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_INT32> {};
+
+// More specific types
+template <>
+struct MemfaultLogArgPromotionType<float>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE> {};
+
+template <>
+struct MemfaultLogArgPromotionType<double>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE> {};
+
+template <>
+struct MemfaultLogArgPromotionType<long double>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE> {};
+
+template <>
+struct MemfaultLogArgPromotionType<char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> {};
+
+template <>
+struct MemfaultLogArgPromotionType<const char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> {};
+
+// When expressing the final type via the template parameter expansion, operate
+// on (arg) + 0 to force integer promotion
+#define _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg) \
+  MemfaultLogArgPromotionType<decltype((arg) + 0)>::value
 
 #else // C Code implementation
-
 
 //! Preprocessor macro to encode promotion type info about each va_arg in a uint32_t
 //!
@@ -94,6 +126,10 @@ extern "C" {
            default: sizeof((arg) + 0) <= sizeof(int) ?                  \
               MEMFAULT_LOG_ARG_PROMOTED_TO_INT32 : MEMFAULT_LOG_ARG_PROMOTED_TO_INT64) \
 
+#endif  // __cplusplus
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define _MF_FMT_0(fmt_op)          0
@@ -176,8 +212,8 @@ typedef struct MemfaultLogFmtElfSectionHeader {
 
 extern const sMemfaultLogFmtElfSectionHeader g_memfault_log_fmt_elf_section_hdr;
 
-#endif /* MEMFAULT_COMPACT_LOG_ENABLE */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* MEMFAULT_COMPACT_LOG_ENABLE */

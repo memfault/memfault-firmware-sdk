@@ -9,6 +9,7 @@
 #include <sys/times.h>
 
 #include "FreeRTOS.h"
+#include "compact_log.h"
 #include "console.h"
 #include "memfault/components.h"
 #include "task.h"
@@ -144,6 +145,17 @@ int main(void) {
   prv_heap_task();
   prv_metrics_task();
   console_init();
+
+  compact_log_cpp_example();
+
+  // Enable this to export compact log data to stdio. This is intended only for
+  // testing deserialization of the compact log example above and is not
+  // typically useful.
+#if defined(DEBUG_COMPACT_LOGS)
+  printf(">> exporting logs...\n");
+  memfault_log_export_logs();
+#endif
+
   // Initialize the FreeRTOS kernel
   vTaskStartScheduler();
 

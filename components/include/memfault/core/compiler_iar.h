@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#include "intrinsics.h"
+
 #define MEMFAULT_PACKED __packed
 #define MEMFAULT_PACKED_STRUCT MEMFAULT_PACKED struct
 #define MEMFAULT_NORETURN __noreturn

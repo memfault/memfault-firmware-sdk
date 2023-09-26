@@ -1,5 +1,30 @@
 # Memfault Firmware SDK Changelog
 
+## 1.3.2 - Sept 26, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - use `<cmsis_core.h>` instead of `<nmi.h>`. Thanks @kmeihar for this change!
+    (see [#64](https://github.com/memfault/memfault-firmware-sdk/pull/64))
+
+- nRF Connect SDK:
+
+  - Add missing Kconfig flags `CONFIG_FLASH_MAP=y` + `CONFIG_STREAM_FLASH=y` for
+    the [`examples/nrf-connect-sdk/nrf5/`](examples/nrf-connect-sdk/nrf5/)
+    example app, for compatibility with nRF Connect SDK v2.4.1+. This was
+    required due to an
+    [upstream Zephyr change](https://github.com/zephyrproject-rtos/zephyr/commit/1b4b979f8789af6087f877c0daad0a660c1b9b28).
+
+- General:
+  - Add support for Memfault Compact Logs for C++ source files (previously only
+    supported in C source files). Compact logging can be enabled by setting
+    `MEMFAULT_LOG_COMPACT_ENABLE=1` in `memfault_platform_config.h`. See
+    [the docs](https://docs.memfault.com/docs/mcu/debugging/compact-logs) for
+    more details.
+  - Fix a missing include of `<intrinsics.h>` required by the IAR compiler
+
 ## 1.3.1 - Sept 21, 2023
 
 ### :chart_with_upwards_trend: Improvements

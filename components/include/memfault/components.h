@@ -13,10 +13,6 @@
 //!  #include memfault/components.h
 //!
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "memfault/config.h"
 #include "memfault/core/arch.h"
 #include "memfault/core/batched_events.h"
@@ -69,7 +65,3 @@ extern "C" {
 #include "memfault/util/rle.h"
 #include "memfault/util/varint.h"
 #include "memfault/version.h"
-
-#ifdef __cplusplus
-}
-#endif

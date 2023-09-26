@@ -20,14 +20,17 @@ BUILD_DIR := build/$(BOARD)
 ELF = $(BUILD_DIR)/main.elf
 
 ARM_CC ?= arm-none-eabi-gcc
+ARM_CXX ?= arm-none-eabi-g++
 # if cc isn't set by the user, set it to ARM_CC
 ifeq ($(origin CC),default)
 CC := $(ARM_CC)
+CXX := $(ARM_CXX)
 endif
 # use ccache if available
 CCACHE := $(shell command -v ccache 2> /dev/null)
 ifdef CCACHE
 CC := ccache $(CC)
+CXX := ccache $(CXX)
 endif
 OBJCOPY ?= $(shell $(CC) -print-prog-name=objcopy)
 
@@ -59,6 +62,7 @@ FREERTOS_SRCS = \
 # Add application sources
 SRCS += \
 	main.c \
+	compact_log.cpp \
 	$(BOARD_DIR)/startup.c \
 	console.c \
 	$(BOARD_DIR)/memfault_platform_impl.c \
@@ -79,7 +83,7 @@ SRCS += \
 		$(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
 
 # Fixup build path for objects of the Memfault SDK, all build output kept within build/
-OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%.c=$(BUILD_DIR)/%.o))
+OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%=$(BUILD_DIR)/%.o))
 
 INCLUDE_PATHS += \
   -I$(FREERTOS_DIR)/include \
@@ -102,8 +106,10 @@ CFLAGS += \
 	-Og \
 	-MD \
 
+LINKER_SCRIPT = $(BOARD_DIR)/linker.ld
+
 LDFLAGS += \
-	-Wl,-T$(BOARD_DIR)/linker.ld \
+	-Wl,-T$(LINKER_SCRIPT) \
 	-Wl,--gc-sections \
 	--specs=nano.specs \
 	--specs=rdimon.specs \
@@ -119,17 +125,22 @@ all: $(ELF)
 $(SRCS): $(FREERTOS_DIR)/.clonedone
 
 # Add rules for patched build objects from SDK
-$(BUILD_DIR)/memfault-firmware-sdk/%.o: $(MEMFAULT_SDK_ROOT)/%.c
+$(BUILD_DIR)/memfault-firmware-sdk/%.c.o: $(MEMFAULT_SDK_ROOT)/%.c
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
-$(ELF).uncompressed: $(OBJS)
+$(BUILD_DIR)/%.cpp.o: %.cpp
+	mkdir -p $(dir $@)
+	$(info Compiling $<)
+	$(CXX) -std=gnu++11 $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
+
+$(ELF).uncompressed: $(OBJS) $(LINKER_SCRIPT)
 	$(info Linking $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 

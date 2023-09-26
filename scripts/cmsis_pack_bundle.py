@@ -139,30 +139,20 @@ def files_to_link(dir_glob, common_prefix, sdk_version):
         yield get_file_element(file_name, common_prefix, sdk_version)
 
 
-def get_latest_github_artifact(url):
+def get_latest_pdsc():
+    """Retrieve the contents of the latest pdsc file"""
+    url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.FirmwareSDK.pdsc"
     logging.debug("Fetching %s", url)
     resp = requests.get(url)
 
     # There should always be a pidx/pdsc file available. Only skip if the env
     # var is set and it's a 404, which is only useful before the first release.
     if resp.status_code == 404 or os.getenv("SKIP_MISSING_PRIOR_RELEASE"):
-        logging.debug("Skipping missing pidx file")
+        logging.debug("Skipping missing file")
         return None
 
     resp.raise_for_status()
     return resp.text
-
-
-def get_latest_pdsc():
-    """Retrieve the contents of the latest pdsc file"""
-    url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.FirmwareSDK.pdsc"
-    return get_latest_github_artifact(url)
-
-
-def get_latest_pidx():
-    """Retrieve the contents of the latest pidx file"""
-    url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.pidx"
-    return get_latest_github_artifact(url)
 
 
 def lxml_reindent_tree(root):

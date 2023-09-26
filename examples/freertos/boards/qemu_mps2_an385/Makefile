@@ -11,5 +11,7 @@ RUN_COMMAND = qemu-system-arm -machine mps2-an385 -monitor null -semihosting \
 
 DEBUG_COMMAND = $(RUN_COMMAND) $(ATTACH_DEBUGGER)
 
+# Permit overriding the gdb executable
+GDB ?= gdb
 GDB_COMMAND = \
-    gdb --ex 'target extended-remote :1234' $(ELF)
+    $(GDB) --ex 'target extended-remote :1234' $(ELF)

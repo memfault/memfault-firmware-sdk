@@ -323,7 +323,7 @@ class XtensaCoredumpArch(CoredumpArch):
 
         # Scoop up all register values
         vals = []
-        for i in range(0, len(xtensa_gdb_idx_regs)):
+        for i in range(len(xtensa_gdb_idx_regs)):
             start_idx = i * 8
             hexstr = registers[start_idx : start_idx + 8]
             vals.append(bytearray.fromhex(hexstr))
@@ -345,7 +345,7 @@ class XtensaCoredumpArch(CoredumpArch):
     def get_current_registers(self, gdb_thread, analytics_props):
         result = []
         try:
-            for core_id in range(0, self.num_cores):
+            for core_id in range(self.num_cores):
                 result.append(self._read_registers(core_id, gdb_thread, analytics_props))
         except Exception:
             analytics_props["core_reg_collection_error"] = {"traceback": traceback.format_exc()}
@@ -433,7 +433,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         result += mpu_ctrl_data
 
         num_regions = (mpu_type >> 8) & 0xFF
-        for i in range(0, num_regions):
+        for i in range(num_regions):
             _write_register(mpu_rnr, i)
             _, data = _read_register(mpu_rbar)
             result += data
