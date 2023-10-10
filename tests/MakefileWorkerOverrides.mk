@@ -96,7 +96,11 @@ else
 
 # GCC-only warnings
 COMPILER_SPECIFIC_WARNINGS += \
-  -Wformat-signedness
+  -Wformat-signedness \
+
+# Enable gcc static analyzer
+CPPUTEST_C_WARNINGFLAGS += \
+  -fanalyzer \
 
 # Permit disabling the sanitizers via environment variable
 ifneq ($(MEMFAULT_DISABLE_ASAN),1)

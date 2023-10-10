@@ -44,6 +44,9 @@ extern "C" {
 //!  If x is 0, the result is undefined.
 #define MEMFAULT_CLZ(a) ((a == 0) ? 32UL : (uint32_t)__builtin_clz(a))
 
+//! Non-loaded symbols are specified by linker section, not compiler attribute
+#define MEMFAULT_NO_ALLOC
+
 #if defined(__arm__)
 #  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))

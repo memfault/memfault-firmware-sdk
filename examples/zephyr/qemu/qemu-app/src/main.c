@@ -192,6 +192,14 @@ static void prv_run_stack_metrics_example(void) {
 }
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
 
+#if defined(CONFIG_MEMFAULT_FAULT_HANDLER_RETURN)
+#include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
+  printk("User fatal handler invoked with reason: %d. Rebooting!\n", reason);
+  memfault_platform_reboot();
+}
+#endif
+
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();

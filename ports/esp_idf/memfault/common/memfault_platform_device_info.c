@@ -17,11 +17,7 @@
 #include <string.h>
 
 #include "esp_system.h"
-#include "memfault/components.h"
-
-#ifndef MEMFAULT_ESP32_HW_REVISION
-  #define MEMFAULT_ESP32_HW_REVISION CONFIG_IDF_TARGET "-proto"
-#endif
+#include "memfault/esp_port/device_info.h"
 
 static char s_device_serial[32];
 
@@ -44,15 +40,30 @@ static void prv_get_device_serial(char *buf, size_t buf_len) {
   }
 }
 
-void memfault_platform_device_info_boot(void) {
-  prv_get_device_serial(s_device_serial, sizeof(s_device_serial));
-}
-
-void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
+void memfault_esp_port_get_device_info(struct MemfaultDeviceInfo *info) {
+  // Initialize the device information data structure if the s_device_serial is
+  // not set. Note that the first call to this function should be in a
+  // non-interrupt context, to safely load the mac address.
+  char *device_serial = s_device_serial;
+  if (s_device_serial[0] == '\0') {
+    // if in isr, don't attempt to read mac address. just set the device serial
+    // to "unknown" and continue
+    if (memfault_arch_is_inside_isr()) {
+      device_serial = "unknown";
+    } else {
+      prv_get_device_serial(s_device_serial, sizeof(s_device_serial));
+    }
+  }
   *info = (struct MemfaultDeviceInfo){
-    .device_serial = s_device_serial,
-    .hardware_version = MEMFAULT_ESP32_HW_REVISION,
-    .software_version = CONFIG_MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION,
-    .software_type = CONFIG_MEMFAULT_APP_SOFTWARE_TYPE,
+    .device_serial = device_serial,
+    .hardware_version = CONFIG_MEMFAULT_DEVICE_INFO_HARDWARE_VERSION,
+    .software_version = CONFIG_MEMFAULT_DEVICE_INFO_SOFTWARE_VERSION,
+    .software_type = CONFIG_MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE,
   };
 }
+
+#if defined(CONFIG_MEMFAULT_DEFAULT_GET_DEVICE_INFO)
+void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
+  memfault_esp_port_get_device_info(info);
+}
+#endif

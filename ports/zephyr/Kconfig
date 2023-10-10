@@ -391,6 +391,14 @@ config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
         'memfault_platform_config_extra.h'. This can be useful for third party
         libraries that want to include additional default platform configs.
 
+config MEMFAULT_FAULT_HANDLER_RETURN
+       bool "Return from fault handler"
+       default n
+       help
+        When enabled, the Memfault fault handler will call `z_fatal_error`
+        instead of rebooting the system. Useful if the system needs to hook into
+        `k_sys_fatal_error_handler` at the end of system fault handling.
+
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         default y
         bool "Use a GNU build ID in an image"

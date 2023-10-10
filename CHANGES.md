@@ -1,12 +1,68 @@
 # Memfault Firmware SDK Changelog
 
+## 1.3.3 - Oct 10, 2023
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add a new Kconfig flag, `CONFIG_MEMFAULT_FAULT_HANDLER_RETURN`, which will
+    call the normal `z_fatal_error` handler at the end of Memfault fault
+    processing instead of rebooting the system. This is useful when user code
+    needs to run within `k_sys_fatal_error_handler()` just prior to system
+    shutdown. Thanks to @JordanYates for the patch! Fixes
+    [#59](https://github.com/memfault/memfault-firmware-sdk/issues/59).
+
+  - Add a timeout to the initial `send()` socket operation in
+    `memfault_zephyr_port_http_upload_sdk_data()`, to abort the transfer if the
+    socket is blocking for too long. That function will execute repeated
+    `send()` calls to drain all the buffered Memfault data; this update only
+    changes the initial call to check for a timeout, but otherwise will keep
+    trying until the process completes, or a watchdog triggers. This is to
+    balance the existing behavior, where a badly performing socket will still
+    eventually push data through, but improves the case where the socket fails
+    on the initial send (more common failure mode).
+
+  - Remove a nuisance build warning generated when configured with
+    `CONFIG_LOG_PRINTK=y && CONFIG_LOG_MODE_DEFERRED=y`. This impacts the
+    usability of exporting base64-encoded chunks on the shell for testing
+    (`mflt export` command), but is otherwise harmless.
+
+- ESP-IDF:
+
+  - Multiple changes to the
+    [`examples/esp32`](examples/esp32/apps/memfault_demo_app) sample project:
+
+    - Disable WiFi SoftAP by setting `CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n`, since
+      it's unused in the sample app. This saves about 40kB flash.
+    - Permit setting the Memfault Project Key at runtime, with a new cli command
+      `project_key`. The key is saved in Non-Volatile Storage on the ESP32
+      board.
+
+- General:
+
+  - Enable using compact logs with the IAR build tools, by adding the needed
+    `__no_alloc` attribute to the compact log symbols, to have the IAR linker
+    set the `NO_LOAD` attribute correctly on the compact log output section.
+
+#### :boom: Breaking Changes
+
+- ESP-IDF:
+
+  - The [ESP-IDF port](ports/esp_idf/) now implements a default
+    `memfault_get_device_info()` function, which uses the device MAC address for
+    the Memfault Device Serial. When updating the Memfault SDK in an existing
+    project, this implementation will cause a **linker error** due to duplicate
+    definition. To disable the built-in definition, set
+    `CONFIG_MEMFAULT_DEFAULT_GET_DEVICE_INFO=n`.
+
 ## 1.3.2 - Sept 26, 2023
 
 ### :chart_with_upwards_trend: Improvements
 
 - Zephyr:
 
-  - use `<cmsis_core.h>` instead of `<nmi.h>`. Thanks @kmeihar for this change!
+  - use `<cmsis_core.h>` instead of `<nmi.h>`. Thanks @kmeinhar for this change!
     (see [#64](https://github.com/memfault/memfault-firmware-sdk/pull/64))
 
 - nRF Connect SDK:
@@ -21,8 +77,8 @@
   - Add support for Memfault Compact Logs for C++ source files (previously only
     supported in C source files). Compact logging can be enabled by setting
     `MEMFAULT_LOG_COMPACT_ENABLE=1` in `memfault_platform_config.h`. See
-    [the docs](https://docs.memfault.com/docs/mcu/debugging/compact-logs) for
-    more details.
+    [the docs](https://docs.memfault.com/docs/mcu/compact-logs/) for more
+    details.
   - Fix a missing include of `<intrinsics.h>` required by the IAR compiler
 
 ## 1.3.1 - Sept 21, 2023

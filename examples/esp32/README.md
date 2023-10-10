@@ -271,7 +271,7 @@ The following steps can be used to exercise OTA functionality:
    ```
 
 3. Use `idf.py menuconfig` to change the value of
-   `MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION` config variable to `"1.0.1"`, and
+   `MEMFAULT_DEVICE_INFO_SOFTWARE_VERSION` config variable to `"1.0.1"`, and
    rebuild (`idf.py build`), but don't load it to the device. We'll use this
    build as our OTA payload!
 

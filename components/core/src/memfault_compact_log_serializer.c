@@ -24,6 +24,7 @@ extern uint32_t __start_log_fmt;
 //! Note: We don't read this in the firmware but it is used during the decode
 //! process to sanity check the section is being laid out as we would expect.
 MEMFAULT_PUT_IN_SECTION(".log_fmt_hdr")
+MEMFAULT_NO_ALLOC
 const sMemfaultLogFmtElfSectionHeader g_memfault_log_fmt_elf_section_hdr = {
   .magic = 0x66474f4c, /* LOGf */
   .version = 1,

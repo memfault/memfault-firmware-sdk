@@ -40,6 +40,30 @@ menu "Memfault"
             `memfault_boot`. This option is deprecated and not supported.
             A build error will be generated when enabling this option.
 
+    menuconfig MEMFAULT_DEFAULT_GET_DEVICE_INFO
+        bool "Enables the default memfault_platform_get_device_info() implementation"
+        default y
+        help
+            Enable a default implementation of
+            memfault_platform_get_device_info(). Disable this config to
+            implement a custom version of the function.
+
+    if MEMFAULT_DEFAULT_GET_DEVICE_INFO
+
+    config MEMFAULT_DEVICE_INFO_HARDWARE_VERSION
+        string "Hardware version used in the default device info implementation"
+        default "$(IDF_TARGET)-proto"
+
+    config MEMFAULT_DEVICE_INFO_SOFTWARE_VERSION
+        string "Software version used in the default device info implementation"
+        default "1.0.0-dev"
+
+    config MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE
+        string "Software type used in the default device info implementation"
+        default "esp32-main"
+
+    endif # MEMFAULT_DEFAULT_GET_DEVICE_INFO
+
     config MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
         int "The HTTP client timeout in milliseconds"
         default 5000

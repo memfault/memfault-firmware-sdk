@@ -139,8 +139,6 @@ if (SDK_FW_TASKS_DIR / "modus.py").exists():
 
 @task(
     pre=[
-        nrf.nrf_clean,
-        nrf.nrf_build,
         esp32.esp32_app_clean,
         esp32.esp32_app_build,
         esp32.esp32_app_clean,

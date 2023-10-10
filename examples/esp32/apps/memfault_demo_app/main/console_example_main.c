@@ -336,8 +336,6 @@ void app_main() {
 #if !CONFIG_MEMFAULT_AUTOMATIC_INIT
   memfault_boot();
 #endif
-  extern void memfault_platform_device_info_boot(void);
-  memfault_platform_device_info_boot();
   memfault_device_info_dump();
 
   g_unaligned_buffer = &s_my_buf[1];
@@ -365,6 +363,14 @@ void app_main() {
   register_system();
   register_wifi();
   register_app();
+
+  // Attempt to load project key from nvs
+  static char project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = {0};
+  int err = wifi_get_project_key(project_key, sizeof(project_key));
+  if (err == 0) {
+    project_key[sizeof(project_key) - 1] = '\0';
+    g_mflt_http_client_config.api_key = project_key;
+  }
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
@@ -419,7 +425,7 @@ void app_main() {
     } else if (err == ESP_ERR_INVALID_ARG) {
       // command was empty
     } else if (err == ESP_OK && ret != ESP_OK) {
-      printf("Command returned non-zero error code: 0x%x (%s)\n", ret, esp_err_to_name(err));
+      printf("Command returned non-zero error code: 0x%x (%s)\n", ret, esp_err_to_name(ret));
     } else if (err != ESP_OK) {
       printf("Internal error: %s\n", esp_err_to_name(err));
     }

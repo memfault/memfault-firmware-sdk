@@ -34,6 +34,9 @@ extern "C" {
 
 #define MEMFAULT_CLZ(a) ((a == 0) ? 32UL : (uint32_t)__clz(a))
 
+//! Non-loaded symbols are specified by linker section, not compiler attribute
+#define MEMFAULT_NO_ALLOC
+
 // Compiler incorrectly thinks return value is missing for pure asm function
 // disable the check for them
 #pragma diag_push

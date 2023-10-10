@@ -8,13 +8,6 @@ config STORE_HISTORY
         command history. If this option is enabled, initalizes a FAT filesystem
         and uses it to store command history.
 
-config MEMFAULT_ESP32_MAIN_FIRMWARE_VERSION
-    string "Main firmware version"
-    default "1.0.0-dev"
-    help
-        The version of the main firmware. Used when the device reports in as
-        well as for OTA checks.
-
 config MEMFAULT_APP_OTA
     bool "Enable automatic periodic check+update for OTA"
     default y
@@ -39,10 +32,11 @@ choice APP_MEMFAULT_TRANSPORT
         select MQTT_PROTOCOL_5
 endchoice
 
-config MEMFAULT_APP_SOFTWARE_TYPE
-    string "Software version for the application"
-    default "esp32-main-mqtt" if APP_MEMFAULT_TRANSPORT_MQTT
-    default "esp32-main"
+if APP_MEMFAULT_TRANSPORT_MQTT
+config MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE
+    string "Override default software version for the application"
+    default "esp32-main-mqtt"
+endif
 
 # These LED settings are taken from ESP-IDF:
 # examples/get-started/blink/main/blink_example_main.c

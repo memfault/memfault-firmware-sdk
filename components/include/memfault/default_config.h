@@ -396,6 +396,12 @@ extern "C" {
 #define MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM  0
 #endif
 
+// If enabled, memfault_fault_handler will return back to OS
+// exception handling code instead of rebooting the device.
+#ifndef MEMFAULT_FAULT_HANDLER_RETURN
+#define MEMFAULT_FAULT_HANDLER_RETURN 0
+#endif
+
 //
 // Http Configuration Options
 //

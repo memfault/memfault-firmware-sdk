@@ -38,17 +38,16 @@ static int prv_get_device_info(const struct shell *shell, size_t argc, char **ar
 //! Route the 'export' command to output via printk, so we don't drop messages
 //! from logging a big burst.
 void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
-#if defined(CONFIG_LOG_PRINTK) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
-  // printk is configured to pass through the deferred logging subsystem,
-  // which can result in dropped Memfault chunk messages
-  #warning "CONFIG_LOG_PRINTK is enabled, but CONFIG_LOG_MODE_IMMEDIATE is not. " \
-    "Exported Memfault chunk messages may be dropped. " \
-    "Consider disabling CONFIG_LOG_PRINTK or enabling CONFIG_LOG_MODE_IMMEDIATE."
-#endif
   printk("%s\n", base64_chunk);
 }
 
 static int prv_chunk_data_export(const struct shell *shell, size_t argc, char **argv) {
+#if defined(CONFIG_LOG_PRINTK) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
+  // printk is configured to pass through the deferred logging subsystem,
+  // which can result in dropped Memfault chunk messages
+  MEMFAULT_LOG_WARN("CONFIG_LOG_PRINTK=y and CONFIG_LOG_MODE_IMMEDIATE=n can result in dropped "
+                    "'mflt export' messages");
+#endif
   memfault_data_export_dump_chunks();
   return 0;
 }
@@ -103,7 +102,8 @@ static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t
 #if MEMFAULT_NRF_CONNECT_SDK
   // The nRF Connect SDK comes with a download client module that can be used to
   // perform an actual e2e OTA so use that instead and don't link this code in at all!
-  shell_print(shell, "Use 'mflt_nrf fota' instead. See https://mflt.io/nrf-fota-setup for more details");
+  shell_print(shell,
+              "Use 'mflt_nrf fota' instead. See https://mflt.io/nrf-fota-setup for more details");
 #elif defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   uint8_t working_buf[256];
 
@@ -169,7 +169,8 @@ static int prv_hang_example(const struct shell *shell, size_t argc, char **argv)
 
 static int prv_busfault_example(const struct shell *shell, size_t argc, char **argv) {
   //! Note: The Zephyr fault handler dereferences the pc which triggers a fault
-  //! if the pc itself is from a bad pointer: https://github.com/zephyrproject-rtos/zephyr/blob/f400c94/arch/arm/core/aarch32/cortex_m/fault.c#L664
+  //! if the pc itself is from a bad pointer:
+  //! https://github.com/zephyrproject-rtos/zephyr/blob/f400c94/arch/arm/core/aarch32/cortex_m/fault.c#L664
   //!
   //! We set the BFHFNMIGN bit to prevent a lockup from happening due to de-referencing the bad PC
   //! which generated the fault in the first place

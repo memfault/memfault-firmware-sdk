@@ -93,7 +93,7 @@ def selected_thread():
     return None
 
 
-def execute(cmd: str, to_string=False) -> Any:
+def execute(cmd: str, to_string=False) -> Any:  # noqa: ANN401
     raise NotImplementedError()
 
 

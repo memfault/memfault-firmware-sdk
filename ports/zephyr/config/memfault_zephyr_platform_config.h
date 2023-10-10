@@ -59,6 +59,10 @@ extern "C" {
 
 #endif
 
+#if defined(CONFIG_MEMFAULT_FAULT_HANDLER_RETURN)
+#define MEMFAULT_FAULT_HANDLER_RETURN 1
+#endif
+
 #if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
 
 // Pick up any user configuration overrides

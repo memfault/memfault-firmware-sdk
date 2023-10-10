@@ -51,6 +51,9 @@
 
 #endif /* CONFIG_MEMFAULT_HTTP_USES_MBEDTLS */
 
+// Timeout for the socket file descriptor to become available for I/0
+#define POLL_TIMEOUT_MS 5000
+
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 static void *prv_calloc(size_t count, size_t size) {
   return calloc(count, size);
@@ -199,10 +202,28 @@ static int prv_connect_socket(int fd, struct addrinfo *res) {
   return rv;
 }
 
+static int prv_poll_socket(int sock_fd, int events) {
+  struct pollfd poll_fd = {
+    .fd = sock_fd,
+    .events = events,
+  };
+  const int timeout_ms = POLL_TIMEOUT_MS;
+  int rv = poll(&poll_fd, 1, timeout_ms);
+  if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Timeout waiting for socket event(s): event(s)=%d, errno=%d", events, errno);
+  }
+  return rv;
+}
+
 static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
+  int rv = prv_poll_socket(sock_fd, POLLOUT);
+  if (rv < 0) {
+    return false;
+  }
+
   size_t idx = 0;
   while (idx != buf_len) {
-    int rv = send(sock_fd, &buf[idx], buf_len - idx, 0);
+    rv = send(sock_fd, &buf[idx], buf_len - idx, MSG_DONTWAIT);
     if (rv > 0) {
       idx += rv;
       continue;
@@ -300,14 +321,8 @@ static bool prv_send_next_msg(int sock) {
 }
 
 static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
-  struct pollfd poll_fd = {
-    .fd = sock_fd,
-    .events = POLLIN,
-  };
-  const int timeout_ms = 5000;
-  int rv = poll(&poll_fd, 1, timeout_ms);
+  int rv = prv_poll_socket(sock_fd, POLLIN);
   if (rv < 0) {
-    MEMFAULT_LOG_ERROR("Timeout awaiting response: errno=%d", errno);
     return false;
   }
 

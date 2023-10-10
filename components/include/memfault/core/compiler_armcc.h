@@ -27,6 +27,8 @@ extern "C" {
 #define MEMFAULT_WEAK __attribute__((weak))
 #define MEMFAULT_PRINTF_LIKE_FUNC(a, b)
 #define MEMFAULT_CLZ(a) __clz(a)
+//! Non-loaded symbols are specified by linker section, not compiler attribute
+#define MEMFAULT_NO_ALLOC
 
 
 #define MEMFAULT_GET_LR(_a) _a = ((void *)__return_address())

@@ -184,7 +184,9 @@ ifeq ($(UNAME_OS),$(LINUX_STR))
 	CPPUTEST_WARNINGFLAGS += -Wsign-conversion
 endif
 	CPPUTEST_CXX_WARNINGFLAGS = -Woverloaded-virtual
-	CPPUTEST_C_WARNINGFLAGS = -Wstrict-prototypes
+	ifndef CPPUTEST_C_WARNINGFLAGS
+		CPPUTEST_C_WARNINGFLAGS = -Wstrict-prototypes
+	endif
 endif
 
 #Wonderful extra compiler warnings with clang

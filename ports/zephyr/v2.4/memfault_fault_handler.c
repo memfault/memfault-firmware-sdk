@@ -56,6 +56,13 @@ extern void sys_arch_reboot(int type);
 
 // Intercept zephyr/kernel/fatal.c:z_fatal_error()
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void __real_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+// Ensure the substituted function signature matches the original function
+_Static_assert(__builtin_types_compatible_p(__typeof__(&z_fatal_error),
+                                            __typeof__(&__wrap_z_fatal_error)) &&
+                 __builtin_types_compatible_p(__typeof__(&z_fatal_error),
+                                              __typeof__(&__real_z_fatal_error)),
+               "Error: check z_fatal_error function signature");
 
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
   // flush logs prior to capturing coredump & rebooting
@@ -84,6 +91,13 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
   };
 
   memfault_fault_handler(&reg, kMfltRebootReason_HardFault);
+
+#if MEMFAULT_FAULT_HANDLER_RETURN
+  // instead of returning, call the Zephyr fatal error handler. This is done
+  // here instead of in memfault_platform_reboot(), because we need to pass the
+  // function parameters through
+  __real_z_fatal_error(reason, esf);
+#endif
 }
 
 MEMFAULT_WEAK
