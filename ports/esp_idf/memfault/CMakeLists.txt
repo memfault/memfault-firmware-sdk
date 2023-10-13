@@ -160,7 +160,7 @@ if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
 endif()
 
 if($ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
-  list(APPEND COMPONENT_REQUIRES esp_http_client)
+  list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota)
 endif()
 register_component()
 

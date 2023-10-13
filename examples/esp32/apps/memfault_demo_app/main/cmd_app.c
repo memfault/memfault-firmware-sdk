@@ -14,6 +14,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "memfault/components.h"
 #include "sdkconfig.h"
 
 //! cause the task watchdog to fire by deadlocking the example task
@@ -26,16 +27,31 @@ static int test_task_watchdog(int argc, char** argv) {
   return 0;
 }
 
-static void register_test_task_watchdog(void) {
-  const esp_console_cmd_t cmd = {
+static int prv_coredump_size(int argc, char** argv) {
+  (void)argc, (void)argv;
+
+  sMfltCoredumpStorageInfo storage_info = {0};
+  memfault_platform_coredump_storage_get_info(&storage_info);
+  const size_t size_needed = memfault_coredump_storage_compute_size_required();
+  printf("coredump storage capacity: %zuB\n", storage_info.size);
+  printf("coredump size required: %zuB\n", size_needed);
+  return 0;
+}
+
+void register_app(void) {
+  const esp_console_cmd_t test_watchdog_cmd = {
     .command = "test_task_watchdog",
     .help = "Demonstrate the task watchdog tripping on a deadlock",
     .hint = NULL,
     .func = &test_task_watchdog,
   };
-  ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
-}
+  ESP_ERROR_CHECK(esp_console_cmd_register(&test_watchdog_cmd));
 
-void register_app(void) {
-  register_test_task_watchdog();
+  const esp_console_cmd_t coredump_size_cmd = {
+    .command = "coredump_size",
+    .help = "Print the coredump storage capacity and the capacity required",
+    .hint = NULL,
+    .func = &prv_coredump_size,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&coredump_size_cmd));
 }

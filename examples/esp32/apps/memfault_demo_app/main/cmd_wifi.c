@@ -16,8 +16,7 @@
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "nvs.h"
-#include "nvs_flash.h"
+#include "settings.h"
 
 // enable for more verbose debug logs
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -180,71 +179,23 @@ static int connect(int argc, char **argv) {
   return 0;
 }
 
-static esp_err_t prv_open_nvs(nvs_handle_t* nvs_handle) {
-  // Initialize NVS
-  esp_err_t err = nvs_flash_init();
-  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    // NVS partition was truncated and needs to be erased
-    // Retry nvs_flash_init
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    err = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(err);
-
-  // Open
-  err = nvs_open("storage", NVS_READWRITE, nvs_handle);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) opening NVS handle!", esp_err_to_name(err));
-    return err;
-  }
-
-  return ESP_OK;
-}
-
 //! Since the creds are set via cli, we can safely assume there's no null bytes
 //! in the password, despite being theoretically permissible by the spec
 static void prv_save_wifi_creds(const char* ssid, const char* password) {
-  // Initialize NVS
-  nvs_handle_t nvs_handle;
-  esp_err_t err = prv_open_nvs(&nvs_handle);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) opening NVS handle!", esp_err_to_name(err));
-    return;
-  }
-
-  ESP_LOGD(__func__, "Opened NVS handle");
-
-  // Write
-  err = nvs_set_str(nvs_handle, "wifi_ssid", ssid);
+  // length arg is ignored for string-type settings
+  esp_err_t err = settings_set(kSettingsWifiSsid, ssid, 0);
   if (err != ESP_OK) {
     ESP_LOGE(__func__, "Error (%s) writing ssid to NVS!", esp_err_to_name(err));
-  } else {
-    ESP_LOGD(__func__, "Wrote ssid to NVS");
   }
-  err = nvs_set_str(nvs_handle, "wifi_password", password);
-  if (err == ESP_OK) {
-    if (err != ESP_OK) {
-      ESP_LOGE(__func__, "Error (%s) writing password to NVS!", esp_err_to_name(err));
-    } else {
-      ESP_LOGD(__func__, "Wrote password to NVS");
-    }
-  }
-
-  // Commit written value.
-  // After setting any values, nvs_commit() must be called to ensure changes are written
-  // to flash storage. Implementations may write to storage at other times,
-  // but this is not guaranteed.
-  err = nvs_commit(nvs_handle);
+  err = settings_set(kSettingsWifiPassword, password, 0);
   if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) committing NVS!", esp_err_to_name(err));
-  } else {
+    ESP_LOGE(__func__, "Error (%s) writing password to NVS!", esp_err_to_name(err));
+  }
+  if (err == ESP_OK) {
     ESP_LOGD(__func__, "Successfully saved new wifi creds");
     strncpy(s_wifi_ssid, ssid, sizeof(s_wifi_ssid) - 1);
     strncpy(s_wifi_pass, password, sizeof(s_wifi_pass) - 1);
   }
-
-  // Close
-  nvs_close(nvs_handle);
 }
 
 //! Return ssid + password pointers, or NULL if not found
@@ -260,41 +211,23 @@ void wifi_load_creds(char** ssid, char** password) {
   *ssid = NULL;
   *password = NULL;
 
-  // Initialize NVS
-  nvs_handle_t nvs_handle;
-  esp_err_t err = prv_open_nvs(&nvs_handle);
+  ESP_LOGD(__func__, "Reading wifi creds ... ");
+  size_t len = sizeof(s_wifi_ssid);
+  esp_err_t err = settings_get(kSettingsWifiSsid, s_wifi_ssid, &len);
   if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+    ESP_LOGE(__func__, "failed reading ssid");
     return;
   }
 
-  ESP_LOGD(__func__, "Opened NVS handle");
-
-  // Read
-  ESP_LOGD(__func__, "Reading wifi creds ... ");
-  size_t len = sizeof(s_wifi_ssid);
-  err = nvs_get_str(nvs_handle, "wifi_ssid", s_wifi_ssid, &len);
-  if (err == ESP_OK) {
-    ESP_LOGD(__func__, "ssid size: %d", len);
-  } else {
-    ESP_LOGE(__func__, "failed reading ssid");
-    goto close;
-  }
-
   len = sizeof(s_wifi_pass);
-  err = nvs_get_str(nvs_handle, "wifi_password", s_wifi_pass, &len);
-  if (err == ESP_OK) {
-    ESP_LOGD(__func__, "pw size: %d", len);
-  } else {
+  err = settings_get(kSettingsWifiPassword, s_wifi_pass, &len);
+  if (err != ESP_OK) {
     ESP_LOGE(__func__, "failed reading pw");
-    goto close;
+    return;
   }
 
   *ssid = s_wifi_ssid;
   *password = s_wifi_pass;
-
-close:
-  nvs_close(nvs_handle);
 }
 
 // argtable3 requires this data structure to be valid through the entire command
@@ -353,29 +286,8 @@ __attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char* project
              MEMFAULT_PROJECT_KEY_LEN + 1);
     return 1;
   }
-
-  // Initialize NVS
-  nvs_handle_t nvs_handle;
-  esp_err_t err = prv_open_nvs(&nvs_handle);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) opening NVS handle!", esp_err_to_name(err));
-    return err;
-  }
-
-  ESP_LOGD(__func__, "Opened NVS handle");
-
-  // load the project key, if it exists
-  size_t len = project_key_len + 1;
-  err = nvs_get_str(nvs_handle, "project_key", project_key, &len);
-  if (err == ESP_OK) {
-    ESP_LOGD(__func__, "project key size: %d", len);
-  } else {
-    ESP_LOGE(__func__, "failed reading project key %d", err);
-  }
-
-  nvs_close(nvs_handle);
-
-  return err;
+  size_t len = project_key_len;
+  return settings_get(kSettingsProjectKey, project_key, &len);
 }
 
 __attribute__((access(read_only, 1, 2))) static esp_err_t prv_set_project_key(
@@ -384,39 +296,7 @@ __attribute__((access(read_only, 1, 2))) static esp_err_t prv_set_project_key(
   assert((project_key_len == MEMFAULT_PROJECT_KEY_LEN) &&
          (strlen(project_key) == MEMFAULT_PROJECT_KEY_LEN));
 
-  // Initialize NVS
-  nvs_handle_t nvs_handle;
-  esp_err_t err = prv_open_nvs(&nvs_handle);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) opening NVS handle!", esp_err_to_name(err));
-    return err;
-  }
-
-  ESP_LOGD(__func__, "Opened NVS handle");
-
-  // Write
-  err = nvs_set_str(nvs_handle, "project_key", project_key);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) writing project key to NVS!", esp_err_to_name(err));
-  } else {
-    ESP_LOGD(__func__, "Wrote project key to NVS");
-  }
-
-  // Commit written value.
-  // After setting any values, nvs_commit() must be called to ensure changes are written
-  // to flash storage. Implementations may write to storage at other times,
-  // but this is not guaranteed.
-  err = nvs_commit(nvs_handle);
-  if (err != ESP_OK) {
-    ESP_LOGE(__func__, "Error (%s) committing NVS!", esp_err_to_name(err));
-  } else {
-    ESP_LOGD(__func__, "Successfully saved new project key");
-  }
-
-  // Close
-  nvs_close(nvs_handle);
-
-  return err;
+  return settings_set(kSettingsProjectKey, project_key, project_key_len);
 }
 
 static int project_key_set(int argc, char** argv) {

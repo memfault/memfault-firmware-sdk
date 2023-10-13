@@ -17,7 +17,17 @@ SDK_FW_TASKS_DIR = pathlib.Path(os.path.join(SDK_FW_ROOT, "tasks"))
 SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
 
 
-@task
+@task(
+    help={
+        "coverage": "Generate coverage report",
+        "rule": "Override default make rule to run",
+        "test_filter": "Test filter expression, eg '*metrics*'",
+        "test_dir": "Test directory (typically tests/)",
+        "extra_make_options": "Extra make options",
+        "verbose": "Verbose output",
+        "no_pytest": "Don't run pytest, instead run the Make-based test runner",
+    }
+)
 def fw_sdk_unit_test(
     ctx,
     coverage=False,
@@ -26,6 +36,7 @@ def fw_sdk_unit_test(
     test_dir=SDK_FW_TESTS_ROOT,
     extra_make_options="",
     verbose=False,
+    no_pytest=False,
 ):
     """Runs unit tests"""
 
@@ -94,7 +105,7 @@ def fw_sdk_unit_test(
         # The main unit tests (in the 'tests' directory) use a test.py file to
         # drive the test run. The internal tests, in the 'internal/tests' directory,
         # use a Make-based test runner, so support both.
-        if os.path.exists(os.path.join(test_dir, "test.py")):
+        if os.path.exists(os.path.join(test_dir, "test.py")) and not no_pytest:
             # run the tests with pytest
             test_cmd = "pytest --numprocesses=auto {verbose} test.py".format(
                 verbose="-v" if verbose else ""

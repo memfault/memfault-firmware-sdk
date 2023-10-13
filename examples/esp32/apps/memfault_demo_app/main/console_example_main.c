@@ -33,6 +33,7 @@
 #include "memfault/esp_port/version.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "settings.h"
 
 static const char *TAG = "example";
 
@@ -363,6 +364,7 @@ void app_main() {
   register_system();
   register_wifi();
   register_app();
+  settings_register_shell_commands();
 
   // Attempt to load project key from nvs
   static char project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = {0};

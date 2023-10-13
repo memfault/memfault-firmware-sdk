@@ -240,6 +240,18 @@ occupied. Typically coredumps are cleared once they have been posted to the
 memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
 You can invoke this command from the cli by running `clear_core`.
 
+### Checking coredump storage capacity
+
+Memfault coredumps will be written to the `coredump` partition by default. Use
+the `coredump_size` command to see the computed maximum coredump size, and the
+available storage capacity:
+
+```bash
+esp32> coredump_size
+coredump storage capacity: 262144B
+coredump size required: 456988B
+```
+
 ### Testing OTA
 
 The following steps can be used to exercise OTA functionality:

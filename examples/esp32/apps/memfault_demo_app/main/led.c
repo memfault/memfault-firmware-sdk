@@ -13,11 +13,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "settings.h"
+
 #if CONFIG_BLINK_LED_RMT
   #include "led_strip.h"
 #endif
 
 #include "driver/gpio.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 #include "memfault/components.h"
@@ -27,6 +30,8 @@
 // Green: System is running, has checked in to memfault
 // Blue:  System is performing an OTA update
 static int s_led_color = kLedColor_Red;
+
+static int32_t s_led_brightness = 5;
 
 void led_set_color(enum LED_COLORS color) {
   s_led_color = color;
@@ -69,7 +74,7 @@ static void prv_set_pixel(struct rgb_led_s rgb, bool set) {
   }
 }
 
-  #else  // ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
+  #else   // ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0)
 
 static led_strip_t *pStrip_a;
 
@@ -99,24 +104,22 @@ static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
   /* If the addressable LED is enabled */
   struct rgb_led_s rgb_led;
 
-  #define BRIGHTNESS 5
-
   switch (s_led_color) {
     default:
     case kLedColor_Red:
-      rgb_led.r = BRIGHTNESS;
+      rgb_led.r = s_led_brightness;
       rgb_led.g = 0;
       rgb_led.b = 0;
       break;
     case kLedColor_Green:
       rgb_led.r = 0;
-      rgb_led.g = BRIGHTNESS;
+      rgb_led.g = s_led_brightness;
       rgb_led.b = 0;
       break;
     case kLedColor_Blue:
       rgb_led.r = 0;
       rgb_led.g = 0;
-      rgb_led.b = BRIGHTNESS;
+      rgb_led.b = s_led_brightness;
       break;
   }
 
@@ -154,9 +157,17 @@ static void led_config(void) {
 void led_init(void) {
   led_config();
 
+  size_t len = sizeof(s_led_brightness);
+  (void)settings_get(kSettingsLedBrightness, &s_led_brightness, &len);
+  ESP_LOGI(__func__, "LED brightness: %" PRIi32, s_led_brightness);
+
   // create a timer that blinks the LED, indicating the app is alive
   const char *const pcTimerName = "HeartbeatLED";
-  const TickType_t xTimerPeriodInTicks = pdMS_TO_TICKS(500);
+  int32_t led_interval_ms = 500;
+  len = sizeof(led_interval_ms);
+  (void)settings_get(kSettingsLedBlinkIntervalMs, &led_interval_ms, &len);
+  ESP_LOGI(__func__, "LED blink interval: %" PRIi32, led_interval_ms);
+  const TickType_t xTimerPeriodInTicks = pdMS_TO_TICKS(led_interval_ms);
 
   TimerHandle_t timer;
 

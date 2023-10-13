@@ -1,5 +1,31 @@
 # Memfault Firmware SDK Changelog
 
+## [1.3.4] - 2023-10-12
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Add a missing dependency to the `memfault` component, `esp_https_ota`. It's
+    only linked into the target project if the `memfault_esp_port_ota_update()`
+    API is used. This was previously an implicit dependency from the `common`
+    component dependencies, when building `memfault` into an ESP-IDF
+    component-style project. This change fixes building for non-component-style
+    ESP-IDF projects, where the default component dependencies might not be
+    included.
+
+  - Multiple changes to the
+    [`examples/esp32`](examples/esp32/apps/memfault_demo_app) sample project:
+
+    - Add a new `coredump_size` shell command, which prints out the maximum
+      coredump size and the available coredump storage capacity.
+    - Add new `settings_[get|set]` shell commands, and enable setting the LED
+      brightness and blink interval to NVS. This is intended as a minor
+      quality-of-life change for internal Memfault users of the example app.
+
+- Fix a build error in the public unit tests, caused by the recent addition of
+  the `-fanalyzer` flag to the unit test compilation options.
+
 ## 1.3.3 - Oct 10, 2023
 
 ### :chart_with_upwards_trend: Improvements

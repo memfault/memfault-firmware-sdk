@@ -479,6 +479,13 @@ typedef enum {
 static bool prv_update_timer_metric(const sMemfaultMetricValueInfo *value_info,
                                     eMemfaultTimerOp op) {
   sMemfaultMetricValueMetadata *meta_datap = value_info->meta_datap;
+#if defined(MEMFAULT_UNITTEST)
+  // It's a programming error if we reach this point and meta_datap is NULL. It
+  // should always be valid for a timer metric class. Use c stdlib assert to
+  // prevent the static analyzer from triggering below.
+  #include <assert.h>
+  assert(meta_datap != NULL);
+#endif
   const bool timer_running = meta_datap->is_running;
 
   // The timer is not running _and_ we received a Start request

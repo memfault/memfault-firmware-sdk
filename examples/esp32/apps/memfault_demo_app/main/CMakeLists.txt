@@ -4,6 +4,7 @@ list(APPEND
    cmd_system.c
    console_example_main.c
    led.c
+   settings.c
 )
 
 if (CONFIG_APP_MEMFAULT_TRANSPORT_HTTP)
