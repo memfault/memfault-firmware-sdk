@@ -129,11 +129,18 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
     .name = "mflt",
   };
 
+#if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
+  // This is only needed if CONFIG_MEMFAULT_AUTOMATIC_INIT is enabled. Normally
+  // esp_timer_init() is called during the system init sequence, before
+  // app_main(), but if memfault_boot() is running in the system init stage, it
+  // can potentially run before esp_timer_init() has been called.
+  //
   // Ignore return value; this function should be safe to call multiple times
   // during system init, but needs to called before we create any timers.
   // See implementation here (may change by esp-idf version!):
   // https://github.com/espressif/esp-idf/blob/master/components/esp_timer/src/esp_timer.c#L431-L460
   (void)esp_timer_init();
+#endif
 
   esp_timer_handle_t periodic_timer;
   ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));

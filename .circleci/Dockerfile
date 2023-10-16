@@ -24,6 +24,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 ARG MEMFAULT_SDK_APT_DEPS="\
     build-essential \
     cpputest \
+    gcc-12 \
+    g++-12 \
     git \
     python3.10 \
     python3.10-venv\
@@ -32,7 +34,7 @@ ARG MEMFAULT_SDK_APT_DEPS="\
 # Run commands and tests as circleci user
 RUN echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90circleci && \
     echo 'DPkg::Options "--force-confnew";' >> /etc/apt/apt.conf.d/90circleci && \
-    apt-get update && apt-get install -y \
+    apt-get update && apt-get install -y --no-install-recommends \
         locales \
         sudo \
         wget \
@@ -47,10 +49,32 @@ RUN echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90circleci && \
     sudo -u circleci mkdir /home/circleci/project && \
     sudo -u circleci mkdir /home/circleci/bin
 
+# Select gcc-12 as the default gcc/g++ version
+RUN sudo update-alternatives --install \
+    /usr/bin/gcc gcc /usr/bin/gcc-12 60 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-12 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-12
+
 ENV PATH=/home/circleci/bin:/home/circleci/.local/bin:$PATH \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
+
+# Install lcov and add to PATH
+ARG LCOV_VERSION=1.16
+ARG LCOV_SHA256SUM=987031ad5528c8a746d4b52b380bc1bffe412de1f2b9c2ba5224995668e3240b
+RUN \
+    cd /tmp && \
+    wget https://github.com/linux-test-project/lcov/releases/download/v${LCOV_VERSION}/lcov-${LCOV_VERSION}.tar.gz -O lcov.tar.gz && \
+    echo "${LCOV_SHA256SUM}  lcov.tar.gz" | shasum --algorithm=256 --check && \
+    tar zvxf lcov.tar.gz && \
+    cd lcov-${LCOV_VERSION} && sudo make install && \
+    cd .. && \
+    rm -rf ./lcov* && \
+    lcov --version && \
+    genhtml --version
+
+ENV PATH=/home/circleci/lcov-${LCOV_VERSION}/bin:$PATH
 
 USER circleci
 
@@ -59,18 +83,6 @@ WORKDIR /home/circleci/project
 
 # Create the virtualenv
 RUN python3 -m venv ~/venv
-
-# Install lcov and add to PATH
-ARG LCOV_VERSION=1.14
-ARG LCOV_SHA256SUM=14995699187440e0ae4da57fe3a64adc0a3c5cf14feab971f8db38fb7d8f071a
-RUN \
-    cd ~ && \
-    wget https://github.com/linux-test-project/lcov/releases/download/v${LCOV_VERSION}/lcov-${LCOV_VERSION}.tar.gz -O ~/lcov.tar.gz && \
-    echo "${LCOV_SHA256SUM}  ${HOME}/lcov.tar.gz" | shasum --algorithm=256 --check && \
-    cd ~ && tar zvxf ~/lcov.tar.gz && \
-    rm ~/lcov.tar.gz
-
-ENV PATH=/home/circleci/lcov-${LCOV_VERSION}/bin:$PATH
 
 # Auto-activate the virtualenv in the container
 RUN sudo mkdir -p /circleci/ && \

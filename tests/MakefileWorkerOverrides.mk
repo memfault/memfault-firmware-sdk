@@ -98,9 +98,12 @@ else
 COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness \
 
-# Enable gcc static analyzer
-CPPUTEST_C_WARNINGFLAGS += \
-  -fanalyzer \
+# Only enable -fanalyzer if GCC version is >= 12
+GCC_VERSION_GTEQ_12 := $(shell expr $$($(CC) -dumpversion | cut -f1 -d.) \>= 12)
+ifeq "$(GCC_VERSION_GTEQ_12)" "1"
+CFLAGS += \
+  -fanalyzer
+endif
 
 # Permit disabling the sanitizers via environment variable
 ifneq ($(MEMFAULT_DISABLE_ASAN),1)

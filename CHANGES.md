@@ -1,5 +1,26 @@
 # Memfault Firmware SDK Changelog
 
+## [1.3.5] - 2023-10-14
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix build errors when building the [ESP32 example app](examples/esp32)
+    project on ESP-IDF versions earlier than v5. This was a regression in
+    **1.3.4**.
+
+  - Conditionally remove a redundant call to `esp_timer_init()` during the
+    `memfault_boot()` sequence, which was causing a runtime error message. This
+    call was originally required when `memfault_boot()` was called as part of
+    ESP-IDF system init, which was disabled by default in **0.31.4** and
+    deprecated in **0.40.0**. The redundant call was harmless but generated a
+    nuisance error message.
+
+- Fix another build error in the public unit tests caused by the `-fanalyzer`
+  flag. The `-fanalyzer` static analyzer was generating a false positive on
+  GCC 11. Updating the GCC version to 12 removes the false positive.
+
 ## [1.3.4] - 2023-10-12
 
 ### :chart_with_upwards_trend: Improvements

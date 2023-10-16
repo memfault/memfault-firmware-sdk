@@ -4,7 +4,6 @@ list(APPEND
    cmd_system.c
    console_example_main.c
    led.c
-   settings.c
 )
 
 if (CONFIG_APP_MEMFAULT_TRANSPORT_HTTP)
@@ -23,6 +22,14 @@ else()
    list(APPEND
       COMPONENT_SRCS
       cmd_wifi_legacy.c
+   )
+endif()
+
+# include settings.c only on idf >= 4
+if("${IDF_VERSION_MAJOR}" VERSION_GREATER_EQUAL 4)
+   list(APPEND
+      COMPONENT_SRCS
+      settings.c
    )
 endif()
 

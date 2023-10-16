@@ -175,13 +175,13 @@ void memfault_boot(void) {
 
   memfault_build_info_dump();
 
-#if CONFIG_MEMFAULT_CLI_ENABLED
+#if defined(CONFIG_MEMFAULT_CLI_ENABLED)
   // register CLI for easily testing Memfault
   memfault_register_cli();
 #endif
 }
 
-#if CONFIG_MEMFAULT_AUTOMATIC_INIT
+#if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
 // register an initialization routine that will be run from do_global_ctors()
 static void __attribute__((constructor)) prv_memfault_boot(void) {
   memfault_boot();

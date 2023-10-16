@@ -8,6 +8,7 @@
 #include "settings.h"
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "argtable3/argtable3.h"
@@ -103,7 +104,10 @@ static esp_err_t prv_open_nvs(nvs_handle_t *nvs_handle) {
   return ESP_OK;
 }
 
-__attribute__((access(write_only, 2))) int settings_get(enum settings_key key, void *value,
+#if __GNUC__ >= 11
+__attribute__((access(write_only, 2)))
+#endif
+int settings_get(enum settings_key key, void *value,
                                                         size_t *len) {
   if (!prv_settings_key_is_valid(key)) {
     ESP_LOGE(__func__, "Invalid key: %d", key);
@@ -163,8 +167,10 @@ close:
   return err;
 }
 
-__attribute__((access(read_only, 2, 3))) int settings_set(enum settings_key key, const void *value,
-                                                          size_t len) {
+#if __GNUC__ >= 11
+__attribute__((access(read_only, 2, 3)))
+#endif
+int settings_set(enum settings_key key, const void *value, size_t len) {
   if (!prv_settings_key_is_valid(key)) {
     ESP_LOGE(__func__, "Invalid key: %d", key);
     return ESP_ERR_INVALID_ARG;
@@ -316,12 +322,14 @@ static int prv_set_cmd(int argc, char **argv) {
       break;
     case kSettingsTypeI32:
       // convert string to int
-      int32_t i32;
-      if (sscanf(s_set_args.value->sval[0], "%" SCNi32, &i32) != 1) {
-        ESP_LOGE(__func__, "Invalid value: %s", s_set_args.value->sval[0]);
-        return 1;
+      {
+        int32_t i32;
+        if (sscanf(s_set_args.value->sval[0], "%" SCNi32, &i32) != 1) {
+          ESP_LOGE(__func__, "Invalid value: %s", s_set_args.value->sval[0]);
+          return 1;
+        }
+        err = settings_set(key, &i32, sizeof(i32));
       }
-      err = settings_set(key, &i32, sizeof(i32));
       break;
     default:
       return 1;

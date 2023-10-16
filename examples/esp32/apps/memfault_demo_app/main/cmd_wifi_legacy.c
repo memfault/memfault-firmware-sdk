@@ -40,8 +40,7 @@ const int CONNECTED_BIT = BIT0;
 typedef nvs_handle nvs_handle_t;
 #endif
 
-__attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char* project_key,
-                                                                   size_t project_key_len) {
+int wifi_get_project_key(char* project_key, size_t project_key_len) {
   // Configurable project key not supported, project key must be compiled in via
   // CONFIG_MEMFAULT_PROJECT_KEY
   return 1;

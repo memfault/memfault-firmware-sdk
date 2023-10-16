@@ -15,7 +15,7 @@ version: 2.1
 executors:
   memfault-ci:
     docker:
-      - image: memfault/memfault-firmware-sdk-ci:0.0.1
+      - image: memfault/memfault-firmware-sdk-ci:2023-10-13
     working_directory: ~/repo
 
 commands:
