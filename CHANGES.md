@@ -1,5 +1,42 @@
 # Memfault Firmware SDK Changelog
 
+## [1.4.0] - 2023-10-23
+
+#### :rocket: New Features
+
+- ESP-IDF:
+
+  - Implement support for a "zero-config" integration on ESP-IDF. This change
+    makes the template + platform config files optional. See the
+    [ESP32 Integration Guide](https://mflt.io/esp-tutorial) section on
+    configuration files for details.
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix a build issue when overriding the default device-info implementation,
+    `CONFIG_MEMFAULT_DEFAULT_GET_DEVICE_INFO=n`. This was a regression in
+    **1.3.3**.
+
+  - Add a new Kconfig flag, `MEMFAULT_COREDUMP_STORAGE_MAX_SIZE`, which can be
+    used to set the Memfault SDK's built-in
+    [ESP-IDF coredump storage implementation](sdk/embedded/ports/esp_idf/memfault/common/memfault_platform_coredump.c)
+    to artificially limit the maximum coredump storage size. This is useful for
+    situations where the default `memfault_platform_coredump_get_regions()`
+    function is still desirable, but the coredump maximum size needs to be
+    limited (eg for bandwidth reasons).
+
+  - Switch to using `ESP_DRAM_LOGE` when logging an error from Memfault's
+    FreeRTOS task tracking when the number of tasks created on the system
+    exceeds `MEMFAULT_PLATFORM_MAX_TRACKED_TASKS` (default of 16).
+
+- General:
+
+  - Remove the setting of the Memfault Firmware SDK version into a string metric
+    on system boot. This value is now automatically extracted by the Memfault
+    backend from the symbol file, and does not need to be set by devices.
+
 ## [1.3.5] - 2023-10-14
 
 ### :chart_with_upwards_trend: Improvements

@@ -17,7 +17,7 @@ python = "^3.6" # must match memfault-cli
 pyelftools = ">=0.26,<=0.29"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6"
+pytest = ">=6"
 pytest-cov = "^2"
 pytest-timeout = "^2.0"
 wasmer = "0.3.0"

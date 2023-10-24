@@ -904,9 +904,6 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
     return rv;
   }
 
-  rv = memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(MemfaultSdkMetric_sdk_version),
-                                             MEMFAULT_SDK_VERSION_STR);
-
   rv = prv_init_unexpected_reboot_metric();
   if (rv != 0) {
     return rv;

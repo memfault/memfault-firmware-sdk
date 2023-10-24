@@ -188,15 +188,50 @@ if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
 endif()
 
 component_compile_options(-DMEMFAULT_ESP_HTTP_CLIENT_ENABLE=$ENV{MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
+
+# FreeRTOS error logging redirect for ESP-IDF compatibility.
+component_compile_options(
+  -DMEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG_INCLUDE="memfault_platform_freertos_error_log.h"
+)
+
 # Set the heartbeat config file to use the ESP-IDF port file, which will bring
 # in the user's heartbeat config automatically. Set it as a global compiler
 # option so it properly affects both component compilation and when the metric
 # keys are used in the application.
+#
+# Set the ESP-IDF specific Memfault platform config header as well.
 if (IDF_VERSION_MAJOR VERSION_EQUAL 3)
   # On pre-v4 of ESP-IDF, insert the compiler flag to the global CMAKE_C_FLAGS
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\\\"memfault_esp_metrics_heartbeat_config.def\\\"" CACHE STRING "Global C Flags" FORCE)
+  set(
+    memfault_c_flags
+    "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\\\"memfault_esp_metrics_heartbeat_config.def\\\""
+    "-DMEMFAULT_PLATFORM_CONFIG_FILE=\\\"memfault_esp_idf_port_config.h\\\""
+    "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\\\"memfault_trace_reason_esp_idf_port_config.def\\\""
+  )
+  # convert from list to string before setting
+  list(JOIN memfault_c_flags " " memfault_c_flags)
+  set(CMAKE_C_FLAGS
+  "${CMAKE_C_FLAGS} ${memfault_c_flags}"
+  CACHE STRING
+  "Global C Flags"
+  FORCE
+  )
 else()
-  idf_build_set_property(COMPILE_OPTIONS -DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE="memfault_esp_metrics_heartbeat_config.def" APPEND)
+  # set these as compile_options, not compile_definitions; pre-v5 of ESP-IDF
+  # required the -D prefix, post-v5 auto strips it, but for safety, set them as
+  # plain options not "definitions"
+  list(APPEND compile_options
+    "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
+    "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
+    "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
+  )
+  idf_build_set_property(
+    COMPILE_OPTIONS
+    "${compile_options}"
+    APPEND
+  )
+  # idf_build_get_property(bleh COMPILE_OPTIONS)
+  # message(FATAL_ERROR "COMPILE_OPTIONS=${bleh}")
 endif()
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH

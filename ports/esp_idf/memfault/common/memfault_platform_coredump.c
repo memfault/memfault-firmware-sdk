@@ -298,12 +298,26 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
   // sanity check that the memory holding the info is populated and not corrupted
   const esp_partition_t *core_part = prv_validate_and_get_core_partition();
   if (core_part == NULL) {
-    *info = (sMfltCoredumpStorageInfo) { 0 };
+    *info = (sMfltCoredumpStorageInfo){0};
     return;
   }
 
-  *info  = (sMfltCoredumpStorageInfo) {
-    .size = core_part->size,
+#if defined(CONFIG_MEMFAULT_COREDUMP_STORAGE_LIMIT_SIZE)
+  // confirm MAX_SIZE is aligned to SPI_FLASH_SEC_SIZE
+  MEMFAULT_STATIC_ASSERT(
+    (CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE % SPI_FLASH_SEC_SIZE == 0),
+    "Error, check CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE value: " MEMFAULT_EXPAND_AND_QUOTE(
+      CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE));
+#endif
+
+  *info = (sMfltCoredumpStorageInfo) {
+    .size =
+#if CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE > 0
+      MEMFAULT_MIN(core_part->size, CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE)
+#else
+      core_part->size
+#endif
+      ,
     .sector_size = SPI_FLASH_SEC_SIZE,
   };
 }

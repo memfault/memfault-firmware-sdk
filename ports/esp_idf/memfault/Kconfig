@@ -32,6 +32,20 @@ menu "Memfault"
             been shipped and the partition table cannot be modified, an
             OTA slot can be used instead.
 
+    config MEMFAULT_COREDUMP_STORAGE_MAX_SIZE
+        int "The maximum size of a coredump (0=partition max size)"
+        default 0
+        help
+            The maximum size of a coredump. If a coredump is larger than this
+            size, it will be truncated to this size. Must be aligned to
+            SPI_FLASH_SEC_SIZE. When set to =0 (the default), Memfault will
+            attempt to capture the entire RAM region of the device, up to the
+            maximum size of the `coredump` region. If it's desirable to
+            artificially reduce the utilized space in the `coredump` partition,
+            setting a non-zero value will cause the Memfault ESP-IDF port's
+            'memfault_platform_coredump_storage_get_info()' function to return
+            the threshold value set here as the size of the partition..
+
     config MEMFAULT_AUTOMATIC_INIT
         bool "[DEPRECATED] Automatically initialize the SDK when the system is booted"
         default n
@@ -40,7 +54,9 @@ menu "Memfault"
             `memfault_boot`. This option is deprecated and not supported.
             A build error will be generated when enabling this option.
 
-    menuconfig MEMFAULT_DEFAULT_GET_DEVICE_INFO
+    menu "Builtin device info implementation"
+
+    config MEMFAULT_DEFAULT_GET_DEVICE_INFO
         bool "Enables the default memfault_platform_get_device_info() implementation"
         default y
         help
@@ -48,21 +64,37 @@ menu "Memfault"
             memfault_platform_get_device_info(). Disable this config to
             implement a custom version of the function.
 
-    if MEMFAULT_DEFAULT_GET_DEVICE_INFO
-
     config MEMFAULT_DEVICE_INFO_HARDWARE_VERSION
-        string "Hardware version used in the default device info implementation"
+        string "Hardware version used in memfault_esp_port_get_device_info()"
         default "$(IDF_TARGET)-proto"
 
     config MEMFAULT_DEVICE_INFO_SOFTWARE_VERSION
-        string "Software version used in the default device info implementation"
+        string "Software version used in memfault_esp_port_get_device_info()"
         default "1.0.0-dev"
 
     config MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE
-        string "Software type used in the default device info implementation"
+        string "Software type used in memfault_esp_port_get_device_info()"
         default "esp32-main"
 
-    endif # MEMFAULT_DEFAULT_GET_DEVICE_INFO
+    endmenu  # Builtin device info implementation
+
+    config MEMFAULT_PLATFORM_CONFIG_FILE
+        string "Name of the Memfault platform config file"
+        default "memfault_platform_config.h"
+        help
+            The name of the file which contains the Memfault platform config
+            options. This file must be included in the project's include path.
+
+    config MEMFAULT_USER_CONFIG_SILENT_FAIL
+        bool "Continue with build even if user configuration of Memfault SDK is missing"
+        default y
+        help
+          When enabled, __has_include is used to conditionally include the three Memfault
+          configuration files to a port if they exist instead of failing to compile if
+          they do not:
+          memfault_platform_config.h
+          memfault_metrics_heartbeat_config.def
+          memfault_trace_reason_user_config.def
 
     config MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
         int "The HTTP client timeout in milliseconds"

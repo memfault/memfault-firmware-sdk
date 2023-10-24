@@ -3,7 +3,6 @@
 // Required to pull in Kconfig-generated definitions
 #include "sdkconfig.h"
 
-
 #if CONFIG_MEMFAULT_LWIP_METRICS
 #include "memfault_lwip_metrics_heartbeat_config.def"
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
@@ -24,5 +23,14 @@ MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
 #endif // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
-// Include user metrics
+#if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+
+# if __has_include("memfault_metrics_heartbeat_config.def")
+#   include "memfault_metrics_heartbeat_config.def"
+# endif
+
+#else
+
 #include "memfault_metrics_heartbeat_config.def"
+
+#endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */

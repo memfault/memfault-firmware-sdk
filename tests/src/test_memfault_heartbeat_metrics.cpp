@@ -102,8 +102,8 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
       MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootDidOccur), &logged_reboot_did_occur);
     LONGS_EQUAL(1, logged_reboot_did_occur);
 
-    // SdkVersion & IntervalMs & RebootCount & ResetDidOccur
-    const size_t num_memfault_sdk_metrics = 4;
+    // IntervalMs & RebootCount & ResetDidOccur
+    const size_t num_memfault_sdk_metrics = 3;
 
     // We should test all the types of available metrics so if this
     // fails it means there's a new type we aren't yet covering

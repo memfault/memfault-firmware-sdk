@@ -122,12 +122,28 @@
   #endif
 #endif
 
-//! The maximum number
+//! Allow overriding the MEMFAULT_LOG_ERROR() call when the task registry is
+//! full and a new task is created. Some systems are unable to issue logs from
+//! the task creation calling context (i.e the task is created before the
+//! logging system is initialized).
+//!
+//! For example, for ESP-IDF, it might be appropriate to instead use:
+//! #define MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG(...) ESP_EARLY_LOGE("mflt", __VA_ARGS__)
+//!
+//! The overriding is done in a file included from here, in case additional
+//! headers are needed
+#if defined(MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG_INCLUDE)
+  #include MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG_INCLUDE
+#else
+  #define MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG MEMFAULT_LOG_ERROR
+#endif
+
+//! This array holds the tracked TCB references
 static void *s_task_tcbs[MEMFAULT_PLATFORM_MAX_TRACKED_TASKS];
 #define EMPTY_SLOT 0
 
 static bool prv_find_slot(size_t *idx, void *desired_tcb) {
-  for (size_t i = 0; i < MEMFAULT_PLATFORM_MAX_TRACKED_TASKS; i++) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs); i++) {
     if (s_task_tcbs[i] == desired_tcb) {
       *idx = i;
       return true;
@@ -151,7 +167,8 @@ void memfault_freertos_trace_task_create(void *tcb) {
   }
 
   if (!slot_found) {
-    MEMFAULT_LOG_ERROR("Task registry full (%d)", MEMFAULT_PLATFORM_MAX_TRACKED_TASKS);
+    MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG(
+      "Task registry full (" MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PLATFORM_MAX_TRACKED_TASKS) ")");
   }
 }
 
