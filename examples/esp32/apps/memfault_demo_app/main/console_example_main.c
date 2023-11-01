@@ -249,6 +249,9 @@ static void prv_poster_task(void *args) {
         prv_memfault_ota();
         ota_last_check_time = xTaskGetTickCount();
       }
+    } else {
+      // Set LED to red
+      led_set_color(kLedColor_Red);
     }
 
     // sleep

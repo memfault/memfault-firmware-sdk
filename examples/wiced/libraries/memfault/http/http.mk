@@ -2,8 +2,8 @@ NAME := MemfaultHttp
 
 $(NAME)_SOURCES := \
   src/memfault_http_client.c \
-  src/memfault_http_client_post_chunk.c
-
+  src/memfault_http_client_post_chunk.c \
+  src/memfault_http_utils.c \
 
 $(NAME)_COMPONENTS := \
   libraries/memfault/core \

@@ -84,6 +84,9 @@ int memfault_demo_cli_cmd_post_core(int argc, char *argv[]);
 //! It takes no arguments.
 int memfault_demo_cli_cmd_clear_core(int argc, char *argv[]);
 
+//! Print coredump size and storage capacity
+int memfault_demo_cli_cmd_coredump_size(int argc, char *argv[]);
+
 //! Command to print device info, as obtained through memfault_platform_get_device_info().
 //! It takes no arguments.
 int memfault_demo_cli_cmd_get_device_info(int argc, char *argv[]);

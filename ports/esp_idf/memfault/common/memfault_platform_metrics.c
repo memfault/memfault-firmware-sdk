@@ -10,6 +10,7 @@
 //!   -DMEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=15
 
 #include "esp_event.h"
+#include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -21,19 +22,19 @@
 #include "memfault/metrics/platform/timer.h"
 #include "sdkconfig.h"
 
-#if CONFIG_MEMFAULT_LWIP_METRICS
+#if defined(CONFIG_MEMFAULT_LWIP_METRICS)
   #include "memfault/ports/lwip/metrics.h"
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
-#if CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+#if defined(CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
   #include "memfault/ports/freertos/metrics.h"
 #endif  // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
 
-#if CONFIG_MEMFAULT_MBEDTLS_METRICS
+#if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   #include "memfault/ports/mbedtls/metrics.h"
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
 
-#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 int32_t s_min_rssi;
@@ -64,7 +65,7 @@ static void prv_metric_timer_handler(void *arg) {
   memfault_esp_metric_timer_dispatch(metric_timer_handler);
 }
 
-#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
                                  void *event_data) {
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
@@ -121,6 +122,25 @@ static void prv_collect_wifi_metrics(void) {
 }
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
+#if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
+
+static void prv_record_heap_metrics(void) {
+  multi_heap_info_t heap_info = {0};
+  heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_free_bytes),
+                                          heap_info.total_free_bytes);
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_largest_free_block_bytes),
+                                          heap_info.largest_free_block);
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_allocated_blocks_count),
+                                          heap_info.allocated_blocks);
+  // lifetime minimum free bytes. see caveat here:
+  // https://docs.espressif.com/projects/esp-idf/en/v5.1.1/esp32/api-reference/system/mem_alloc.html#_CPPv431heap_caps_get_minimum_free_size8uint32_t
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_min_free_bytes),
+                                          heap_info.minimum_free_bytes);
+}
+
+#endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
+
 bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
                                           MemfaultPlatformTimerCallback callback) {
   const esp_timer_create_args_t periodic_timer_args = {
@@ -148,7 +168,7 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   const int64_t us_per_sec = 1000000;
   ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, period_sec * us_per_sec));
 
-#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
   prv_register_event_handler();
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
@@ -156,11 +176,11 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
 }
 
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
-#if CONFIG_MEMFAULT_LWIP_METRICS
+#if defined(CONFIG_MEMFAULT_LWIP_METRICS)
   memfault_lwip_heartbeat_collect_data();
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
-#ifdef CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+#if defined(CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
   MEMFAULT_STATIC_ASSERT(
     MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS <= (60 * 60),
     "Heartbeat must be an hour or less for runtime metrics to mitigate counter overflow");
@@ -168,11 +188,15 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   memfault_freertos_port_task_runtime_metrics();
 #endif  // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
 
-#if CONFIG_MEMFAULT_MBEDTLS_METRICS
+#if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   memfault_mbedtls_heartbeat_collect_data();
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
 
-#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
   prv_collect_wifi_metrics();
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
+
+#if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
+  prv_record_heap_metrics();
+#endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
 }

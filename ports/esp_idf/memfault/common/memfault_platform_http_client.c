@@ -182,7 +182,7 @@ static int prv_deviceinfo_needs_url_escaping(sMemfaultDeviceInfo *device_info) {
 
 static int prv_build_latest_release_url(char *buf, size_t buf_len) {
   sMemfaultDeviceInfo device_info;
-  memfault_platform_get_device_info(&device_info);
+  memfault_http_get_device_info(&device_info);
 
   // if any of the device info fields need escaping, abort
   if (prv_deviceinfo_needs_url_escaping(&device_info)) {

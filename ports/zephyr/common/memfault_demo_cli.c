@@ -134,6 +134,18 @@ static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t
 #endif
 }
 
+static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc, (void)argv;
+
+  size_t capacity, total_size;
+  memfault_coredump_size_and_storage_capacity(&total_size, &capacity);
+
+  shell_print(shell, "coredump storage capacity: %zuB", capacity);
+  shell_print(shell, "coredump size required: %zuB", total_size);
+
+  return 0;
+}
+
 static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **argv) {
 #if CONFIG_MEMFAULT_METRICS
   shell_print(shell, "Triggering Heartbeat");
@@ -266,6 +278,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
   SHELL_CMD(get_latest_release, NULL, "checks to see if new ota payload is available",
             prv_check_and_fetch_ota_payload_cmd),
+  SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
+            prv_coredump_size),
   SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
   SHELL_CMD(test, &sub_memfault_crash_cmds,
             "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",

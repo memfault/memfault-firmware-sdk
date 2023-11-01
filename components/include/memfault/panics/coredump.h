@@ -69,6 +69,12 @@ bool memfault_coredump_storage_check_size(void);
 //! (i.e no coredump regions defined, coredump storage of 0 size)
 size_t memfault_coredump_storage_compute_size_required(void);
 
+//! Returns the computed size of a coredump and the available storage capacity
+//!
+//! @param[out] total_size The size of the coredump in bytes
+//! @param[out] capacity The total capacity of the coredump storage in bytes
+void memfault_coredump_size_and_storage_capacity(size_t *total_size, size_t *capacity);
+
 //! Queries whether a valid coredump is present in the coredump storage.
 //!
 //! @param total_size_out Upon returning from the function, the size of the coredump

@@ -3,34 +3,41 @@
 // Required to pull in Kconfig-generated definitions
 #include "sdkconfig.h"
 
-#if CONFIG_MEMFAULT_LWIP_METRICS
-#include "memfault_lwip_metrics_heartbeat_config.def"
+#if defined(CONFIG_MEMFAULT_LWIP_METRICS)
+  #include "memfault_lwip_metrics_heartbeat_config.def"
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
-#if CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
-#include "memfault_metrics_heartbeat_freertos_task_runtime_config.def"
-#endif // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+#if defined(CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
+  #include "memfault_metrics_heartbeat_freertos_task_runtime_config.def"
+#endif  // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
 
-#if CONFIG_MEMFAULT_MBEDTLS_METRICS
-#include "memfault_mbedtls_metrics_heartbeat_config.def"
+#if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)
+  #include "memfault_mbedtls_metrics_heartbeat_config.def"
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
 
-#if CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
+MEMFAULT_METRICS_KEY_DEFINE(heap_free_bytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(heap_largest_free_block_bytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(heap_allocated_blocks_count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(heap_min_free_bytes, kMemfaultMetricType_Unsigned)
+#endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
+
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
-    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-    MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
-    #endif // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
-#endif // CONFIG_MEMFAULT_ESP_WIFI_METRICS
+#endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
-#if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+#if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 
-# if __has_include("memfault_metrics_heartbeat_config.def")
-#   include "memfault_metrics_heartbeat_config.def"
-# endif
+  #if __has_include("memfault_metrics_heartbeat_config.def")
+    #include "memfault_metrics_heartbeat_config.def"
+  #endif
 
 #else
 
-#include "memfault_metrics_heartbeat_config.def"
+  #include "memfault_metrics_heartbeat_config.def"
 
 #endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */

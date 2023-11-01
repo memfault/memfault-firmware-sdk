@@ -1261,9 +1261,7 @@ class MemfaultPostChunk(MemfaultGdbCommand):
                 """Chunk handler function '{}' does not exist.
 
             A custom handler location can be specified with the --chunk-handler-func argument.
-            """.format(
-                    chunk_handler_func
-                )
+            """.format(chunk_handler_func)
             )
             return
 

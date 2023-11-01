@@ -27,11 +27,6 @@ extend = "../../ruff.toml"
 target-version = "py37" # ruff does not support 3.6
 extend-ignore = ["UP"]
 
-[tool.black]
-line-length = 100
-target-version = ['py36']
-include = '\.pyi?$'
-
 #
 # NB: Uncommenting these lines will prevent installing the project in editable mode.
 #

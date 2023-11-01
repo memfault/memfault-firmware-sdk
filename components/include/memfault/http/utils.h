@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/core/platform/device_info.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -205,6 +207,13 @@ bool memfault_http_needs_escape(const char *str, size_t len);
 //!
 //! @return 0 if encoding was successful, non zero otherwise
 int memfault_http_urlencode(const char *inbuf, size_t inbuf_len, char *outbuf, size_t outbuf_len);
+
+//! Read the device information for building an HTTP request. This uses the
+//! callback installed into g_mflt_http_client_config.get_device_info if
+//! available, or falls back onto the default platform implementation otherwise.
+//!
+//! @param[out] info The device information to populate
+void memfault_http_get_device_info(sMemfaultDeviceInfo *info);
 
 #ifdef __cplusplus
 }

@@ -133,4 +133,10 @@ menu "Memfault"
         help
             Collects Memfault metrics measuring the minimum RSSI, time connected to
             WiFi, and the number of WiFi disconnects.
+
+    config MEMFAULT_ESP_HEAP_METRICS
+        bool "Collect basic heap metrics"
+        default y
+        help
+            Collects Memfault metrics for basic heap utilization.
 endmenu

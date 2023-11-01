@@ -243,8 +243,10 @@ endif()
 #   Data can be posted directly from device to Memfault cloud for deduplication and analysis
 target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_core_dump_to_flash -Wl,--wrap=esp_core_dump_init -Wl,--wrap=esp_core_dump_image_get")
 
-# Wrap the esp-idf assert handler to capture assert info
-target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=_esp_error_check_failed")
+# Wrap panic_abort to intercept assert()/abort() calls. Note that support for
+# this was added in ESP-IDF v4.2; earlier versions are intercepted with the
+# __assert_func definition provided in memfault_stdlib_assert.c
+target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=panic_abort")
 
 # Wrap allocator functions to capture mbedTLS metrics
 if(CONFIG_MEMFAULT_MBEDTLS_METRICS)

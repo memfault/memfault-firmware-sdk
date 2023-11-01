@@ -95,7 +95,7 @@ bool memfault_http_start_chunk_post(
   //  \r\n
 
   sMemfaultDeviceInfo device_info;
-  memfault_platform_get_device_info(&device_info);
+  memfault_http_get_device_info(&device_info);
 
   char buffer[100];
   const size_t max_msg_len = sizeof(buffer);
@@ -156,7 +156,7 @@ bool memfault_http_get_latest_ota_payload_url(MfltHttpClientSendCb write_callbac
   }
 
   sMemfaultDeviceInfo device_info = { 0 };
-  memfault_platform_get_device_info(&device_info);
+  memfault_http_get_device_info(&device_info);
 
   #define DEVICE_SERIAL_QPARAM "device_serial"
   #define HARDWARE_VERSION_QPARAM "hardware_version"
@@ -707,4 +707,14 @@ int memfault_http_urlencode(const char *inbuf, size_t inbuf_len, char *outbuf, s
   *outbuf = '\0';
 
   return 0;
+}
+
+void memfault_http_get_device_info(sMemfaultDeviceInfo *info) {
+  // Use the user provided callback if available, otherwise use the standard
+  // platform implementation
+  if (g_mflt_http_client_config.get_device_info != NULL) {
+    g_mflt_http_client_config.get_device_info(info);
+    return;
+  }
+  memfault_platform_get_device_info(info);  // note: HTTP functions should always call this
 }

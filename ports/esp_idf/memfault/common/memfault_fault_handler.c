@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 
+#include "esp_attr.h"
 #include "esp_core_dump.h"
 #include "esp_err.h"
 #ifdef __XTENSA__
@@ -31,26 +32,35 @@ void memfault_fault_handling_assert(void *pc, void *lr) {
   abort();
 }
 
-// This wrapper is for instances of the "ESP_ERROR_CHECK()" macro
-void __real__esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function,
-                                    const char *expression);
-
-__attribute__((noreturn)) void __wrap__esp_error_check_failed(esp_err_t rc, const char *file,
-                                                              int line, const char *function,
-                                                              const char *expression) {
+// This wrap handles the libc <assert.h> assert() calls, which we cannot
+// intercept at __assert_func() as usual because that's already supplied by
+// esp-idf. Note that if the assert path went through
+// MEMFAULT_ASSERT()->memfault_fault_handling_assert()->abort()->__wrap_panic_abort(),
+// memfault_arch_fault_handling_assert() is called twice. This isn't a problem,
+// because there's logic inside memfault_reboot_tracking_mark_reset_imminent()
+// to ignore the second call, and this gets us the highest-frame PC and LR in
+// the assert info when MEFMAULT_ASSERT() is called.
+void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined))
+__real_panic_abort(const char *details);
+void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined))
+__wrap_panic_abort(const char *details) {
   void *pc;
   MEMFAULT_GET_PC(pc);
   void *lr;
   MEMFAULT_GET_LR(lr);
-
   memfault_arch_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
-  __real__esp_error_check_failed(rc, file, line, function, expression);
-  __builtin_unreachable();
+
+  __real_panic_abort(details);
 }
+
+// This header is only available for ESP-IDF >= 4.2
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0)
+  #include "esp_private/panic_internal.h"
 // Ensure the substituted function signature matches the original function
-_Static_assert(__builtin_types_compatible_p(__typeof__(&_esp_error_check_failed),
-                                            __typeof__(&__wrap__esp_error_check_failed)),
-               "Error: esp abort handler wrapper is not compatible with esp-idf implementation");
+_Static_assert(__builtin_types_compatible_p(__typeof__(&panic_abort),
+                                            __typeof__(&__wrap_panic_abort)),
+               "Error: esp panic_abort wrapper is not compatible with esp-idf implementation");
+#endif
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   memfault_arch_fault_handling_assert(pc, lr, extra_info->assert_reason);

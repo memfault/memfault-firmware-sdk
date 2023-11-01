@@ -23,6 +23,10 @@ extern "C" {
 //! The software_type name to be displayed in the Memfault UI
 #define MEMFAULT_PARTICLE_PORT_SOFTWARE_TYPE "mflt-test-fw"
 
+//! The particle librt-dynalib.a library implements a custom __assert_func(), so
+//! disable the conflicting Memfault SDK implementation
+#define MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED 0
+
 #ifdef __cplusplus
 }
 #endif

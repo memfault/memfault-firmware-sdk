@@ -140,6 +140,14 @@ config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
           to printk if Zephyr LOG is disabled. This is useful for testing when
           Zephyr LOG is not enabled (eg due to code space limitations).
 
+config MEMFAULT_COMPACT_LOG
+        bool "Enable compact logging"
+        default n
+        help
+          When enabled, the Memfault SDK will use a compact representation
+          for log messages written using the 'MEMFAULT_LOG_x' macros. Find more
+          information here: https://mflt.io/compact-logs
+
 config MEMFAULT_LOGGING_ENABLE
         bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
         default n

@@ -49,7 +49,7 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
    "Export base64-encoded chunks. To upload data see https://mflt.io/chunk-data-export"},
   {"get_core", memfault_demo_cli_cmd_get_core, "Get coredump info"},
   {"get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info"},
-
+  {"coredump_size", memfault_demo_cli_cmd_coredump_size, "Print the coredump storage capacity"},
   //
   // Test commands for validating SDK functionality: https://mflt.io/mcu-test-commands
   //

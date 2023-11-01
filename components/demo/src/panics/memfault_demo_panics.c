@@ -112,6 +112,14 @@ int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED c
   return 0;
 }
 
+int memfault_demo_cli_cmd_coredump_size(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  size_t total_size = 0;
+  size_t capacity = 0;
+  memfault_coredump_size_and_storage_capacity(&total_size, &capacity);
+  MEMFAULT_LOG_INFO("Coredump size: %d, capacity: %d", (int)total_size, (int)capacity);
+  return 0;
+}
+
 int memfault_demo_cli_cmd_assert(int argc, char *argv[]) {
   // permit running with a user-provided "extra" value for testing that path
   if (argc > 1) {

@@ -1,5 +1,50 @@
 # Memfault Firmware SDK Changelog
 
+## [1.4.1] - 2023-10-31
+
+#### :rocket: New Features
+
+- ESP-IDF:
+
+  - Add the following built-in heap allocation metrics by default. These can be
+    disabled with the `CONFIG_MEMFAULT_ESP_HEAP_METRICS` Kconfig flag.
+
+    - `heap_free_bytes`
+    - `heap_largest_free_block_bytes`
+    - `heap_allocated_blocks_count`
+    - `heap_min_free_bytes`
+
+- Zephyr:
+
+  - Enable capturing [Memfault-style compact logs](https://mflt.io/compact-logs)
+    on Zephyr systems. Note that this does not enable decoding
+    [Zephyr "dictionary logs"](https://docs.zephyrproject.org/3.5.0/services/logging/index.html#dictionary-based-logging),
+    but requires using the Memfault logging APIs directly (i.e.
+    `MEMFAULT_LOG_INFO("...")` instead of `LOG_INF("...")`).
+
+- General:
+
+  - Add a `coredump_size` CLI command to the Zephyr, ESP-IDF, and demo CLI
+    implementations. This command will print the computed size of the coredump
+    and the available storage space. Can be used to tune coredump size.
+
+  - Enable providing the Memfault HTTP Client with a custom
+    `memfault_platform_get_device_info()` callback, for when the device is
+    uploading data for a downstream device, with different device info.
+
+  - When [compact logging](https://mflt.io/compact-logs) is enabled, route all
+    `MEMFAULT_LOG_x()` statements through the compact serializer
+    (`MEMFAULT_COMPACT_LOG_SAVE`). Previously, logs had to explicitly use the
+    `MEMFAULT_COMPACT_LOG_SAVE` API to store in the compact form.
+
+  - Capture C stdlib `assert.h` asserts, by implementing the correct assert
+    hooks for Newlib/Picolibc and IAR libc's. This can be disabled with the
+    Memfault platform config `MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED`. This should
+    improve the Trace quality for systems that are using the C stdlib
+    `assert(x)` functions.
+
+### :chart_with_upwards_trend: Improvements
+
 ## [1.4.0] - 2023-10-23
 
 #### :rocket: New Features

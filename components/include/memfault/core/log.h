@@ -64,7 +64,9 @@ bool memfault_log_boot(void *buffer, size_t buf_len);
 //! By default, any logs >= kMemfaultPlatformLogLevel_Info can be saved
 void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 
-//! Macro which can be called from a platforms pre-existing logging macro.
+//! The MEMFAULT_LOG_SAVE macro backs the built-in SDK MEMFAULT_LOG_x logging
+//! macros, but can also be called from a platforms pre-existing logging
+//! macro.
 //!
 //! For example, if your platform already has something like this
 //!
@@ -79,7 +81,9 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 //!    MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Error, __VA_ARGS__);
 //!    your_platform_log_error(__VA_ARGS__)
 //! } while (0)
-#define MEMFAULT_LOG_SAVE(_level, ...) memfault_log_save(_level, __VA_ARGS__)
+//!
+//! The macro will save the log data in the normal or compact form depending on
+//! SDK configuration.
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
@@ -96,6 +100,7 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
                               ## __VA_ARGS__);                          \
   } while (0)
 
+  #define MEMFAULT_LOG_SAVE MEMFAULT_COMPACT_LOG_SAVE
 
 //! Serializes the provided compact log and saves it to backing storage
 //!
@@ -103,6 +108,8 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
                                uint32_t compressed_fmt, ...);
 
+#else  // !MEMFAULT_COMPACT_LOG_ENABLE
+  #define MEMFAULT_LOG_SAVE(_level, ...) memfault_log_save(_level, __VA_ARGS__)
 #endif /* MEMFAULT_COMPACT_LOG_ENABLE */
 
 //! Function which can be called to save a log after it has been formatted

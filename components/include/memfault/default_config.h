@@ -52,6 +52,12 @@ extern "C" {
 #define MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED 0
 #endif
 
+//! Install a low-level hook into the C stdlib assert() library call, to capture
+//! coredumps when asserts occur.
+#ifndef MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED
+#define MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED 1
+#endif
+
 //! Controls whether or not device serial is encoded in events
 //!
 //! When disabled (default), the device serial is derived from the API route

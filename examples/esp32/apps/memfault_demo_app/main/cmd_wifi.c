@@ -88,6 +88,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 }
 
 bool wifi_join(const char *ssid, const char *pass) {
+  static bool connected_successfully = false;
   static bool one_time_init = false;
   if (!one_time_init) {
     one_time_init = true;
@@ -120,15 +121,25 @@ bool wifi_join(const char *ssid, const char *pass) {
               .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
           },
   };
-  strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
-  strncpy((char *)wifi_config.sta.password, pass, sizeof(wifi_config.sta.password) - 1);
+  if (connected_successfully) {
+    // reconnect attempt
+    ESP_LOGD(TAG, "wifi already connected, reconnecting ...");
+    esp_wifi_disconnect();
+    esp_err_t err = esp_wifi_connect();
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
+      return false;
+    }
+  } else {
+    strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char *)wifi_config.sta.password, pass, sizeof(wifi_config.sta.password) - 1);
 
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-  ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
-  ESP_LOGD(TAG, "wifi_init_sta finished.");
-
+    ESP_LOGD(TAG, "wifi_init_sta finished.");
+  }
   /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or
    * connection failed for the maximum number of re-tries (WIFI_FAIL_BIT). The
    * bits are set by event_handler() (see above) */
@@ -140,6 +151,7 @@ bool wifi_join(const char *ssid, const char *pass) {
    * can test which event actually happened. */
   if (bits & WIFI_CONNECTED_BIT) {
     ESP_LOGI(TAG, "connected to ap SSID:%s ", ssid);
+    connected_successfully = true;
     return true;
   } else if (bits & WIFI_FAIL_BIT) {
     ESP_LOGD(TAG, "Failed to connect to SSID:%s", pass);

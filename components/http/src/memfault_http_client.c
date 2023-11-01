@@ -16,10 +16,11 @@
 #include "memfault/core/errors.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/http/platform/http_client.h"
+#include "memfault/http/utils.h"
 
 bool memfault_http_build_url(char url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE], const char *subpath) {
   sMemfaultDeviceInfo device_info;
-  memfault_platform_get_device_info(&device_info);
+  memfault_http_get_device_info(&device_info);
 
 
   const int rv = snprintf(url_buffer, MEMFAULT_HTTP_URL_BUFFER_SIZE, "%s://%s" MEMFAULT_HTTP_CHUNKS_API_PREFIX "%s/%s",

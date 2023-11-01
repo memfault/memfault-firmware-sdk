@@ -72,6 +72,8 @@ static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
   LONGS_EQUAL(expected_type, log.type);
 }
 
+#if !MEMFAULT_COMPACT_LOG_ENABLE
+
 TEST(MemfaultLog, Test_BadInit) {
   // should be no-ops
   memfault_log_boot(NULL, 10);
@@ -85,6 +87,8 @@ TEST(MemfaultLog, Test_BadInit) {
   const bool log_found = memfault_log_read(&log);
   CHECK(!log_found);
 }
+
+#endif  // !MEMFAULT_COMPACT_LOG_ENABLE
 
 TEST(MemfaultLog, Test_MemfaultLogBasic) {
   uint8_t s_ram_log_store[20];
@@ -154,6 +158,8 @@ TEST(MemfaultLog, Test_MemfaultLog_GetRegions) {
   LONGS_EQUAL(1, mflt_ram_logger[1]); // enabled == 1
 }
 
+#if !MEMFAULT_COMPACT_LOG_ENABLE
+
 TEST(MemfaultLog, Test_MemfaultHandleSaveCallback) {
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
@@ -198,6 +204,8 @@ TEST(MemfaultLog, Test_MemfaultLogTruncation) {
   prv_run_header_check(s_ram_log_store, level, long_log, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
 }
 
+#endif  // !MEMFAULT_COMPACT_LOG_ENABLE
+
 TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
@@ -238,6 +246,8 @@ TEST(MemfaultLog, Test_MemfaultLogFrozenBuffer) {
 
     prv_run_header_check(&s_ram_log_store[0], level, log0, strlen(log0));
 }
+
+#if !MEMFAULT_COMPACT_LOG_ENABLE
 
 TEST(MemfaultLog, Test_MemfaultLogBufTooLongForStorage) {
   uint8_t s_ram_log_store[5];
@@ -296,6 +306,9 @@ TEST(MemfaultLog, Test_DroppedLogs) {
   const char *expected_msg5 = "MSG 5";
   prv_read_log_and_check(level, type, expected_msg5, strlen(expected_msg5));
 }
+
+#endif  // !MEMFAULT_COMPACT_LOG_ENABLE
+
 
 static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset,
                                         const char *buf, size_t buf_len) {

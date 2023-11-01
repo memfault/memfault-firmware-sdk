@@ -147,6 +147,25 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
 }
 #endif
 
+static int prv_esp32_assert_example(int argc, char** argv) {
+  // default to assert()
+  int assert_type =  1;
+
+  if (argc >= 2) {
+    assert_type = atoi(argv[1]);
+  }
+
+  if (assert_type == 1) {
+    assert(0);
+  } else if (assert_type == 2) {
+    MEMFAULT_ASSERT(0);
+  } else if (assert_type == 3) {
+    ESP_ERROR_CHECK(-1);
+  }
+
+  return 0;
+}
+
 static int prv_esp32_crash_example(int argc, char** argv) {
   int crash_type =  0;
 
@@ -261,6 +280,13 @@ void memfault_register_cli(void) {
   prv_timer_init();
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
+      .command = "assert",
+      .help = "Trigger an assert; optional arg of 1=assert(), 2=MEMFAULT_ASSERT(), 3=ESP_ERROR_CHECK(-1)",
+      .hint = "assert type",
+      .func = prv_esp32_assert_example,
+  }));
+
+  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
       .command = "crash",
       .help = "Trigger a crash",
       .hint = "crash type",
@@ -300,6 +326,13 @@ void memfault_register_cli(void) {
       .help = "Get coredump info",
       .hint = NULL,
       .func = memfault_demo_cli_cmd_get_core,
+  }));
+
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t) {
+    .command = "coredump_size",
+    .help = "Print the coredump storage capacity and the capacity required",
+    .hint = NULL,
+    .func = &memfault_demo_cli_cmd_coredump_size,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {

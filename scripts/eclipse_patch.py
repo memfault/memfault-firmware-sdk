@@ -49,9 +49,7 @@ def generate_link_element(name, path, path_type="1"):
 \t\t<type>{PATH_TYPE}</type>
 \t\t<locationURI>{PATH}</locationURI>
 \t</link>
-""".format(
-            NAME=name, PATH=path, PATH_TYPE=path_type
-        )
+""".format(NAME=name, PATH=path, PATH_TYPE=path_type)
     )
     ele.tail = "\n\t"
     return ele
