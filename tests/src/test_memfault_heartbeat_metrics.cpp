@@ -238,6 +238,32 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueSimple) {
   LONGS_EQUAL(10, val);
 }
 
+TEST(memfaultHeartbeatMetrics, Test_TimerHeartBeatReadWhileRunning)
+{
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
+  // no-op
+  int rv = memfault_metrics_heartbeat_timer_stop(key);
+  CHECK(rv != 0);
+
+  // start the timer
+  rv = memfault_metrics_heartbeat_timer_start(key);
+  LONGS_EQUAL(0, rv);
+
+  // read while running
+  uint32_t val;
+  prv_fake_time_incr(10);
+  memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(10, val);
+
+  // stop the timer
+  prv_fake_time_incr(9);
+  rv = memfault_metrics_heartbeat_timer_stop(key);
+  LONG_EQUAL(0, rv);
+
+  memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(19, val);
+}
+
 TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueRollover) {
   MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
 
