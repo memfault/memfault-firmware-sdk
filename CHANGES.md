@@ -1,8 +1,20 @@
 # Memfault Firmware SDK Changelog
 
+## [1.4.2] - 2023-11-02
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Improve the trace quality for asserts when using the IAR compiler and high
+    optimization settings (`-Oh`)
+  - Add demo CLI command to print the current values of heartbeat metrics. Try
+    this out in your demo CLI implementation or with the built-in CLI with
+    Zephyr!
+
 ## [1.4.1] - 2023-10-31
 
-#### :rocket: New Features
+### :rocket: New Features
 
 - ESP-IDF:
 
@@ -13,6 +25,8 @@
     - `heap_largest_free_block_bytes`
     - `heap_allocated_blocks_count`
     - `heap_min_free_bytes`
+
+### :chart_with_upwards_trend: Improvements
 
 - Zephyr:
 
@@ -47,7 +61,7 @@
 
 ## [1.4.0] - 2023-10-23
 
-#### :rocket: New Features
+### :rocket: New Features
 
 - ESP-IDF:
 
@@ -174,7 +188,7 @@
     `__no_alloc` attribute to the compact log symbols, to have the IAR linker
     set the `NO_LOAD` attribute correctly on the compact log output section.
 
-#### :boom: Breaking Changes
+### :boom: Breaking Changes
 
 - ESP-IDF:
 

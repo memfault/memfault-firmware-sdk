@@ -141,7 +141,11 @@ def files_to_link(dir_glob, common_prefix, sdk_version):
 
 def get_latest_pdsc():
     """Retrieve the contents of the latest pdsc file"""
-    url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.FirmwareSDK.pdsc"
+    # Optionally override the release to fetch
+    if release := os.getenv("CMSIS_SDK_BASE_RELEASE"):
+        url = f"https://github.com/{GITHUB_REPO}/releases/download/{release}/Memfault.FirmwareSDK.pdsc"
+    else:
+        url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.FirmwareSDK.pdsc"
     logging.debug("Fetching %s", url)
     resp = requests.get(url)
 

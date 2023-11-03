@@ -14,6 +14,7 @@
 #include "memfault/core/math.h"
 #include "memfault/demo/cli.h"
 #include "memfault/demo/shell_commands.h"
+#include "memfault/metrics/metrics.h"
 
 static int prv_panics_component_required(void) {
   MEMFAULT_LOG_RAW("Disabled. panics component integration required");
@@ -41,6 +42,11 @@ int memfault_demo_cli_cmd_export(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char 
   return 0;
 }
 
+int memfault_demo_cli_cmd_heartbeat_dump(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  memfault_metrics_heartbeat_debug_print();
+  return 0;
+}
+
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"clear_core", memfault_demo_cli_cmd_clear_core, "Clear an existing coredump"},
   {"drain_chunks", memfault_demo_drain_chunk_data,
@@ -50,6 +56,8 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"get_core", memfault_demo_cli_cmd_get_core, "Get coredump info"},
   {"get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info"},
   {"coredump_size", memfault_demo_cli_cmd_coredump_size, "Print the coredump storage capacity"},
+  {"heartbeat_dump", memfault_demo_cli_cmd_heartbeat_dump,
+   "Dump current Memfault metrics heartbeat state"},
   //
   // Test commands for validating SDK functionality: https://mflt.io/mcu-test-commands
   //

@@ -111,6 +111,9 @@ void user_transport_send_chunk_data(void *chunk_data, size_t chunk_data_len);
 //! manually via the Chunks Debug in the UI.
 int memfault_demo_cli_cmd_export(int argc, char *argv[]);
 
+//! Print current heartbeat metrics
+int memfault_demo_cli_cmd_heartbeat_dump(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif

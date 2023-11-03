@@ -157,6 +157,15 @@ static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **
 #endif
 }
 
+static int prv_heartbeat_dump(const struct shell *shell, size_t argc, char **argv) {
+#if defined(CONFIG_MEMFAULT_METRICS)
+  memfault_metrics_heartbeat_debug_print();
+#else
+  shell_print(shell, "CONFIG_MEMFAULT_METRICS not enabled");
+#endif
+  return 0;
+}
+
 static int prv_test_reboot(const struct shell *shell, size_t argc, char **argv) {
   memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
   memfault_platform_reboot();
@@ -280,6 +289,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_check_and_fetch_ota_payload_cmd),
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
+  SHELL_CMD(heartbeat_dump, NULL, "dump current Memfault metrics heartbeat state",
+            prv_heartbeat_dump),
   SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
   SHELL_CMD(test, &sub_memfault_crash_cmds,
             "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",

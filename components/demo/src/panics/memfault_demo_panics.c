@@ -127,6 +127,8 @@ int memfault_demo_cli_cmd_assert(int argc, char *argv[]) {
   } else {
     MEMFAULT_ASSERT(0);
   }
+
+  return -1;
 }
 
 #if MEMFAULT_COMPILER_ARM_CORTEX_M

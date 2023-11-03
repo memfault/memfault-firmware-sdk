@@ -33,7 +33,13 @@ int memfault_platform_boot(void);
 //! Invoked after memfault fault handling has run.
 //!
 //! The platform should do any final cleanup and reboot the system
-MEMFAULT_NORETURN void memfault_platform_reboot(void);
+#if defined(__ICCARM__)
+//! IAR will optimize away link register stores from callsites which makes it
+//! impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
+#else
+MEMFAULT_NORETURN
+#endif
+void memfault_platform_reboot(void);
 
 //! Invoked after faults occur so the user can debug locally if a debugger is attached
 void memfault_platform_halt_if_debugging(void);
