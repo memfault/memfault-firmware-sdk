@@ -284,6 +284,11 @@ if(DEFINED ENV{IDF_VERSION})
     # This method is an alternative to #include within FreeRTOSConfig.h which esp-idf
     # makes very difficult to do.
     get_filename_component(freertos_trace_header ${MEMFAULT_SDK_ROOT}/ports/include/memfault/ports/freertos_trace.h ABSOLUTE)
-    target_compile_options(${freertos_lib} INTERFACE -include ${freertos_trace_header})
+    target_compile_options(${freertos_lib} INTERFACE
+      "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
+      "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
+      "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
+      -include ${freertos_trace_header}
+    )
   endif()
 endif()

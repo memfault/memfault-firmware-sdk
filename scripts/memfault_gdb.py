@@ -529,7 +529,7 @@ class ArmCortexMCoredumpArch(CoredumpArch):
         return (lookup_registers_from_list(self, info_reg_all_list, analytics_props),)
 
 
-# FIXME: De-duplicate with code from rtos_register_stacking.py
+# TODO: De-duplicate with code from rtos_register_stacking.py
 def concat_registers_dict_to_bytes(arch, regs):
     result = b""
     for reg_name in arch.register_collection_list:
@@ -639,7 +639,7 @@ def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
     return register_list
 
 
-# FIXME: De-duplicate with code from core_convert.py
+# TODO: De-duplicate with code from core_convert.py
 MEMFAULT_COREDUMP_MAGIC = 0x45524F43
 MEMFAULT_COREDUMP_VERSION = 1
 MEMFAULT_COREDUMP_FILE_HEADER_FMT = "<III"  # magic, version, file length (incl. file header)
@@ -687,7 +687,7 @@ class MemfaultCoredumpWriter(object):
             )
         )
 
-        def _write_block(type, payload, address=0):
+        def _write_block(type, payload, address=0):  # noqa: A002
             write(pack(MEMFAULT_COREDUMP_BLOCK_HEADER_FMT, type, address, len(payload)))
             write(payload)
 
@@ -1003,17 +1003,17 @@ def upload_symbols_if_needed(config, elf_fn, software_type, software_version):
                 print("Failed to upload symbols: {}".format(e))
 
 
-# FIXME: Duped from mflt.tools/gdb_memfault.py
+# TODO: Duped from mflt.tools/gdb_memfault.py
 class MemfaultGdbArgumentParseError(Exception):
     pass
 
 
 class MemfaultGdbArgumentParser(argparse.ArgumentParser):
-    def exit(self, status=0, message=None):
+    def exit(self, status=0, message=None):  # noqa: A003
         if message:
             self._print_message(message)
         # Don't call sys.exit()
-        raise MemfaultGdbArgumentParseError()
+        raise MemfaultGdbArgumentParseError
 
 
 def populate_config_args_and_parse_args(parser, unicode_args, config):
@@ -1291,7 +1291,7 @@ class MemfaultPostChunk(MemfaultGdbCommand):
         # NB: Wrapped in a try catch because older versions of gdb.breakpoints() eventually return None
         # instead of raising StopIteration
         try:
-            for breakpoint in gdb.breakpoints():
+            for breakpoint in gdb.breakpoints():  # noqa: A001
                 if chunk_handler_func in breakpoint.location:
                     print("Deleting breakpoint for '{}'".format(chunk_handler_func))
                     breakpoint.delete()
@@ -1459,7 +1459,7 @@ Proceed? [y/n]
         elif status >= 200 and status < 300:
             print("Coredump uploaded successfully!")
             print("Once it has been processed, it will appear here:")
-            # FIXME: Print direct link to trace
+            # TODO: Print direct link to trace
             # https://memfault.myjetbrains.com/youtrack/issue/MFLT-461
             print(_infer_issues_html_url(parsed_args.ingress_uri, config))
         else:
@@ -1761,13 +1761,13 @@ class AnalyticsTracker(Thread):
         # Put in queue to offload to background thread, to avoid slowing down the GDB commands
         self._queue.put((event_name, event_properties, user_id))
 
-    def log(self, level, type, **kwargs):
+    def log(self, level, type, **kwargs):  # noqa: A002
         props = dict(**kwargs)
         props["type"] = type
         props["level"] = level
         self.track("Log", props)
 
-    def error(self, type, info=None):
+    def error(self, type, info=None):  # noqa: A002
         self.log("error", type, info=info)
 
     def _is_analytics_disabled(self):
@@ -1839,7 +1839,7 @@ def _track_script_sourced():
 
     ANALYTICS.track(
         "Script sourced",
-        # FIXME: MFLT-497 -- properly version this
+        # TODO: MFLT-497 -- properly version this
         {
             "version": "1",
             "python": platform.python_version(),

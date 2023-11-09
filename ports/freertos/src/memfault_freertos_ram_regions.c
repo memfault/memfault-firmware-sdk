@@ -79,6 +79,8 @@
 
 #include "memfault/ports/freertos_coredump.h"
 
+#include <stdint.h>
+
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
@@ -102,6 +104,28 @@
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
 #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
+#endif
+
+// This feature is opt-in, since it can fail if the TCB data structures are
+// corrupt, and results in a lost coredump.
+#if !defined(MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
+  #define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 0
+#endif
+
+#if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE && !INCLUDE_uxTaskGetStackHighWaterMark
+  #warning \
+    MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE requires uxTaskGetStackHighWaterMark() API.\
+    Add '#define INCLUDE_uxTaskGetStackHighWaterMark 1' to FreeRTOSConfig.h to enable it,\
+    or set '#define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 0' in\
+    memfault_platform_config.h to disable this warning.
+  #undef MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+  #define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 0
+#endif
+
+#if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+static struct MfltTaskWatermarks {
+  uint32_t high_watermark;
+} s_memfault_task_watermarks[MEMFAULT_PLATFORM_MAX_TRACKED_TASKS];
 #endif
 
 // If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is set to 0, apply a default
@@ -182,6 +206,29 @@ void memfault_freertos_trace_task_delete(void *tcb) {
   s_task_tcbs[idx] = EMPTY_SLOT;
 }
 
+#if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+static uint32_t prv_stack_bytes_high_watermark(void *tcb_address) {
+  // Note: ideally we would sanitize the pxTCB->pxStack value here (which is
+  // used when computing high watermark) to prevent a memory error. We could
+  // potentially scan in decrementing addresses from pxTopOfStack (full
+  // descending stack), looking for the first n run of 0xa5 bytes, and use that
+  // as the presumed "high watermark". We could then sanitize that access, so
+  // we'd be less likely to trip a memory error. For now, just rely on the
+  // earlier sanity check on pxTopOfStack being a valid address, and assume
+  // pxStack hasn't been corrupted in that case.
+
+  // Note: uxTaskGetStackHighWaterMark is very simple, and just scans the
+  // stack for the first non 0xa5 byte. It's safe to call it from the fault
+  // handler context (no locks, no memory allocation, etc)
+
+  // The value returned here is the high watermark, *NOT* the "bytes unused".
+  // Memfault's backend will convert it using the TCB_t stack size. We cannot
+  // access the TCB_t definition from this compilation unit as it is
+  // intentionally opaque in FreeRTOS, unfortunately.
+  return uxTaskGetStackHighWaterMark((TaskHandle_t)tcb_address);
+}
+#endif
+
 size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t num_regions) {
   if (regions == NULL || num_regions == 0) {
     return 0;
@@ -226,12 +273,29 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
       continue;
     }
 
+#if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+    s_memfault_task_watermarks[i].high_watermark = prv_stack_bytes_high_watermark(tcb_address);
+#endif
+
     regions[region_idx] =  MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
     region_idx++;
     if (region_idx == num_regions) {
       return region_idx;
     }
   }
+
+#if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+  // Store the task TCBs and watermarks, if there's free regions
+  if (region_idx < num_regions) {
+    regions[region_idx] =
+      MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_task_tcbs[0], sizeof(s_task_tcbs));
+    region_idx++;
+
+    regions[region_idx] =
+      MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_memfault_task_watermarks[0], sizeof(s_memfault_task_watermarks));
+    region_idx++;
+  }
+#endif
 
   return region_idx;
 }

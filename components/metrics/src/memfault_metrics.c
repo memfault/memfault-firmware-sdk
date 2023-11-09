@@ -728,6 +728,7 @@ int memfault_metrics_heartbeat_timer_read(MemfaultMetricId key, uint32_t *read_v
   memfault_lock();
   {
     union MemfaultMetricValue *value;
+    prv_find_timer_metric_and_update(key, kMemfaultTimerOp_ForceValueUpdate);
     rv = prv_find_key_of_type(key, kMemfaultMetricType_Timer, &value);
     if (rv == 0) {
       *read_val = value->u32;

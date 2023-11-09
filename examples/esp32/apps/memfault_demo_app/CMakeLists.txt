@@ -59,6 +59,8 @@ add_custom_command(TARGET ${IDF_PROJECT_EXECUTABLE}
   COMMAND python ${memfault_firmare_sdk_dir}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
   # Save a copy of the ELF that includes the 'log_fmt' section
   BYPRODUCTS ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+  # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
+  COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
   COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
   COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
   # Remove the 'log_fmt' compact log section, which confuses elf2image

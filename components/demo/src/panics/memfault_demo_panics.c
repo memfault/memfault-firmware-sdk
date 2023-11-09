@@ -22,6 +22,13 @@
 #include "memfault/panics/platform/coredump.h"
 #include "memfault_demo_cli_aux_private.h"
 
+// Allow opting out of the cassert demo. Some platforms may not have a libc
+// assert implementation.
+#if !defined(MEMFAULT_DEMO_DISABLE_CASSERT)
+  #include <assert.h>
+  #define MEMFAULT_DEMO_DISABLE_CASSERT 0
+#endif
+
 MEMFAULT_NO_OPT
 static void do_some_work_base(char *argv[]) {
   // An assert that is guaranteed to fail. We perform
@@ -127,6 +134,18 @@ int memfault_demo_cli_cmd_assert(int argc, char *argv[]) {
   } else {
     MEMFAULT_ASSERT(0);
   }
+
+  return -1;
+}
+
+int memfault_demo_cli_cmd_cassert(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+#if MEMFAULT_DEMO_DISABLE_CASSERT
+  MEMFAULT_LOG_ERROR("C assert demo disabled");
+#else
+  assert(0);
+#endif
 
   return -1;
 }

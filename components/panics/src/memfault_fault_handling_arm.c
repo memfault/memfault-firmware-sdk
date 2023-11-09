@@ -561,6 +561,13 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
   memfault_platform_reboot();
 }
 
+  // ARM compiler 5 requires even more explicit no optimization directives to prevent our assert
+  // functions from optimizing away the callee saved registers.
+  #if defined(__CC_ARM)
+    #pragma push
+    #pragma optimize O0
+  #endif
+
 // Note: These functions are annotated as "noreturn" which can be useful for static analysis.
 // However, this can also lead to compiler optimizations that make recovering local variables
 // difficult (such as ignoring ABI requirements to preserve callee-saved registers)
@@ -568,7 +575,7 @@ MEMFAULT_NO_OPT
 void memfault_fault_handling_assert(void *pc, void *lr) {
   prv_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
 
-#if (defined(__clang__) && defined(__ti__))
+#if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
   //! tiarmclang does not respect the no optimization request and will
   //! strip the pushing callee saved registers making it impossible to recover
   //! an accurate backtrace so we skip over providing the unreachable hint.
@@ -580,11 +587,15 @@ MEMFAULT_NO_OPT
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   prv_fault_handling_assert(pc, lr, extra_info->assert_reason);
 
-#if (defined(__clang__) && defined(__ti__))
+#if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
   //! See comment in memfault_fault_handling_assert for more context
 #else
     MEMFAULT_UNREACHABLE;
 #endif
 }
+
+  #if defined(__CC_ARM)
+    #pragma pop
+  #endif
 
 #endif /* MEMFAULT_COMPILER_ARM_CORTEX_M */

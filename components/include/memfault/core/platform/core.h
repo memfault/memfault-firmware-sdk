@@ -33,9 +33,10 @@ int memfault_platform_boot(void);
 //! Invoked after memfault fault handling has run.
 //!
 //! The platform should do any final cleanup and reboot the system
-#if defined(__ICCARM__)
-//! IAR will optimize away link register stores from callsites which makes it
-//! impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
+#if defined(__ICCARM__) || defined(__CC_ARM)
+//! IAR and armcc will optimize away link register stores from callsites, which
+//! makes it impossible for a reliable backtrace to be resolved, so for those
+//! compilers don't apply the NORETURN attribute
 #else
 MEMFAULT_NORETURN
 #endif

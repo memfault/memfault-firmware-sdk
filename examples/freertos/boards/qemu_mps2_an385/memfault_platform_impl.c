@@ -58,6 +58,7 @@ static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_COREDUMP_MAX_TASK_REGIONS
                                               2   /* active stack(s) */
                                               + 1 /* _kernel variable */
                                               + 1 /* __memfault_capture_start */
+                                              + 2 /* s_task_tcbs + s_task_watermarks */
 ];
 
 extern uint32_t __memfault_capture_bss_end;

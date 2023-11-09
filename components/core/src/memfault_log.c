@@ -314,9 +314,20 @@ void memfault_log_export_logs(void) {
       #pragma diag_push
       #pragma diag_remark 190
     #endif
+    #if defined(__CC_ARM)
+      #pragma push
+      // This armcc diagnostic is technically violating the C standard, which
+      // _explicitly_ requires enums to be type-equivalent to ints. See ISO/IEC
+      // 9899:TC3 6.2.5.16, and specifically 6.4.4.3, which states: "An
+      // identifier declared as an enumeration constant has type int."
+      #pragma diag_suppress 188  // enumerated type mixed with another type
+    #endif
     sMemfaultLog log = {0};
     #if defined(__TI_ARM__)
       #pragma diag_pop
+    #endif
+    #if defined(__CC_ARM)
+      #pragma pop
     #endif
 
     const bool log_found = memfault_log_read(&log);

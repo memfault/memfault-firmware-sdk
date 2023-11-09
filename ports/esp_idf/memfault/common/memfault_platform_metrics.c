@@ -9,6 +9,8 @@
 //! by using the following CFLAG:
 //!   -DMEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=15
 
+#include <string.h>
+
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
@@ -107,6 +109,22 @@ static void prv_register_event_handler(void) {
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &metric_event_handler, NULL));
 }
 
+static void prv_collect_oui(void) {
+  wifi_ap_record_t ap_info;
+  static uint8_t s_memfault_ap_bssid[sizeof(ap_info.bssid)];
+  esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
+  if (err == ESP_OK) {
+    // only set the metric if the AP MAC changed
+    if (memcmp(s_memfault_ap_bssid, ap_info.bssid, sizeof(s_memfault_ap_bssid)) != 0) {
+      char oui[9];
+      snprintf(oui, sizeof(oui), "%02x:%02x:%02x", ap_info.bssid[0], ap_info.bssid[1],
+               ap_info.bssid[2]);
+      memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(wifi_ap_oui), oui);
+      memcpy(s_memfault_ap_bssid, ap_info.bssid, sizeof(s_memfault_ap_bssid));
+    }
+  }
+}
+
 static void prv_collect_wifi_metrics(void) {
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   if (s_min_rssi <= MAXIMUM_RSSI) {
@@ -119,6 +137,9 @@ static void prv_collect_wifi_metrics(void) {
     s_min_rssi = 0;
   }
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+
+  // Collect AP OUI
+  prv_collect_oui();
 }
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 

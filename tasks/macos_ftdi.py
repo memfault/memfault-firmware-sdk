@@ -15,7 +15,7 @@ def is_macos():
 
 def _unload_apple_ftdi_driver_if_needed(ctx):
     if not is_macos():
-        return
+        return None
     result = ctx.run("kextstat -b {}".format(APPLE_FTDI_DRIVER_BUNDLE_ID), hide=True)
     loaded = APPLE_FTDI_DRIVER_BUNDLE_ID in result.stdout
     if loaded:

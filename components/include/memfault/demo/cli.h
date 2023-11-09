@@ -57,6 +57,9 @@ int memfault_demo_cli_cmd_prefetchabort(int argc, char *argv[]);
 //! Command which will generate an assert
 int memfault_demo_cli_cmd_assert(int argc, char *argv[]);
 
+//! Command which will generate a libc assert()
+int memfault_demo_cli_cmd_cassert(int argc, char *argv[]);
+
 //! Command to exercise the MEMFAULT_TRACE_EVENT API, capturing a
 //! Trace Event with the error reason set to "MemfaultDemoCli_Error".
 int memfault_demo_cli_cmd_trace_event_capture(int argc, char *argv[]);
@@ -113,6 +116,9 @@ int memfault_demo_cli_cmd_export(int argc, char *argv[]);
 
 //! Print current heartbeat metrics
 int memfault_demo_cli_cmd_heartbeat_dump(int argc, char *argv[]);
+
+//! Trigger a heartbeat
+int memfault_demo_cli_cmd_heartbeat(int argc, char *argv[]);
 
 #ifdef __cplusplus
 }

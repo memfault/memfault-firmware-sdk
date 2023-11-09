@@ -238,6 +238,29 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueSimple) {
   LONGS_EQUAL(10, val);
 }
 
+TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatReadWhileRunning)
+{
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
+
+  // start the timer
+  int rv = memfault_metrics_heartbeat_timer_start(key);
+  LONGS_EQUAL(0, rv);
+
+  // read while running
+  uint32_t val;
+  prv_fake_time_incr(10);
+  memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(10, val);
+
+  // stop the timer
+  prv_fake_time_incr(9);
+  rv = memfault_metrics_heartbeat_timer_stop(key);
+  LONGS_EQUAL(0, rv);
+
+  memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(19, val);
+}
+
 TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueRollover) {
   MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
 
@@ -478,4 +501,46 @@ TEST(MemfaultHeartbeatMetrics, Test_HeartbeatCollection) {
   CHECK(rv != 0);
   rv = memfault_metrics_heartbeat_read_unsigned(keyu32, &valu32);
   CHECK(rv != 0);
+}
+
+// Sanity test the alternate setter API
+TEST(MemfaultHeartbeatMetrics, Test_HeartbeatCollectionAltSetter) {
+  MemfaultMetricId keyi32 = MEMFAULT_METRICS_KEY(test_key_signed);
+  MemfaultMetricId keyu32 = MEMFAULT_METRICS_KEY(test_key_unsigned);
+  MemfaultMetricId keytimer = MEMFAULT_METRICS_KEY(test_key_timer);
+  MemfaultMetricId keystring = MEMFAULT_METRICS_KEY(test_key_string);
+
+  // integers
+  MEMFAULT_HEARTBEAT_SET_SIGNED(test_key_signed, -200);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(test_key_unsigned, 199);
+  MEMFAULT_HEARTBEAT_ADD(test_key_signed, 1);
+  MEMFAULT_HEARTBEAT_ADD(test_key_unsigned, 1);
+
+  // string
+  MEMFAULT_HEARTBEAT_SET_STRING(test_key_string, "test");
+
+  // timer
+  MEMFAULT_HEARTBEAT_TIMER_START(test_key_timer);
+  prv_fake_time_incr(10);
+  MEMFAULT_HEARTBEAT_TIMER_STOP(test_key_timer);
+
+  int32_t vali32;
+  uint32_t valu32;
+  uint32_t timer_valu32;
+
+  int rv;
+  rv = memfault_metrics_heartbeat_read_signed(keyi32, &vali32);
+  LONGS_EQUAL(0, rv);
+  rv = memfault_metrics_heartbeat_read_unsigned(keyu32, &valu32);
+  LONGS_EQUAL(0, rv);
+  char buf[512];
+  rv = memfault_metrics_heartbeat_read_string(keystring, buf, sizeof(buf));
+  LONGS_EQUAL(0, rv);
+  rv = memfault_metrics_heartbeat_timer_read(keytimer, &timer_valu32);
+  LONGS_EQUAL(0, rv);
+
+  LONGS_EQUAL(vali32, -199);
+  LONGS_EQUAL(valu32, 200);
+  STRCMP_EQUAL(buf, "test");
+  LONGS_EQUAL(timer_valu32, 10);
 }

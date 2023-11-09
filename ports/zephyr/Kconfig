@@ -1,5 +1,5 @@
 config MEMFAULT
-        bool "MEMFAULT Support"
+        bool "Memfault Support"
         default n
         depends on CPU_CORTEX_M
         select RUNTIME_NMI
@@ -12,7 +12,7 @@ config MEMFAULT
 if MEMFAULT
 
 config MEMFAULT_CACHE_FAULT_REGS
-        bool "MEMFAULT Cache ARM fault registers"
+        bool "Memfault Cache ARM fault registers"
         default y
         help
           Save a copy of the ARMv7's fault registers before Zephyr
@@ -40,6 +40,9 @@ config MEMFAULT_USER_CONFIG_SILENT_FAIL
           memfault_metrics_heartbeat_config.def
           memfault_trace_reason_user_config.def
 
+# sub menu for coredump settings
+menu "Memfault Coredump Settings"
+
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
         bool
         default n
@@ -48,14 +51,14 @@ config MEMFAULT_COREDUMP_STORAGE_CUSTOM
           coredump implementation using select.
 
 config MEMFAULT_RAM_BACKED_COREDUMP
-        bool "MEMFAULT Ram Backed Coredump"
+        bool "Memfault Ram Backed Coredump"
         default y if !MEMFAULT_COREDUMP_STORAGE_CUSTOM
         depends on !MEMFAULT_COREDUMP_STORAGE_CUSTOM
         help
           Save a minimal coredump in noinit RAM.
 
 config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
-        int "MEMFAULT Ram Backed Coredump"
+        int "Memfault Ram Backed Coredump"
         default 8192
         depends on MEMFAULT_RAM_BACKED_COREDUMP
         help
@@ -107,6 +110,32 @@ config MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
         depends on THREAD_STACK_INFO && !STACK_GROWS_UP && INIT_STACKS
         help
           Adds thread stack usage computed during fault handling into a coredump.
+config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
+       int "Maximum amount of bytes to collect for task"
+       default 256
+       help
+        The larger the size, the more stack frames Memfault can recover for tasks. The
+        default setting typically allows for 4 or more frames to be recovered.
+
+config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
+       bool "Collect full thread stacks in coredumps"
+       default n
+       depends on THREAD_STACK_INFO
+       help
+        When enabled, Memfault will collect the full thread stack in
+        coredumps. This will likely increase the size of coredumps, and there
+        will no longer be a strict ceiling on the coredump task region sizes.
+        This is provided as an alternative when capturing all of RAM is not
+        viable but full thread stack analysis (watermarking, stack overflow
+        tagging) is desired.
+
+config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
+       int "Maximum amount of tasks to collect in a coredump"
+       default 32
+       help
+        The maximum amount of tasks Memfault will store state for in a coredump.
+
+endmenu  # Memfault Coredump Settings
 
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
@@ -119,7 +148,7 @@ config MEMFAULT_HEAP_STATS
           allocation/deallocation (k_malloc/k_free).
 
 config MEMFAULT_SHELL
-        bool "MEMFAULT Shell"
+        bool "Memfault Shell"
         default y if SHELL
         depends on SHELL
         help
@@ -149,7 +178,7 @@ config MEMFAULT_COMPACT_LOG
           information here: https://mflt.io/compact-logs
 
 config MEMFAULT_LOGGING_ENABLE
-        bool "MEMFAULT Zephyr backend logging Enable [EXPERIMENTAL]"
+        bool "Memfault Zephyr backend logging Enable [EXPERIMENTAL]"
         default n
         select LOG
         select LOG_OUTPUT
@@ -266,31 +295,6 @@ config MEMFAULT_EVENT_STORAGE_SIZE
        help
         The storage area used to batch memfault events before they are flushed
         to persistent storage or the Memfault Cloud.
-
-config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
-       int "Maximum amount of bytes to collect for task"
-       default 256
-       help
-        The larger the size, the more stack frames Memfault can recover for tasks. The
-        default setting typically allows for 4 or more frames to be recovered.
-
-config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
-       bool "Collect full thread stacks in coredumps"
-       default n
-       depends on THREAD_STACK_INFO
-       help
-        When enabled, Memfault will collect the full thread stack in
-        coredumps. This will likely increase the size of coredumps, and there
-        will no longer be a strict ceiling on the coredump task region sizes.
-        This is provided as an alternative when capturing all of RAM is not
-        viable but full thread stack analysis (watermarking, stack overflow
-        tagging) is desired.
-
-config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
-       int "Maximum amount of tasks to collect in a coredump"
-       default 32
-       help
-        The maximum amount of tasks Memfault will store state for in a coredump.
 
 config MEMFAULT_REBOOT_REASON_GET_CUSTOM
        bool "Provide a custom implementation for recovering reboot information"

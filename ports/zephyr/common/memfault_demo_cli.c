@@ -224,7 +224,7 @@ static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, cha
   // Fire off a last-ditch log message to show how logs are flushed prior to
   // crash, in the case of deferred logging mode
   MEMFAULT_LOG_ERROR("About to crash in %s!", __func__);
-  __ASSERT(0, "test assert");
+  __ASSERT(0, "test __ASSERT");
   return 0;
 }
 

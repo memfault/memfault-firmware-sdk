@@ -67,9 +67,11 @@
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   // Memory regions used for esp-idf >= 4.4.3
-  // Active stack (1) + task/timer and bss/common regions (4) +
-  // freertos tasks (MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + bss(1) + data(1) + heap(1)
-  #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1)
+  //Active stack (1) + task/timer and bss/common regions (4) + freertos tasks
+  //(MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + task_tcbs(1) + task_watermarks(1) +
+  //bss(1) + data(1) + heap(1)
+  #define MEMFAULT_ESP_PORT_NUM_REGIONS \
+    (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1 + 1 + 1)
 #else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   // Memory regions for esp-idf < 4.4.3
   // Active stack (1) + bss(1) + data(1) + heap(1)

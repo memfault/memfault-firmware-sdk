@@ -171,6 +171,20 @@ int memfault_metrics_heartbeat_timer_stop(MemfaultMetricId key);
 //! @note The metric must be of type kMemfaultMetricType_Unsigned or kMemfaultMetricType_Signed
 int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 
+//! Alternate API that includes the 'MEMFAULT_METRICS_KEY()' expansion
+#define MEMFAULT_HEARTBEAT_SET_SIGNED(key_name, signed_value) \
+  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(key_name), signed_value)
+#define MEMFAULT_HEARTBEAT_SET_UNSIGNED(key_name, unsigned_value) \
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(key_name), unsigned_value)
+#define MEMFAULT_HEARTBEAT_SET_STRING(key_name, value) \
+  memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(key_name), value)
+#define MEMFAULT_HEARTBEAT_TIMER_START(key_name) \
+  memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(key_name))
+#define MEMFAULT_HEARTBEAT_TIMER_STOP(key_name) \
+  memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(key_name))
+#define MEMFAULT_HEARTBEAT_ADD(key_name, amount) \
+  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(key_name), amount)
+
 //! For debugging purposes: prints the current heartbeat values using
 //! MEMFAULT_LOG_DEBUG(). Before printing, any active timer values are computed.
 //! Other metrics will print the current values. This can be called from the

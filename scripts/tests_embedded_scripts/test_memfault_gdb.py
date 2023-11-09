@@ -310,7 +310,7 @@ def test_read_memory_until_error_after_10k():
         nonlocal total_size
         total_size += _size
         if total_size > _size * 10:
-            raise ValueError()
+            raise ValueError
         return b"A" * _size
 
     inferior.read_memory.side_effect = _read_memory_raise_after_10k

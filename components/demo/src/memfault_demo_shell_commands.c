@@ -47,6 +47,11 @@ int memfault_demo_cli_cmd_heartbeat_dump(MEMFAULT_UNUSED int argc, MEMFAULT_UNUS
   return 0;
 }
 
+int memfault_demo_cli_cmd_heartbeat(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  memfault_metrics_heartbeat_debug_trigger();
+  return 0;
+}
+
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"clear_core", memfault_demo_cli_cmd_clear_core, "Clear an existing coredump"},
   {"drain_chunks", memfault_demo_drain_chunk_data,
@@ -58,11 +63,13 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"coredump_size", memfault_demo_cli_cmd_coredump_size, "Print the coredump storage capacity"},
   {"heartbeat_dump", memfault_demo_cli_cmd_heartbeat_dump,
    "Dump current Memfault metrics heartbeat state"},
+  {"heartbeat", memfault_demo_cli_cmd_heartbeat, "Trigger a heartbeat"},
   //
   // Test commands for validating SDK functionality: https://mflt.io/mcu-test-commands
   //
 
   {"test_assert", memfault_demo_cli_cmd_assert, "Trigger memfault assert"},
+  {"test_cassert", memfault_demo_cli_cmd_cassert, "Trigger C assert"},
 
 #if MEMFAULT_COMPILER_ARM_CORTEX_M
   {"test_busfault", memfault_demo_cli_cmd_busfault, "Trigger a busfault"},

@@ -1,5 +1,77 @@
 # Memfault Firmware SDK Changelog
 
+## [1.4.3] - 2023-11-08
+
+### :rocket: New Features
+
+- General:
+
+  - Add a new streamlined Metrics setter API:
+
+    - `MEMFAULT_HEARTBEAT_SET_SIGNED(key_name, signed_value)`
+    - `MEMFAULT_HEARTBEAT_SET_UNSIGNED(key_name, unsigned_value)`
+    - `MEMFAULT_HEARTBEAT_SET_STRING(key_name, value)`
+    - `MEMFAULT_HEARTBEAT_TIMER_START(key_name)`
+    - `MEMFAULT_HEARTBEAT_TIMER_STOP(key_name)`
+    - `MEMFAULT_HEARTBEAT_ADD(key_name, amount)`
+
+    These APIs can be used in place of the original APIs:
+
+    - `memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(key_name), signed_value)`
+    - `memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(key_name), unsigned_value)`
+    - `memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(key_name), value)`
+    - `memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(key_name))`
+    - `memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(key_name))`
+    - `memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(key_name), amount)`
+
+    Saving some typing!
+
+  - Add the ability to compute FreeRTOS task stack high watermarks when storing
+    coredumps. This is useful only if the entire RAM (`.data` + `.bss`) cannot
+    be saved in the coredump. The feature is opt-in with the config flag
+    `#define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 1`.
+
+  - Add a `heartbeat` command to the [core demo cli](components/demo). This
+    behaves the same as the commands of the same name already present in the
+    Zephyr + ESP-IDF port.
+
+  - Add a `test_cassert` command to the core demo cli. This command executes a C
+    stdlib `<assert.h>``assert(0)` call. For platforms that do not implement a
+    `assert()` handler, a config flag `MEMFAULT_DEMO_DISABLE_CASSERT` can be
+    defined to `0` to disable the command.
+
+- ESP-IDF:
+
+  - Add a new out-of-box metric, `wifi_ap_oui`, which will record the associated
+    AP's Organizationally Unique Identifier (OUI) in the Memfault heartbeat.
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Disable a warning emitted by the ARM C Compiler v5
+    (`#188-D: enumerated type mixed with another type`) when initializing a
+    structure in
+    [`components/core/src/memfault_log.c`:314](https://github.com/memfault/memfault-firmware-sdk/blob/1.4.3/components/core/src/memfault_log.c#L313).
+
+  - Improve the quality of Assert backtraces when using the ARM C Compiler v5.
+    Certain frames in the assert call stack were missing link register
+    inforation, due to compiler optimizations based on the `noreturn` and
+    unreachable compiler hints. These hints have been removed for `armcc`, which
+    should permit full stack unwinding for Assert coredumps generated from
+    builds on that toolchain.
+
+  - Perform an update of the timer when calling the
+    `memfault_metrics_heartbeat_timer_read()` debug function. Fixes
+    [#65](https://github.com/memfault/memfault-firmware-sdk/pull/65). Thanks to
+    @LuskeyNoah for providing this fix!
+
+- ESP-IDF:
+
+  - Fix a missing piece enabling the "zero-config" integration (originally added
+    in `1.4.0`)- the `memfault_platform_port.h` file was still incorrectly
+    required. This is now fixed.
+
 ## [1.4.2] - 2023-11-02
 
 ### :chart_with_upwards_trend: Improvements
@@ -80,7 +152,7 @@
 
   - Add a new Kconfig flag, `MEMFAULT_COREDUMP_STORAGE_MAX_SIZE`, which can be
     used to set the Memfault SDK's built-in
-    [ESP-IDF coredump storage implementation](sdk/embedded/ports/esp_idf/memfault/common/memfault_platform_coredump.c)
+    [ESP-IDF coredump storage implementation](https://github.com/memfault/memfault-firmware-sdk/blob/master/ports/esp_idf/memfault/common/memfault_platform_coredump.c)
     to artificially limit the maximum coredump storage size. This is useful for
     situations where the default `memfault_platform_coredump_get_regions()`
     function is still desirable, but the coredump maximum size needs to be
