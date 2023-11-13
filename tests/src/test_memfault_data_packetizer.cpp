@@ -465,7 +465,7 @@ TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
 
 // exercise the path where a zero length buffer is passed
 TEST(MemfaultDataPacketizer, Test_ZeroLengthBuffer) {
-  uint8_t packet[5];
+  uint8_t packet[0];
 
   // start sending a packet and abort after we have received one packet
   // we should re-wind and see the entire message transmitted again
@@ -477,7 +477,7 @@ TEST(MemfaultDataPacketizer, Test_ZeroLengthBuffer) {
   size_t buf_len = 0;
   eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet, &buf_len);
   LONGS_EQUAL(0, buf_len);
-  LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
+  LONGS_EQUAL(kMemfaultPacketizerStatus_NoMoreData, rv);
 }
 
 TEST(MemfaultDataPacketizer, Test_BadArguments) {
@@ -674,5 +674,27 @@ TEST(MemfaultDataPacketizer, Test_ActiveSources) {
   mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
   more_data = memfault_packetizer_get_chunk(packet, &buf_len);
   CHECK(!more_data);
+  mock().checkExpectations();
+}
+
+TEST(MemfaultDataPacketizer, Test_ZeroBufferLength) {
+  // AddressSanitizer will trip on this if anything is written to it
+  uint8_t empty_buf[0];
+  size_t buf_len = 0;
+  prv_setup_expect_coredump_call_expectations(true);
+  bool rv = memfault_packetizer_get_chunk(empty_buf, &buf_len);
+  LONGS_EQUAL(false, rv);
+  LONGS_EQUAL(0, buf_len);
+  mock().checkExpectations();
+}
+
+TEST(MemfaultDataPacketizer, Test_MinimalBufferLength) {
+  // the fake chunker has 0 overhead, so the minimal chunk size here is 1 byte.
+  uint8_t small_buf[1];
+  size_t buf_len = sizeof(small_buf);
+  prv_setup_expect_coredump_call_expectations(true);
+  bool rv = memfault_packetizer_get_chunk(small_buf, &buf_len);
+  LONGS_EQUAL(1, buf_len);
+  LONGS_EQUAL(true, rv);
   mock().checkExpectations();
 }

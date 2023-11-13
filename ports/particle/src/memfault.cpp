@@ -243,24 +243,24 @@ void Memfault::handle_cloud_connectivity_event(system_event_t event, int param) 
 #if MEMFAULT_PARTICLE_PORT_CLOUD_METRICS_ENABLE
   switch (param) {
     case cloud_status_disconnected:
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Cloud_ConnectingTime));
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Cloud_ConnectedTime));
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Cloud_DisconnectCount), 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectedTime);
+      MEMFAULT_HEARTBEAT_ADD(Cloud_DisconnectCount, 1);
       break;
 
     case cloud_status_connecting:
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(Cloud_ConnectingTime));
+      MEMFAULT_HEARTBEAT_TIMER_START(Cloud_ConnectingTime);
       break;
 
     case cloud_status_connected:
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Cloud_ConnectingTime));
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(Cloud_ConnectedTime));
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Cloud_ConnectCount), 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_HEARTBEAT_TIMER_START(Cloud_ConnectedTime);
+      MEMFAULT_HEARTBEAT_ADD(Cloud_ConnectCount, 1);
       break;
 
     case cloud_status_disconnecting:
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Cloud_ConnectingTime));
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Cloud_ConnectedTime));
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectedTime);
       break;
     default:
       break;
@@ -332,13 +332,10 @@ static void prv_metric_timer_callback() {
   info.size = sizeof(info);
   HAL_Core_Runtime_Info(&info, NULL);
 
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_TotalSize),
-                                          info.total_init_heap);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_MinBytesFree),
-                                          info.total_init_heap - info.max_used_heap);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_BytesFree), info.freeheap);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_MaxBlockSize),
-                                          info.largest_free_block_heap);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_TotalSize, info.total_init_heap);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MinBytesFree, info.total_init_heap - info.max_used_heap);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_BytesFree, info.freeheap);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MaxBlockSize, info.largest_free_block_heap);
 #endif
 
   s_callback();

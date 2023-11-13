@@ -122,6 +122,16 @@
   #define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 0
 #endif
 
+#if !defined(MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE)
+  #if !configRECORD_STACK_HIGH_ADDRESS
+    #warning \
+      To see FreeRTOS thread stack sizes in coredumps, Add\
+      '#define configRECORD_STACK_HIGH_ADDRESS 1' to FreeRTOSConfig.h. Otherwise, set\
+      '#define MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE 0' in\
+      memfault_platform_config.h to disable this warning.
+  #endif
+#endif
+
 #if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
 static struct MfltTaskWatermarks {
   uint32_t high_watermark;

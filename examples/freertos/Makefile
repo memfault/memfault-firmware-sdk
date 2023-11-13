@@ -61,18 +61,23 @@ FREERTOS_SRCS = \
 
 # Add application sources
 SRCS += \
-	main.c \
-	compact_log.cpp \
+	src/main.c \
+	src/compact_log.cpp \
+	src/console.c \
+	src/heap_task.c \
+	src/metrics.c \
+	src/memfault/memfault_platform_port.c \
 	$(BOARD_DIR)/startup.c \
-	console.c \
 	$(BOARD_DIR)/memfault_platform_impl.c \
-	memfault/memfault_platform_port.c \
 	$(FREERTOS_SRCS) \
 
 # Use Memfault SDK worker to gather initial Memfault SDK sources and include dirs
 MEMFAULT_SDK_ROOT := ../..
-MEMFAULT_COMPONENTS := core util panics metrics demo
+MEMFAULT_COMPONENTS ?= core util panics metrics demo
 include $(MEMFAULT_SDK_ROOT)/makefiles/MemfaultWorker.mk
+
+# Add CFLAGS defines for each of the memfault components enabled above
+CFLAGS += $(foreach each, $(MEMFAULT_COMPONENTS), -DMEMFAULT_COMPONENT_$(each)_)
 
 # Add additional SDK sources to project for FreeRTOS and RAM-backed coredump.
 # Intentionally using a wildcard to trap any new features added- it's nice to
@@ -88,7 +93,8 @@ OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%=$(BUILD_DIR)
 INCLUDE_PATHS += \
   -I$(FREERTOS_DIR)/include \
   -I. \
-  -I./memfault \
+  -Isrc \
+  -Isrc/memfault \
   -I$(MEMFAULT_COMPONENTS_INC_FOLDERS) \
   -I$(MEMFAULT_SDK_ROOT)/ports/include \
   -I$(MEMFAULT_SDK_ROOT) \

@@ -1,5 +1,31 @@
 # Memfault Firmware SDK Changelog
 
+## [1.4.4] - 2023-11-13
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Rename this file from [`CHANGES.md`] to [`CHANGELOG.md`].
+
+  - For FreeRTOS, add a warning when `configRECORD_STACK_HIGH_ADDRESS` is not
+    enabled. Memfault uses this to show stack sizes in the coredump view for
+    coredumps on FreeRTOS systems. The warning can be disabled by enabling the
+    `configRECORD_STACK_HIGH_ADDRESS` FreeRTOS config flag, or by setting
+    `#define MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE 0`.
+
+  - Make `memfault_packetizer_get_chunk()` return `false` if the buffer was too
+    small to load a full chunk. Previously the function would return `true` but
+    with `0` bytes loaded into the output buffer and `*buf_len` set to `0`.
+
+  - Update all example Metrics implementations to use the new API from v1.4.3
+    (eg `MEMFAULT_HEARTBEAT_SET_UNSIGNED` instead of
+    `memfault_metrics_heartbeat_set_unsigned`).
+
+  - Fix compilation for systems not integrating the
+    [Metrics](https://mflt.io/embedded-metrics) component but using the Demo CLI
+    (this regressed in v1.4.3).
+
 ## [1.4.3] - 2023-11-08
 
 ### :rocket: New Features

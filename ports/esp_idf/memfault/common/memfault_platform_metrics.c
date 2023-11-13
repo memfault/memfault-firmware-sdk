@@ -82,11 +82,11 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
       // state.
       ESP_ERROR_CHECK(esp_wifi_set_rssi_threshold(MAXIMUM_RSSI));
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(wifi_connected_time_ms));
+      MEMFAULT_HEARTBEAT_TIMER_START(wifi_connected_time_ms);
       break;
     case WIFI_EVENT_STA_DISCONNECTED:
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(wifi_disconnect_count), 1);
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(wifi_connected_time_ms));
+      MEMFAULT_HEARTBEAT_ADD(wifi_disconnect_count, 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(wifi_connected_time_ms);
 
       break;
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
@@ -119,7 +119,7 @@ static void prv_collect_oui(void) {
       char oui[9];
       snprintf(oui, sizeof(oui), "%02x:%02x:%02x", ap_info.bssid[0], ap_info.bssid[1],
                ap_info.bssid[2]);
-      memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(wifi_ap_oui), oui);
+      MEMFAULT_HEARTBEAT_SET_STRING(wifi_ap_oui, oui);
       memcpy(s_memfault_ap_bssid, ap_info.bssid, sizeof(s_memfault_ap_bssid));
     }
   }
@@ -128,7 +128,7 @@ static void prv_collect_oui(void) {
 static void prv_collect_wifi_metrics(void) {
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   if (s_min_rssi <= MAXIMUM_RSSI) {
-    memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(wifi_sta_min_rssi), s_min_rssi);
+    MEMFAULT_HEARTBEAT_SET_SIGNED(wifi_sta_min_rssi, s_min_rssi);
     // Error checking is ignored here, as it's possible that WIFI is not
     // intialized yet at time of heartbeat. In that case, the RSSI threshold
     // will be set reset on the first connection, and any errors here can be
@@ -148,16 +148,12 @@ static void prv_collect_wifi_metrics(void) {
 static void prv_record_heap_metrics(void) {
   multi_heap_info_t heap_info = {0};
   heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_free_bytes),
-                                          heap_info.total_free_bytes);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_largest_free_block_bytes),
-                                          heap_info.largest_free_block);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_allocated_blocks_count),
-                                          heap_info.allocated_blocks);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(heap_free_bytes, heap_info.total_free_bytes);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(heap_largest_free_block_bytes, heap_info.largest_free_block);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(heap_allocated_blocks_count, heap_info.allocated_blocks);
   // lifetime minimum free bytes. see caveat here:
   // https://docs.espressif.com/projects/esp-idf/en/v5.1.1/esp32/api-reference/system/mem_alloc.html#_CPPv431heap_caps_get_minimum_free_size8uint32_t
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(heap_min_free_bytes),
-                                          heap_info.minimum_free_bytes);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(heap_min_free_bytes, heap_info.minimum_free_bytes);
 }
 
 #endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS

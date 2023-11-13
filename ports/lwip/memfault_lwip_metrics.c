@@ -16,22 +16,19 @@
 // things:
 // 1. The counters are monotonically increasing
 // 2. The values will never wrap more than once before a heartbeat
-#define SET_PROTOCOL_METRICS(proto_struct, proto_name, proto_metric_prefix)                       \
-  do {                                                                                            \
-    uint32_t tx_diff = proto_struct.xmit - s_##proto_name##_tx_prev;                              \
-    uint32_t rx_diff = proto_struct.recv - s_##proto_name##_rx_prev;                              \
-    uint32_t drop_diff = proto_struct.drop - s_##proto_name##_drop_prev;                          \
-                                                                                                  \
-    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(proto_metric_prefix##_tx_count), \
-                                            tx_diff);                                             \
-    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(proto_metric_prefix##_rx_count), \
-                                            rx_diff);                                             \
-    memfault_metrics_heartbeat_set_unsigned(                                                      \
-      MEMFAULT_METRICS_KEY(proto_metric_prefix##_drop_count), drop_diff);                         \
-                                                                                                  \
-    s_##proto_name##_tx_prev += tx_diff;                                                          \
-    s_##proto_name##_rx_prev += rx_diff;                                                          \
-    s_##proto_name##_drop_prev += drop_diff;                                                      \
+#define SET_PROTOCOL_METRICS(proto_struct, proto_name, proto_metric_prefix)       \
+  do {                                                                            \
+    uint32_t tx_diff = proto_struct.xmit - s_##proto_name##_tx_prev;              \
+    uint32_t rx_diff = proto_struct.recv - s_##proto_name##_rx_prev;              \
+    uint32_t drop_diff = proto_struct.drop - s_##proto_name##_drop_prev;          \
+                                                                                  \
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_tx_count, tx_diff);     \
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_rx_count, rx_diff);     \
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_drop_count, drop_diff); \
+                                                                                  \
+    s_##proto_name##_tx_prev += tx_diff;                                          \
+    s_##proto_name##_rx_prev += rx_diff;                                          \
+    s_##proto_name##_drop_prev += drop_diff;                                      \
   } while (0)
 
 void memfault_lwip_heartbeat_collect_data(void) {

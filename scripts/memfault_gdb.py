@@ -74,7 +74,7 @@ MEMFAULT_DEFAULT_CHUNKS_BASE_URI = "https://chunks.memfault.com"
 MEMFAULT_DEFAULT_API_BASE_URI = "https://api.memfault.com"
 
 
-try:
+try:  # noqa: SIM105
     # In Python 3.x, raw_input was renamed to input
     # NOTE: Python 2.x also had an input() function which eval'd the input...!
     input = raw_input
@@ -1110,7 +1110,7 @@ def settings_load():
 
 
 def settings_save(settings):
-    try:
+    try:  # noqa: SIM105
         # exist_ok does not exist yet in Python 2.7!
         os.makedirs(os.path.dirname(MEMFAULT_CONFIG.json_path))
     except OSError:

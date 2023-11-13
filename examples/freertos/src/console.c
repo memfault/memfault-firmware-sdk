@@ -40,7 +40,7 @@ static void prv_console_input_task(MEMFAULT_UNUSED void *pvParameters) {
   }
 }
 
-void console_init(void) {
+void console_task_init(void) {
   xTaskCreateStatic(
     prv_console_input_task,                        /* Function that implements the task. */
     "Console Input",                               /* Text name for the task. */

@@ -98,9 +98,11 @@ def http_expect_request():
 
         return _connection_constructor
 
-    with mock.patch("memfault_gdb.HTTPSConnection", _create_connection_constructor("https")):
-        with mock.patch("memfault_gdb.HTTPConnection", _create_connection_constructor("http")):
-            yield _http_expect_request
+    with (
+        mock.patch("memfault_gdb.HTTPSConnection", _create_connection_constructor("https")),
+        mock.patch("memfault_gdb.HTTPConnection", _create_connection_constructor("http")),
+    ):
+        yield _http_expect_request
 
     assert actual_request_count == len(expected_requests)
 

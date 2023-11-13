@@ -30,10 +30,8 @@ void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
 #if CONFIG_MEMFAULT_HEARTBEAT_TRACK_HEAP_USAGE
   // We are about to service heartbeat data so get the latest stats for the
   // statistics being automatically tracked by the port
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_FreeSize),
-                                          heap_caps_get_free_size(0));
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_MinFreeSize),
-                                          heap_caps_get_minimum_free_size(0));
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_FreeSize, heap_caps_get_free_size(0));
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MinFreeSize, heap_caps_get_minimum_free_size(0));
 #endif
 
 #if CONFIG_MEMFAULT_HEARTBEAT_TRACK_MAIN_STACK_HWM
@@ -43,9 +41,8 @@ void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
 #endif
   TaskHandle_t xHandle = xTaskGetHandle("uiT");
 
-  memfault_metrics_heartbeat_set_unsigned(
-      MEMFAULT_METRICS_KEY(MainTask_StackHighWaterMarkWords),
-      uxTaskGetStackHighWaterMark(xHandle));
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(MainTask_StackHighWaterMarkWords,
+                                  uxTaskGetStackHighWaterMark(xHandle));
 #endif
 
   handler();

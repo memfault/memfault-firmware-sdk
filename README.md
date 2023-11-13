@@ -87,7 +87,7 @@ This makes it easy to track the history of the Memfault SDK. You should not need
 to make modifications to the Memfault SDK. The typical update flow is:
 
 - `git pull` the latest upstream
-- check [CHANGES.md](CHANGES.md) to see if any modifications are needed
+- check [CHANGELOG.md](CHANGELOG.md) to see if any modifications are needed
 - update to the new submodule commit in your repo.
 
 Alternatively, the Memfault SDK may be added to a project as a git subtree or by

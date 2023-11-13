@@ -91,6 +91,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-suggest-override \
   -Wno-declaration-after-statement \
   -Wno-reserved-identifier \
+  -Wno-zero-length-array \
 
 else
 

@@ -27,16 +27,16 @@ import requests
 GITHUB_REPO = os.getenv("GITHUB_REPO", "memfault/memfault-firmware-sdk")
 
 PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
-<package schemaVersion="1.7.27" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/v1.7.27/schema/PACK.xsd">
+<package schemaVersion="1.7.27" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/v1.7.28/schema/PACK.xsd">
   <vendor>Memfault</vendor>
   <name>FirmwareSDK</name>
   <description>Memfault SDK</description>
   <url>https://github.com/{GITHUB_REPO}/releases/download/{SDK_VERSION}/</url>
   <supportContact>hello@memfault.com</supportContact>
   <repository type="git">https://github.com/{GITHUB_REPO}.git</repository>
-  <changeLogs>
-    <changelog id="all" default="true" name="CHANGES.md"/>
-  </changeLogs>
+  <changelogs>
+    <changelog id="all" default="true" name="CHANGELOG.md"/>
+  </changelogs>
   <license>License.txt</license>
   <licenseSets>
     <licenseSet id="all" default="true" gating="true">
@@ -83,7 +83,7 @@ PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 PIDX_TEMPLATE = """<?xml version='1.0' encoding='UTF-8'?>
-<index xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.1.1" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/v1.7.27/schema/PackIndex.xsd">
+<index xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="1.1.1" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/Open-CMSIS-Pack/Open-CMSIS-Pack-Spec/v1.7.28/schema/PackIndex.xsd">
     <vendor>Memfault</vendor>
     <url>https://github.com/{GITHUB_REPO}/releases/latest/download/</url>
     <timestamp>{TIMESTAMP}</timestamp>
@@ -324,7 +324,7 @@ def build_cmsis_pack(
             shutil.copytree(f"{memfault_sdk_dir}/{directory}", f"{tmpdir_str}/{directory}")
 
         aux_files = [
-            "CHANGES.md",
+            "CHANGELOG.md",
             "License.txt",
             "README.md",
         ]

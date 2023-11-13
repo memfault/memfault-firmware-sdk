@@ -87,10 +87,8 @@ void __wrap_mbedtls_free(void *ptr) {
 }
 
 void memfault_mbedtls_heartbeat_collect_data(void) {
-  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(mbedtls_mem_used_bytes),
-                                        s_mbedtls_mem_used);
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(mbedtls_mem_max_bytes),
-                                          s_mbedtls_mem_max);
+  MEMFAULT_HEARTBEAT_SET_SIGNED(mbedtls_mem_used_bytes, s_mbedtls_mem_used);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(mbedtls_mem_max_bytes, s_mbedtls_mem_max);
 }
 
 void memfault_mbedtls_test_clear_values(void) {

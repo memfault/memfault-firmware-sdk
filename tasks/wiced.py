@@ -3,6 +3,7 @@
 # See License.txt for details
 #
 
+import contextlib
 import os
 import sys
 from glob import glob
@@ -105,10 +106,8 @@ def wiced_gdb(ctx, elf=DEMO_APP_ELF, gdb=3333):
     with ctx.cd(WICED_SDK_43X_ROOT):
         # Remove the generated .gdbinit -- running openocd using "shell start" within gdb doesn't seem to work very
         # reliably across board resets for some reason...
-        try:
+        with contextlib.suppress(FileNotFoundError):
             os.unlink(WICED_GDBINIT)
-        except FileNotFoundError:
-            pass
         cmd = gdb_build_cmd(None, elf, gdb, reset=False)
         ctx.run(cmd, pty=True)
 

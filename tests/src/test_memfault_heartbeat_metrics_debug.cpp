@@ -61,9 +61,9 @@ static void prv_debug_print_expectations(eMemfaultPlatformLogLevel level, const 
 }
 
 void memfault_metrics_heartbeat_collect_data(void) {
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(test_key_unsigned), 1234);
-  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(test_key_signed), -100);
-  memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(test_key_string), "heyo!");
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(test_key_unsigned, 1234);
+  MEMFAULT_HEARTBEAT_SET_SIGNED(test_key_signed, -100);
+  MEMFAULT_HEARTBEAT_SET_STRING(test_key_string, "heyo!");
 
   // add a call here to ensure it doesn't recurse endlessly. customers may be
   // using this pattern
@@ -115,7 +115,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   mock().checkExpectations();
 
   s_boot_time_ms = 678;
-  memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(test_key_timer));
+  MEMFAULT_HEARTBEAT_TIMER_START(test_key_timer);
   s_boot_time_ms = 5678;
 
   // debug trigger will update, save, and zero the values
@@ -166,7 +166,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_add_non_null,
                                MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));
   // call add on this metric alone and confirm it is set
-  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(test_key_unsigned), 123);
+  MEMFAULT_HEARTBEAT_ADD(test_key_unsigned, 123);
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
 }

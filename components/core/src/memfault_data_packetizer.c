@@ -293,6 +293,7 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
   if (*buf_len == 0) {
     MEMFAULT_LOG_ERROR("Buffer of %d bytes too small to packetize data",
                        (int)original_size);
+    return kMemfaultPacketizerStatus_NoMoreData;
   }
 
   if (!md) {

@@ -232,7 +232,7 @@ static void prv_poster_task(void *args) {
 
   while (true) {
     // count the number of times this task has run
-    memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(PosterTaskNumSchedules), 1);
+    MEMFAULT_HEARTBEAT_ADD(PosterTaskNumSchedules, 1);
     // attempt to autojoin wifi, if configured
     memfault_esp_port_wifi_autojoin();
 

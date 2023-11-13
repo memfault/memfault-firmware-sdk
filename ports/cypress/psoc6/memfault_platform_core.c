@@ -45,15 +45,12 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
   const uint32_t heap_total_size = (uint32_t)&__HeapLimit - (uint32_t)&__HeapBase;
 
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_TotalSize),
-                                          heap_total_size);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_TotalSize, heap_total_size);
 
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_MinBytesFree),
-                                          heap_total_size - mall_info.arena);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MinBytesFree, heap_total_size - mall_info.arena);
 
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Heap_BytesFree),
-                                          heap_total_size - mall_info.uordblks);
-#endif /* defined(__GNUC__) && !defined(__ARMCC_VERSION) */
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_BytesFree, heap_total_size - mall_info.uordblks);
+  #endif /* defined(__GNUC__) && !defined(__ARMCC_VERSION) */
 #endif /* MEMFAULT_PORT_MEMORY_TRACKING_ENABLED */
 
 #if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
@@ -62,20 +59,18 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   if (result == CY_RSLT_SUCCESS) {
     // Note: RSSI in dBm. (<-90=Very poor, >-30=Excellent)
     // A good way to determine whether or not issues an device is facing are due to poor signal strength
-    memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(Wifi_SignalStrength),
-                                          ap_info.signal_strength);
+    MEMFAULT_HEARTBEAT_SET_SIGNED(Wifi_SignalStrength, ap_info.signal_strength);
 
-    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Wifi_Channel),
-                                            ap_info.channel);
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(Wifi_Channel, ap_info.channel);
   }
 
   cy_wcm_wlan_statistics_t curr_stat;
   result = cy_wcm_get_wlan_statistics(CY_WCM_INTERFACE_TYPE_STA, &curr_stat);
   if (result == CY_RSLT_SUCCESS) {
-    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Wifi_TxBytes),
-                                            curr_stat.tx_bytes - s_last_wlan_statistics.tx_bytes);
-    memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(Wifi_TxBytes),
-                                            curr_stat.rx_bytes - s_last_wlan_statistics.rx_bytes);
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(Wifi_TxBytes,
+                                    curr_stat.tx_bytes - s_last_wlan_statistics.tx_bytes);
+    MEMFAULT_HEARTBEAT_SET_UNSIGNED(Wifi_TxBytes,
+                                    curr_stat.rx_bytes - s_last_wlan_statistics.rx_bytes);
     s_last_wlan_statistics = curr_stat;
   }
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
@@ -86,29 +81,29 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 static void prv_wcm_event_cb(cy_wcm_event_t event, cy_wcm_event_data_t *event_data) {
   switch (event) {
     case CY_WCM_EVENT_CONNECTING:
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(Wifi_ConnectingTime));
+      MEMFAULT_HEARTBEAT_TIMER_START(Wifi_ConnectingTime);
       break;
 
     case CY_WCM_EVENT_CONNECTED:
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Wifi_ConnectingTime));
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(Wifi_ConnectedTime));
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Wifi_ConnectCount), 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Wifi_ConnectingTime);
+      MEMFAULT_HEARTBEAT_TIMER_START(Wifi_ConnectedTime);
+      MEMFAULT_HEARTBEAT_ADD(Wifi_ConnectCount, 1);
       break;
 
     case CY_WCM_EVENT_CONNECT_FAILED:
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Wifi_ConnectFailureCount), 1);
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Wifi_ConnectingTime));
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Wifi_ConnectedTime));
+      MEMFAULT_HEARTBEAT_ADD(Wifi_ConnectFailureCount, 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Wifi_ConnectingTime);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Wifi_ConnectedTime);
       break;
 
     case CY_WCM_EVENT_RECONNECTED:
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Wifi_ReconnectCount), 1);
-      memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(Wifi_ConnectedTime));
+      MEMFAULT_HEARTBEAT_ADD(Wifi_ReconnectCount, 1);
+      MEMFAULT_HEARTBEAT_TIMER_START(Wifi_ConnectedTime);
       break;
 
     case CY_WCM_EVENT_DISCONNECTED:
-      memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(Wifi_ConnectedTime));
-      memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(Wifi_DisconnectCount), 1);
+      MEMFAULT_HEARTBEAT_TIMER_STOP(Wifi_ConnectedTime);
+      MEMFAULT_HEARTBEAT_ADD(Wifi_DisconnectCount, 1);
       break;
 
     case CY_WCM_EVENT_IP_CHANGED:

@@ -586,8 +586,7 @@ static void prv_reset_metrics(void) {
   // This must be explicitly set because we use 0 to track number of operational hours
   // Without setting to 0, this defaults to null and will not be counted in the sum
   // of total operational hours
-  memfault_metrics_heartbeat_set_unsigned(
-    MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootDidOccur), 0);
+  MEMFAULT_HEARTBEAT_SET_UNSIGNED(MemfaultSdkMetric_UnexpectedRebootDidOccur, 0);
 }
 
 static void prv_heartbeat_timer_update(void) {
@@ -869,8 +868,8 @@ static int prv_init_unexpected_reboot_metric(void) {
     return -1;
   }
 
-  return memfault_metrics_heartbeat_set_unsigned(
-    MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootDidOccur), unexpected_reboot ? 1 : 0);
+  return MEMFAULT_HEARTBEAT_SET_UNSIGNED(MemfaultSdkMetric_UnexpectedRebootDidOccur,
+                                         unexpected_reboot ? 1 : 0);
 }
 
 int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
@@ -893,14 +892,13 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
     return MEMFAULT_METRICS_STORAGE_TOO_SMALL;
   }
 
-  int rv = memfault_metrics_heartbeat_timer_start(
-      MEMFAULT_METRICS_KEY(MemfaultSdkMetric_IntervalMs));
+  int rv = MEMFAULT_HEARTBEAT_TIMER_START(MemfaultSdkMetric_IntervalMs);
   if (rv != 0) {
     return rv;
   }
 
-  rv = memfault_metrics_heartbeat_set_unsigned(
-      MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootCount), info->unexpected_reboot_count);
+  rv = MEMFAULT_HEARTBEAT_SET_UNSIGNED(MemfaultSdkMetric_UnexpectedRebootCount,
+                                       info->unexpected_reboot_count);
   if (rv != 0) {
     return rv;
   }

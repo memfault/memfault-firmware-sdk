@@ -137,7 +137,9 @@ def arduinoify_memfault_sdk(sdk_root_dir: str, result_dir: str, port: str):
     # Up level a few files to the root of the repo
     shutil.move(os.path.join(sdk_root_dir, "License.txt"), os.path.join(library_dir, "LICENSE.txt"))
     shutil.move(os.path.join(sdk_root_dir, "VERSION"), os.path.join(library_dir, "VERSION"))
-    shutil.move(os.path.join(sdk_root_dir, "CHANGES.md"), os.path.join(library_dir, "CHANGES.md"))
+    shutil.move(
+        os.path.join(sdk_root_dir, "CHANGELOG.md"), os.path.join(library_dir, "CHANGELOG.md")
+    )
     shutil.move(sdk_root_dir, os.path.join(library_dir, "src", "memfault-firmware-sdk"))
 
     logging.debug("Patched SDK Generation Success! %s", library_dir)

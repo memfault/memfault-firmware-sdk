@@ -42,6 +42,17 @@ int memfault_demo_cli_cmd_export(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char 
   return 0;
 }
 
+// Provide weak implementations in the case where the metrics component is not enabled
+MEMFAULT_WEAK
+void memfault_metrics_heartbeat_debug_print(void) {
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+}
+
+MEMFAULT_WEAK
+void memfault_metrics_heartbeat_debug_trigger(void) {
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+}
+
 int memfault_demo_cli_cmd_heartbeat_dump(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   memfault_metrics_heartbeat_debug_print();
   return 0;
