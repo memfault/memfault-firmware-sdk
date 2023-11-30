@@ -93,7 +93,7 @@ def fw_sdk_unit_test(
     make_options.extend(["-j", str(cpus)])
 
     # force colorized cpputest output
-    env_dict["CPPUTEST_EXE_FLAGS"] = "-c"
+    env_dict["CPPUTEST_EXE_FLAGS"] = "-c " + os.environ.get("CPPUTEST_EXE_FLAGS", "")
 
     # force compiler colored output; it detects as running in a non-tty but the
     # color output is useful

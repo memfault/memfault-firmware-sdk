@@ -19,8 +19,8 @@ static void prv_run_metrics_task(MEMFAULT_UNUSED void* pvParameters) {
     HeapStats_t stats = {0};
 
     vPortGetHeapStats(&stats);
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(Example_HeapFreeBytes, stats.xAvailableHeapSpaceInBytes);
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(Example_HeapMinFreeBytes, stats.xMinimumEverFreeBytesRemaining);
+    MEMFAULT_METRIC_SET_UNSIGNED(Example_HeapFreeBytes, stats.xAvailableHeapSpaceInBytes);
+    MEMFAULT_METRIC_SET_UNSIGNED(Example_HeapMinFreeBytes, stats.xMinimumEverFreeBytesRemaining);
     vTaskDelay((1000 * 10) / portTICK_PERIOD_MS);
   }
 }

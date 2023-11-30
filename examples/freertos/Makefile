@@ -33,6 +33,8 @@ CC := ccache $(CC)
 CXX := ccache $(CXX)
 endif
 OBJCOPY ?= $(shell $(CC) -print-prog-name=objcopy)
+SIZE ?= $(shell $(CC) -print-prog-name=size)
+READELF ?= $(shell $(CC) -print-prog-name=readelf)
 
 # Check if FreeRTOS location set, add rule to download if not
 ifeq ($(FREERTOS_DIR),)
@@ -130,18 +132,34 @@ all: $(ELF)
 # Require clone to complete as prereq for sources
 $(SRCS): $(FREERTOS_DIR)/.clonedone
 
+# Store computed cflags in a file; it's a prerequisite for all objects. Use a
+# shell hack to check if the current cflags are different from the stored file,
+# and make it out of date if so
+# If CFLAGS differ from last build, rebuild all files
+RAW_CFLAGS := $(CFLAGS) $(LDFLAGS)
+CFLAGS_STALE = \
+  $(shell \
+    if ! (echo "$(RAW_CFLAGS)" | diff -q $(BUILD_DIR)/cflags - > /dev/null 2>&1); then \
+      echo CFLAGS_STALE; \
+    fi \
+   )
+.PHONY: CFLAGS_STALE
+$(BUILD_DIR)/cflags: $(CFLAGS_STALE) Makefile
+	mkdir -p $(dir $@)
+	echo "$(RAW_CFLAGS)" > $@
+
 # Add rules for patched build objects from SDK
-$(BUILD_DIR)/memfault-firmware-sdk/%.c.o: $(MEMFAULT_SDK_ROOT)/%.c
+$(BUILD_DIR)/memfault-firmware-sdk/%.c.o: $(MEMFAULT_SDK_ROOT)/%.c $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
-$(BUILD_DIR)/%.c.o: %.c
+$(BUILD_DIR)/%.c.o: %.c $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
-$(BUILD_DIR)/%.cpp.o: %.cpp
+$(BUILD_DIR)/%.cpp.o: %.cpp $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CXX) -std=gnu++11 $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
@@ -154,6 +172,9 @@ $(ELF): $(ELF).uncompressed
 	echo -n 'Compressing debug info... '
 	$(OBJCOPY) --compress-debug-sections $^ $@
 	echo From $$("$(STAT)" $^) to $$("$(STAT)" $@) bytes
+	$(SIZE) $@
+	$(READELF) -n $@ | grep 'Build ID'
+
 
 -include $(OBJS:.o=.d)
 

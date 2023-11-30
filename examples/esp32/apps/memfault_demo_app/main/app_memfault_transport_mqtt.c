@@ -59,7 +59,7 @@ static void prv_close_client(void) {
   if (rv) {
     ESP_LOGW(TAG, "Failed to destroy client[%d]", rv);
   }
-  MEMFAULT_HEARTBEAT_TIMER_STOP(mqtt_conn_uptime);
+  MEMFAULT_METRIC_TIMER_STOP(mqtt_conn_uptime);
 
   s_mqtt_client = NULL;
 }
@@ -91,14 +91,14 @@ static int prv_create_client(void) {
   rv = xSemaphoreTake(s_mqtt_connected, (1000 * 10) / portTICK_PERIOD_MS);
   if (rv != pdTRUE) {
     ESP_LOGE(TAG, "MQTT client failed to connect[%d]", rv);
-    MEMFAULT_HEARTBEAT_TIMER_START(mqtt_conn_downtime);
+    MEMFAULT_METRIC_TIMER_START(mqtt_conn_downtime);
     prv_close_client();
     return -1;
   }
 
   // Update connection metrics when connected
-  MEMFAULT_HEARTBEAT_TIMER_STOP(mqtt_conn_downtime);
-  MEMFAULT_HEARTBEAT_TIMER_START(mqtt_conn_uptime);
+  MEMFAULT_METRIC_TIMER_STOP(mqtt_conn_downtime);
+  MEMFAULT_METRIC_TIMER_START(mqtt_conn_uptime);
 
   // Set topic alias before publishing
   rv = esp_mqtt5_client_set_publish_property(s_mqtt_client, &s_publish_property);
@@ -161,8 +161,8 @@ int app_memfault_transport_send_chunks(void) {
       break;
     }
 
-    MEMFAULT_HEARTBEAT_ADD(mqtt_publish_bytes, chunk_size);
-    MEMFAULT_HEARTBEAT_ADD(mqtt_publish_count, 1);
+    MEMFAULT_METRIC_ADD(mqtt_publish_bytes, chunk_size);
+    MEMFAULT_METRIC_ADD(mqtt_publish_count, 1);
     ESP_LOGD(TAG, "chunk[%d], len[%zu] published to %s", rv, chunk_size, s_topic_string);
   }
 

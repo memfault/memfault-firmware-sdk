@@ -6,7 +6,13 @@
 // clang-format off
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+
+// for zephyr 3.5.0+, use random.h instead of rand32.h
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 4)
+#include MEMFAULT_ZEPHYR_INCLUDE(random/random.h)
+#else
 #include MEMFAULT_ZEPHYR_INCLUDE(random/rand32.h)
+#endif
 
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"

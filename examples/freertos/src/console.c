@@ -40,6 +40,43 @@ static void prv_console_input_task(MEMFAULT_UNUSED void *pvParameters) {
   }
 }
 
+// shell extensions
+#if defined(MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS)
+static int prv_freertos_vassert_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  printf("Triggering vAssertCalled!\n");
+  configASSERT(0);
+  return 0;
+}
+// print all task information
+static int prv_freertos_tasks_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  size_t task_count = uxTaskGetNumberOfTasks();
+  // 100 bytes per task should be enough™️
+  char *write_buf = pvPortMalloc(task_count * 100);
+
+  vTaskList(write_buf);
+
+  puts(write_buf);
+
+  vPortFree(write_buf);
+
+  return 0;
+}
+static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
+  {
+    .command = "freertos_vassert",
+    .handler = prv_freertos_vassert_cmd,
+    .help = "Example command",
+  },
+  {
+    .command = "freertos_tasks",
+    .handler = prv_freertos_tasks_cmd,
+    .help = "Print all FreeRTOS tasks",
+  },
+};
+#endif
+
 void console_task_init(void) {
   xTaskCreateStatic(
     prv_console_input_task,                        /* Function that implements the task. */
@@ -51,6 +88,11 @@ void console_task_init(void) {
     &console_input_task);
 
   //! We will use the Memfault CLI shell as a very basic debug interface
+#if defined(MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS)
+  memfault_shell_command_set_extensions(
+    s_freertos_example_shell_extension_list,
+    MEMFAULT_ARRAY_SIZE(s_freertos_example_shell_extension_list));
+#endif
   const sMemfaultShellImpl impl = {
     .send_char = prv_send_char,
   };

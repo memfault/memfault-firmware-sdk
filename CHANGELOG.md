@@ -1,5 +1,124 @@
 # Memfault Firmware SDK Changelog
 
+## [1.5.0] - 2023-11-29
+
+### :rocket: New Features
+
+- General:
+
+  - Added support for Session Metrics. These are similar to Heartbeat Metrics,
+    except they are set on an arbitrary session interval (not required to be
+    aligned to Heartbeat interval). Session metrics are useful for tracking
+    device operation sessions- for example, measuring properties for a BLE
+    connected stove top during a single cooking session. Session metrics
+    automatically include a "session duration" timer metric.
+
+    Session metrics must be defined using the new session-specific APIs, but are
+    set using the same `MEMFAULT_METRIC_SET_*` APIs as Heartbeat metrics.
+
+    See the
+    [`metrics.h` header file](components/include/memfault/metrics/metrics.h) for
+    usage details.
+
+  - New built in metrics for measuring the following properties:
+
+    - **crash-free hours**: enabled by default, generates `operational_hours`
+      and `operational_crashfree_hours` metrics, which are automatically
+      processed by Memfault
+
+    - **battery drop**: enabled with `#define MEMFAULT_METRICS_BATTERY_ENABLE 1`
+      in `memfault_platform_config.h`. See more information in the
+      [header file](components/include/memfault/metrics/battery.h) for how to
+      use the metric.
+
+    - **connectivity**: enabled with
+      `MEMFAULT_METRICS_SYNC_SUCCESS`/`MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS`/`MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME`.
+      See more information in the
+      [header file](components/include/memfault/metrics/connectivity.h) for how
+      to use the metric.
+
+    These metrics are considered first-class metrics by Memfault, are exempt
+    from quota limits, and are automatically processed by Memfault.
+
+- Zephyr:
+
+  - By default, set the `sync_memfault_successful`/`sync_memfault_failure`
+    metrics for devices using Memfault's Zephyr HTTP chunk upload functionality.
+    This feature is controlled with the `CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS`
+    Kconfig flag.
+
+  - Automatically set captured timestamps for events for devices that either
+    implement the RTC subsystem, or use the Nordic `date_time` library. The
+    appropriate option is enabled by default based on which features are
+    available, and can be controlled with the Kconfig flags:
+    `CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME` or
+    `CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_RTC`.
+
+- ESP-IDF:
+
+  - By default, set the `sync_memfault_successful`/`sync_memfault_failure`
+    metrics for devices using Memfault's ESP-IDF HTTP chunk upload
+    functionality. This feature is controlled with the
+    `CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS` Kconfig flag.
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Add the ability to extend the Memfault Demo Shell command table with custom
+    commands. This is used in the [`examples/freertos`](examples/freertos) demo
+    project to add 2 new commands:
+
+    - `freertos_tasks` : print FreeRTOS task information, via `vTaskList()`
+    - `freertos_vassert` : trigger a `vAssertCalled` FreeRTOS assert, via
+      `configASSERT()`
+
+    The Shell extension API is documented in
+    [`components/include/memfault/demo/shell_commands.h`](components/include/memfault/demo/shell_commands.h),
+    and must be enabled by setting
+    `#define MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS 1` in
+    `memfault_platform_config.h`.
+
+- Zephyr:
+
+  - Remove a warning in Zephyr 3.5+ where the `zephyr/random/rand32.h` header
+    was renamed to `zephyr/random/random.h`. This was reported in
+    [#66](https://github.com/memfault/memfault-firmware-sdk/issues/66)- thanks
+    to @nordicjm for reporting this!
+
+  - Add test commands for exercising Secure Faults in ARM TrustZone-enabled
+    chips:
+
+    - `mflt test badptr`
+    - `mflt test isr_badptr`
+
+    Note that non-TrustZone chips may not trigger a fault when running those
+    commands.
+
+- nRF-Connect SDK:
+
+  - Add the `CONFIG_AT_SHELL` setting to the
+    [`examples/nrf-connect-sdk/nrf9160`](nrf-connect-sdk/nrf9160) sample app.
+    This permits sending raw AT commands, useful for testing.
+
+  - Specific to nRF-Connect based apps using FOTA, add a warning if
+    `CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE > 1024`, which can sporadically error
+    out on nRF9160 devices (there is a limitation in the modem, see
+    `CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_2048=y`) and DevZone note
+    [here](https://devzone.nordicsemi.com/f/nordic-q-a/68601/tls-2303-bytes-packet-limit/281107).
+
+  - Improve FOTA support for nRF-Connect SDK 2.4+, by improving the technique
+    used to find the correct Memfault server root cert. Memfault uses a fast CDN
+    to improve OTA payload delivery, which uses a different root cert than the
+    Memfault device server. Please contact support@memfault.com immediately if
+    you encounter any cert-related issues.
+
+### :boom: Breaking Changes
+
+- The metrics convenience API added in v1.4.3 (`MEMFAULT_HEARTBEAT_SET_*` and
+  others) have been renamed to `MEMFAULT_METRIC_SET_*`, to better support the
+  new Session Metric feature.
+
 ## [1.4.4] - 2023-11-13
 
 ### :chart_with_upwards_trend: Improvements
@@ -19,7 +138,7 @@
     with `0` bytes loaded into the output buffer and `*buf_len` set to `0`.
 
   - Update all example Metrics implementations to use the new API from v1.4.3
-    (eg `MEMFAULT_HEARTBEAT_SET_UNSIGNED` instead of
+    (eg `MEMFAULT_METRIC_SET_UNSIGNED` instead of
     `memfault_metrics_heartbeat_set_unsigned`).
 
   - Fix compilation for systems not integrating the
@@ -34,12 +153,12 @@
 
   - Add a new streamlined Metrics setter API:
 
-    - `MEMFAULT_HEARTBEAT_SET_SIGNED(key_name, signed_value)`
-    - `MEMFAULT_HEARTBEAT_SET_UNSIGNED(key_name, unsigned_value)`
-    - `MEMFAULT_HEARTBEAT_SET_STRING(key_name, value)`
-    - `MEMFAULT_HEARTBEAT_TIMER_START(key_name)`
-    - `MEMFAULT_HEARTBEAT_TIMER_STOP(key_name)`
-    - `MEMFAULT_HEARTBEAT_ADD(key_name, amount)`
+    - `MEMFAULT_METRIC_SET_SIGNED(key_name, signed_value)`
+    - `MEMFAULT_METRIC_SET_UNSIGNED(key_name, unsigned_value)`
+    - `MEMFAULT_METRIC_SET_STRING(key_name, value)`
+    - `MEMFAULT_METRIC_TIMER_START(key_name)`
+    - `MEMFAULT_METRIC_TIMER_STOP(key_name)`
+    - `MEMFAULT_METRIC_ADD(key_name, amount)`
 
     These APIs can be used in place of the original APIs:
 
@@ -70,6 +189,12 @@
 
   - Add a new out-of-box metric, `wifi_ap_oui`, which will record the associated
     AP's Organizationally Unique Identifier (OUI) in the Memfault heartbeat.
+
+- Zephyr:
+
+  - Organize the Memfault Coredump Kconfig settings under a
+    `Memfault Coredump Settings` submenu, for easier navigation when using
+    graphical Kconfig frontends like menuconfig.
 
 ### :chart_with_upwards_trend: Improvements
 

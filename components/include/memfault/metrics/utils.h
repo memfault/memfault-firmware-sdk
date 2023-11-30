@@ -30,6 +30,7 @@ typedef struct {
   eMemfaultMetricType type;
   bool is_set;
   union MemfaultMetricValue val;
+  eMfltMetricsSessionIndex session_key;
 } sMemfaultMetricInfo;
 
 //! The callback invoked when "memfault_metrics_heartbeat_iterate" is called
@@ -43,8 +44,11 @@ typedef bool (*MemfaultMetricIteratorCallback)(void *ctx, const sMemfaultMetricI
 
 void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void *ctx);
 
-//! @return the number of metrics being required
+//! @return the number of metrics being required for a heartbeat
 size_t memfault_metrics_heartbeat_get_num_metrics(void);
+
+//! @return the number of metrics being required for a given session
+size_t memfault_metrics_session_get_num_metrics(eMfltMetricsSessionIndex session_key);
 
 #ifdef __cplusplus
 }

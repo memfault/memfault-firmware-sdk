@@ -78,7 +78,7 @@ config BLINK_GPIO
         GPIO number (IOxx) to blink on and off or the RMT signal for the addressable LED.
         Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
 
-# esp32c3 specific settings
+# esp32c3/c6 specific settings
 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
     # Default optimize for size due to increase in binary size
     # This can be changed in root -> Compiler Options

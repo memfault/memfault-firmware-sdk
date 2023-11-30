@@ -22,9 +22,9 @@
     uint32_t rx_diff = proto_struct.recv - s_##proto_name##_rx_prev;              \
     uint32_t drop_diff = proto_struct.drop - s_##proto_name##_drop_prev;          \
                                                                                   \
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_tx_count, tx_diff);     \
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_rx_count, rx_diff);     \
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(proto_metric_prefix##_drop_count, drop_diff); \
+    MEMFAULT_METRIC_SET_UNSIGNED(proto_metric_prefix##_tx_count, tx_diff);     \
+    MEMFAULT_METRIC_SET_UNSIGNED(proto_metric_prefix##_rx_count, rx_diff);     \
+    MEMFAULT_METRIC_SET_UNSIGNED(proto_metric_prefix##_drop_count, drop_diff); \
                                                                                   \
     s_##proto_name##_tx_prev += tx_diff;                                          \
     s_##proto_name##_rx_prev += rx_diff;                                          \

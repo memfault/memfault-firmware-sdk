@@ -66,6 +66,7 @@ TEST_GROUP(MfltDemoShell){
     mock().checkExpectations();
     mock().clear();
     prv_reset_sent_buffer();
+    memfault_shell_command_set_extensions(NULL, 0);
   }
 };
 
@@ -175,4 +176,24 @@ TEST(MfltDemoShell, Test_MfltDemoShellNotBooted) {
 
   prv_receive_str("test 1\n");
   LONGS_EQUAL(0, s_num_chars_sent);
+}
+
+TEST(MfltDemoShell, Test_Extension_Commands) {
+  // baseline, test help output
+  prv_receive_str("help\n");
+
+  STRCMP_EQUAL("help\r\ntest: test command\r\nhelp: Lists all commands\r\nmflt> ",
+               s_chars_sent_buffer);
+  prv_reset_sent_buffer();
+
+  // attach an extension command table
+  static const sMemfaultShellCommand s_extension_commands[] = {
+    {"test2", prv_test_handler, "test2 command"},
+  };
+  memfault_shell_command_set_extensions(s_extension_commands,
+                                        MEMFAULT_ARRAY_SIZE(s_extension_commands));
+  prv_receive_str("help\n");
+  STRCMP_EQUAL(
+    "help\r\ntest: test command\r\nhelp: Lists all commands\r\ntest2: test2 command\r\nmflt> ",
+    s_chars_sent_buffer);
 }

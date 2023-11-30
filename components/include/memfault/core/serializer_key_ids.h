@@ -41,6 +41,7 @@ typedef enum {
 //! EventInfo dictionary keys for events with type kMemfaultEventType_Heartbeat.
 typedef enum {
   kMemfaultHeartbeatInfoKey_Metrics = 1,
+  kMemfaultHeartbeatInfoKey_Session = 2,
 } eMemfaultHeartbeatInfoKey;
 
 //! EventInfo dictionary keys for events with type kMemfaultEventType_Trace.

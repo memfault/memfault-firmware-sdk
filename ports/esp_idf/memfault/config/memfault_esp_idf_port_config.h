@@ -17,7 +17,12 @@ extern "C" {
 
 #include "sdkconfig.h"
 
-// Pick up any user configuration overrides
+#if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+  #define MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS 1
+#endif
+
+// Pick up any user configuration overrides. This should be kept at the bottom
+// of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
 
   #if __has_include(CONFIG_MEMFAULT_PLATFORM_CONFIG_FILE)

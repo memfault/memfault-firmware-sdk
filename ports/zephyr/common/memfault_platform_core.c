@@ -10,6 +10,10 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log_ctrl.h)
 #include <soc.h>
+#if defined(CONFIG_MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK)
+#include <date_time.h>
+#include "memfault/ports/ncs/date_time_callback.h"
+#endif
 
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
@@ -124,6 +128,11 @@ static int prv_init_and_log_reboot() {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
+#endif
+
+#if defined(CONFIG_MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK)
+  // Register a callback to get the current time from the Zephyr Date-Time library
+  date_time_register_handler(memfault_zephyr_date_time_evt_handler);
 #endif
 
   memfault_build_info_dump();

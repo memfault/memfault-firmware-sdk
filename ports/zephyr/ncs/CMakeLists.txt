@@ -12,4 +12,13 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
   add_subdirectory(src)
   zephyr_include_directories(include)
 
+  if (NCS_VERSION_MAJOR)
+    # Note: Starting in nRF Connect SDK >= 1.3, NCS_VERSION_* fields are exposed
+    if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL 2.4.0)
+      # We wrap download_client_get() in order to register multiple root certificates
+      #   See comment in src/memfault_fota.c for more details
+      zephyr_ld_options(-Wl,--wrap=download_client_get)
+    endif()
+  endif()
+
 endif()

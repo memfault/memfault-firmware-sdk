@@ -66,7 +66,7 @@ if(CONFIG_MEMFAULT)
   # supports the Kconfig option 'CONFIG_LEGACY_INCLUDE_PATH' to enable the same
   # compatibility behavior, but it's marked as deprecated and to be removed in
   # the future, so just apply the compatibiltiy fix here.
-  if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99")
+  if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99" AND CONFIG_LEGACY_INCLUDE_PATH)
     zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr)
   endif()
 

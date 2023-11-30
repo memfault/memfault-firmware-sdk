@@ -252,6 +252,24 @@ static int prv_cli_cmd_double_free(const struct shell *shell, size_t argc, char 
   return -1;
 }
 
+static int prv_bad_ptr_deref_example(const struct shell *shell, size_t argc, char **argv) {
+  volatile uint32_t *bad_ptr = (void *)0x1;
+  *bad_ptr = 0xbadcafe;
+  return -1;
+}
+
+static void prv_crash_timer_handler(struct k_timer *dummy) {
+  volatile uint32_t *bad_ptr = (void *)0x1;
+  *bad_ptr = 0xbadcafe;
+}
+
+K_TIMER_DEFINE(s_isr_crash_timer, prv_crash_timer_handler, NULL);
+
+static int prv_timer_isr_crash_example(const struct shell *shell, size_t argc, char **argv) {
+  k_timer_start(&s_isr_crash_timer, K_MSEC(10), K_MSEC(10));
+  return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
   //! different crash types that should result in a coredump being collected
@@ -263,7 +281,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
-  SHELL_CMD(double_free, NULL, "Trigger a double free error", prv_cli_cmd_double_free),
+  SHELL_CMD(double_free, NULL, "trigger a double free error", prv_cli_cmd_double_free),
+  SHELL_CMD(badptr, NULL, "trigger fault via store to a bad address", prv_bad_ptr_deref_example),
+  SHELL_CMD(isr_badptr, NULL, "trigger fault via store to a bad address from an ISR", prv_timer_isr_crash_example),
 
   //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),

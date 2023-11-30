@@ -139,4 +139,11 @@ menu "Memfault"
         default y
         help
             Collects Memfault metrics for basic heap utilization.
+
+    config MEMFAULT_SYNC_MEMFAULT_METRICS
+        bool "Enable sync_memfault_successful metric"
+        default y
+        help
+            Collects Memfault metrics for the number of successful and failed
+            syncs to the Memfault cloud.
 endmenu

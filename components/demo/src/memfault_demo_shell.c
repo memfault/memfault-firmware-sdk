@@ -20,10 +20,22 @@
 #define MEMFAULT_SHELL_MAX_ARGS (16)
 #define MEMFAULT_SHELL_PROMPT "mflt> "
 
-#define MEMFAULT_SHELL_FOR_EACH_COMMAND(command) \
-  for (const sMemfaultShellCommand *command = g_memfault_shell_commands; \
-    command < &g_memfault_shell_commands[g_memfault_num_shell_commands]; \
-    ++command)
+#if defined(MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS)
+  // When the extension list is enabled, iterate over both the core commands and
+  // the extension commands. This construct, despite being pretty intricate,
+  // saves about ~28 bytes of code space over running the iteration twice in a
+  // row, and keeps the iterator in one macro, instead of two.
+  #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                                              \
+    const sMemfaultShellCommand *command = g_memfault_shell_commands;                           \
+    for (size_t i = 0; i < g_memfault_num_shell_commands + s_mflt_shell.num_extension_commands; \
+         ++i, command = (i < g_memfault_num_shell_commands)                                     \
+                          ? &g_memfault_shell_commands[i]                                       \
+                          : &s_mflt_shell.extension_commands[i - g_memfault_num_shell_commands])
+#else
+  #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                         \
+    for (const sMemfaultShellCommand *command = g_memfault_shell_commands; \
+         command < &g_memfault_shell_commands[g_memfault_num_shell_commands]; ++command)
+#endif
 
 static struct MemfaultShellContext {
   int (*send_char)(char c);
@@ -31,6 +43,10 @@ static struct MemfaultShellContext {
   // the char we will ignore when received end-of-line sequences
   char eol_ignore_char;
   char rx_buffer[MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE];
+#if defined(MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS)
+  const sMemfaultShellCommand *extension_commands;
+  size_t num_extension_commands;
+#endif
 } s_mflt_shell;
 
 static bool prv_booted(void) {
@@ -136,6 +152,14 @@ void memfault_demo_shell_boot(const sMemfaultShellImpl *impl) {
   prv_reset_rx_buffer();
   prv_echo_str("\n" MEMFAULT_SHELL_PROMPT);
 }
+
+#if defined(MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS)
+void memfault_shell_command_set_extensions(const sMemfaultShellCommand *const commands,
+                                           size_t num_commands) {
+  s_mflt_shell.extension_commands = commands;
+  s_mflt_shell.num_extension_commands = num_commands;
+}
+#endif
 
 //! Logic to deal with CR, LF, CRLF, or LFCR end-of-line (EOL) sequences
 //! @return true if the character should be ignored, false otherwise

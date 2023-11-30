@@ -8,7 +8,6 @@ A small wrapper around the Make-based unit test driver, to provide a pytest
 front-end for running the tests.
 """
 
-
 import subprocess
 from pathlib import Path
 

@@ -296,6 +296,26 @@ extern "C" {
   "memfault_metrics_heartbeat_config.def"
 #endif
 
+//! Enable the sync_successful metric API
+#ifndef MEMFAULT_METRICS_SYNC_SUCCESS
+#define MEMFAULT_METRICS_SYNC_SUCCESS 0
+#endif
+
+//! Enable the sync_memfault_successful metric API
+#ifndef MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
+#define MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS 0
+#endif
+
+//! Enable the connectivity_connected_time_ms metric API
+#ifndef MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+#define MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME 0
+#endif
+
+//! Enable the battery metrics API
+#ifndef MEMFAULT_METRICS_BATTERY_ENABLE
+#define MEMFAULT_METRICS_BATTERY_ENABLE 0
+#endif
+
 //
 // Panics Component Configs
 //

@@ -16,16 +16,20 @@
 #include <stddef.h>
 
 #include "memfault/core/event_storage.h"
+#include "memfault/metrics/ids_impl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//! Compute the worst case number of bytes required to serialize Memfault data
+//! Compute the worst case number of bytes required to serialize Memfault metrics for a heartbeat.
 //!
 //! @return the worst case amount of space needed to serialize an event
 size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void);
 
+//! Compute the worst case number of bytes required to serialize Memfault metrics for a given
+//! session
+size_t memfault_metrics_session_compute_worst_case_storage_size(eMfltMetricsSessionIndex session);
 
 //! Serialize out the current set of heartbeat metrics
 //!
@@ -33,6 +37,8 @@ size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void);
 //! to serialize the data
 bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *storage_impl);
 
+bool memfault_metrics_session_serialize(const sMemfaultEventStorageImpl *storage_impl,
+                                        eMfltMetricsSessionIndex session);
 
 #ifdef __cplusplus
 }

@@ -37,6 +37,14 @@ else() # nRF Connect SDK Version >= 1.3.0
   set(CONFIG_SHELL_LOG_BACKEND n CACHE INTERNAL "")
 endif()
 
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.4)
+else() # nRF Connect SDK Version >= 1.4.0
+  # We need the response for a FOTA download request to fit within a 2kB buffer (space nRF91 modem
+  # allocates). This parameter bounds this size by controlling the maximum amount of data we
+  # request in an HTTP get range request.
+  set(CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_1024 y CACHE INTERNAL "")
+endif()
+
 if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.5)
   # Legacy name for CONFIG_DEBUG_THREAD_INFO needed for nRF Connect version <= 1.5
   # due to the version of Zephyr included (pre v2.5)
@@ -109,6 +117,11 @@ if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL
   # These are required for NCS >= 2.4
   set(CONFIG_FLASH_MAP y CACHE INTERNAL "")
   set(CONFIG_STREAM_FLASH y CACHE INTERNAL "")
+
+  set(CONFIG_AT_SHELL y CACHE INTERNAL "")
+  # Make it possible to send AT commands ending with a "?"
+  #  https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.4.2/nrf/libraries/modem/at_shell.html
+  set(CONFIG_SHELL_WILDCARD n CACHE INTERNAL "")
 endif()
 
 # Required for app to compile against nRF Connect SDK <= v1.2

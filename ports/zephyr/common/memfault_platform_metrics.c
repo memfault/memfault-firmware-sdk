@@ -50,7 +50,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   // k_thread_stack_space_get() introduced in v2.2.0
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);
+  MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);
 #endif
 
 #if defined(CONFIG_THREAD_RUNTIME_STATS)
@@ -82,7 +82,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #endif
 
   sys_heap_runtime_stats_get(&_system_heap, &stats);
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_BytesFree, stats.free_bytes);
+  MEMFAULT_METRIC_SET_UNSIGNED(Heap_BytesFree, stats.free_bytes);
 #endif /* defined(CONFIG_SYS_HEAP_RUNTIME_STATS) */
 
 #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
@@ -92,7 +92,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
     if (retval == 0) {
       // compute free bytes
       uint32_t bytes_free = fs_stats.f_frsize * fs_stats.f_bfree;
-      MEMFAULT_HEARTBEAT_SET_UNSIGNED(FileSystem_BytesFree, bytes_free);
+      MEMFAULT_METRIC_SET_UNSIGNED(FileSystem_BytesFree, bytes_free);
     }
   }
 #endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */

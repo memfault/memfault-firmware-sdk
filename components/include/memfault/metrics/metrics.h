@@ -62,7 +62,8 @@ typedef enum MemfaultMetricValueType {
 //!
 //! // memfault_metrics_heartbeat_config.def
 //! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(battery_level, kMemfaultMetricType_Unsigned, 0, 100)
-//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(ambient_temperature_celcius, kMemfaultMetricType_Signed, -40, 40)
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(ambient_temperature_celcius, kMemfaultMetricType_Signed,
+//! -40, 40)
 //!
 //! @param key_name The name of the key, without quotes. This gets surfaced in the Memfault UI, so
 //! it's useful to make these names human readable. C variable naming rules apply.
@@ -71,8 +72,8 @@ typedef enum MemfaultMetricValueType {
 //! @param max_value A hint as to what the expected maximum value of the metric will be
 //!
 //! @note min_value & max_value are used to define an expected range for a given metric.
-//! This information is used in the Memfault cloud to normalize the data to a range of your choosing.
-//! Metrics will still be ingested _even_ if they are outside the range defined.
+//! This information is used in the Memfault cloud to normalize the data to a range of your
+//! choosing. Metrics will still be ingested _even_ if they are outside the range defined.
 //!
 //! @note The definitions here are used to catch accidental usage outside of the
 //! '*_heartbeat_config.def' files; 'MEMFAULT_METRICS_KEY_DEFINE_TRAP_' is a placeholder used to
@@ -84,21 +85,41 @@ typedef enum MemfaultMetricValueType {
   MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE' just with no range hints specified
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Declare a string metric for use in a heartbeat. 'max_length' is the maximum
 //! length of the string recorded to the metric (excluding null terminator).
 //! This declaration also reserves space to hold the string value when the
 //! metric is written.
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Declare a string metric for use in a session. See`MEMFAULT_METRICS_STRING_KEY_DEFINE` for
+//! details.
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
   MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Declare a metric which is tracked in a metric session.
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION', with range hints specified
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                           max_value, session_key)          \
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Define a metric session.
+//!
+//! A metric session is analogous to a heartbeat, but you can use it to track metrics
+//! across an arbitrary event. For example, if you wanted to track battery life over the course of
+//! an LTE session, you could start a session when the LTE modem is powered on and stop the session
+//! when the modem is powered off.
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Uses a metric key. Before you can use a key, it should defined using MEMFAULT_METRICS_KEY_DEFINE
 //! in memfault_metrics_heartbeat_config.def.
-//! @param key_name The name of the key, without quotes, as defined using MEMFAULT_METRICS_KEY_DEFINE.
-#define MEMFAULT_METRICS_KEY(key_name) \
-  _MEMFAULT_METRICS_ID(key_name)
+//! @param key_name The name of the key, without quotes, as defined using
+//! MEMFAULT_METRICS_KEY_DEFINE.
+#define MEMFAULT_METRICS_KEY(key_name) _MEMFAULT_METRICS_ID(key_name)
 
 typedef struct MemfaultMetricsBootInfo {
   //! The number of times the system has rebooted unexpectedly since reporting the last heartbeat
@@ -146,7 +167,7 @@ int memfault_metrics_heartbeat_set_unsigned(MemfaultMetricId key, uint32_t unsig
 //! @param value The new value to set for the metric
 //! @return 0 on success, else error code
 //! @note The metric must be of type kMemfaultMetricType_String
-int memfault_metrics_heartbeat_set_string(MemfaultMetricId key, const char * value);
+int memfault_metrics_heartbeat_set_string(MemfaultMetricId key, const char *value);
 
 //! Used to start a "timer" metric
 //!
@@ -172,18 +193,18 @@ int memfault_metrics_heartbeat_timer_stop(MemfaultMetricId key);
 int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 
 //! Alternate API that includes the 'MEMFAULT_METRICS_KEY()' expansion
-#define MEMFAULT_HEARTBEAT_SET_SIGNED(key_name, signed_value) \
-  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(key_name), signed_value)
-#define MEMFAULT_HEARTBEAT_SET_UNSIGNED(key_name, unsigned_value) \
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(key_name), unsigned_value)
-#define MEMFAULT_HEARTBEAT_SET_STRING(key_name, value) \
-  memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(key_name), value)
-#define MEMFAULT_HEARTBEAT_TIMER_START(key_name) \
+#define MEMFAULT_METRIC_SET_SIGNED(key_name, signed_value) \
+  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY(key_name), (signed_value))
+#define MEMFAULT_METRIC_SET_UNSIGNED(key_name, unsigned_value) \
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(key_name), (unsigned_value))
+#define MEMFAULT_METRIC_SET_STRING(key_name, value) \
+  memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY(key_name), (value))
+#define MEMFAULT_METRIC_TIMER_START(key_name) \
   memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY(key_name))
-#define MEMFAULT_HEARTBEAT_TIMER_STOP(key_name) \
+#define MEMFAULT_METRIC_TIMER_STOP(key_name) \
   memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(key_name))
-#define MEMFAULT_HEARTBEAT_ADD(key_name, amount) \
-  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(key_name), amount)
+#define MEMFAULT_METRIC_ADD(key_name, amount) \
+  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(key_name), (amount))
 
 //! For debugging purposes: prints the current heartbeat values using
 //! MEMFAULT_LOG_DEBUG(). Before printing, any active timer values are computed.
@@ -193,17 +214,51 @@ int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 //! a metrics collection).
 void memfault_metrics_heartbeat_debug_print(void);
 
-//! For debugging purposes: triggers the heartbeat data collection handler, as if the heartbeat timer
-//! had fired. We recommend also testing that the heartbeat timer fires by itself. To get the periodic data
-//! collection triggering rapidly for testing and debugging, consider using a small value for
-//! MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS.
+//! For debugging purposes: triggers the heartbeat data collection handler, as if the heartbeat
+//! timer had fired. We recommend also testing that the heartbeat timer fires by itself. To get the
+//! periodic data collection triggering rapidly for testing and debugging, consider using a small
+//! value for MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS.
 void memfault_metrics_heartbeat_debug_trigger(void);
 
 //! For debugging and unit test purposes, allows for the extraction of different values
 int memfault_metrics_heartbeat_read_unsigned(MemfaultMetricId key, uint32_t *read_val);
 int memfault_metrics_heartbeat_read_signed(MemfaultMetricId key, int32_t *read_val);
 int memfault_metrics_heartbeat_timer_read(MemfaultMetricId key, uint32_t *read_val);
-int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val, size_t read_val_len);
+int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
+                                           size_t read_val_len);
+
+//! Callback used to collect custom metrics at the end of a session.
+//!
+//! This CB is called when a session is ended. It can be used to collect custom metrics
+//! whose value at the end of a session are all that matters. For example, if you wanted to
+//! track the battery life over the course of an LTE session.
+typedef void (*MemfaultMetricsSessionEndCb)(void);
+
+//! Register a callback to be called when a session is ended.
+//!
+//! @param session_key The key of the session to register the callback for
+//! @param session_end_cb The callback to be called when the session has ended
+void memfault_metrics_session_register_end_cb(eMfltMetricsSessionIndex session_key,
+                                              MemfaultMetricsSessionEndCb session_end_cb);
+
+//! Used to start a metric "session".
+//!
+//! A session is a special type of metric which tracks the time a certain event is active.
+//! For example, if you wanted to track battery life over the course of an LTE session, you could
+//! start a session when the LTE modem is powered on and stop the session when the modem is
+//! powered off.
+int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key);
+
+//! Used to stop a metric "session".
+//!
+//! Same as @memfault_metrics_session_start except for stopping a session.
+int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key);
+
+//! Alternate API that includes the 'MEMFAULT_METRICS_SESSION_KEY()' expansion
+#define MEMFAULT_METRICS_SESSION_START(key) \
+  memfault_metrics_session_start(MEMFAULT_METRICS_SESSION_KEY(key))
+#define MEMFAULT_METRICS_SESSION_END(key) \
+  memfault_metrics_session_end(MEMFAULT_METRICS_SESSION_KEY(key))
 
 //! Collect built-in metrics as part of default ports in memfault-firmware-sdk.
 //!

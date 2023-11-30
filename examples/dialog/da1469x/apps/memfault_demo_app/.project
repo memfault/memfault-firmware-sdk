@@ -245,6 +245,11 @@
 			<locationURI>PARENT-5-PROJECT_LOC/ports/freertos/src/memfault_metrics_freertos.c</locationURI>
 		</link>
 		<link>
+			<name>sdk/memfault_components/memfault_metrics_reliability.c</name>
+			<type>1</type>
+			<location>PARENT-5-PROJECT_LOC/components/metrics/src/memfault_metrics_reliability.c</location>
+		</link>
+		<link>
 			<name>sdk/memfault_components/memfault_metrics_serializer.c</name>
 			<type>1</type>
 			<location>PARENT-5-PROJECT_LOC/components/metrics/src/memfault_metrics_serializer.c</location>

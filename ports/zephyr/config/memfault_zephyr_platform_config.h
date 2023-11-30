@@ -67,9 +67,14 @@ extern "C" {
 #define MEMFAULT_COMPACT_LOG_ENABLE 1
 #endif
 
+#if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+#define MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS 1
+#endif
+
 #if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
 
-// Pick up any user configuration overrides
+// Pick up any user configuration overrides. This should be kept at the bottom
+// of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
 
 # if __has_include("memfault_platform_config.h")

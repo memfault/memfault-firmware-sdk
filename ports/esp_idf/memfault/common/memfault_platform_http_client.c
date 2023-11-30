@@ -116,6 +116,9 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     .cert_pem = g_mflt_http_client_config.disable_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
+  if (!client) {
+    return NULL;
+  }
   esp_http_client_set_header(client, MEMFAULT_HTTP_PROJECT_KEY_HEADER,
                              g_mflt_http_client_config.api_key);
   return (sMfltHttpClient *)client;
@@ -216,6 +219,7 @@ static int prv_get_ota_update_url(char **download_url_out) {
 
   int rv = -1;
   if (http_client == NULL) {
+    MEMFAULT_LOG_ERROR("OTA: failed to create HTTP client");
     return rv;
   }
 
@@ -434,6 +438,13 @@ int memfault_esp_port_http_client_post_data(void) {
     MEMFAULT_LOG_INFO("No new data found");
   } else {
     MEMFAULT_LOG_INFO("Result: %d", (int)rv);
+  #if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+    if (rv == 0) {
+      memfault_metrics_connectivity_record_memfault_sync_success();
+    } else {
+      memfault_metrics_connectivity_record_memfault_sync_failure();
+    }
+  #endif
   }
   const uint32_t timeout_ms = 30 * 1000;
   memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);

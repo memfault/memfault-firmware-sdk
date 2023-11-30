@@ -39,7 +39,7 @@ extern "C" {
 #define MEMFAULT_ENCLOSE_ARROW_BRACKETS(contents) \
   MEMFAULT_IDENT(<)MEMFAULT_IDENT(contents)MEMFAULT_IDENT(>)
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1) && !defined(CONFIG_LEGACY_INCLUDE_PATHDE)
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1) && !defined(CONFIG_LEGACY_INCLUDE_PATH)
   // Concatenates contents with zephyr/ to form a single token
   #define PREPEND_ZEPHYR(contents) MEMFAULT_IDENT(zephyr/)MEMFAULT_IDENT(contents)
 

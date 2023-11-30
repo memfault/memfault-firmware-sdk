@@ -949,7 +949,7 @@ def http_get_software_version(config, software_type, software_version):
         software_version=software_version,
     )
 
-    status, reason, body = _http_api(config, "GET", software_version_url)
+    status, _, body = _http_api(config, "GET", software_version_url)
     if status < 200 or status >= 300:
         return None
     return body["data"]
@@ -1060,7 +1060,7 @@ def populate_config_args_and_parse_args(parser, unicode_args, config):
     if parsed_args.email == MEMFAULT_CONFIG.email:
         config.user_id = MEMFAULT_CONFIG.user_id
     else:
-        status, reason, json_body = http_get_auth_me(config.api_uri, config.email, config.password)
+        _, _, json_body = http_get_auth_me(config.api_uri, config.email, config.password)
         config.user_id = json_body["id"]
 
     return parsed_args

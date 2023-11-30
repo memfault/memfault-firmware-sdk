@@ -177,7 +177,8 @@ bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx);
 //!
 //! @param ctx Connection context previously opened with
 //! memfault_zephyr_port_http_open_socket()
-void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx);
+//! @return 0 on success, 1 on error
+int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx);
 
 //! Similar to memfault_zephyr_port_http_upload_sdk_data(), but instead of using
 //! the SDK packetizer functions under the hood, send the data passed into this

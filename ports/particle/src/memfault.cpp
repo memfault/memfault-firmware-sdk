@@ -243,24 +243,24 @@ void Memfault::handle_cloud_connectivity_event(system_event_t event, int param) 
 #if MEMFAULT_PARTICLE_PORT_CLOUD_METRICS_ENABLE
   switch (param) {
     case cloud_status_disconnected:
-      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
-      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectedTime);
-      MEMFAULT_HEARTBEAT_ADD(Cloud_DisconnectCount, 1);
+      MEMFAULT_METRIC_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_METRIC_TIMER_STOP(Cloud_ConnectedTime);
+      MEMFAULT_METRIC_ADD(Cloud_DisconnectCount, 1);
       break;
 
     case cloud_status_connecting:
-      MEMFAULT_HEARTBEAT_TIMER_START(Cloud_ConnectingTime);
+      MEMFAULT_METRIC_TIMER_START(Cloud_ConnectingTime);
       break;
 
     case cloud_status_connected:
-      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
-      MEMFAULT_HEARTBEAT_TIMER_START(Cloud_ConnectedTime);
-      MEMFAULT_HEARTBEAT_ADD(Cloud_ConnectCount, 1);
+      MEMFAULT_METRIC_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_METRIC_TIMER_START(Cloud_ConnectedTime);
+      MEMFAULT_METRIC_ADD(Cloud_ConnectCount, 1);
       break;
 
     case cloud_status_disconnecting:
-      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectingTime);
-      MEMFAULT_HEARTBEAT_TIMER_STOP(Cloud_ConnectedTime);
+      MEMFAULT_METRIC_TIMER_STOP(Cloud_ConnectingTime);
+      MEMFAULT_METRIC_TIMER_STOP(Cloud_ConnectedTime);
       break;
     default:
       break;
@@ -332,10 +332,10 @@ static void prv_metric_timer_callback() {
   info.size = sizeof(info);
   HAL_Core_Runtime_Info(&info, NULL);
 
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_TotalSize, info.total_init_heap);
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MinBytesFree, info.total_init_heap - info.max_used_heap);
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_BytesFree, info.freeheap);
-  MEMFAULT_HEARTBEAT_SET_UNSIGNED(Heap_MaxBlockSize, info.largest_free_block_heap);
+  MEMFAULT_METRIC_SET_UNSIGNED(Heap_TotalSize, info.total_init_heap);
+  MEMFAULT_METRIC_SET_UNSIGNED(Heap_MinBytesFree, info.total_init_heap - info.max_used_heap);
+  MEMFAULT_METRIC_SET_UNSIGNED(Heap_BytesFree, info.freeheap);
+  MEMFAULT_METRIC_SET_UNSIGNED(Heap_MaxBlockSize, info.largest_free_block_heap);
 #endif
 
   s_callback();

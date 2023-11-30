@@ -131,7 +131,7 @@ static void prv_collect_main_thread_stack_free(void) {
   size_t unused = 0;
   int rc = k_thread_stack_space_get(s_main_thread, &unused);
   if (rc == 0) {
-    rc = MEMFAULT_HEARTBEAT_SET_UNSIGNED(MainStack_MinBytesFree, unused);
+    rc = MEMFAULT_METRIC_SET_UNSIGNED(MainStack_MinBytesFree, unused);
     if (rc) {
       LOG_ERR("Error[%d] setting MainStack_MinBytesFree", rc);
     }

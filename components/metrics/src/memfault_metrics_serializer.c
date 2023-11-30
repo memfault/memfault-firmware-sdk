@@ -10,8 +10,10 @@
 
 #include "memfault/metrics/serializer.h"
 
-#include <stdio.h>
+// non-module headers below
+
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "memfault/core/compiler.h"
@@ -28,6 +30,7 @@ typedef struct {
   sMemfaultCborEncoder encoder;
   bool compute_worst_case_size;
   bool encode_success;
+  eMfltMetricsSessionIndex session;
 } sMemfaultSerializerState;
 
 static bool prv_metric_heartbeat_write_integer(sMemfaultSerializerState *state,
@@ -55,6 +58,12 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
   sMemfaultSerializerState *state = (sMemfaultSerializerState *)ctx;
   sMemfaultCborEncoder *encoder = &state->encoder;
 
+  // only encode metrics for the session we are interested in
+  if (metric_info->session_key != state->session) {
+    state->encode_success = true;
+    return state->encode_success;
+  }
+
   // encode the value
   switch (metric_info->type) {
     case kMemfaultMetricType_Timer: {
@@ -72,7 +81,7 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
       state->encode_success = memfault_cbor_encode_string(encoder, value);
       break;
     }
-    case kMemfaultMetricType_NumTypes: // silence error with -Wswitch-enum
+    case kMemfaultMetricType_NumTypes:  // silence error with -Wswitch-enum
     default:
       break;
   }
@@ -91,9 +100,12 @@ static bool prv_serialize_latest_heartbeat_and_deinit(sMemfaultSerializerState *
 
   // Encode up to "metrics:" section
   if (!memfault_cbor_encode_unsigned_integer(encoder, kMemfaultEventKey_EventInfo) ||
-      !memfault_cbor_encode_dictionary_begin(encoder, 1) ||
+      !memfault_cbor_encode_dictionary_begin(encoder, 2) ||
+      !memfault_serializer_helper_encode_uint32_kv_pair(encoder, kMemfaultHeartbeatInfoKey_Session,
+                                                        state->session) ||
       !memfault_cbor_encode_unsigned_integer(encoder, kMemfaultHeartbeatInfoKey_Metrics) ||
-      !memfault_cbor_encode_array_begin(encoder, memfault_metrics_heartbeat_get_num_metrics())) {
+      !memfault_cbor_encode_array_begin(encoder,
+                                        memfault_metrics_session_get_num_metrics(state->session))) {
     goto cleanup;
   }
 
@@ -109,12 +121,26 @@ static bool prv_encode_cb(MEMFAULT_UNUSED sMemfaultCborEncoder *encoder, void *c
   return prv_serialize_latest_heartbeat_and_deinit(state);
 }
 
-size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void) {
-  sMemfaultSerializerState state = { .compute_worst_case_size = true };
+static size_t prv_compute_worst_case_size(eMfltMetricsSessionIndex session) {
+  sMemfaultSerializerState state = {.compute_worst_case_size = true, .session = session};
+
   return memfault_serializer_helper_compute_size(&state.encoder, prv_encode_cb, &state);
 }
 
+size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void) {
+  return prv_compute_worst_case_size(MEMFAULT_METRICS_SESSION_KEY(heartbeat));
+}
+
+size_t memfault_metrics_session_compute_worst_case_storage_size(eMfltMetricsSessionIndex session) {
+  return prv_compute_worst_case_size(session);
+}
+
 bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *storage_impl) {
+  return memfault_metrics_session_serialize(storage_impl, MEMFAULT_METRICS_SESSION_KEY(heartbeat));
+}
+
+bool memfault_metrics_session_serialize(const sMemfaultEventStorageImpl *storage_impl,
+                                        eMfltMetricsSessionIndex session) {
   // Build a heartbeat event, which looks like this:
   // {
   //    "type": "heartbeat",
@@ -123,6 +149,7 @@ bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *stora
   //    "software_version": "1.2.3",
   //    "hardware_version": "evt_24",
   //    "event_info": {
+  //         "session_key": Heartbeat
   //         "metrics": {
   //          ... heartbeat metrics ...
   //    }
@@ -131,9 +158,10 @@ bool memfault_metrics_heartbeat_serialize(const sMemfaultEventStorageImpl *stora
 
   // NOTE: We'll always attempt to serialize the heartbeat and rollback if we are out of space
   // avoiding the need to serialize the data twice
-  sMemfaultSerializerState state = { 0 };
-  const bool success = memfault_serializer_helper_encode_to_storage(
-      &state.encoder, storage_impl, prv_encode_cb, &state);
+  sMemfaultSerializerState state = {0};
+  state.session = session;
+  const bool success = memfault_serializer_helper_encode_to_storage(&state.encoder, storage_impl,
+                                                                    prv_encode_cb, &state);
 
   return success;
 }

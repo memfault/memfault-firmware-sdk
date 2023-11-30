@@ -28,6 +28,18 @@ extern "C" {
    ((KERNEL_VERSION_MAJOR == (major)) && ((KERNEL_VERSION_MINOR + 1) > (minor)) && \
     (KERNEL_PATCHLEVEL == 99)))
 
+//! Returns true if current Zephyr Kernel Version is strictly greater than the one specified.
+//! Strictly means no development patches will be considered greater than the specified version.
+//! This adaptation accounts for a situation where a feature is introduced in the release
+//! candidate phase, and is therefore not available in any development build.
+//!
+//! Two checks:
+//!  - First check if major version is greater than the one specified
+//!  - Next check if the major version matches and the minor version is greater
+#define MEMFAULT_ZEPHYR_VERSION_GT_STRICT(major, minor) \
+  ((KERNEL_VERSION_MAJOR > (major)) ||                  \
+   ((KERNEL_VERSION_MAJOR == (major)) && (KERNEL_VERSION_MINOR > (minor))))
+
 #ifdef __cplusplus
 }
 #endif

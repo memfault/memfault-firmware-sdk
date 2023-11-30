@@ -154,13 +154,6 @@ config MEMFAULT_SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
 
-config MEMFAULT_HTTP_ENABLE
-        bool "Enables support for using Memfault's HTTP APIs"
-        default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
-        help
-          Enables support for querying the Memfault API for OTA updates
-          and posting Memfault chunks
-
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
         bool "Fallback to printk for platform logging"
         default y if ! LOG
@@ -221,6 +214,13 @@ config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
     bool "Provide a custom implementation of memfault_root_cert_storage_add()"
 
 endchoice
+
+config MEMFAULT_HTTP_ENABLE
+        bool "Enables support for using Memfault's HTTP APIs"
+        default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
+        help
+          Enables support for querying the Memfault API for OTA updates
+          and posting Memfault chunks
 
 if MEMFAULT_HTTP_ENABLE
 
@@ -356,6 +356,14 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
          The path to the virtual filesystem mount point to collect free space
          metrics for, omitting the leading '/'.
 
+config MEMFAULT_SYNC_MEMFAULT_METRICS
+        bool "Enable sync_memfault_successful metric"
+        default y
+        depends on MEMFAULT_HTTP_ENABLE
+        help
+         Collects Memfault metrics for the number of successful and failed
+         syncs to the Memfault cloud.
+
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
@@ -410,6 +418,50 @@ config MEMFAULT_FAULT_HANDLER_RETURN
         When enabled, the Memfault fault handler will call `z_fatal_error`
         instead of rebooting the system. Useful if the system needs to hook into
         `k_sys_fatal_error_handler` at the end of system fault handling.
+
+choice MEMFAULT_SYSTEM_TIME_SOURCE
+        prompt "Memfault system time source"
+        default MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME if DATE_TIME
+        default MEMFAULT_SYSTEM_TIME_SOURCE_RTC if RTC
+        default MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
+        help
+         Choose the source of the system time used by the Memfault SDK
+
+config MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
+        bool "Custom/disabled"
+        help
+         When enabled, the user can provide an implementation of
+         memfault_platform_time_get_current() in their port. This also can be
+         selected to disable the built-in implementations.
+
+config MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME
+        bool "Datetime"
+        depends on DATE_TIME
+        help
+         Provides a built-in implementation of
+         memfault_platform_time_get_current() using the Zephyr datetime
+         subsystem.
+
+config MEMFAULT_SYSTEM_TIME_SOURCE_RTC
+        bool "RTC"
+        depends on RTC
+        help
+         Provides a built-in implementation of
+         memfault_platform_time_get_current() using the Zephyr RTC subsystem.
+
+endchoice
+
+config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
+        bool "Install a callback on boot for date_time events"
+        default y
+        depends on MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME
+        help
+         When enabled, a callback will be installed on boot to update the
+         Memfault SDK's timestamp when the Zephyr datetime subsystem is
+         updated. Note that the date_time library only has 1 event callback, so
+         if it's needed elsewhere, this option should be disabled and the
+         memfault_zephyr_date_time_evt_handler() function should be called from
+         the application's date_time event handler.
 
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         default y

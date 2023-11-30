@@ -20,6 +20,7 @@
 #include "memfault/http/http_client.h"
 #include "memfault/http/root_certs.h"
 #include "memfault/http/utils.h"
+#include "memfault/metrics/connectivity.h"
 #include "memfault/panics/assert.h"
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/root_cert_storage.h"
@@ -258,7 +259,11 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
   return sock_fd;
 }
 
-static bool prv_send_next_msg(int sock) {
+//! Returns:
+//! 0  - no more data to send
+//! 1  - data sent, awaiting response
+//! -1 - error
+static int prv_send_next_msg(int sock) {
 #if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
   uint8_t buf[CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE];
   size_t buf_len = sizeof(buf);
@@ -266,7 +271,7 @@ static bool prv_send_next_msg(int sock) {
   bool data_available = memfault_packetizer_get_chunk(buf, &buf_len);
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");
-    return false; // no more data to send
+    return 0;  // no more data to send
   }
 
   memfault_http_start_chunk_post(prv_send_data, &sock, buf_len);
@@ -274,11 +279,11 @@ static bool prv_send_next_msg(int sock) {
   if (!prv_try_send(sock, buf, buf_len)) {
     // unexpected failure, abort in-flight transaction
     memfault_packetizer_abort();
-    return false;
+    return -1;
   }
 
   // message sent, await response
-  return true;
+  return 1;
 
 #else
   const sPacketizerConfig cfg = {
@@ -291,7 +296,7 @@ static bool prv_send_next_msg(int sock) {
   const bool data_available = memfault_packetizer_begin(&cfg, &metadata);
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");
-    return false;
+    return 0;
   }
 
   memfault_http_start_chunk_post(prv_send_data, &sock, metadata.single_chunk_message_length);
@@ -307,7 +312,7 @@ static bool prv_send_next_msg(int sock) {
     if (!prv_try_send(sock, buf, buf_len)) {
       // unexpected failure, abort in-flight transaction
       memfault_packetizer_abort();
-      return false;
+      return -1;
     }
 
     if (status == kMemfaultPacketizerStatus_EndOfChunk) {
@@ -316,7 +321,7 @@ static bool prv_send_next_msg(int sock) {
   }
 
   // message sent, await response
-  return true;
+  return 1;
 #endif /* CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE */
 }
 
@@ -601,15 +606,24 @@ int memfault_zephyr_port_post_data(void) {
   ctx.sock_fd = -1;
 
   int rv = memfault_zephyr_port_http_open_socket(&ctx);
-  if (rv < 0) {
-    return rv;
+
+  if (rv == 0) {
+    rv = memfault_zephyr_port_http_upload_sdk_data(&ctx);
   }
 
-  memfault_zephyr_port_http_upload_sdk_data(&ctx);
+  if (rv == 0) {
+    memfault_zephyr_port_http_close_socket(&ctx);
+  }
 
-  memfault_zephyr_port_http_close_socket(&ctx);
+#if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+  if (rv == 0) {
+    memfault_metrics_connectivity_record_memfault_sync_success();
+  } else {
+    memfault_metrics_connectivity_record_memfault_sync_failure();
+  }
+#endif
 
-  return 0;
+  return rv;
 }
 
 int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
@@ -678,7 +692,7 @@ void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
 
 bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) { return ctx->sock_fd >= 0; }
 
-void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
+int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   int max_messages_to_send = 5;
 #if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE && CONFIG_MEMFAULT_RAM_BACKED_COREDUMP
   // The largest data type we will send is a coredump. If CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
@@ -687,15 +701,23 @@ void memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
     MEMFAULT_MAX(max_messages_to_send,
                  CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE);
 #endif
+  bool success = true;
 
   while (max_messages_to_send-- > 0) {
-    if (!prv_send_next_msg(ctx->sock_fd)) {
+    int rv = prv_send_next_msg(ctx->sock_fd);
+    if (rv == 0) {
+      // no more messages to send
+      break;
+    } else if (rv < 0) {
+      success = false;
       break;
     }
-    if (!prv_wait_for_http_response(ctx->sock_fd)) {
+    success = prv_wait_for_http_response(ctx->sock_fd);
+    if (!success) {
       break;
     }
   }
+  return success ? 0 : 1;
 }
 
 int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len) {

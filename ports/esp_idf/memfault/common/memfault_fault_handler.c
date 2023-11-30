@@ -25,6 +25,14 @@
   #error "The port assumes the esp-idf is in use!"
 #endif
 
+// Header refactor and watchpoint definitions added in 4.3.0
+// Only include if watchpoint stack overflow detection enabled
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) && \
+  defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+  #include "soc/soc_caps.h"
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) &&
+        // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+
 // Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
 // chip reboot so we just piggyback off of that
 void memfault_fault_handling_assert(void *pc, void *lr) {
@@ -92,6 +100,26 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
 void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
 #endif
 
+  eMemfaultRebootReason reason;
+
+/*
+ * To better classify the exception, we need panic_info_t provided by
+ * esp-idf v4.2.3+. For older versions just assume kMfltRebootReason_HardFault
+ */
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
+  switch (info->exception) {
+    case PANIC_EXCEPTION_DEBUG:
+      reason = kMfltRebootReason_DebuggerHalted;
+      break;
+    default:
+      // Default to HardFault until other reasons are handled
+      reason = kMfltRebootReason_HardFault;
+      break;
+  }
+#else
+  reason = kMfltRebootReason_HardFault;
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
+
 #ifdef __XTENSA__
   // Clear "EXCM" bit so we don't have to correct PS.OWB to get a good unwind This will also be
   // more reflective of the state of the register prior to the "panicHandler" being invoked
@@ -131,6 +159,37 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
     .exccause = fp->exccause,
     .excvaddr = fp->excvaddr,
   };
+
+  // If enabled, check if exception was triggered by stackoverflow type
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) && \
+    defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+    /*
+     * See Xtensa ISA Debug Cause Register section:
+     * https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf#_OPENTOPIC_TOC_PROCESSING_d61e48262
+     */
+    // Mask to select bits indicating a data breakpoint/watchpoint
+    #define DBREAK_EXCEPTION_MASK (1 << 2)
+
+    #define _WATCHPOINT_VAL_SHIFT (8)
+    #define _WATCHPOINT_VAL_MASK (0xF << _WATCHPOINT_VAL_SHIFT)
+    // Extracts DBNUM bits to determine watchpoint that triggered exception
+    #define WATCHPOINT_VAL_GET(reg) ((reg & _WATCHPOINT_VAL_MASK) >> _WATCHPOINT_VAL_SHIFT)
+    // Watchpoint to detect stack overflow
+    #define END_OF_STACK_WATCHPOINT_VAL (SOC_CPU_WATCHPOINTS_NUM - 1)
+
+  if (info->exception == PANIC_EXCEPTION_DEBUG) {
+    // Read debugcause register into debug_cause local var
+    int debug_cause;
+    asm("rsr.debugcause %0" : "=r"(debug_cause));
+
+    // Check that DBREAK bit is set and that stack overflow watchpoint was the source
+    if ((debug_cause & DBREAK_EXCEPTION_MASK) &&
+        (WATCHPOINT_VAL_GET(debug_cause) == END_OF_STACK_WATCHPOINT_VAL)) {
+      reason = kMfltRebootReason_StackOverflow;
+    }
+  }
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) &&
+          // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
 #elif __riscv
   sMfltRegState regs = {
     .mepc = fp->mepc,
@@ -182,7 +241,7 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
   };
 #endif
 
-  memfault_fault_handler(&regs, kMfltRebootReason_HardFault);
+  memfault_fault_handler(&regs, reason);
 }
 
 // Ensure the substituted function signature matches the original function

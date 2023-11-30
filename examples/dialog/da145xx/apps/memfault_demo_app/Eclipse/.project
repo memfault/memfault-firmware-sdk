@@ -220,6 +220,11 @@
 			<locationURI>PARENT-6-PROJECT_LOC/components/metrics/src/memfault_metrics_serializer.c</locationURI>
 		</link>
 		<link>
+			<name>memfault_components/memfault_metrics_reliability.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/components/metrics/src/memfault_metrics_reliability.c</locationURI>
+		</link>
+		<link>
 			<name>memfault_components/memfault_minimal_cbor.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/components/util/src/memfault_minimal_cbor.c</locationURI>

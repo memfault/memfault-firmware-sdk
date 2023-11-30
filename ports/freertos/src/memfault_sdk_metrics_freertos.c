@@ -123,15 +123,15 @@ void memfault_freertos_port_task_runtime_metrics(void) {
 
   if (idle0_runtime_percentage >= 0) {
   #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(idle0_task_run_time_percent,
+    MEMFAULT_METRIC_SET_UNSIGNED(idle0_task_run_time_percent,
                                     (uint32_t)idle0_runtime_percentage);
   #else
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(idle_task_run_time_percent, (uint32_t)idle0_runtime_percentage);
+    MEMFAULT_METRIC_SET_UNSIGNED(idle_task_run_time_percent, (uint32_t)idle0_runtime_percentage);
   #endif
   }
   #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
   if (idle1_runtime_percentage >= 0) {
-    MEMFAULT_HEARTBEAT_SET_UNSIGNED(idle1_task_run_time_percent,
+    MEMFAULT_METRIC_SET_UNSIGNED(idle1_task_run_time_percent,
                                     (uint32_t)idle1_runtime_percentage);
   }
   #endif
