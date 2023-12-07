@@ -161,13 +161,11 @@ extern "C" {
 #define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
 #endif
 
-//! Enables support for the non-volatile event storage at compile time
-//! instead of dynamically at runtime
-//!
-//! Disabling this feature saves several hundred bytes of codespace and can be useful to enable for
-//! extremely constrained environments
+//! Enables support for non-volatile event storage. At run-time the non-volatile
+//! storage must be enabled before use. See nonvolatile_event_storage.h for
+//! details.
 #ifndef MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
-#define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 1
+#define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 0
 #endif
 
 #if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED != 0

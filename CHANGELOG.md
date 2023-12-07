@@ -1,5 +1,25 @@
 # Memfault Firmware SDK Changelog
 
+## [1.5.1] - 2023-12-07
+
+### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect SDK:
+
+  - Correct a build error that occurs when `CONFIG_DOWNLOAD_CLIENT=y` +
+    `CONFIG_MEMFAULT_FOTA=n`. This fixes the second issue reported in
+    [#66](https://github.com/memfault/memfault-firmware-sdk/issues/66#issuecomment-1845301737)
+
+### :boom: Breaking Changes
+
+- General:
+
+  - The SDK config flag `MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED` now defaults
+    to `0`, disabled. This saves a minor amount of code space. Most
+    implementations don't need the feature; for users that require it, the flag
+    will now need to be set in `memfault_platform_config.h` as
+    `#define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 1`.
+
 ## [1.5.0] - 2023-11-29
 
 ### :rocket: New Features
