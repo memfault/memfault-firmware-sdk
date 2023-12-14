@@ -22,6 +22,7 @@ extern "C" {
 //! - MEMFAULT_ASSERT : normal assert
 //! - MEMFAULT_ASSERT_EXTRA : assert with a single arbitrary uint32_t context value included
 //! - MEMFAULT_ASSERT_EXTRA_AND_REASON : assert with arbitrary uint32_t value and reason code
+//! - MEMFAULT_ASSERT_WITH_REASON : assert with reason code
 //! - MEMFAULT_SOFTWARE_WATCHDOG : assert with kMfltRebootReason_SoftwareWatchdog reason set
 //!
 //! NB: We may also want to think about whether we should save off something like __LINE__ (or use a
@@ -62,9 +63,16 @@ extern "C" {
     }                                         \
   } while (0)
 
+#define MEMFAULT_ASSERT_WITH_REASON(exp, _reason)   \
+  do {                                              \
+    if (!(exp)) {                                   \
+      MEMFAULT_ASSERT_EXTRA_AND_REASON(0, _reason); \
+    }                                               \
+  } while (0)
+
 //! Assert subclass to be used when a software watchdog trips.
 #define MEMFAULT_SOFTWARE_WATCHDOG() \
-  MEMFAULT_ASSERT_EXTRA_AND_REASON(0, kMfltRebootReason_SoftwareWatchdog)
+  MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_SoftwareWatchdog)
 
 #ifdef __cplusplus
 }

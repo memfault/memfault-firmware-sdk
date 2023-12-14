@@ -63,6 +63,12 @@ static int prv_freertos_tasks_cmd(int argc, char *argv[]) {
 
   return 0;
 }
+static int prv_fake_fw_update_error_assert_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  printf("Triggering fake firmware update error assert!\n");
+  MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_FirmwareUpdateError);
+  return 0;
+}
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -73,6 +79,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "freertos_tasks",
     .handler = prv_freertos_tasks_cmd,
     .help = "Print all FreeRTOS tasks",
+  },
+  {
+    .command = "fwup_assert",
+    .handler = prv_fake_fw_update_error_assert_cmd,
+    .help = "Trigger fake firmware update error assert",
   },
 };
 #endif

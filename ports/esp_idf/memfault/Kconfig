@@ -146,4 +146,12 @@ menu "Memfault"
         help
             Collects Memfault metrics for the number of successful and failed
             syncs to the Memfault cloud.
+
+    config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
+        bool "Assert on allocation failure"
+        default n
+        help
+            When enabled, the Memfault SDK will assert if any allocation fails.
+            This can be useful for tracking down heap memory issues.
+
 endmenu

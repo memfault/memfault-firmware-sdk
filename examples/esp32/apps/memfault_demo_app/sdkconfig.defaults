@@ -28,3 +28,13 @@ CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y
 
 # SoftAP is unused in this example, disabling it saves about 40kB flash
 CONFIG_ESP_WIFI_SOFTAP_SUPPORT=n
+
+# Instead of pre-allocating large 16 + 4kB IN/OUT buffers when setting up the
+# TLS connection, use dynamic buffers. This reduces the large memory pressure at
+# the cost of some extra mallocs.
+CONFIG_MBEDTLS_DYNAMIC_BUFFER=y
+CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA=y
+CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT=y
+
+# Trigger an assert if any malloc fails
+CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE=y

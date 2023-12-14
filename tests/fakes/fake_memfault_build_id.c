@@ -34,3 +34,12 @@ bool memfault_build_info_read(sMemfaultBuildInfo *info) {
          sizeof(g_fake_memfault_build_id_info.build_id));
   return true;
 }
+
+bool memfault_build_id_get_string(char *out_buf, size_t buf_len) {
+  if (g_fake_memfault_build_id_type == kMemfaultBuildIdType_None) {
+    return false;
+  }
+  const char *fake_build_id = "0123456789abcdef0123456789abcdef01234567";
+  strncpy(out_buf, fake_build_id, buf_len);
+  return true;
+}

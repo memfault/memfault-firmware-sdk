@@ -148,17 +148,7 @@ static bool prv_handle_ota_upload_available(void *user_ctx) {
 static bool prv_handle_ota_download_complete(void *user_ctx) {
   MEMFAULT_LOG_INFO("OTA Update Complete, Rebooting System");
 
-  // The pc & lr which result in the reboot can always be *optionally* recorded
-  void *pc;
-  MEMFAULT_GET_PC(pc);
-  void *lr;
-  MEMFAULT_GET_LR(lr);
-  sMfltRebootTrackingRegInfo reg_info = {
-    .pc = (uint32_t)pc,
-    .lr = (uint32_t)lr,
-  };
-  // Note: "reg_info" may be NULL if no register information collection is desired
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_FirmwareUpdate, &reg_info);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
 
   esp_restart();
   return true;
@@ -224,6 +214,7 @@ static void prv_poster_task(void *args) {
   const uint32_t interval_sec = 60;
   const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
   const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
+  // initial OTA check is immediately on boot
   TickType_t ota_last_check_time = xTaskGetTickCount() - ota_check_interval;
 
   app_memfault_transport_init();
@@ -332,6 +323,22 @@ static void prv_initialize_task_watchdog(void) {
 #else
 static void prv_initialize_task_watchdog(void) {
   // task watchdog disabled, do nothing
+}
+#endif
+
+#if defined(CONFIG_HEAP_USE_HOOKS)
+// This callback is triggered when a heap allocation is made. It prints large
+// allocations for debugging heap usage from the serial log.
+void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
+  // In our app, there's a periodic 1696 byte alloc. Filter out anything that
+  // size or smaller from this log, otherwise it's quite spammy
+  if (size > 1696) {
+    ESP_LOGI(TAG, "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
+
+    multi_heap_info_t heap_info = {0};
+    heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
+    ESP_LOGI(TAG, "Total free bytes: %d", heap_info.total_free_bytes);
+  }
 }
 #endif
 

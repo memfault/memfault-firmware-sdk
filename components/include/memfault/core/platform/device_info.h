@@ -16,6 +16,11 @@
 extern "C" {
 #endif
 
+//! Maximum string size of a field in MemfaultDeviceInfo. Does not include NULL terminator
+#if !defined(MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE)
+  #define MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE 128
+#endif  // !defined(MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE)
+
 typedef struct MemfaultDeviceInfo {
   //! The device's serial number or unique identifier.
   //! Regular expression defining valid device serials: ^[-a-zA-Z0-9_]+$

@@ -63,12 +63,15 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 
 MEMFAULT_NORETURN
 static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
-  sMfltRebootTrackingRegInfo info = {
-    .pc = (uint32_t)(uintptr_t)pc,
-    .lr = (uint32_t)(uintptr_t)lr,
-  };
-  s_crash_reason = reason;
-  memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+  // Only set the crash reason if it's unset, in case we are in a nested assert
+  if (s_crash_reason == kMfltRebootReason_Unknown) {
+    sMfltRebootTrackingRegInfo info = {
+      .pc = (uint32_t)(uintptr_t)pc,
+      .lr = (uint32_t)(uintptr_t)lr,
+    };
+    s_crash_reason = reason;
+    memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+  }
 
   // For assert path, we will trap into fault handler
   __builtin_trap();

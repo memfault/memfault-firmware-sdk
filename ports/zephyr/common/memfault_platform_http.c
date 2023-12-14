@@ -210,20 +210,23 @@ static int prv_poll_socket(int sock_fd, int events) {
   };
   const int timeout_ms = POLL_TIMEOUT_MS;
   int rv = poll(&poll_fd, 1, timeout_ms);
-  if (rv < 0) {
+  if (rv == 0) {
     MEMFAULT_LOG_ERROR("Timeout waiting for socket event(s): event(s)=%d, errno=%d", events, errno);
   }
   return rv;
 }
 
 static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
-  int rv = prv_poll_socket(sock_fd, POLLOUT);
-  if (rv < 0) {
-    return false;
-  }
-
   size_t idx = 0;
   while (idx != buf_len) {
+    // Wait for socket to become available within a timeout in case the socket is busy processing
+    // other tx data. This will prevent busy looping in this loop (since the send call is
+    // non-blocking), therefore allowing other threads to run.
+    int rv = prv_poll_socket(sock_fd, POLLOUT);
+    if (rv <= 0) {
+      return false;
+    }
+
     rv = send(sock_fd, &buf[idx], buf_len - idx, MSG_DONTWAIT);
     if (rv > 0) {
       idx += rv;
@@ -327,7 +330,7 @@ static int prv_send_next_msg(int sock) {
 
 static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
   int rv = prv_poll_socket(sock_fd, POLLIN);
-  if (rv < 0) {
+  if (rv <= 0) {
     return false;
   }
 

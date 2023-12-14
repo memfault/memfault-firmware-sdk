@@ -97,7 +97,7 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
 
   LOG_DBG("Setting event time %llu", (uint64_t)time_now);
   // load the timestamp and return true for a valid timestamp
-  *thistime = (sMemfaultCurrentTime){
+  *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
     .info =
       {

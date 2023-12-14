@@ -3,11 +3,11 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <stdlib.h>
+#include <inttypes.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "memfault/components.h"
-
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/version.h"
 #include "memfault/metrics/metrics.h"
@@ -154,6 +154,18 @@ static int prv_memfault_log_wrapper(const char *fmt, va_list args) {
   return vprintf(fmt, args);
 }
 
+#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
+  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
+// Crash if an allocation fails. If the application is running correctly,
+// without memory leaks, there should be zero allocation failures. If any occur,
+// it's an error and we would like a nice crash report at the point of failure.
+static void prv_alloc_failed_callback(size_t size, uint32_t caps, const char *function_name) {
+  MEMFAULT_LOG_ERROR("Failed to allocate %d bytes with caps %" PRIu32 " in %s", size, caps,
+                     function_name);
+  MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_OutOfMemory);
+}
+#endif
+
 void memfault_boot(void) {
   s_memfault_lock = xSemaphoreCreateRecursiveMutex();
 
@@ -178,6 +190,11 @@ void memfault_boot(void) {
 #if defined(CONFIG_MEMFAULT_CLI_ENABLED)
   // register CLI for easily testing Memfault
   memfault_register_cli();
+#endif
+
+#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
+  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
+  heap_caps_register_failed_alloc_callback(prv_alloc_failed_callback);
 #endif
 }
 

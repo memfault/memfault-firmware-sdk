@@ -23,6 +23,10 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
 static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
+  if (s_crash_reason != kMfltRebootReason_Unknown) {
+    // we've already been called once, ignore the second call
+    return;
+  }
   sMfltRebootTrackingRegInfo info = {
     .pc = (uint32_t)pc,
     .lr = (uint32_t)lr,

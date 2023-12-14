@@ -40,6 +40,7 @@
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/sdk_assert.h"
+#include "memfault/core/self_test.h"
 #include "memfault/core/task_watchdog.h"
 #include "memfault/core/trace_event.h"
 #include "memfault/demo/cli.h"

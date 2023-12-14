@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#include "memfault/core/compiler.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/reboot_reason_types.h"
 
@@ -108,6 +109,21 @@ typedef struct MfltRebootTrackingRegInfo {
 //! @param reg Register state at the time the reboot was initiated or NULL if no state is available
 void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_reason,
                                                   const sMfltRebootTrackingRegInfo *reg);
+
+//! Helper macro to capture the current pc & lr and call
+//! memfault_reboot_tracking_mark_reset_imminent
+#define MEMFAULT_REBOOT_MARK_RESET_IMMINENT(reason_)                       \
+  do {                                                                     \
+    void *mflt_pc;                                                         \
+    MEMFAULT_GET_PC(mflt_pc);                                              \
+    void *mflt_lr;                                                         \
+    MEMFAULT_GET_LR(mflt_lr);                                              \
+    sMfltRebootTrackingRegInfo mflt_reg_info = {                           \
+      .pc = (uint32_t)mflt_pc,                                             \
+      .lr = (uint32_t)mflt_lr,                                             \
+    };                                                                     \
+    memfault_reboot_tracking_mark_reset_imminent(reason_, &mflt_reg_info); \
+  } while (0)
 
 //! Collects recent reset info and pushes it to memfault_event_storage so that the data can
 //! can be sent out using the Memfault data packetizer

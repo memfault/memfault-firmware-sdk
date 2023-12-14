@@ -1,5 +1,43 @@
 # Memfault Firmware SDK Changelog
 
+## [1.5.2] - 2023-12-12
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Add a self-test component which checks the device's integration state. This
+    self test is available via the demo cli command `self_test`, or can be
+    called directly via `memfault_self_test_run()` (see
+    [`self_test.h`](components/include/memfault/core/self_test.h) for details).
+    Currently, it validates device info and the build ID.
+
+  - Add a helper macro called `MEMFAULT_REBOOT_MARK_RESET_IMMINENT` in order to
+    make marking an imminent reboot easier. It takes the reboot reason as an
+    argument.
+
+- ESP-IDF:
+
+  - Add an opt-in assert on malloc failure, controlled with
+    `CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE`. This is useful for tracking heap
+    memory issues. Depending on the design, a system may in general not have any
+    expected malloc failures, and may not be set up to handle them. This feature
+    will generate issues tagged as `Out Of Memory` in the Memfault platform.
+
+- Zephyr:
+
+  - Adjust the implementation of `memfault_zephyr_port_http_upload_sdk_data()`
+    to check the socket before each incremental call to the `send()` socket
+    operation and wait for the socket to become available. If the socket takes
+    too long (a healthy 5 second timeout is given), the function will return
+    with an error. Note this function was previously blocking, but may now abort
+    mid-transfer. This check was primarily added to prevent a busy loop that
+    hogs the CPU, preventing lower priority threads from running. This situation
+    could occur with larger HTTP transfers during which the socket may be busy
+    processing tx data when another send request occurs.
+
+  - Fix a build error in the Zephyr RTC port.
+
 ## [1.5.1] - 2023-12-07
 
 ### :chart_with_upwards_trend: Improvements

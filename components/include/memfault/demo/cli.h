@@ -120,6 +120,11 @@ int memfault_demo_cli_cmd_heartbeat_dump(int argc, char *argv[]);
 //! Trigger a heartbeat
 int memfault_demo_cli_cmd_heartbeat(int argc, char *argv[]);
 
+//! Run a self test
+//!
+//! This command triggers a test which exercises different subsystems
+int memfault_demo_cli_cmd_self_test(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif

@@ -396,12 +396,15 @@ void MEMFAULT_EXC_HANDLER_PREFETCH_ABORT(void) {
 #endif
 
 static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
-  sMfltRebootTrackingRegInfo info = {
-    .pc = (uint32_t)pc,
-    .lr = (uint32_t)lr,
-  };
-  s_crash_reason = reason;
-  memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+  // Only set the crash reason if it's unset, in case we are in a nested assert
+  if (s_crash_reason == kMfltRebootReason_Unknown) {
+    sMfltRebootTrackingRegInfo info = {
+      .pc = (uint32_t)pc,
+      .lr = (uint32_t)lr,
+    };
+    s_crash_reason = reason;
+    memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
+  }
 
   #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
   memfault_platform_halt_if_debugging();

@@ -12,6 +12,7 @@
 #include "memfault/core/data_export.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
+#include "memfault/core/self_test.h"
 #include "memfault/demo/cli.h"
 #include "memfault/demo/shell_commands.h"
 #include "memfault/metrics/metrics.h"
@@ -63,6 +64,10 @@ int memfault_demo_cli_cmd_heartbeat(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED ch
   return 0;
 }
 
+int memfault_demo_cli_cmd_self_test(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  return memfault_self_test_run();
+}
+
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"clear_core", memfault_demo_cli_cmd_clear_core, "Clear an existing coredump"},
   {"drain_chunks", memfault_demo_drain_chunk_data,
@@ -100,6 +105,8 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   {"test_reboot", memfault_demo_cli_cmd_system_reboot,
    "Force system reset and track it with a trace event"},
   {"test_trace", memfault_demo_cli_cmd_trace_event_capture, "Capture an example trace event"},
+  { "self_test", memfault_demo_cli_cmd_self_test,
+    "Run a self test to check integration with the SDK" },
 
   {"help", memfault_shell_help_handler, "Lists all commands"},
 };

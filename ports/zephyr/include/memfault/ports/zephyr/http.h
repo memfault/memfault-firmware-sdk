@@ -25,9 +25,13 @@ int memfault_zephyr_port_install_root_certs(void);
 
 //! Sends diagnostic data to the Memfault cloud chunks endpoint
 //!
-//! @note This function is blocking and will return once posting of chunk data has completed.
+//! @note If the socket is unavailable after a timeout of 5 seconds, or if the underlying socket
+//! send operation returns with error, the function will abort the transfer. Otherwise, this
+//! function will block and return once posting of chunk data has completed.
 //!
 //! For more info see https://mflt.io/data-to-cloud
+//!
+//! @return 0 on success, else error code
 int memfault_zephyr_port_post_data(void);
 
 typedef struct MemfaultOtaInfo {

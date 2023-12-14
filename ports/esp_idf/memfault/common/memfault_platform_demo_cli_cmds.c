@@ -186,6 +186,30 @@ static int prv_esp32_crash_example(int argc, char** argv) {
   return 0;
 }
 
+static int prv_esp32_leak_cmd(int argc, char **argv) {
+  int leak_size = 0;
+
+  if (argc >= 2) {
+    leak_size = atoi(argv[1]);
+  }
+
+  if (leak_size == 0) {
+    MEMFAULT_LOG_INFO("Usage: leak <size>");
+    return 1;
+  }
+
+  MEMFAULT_LOG_INFO("Allocating %d bytes", leak_size);
+  void *ptr = malloc(leak_size);
+  if (ptr == NULL) {
+    MEMFAULT_LOG_ERROR("Failed to allocate %d bytes", leak_size);
+    return 1;
+  }
+
+  MEMFAULT_LOG_INFO("Allocated %d bytes at %p", leak_size, ptr);
+
+  return 0;
+}
+
 static int prv_esp32_memfault_heartbeat(int argc, char **argv) {
   memfault_metrics_heartbeat_debug_trigger();
   return 0;
@@ -298,6 +322,13 @@ void memfault_register_cli(void) {
       .help = "Trigger a timer isr crash",
       .hint = NULL,
       .func = prv_esp32_crash_example,
+  }));
+
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "leak",
+    .help = "Allocate the specified number of bytes without freeing",
+    .hint = NULL,
+    .func = prv_esp32_leak_cmd,
   }));
 
   ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
