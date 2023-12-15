@@ -150,8 +150,12 @@ menu "Memfault"
     config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
         bool "Assert on allocation failure"
         default n
+        depends on !HEAP_ABORT_WHEN_ALLOCATION_FAILS
         help
             When enabled, the Memfault SDK will assert if any allocation fails.
-            This can be useful for tracking down heap memory issues.
+            This can be useful for tracking down heap memory issues. Note that
+            this operates similarly to HEAP_ABORT_WHEN_ALLOCATION_FAILS, but the
+            Memfault Issue created will be tagged as "Out of Memory" instead of
+            a generic "Assert".
 
 endmenu

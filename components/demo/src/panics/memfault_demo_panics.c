@@ -195,18 +195,6 @@ int memfault_demo_cli_cmd_usagefault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED c
   return -1;
 }
 
-int memfault_demo_cli_loadaddr(int argc, char *argv[]) {
-  if (argc < 2) {
-    MEMFAULT_LOG_ERROR("Usage: loadaddr <addr>");
-    return -1;
-  }
-  uint32_t addr = (uint32_t)strtoul(argv[1], NULL, 0);
-  uint32_t val = *(uint32_t *)addr;
-
-  MEMFAULT_LOG_INFO("Read 0x%08" PRIx32 " from 0x%08" PRIx32, val, (uint32_t)(uintptr_t)addr);
-  return 0;
-}
-
 #endif  // MEMFAULT_COMPILER_ARM_CORTEX_M
 
 #if MEMFAULT_COMPILER_ARM_V7_A_R
@@ -229,3 +217,15 @@ int memfault_demo_cli_cmd_prefetchabort(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSE
 }
 
 #endif  // MEMFAULT_COMPILER_ARM_V7_A_R
+
+int memfault_demo_cli_loadaddr(int argc, char *argv[]) {
+  if (argc < 2) {
+    MEMFAULT_LOG_ERROR("Usage: loadaddr <addr>");
+    return -1;
+  }
+  uint32_t addr = (uint32_t)strtoul(argv[1], NULL, 0);
+  uint32_t val = *(uint32_t *)addr;
+
+  MEMFAULT_LOG_INFO("Read 0x%08" PRIx32 " from 0x%08" PRIx32, val, (uint32_t)(uintptr_t)addr);
+  return 0;
+}

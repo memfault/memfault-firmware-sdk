@@ -55,6 +55,13 @@ extern "C" {
 #  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
 #  define MEMFAULT_GET_PC(_a) _a = ({ __label__ _l; _l: &&_l;});
 #  define MEMFAULT_BREAKPOINT(val)  __asm__ ("break 0,0")
+#elif defined(__riscv)
+#  define MEMFAULT_GET_LR(_a) _a = __builtin_return_address(0)
+// Take advantage of "Locally Declared Labels" to get a PC
+//   https://gcc.gnu.org/onlinedocs/gcc/Local-Labels.html#Local-Labels
+#  define MEMFAULT_GET_PC(_a) _a = ({ __label__ _l; _l: &&_l;});
+// Trigger a breakpoint exception (similar to bkpt instruction in ARM)
+#define MEMFAULT_BREAKPOINT(val) __asm volatile("ebreak")
 #elif defined(MEMFAULT_UNITTEST) || defined(__APPLE__)  // Memfault iOS SDK also #includes this header
 #  define MEMFAULT_GET_LR(_a) _a = 0
 #  define MEMFAULT_GET_PC(_a) _a = 0

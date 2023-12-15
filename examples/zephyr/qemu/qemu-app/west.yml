@@ -18,6 +18,7 @@ manifest:
         # Limit the Zephyr modules to the required set
         name-allowlist:
             - cmsis
+            - hal_espressif
 
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk

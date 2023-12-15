@@ -35,7 +35,10 @@
 #include "nvs_flash.h"
 #include "settings.h"
 
-static const char *TAG = "example";
+// Conditionally enable the logging tag variable only when it's used
+#if defined(CONFIG_STORE_HISTORY) || defined(CONFIG_HEAP_USE_HOOKS)
+static const char *TAG = "main";
+#endif
 
 /* Console command history can be stored to and loaded from a file.
  * The easiest way to do this is to use FATFS filesystem on top of
@@ -121,7 +124,7 @@ static void initialize_console() {
   linenoiseSetHintsCallback((linenoiseHintsCallback *)&esp_console_get_hint);
 
   /* Set command history size */
-  linenoiseHistorySetMaxLen(100);
+  linenoiseHistorySetMaxLen(10);
 
 #if CONFIG_STORE_HISTORY
   /* Load command history from filesystem */
@@ -333,11 +336,11 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
   // In our app, there's a periodic 1696 byte alloc. Filter out anything that
   // size or smaller from this log, otherwise it's quite spammy
   if (size > 1696) {
-    ESP_LOGI(TAG, "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
+    ESP_LOGI("main", "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
 
     multi_heap_info_t heap_info = {0};
     heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "Total free bytes: %d", heap_info.total_free_bytes);
+    ESP_LOGI("main", "Total free bytes: %d", heap_info.total_free_bytes);
   }
 }
 #endif
