@@ -117,7 +117,8 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   };
 
   sCoredumpCrashInfo info = {
-    .stack_address = (void *)regs->sp,
+    // Zephyr fault shim saves the stack pointer in s[0]
+    .stack_address = (void *)regs->s[0],
     .trace_reason = save_info.trace_reason,
     .exception_reg_state = regs,
   };
@@ -127,6 +128,11 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   if (coredump_saved) {
     memfault_reboot_tracking_mark_coredump_saved();
   }
+
+  #if !MEMFAULT_FAULT_HANDLER_RETURN
+  memfault_platform_reboot();
+  MEMFAULT_UNREACHABLE;
+  #endif
 }
 
 size_t memfault_coredump_storage_compute_size_required(void) {

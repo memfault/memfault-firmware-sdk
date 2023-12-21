@@ -24,14 +24,17 @@ extern void sys_arch_reboot(int type);
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
-  // flush logs prior to capturing coredump & rebooting
-  LOG_PANIC();
+  // TODO log panic may not be working correctly in fault handler context :(
+  // // flush logs prior to capturing coredump & rebooting
+  // LOG_PANIC();
 
   sMfltRegState reg = {
     .mepc = esf->mepc, /* machine exception program counter */
     .ra = esf->ra,
 #ifdef CONFIG_USERSPACE
     .sp = esf->sp, /* preserved (user or kernel) stack pointer */
+#else
+    .sp = esf->s0, /* sp is stashed here in the Zephyr fault shim */
 #endif
     // .gp = ?,
     // .tp = ?,
@@ -77,7 +80,8 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
 MEMFAULT_WEAK
 MEMFAULT_NORETURN
 void memfault_platform_reboot(void) {
-  memfault_platform_halt_if_debugging();
+  // TODO this is not working correctly on the esp32c3 :(
+  // memfault_platform_halt_if_debugging();
 
   sys_arch_reboot(0);
   CODE_UNREACHABLE;

@@ -102,4 +102,13 @@ if(CONFIG_MEMFAULT)
     )
   endif()
 
+  if(CONFIG_MEMFAULT_COMPRESS_DEBUG_INFO)
+    # run a post build command on the output .elf file to compress debug info
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND
+      ${CMAKE_OBJCOPY} --compress-debug-sections
+      ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+    )
+  endif()
+
 endif()

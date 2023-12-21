@@ -505,6 +505,12 @@ endchoice # MEMFAULT_GNU_BUILD_ID_SOURCE
 
 endif # MEMFAULT_USE_GNU_BUILD_ID
 
+config MEMFAULT_COMPRESS_DEBUG_INFO
+        bool "Compress debug info"
+        default y
+        help
+          Compress debug info to reduce the size of the output elf file.
+
 module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"
