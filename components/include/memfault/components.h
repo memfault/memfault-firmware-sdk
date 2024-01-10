@@ -28,7 +28,7 @@
 #include "memfault/core/heap_stats.h"
 #include "memfault/core/log.h"
 #include "memfault/core/math.h"
-#include "memfault/core/platform/battery.h"
+#include "memfault/metrics/platform/battery.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/crc32.h"
 #include "memfault/core/platform/debug_log.h"

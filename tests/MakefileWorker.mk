@@ -68,6 +68,10 @@
 
 # Platforms
 UNAME_OUTPUT = "$(shell uname -a)"
+UNAME_VERSION = "$(shell uname -r)"
+UNAME_MAJOR_VERSION = $(shell echo $(UNAME_VERSION) | cut -d. -f1)
+VERSION_GREATER_OR_EQUAL = $(shell [[ $1 -ge $2 ]] && echo true)
+
 MACOSX_STR = Darwin
 MINGW_STR = MINGW
 CYGWIN_STR = CYGWIN
@@ -135,6 +139,18 @@ ifeq ($(findstring Version 9,$(UNAME_OUTPUT)),Version 9)
 	CPPUTEST_PEDANTIC_ERRORS = N
 endif
 endif
+
+# Starting in macOS Sonoma (version 23 and above), we do not pick up libs (eg libc++) automagically from the conda env. To work
+# around this, we explicitly set rpath and -L to point to the conda env lib directory
+ifeq ($(UNAME_OS), $(MACOSX_STR))
+ifeq ($(call VERSION_GREATER_OR_EQUAL, 23, $(UNAME_MAJOR_VERSION)), true)
+ifneq ($(CONDA_PREFIX),)
+CPPUTEST_LDFLAGS += \
+	-rpath $(CONDA_PREFIX)/lib \
+	-L$(CONDA_PREFIX)/lib
+endif # conda env check
+endif # macos major version check
+endif # macos check
 
 ifndef COMPONENT_NAME
     COMPONENT_NAME = name_this_in_the_makefile
@@ -316,11 +332,25 @@ ifeq ($(CPPUTEST_USE_GCOV), Y)
 	CPPUTEST_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
-CPPUTEST_CXXFLAGS += $(CPPUTEST_WARNINGFLAGS) $(CPPUTEST_CXX_WARNINGFLAGS)
+CPPUTEST_CXXFLAGS += $(CPPUTEST_CXX_WARNINGFLAGS)
 CPPUTEST_CPPFLAGS += $(CPPUTEST_WARNINGFLAGS)
-CPPUTEST_CXXFLAGS += $(CPPUTEST_MEMLEAK_DETECTOR_NEW_MACRO_FILE)
-CPPUTEST_CPPFLAGS += $(CPPUTEST_MEMLEAK_DETECTOR_MALLOC_MACRO_FILE)
 CPPUTEST_CFLAGS += $(CPPUTEST_C_WARNINGFLAGS)
+
+CPPUTEST_CXXFLAGS += $(CPPUTEST_MEMLEAK_DETECTOR_NEW_MACRO_FILE)
+# CppUTest's malloc memory leak macros hit errors when used with code that uses namespaced malloc calls (i.e. std::malloc)
+# The root cause of this is the combination the -include flag, the macro #defines, and the namespaced calls.
+# The -include flag always includes the macro header (MemoryLeakDetectorMallocMacros.h) into the source files first.
+# The macro header defines the malloc family replacements. The preprocessor replaces the token  with the CppUTest function
+# but this yields std::cpputest_malloc_location or similar causing a compilation error. This most commonly occurs on
+# macOS due to stdlib defaulting to libc++. To avoid this but keep the most coverage for leaks only enable the malloc
+# macros with CPPFLAGS on Linux vs CFLAGS on macOS. If the header is needed in tests to detect malloc leaks in the tests,
+# include the header AFTER all stdlib includes. The malloc calls cannot use the namespaced version.
+# On macOS only, with this workaround we will miss any leaks caused from malloc calls within external cpp libs (stdlib, etc.)
+ifeq ($(UNAME_OS),$(LINUX_STR))
+CPPUTEST_CPPFLAGS += $(CPPUTEST_MEMLEAK_DETECTOR_MALLOC_MACRO_FILE)
+else
+CPPUTEST_CFLAGS += $(CPPUTEST_MEMLEAK_DETECTOR_MALLOC_MACRO_FILE)
+endif
 
 TARGET_MAP = $(COMPONENT_NAME).map.txt
 ifeq ($(CPPUTEST_MAP_FILE), Y)

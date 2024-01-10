@@ -49,6 +49,7 @@ TEST(MfltStorageTestGroup, Test_SetAndGetCrashInfo) {
     .reset_reason_reg = 0x1,
   };
   memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, &bootup_info);
+  CHECK(memfault_reboot_tracking_booted());
 
   crash_found = memfault_reboot_tracking_read_reset_info(&read_info);
   CHECK(crash_found);
@@ -66,6 +67,7 @@ TEST(MfltStorageTestGroup, Test_SetAndGetCrashInfo) {
 
 TEST(MfltStorageTestGroup, Test_NoRamRegionIntialized) {
   memfault_reboot_tracking_boot(NULL, NULL);
+  CHECK_FALSE(memfault_reboot_tracking_booted());
   memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_Assert, NULL);
   sMfltResetReasonInfo info;
   bool info_available = memfault_reboot_tracking_read_reset_info(&info);
@@ -281,4 +283,14 @@ TEST(MfltStorageTestGroup, Test_GetUnexpectedRebootOccurred) {
   rc = memfault_reboot_tracking_get_unexpected_reboot_occurred(&unexpected_reboot);
   LONGS_EQUAL(0, rc);
   CHECK(unexpected_reboot);
+}
+
+TEST(MfltStorageTestGroup, Test_RebootTrackingBooted) {
+  // Reset the struct back to uninitialized and module pointer to null
+  memset(&s_mflt_reboot_tracking_region[0], 0xBA, sizeof(s_mflt_reboot_tracking_region));
+  memfault_reboot_tracking_boot(NULL, NULL);
+
+  CHECK_FALSE(memfault_reboot_tracking_booted());
+  memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, NULL);
+  CHECK(memfault_reboot_tracking_booted());
 }

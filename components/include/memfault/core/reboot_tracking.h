@@ -176,6 +176,10 @@ int memfault_reboot_tracking_get_reboot_reason(sMfltRebootReason *reboot_reason)
 //! @return 0 on success, or 1 if the result is invalid or the input parameter is NULL
 int memfault_reboot_tracking_get_unexpected_reboot_occurred(bool *unexpected_reboot_occurred);
 
+//! Checks if reboot tracking component has booted
+//!
+//! @returns true if reboot tracking component booted or false if not
+bool memfault_reboot_tracking_booted(void);
 #ifdef __cplusplus
 }
 #endif

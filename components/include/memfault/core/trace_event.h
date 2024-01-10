@@ -124,6 +124,11 @@ int memfault_trace_event_try_flush_isr_event(void);
 //! @return the worst case amount of space needed to serialize a Trace Event.
 size_t memfault_trace_event_compute_worst_case_storage_size(void);
 
+//! Checks if trace event component has booted
+//!
+//! @returns true if trace event component booted or false if not
+bool memfault_trace_event_booted(void);
+
 #ifdef __cplusplus
 }
 #endif

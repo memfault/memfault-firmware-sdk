@@ -226,6 +226,11 @@ void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_lis
 //! @note This function must not be called from an ISR context.
 void memfault_log_trigger_collection(void);
 
+//! Check if log component has booted
+//!
+//! @returns true if log component has booted or false if not
+bool memfault_log_booted(void);
+
 #ifdef __cplusplus
 }
 #endif

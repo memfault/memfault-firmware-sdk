@@ -3,6 +3,7 @@
 # See License.txt for details
 #
 
+# pyright: reportTypeCommentUsage=false
 # This file needs to be Python 2.7 compatible (i.e. type annotations must remain in comments).
 # Note: The snippet should be kept in sync with the "Example Usage" section of the README
 """Inspects provided ELF for a Build ID and when missing adds one if possible.

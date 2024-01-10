@@ -274,3 +274,8 @@ void memfault_reboot_tracking_clear_reboot_reason(void) {
     .is_valid = false,
   };
 }
+
+bool memfault_reboot_tracking_booted(void) {
+  return ((s_mflt_reboot_info != NULL) &&
+          (s_mflt_reboot_info->magic == MEMFAULT_REBOOT_INFO_MAGIC));
+}

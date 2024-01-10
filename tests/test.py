@@ -18,9 +18,13 @@ TEST_DIR = Path(__file__).parent
 # Run this special Make target to print out the set of tests that are available.
 # This will honor the TEST_MAKEFILE_FILTER environment variable, if set, so the
 # same filtering behavior is supported.
-output = subprocess.check_output(
-    ["make", "--no-print-directory", "-C", TEST_DIR, "print-makefiles"]
-)
+output = subprocess.check_output([
+    "make",
+    "--no-print-directory",
+    "-C",
+    TEST_DIR,
+    "print-makefiles",
+])
 test_makefiles = output.decode().split()
 
 

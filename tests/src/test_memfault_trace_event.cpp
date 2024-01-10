@@ -51,12 +51,14 @@ TEST_GROUP(MfltTraceEvent) {
 TEST(MfltTraceEvent, Test_BootNullStorage) {
   const int rv = memfault_trace_event_boot(NULL);
   CHECK_EQUAL(rv, -4);
+  CHECK_FALSE(memfault_trace_event_booted());
 }
 
 TEST(MfltTraceEvent, Test_BootStorageTooSmall) {
   fake_memfault_event_storage_set_available_space(MEMFAULT_TRACE_EVENT_WORST_CASE_SIZE_BYTES - 1);
   const int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
   CHECK_EQUAL(rv, -3);
+  CHECK_FALSE(memfault_trace_event_booted());
 }
 
 
@@ -86,8 +88,10 @@ static void prv_run_capture_test(
 
 TEST(MfltTraceEvent, Test_CaptureOk_PcAndLr) {
   fake_memfault_event_storage_clear();
+  CHECK_FALSE(memfault_trace_event_booted());
   const int rv = memfault_trace_event_boot(s_fake_event_storage_impl);
   CHECK_EQUAL(0, rv);
+  CHECK(memfault_trace_event_booted());
 
   const uint8_t expected_data[] = {
       0xA7, 0x02, 0x02, 0x03, 0x01, 0x07, 0x69, 0x44,

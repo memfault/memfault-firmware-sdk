@@ -92,6 +92,8 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-declaration-after-statement \
   -Wno-reserved-identifier \
   -Wno-zero-length-array \
+  -Wno-unsafe-buffer-usage \
+  -Wno-cast-function-type-strict \
 
 else
 

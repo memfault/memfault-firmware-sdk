@@ -12,6 +12,7 @@
 #include "fakes/fake_memfault_platform_metrics_locking.h"
 #include "memfault/components.h"
 #include "memfault/metrics/serializer.h"
+#include "mocks/mock_memfault_platform_debug_log.h"
 
 extern "C" {
 static uint64_t s_boot_time_ms = 0;
@@ -57,16 +58,6 @@ TEST_GROUP(MemfaultHeartbeatMetricsDebug){
 };
 // clang-format on
 
-static void prv_debug_print_expectations(eMemfaultPlatformLogLevel level, const char *const lines[],
-                                         size_t num_lines) {
-  for (unsigned int i = 0; i < num_lines; ++i) {
-    mock()
-      .expectOneCall("memfault_platform_log")
-      .withIntParameter("level", level)
-      .withStringParameter("output", lines[i]);
-  }
-}
-
 void memfault_metrics_heartbeat_collect_data(void) {
   MEMFAULT_METRIC_SET_UNSIGNED(test_key_unsigned, 1234);
   MEMFAULT_METRIC_SET_SIGNED(test_key_signed, -100);
@@ -104,8 +95,8 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_on_boot,
-                               MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_on_boot));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_on_boot,
+                                 MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_on_boot));
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
 
@@ -126,9 +117,9 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_string: \"heyo!\"",
   };
   mock().expectOneCall("memfault_metrics_reliability_collect");
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info,
-                               heartbeat_debug_print_after_collected,
-                               MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_after_collected));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info,
+                                 heartbeat_debug_print_after_collected,
+                                 MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_after_collected));
   mock().expectOneCall("memfault_metrics_heartbeat_serialize");
   memfault_metrics_heartbeat_debug_trigger();
   mock().checkExpectations();
@@ -145,8 +136,8 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_reset,
-                               MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_reset));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_reset,
+                                 MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_reset));
   memfault_metrics_heartbeat_debug_print();
   mock().checkExpectations();
 
@@ -163,8 +154,8 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
   };
-  prv_debug_print_expectations(kMemfaultPlatformLogLevel_Info, heartbeat_add_non_null,
-                               MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_add_non_null,
+                                 MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));
   // call add on this metric alone and confirm it is set
   MEMFAULT_METRIC_ADD(test_key_unsigned, 123);
   memfault_metrics_heartbeat_debug_print();

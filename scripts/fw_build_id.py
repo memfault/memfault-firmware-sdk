@@ -18,7 +18,7 @@ if os.path.exists(bundled_mflt_build_id_src_dir):
     # Released SDK:
     sys.path.insert(0, bundled_mflt_build_id_src_dir)
 
-from mflt_build_id import *  # noqa: E402, F403
+from mflt_build_id import *  # noqa: E402, F403  # pyright: ignore[reportWildcardImportFromLibrary]
 
 if __name__ == "__main__":
     from mflt_build_id import main

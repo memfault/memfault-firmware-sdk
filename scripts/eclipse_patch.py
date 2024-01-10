@@ -171,7 +171,7 @@ def patch_project(
     # added. We will just be adding them back below.
     for link in linked_resources.findall("link"):
         name = link.find(".//name")
-        if name is not None and "memfault_" in name.text:
+        if name is not None and "memfault_" in name.text:  # pyright: ignore[reportGeneralTypeIssues]
             linked_resources.remove(link)
 
     comp_folder_name = "memfault_components"
@@ -266,15 +266,13 @@ def patch_cproject(
     #
 
     def _find_include_nodes(option):
-        return option.get("id", "").startswith(
-            (
-                # this is the element id used by Dialog's Smart Snippets Studio
-                # IDE (and possibly others)
-                "ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths",
-                # this is the element id used by NXP's MCUXpresso IDE
-                "gnu.c.compiler.option.include.paths",
-            )
-        )
+        return option.get("id", "").startswith((
+            # this is the element id used by Dialog's Smart Snippets Studio
+            # IDE (and possibly others)
+            "ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths",
+            # this is the element id used by NXP's MCUXpresso IDE
+            "gnu.c.compiler.option.include.paths",
+        ))
 
     memfault_sdk_include_paths = [
         "${workspace_loc:/${ProjName}/memfault_includes/components/include}",

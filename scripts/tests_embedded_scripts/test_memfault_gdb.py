@@ -22,7 +22,7 @@ scripts_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, scripts_dir)
 
 
-from memfault_gdb import (  # noqa: E402  # type: ignore[import]
+from memfault_gdb import (  # noqa: E402  # pyright: ignore[reportGeneralTypeIssues]
     ArmCortexMCoredumpArch,
     MemfaultConfig,
     MemfaultCoredump,
@@ -235,6 +235,7 @@ Debugging a target over a serial line.
 def test_parse_maintenance_info_sections_with_file(maintenance_info_sections_fixture, fake_elf):
     fn, sections = parse_maintenance_info_sections(maintenance_info_sections_fixture)
     assert fn == str(fake_elf)
+    assert sections
     assert len(sections) == 35
     assert sections[0] == Section(0x26000, 0x6B784 - 0x26000, ".text", read_only=True)
     assert sections[20] == Section(0x20005C30, 0x2000B850 - 0x20005C30, ".bss", read_only=False)
@@ -330,7 +331,7 @@ def test_coredump_writer(snapshot):
         arch, device_serial, software_type, software_version, hardware_revision
     )
     cd_writer.trace_reason = 5
-    cd_writer.regs = [
+    cd_writer.regs = [  # pyright: ignore[reportGeneralTypeIssues]
         {
             "r0": 4 * b"\x00",
             "r1": 4 * b"\x01",
@@ -355,7 +356,7 @@ def test_coredump_writer(snapshot):
             "control": 4 * b"\x14",
         },
     ]
-    section = Section(4, 32, ".test", "")
+    section = Section(4, 32, ".test", "")  # pyright: ignore[reportGeneralTypeIssues]
     section.data = b"hello world"
     cd_writer.add_section(section)
 
@@ -407,7 +408,9 @@ def _gdb_for_coredump(mocker, maintenance_info_sections_fixture, _settings_cored
 @pytest.mark.usefixtures("_gdb_for_coredump")
 def test_coredump_command_no_target(capsys):
     """Test coredump command shows error when no target is connected"""
-    gdb_fake.selected_inferior().threads.return_value = []
+    inferior = gdb_fake.selected_inferior()
+    assert inferior
+    inferior.threads.return_value = []
 
     cmd = MemfaultCoredump()
     cmd.invoke("--project-key {}".format(TEST_PROJECT_KEY), True)

@@ -78,7 +78,8 @@ endif
 # Exclude these directory stems from the coverage results
 LCOV_EXCLUDE_DIRS := \
   '*/tests/*' \
-  '*/CppUTestExt/*'
+  '*/CppUTestExt/*' \
+  '/usr/include/*' \
 
 # set additional args for genhtml in environment var, like --dark-mode
 GENHTML_EXTRA_ARGS ?=

@@ -270,6 +270,11 @@ static int prv_timer_isr_crash_example(const struct shell *shell, size_t argc, c
   return 0;
 }
 
+static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, MEMFAULT_UNUSED size_t argc,
+                         MEMFAULT_UNUSED char **argv) {
+  return memfault_self_test_run();
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
   //! different crash types that should result in a coredump being collected
@@ -283,7 +288,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
   SHELL_CMD(double_free, NULL, "trigger a double free error", prv_cli_cmd_double_free),
   SHELL_CMD(badptr, NULL, "trigger fault via store to a bad address", prv_bad_ptr_deref_example),
-  SHELL_CMD(isr_badptr, NULL, "trigger fault via store to a bad address from an ISR", prv_timer_isr_crash_example),
+  SHELL_CMD(isr_badptr, NULL, "trigger fault via store to a bad address from an ISR",
+            prv_timer_isr_crash_example),
 
   //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),
@@ -294,6 +300,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(log_capture, NULL, "trigger capture of current log buffer contents", prv_trigger_logs),
   SHELL_CMD(logs, NULL, "writes test logs to log buffer", prv_test_log),
   SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),
+  SHELL_CMD(self, NULL, "test Memfault components on-device", prv_self_test),
 
   SHELL_SUBCMD_SET_END /* Array terminated. */
 );

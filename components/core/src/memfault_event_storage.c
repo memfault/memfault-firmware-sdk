@@ -467,3 +467,23 @@ size_t memfault_event_storage_bytes_free(void) {
 
   return bytes_free;
 }
+
+bool memfault_event_storage_booted(void) {
+  // The event storage component does not have any internal state we can check to see if
+  // memfault_events_storage_boot was called. As an indirect method, we can check the value of the
+  // circular buffer used internally. If the buffer structure has been initialized (storage pointer
+  // is not null), then we can assume that memfault_events_storage_boot was called.
+  // This check breaks the circular buffer API contract but is intentional for simplicity/efficiency
+  return (s_event_storage.storage != NULL);
+}
+
+// Resets the internal structures of the event storage component. This function is to only be used
+// in event storage unit tests. Declaration here to silence -Wmissing-prototypes
+void memfault_event_storage_reset(void);
+void memfault_event_storage_reset(void) {
+  // Delete the circular buffer and read/write state
+  // NB: storage implementation is const so cannot be reset
+  memset(&s_event_storage, 0, sizeof(s_event_storage));
+  s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
+  s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
+}

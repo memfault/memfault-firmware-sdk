@@ -297,3 +297,7 @@ void memfault_trace_event_reset(void) {
   s_memfault_trace_event_ctx.storage_impl = NULL;
   s_isr_trace_event = (sMemfaultIsrTraceEvent) { 0 };
 }
+
+bool memfault_trace_event_booted(void) {
+  return (s_memfault_trace_event_ctx.storage_impl != NULL);
+}

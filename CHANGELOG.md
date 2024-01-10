@@ -1,5 +1,64 @@
 # Memfault Firmware SDK Changelog
 
+## [1.6.0] - 2024-01-09
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - In the [ESP32 example app](examples/esp32), disable the shell history cache
+    for the FatFS shell command handler, which saves some ~20kB of heap memory.
+
+  - Also in the [ESP32 example app](examples/esp32), add a new built-in metric
+    `sync_successful` which is set to `1` when a successful Memfault OTA
+    check-in is performed. Primarily added for demonstration purposes for the
+    metric. See more information about Memfault Core Metrics
+    [here](https://docs.memfault.com/docs/platform/memfault-core-metrics).
+
+- General:
+
+  - Enhanced the Self-Test component with the following new features:
+
+    - Check that other components are initialized correctly (boot test)
+    - Check that exporting data over the console is supported (primiarly
+      checking that the output buffer is large enough)
+    - Print information about the coredump regions that would be collected
+      during a crash, for diagnostic purposes
+
+- nRF-Connect SDK:
+
+  - Fix a use-after-free problem in the Memfault FOTA helper code
+    ([`ports/zephyr/ncs/src/memfault_fota.c`](ports/zephyr/ncs/src/memfault_fota.c)),
+    where the allocated Memfault OTA download URL was freed too early. This
+    issue was introduced in Memfault SDK v1.5.0, where support for FOTA on
+    nRF-Connect SDK v2.4+ was improved.
+
+- Zephyr:
+
+  - Fix a concurrent access bug in the Memfault Zephyr Logging Backend. Only
+    affected configurations with `CONFIG_LOG_MODE_IMMEDIATE=y`. In certain cases
+    the logging `ctx` could be corrupted, causing unpredictable behavior.
+    Replace the synchronization approach with an atomic primitive and correct a
+    potential concurrency issue in the log panic handler.
+
+  - Fix a build warning for certain Zephyr configurations (when using
+    `CONFIG_NEWLIB_LIBC=y`) due to a missing declaration for `strnlen`. This
+    warning was introduced with the Memfault Self-Test additions in Memfault SDK
+    v1.5.2.
+
+### :boom: Breaking Changes
+
+- General:
+
+  - The Battery Metrics platform API has been consolidated into a single
+    function,
+    `int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc)`,
+    where the platform data is loaded into the `soc` struct. This should
+    simplify the platform implementation, and enables platforms to return a
+    non-zero value to indicate state-of-charge is unknown. See the new API in
+    the header file
+    [`memfault/metrics/platform/battery.h`](components/include/memfault/metrics/platform/battery.h)
+
 ## [1.5.2] - 2023-12-12
 
 ### :chart_with_upwards_trend: Improvements

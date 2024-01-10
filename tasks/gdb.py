@@ -6,7 +6,7 @@
 try:
     from shutil import which  # Python 3
 except ImportError:  # Python 2
-    from distutils.spawn import find_executable as which  # type: ignore[no-redef]
+    from distutils.spawn import find_executable as which
 
 
 def gdb_find(prefix=None):

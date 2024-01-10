@@ -9,6 +9,7 @@
 
 // clang-format off
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/atomic.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log_backend.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log_output.h)
@@ -31,6 +32,14 @@
 // Can't be zero but should be reasonably sized. See ports/zephyr/Kconfig to change this size.
 BUILD_ASSERT(CONFIG_MEMFAULT_LOGGING_RAM_SIZE);
 
+// Immediate mode requires reentrancy support in the logging backend. It's very
+// low overhead, so to keep things simple enable the protection in deferred mode
+// too.
+enum {
+  MFLT_LOG_BUFFER_BUSY,
+};
+static atomic_t s_log_output_busy_flag;
+
 // Define a log_output_mflt_control_block and log_output_mflt that references
 // log_output_mflt_control_block via pointer. First arg to LOG_OUTPUT_DEFINE()
 // is a token that the C preprocessor uses to create symbol names,
@@ -44,22 +53,6 @@ LOG_OUTPUT_DEFINE(s_log_output_mflt, prv_log_out, s_zephyr_render_buf, sizeof(s_
 // store the log backend ID, so we can disable it during the panic handler
 const struct log_backend * s_memfault_log_backend;
 
-// This semaphore protects the log serialization operations, both the shared
-// render buffer and the Memfault logging component circular buffer
-static K_SEM_DEFINE(s_log_flush_sem, 1, 1);
-
-static int prv_sem_take(void) {
-  // if we're in an ISR, don't wait for the semaphore, otherwise wait forever
-  k_timeout_t timeout = (memfault_arch_is_inside_isr()) ? (K_NO_WAIT) : (K_FOREVER);
-
-  // get the semaphore and return
-  return k_sem_take(&s_log_flush_sem, timeout);
-}
-
-static void prv_sem_give(void) {
-  k_sem_give(&s_log_flush_sem);
-}
-
 // Zephyr will call our init function so we can establish some storage.
 static void prv_log_init(const struct log_backend *const backend) {
   // static RAM storage where logs will be stored. Storage can be any size
@@ -71,9 +64,12 @@ static void prv_log_init(const struct log_backend *const backend) {
   s_memfault_log_backend = backend;
 }
 
-static void prv_log_panic(struct log_backend const *const backend) {
-  log_output_flush(&s_log_output_mflt);
-}
+// Intentionally a no-op. In immediate mode, we can't safely re-enter
+// prv_log_out() to flush any buffered log data, and in deferred mode, the
+// full prv_log_process() function is called, which has reentrancy protection.
+// See here:
+// https://github.com/zephyrproject-rtos/zephyr/blob/v3.5.0/subsys/logging/log_core.c#L393-L403
+static void prv_log_panic(struct log_backend const *const backend) {}
 
 void memfault_zephyr_log_backend_disable(void) {
   log_backend_deactivate(s_memfault_log_backend);
@@ -132,8 +128,14 @@ static void prv_log_process(const struct log_backend *const backend,
     .memfault_level = prv_map_zephyr_level_to_memfault(zephyr_level),
   };
 
+  if (atomic_test_and_set_bit(&s_log_output_busy_flag, MFLT_LOG_BUFFER_BUSY)) {
+    return;
+  }
+
   log_output_ctx_set(&s_log_output_mflt, &log_process_ctx);
   log_output_msg_process(&s_log_output_mflt, &msg->log, flags);
+
+  atomic_clear_bit(&s_log_output_busy_flag, MFLT_LOG_BUFFER_BUSY);
 }
 
 static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt) {
@@ -145,7 +147,9 @@ const struct log_backend_api log_backend_mflt_api = {
   .process          = prv_log_process,
   .panic            = prv_log_panic,
   .init             = prv_log_init,
-  .dropped          = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : prv_log_dropped,
+  // dropped handler is only used in deferred mode, so save some space by not
+  // including it when immediate mode is enabled.
+  .dropped          = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_dropped,
 };
 
 // Define a couple of structs needed by the logging backend infrastructure.
@@ -164,11 +168,6 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
     return (int)length;
   }
 #endif
-
-  // Ensure we have control over logging context, drop data if we cannot obtain control
-  if (prv_sem_take() != 0) {
-    return (int)length;
-  }
 
   sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx *)ctx;
   size_t save_length = length;
@@ -193,7 +192,6 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
 
   const bool flush = (length == 0);
   if (!flush) {
-      prv_sem_give();
       return (int)length;
   }
 
@@ -214,8 +212,6 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   // Assert to catch any behavior changes in future versions of Zephyr
   MEMFAULT_SDK_ASSERT(mflt_ctx != NULL);
   memfault_log_save_preformatted_nolock(mflt_ctx->memfault_level, data, save_length);
-
-  prv_sem_give();
 
   return (int) length;
 }

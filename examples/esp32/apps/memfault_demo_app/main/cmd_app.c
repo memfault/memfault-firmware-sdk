@@ -11,6 +11,7 @@
 
 #include "cmd_decl.h"
 #include "esp_console.h"
+#include "esp_heap_task_info.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -110,6 +111,47 @@ static void prv_init_stack_overflow_test(void) {
           // !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
 #endif    // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
+#if defined(CONFIG_HEAP_TASK_TRACKING)
+// Print out per-task heap allocations. This is lifted from the example here:
+// https://github.com/espressif/esp-idf/blob/v5.1.2/examples/system/heap_task_tracking/main/heap_task_tracking_main.c
+static int prv_heap_task_stats(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char **argv) {
+  #define MAX_TASK_NUM 10   // Max number of per tasks info that it can store
+  #define MAX_BLOCK_NUM 10  // Max number of per block info that it can store
+
+  static size_t s_prepopulated_num = 0;
+  static heap_task_totals_t s_totals_arr[MAX_TASK_NUM];
+  static heap_task_block_t s_block_arr[MAX_BLOCK_NUM];
+
+  heap_task_info_params_t heap_info = {0};
+  heap_info.caps[0] = MALLOC_CAP_8BIT;  // Gets heap with CAP_8BIT capabilities
+  heap_info.mask[0] = MALLOC_CAP_8BIT;
+  heap_info.caps[1] = MALLOC_CAP_32BIT;  // Gets heap info with CAP_32BIT capabilities
+  heap_info.mask[1] = MALLOC_CAP_32BIT;
+  heap_info.tasks = NULL;  // Passing NULL captures heap info for all tasks
+  heap_info.num_tasks = 0;
+  heap_info.totals = s_totals_arr;  // Gets task wise allocation details
+  heap_info.num_totals = &s_prepopulated_num;
+  heap_info.max_totals = MAX_TASK_NUM;  // Maximum length of "s_totals_arr"
+  heap_info.blocks = s_block_arr;  // Gets block wise allocation details. For each block, gets owner
+                                   // task, address and size
+  heap_info.max_blocks = MAX_BLOCK_NUM;  // Maximum length of "s_block_arr"
+
+  heap_caps_get_per_task_info(&heap_info);
+
+  for (int i = 0; i < *heap_info.num_totals; i++) {
+    printf(
+      "Task: %s -> CAP_8BIT: %d CAP_32BIT: %d\n",
+      heap_info.totals[i].task ? pcTaskGetName(heap_info.totals[i].task) : "Pre-Scheduler allocs",
+      heap_info.totals[i].size[0],   // Heap size with CAP_8BIT capabilities
+      heap_info.totals[i].size[1]);  // Heap size with CAP32_BIT capabilities
+  }
+
+  printf("\n\n");
+
+  return 0;
+}
+#endif  // CONFIG_HEAP_TASK_TRACKING
+
 void register_app(void) {
 #if MEMFAULT_TASK_WATCHDOG_ENABLE
   const esp_console_cmd_t test_watchdog_cmd = {
@@ -119,6 +161,16 @@ void register_app(void) {
     .func = &test_task_watchdog,
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&test_watchdog_cmd));
+#endif
+
+#if defined(CONFIG_HEAP_TASK_TRACKING)
+  const esp_console_cmd_t heap_task_stats_cmd = {
+    .command = "heap_task_stats",
+    .help = "Prints heap usage per task",
+    .hint = NULL,
+    .func = &prv_heap_task_stats,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&heap_task_stats_cmd));
 #endif
 
 // Only support the stack overflow test on esp-idf >= 4.3.0

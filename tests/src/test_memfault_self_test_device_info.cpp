@@ -3,7 +3,6 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_build_id.h"
-#include "memfault/core/compiler.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault_self_test_private.h"
 
@@ -12,12 +11,11 @@
 #define VALID_SOFTWARE_VERSION "1.2.3+dev"
 #define VALID_HARDWARE_VERSION "1.0_+:hw-version"
 
-static const char *invalid_long_field =
-  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+extern "C" {
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *device_info) {
   mock().actualCall(__func__).withOutputParameter("device_info", device_info);
+}
 }
 
 typedef struct {
@@ -26,6 +24,9 @@ typedef struct {
   uint32_t invalid_result;
 } sDeviceInfoFieldParam;
 
+static const char *invalid_long_field =
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 static sMemfaultDeviceInfo s_device_info = { 0 };
 
 static void prv_set_device_info_valid(void) {

@@ -77,7 +77,9 @@ static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
 TEST(MemfaultLog, Test_BadInit) {
   // should be no-ops
   memfault_log_boot(NULL, 10);
-  memfault_log_boot((void*)0xbadcafe, 0);
+  CHECK_FALSE(memfault_log_booted());
+  memfault_log_boot((void *)0xbadcafe, 0);
+  CHECK_FALSE(memfault_log_booted());
 
   // calling any API while not enabled should have no effect
   memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Error, "1", 1);
@@ -92,7 +94,9 @@ TEST(MemfaultLog, Test_BadInit) {
 
 TEST(MemfaultLog, Test_MemfaultLogBasic) {
   uint8_t s_ram_log_store[20];
+  CHECK_FALSE(memfault_log_booted());
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+  CHECK(memfault_log_booted());
 
   const char *my_log = "12345678";
   const size_t my_log_len = strlen(my_log);

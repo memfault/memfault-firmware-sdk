@@ -57,7 +57,7 @@ def download_memfault_library(working_dir: str, tag: str):
 def extract_memfault_library(working_dir: str, release_artifact_filepath: str):
     logging.debug("Extracting %s", release_artifact_filepath)
     download = tarfile.open(release_artifact_filepath)
-    download.extractall(working_dir)
+    download.extractall(working_dir)  # noqa: S202
     root_folder_name = download.getnames()[0]
     download.close()
     extract_dir = os.path.realpath(os.path.join(working_dir, root_folder_name))
@@ -214,6 +214,7 @@ $ python create_arduino_library.py --tag 0.28.2 --output build
         release_artifact_filepath = args.memfault_sdk
         extraction_working_dir = os.path.join(BUILD_DIRECTORY, "memfault-firmware-sdk")
 
+    assert release_artifact_filepath
     release_artifact_dir = extract_memfault_library(
         extraction_working_dir, release_artifact_filepath
     )

@@ -40,18 +40,52 @@
 
 #endif
 
+// The OTA download URL is allocated to this pointer, and must be freed when the
+// FOTA download ends.
+static char *s_download_url = NULL;
+
+static void prv_fota_url_cleanup(void) {
+  MEMFAULT_LOG_DEBUG("Freeing download URL");
+  memfault_zephyr_port_release_download_url(&s_download_url);
+}
+
 #if !CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
 void memfault_fota_download_callback(const struct fota_download_evt *evt) {
   switch (evt->id) {
     case FOTA_DOWNLOAD_EVT_FINISHED:
       MEMFAULT_LOG_INFO("OTA Complete, resetting to install update!");
+      // not necessary to call prv_fota_url_cleanup() here since
+      // memfault_platform_reboot() will reset the device.
       memfault_platform_reboot();
       break;
+    case FOTA_DOWNLOAD_EVT_ERROR:
+    case FOTA_DOWNLOAD_EVT_CANCELLED:
+      MEMFAULT_LOG_ERROR("FOTA download error: rv=%d", evt->id);
+      prv_fota_url_cleanup();
     default:
       break;
   }
 }
 #endif
+
+// Install this callback wrapper to permit user-supplied callback (when
+// CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y), but to ensure any cleanup
+// is done.
+static void prv_fota_download_callback_wrapper(const struct fota_download_evt *evt) {
+  // May not return if OTA was successful
+  memfault_fota_download_callback(evt);
+
+  switch (evt->id) {
+    // For any case where the download client has exited, free the OTA URL
+    case FOTA_DOWNLOAD_EVT_ERROR:
+    case FOTA_DOWNLOAD_EVT_CANCELLED:
+    case FOTA_DOWNLOAD_EVT_FINISHED:
+      prv_fota_url_cleanup();
+      break;
+    default:
+      break;
+  }
+}
 
 static const int s_memfault_fota_certs[] = {
   kMemfaultRootCert_DigicertRootG2,
@@ -97,16 +131,17 @@ _Static_assert(__builtin_types_compatible_p(__typeof__(&download_client_get),
 #endif
 
 int memfault_fota_start(void) {
-  char *download_url = NULL;
-  int rv = memfault_zephyr_port_get_download_url(&download_url);
+  // Note: The download URL is allocated on the heap and must be freed when done
+  int rv = memfault_zephyr_port_get_download_url(&s_download_url);
   if (rv <= 0) {
     return rv;
   }
+  MEMFAULT_LOG_DEBUG("Allocated new FOTA download URL");
 
-  MEMFAULT_ASSERT(download_url != NULL);
+  MEMFAULT_ASSERT(s_download_url != NULL);
 
   MEMFAULT_LOG_INFO("FOTA Update Available. Starting Download!");
-  rv = fota_download_init(&memfault_fota_download_callback);
+  rv = fota_download_init(&prv_fota_download_callback_wrapper);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("FOTA init failed, rv=%d", rv);
     goto cleanup;
@@ -121,10 +156,12 @@ int memfault_fota_start(void) {
     // which replaces the parameter used to specify the APN"
     //
     // https://github.com/nrfconnect/sdk-nrf/blob/v1.8.0/include/net/fota_download.h#L88-L106
-    rv = fota_download_start(download_url, download_url, s_memfault_fota_certs[i], 0 /* pdn_id */, 0);
+    rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
+                             0 /* pdn_id */, 0);
 #else // NCS <= 1.7
     // https://github.com/nrfconnect/sdk-nrf/blob/v1.4.1/include/net/fota_download.h#L88-L106
-    rv = fota_download_start(download_url, download_url, s_memfault_fota_certs[i], NULL /* apn */, 0);
+    rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
+                             NULL /* apn */, 0);
 #endif
     if (rv == 0) {
       // success -- we are ready to start the FOTA download!
@@ -161,12 +198,17 @@ int memfault_fota_start(void) {
   }
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("FOTA start failed, rv=%d", rv);
-    return rv;
+    goto cleanup;
   }
 
   MEMFAULT_LOG_INFO("FOTA In Progress");
   rv = 1;
+
 cleanup:
-  memfault_zephyr_port_release_download_url(&download_url);
+  // any error code other than 1 or 0 indicates an error
+  if ((rv != 1) && (rv != 0)) {
+    // free the allocated s_download_url
+    prv_fota_url_cleanup();
+  }
   return rv;
 }

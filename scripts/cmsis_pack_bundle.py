@@ -242,8 +242,8 @@ def build_cmsis_pack(
     root = tree.getroot()
 
     # the pdsc file name must exactly match these fields
-    psdc_vendor = root.find(".//vendor").text  # type: ignore[union-attr]
-    psdc_name = root.find(".//name").text  # type: ignore[union-attr]
+    psdc_vendor = root.find(".//vendor").text  # pyright: ignore[reportOptionalMemberAccess]
+    psdc_name = root.find(".//name").text  # pyright: ignore[reportOptionalMemberAccess]
     psdc_file_name = f"{psdc_vendor}.{psdc_name}.pdsc"
 
     component_nodes = root.findall(".//component")

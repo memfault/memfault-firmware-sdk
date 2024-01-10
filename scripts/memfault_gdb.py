@@ -928,15 +928,13 @@ def http_upload_symbol_file(config, artifact_readable, software_type, software_v
             project=config.project,
         ),
         headers={"Content-Type": "application/json", "Accept": "application/json"},
-        body=dumps(
-            {
-                "file": {"token": token, "name": "symbols.elf"},
-                "software_version": {
-                    "version": software_version,
-                    "software_type": software_type,
-                },
-            }
-        ),
+        body=dumps({
+            "file": {"token": token, "name": "symbols.elf"},
+            "software_version": {
+                "version": software_version,
+                "software_type": software_type,
+            },
+        }),
         should_raise=True,
     )
 
@@ -1350,7 +1348,7 @@ class MemfaultCoredump(MemfaultGdbCommand):
     """Captures a coredump from the target and uploads it to Memfault for analysis"""
 
     ALPHANUM_SLUG_DOTS_COLON_REGEX = r"^[-a-zA-Z0-9_\.\+:]+$"
-    ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_REGEX = r"^[-a-zA-Z0-9_\.\+: \(\)\[\]/]+$"
+    ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_COMMA_REGEX = r"^[-a-zA-Z0-9_\.\+: \(\)\[\]/,]+$"
     DEFAULT_CORE_DUMP_HARDWARE_REVISION = "DEVBOARD"
     DEFAULT_CORE_DUMP_SERIAL_NUMBER = "DEMOSERIALNUMBER"
     DEFAULT_CORE_DUMP_SOFTWARE_TYPE = "main"
@@ -1541,7 +1539,7 @@ Proceed? [y/n]
         parser.add_argument(
             "--software-version",
             type=_character_check(
-                self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_REGEX, "software version"
+                self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_COMMA_REGEX, "software version"
             ),
             help=(
                 "Overrides the software version that will be reported in the core dump."

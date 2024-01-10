@@ -19,6 +19,11 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/nonvolatile_event_storage.h"
 
+extern "C" {
+// Declaration for test function used to reset event storage
+extern void memfault_event_storage_reset(void);
+}
+
 static uint8_t s_ram_store[11];
 static const size_t s_ram_store_size = sizeof(s_ram_store);
 static const sMemfaultEventStorageImpl *s_storage_impl;
@@ -593,3 +598,16 @@ TEST(MemfaultEventStorage, Test_UsedFreeSizes) {
   LONGS_EQUAL(bytes_free, 0);
 }
 #endif /* !MEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE */
+
+TEST(MemfaultEventStorage, Test_EventStorageBoot) {
+  uint8_t storage[11] = { 0 };
+  const size_t storage_size = sizeof(storage);
+  const sMemfaultEventStorageImpl *storage_impl = NULL;
+
+  memfault_event_storage_reset();
+  CHECK_FALSE(memfault_event_storage_booted());
+
+  storage_impl = memfault_events_storage_boot(storage, storage_size);
+  CHECK(storage_impl != NULL);
+  CHECK(memfault_event_storage_booted());
+}

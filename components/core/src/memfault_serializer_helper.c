@@ -24,26 +24,11 @@
 #include "memfault_build_id_private.h"
 #endif
 
-typedef struct MemfaultSerializerOptions {
-  // By default, the device serial number is not encoded in each event to conserve space
-  // and instead is derived from the identifier provided when posting to the chunks endpoint
-  //  (api/v0/chunks/{{device_identifier}})
-  //
-  // To instead always encode the device serial number, compile the Memfault SDK with the following
-  // CFLAG:
-  //   MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL=0
-  bool encode_device_serial;
-} sMemfaultSerializerOptions;
-
 //! The number of messages dropped since the last successful send
 static uint32_t s_num_storage_drops = 0;
 //! A running sum of total messages dropped since memfault_serializer_helper_read_drop_count() was
 //! last called
 static uint32_t s_last_drop_count = 0;
-
-static const sMemfaultSerializerOptions s_memfault_serializer_options = {
-  .encode_device_serial = (MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL != 0),
-};
 
 static bool prv_encode_event_key_string_pair(
     sMemfaultCborEncoder *encoder, eMemfaultEventKey key,  const char *value) {
@@ -64,10 +49,11 @@ static bool prv_encode_device_version_info(sMemfaultCborEncoder *e) {
   sMemfaultDeviceInfo info = { 0 };
   memfault_platform_get_device_info(&info);
 
-  if (s_memfault_serializer_options.encode_device_serial &&
-      !prv_encode_event_key_string_pair(e, kMemfaultEventKey_DeviceSerial, info.device_serial)) {
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
+  if (!prv_encode_event_key_string_pair(e, kMemfaultEventKey_DeviceSerial, info.device_serial)) {
     return false;
   }
+#endif
 
   if (!prv_encode_event_key_string_pair(e, kMemfaultEventKey_SoftwareType, info.software_type)) {
     return false;
@@ -130,14 +116,13 @@ bool memfault_serializer_helper_encode_metadata_with_time(sMemfaultCborEncoder *
   const bool has_build_id = false;
 #endif
 
-  const size_t top_level_num_pairs =
-      1 /* type */ +
-      (unix_timestamp_available ? 1 : 0) +
-      (s_memfault_serializer_options.encode_device_serial ? 1 : 0) +
-      3 /* sw version, sw type, hw version */ +
-      (has_build_id ? 1 : 0) +
-      1 /* cbor schema version */ +
-      1 /* event_info */;
+  const size_t top_level_num_pairs = 1 /* type */ + (unix_timestamp_available ? 1 : 0) +
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
+                                     1 +
+#endif
+                                     3 /* sw version, sw type, hw version */ +
+                                     (has_build_id ? 1 : 0) + 1 /* cbor schema version */ +
+                                     1 /* event_info */;
 
   memfault_cbor_encode_dictionary_begin(encoder, top_level_num_pairs);
 

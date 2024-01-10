@@ -2,8 +2,8 @@ list(APPEND
    COMPONENT_SRCS
    cmd_app.c
    cmd_system.c
-   console_example_main.c
    led.c
+   main.c
 )
 
 if (CONFIG_APP_MEMFAULT_TRANSPORT_HTTP)

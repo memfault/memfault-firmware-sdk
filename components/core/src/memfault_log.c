@@ -483,3 +483,7 @@ void memfault_log_reset(void) {
     .enabled = false,
   };
 }
+
+bool memfault_log_booted(void) {
+  return s_memfault_ram_logger.enabled;
+}

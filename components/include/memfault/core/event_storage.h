@@ -105,6 +105,11 @@ size_t memfault_event_storage_bytes_used(void);
 //! Returns zero if the storage has not been allocated.
 size_t memfault_event_storage_bytes_free(void);
 
+//! Check if event storage component has booted
+//!
+//! @returns true if event storage booted or false if not
+bool memfault_event_storage_booted(void);
+
 #ifdef __cplusplus
 }
 #endif
