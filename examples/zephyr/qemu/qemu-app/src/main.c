@@ -38,9 +38,7 @@ static struct k_thread *s_main_thread = NULL;
 
 // Blink code taken from the zephyr/samples/basic/blinky example.
 static void blink_forever(void) {
-#if CONFIG_QEMU_TARGET
-  k_sleep(K_FOREVER);
-#else
+#if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
   /* 1000 msec = 1 sec */
   #define SLEEP_TIME_MS 1000
 
@@ -58,7 +56,10 @@ static void blink_forever(void) {
     gpio_pin_toggle_dt(&led);
     k_msleep(SLEEP_TIME_MS);
   }
-#endif  // CONFIG_QEMU_TARGET
+#else
+  // no led on this board, just sleep forever
+  k_sleep(K_FOREVER);
+#endif
 }
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {

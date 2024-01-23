@@ -75,22 +75,38 @@ static void prv_free(void *ptr) {
 #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
 #endif
 
+#if defined(CONFIG_MEMFAULT_TLS_USE_DER)
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr g_memfault_cert_digicert_global_root_ca
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len g_memfault_cert_digicert_global_root_ca_len
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr g_memfault_cert_digicert_global_root_g2
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len g_memfault_cert_digicert_global_root_g2_len
+#define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr g_memfault_cert_amazon_root_ca1
+#define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len g_memfault_cert_amazon_root_ca1_len
+#else
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA)
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
+#define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2)
+#define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+#define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1)
+#endif
+
 static bool prv_install_cert(eMemfaultRootCert cert_id) {
   const char *cert;
   size_t cert_len;
 
   switch (cert_id) {
     case kMemfaultRootCert_DigicertRootCa:
-      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA);
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len;
       break;
     case kMemfaultRootCert_DigicertRootG2:
-      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2);
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len;
       break;
     case kMemfaultRootCert_AmazonRootCa1:
-      cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1);
+      cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len;
       break;
 
     default:
@@ -115,7 +131,7 @@ int memfault_zephyr_port_install_root_certs(void) {
 
 static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   int fd = *(int *)ctx;
-  int rv = send(fd, data, data_len, 0);
+  int rv = zsock_send(fd, data, data_len, 0);
   return (rv == data_len);
 }
 
@@ -128,9 +144,17 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   char port[10] = {0};
   snprintf(port, sizeof(port), "%d", port_num);
 
-  int rv = getaddrinfo(host, port, &hints, res);
+  int rv = zsock_getaddrinfo(host, port, &hints, res);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
+  } else {
+    struct sockaddr_in *addr = net_sin((*res)->ai_addr);
+
+    MEMFAULT_LOG_DEBUG("DNS lookup for %s = %d.%d.%d.%d", host,
+                      addr->sin_addr.s4_addr[0],
+                      addr->sin_addr.s4_addr[1],
+                      addr->sin_addr.s4_addr[2],
+                      addr->sin_addr.s4_addr[3]);
   }
 
   return rv;
@@ -144,7 +168,7 @@ static int prv_create_socket(struct addrinfo **res, const char *host, int port_n
     return rv;
   }
 
-  int fd = socket((*res)->ai_family, (*res)->ai_socktype, protocol);
+  int fd = zsock_socket((*res)->ai_family, (*res)->ai_socktype, protocol);
   if (fd < 0) {
     MEMFAULT_LOG_ERROR("Failed to open socket, errno=%d", errno);
   }
@@ -157,10 +181,16 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
     kMemfaultRootCert_DigicertRootG2,
     kMemfaultRootCert_AmazonRootCa1,
     kMemfaultRootCert_DigicertRootCa };
-  int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
+  int rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;
   }
+
+  // Set TLS cert parse + copy to optional, which will allow us to use either
+  // PEM or DER formatted certs.
+  const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
+  rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy,
+                        sizeof(nocopy));
 
   /* Set up TLS peer verification */
   enum {
@@ -170,14 +200,14 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   };
 
   int verify = REQUIRED;
-  rv = setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
+  rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
   if (rv) {
     MEMFAULT_LOG_ERROR("Failed to setup peer verification, err %d\n", errno);
     return rv;
   }
 
   const size_t host_name_len = strlen(host);
-  return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
+  return zsock_setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
 static int prv_configure_socket(int fd, const char *host) {
@@ -193,11 +223,11 @@ static int prv_configure_socket(int fd, const char *host) {
 }
 
 static int prv_connect_socket(int fd, struct addrinfo *res) {
-  int rv = connect(fd, res->ai_addr, res->ai_addrlen);
+  int rv = zsock_connect(fd, res->ai_addr, res->ai_addrlen);
 
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to connect socket, errno=%d", errno);
-    close(fd);
+    zsock_close(fd);
   }
 
   return rv;
@@ -209,7 +239,7 @@ static int prv_poll_socket(int sock_fd, int events) {
     .events = events,
   };
   const int timeout_ms = POLL_TIMEOUT_MS;
-  int rv = poll(&poll_fd, 1, timeout_ms);
+  int rv = zsock_poll(&poll_fd, 1, timeout_ms);
   if (rv == 0) {
     MEMFAULT_LOG_ERROR("Timeout waiting for socket event(s): event(s)=%d, errno=%d", events, errno);
   }
@@ -227,7 +257,7 @@ static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
       return false;
     }
 
-    rv = send(sock_fd, &buf[idx], buf_len - idx, MSG_DONTWAIT);
+    rv = zsock_send(sock_fd, &buf[idx], buf_len - idx, MSG_DONTWAIT);
     if (rv > 0) {
       idx += rv;
       continue;
@@ -251,7 +281,7 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
 
   int rv = prv_configure_socket(sock_fd, host);
   if (rv < 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
     return -1;
   }
 
@@ -478,11 +508,11 @@ static bool prv_fetch_ota_payload(const char *url,
   success = prv_install_ota_payload(sock_fd, handler);
 cleanup:
   if (sock_fd >= 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
   }
 
   if (res != NULL) {
-    freeaddrinfo(res);
+    zsock_freeaddrinfo(res);
   }
   return success;
 }
@@ -553,11 +583,11 @@ static bool prv_check_for_ota_update(char **download_url) {
   success = prv_parse_new_ota_payload_url_response(sock_fd, download_url);
 cleanup:
   if (sock_fd >= 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
   }
 
   if (res) {
-    freeaddrinfo(res);
+    zsock_freeaddrinfo(res);
   }
   return success;
 }
@@ -635,6 +665,8 @@ int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
 
   memfault_zephyr_port_http_close_socket(ctx);
 
+  MEMFAULT_LOG_DEBUG("Opening socket to %s:%d", host, port);
+
   ctx->sock_fd = prv_open_socket(&(ctx->res), host, port);
 
   if (ctx->sock_fd < 0) {
@@ -683,12 +715,12 @@ int memfault_zephyr_port_http_connect_socket(sMemfaultHttpContext *ctx) {
 
 void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
   if (ctx->sock_fd >= 0) {
-    close(ctx->sock_fd);
+    zsock_close(ctx->sock_fd);
   }
   ctx->sock_fd = -1;
 
   if (ctx->res != NULL) {
-    freeaddrinfo(ctx->res);
+    zsock_freeaddrinfo(ctx->res);
     ctx->res = NULL;
   }
 }

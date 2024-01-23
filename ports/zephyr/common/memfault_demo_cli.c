@@ -188,6 +188,8 @@ static int prv_hang_example(const struct shell *shell, size_t argc, char **argv)
   return -1;
 }
 
+#if CONFIG_ARM
+
 static int prv_busfault_example(const struct shell *shell, size_t argc, char **argv) {
   //! Note: The Zephyr fault handler dereferences the pc which triggers a fault
   //! if the pc itself is from a bad pointer:
@@ -217,14 +219,17 @@ static int prv_memmanage_example(const struct shell *shell, size_t argc, char **
   return -1;
 }
 
+#endif  // CONFIG_ARM
+
 static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, char **argv) {
-#if !CONFIG_ASSERT
-  shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command will have no effect");
-#endif
+#if defined(CONFIG_ASSERT)
   // Fire off a last-ditch log message to show how logs are flushed prior to
   // crash, in the case of deferred logging mode
   MEMFAULT_LOG_ERROR("About to crash in %s!", __func__);
   __ASSERT(0, "test __ASSERT");
+#else
+  shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command has no effect");
+#endif
   return 0;
 }
 
@@ -278,13 +283,17 @@ static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, MEMFAULT_UNU
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
   //! different crash types that should result in a coredump being collected
-  SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
+
+  #if CONFIG_ARM
   SHELL_CMD(busfault, NULL, "trigger a busfault", prv_busfault_example),
-  SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
   SHELL_CMD(hardfault, NULL, "trigger a hardfault", prv_hardfault_example),
   SHELL_CMD(memmanage, NULL, "trigger a memory management fault", prv_memmanage_example),
   SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
+  #endif  // CONFIG_ARM
+
+  SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
+  SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
   SHELL_CMD(double_free, NULL, "trigger a double free error", prv_cli_cmd_double_free),
   SHELL_CMD(badptr, NULL, "trigger fault via store to a bad address", prv_bad_ptr_deref_example),
