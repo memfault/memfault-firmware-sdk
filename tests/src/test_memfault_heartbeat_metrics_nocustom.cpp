@@ -75,7 +75,7 @@ TEST(MemfaultHeartbeatMetricsNoCustom, Test_Boot) {
   static const sMemfaultEventStorageImpl *fake_event_storage_impl =
     memfault_events_storage_boot(&s_storage, sizeof(s_storage));
 
-  sMemfaultMetricBootInfo boot_info = {.unexpected_reboot_count = 1};
+  sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
   int rv = memfault_metrics_boot(fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(0, rv);
 

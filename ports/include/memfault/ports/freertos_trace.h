@@ -21,7 +21,7 @@ extern "C" {
 void memfault_freertos_trace_task_create(void *tcb);
 void memfault_freertos_trace_task_delete(void *tcb);
 
-#include  "memfault/core/heap_stats.h"
+  #include "memfault/core/heap_stats.h"
 
 #endif
 
@@ -31,28 +31,29 @@ void memfault_freertos_trace_task_delete(void *tcb);
 //
 
 #ifndef traceTASK_CREATE
-#define traceTASK_CREATE(pxNewTcb) memfault_freertos_trace_task_create(pxNewTcb)
+  #define traceTASK_CREATE(pxNewTcb) memfault_freertos_trace_task_create(pxNewTcb)
 #endif
 
 #ifndef traceTASK_DELETE
-#define traceTASK_DELETE(pxTaskToDelete) memfault_freertos_trace_task_delete(pxTaskToDelete)
+  #define traceTASK_DELETE(pxTaskToDelete) memfault_freertos_trace_task_delete(pxTaskToDelete)
 #endif
 
 #if MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE
 
-#if MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE != 0
-// FreeRTOS has its own locking mechanism (suspends tasks) so don't attempt
-// to use the memfault_lock implementation as well
-#error "MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE must be 0 when using MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE"
-#endif
+  #if MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE != 0
+    // FreeRTOS has its own locking mechanism (suspends tasks) so don't attempt
+    // to use the memfault_lock implementation as well
+    #error \
+      "MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE must be 0 when using MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE"
+  #endif
 
-#ifndef traceFREE
-#define traceFREE(pv, xBlockSize) MEMFAULT_HEAP_STATS_FREE(pv)
-#endif
+  #ifndef traceFREE
+    #define traceFREE(pv, xBlockSize) MEMFAULT_HEAP_STATS_FREE(pv)
+  #endif
 
-#ifndef traceMALLOC
-#define traceMALLOC(pvReturn, xWantedSize) MEMFAULT_HEAP_STATS_MALLOC(pvReturn, xWantedSize)
-#endif
+  #ifndef traceMALLOC
+    #define traceMALLOC(pvReturn, xWantedSize) MEMFAULT_HEAP_STATS_MALLOC(pvReturn, xWantedSize)
+  #endif
 
 #endif /* MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE */
 

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define MEMFAULT_CBOR_SCHEMA_VERSION_V1 (1) // NOTE: implies "sdk_version": "0.5.0"
+#define MEMFAULT_CBOR_SCHEMA_VERSION_V1 (1)  // NOTE: implies "sdk_version": "0.5.0"
 
 typedef enum {
   kMemfaultEventKey_CapturedDateUnixTimestamp = 1,

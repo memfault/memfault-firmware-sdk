@@ -3,12 +3,11 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/core/data_packetizer.h"
-
-#include <string.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/core/data_packetizer.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/data_source_rle.h"
 #include "memfault/core/debug_log.h"
@@ -28,8 +27,7 @@ static bool prv_data_source_has_event_stub(size_t *event_size) {
   return false;
 }
 
-static bool prv_data_source_read_stub(MEMFAULT_UNUSED uint32_t offset,
-                                      MEMFAULT_UNUSED void *buf,
+static bool prv_data_source_read_stub(MEMFAULT_UNUSED uint32_t offset, MEMFAULT_UNUSED void *buf,
                                       MEMFAULT_UNUSED size_t buf_len) {
   return false;
 }
@@ -66,9 +64,8 @@ MEMFAULT_WEAK const sMemfaultDataSourceImpl g_memfault_cdr_source = {
   .mark_msg_read_cb = prv_data_source_mark_event_read_stub,
 };
 
-MEMFAULT_WEAK
-bool memfault_data_source_rle_encoder_set_active(
-    MEMFAULT_UNUSED const sMemfaultDataSourceImpl *active_source) {
+MEMFAULT_WEAK bool memfault_data_source_rle_encoder_set_active(
+  MEMFAULT_UNUSED const sMemfaultDataSourceImpl *active_source) {
   return false;
 }
 
@@ -92,7 +89,6 @@ MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Log) == kMfltDataSourceMask_Log,
 MEMFAULT_STATIC_ASSERT((1 << kMfltMessageType_Cdr) == kMfltDataSourceMask_Cdr,
                        "kMfltDataSourceMask_Cdr is incorrectly defined");
 MEMFAULT_STATIC_ASSERT(kMfltMessageType_NumTypes == 5, "eMfltMessageType needs to be updated");
-
 
 typedef struct MemfaultDataSource {
   eMfltMessageType type;
@@ -120,7 +116,7 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
   // thing to keep in mind is that when the encoder is enabled, it requires a lot more short reads
   // to take place on the data source which can be a slow operation for flash based filesystems.
   {
-    .type =  kMfltMessageType_Cdr,
+    .type = kMfltMessageType_Cdr,
     .use_rle = false,
     .impl = &g_memfault_cdr_source,
   }
@@ -138,8 +134,9 @@ typedef struct {
 } sMfltTransportState;
 
 typedef MEMFAULT_PACKED_STRUCT {
-  uint8_t mflt_msg_type; // eMfltMessageType
-} sMfltPacketizerHdr;
+  uint8_t mflt_msg_type;  // eMfltMessageType
+}
+sMfltPacketizerHdr;
 
 static sMfltTransportState s_mflt_packetizer_state;
 
@@ -151,15 +148,14 @@ void memfault_packetizer_set_active_sources(uint32_t mask) {
 }
 
 static void prv_reset_packetizer_state(void) {
-  s_mflt_packetizer_state = (sMfltTransportState) {
+  s_mflt_packetizer_state = (sMfltTransportState){
     .active_message = false,
   };
 
   memfault_data_source_rle_encoder_set_active(NULL);
 }
 
-static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *buf,
-                                                       size_t buf_len) {
+static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *buf, size_t buf_len) {
   uint8_t *bufp = buf;
   size_t read_offset = 0;
   const size_t hdr_size = sizeof(sMfltPacketizerHdr);
@@ -209,10 +205,10 @@ static bool prv_get_source_with_data(size_t *total_size, sMemfaultDataSource *ac
       continue;
     }
 
-    const bool rle_enabled = data_source->use_rle &&
-        memfault_data_source_rle_encoder_set_active(data_source->impl);
+    const bool rle_enabled =
+      data_source->use_rle && memfault_data_source_rle_encoder_set_active(data_source->impl);
 
-    *active_source = (sMemfaultDataSource) {
+    *active_source = (sMemfaultDataSource){
       .type = data_source->type,
       .use_rle = rle_enabled,
       .impl = rle_enabled ? &g_memfault_data_rle_source : data_source->impl,
@@ -233,7 +229,7 @@ static bool prv_more_messages_to_send(sMessageMetadata *msg_metadata) {
   }
 
   if (msg_metadata != NULL) {
-    *msg_metadata = (sMessageMetadata) {
+    *msg_metadata = (sMessageMetadata){
       .total_size = total_size,
       .source = active_source,
     };
@@ -249,14 +245,15 @@ static bool prv_load_next_message_to_send(bool enable_multi_packet_chunks,
     return false;
   }
 
-  *state = (sMfltTransportState) {
+  *state = (sMfltTransportState){
     .active_message = true,
     .msg_metadata = msg_metadata,
-    .curr_msg_ctx = (sMfltChunkTransportCtx) {
-      .total_size = msg_metadata.total_size + sizeof(sMfltPacketizerHdr),
-      .read_msg = prv_data_source_chunk_transport_msg_reader,
-      .enable_multi_call_chunk = enable_multi_packet_chunks,
-    },
+    .curr_msg_ctx =
+      (sMfltChunkTransportCtx){
+        .total_size = msg_metadata.total_size + sizeof(sMfltPacketizerHdr),
+        .read_msg = prv_data_source_chunk_transport_msg_reader,
+        .enable_multi_call_chunk = enable_multi_packet_chunks,
+      },
   };
   memfault_chunk_transport_get_chunk_info(&s_mflt_packetizer_state.curr_msg_ctx);
   return true;
@@ -287,12 +284,11 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
   }
 
   size_t original_size = *buf_len;
-  bool md = memfault_chunk_transport_get_next_chunk(
-      &s_mflt_packetizer_state.curr_msg_ctx, buf, buf_len);
+  bool md =
+    memfault_chunk_transport_get_next_chunk(&s_mflt_packetizer_state.curr_msg_ctx, buf, buf_len);
 
   if (*buf_len == 0) {
-    MEMFAULT_LOG_ERROR("Buffer of %d bytes too small to packetize data",
-                       (int)original_size);
+    MEMFAULT_LOG_ERROR("Buffer of %d bytes too small to packetize data", (int)original_size);
     return kMemfaultPacketizerStatus_NoMoreData;
   }
 
@@ -305,11 +301,11 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
   }
 
   return s_mflt_packetizer_state.curr_msg_ctx.enable_multi_call_chunk ?
-      kMemfaultPacketizerStatus_MoreDataForChunk : kMemfaultPacketizerStatus_EndOfChunk;
+           kMemfaultPacketizerStatus_MoreDataForChunk :
+           kMemfaultPacketizerStatus_EndOfChunk;
 }
 
-bool memfault_packetizer_begin(const sPacketizerConfig *cfg,
-                               sPacketizerMetadata *metadata_out) {
+bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata *metadata_out) {
   if ((cfg == NULL) || (metadata_out == NULL)) {
     MEMFAULT_LOG_ERROR("%s: NULL input arguments", __func__);
     return false;
@@ -318,13 +314,13 @@ bool memfault_packetizer_begin(const sPacketizerConfig *cfg,
   if (!s_mflt_packetizer_state.active_message) {
     if (!prv_load_next_message_to_send(cfg->enable_multi_packet_chunk, &s_mflt_packetizer_state)) {
       // no new messages to send
-      *metadata_out = (sPacketizerMetadata) { 0 };
+      *metadata_out = (sPacketizerMetadata){ 0 };
       return false;
     }
   }
 
   const bool send_in_progress = s_mflt_packetizer_state.curr_msg_ctx.read_offset != 0;
-  *metadata_out = (sPacketizerMetadata) {
+  *metadata_out = (sPacketizerMetadata){
     .single_chunk_message_length = s_mflt_packetizer_state.curr_msg_ctx.single_chunk_message_length,
     .send_in_progress = send_in_progress,
   };

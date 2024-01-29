@@ -16,22 +16,22 @@
 #include "os/mynewt.h"
 
 #if MYNEWT_VAL(MEMFAULT_CLI)
-#include "parse/parse.h"
-#include "shell/shell.h"
+  #include "parse/parse.h"
+  #include "shell/shell.h"
 
-#if MYNEWT_VAL(BSP_NRF52) || MYNEWT_VAL(BSP_NRF52840)
-#include <mcu/nrf52_hal.h>
-#elif MYNEWT_VAL(BSP_NRF51)
-#include <mcu/nrf51_hal.h>
-#elif MYNEWT_VAL(BSP_NRF5340)
-#include <mcu/nrf5340_hal.h>
-#elif MYNEWT_VAL(BSP_NRF5340_NET)
-#include <mcu/nrf5340_net_hal.h>
-#elif MYNEWT_VAL(BSP_APOLLO2)
-#include <mcu/SYSTEM_APOLLO2.h>
-#else
-#error "Unsupported arch"
-#endif
+  #if MYNEWT_VAL(BSP_NRF52) || MYNEWT_VAL(BSP_NRF52840)
+    #include <mcu/nrf52_hal.h>
+  #elif MYNEWT_VAL(BSP_NRF51)
+    #include <mcu/nrf51_hal.h>
+  #elif MYNEWT_VAL(BSP_NRF5340)
+    #include <mcu/nrf5340_hal.h>
+  #elif MYNEWT_VAL(BSP_NRF5340_NET)
+    #include <mcu/nrf5340_net_hal.h>
+  #elif MYNEWT_VAL(BSP_APOLLO2)
+    #include <mcu/SYSTEM_APOLLO2.h>
+  #else
+    #error "Unsupported arch"
+  #endif
 
 static int mflt_shell_cmd(int argc, char **argv);
 
@@ -126,8 +126,7 @@ static int test_fault(int argc, char *argv[]) {
 }
 
 static int test_hang(int argc, char *argv[]) {
-  while (1) {
-  }
+  while (1) { }
   return -1;  // should never get here
 }
 
@@ -147,14 +146,10 @@ static int mflt_shell_cmd(int argc, char **argv) {
     int (*func)(int argc, char **argv);
   };
   static const struct subcommand subcommands[] = {
-    { "logging", test_logging },
-    { "coredump_storage", test_coredump_storage },
-    { "heartbeat", test_heartbeat },
-    { "trace", test_trace },
-    { "reboot", test_reboot },
-    { "assert", test_assert },
-    { "fault", test_fault },
-    { "hang", test_hang },
+    { "logging", test_logging },     { "coredump_storage", test_coredump_storage },
+    { "heartbeat", test_heartbeat }, { "trace", test_trace },
+    { "reboot", test_reboot },       { "assert", test_assert },
+    { "fault", test_fault },         { "hang", test_hang },
     { "export", test_export },
   };
 

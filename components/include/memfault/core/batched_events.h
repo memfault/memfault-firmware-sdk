@@ -27,8 +27,8 @@ typedef struct {
 //! @num_events The number events that will be sent in one message
 //! @header_out Populated with the header that needs to lead the events to send.
 //!  If no header is needed (i.e num_events <= 1), the length can be 0.
-void memfault_batched_events_build_header(
-    size_t num_events, sMemfaultBatchedEventsHeader *header_out);
+void memfault_batched_events_build_header(size_t num_events,
+                                          sMemfaultBatchedEventsHeader *header_out);
 
 #ifdef __cplusplus
 }

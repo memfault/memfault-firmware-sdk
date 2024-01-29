@@ -24,7 +24,7 @@
 // Deal with CONFIG_LOG_IMMEDIATE getting renamed to CONFIG_LOG_MODE_IMMEDIATE in v3.0.0 release:
 //  https://github.com/zephyrproject-rtos/zephyr/commit/262cc55609b73ea61b5f999c6c6daaba20bc5240
 #if defined(CONFIG_LOG_IMMEDIATE) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
-#define CONFIG_LOG_MODE_IMMEDIATE CONFIG_LOG_IMMEDIATE
+  #define CONFIG_LOG_MODE_IMMEDIATE CONFIG_LOG_IMMEDIATE
 #endif
 
 // Can't be zero but should be reasonably sized. See ports/zephyr/Kconfig to change this size.
@@ -44,10 +44,9 @@ LOG_OUTPUT_DEFINE(s_log_output_mflt, prv_log_out, s_zephyr_render_buf, sizeof(s_
 // put_sync_string() & dropped().
 static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg);
 static void prv_log_put_sync_string(const struct log_backend *const backend,
-                            struct log_msg_ids src_level, uint32_t timestamp,
-                            const char *fmt, va_list ap);
+                                    struct log_msg_ids src_level, uint32_t timestamp,
+                                    const char *fmt, va_list ap);
 static void prv_log_panic(struct log_backend const *const backend);
-
 
 // The function signature for struct log_backend_api init changed between Zephyr 2.5 and Zephyr 2.6
 // and we don't use any of the parameters so we leave the parameter list empty to mitigate
@@ -56,13 +55,13 @@ static void prv_log_init();
 
 static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt);
 const struct log_backend_api log_backend_mflt_api = {
-  .put              = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_put,
-  .put_sync_string  = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? prv_log_put_sync_string : NULL,
+  .put = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_put,
+  .put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? prv_log_put_sync_string : NULL,
   // Note: We don't want to clutter Memfault circular buffer with hex dumps
   .put_sync_hexdump = NULL,
-  .panic            = prv_log_panic,
-  .init             = prv_log_init,
-  .dropped          = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_dropped,
+  .panic = prv_log_panic,
+  .init = prv_log_init,
+  .dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_dropped,
 };
 
 // Define a couple of structs needed by the logging backend infrastructure.
@@ -77,19 +76,18 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   }
 
   // Note: Context should always be populated. If it is not, flag the log as an _Error
-  const eMemfaultPlatformLogLevel log_level = ctx != NULL ? *(eMemfaultPlatformLogLevel*)ctx :
-                                                            kMemfaultPlatformLogLevel_Error;
+  const eMemfaultPlatformLogLevel log_level =
+    ctx != NULL ? *(eMemfaultPlatformLogLevel *)ctx : kMemfaultPlatformLogLevel_Error;
   memfault_log_save_preformatted(log_level, data, length);
-  return (int) length;
+  return (int)length;
 }
-
 
 static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephyr_level) {
   //     Map             From            To
-  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error
-       : zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning
-       : zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info
-       :              /* LOG_LEVEL_DBG */kMemfaultPlatformLogLevel_Debug;
+  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error :
+         zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning :
+         zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info :
+                                         /* LOG_LEVEL_DBG */ kMemfaultPlatformLogLevel_Debug;
 }
 
 // *** Below are the implementations for the Zephyr backend API ***
@@ -97,9 +95,9 @@ static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephy
 // Zephyr API function. I'm assuming <msg> has been validated by the time put() is called.
 static void prv_log_put(const struct log_backend *const backend, struct log_msg *msg) {
   // Copied flagging from Zephry's ring buffer (rb) implementation.
-  const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
-                       ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL
-                       : LOG_OUTPUT_FLAG_LEVEL;
+  const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP) ?
+                           LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL :
+                           LOG_OUTPUT_FLAG_LEVEL;
 
   // Acquire, process (eventually calls prv_data_out()) and release the message.
   log_msg_get(msg);

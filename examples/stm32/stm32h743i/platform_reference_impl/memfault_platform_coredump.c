@@ -6,15 +6,13 @@
 //! Reference implementation of platform dependency functions which could be used
 //! for coredump collection on an STM32H7
 
-#include "memfault/panics/coredump.h"
-
 #include <string.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
-
 #include "stm32h7xx_hal_flash.h"
 
 // NOTE: Region to be used for saving coredump
@@ -23,7 +21,7 @@
 // from 0x8000000 - 0x8200000
 //
 // As an example, we will store crash information in the last sector of the second bank
-struct { //
+struct {  //
   uint32_t bank_start_addr;
   // the offset within the bank to start writing coredumps at
   uint32_t bank_start_off;
@@ -41,18 +39,16 @@ struct { //
   .sector_size = 128 * 1024,
 };
 
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
-                                                                  size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[2];
   // NOTE: This is just an example of regions which could be collected
   // Typically sizes are derived from variables added to the .ld script of the port
 
   // Beginning of DTCM-RAM (Total size is 128kB)
-  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT((void *)0x20000000,
-      32*1024);
+  s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT((void *)0x20000000, 32 * 1024);
   // Beginning of AXI SRAM (Total size is 512kB)
-  s_coredump_regions[1] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT((void *)0x24000000,
-      32*1024);
+  s_coredump_regions[1] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT((void *)0x24000000, 32 * 1024);
 
   *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
   return s_coredump_regions;
@@ -60,21 +56,19 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(const sCoredum
 
 // Error writing to flash - should never happen & likely detects a configuration error
 // Call our reboot handler which will halt the device if a debugger is attached and then reboot
-__attribute__((optimize("O0")))
-__attribute__((noinline))
-static void prv_coredump_writer_assert_and_reboot(int error_code) {
+__attribute__((optimize("O0"))) __attribute__((noinline)) static void
+prv_coredump_writer_assert_and_reboot(int error_code) {
   memfault_platform_reboot();
 }
 
 void memfault_platform_coredump_storage_clear(void) {
-  const uint32_t sector_id = s_coredump_flash_storage.bank_start_off / s_coredump_flash_storage.sector_size;
-  FLASH_EraseInitTypeDef s_erase_cfg = {
-    .TypeErase = FLASH_TYPEERASE_SECTORS,
-    .Banks = s_coredump_flash_storage.bank_id,
-    .Sector = sector_id,
-    .NbSectors = 1,
-    .VoltageRange = FLASH_VOLTAGE_RANGE_4
-  };
+  const uint32_t sector_id =
+    s_coredump_flash_storage.bank_start_off / s_coredump_flash_storage.sector_size;
+  FLASH_EraseInitTypeDef s_erase_cfg = { .TypeErase = FLASH_TYPEERASE_SECTORS,
+                                         .Banks = s_coredump_flash_storage.bank_id,
+                                         .Sector = sector_id,
+                                         .NbSectors = 1,
+                                         .VoltageRange = FLASH_VOLTAGE_RANGE_4 };
   uint32_t SectorError = 0;
   HAL_FLASH_Unlock();
   {
@@ -87,7 +81,7 @@ void memfault_platform_coredump_storage_clear(void) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = s_coredump_flash_storage.bank_end_off - s_coredump_flash_storage.bank_start_off,
     .sector_size = s_coredump_flash_storage.sector_size,
   };
@@ -97,11 +91,11 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 // bits are also in NOR flash, this means 32 byte hunks can only be written once since an updated
 // in the future would likely cause the ECC to go bad.
 //
-// In practice this means, writes must be issued 32 bytes at a time. The code below accomplishes this
-// by only issuing writes when 32 bytes have been collected. The Memfault coredump writer is guaranteed
-// to issue writes sequentially with the exception of the header which is at the beginning of the coredump
-// region and written last. A future update of the Memfault SDK will incorporate this logic inside the SDK
-// itself.
+// In practice this means, writes must be issued 32 bytes at a time. The code below accomplishes
+// this by only issuing writes when 32 bytes have been collected. The Memfault coredump writer is
+// guaranteed to issue writes sequentially with the exception of the header which is at the
+// beginning of the coredump region and written last. A future update of the Memfault SDK will
+// incorporate this logic inside the SDK itself.
 
 #define COREDUMP_STORAGE_WRITE_SIZE 32
 typedef struct {
@@ -118,7 +112,8 @@ static sCoredumpWorkingBuffer *prv_get_working_buf(uint32_t offset) {
 }
 
 static void prv_write_block(sCoredumpWorkingBuffer *blk) {
-  const uint32_t start_addr = s_coredump_flash_storage.bank_start_addr + s_coredump_flash_storage.bank_start_off;
+  const uint32_t start_addr =
+    s_coredump_flash_storage.bank_start_addr + s_coredump_flash_storage.bank_start_off;
   const uint32_t addr = start_addr + blk->address;
 
   HAL_FLASH_Unlock();
@@ -151,8 +146,7 @@ static void prv_try_flush(void) {
   }
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if ((s_coredump_flash_storage.bank_start_off + offset + data_len) >
       s_coredump_flash_storage.bank_end_off) {
     return false;
@@ -161,16 +155,14 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   const uint8_t *datap = data;
   uint32_t start_addr = offset;
   uint32_t page_aligned_start_address =
-      (start_addr / COREDUMP_STORAGE_WRITE_SIZE) * COREDUMP_STORAGE_WRITE_SIZE;
+    (start_addr / COREDUMP_STORAGE_WRITE_SIZE) * COREDUMP_STORAGE_WRITE_SIZE;
 
   // we have to copy data into a temporary buffer because we can only issue 32
   // byte aligned writes that are 32 bytes in length
   if (page_aligned_start_address != start_addr) {
-    sCoredumpWorkingBuffer *working_buffer =
-        prv_get_working_buf(page_aligned_start_address);
+    sCoredumpWorkingBuffer *working_buffer = prv_get_working_buf(page_aligned_start_address);
     uint32_t bytes_to_write = MEMFAULT_MIN(
-        (page_aligned_start_address + COREDUMP_STORAGE_WRITE_SIZE) - start_addr,
-        data_len);
+      (page_aligned_start_address + COREDUMP_STORAGE_WRITE_SIZE) - start_addr, data_len);
     uint32_t write_offset = start_addr - page_aligned_start_address;
     memcpy(&working_buffer->data[write_offset], datap, bytes_to_write);
     working_buffer->bytes_written += bytes_to_write;
@@ -183,10 +175,8 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   }
 
   for (uint32_t i = 0; i < data_len; i += COREDUMP_STORAGE_WRITE_SIZE) {
-    const uint32_t size =
-        MEMFAULT_MIN(COREDUMP_STORAGE_WRITE_SIZE, data_len - i);
-    sCoredumpWorkingBuffer *working_buffer =
-        prv_get_working_buf(start_addr + i);
+    const uint32_t size = MEMFAULT_MIN(COREDUMP_STORAGE_WRITE_SIZE, data_len - i);
+    sCoredumpWorkingBuffer *working_buffer = prv_get_working_buf(start_addr + i);
     memcpy(&working_buffer->data, &datap[i], size);
     working_buffer->bytes_written += size;
     working_buffer->address = start_addr + i;
@@ -196,14 +186,15 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   return true;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
-  if ((s_coredump_flash_storage.bank_start_off + offset + read_len) > s_coredump_flash_storage.bank_end_off) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
+  if ((s_coredump_flash_storage.bank_start_off + offset + read_len) >
+      s_coredump_flash_storage.bank_end_off) {
     return false;
   }
 
   // The internal flash is memory mapped
-  const uint32_t start_addr = s_coredump_flash_storage.bank_start_addr + s_coredump_flash_storage.bank_start_off;
+  const uint32_t start_addr =
+    s_coredump_flash_storage.bank_start_addr + s_coredump_flash_storage.bank_start_off;
   memcpy(data, (void *)(start_addr + offset), read_len);
   return true;
 }

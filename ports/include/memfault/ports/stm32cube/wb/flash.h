@@ -28,8 +28,8 @@ extern "C" {
 //!
 //! @return true if no error was detected or error was successfully cleared,
 //!  false otherwise
-bool memfault_stm32cubewb_flash_clear_ecc_errors(
-    uint32_t start_addr, uint32_t end_addr, uint32_t *corrupted_address);
+bool memfault_stm32cubewb_flash_clear_ecc_errors(uint32_t start_addr, uint32_t end_addr,
+                                                 uint32_t *corrupted_address);
 
 #ifdef __cplusplus
 }

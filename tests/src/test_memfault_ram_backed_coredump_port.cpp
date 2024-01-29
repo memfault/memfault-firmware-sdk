@@ -1,13 +1,12 @@
+#include <stddef.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
-
-#include <string.h>
-#include <stddef.h>
-
 #include "memfault/config.h"
-#include "memfault/panics/platform/coredump.h"
 #include "memfault/core/compiler.h"
+#include "memfault/panics/platform/coredump.h"
 
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
   (void)start_addr;
@@ -16,7 +15,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
 
 TEST_GROUP(MfltRamBackedCoredumpPort) {
   void setup() { }
-  void teardown() {}
+  void teardown() { }
 };
 
 TEST(MfltRamBackedCoredumpPort, Test_GetRegions) {
@@ -25,8 +24,7 @@ TEST(MfltRamBackedCoredumpPort, Test_GetRegions) {
   };
 
   size_t num_regions;
-  const sMfltCoredumpRegion *regions =
-      memfault_platform_coredump_get_regions(&info, &num_regions);
+  const sMfltCoredumpRegion *regions = memfault_platform_coredump_get_regions(&info, &num_regions);
   LONGS_EQUAL(1, num_regions);
 
   const sMfltCoredumpRegion *r = &regions[0];

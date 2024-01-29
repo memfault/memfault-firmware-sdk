@@ -37,46 +37,41 @@ static const struct {
     const int32_t i32;
   } default_value;
 } settings_table[] = {
-  [kSettingsWifiSsid] =
+  [kSettingsWifiSsid] = {
+    kSettingsTypeString,
+    "wifi_ssid",
     {
-      kSettingsTypeString,
-      "wifi_ssid",
-      {
-        .str = "",
-      },
+      .str = "",
     },
-  [kSettingsWifiPassword] =
+  },
+  [kSettingsWifiPassword] = {
+    kSettingsTypeString,
+    "wifi_password",
     {
-      kSettingsTypeString,
-      "wifi_password",
-      {
-        .str = "",
-      },
+      .str = "",
     },
-  [kSettingsProjectKey] =
+  },
+  [kSettingsProjectKey] = {
+    kSettingsTypeString,
+    "project_key",
     {
-      kSettingsTypeString,
-      "project_key",
-      {
-        .str = CONFIG_MEMFAULT_PROJECT_KEY,
-      },
+      .str = CONFIG_MEMFAULT_PROJECT_KEY,
     },
-  [kSettingsLedBrightness] =
+  },
+  [kSettingsLedBrightness] = {
+    kSettingsTypeI32,
+    "led_brightness",
     {
-      kSettingsTypeI32,
-      "led_brightness",
-      {
-        .i32 = 5,
-      },
+      .i32 = 5,
     },
-  [kSettingsLedBlinkIntervalMs] =
+  },
+  [kSettingsLedBlinkIntervalMs] = {
+    kSettingsTypeI32,
+    "led_blink_ms",
     {
-      kSettingsTypeI32,
-      "led_blink_ms",
-      {
-        .i32 = 500,
-      },
+      .i32 = 500,
     },
+  },
 };
 
 static bool prv_settings_key_is_valid(enum settings_key key) {
@@ -107,8 +102,9 @@ static esp_err_t prv_open_nvs(nvs_handle_t *nvs_handle) {
 #if __GNUC__ >= 11
 __attribute__((access(write_only, 2)))
 #endif
-int settings_get(enum settings_key key, void *value,
-                                                        size_t *len) {
+int
+settings_get(enum settings_key key, void *value,
+             size_t *len) {
   if (!prv_settings_key_is_valid(key)) {
     ESP_LOGE(__func__, "Invalid key: %d", key);
     return ESP_ERR_INVALID_ARG;
@@ -170,7 +166,8 @@ close:
 #if __GNUC__ >= 11
 __attribute__((access(read_only, 2, 3)))
 #endif
-int settings_set(enum settings_key key, const void *value, size_t len) {
+int
+settings_set(enum settings_key key, const void *value, size_t len) {
   if (!prv_settings_key_is_valid(key)) {
     ESP_LOGE(__func__, "Invalid key: %d", key);
     return ESP_ERR_INVALID_ARG;

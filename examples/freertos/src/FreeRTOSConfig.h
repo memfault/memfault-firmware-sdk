@@ -42,7 +42,7 @@
  *----------------------------------------------------------*/
 
 #define configASSERT_DEFINED 1
-extern void vAssertCalled(const char* file, int line);
+extern void vAssertCalled(const char *file, int line);
 #define configASSERT(x) \
   if ((x) == 0) vAssertCalled(__FILE__, __LINE__)
 #define configQUEUE_REGISTRY_SIZE 20
@@ -120,7 +120,7 @@ unsigned long ulGetRunTimeCounterValue(
 #define configMAC_INTERRUPT_PRIORITY 5
 
 /* Prototype for the function used to print out. */
-extern void vLoggingPrintf(const char* pcFormatString, ...);
+extern void vLoggingPrintf(const char *pcFormatString, ...);
 
 #ifdef HEAP3
   #define xPortGetMinimumEverFreeHeapSize (x)

@@ -6,19 +6,18 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/math.h"
 
 extern "C" {
-  #include <string.h>
-  #include <stdio.h>
-  #include <stddef.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
-  #include "memfault/core/data_source_rle.h"
+#include "memfault/core/data_source_rle.h"
 
-  static const uint8_t *s_active_data = NULL;
-  static size_t s_active_data_size = 0;
+static const uint8_t *s_active_data = NULL;
+static size_t s_active_data_size = 0;
 }
 
 static bool prv_has_msgs(size_t *total_size_out) {
@@ -42,7 +41,7 @@ static const sMemfaultDataSourceImpl s_test_data_source = {
   .mark_msg_read_cb = prv_mark_msg_read,
 };
 
-TEST_GROUP(MemfaultDataSourceRle){
+TEST_GROUP(MemfaultDataSourceRle) {
   void setup() {
     s_active_data = NULL;
     s_active_data_size = 0;
@@ -83,8 +82,8 @@ static void prv_get_coredump_data(uint8_t *buf, size_t buf_len, size_t fill_call
   }
 }
 
-static void prv_check_pattern(const uint8_t *in, size_t in_len,
-                              const uint8_t *expected_out, size_t expected_out_len) {
+static void prv_check_pattern(const uint8_t *in, size_t in_len, const uint8_t *expected_out,
+                              size_t expected_out_len) {
   // regardless of the size of the buffer we call read_msg_cb() with
   // we should get the same result
   for (size_t fill_size = 1; fill_size < expected_out_len; fill_size++) {
@@ -107,13 +106,7 @@ static void prv_check_pattern(const uint8_t *in, size_t in_len,
 
 TEST(MemfaultDataSourceRle, Test_DataSourceEndsWithRepeat) {
   const uint8_t fake_core[] = { 1, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 9, 9, 9, 9 };
-  const uint8_t expected_core_rle[] = {
-    4, 1,
-    5, 2, 3, 4,
-    10, 5,
-    1, 6,
-    8, 9
-  };
+  const uint8_t expected_core_rle[] = { 4, 1, 5, 2, 3, 4, 10, 5, 1, 6, 8, 9 };
 
   prv_check_pattern(fake_core, sizeof(fake_core), expected_core_rle, sizeof(expected_core_rle));
 }
@@ -123,14 +116,7 @@ TEST(MemfaultDataSourceRle, Test_DataSourceMultiByteVarintAndEndsWithNonRepeat) 
     1, 1, 2, 3, 4, 5, 5, 5, 5, 5, 6, 7,
   };
   fake_core[sizeof(fake_core) - 1] = 8;
-  const uint8_t expected_core_rle[] = {
-    4, 1,
-    5, 2, 3, 4,
-    10, 5,
-    3, 6, 7,
-    182, 140, 1, 0,
-    1, 8
-  };
+  const uint8_t expected_core_rle[] = { 4, 1, 5, 2, 3, 4, 10, 5, 3, 6, 7, 182, 140, 1, 0, 1, 8 };
 
   prv_check_pattern(fake_core, sizeof(fake_core), expected_core_rle, sizeof(expected_core_rle));
 }

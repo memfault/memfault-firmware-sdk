@@ -3,14 +3,13 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
+#include "hw_cpm_da1469x.h"
 #include "memfault/components.h"
 #include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
 
-#include "hw_cpm_da1469x.h"
-
 #ifndef MEMFAULT_EVENT_STORAGE_RAM_SIZE
-#define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
+  #define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
 #endif
 
 int memfault_platform_boot(void) {
@@ -21,7 +20,7 @@ int memfault_platform_boot(void) {
 
   static uint8_t s_event_storage[MEMFAULT_EVENT_STORAGE_RAM_SIZE];
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
 
   memfault_reboot_tracking_collect_reset_info(evt_storage);

@@ -4,18 +4,16 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <string.h>
-  #include <stddef.h>
+#include <stddef.h>
+#include <string.h>
 
-  #include "memfault/util/circular_buffer.h"
+#include "memfault/util/circular_buffer.h"
 }
 
 TEST_GROUP(MfltCircularBufferTestGroup) {
-  void setup() {
-  }
+  void setup() { }
 
-   void teardown() {
-   }
+  void teardown() { }
 };
 
 TEST(MfltCircularBufferTestGroup, Test_MfltCircularBufferInit) {
@@ -119,7 +117,6 @@ TEST(MfltCircularBufferTestGroup, Test_MfltCircularWriteAndReadBasic) {
                                                      bytes_to_write, sizeof(bytes_to_write));
   CHECK(!success);
 
-
   // trying a read with a NULL buffer should fail
   success = memfault_circular_buffer_read(NULL, 0, bytes_read, sizeof(bytes_read));
   CHECK(!success);
@@ -205,8 +202,7 @@ TEST(MfltCircularBufferTestGroup, Test_MfltCircularWriteAndReadWrapAround) {
     // write an initial pattern that we will overwrite
     uint8_t init_pattern_buf[sizeof(write_buf)];
     memset(init_pattern_buf, 0xfe, sizeof(init_pattern_buf));
-    success = memfault_circular_buffer_write(&buffer, init_pattern_buf,
-                                             sizeof(init_pattern_buf));
+    success = memfault_circular_buffer_write(&buffer, init_pattern_buf, sizeof(init_pattern_buf));
     CHECK(success);
 
     // re-write first byte
@@ -218,7 +214,8 @@ TEST(MfltCircularBufferTestGroup, Test_MfltCircularWriteAndReadWrapAround) {
     CHECK(success);
 
     // re-write remaining
-    success = memfault_circular_buffer_write_at_offset(&buffer, sizeof(write_buf) - 2, &write_buf[1], sizeof(write_buf) - 1);
+    success = memfault_circular_buffer_write_at_offset(&buffer, sizeof(write_buf) - 2,
+                                                       &write_buf[1], sizeof(write_buf) - 1);
     CHECK(success);
 
     if ((i == 0) || ((i % 3) != 0)) {
@@ -311,7 +308,8 @@ static int s_ctx;
 TEST_GROUP(MfltCircularBufferReadWithCallbackTestGroup) {
   void setup() {
     memset(s_storage_buf, 0, sizeof(s_storage_buf));
-    const bool success = memfault_circular_buffer_init(&s_buffer, s_storage_buf, sizeof(s_storage_buf));
+    const bool success =
+      memfault_circular_buffer_init(&s_buffer, s_storage_buf, sizeof(s_storage_buf));
     CHECK(success);
   }
 
@@ -332,24 +330,21 @@ static bool prv_read_callback(void *ctx, size_t offset, const void *buf, size_t 
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_InvalidParamNullBuffer) {
-  CHECK_FALSE(memfault_circular_buffer_read_with_callback(
-      NULL, 0, 1, NULL, prv_read_callback));
+  CHECK_FALSE(memfault_circular_buffer_read_with_callback(NULL, 0, 1, NULL, prv_read_callback));
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_InvalidParamNullCallback) {
-  CHECK_FALSE(memfault_circular_buffer_read_with_callback(
-      &s_buffer, 0, 1, NULL, NULL));
+  CHECK_FALSE(memfault_circular_buffer_read_with_callback(&s_buffer, 0, 1, NULL, NULL));
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_InvalidParamOverReadSize) {
-  CHECK_FALSE(memfault_circular_buffer_read_with_callback(
-      &s_buffer, 0, 1, NULL, prv_read_callback));
+  CHECK_FALSE(memfault_circular_buffer_read_with_callback(&s_buffer, 0, 1, NULL,
+                                                          prv_read_callback));
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_NothingToRead) {
   CHECK(memfault_circular_buffer_write(&s_buffer, "hi", 2));
-  CHECK(memfault_circular_buffer_read_with_callback(
-      &s_buffer, 2, 0, &s_ctx, prv_read_callback));
+  CHECK(memfault_circular_buffer_read_with_callback(&s_buffer, 2, 0, &s_ctx, prv_read_callback));
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_Contiguous) {
@@ -357,14 +352,15 @@ TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_Contiguous) {
   const size_t read_offset = 1;
   CHECK(memfault_circular_buffer_write(&s_buffer, "hi", read_size));
 
-  mock().expectOneCall("prv_read_callback")
+  mock()
+    .expectOneCall("prv_read_callback")
     .withPointerParameter("ctx", &s_ctx)
     .withUnsignedIntParameter("offset", 0)
     .withConstPointerParameter("buf", &s_storage_buf[read_offset])
     .withUnsignedIntParameter("buf_len", read_size - read_offset);
 
-  CHECK(memfault_circular_buffer_read_with_callback(
-      &s_buffer, read_offset, read_size - read_offset, &s_ctx, prv_read_callback));
+  CHECK(memfault_circular_buffer_read_with_callback(&s_buffer, read_offset, read_size - read_offset,
+                                                    &s_ctx, prv_read_callback));
 }
 
 TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_NonContiguous) {
@@ -372,16 +368,18 @@ TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_NonContiguous) {
   CHECK(memfault_circular_buffer_consume(&s_buffer, 5));
   CHECK(memfault_circular_buffer_write(&s_buffer, "hello", 5));
 
-  mock().expectOneCall("prv_read_callback")
-        .withPointerParameter("ctx", &s_ctx)
-        .withUnsignedIntParameter("offset", 0)
-        .withConstPointerParameter("buf", &s_storage_buf[5])
-        .withUnsignedIntParameter("buf_len", 5);
-  mock().expectOneCall("prv_read_callback")
-        .withPointerParameter("ctx", &s_ctx)
-        .withUnsignedIntParameter("offset", 5)
-        .withConstPointerParameter("buf", &s_storage_buf[0])
-        .withUnsignedIntParameter("buf_len", 5);
+  mock()
+    .expectOneCall("prv_read_callback")
+    .withPointerParameter("ctx", &s_ctx)
+    .withUnsignedIntParameter("offset", 0)
+    .withConstPointerParameter("buf", &s_storage_buf[5])
+    .withUnsignedIntParameter("buf_len", 5);
+  mock()
+    .expectOneCall("prv_read_callback")
+    .withPointerParameter("ctx", &s_ctx)
+    .withUnsignedIntParameter("offset", 5)
+    .withConstPointerParameter("buf", &s_storage_buf[0])
+    .withUnsignedIntParameter("buf_len", 5);
 
   CHECK(memfault_circular_buffer_read_with_callback(&s_buffer, 0, 10, &s_ctx, prv_read_callback));
 }
@@ -391,13 +389,15 @@ TEST(MfltCircularBufferReadWithCallbackTestGroup, Test_CallbackReturningFalse) {
   const size_t read_offset = 1;
   CHECK(memfault_circular_buffer_write(&s_buffer, "hi", read_size));
 
-  mock().expectOneCall("prv_read_callback")
-        .withPointerParameter("ctx", &s_ctx)
-        .withUnsignedIntParameter("offset", 0)
-        .withConstPointerParameter("buf", &s_storage_buf[read_offset])
-        .withUnsignedIntParameter("buf_len", read_size - read_offset)
-        .andReturnValue(false);
+  mock()
+    .expectOneCall("prv_read_callback")
+    .withPointerParameter("ctx", &s_ctx)
+    .withUnsignedIntParameter("offset", 0)
+    .withConstPointerParameter("buf", &s_storage_buf[read_offset])
+    .withUnsignedIntParameter("buf_len", read_size - read_offset)
+    .andReturnValue(false);
 
-  CHECK_FALSE(memfault_circular_buffer_read_with_callback(
-    &s_buffer, read_offset, read_size - read_offset, &s_ctx, prv_read_callback));
+  CHECK_FALSE(memfault_circular_buffer_read_with_callback(&s_buffer, read_offset,
+                                                          read_size - read_offset, &s_ctx,
+                                                          prv_read_callback));
 }

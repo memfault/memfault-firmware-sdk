@@ -14,9 +14,9 @@
 static StackType_t metrics_task_stack[EXAMPLE_TASK_STACKS];
 static StaticTask_t metrics_task_tcb;
 
-static void prv_run_metrics_task(MEMFAULT_UNUSED void* pvParameters) {
+static void prv_run_metrics_task(MEMFAULT_UNUSED void *pvParameters) {
   while (true) {
-    HeapStats_t stats = {0};
+    HeapStats_t stats = { 0 };
 
     vPortGetHeapStats(&stats);
     MEMFAULT_METRIC_SET_UNSIGNED(Example_HeapFreeBytes, stats.xAvailableHeapSpaceInBytes);

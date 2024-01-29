@@ -29,9 +29,9 @@ static esp_mqtt_client_handle_t s_mqtt_client = NULL;
 static esp_mqtt5_publish_property_config_t s_publish_property = {
   .topic_alias = 1,
 };
-static char s_topic_string[128] = {0};
+static char s_topic_string[128] = { 0 };
 
-static uint8_t s_chunk_data[1024] = {0};
+static uint8_t s_chunk_data[1024] = { 0 };
 
 static void mqtt_event_handler(MEMFAULT_UNUSED void *handler_args,
                                MEMFAULT_UNUSED esp_event_base_t base,
@@ -109,7 +109,7 @@ static int prv_create_client(void) {
 }
 
 static const char *prv_get_device_serial(void) {
-  sMemfaultDeviceInfo info = {0};
+  sMemfaultDeviceInfo info = { 0 };
   memfault_platform_get_device_info(&info);
   return info.device_serial;
 }

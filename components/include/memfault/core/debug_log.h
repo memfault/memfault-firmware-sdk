@@ -32,38 +32,33 @@ extern "C" {
 #endif
 
 #if !MEMFAULT_SDK_LOG_SAVE_DISABLE
-// Note that this call will be a no-op if the system has not initialized the log module
-// by calling memfault_log_boot(). See ./log.h for more details.
-#define MEMFAULT_SDK_LOG_SAVE MEMFAULT_LOG_SAVE
+  // Note that this call will be a no-op if the system has not initialized the log module
+  // by calling memfault_log_boot(). See ./log.h for more details.
+  #define MEMFAULT_SDK_LOG_SAVE MEMFAULT_LOG_SAVE
 #else
-#define MEMFAULT_SDK_LOG_SAVE(...)
+  #define MEMFAULT_SDK_LOG_SAVE(...)
 #endif
 
 #if MEMFAULT_PLATFORM_HAS_LOG_CONFIG
   #include "memfault_platform_log_config.h"
 #else
 
-#define _MEMFAULT_LOG_IMPL(_level, ...)             \
-  do {                                              \
-    MEMFAULT_SDK_LOG_SAVE(_level, __VA_ARGS__);     \
-    memfault_platform_log(_level, __VA_ARGS__);     \
-  } while (0)
+  #define _MEMFAULT_LOG_IMPL(_level, ...)         \
+    do {                                          \
+      MEMFAULT_SDK_LOG_SAVE(_level, __VA_ARGS__); \
+      memfault_platform_log(_level, __VA_ARGS__); \
+    } while (0)
 
-#define MEMFAULT_LOG_DEBUG(...)                                         \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Debug, __VA_ARGS__)
+  #define MEMFAULT_LOG_DEBUG(...) _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Debug, __VA_ARGS__)
 
-#define MEMFAULT_LOG_INFO(...)                                              \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Info, __VA_ARGS__)
+  #define MEMFAULT_LOG_INFO(...) _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Info, __VA_ARGS__)
 
-#define MEMFAULT_LOG_WARN(...)                                              \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Warning, __VA_ARGS__)
+  #define MEMFAULT_LOG_WARN(...) _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Warning, __VA_ARGS__)
 
-#define MEMFAULT_LOG_ERROR(...)                                             \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Error, __VA_ARGS__)
+  #define MEMFAULT_LOG_ERROR(...) _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Error, __VA_ARGS__)
 
-//! Only needs to be implemented when using demo component
-#define MEMFAULT_LOG_RAW(...)                   \
-  memfault_platform_log_raw(__VA_ARGS__)
+  //! Only needs to be implemented when using demo component
+  #define MEMFAULT_LOG_RAW(...) memfault_platform_log_raw(__VA_ARGS__)
 
 #endif
 

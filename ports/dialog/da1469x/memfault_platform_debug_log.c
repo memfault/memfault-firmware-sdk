@@ -5,18 +5,18 @@
 //!
 //! Map memfault logging dependencies to da145xx arch_printf implementation.
 
-#include "memfault/core/platform/debug_log.h"
-#include "memfault/config.h"
-
 #include <stdarg.h>
 #include <stdio.h>
+
+#include "memfault/config.h"
+#include "memfault/core/platform/debug_log.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
   #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif
 
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
-#if defined (CONFIG_RETARGET) || defined (CONFIG_RTT)
+#if defined(CONFIG_RETARGET) || defined(CONFIG_RTT)
   va_list args;
   va_start(args, fmt);
 
@@ -46,14 +46,14 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   }
 
   if (lvl_str) {
-      printf("[%s] MFLT: %s\r\n", lvl_str, log_buf);
+    printf("[%s] MFLT: %s\r\n", lvl_str, log_buf);
   }
   va_end(args);
 #endif
 }
 
 void memfault_platform_log_raw(const char *fmt, ...) {
-#if defined (CONFIG_RETARGET) || defined (CONFIG_RTT)
+#if defined(CONFIG_RETARGET) || defined(CONFIG_RTT)
   va_list args;
   va_start(args, fmt);
 

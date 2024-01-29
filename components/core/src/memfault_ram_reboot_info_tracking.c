@@ -13,15 +13,14 @@
 //!    upon reboot & the memory must be placed in the same region for the firmwares running on the
 //!    system (i.e bootloader & main image).
 
-#include "memfault/core/reboot_tracking.h"
-#include "memfault_reboot_tracking_private.h"
-
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/errors.h"
+#include "memfault/core/reboot_tracking.h"
+#include "memfault_reboot_tracking_private.h"
 
 #define MEMFAULT_REBOOT_INFO_MAGIC 0x21544252
 
@@ -40,7 +39,7 @@ typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   uint8_t crash_count;
   uint8_t rsvd1[1];
   uint8_t coredump_saved;
-  uint32_t last_reboot_reason; // eMemfaultRebootReason or MEMFAULT_REBOOT_REASON_NOT_SET
+  uint32_t last_reboot_reason;  // eMemfaultRebootReason or MEMFAULT_REBOOT_REASON_NOT_SET
   uint32_t pc;
   uint32_t lr;
   //! Most MCUs have a register which reveals why a device rebooted.
@@ -51,7 +50,8 @@ typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   uint32_t reset_reason_reg0;
   // Reserved for future additions
   uint32_t rsvd2[10];
-} sMfltRebootInfo;
+}
+sMfltRebootInfo;
 
 MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) == MEMFAULT_REBOOT_TRACKING_REGION_SIZE,
                        "struct doesn't match expected size");
@@ -81,7 +81,7 @@ static bool prv_check_or_init_struct(void) {
   }
 
   // structure doesn't match what we expect, reset it
-  *s_mflt_reboot_info = (sMfltRebootInfo) {
+  *s_mflt_reboot_info = (sMfltRebootInfo){
     .magic = MEMFAULT_REBOOT_INFO_MAGIC,
     .version = MEMFAULT_REBOOT_INFO_VERSION,
     .last_reboot_reason = MEMFAULT_REBOOT_REASON_NOT_SET,
@@ -92,10 +92,10 @@ static bool prv_check_or_init_struct(void) {
 static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
   if ((s_mflt_reboot_info->last_reboot_reason == MEMFAULT_REBOOT_REASON_NOT_SET) &&
       (s_mflt_reboot_info->reset_reason_reg0 == 0)) {
-    return false; // no reset crashes!
+    return false;  // no reset crashes!
   }
 
-  *info = (sMfltResetReasonInfo) {
+  *info = (sMfltResetReasonInfo){
     .reason = (eMemfaultRebootReason)s_mflt_reboot_info->last_reboot_reason,
     .pc = s_mflt_reboot_info->pc,
     .lr = s_mflt_reboot_info->lr,
@@ -157,7 +157,7 @@ static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
     return;
   }
   s_mflt_reboot_info->last_reboot_reason = reboot_reason;
-  if (reg == NULL) { // we don't have any extra metadata
+  if (reg == NULL) {  // we don't have any extra metadata
     return;
   }
 
@@ -165,8 +165,7 @@ static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
   s_mflt_reboot_info->lr = reg->lr;
 }
 
-void memfault_reboot_tracking_boot(
-    void *start_addr, const sResetBootupInfo *bootup_info) {
+void memfault_reboot_tracking_boot(void *start_addr, const sResetBootupInfo *bootup_info) {
   s_mflt_reboot_info = start_addr;
 
   if (start_addr == NULL) {

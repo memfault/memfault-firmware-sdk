@@ -21,16 +21,16 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
-//! Size of memory to allocate on main stack
-//! This requires a larger allocation due to the method used to measure stack usage
-#define STACK_ALLOCATION_SIZE (CONFIG_MAIN_STACK_SIZE >> 2)
-//! Size of memory to allocate on system heap
-#define HEAP_ALLOCATION_SIZE (CONFIG_HEAP_MEM_POOL_SIZE >> 3)
-//! Value to sleep for observing metrics changes
-#define METRICS_OBSERVE_PERIOD MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
+  //! Size of memory to allocate on main stack
+  //! This requires a larger allocation due to the method used to measure stack usage
+  #define STACK_ALLOCATION_SIZE (CONFIG_MAIN_STACK_SIZE >> 2)
+  //! Size of memory to allocate on system heap
+  #define HEAP_ALLOCATION_SIZE (CONFIG_HEAP_MEM_POOL_SIZE >> 3)
+  //! Value to sleep for observing metrics changes
+  #define METRICS_OBSERVE_PERIOD MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
 
 //! Array of heap pointers
-static void *heap_ptrs[4] = {NULL};
+static void *heap_ptrs[4] = { NULL };
 
 //! Keep a reference to the main thread for stack info
 static struct k_thread *s_main_thread = NULL;
@@ -117,7 +117,7 @@ static void prv_init_test_thread_timer(void) {
   k_work_submit(&s_test_thread_work);
 }
 #else
-static void prv_init_test_thread_timer(void) {}
+static void prv_init_test_thread_timer(void) { }
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
 
 #if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
@@ -176,7 +176,8 @@ static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc
   return 0;
 }
 
-SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from application", prv_run_example_memory_metrics);
+SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from application",
+                   prv_run_example_memory_metrics);
 
 // Override function to collect the app metric MainStack_MinBytesFree
 // and print current metric values
@@ -193,7 +194,7 @@ static void prv_run_stack_metrics_example(void) {
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
 
 #if defined(CONFIG_MEMFAULT_FAULT_HANDLER_RETURN)
-#include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
   printk("User fatal handler invoked with reason: %d. Rebooting!\n", reason);
   memfault_platform_reboot();

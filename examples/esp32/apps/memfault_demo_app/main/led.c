@@ -132,7 +132,7 @@ static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
   static bool s_led_state = false;
   s_led_state = !s_led_state;
 
-  const gpio_num_t leds[] = {kLedColor_Red, kLedColor_Green, kLedColor_Blue};
+  const gpio_num_t leds[] = { kLedColor_Red, kLedColor_Green, kLedColor_Blue };
   for (size_t i = 0; i < sizeof(leds) / sizeof(leds[0]); i++) {
     if (leds[i] == s_led_color) {
       gpio_set_level(s_led_color, s_led_state);
@@ -143,7 +143,7 @@ static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
 }
 
 static void led_config(void) {
-  const gpio_num_t leds[] = {kLedColor_Red, kLedColor_Green, kLedColor_Blue};
+  const gpio_num_t leds[] = { kLedColor_Red, kLedColor_Green, kLedColor_Blue };
 
   for (size_t i = 0; i < sizeof(leds) / sizeof(leds[0]); i++) {
     gpio_reset_pin(leds[i]);

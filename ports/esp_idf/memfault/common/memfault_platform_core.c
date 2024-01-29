@@ -13,7 +13,7 @@
 #include "memfault/metrics/metrics.h"
 
 #ifndef ESP_PLATFORM
-#  error "The port assumes the esp-idf is in use!"
+  #error "The port assumes the esp-idf is in use!"
 #endif
 
 #include "esp_attr.h"
@@ -21,13 +21,13 @@
 #include "freertos/portmacro.h"
 #include "freertos/semphr.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-#include "esp_cpu.h"
+  #include "esp_cpu.h"
 #else
-#include "soc/cpu.h"
+  #include "soc/cpu.h"
 #endif
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
-#include "esp_log.h"
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_RAM_SIZE];
 static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
@@ -38,19 +38,17 @@ static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
 // tracking data, we place it in the RTC noinit section '.rtc_noinit'
 static RTC_NOINIT_ATTR uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
-MEMFAULT_WEAK
-bool memfault_esp_port_data_available(void) {
+MEMFAULT_WEAK bool memfault_esp_port_data_available(void) {
   return memfault_packetizer_data_available();
 }
 
-MEMFAULT_WEAK
-bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len) {
+MEMFAULT_WEAK bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len) {
   return memfault_packetizer_get_chunk(buf, buf_len);
 }
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();
-  return  (uint64_t) (time_since_boot_us / 1000) /* us per ms */;
+  return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
 }
 
 bool memfault_arch_is_inside_isr(void) {
@@ -79,7 +77,7 @@ static void prv_record_reboot_reason(void) {
 
   // esp_reset_reason is not implemented for 3.x builds
 #if defined(ESP_IDF_VERSION)
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
   esp_reset_cause = (int)esp_reset_reason();
   switch (esp_reset_cause) {
     case ESP_RST_POWERON:
@@ -104,7 +102,7 @@ static void prv_record_reboot_reason(void) {
       reboot_reason = kMfltRebootReason_UnknownError;
       break;
   }
-#endif
+  #endif
 #endif
 
   const sResetBootupInfo reset_info = {
@@ -128,8 +126,7 @@ void memfault_unlock(void) {
 // The esp32 uses vprintf() for dumping to console. The libc implementation used requires a lot of
 // stack space. We therefore prevent this function from being inlined so the log_buf allocation
 // does not wind up in that path.
-__attribute__((noinline))
-static int prv_copy_log_to_mflt_buffer(const char *fmt, va_list args) {
+__attribute__((noinline)) static int prv_copy_log_to_mflt_buffer(const char *fmt, va_list args) {
   // copy result into memfault log buffer collected as part of a coredump
   char log_buf[80];
   const size_t available_space = sizeof(log_buf);
@@ -176,7 +173,7 @@ void memfault_boot(void) {
   prv_record_reboot_reason();
 
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
   memfault_reboot_tracking_collect_reset_info(evt_storage);
 

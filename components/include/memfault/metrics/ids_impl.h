@@ -18,7 +18,7 @@ extern "C" {
 
 //! Generate extern const char * declarations for all IDs (used in key names):
 #define MEMFAULT_METRICS_KEY_DEFINE_(key_name) \
-  extern const char* const g_memfault_metrics_id_##key_name;
+  extern const char *const g_memfault_metrics_id_##key_name;
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
@@ -128,7 +128,7 @@ typedef struct {
 #define _MEMFAULT_METRICS_ID_CREATE(id) \
   { kMfltMetricsIndex_##id }
 
-#define _MEMFAULT_METRICS_ID(id) ((MemfaultMetricId){kMfltMetricsIndex_##id})
+#define _MEMFAULT_METRICS_ID(id) ((MemfaultMetricId){ kMfltMetricsIndex_##id })
 
 #ifdef __cplusplus
 }

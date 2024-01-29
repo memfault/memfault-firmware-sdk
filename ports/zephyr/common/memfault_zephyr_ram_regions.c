@@ -18,16 +18,16 @@
 
 // Use this config flag to manually select the old data region names
 #if !defined(MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES)
-#define MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES 0
+  #define MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES 0
 #endif
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 
 #if CONFIG_THREAD_STACK_INFO
-#if CONFIG_STACK_GROWS_UP
+  #if CONFIG_STACK_GROWS_UP
     #error \
       "Only full-descending stacks are supported by this implementation. Please contact support@memfault.com."
-#endif
+  #endif
 
   #if defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
     #define MEMFAULT_THREAD_STACK_0_BYTES_UNUSED 0xffffffff
@@ -59,16 +59,13 @@ static bool prv_find_slot(size_t *idx, struct k_thread *desired_tcb) {
 // functions are declared in private zephyr ./kernel/include files, which are
 // not really supposed to be accessed from user code and would require some
 // dubious path hacks to get to.
-void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-                            char *stack_ptr, k_thread_entry_t entry,
-                            void *p1, void *p2, void *p3);
-void __real_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-                            char *stack_ptr, k_thread_entry_t entry,
-                            void *p1, void *p2, void *p3);
+void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
+                            k_thread_entry_t entry, void *p1, void *p2, void *p3);
+void __real_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
+                            k_thread_entry_t entry, void *p1, void *p2, void *p3);
 
-void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-                            char *stack_ptr, k_thread_entry_t entry,
-                            void *p1, void *p2, void *p3) {
+void __wrap_arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
+                            k_thread_entry_t entry, void *p1, void *p2, void *p3) {
   size_t idx = 0;
   const bool slot_found = prv_find_slot(&idx, EMPTY_SLOT);
   if (slot_found) {
@@ -91,8 +88,8 @@ void __wrap_z_thread_abort(struct k_thread *thread) {
   __real_z_thread_abort(thread);
 }
 
-MEMFAULT_WEAK
-size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
+MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
+                                                              size_t desired_size) {
   // NB: This only works for MCUs which have a contiguous RAM address range. (i.e Any MCU in the
   // nRF53, nRF52, and nRF91 family). All of these MCUs have a contigous RAM address range so it is
   // sufficient to just look at _image_ram_start/end from the Zephyr linker script
@@ -126,8 +123,7 @@ static ssize_t prv_stack_bytes_unused(uintptr_t stack_start, size_t stack_size) 
   const uint8_t *stack_max = (const uint8_t *)stack_start;
   const uint8_t *const stack_bottom = (const uint8_t *const)(stack_start + stack_size);
 
-  for (; (stack_max < stack_bottom) && (*stack_max == 0xAA); stack_max++) {
-  }
+  for (; (stack_max < stack_bottom) && (*stack_max == 0xAA); stack_max++) { }
 
   // Return the "bytes unused" count for the stack
   const ssize_t bytes_unused = (uintptr_t)stack_max - stack_start;
@@ -163,8 +159,7 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       continue;
     }
 
-    const size_t tcb_size = memfault_platform_sanitize_address_range(
-        thread, sizeof(*thread));
+    const size_t tcb_size = memfault_platform_sanitize_address_range(thread, sizeof(*thread));
     if (tcb_size == 0) {
       // An invalid address, scrub the TCB from the list so we don't try to dereference
       // it when grabbing stacks below and move on.
@@ -194,10 +189,10 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       // when collecting partial stacks, thread context is only valid when task
       // is _not_ running so we skip collecting it. just update the watermark
       // for the thread
-    #if defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
+  #if defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
       s_memfault_task_watermarks_v2[i].bytes_unused =
         prv_stack_bytes_unused(thread->stack_info.start, thread->stack_info.size);
-    #endif  // defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
+  #endif  // defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
       continue;
     }
 #endif
@@ -210,14 +205,14 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     // is in use
     const uint32_t stack_top = thread->stack_info.start + thread->stack_info.size;
 
-    #if CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
-      // Capture the entire stack for this thread
-      size_t stack_size_to_collect = thread->stack_info.size;
-      sp = thread->stack_info.start;
-    #else
+  #if CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
+    // Capture the entire stack for this thread
+    size_t stack_size_to_collect = thread->stack_info.size;
+    sp = thread->stack_info.start;
+  #else
     size_t stack_size_to_collect =
-        MEMFAULT_MIN(stack_top - (uint32_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
-    #endif
+      MEMFAULT_MIN(stack_top - (uint32_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
+  #endif
 #else
     size_t stack_size_to_collect = CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT;
 #endif
@@ -263,12 +258,12 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
   // intermediate Zephyr release, so the version number checking is not
   // possible.
 #if !MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES && MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
-#define ZEPHYR_DATA_REGION_START __data_region_start
-#define ZEPHYR_DATA_REGION_END __data_region_end
+  #define ZEPHYR_DATA_REGION_START __data_region_start
+  #define ZEPHYR_DATA_REGION_END __data_region_end
 #else
   // The old names are used in previous Zephyr versions (<=2.6)
-#define ZEPHYR_DATA_REGION_START __data_ram_start
-#define ZEPHYR_DATA_REGION_END __data_ram_end
+  #define ZEPHYR_DATA_REGION_START __data_ram_start
+  #define ZEPHYR_DATA_REGION_END __data_ram_end
 #endif
 
   extern uint32_t ZEPHYR_DATA_REGION_START[];

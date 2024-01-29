@@ -21,36 +21,34 @@ extern "C" {
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/preprocessor.h"
+  #include "memfault/core/compiler.h"
+  #include "memfault/core/preprocessor.h"
 
-#define MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS 15
+  #define MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS 15
 
-
-static void run_printf_like_func_check_(const char* format, ...)
-    MEMFAULT_PRINTF_LIKE_FUNC(1, 2);
+static void run_printf_like_func_check_(const char *format, ...) MEMFAULT_PRINTF_LIKE_FUNC(1, 2);
 
 //! Mark the function as used to prevent warnings in situations where this header is included but
 //! no logging is actually used
-MEMFAULT_USED
-static void run_printf_like_func_check_(MEMFAULT_UNUSED const char* format, ...) { }
+MEMFAULT_USED static void run_printf_like_func_check_(MEMFAULT_UNUSED const char *format, ...) { }
 
-//! Compilation time checks on log formatter
-//!
-//! - static asserts that argument list does not exceed allowed length.
-//! - Runs printf() style format checking (behind a "if (false)" so that
-//!   the actual code gets optimized away)
-#define MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ...)                           \
-  do {                                                                                  \
-  MEMFAULT_STATIC_ASSERT(                                                               \
-      MEMFAULT_ARG_COUNT_UP_TO_32(__VA_ARGS__) <= MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS , \
-      MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_ARG_COUNT_UP_TO_32(__VA_ARGS__))               \
-      " args > MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS ("                                   \
-      MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS) ")!");             \
-  if (false) {                                                                          \
-    run_printf_like_func_check_(format, ## __VA_ARGS__);                                \
-  } \
-} while (0)
+  //! Compilation time checks on log formatter
+  //!
+  //! - static asserts that argument list does not exceed allowed length.
+  //! - Runs printf() style format checking (behind a "if (false)" so that
+  //!   the actual code gets optimized away)
+  #define MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ...)                                  \
+    do {                                                                                         \
+      MEMFAULT_STATIC_ASSERT(                                                                    \
+        MEMFAULT_ARG_COUNT_UP_TO_32(__VA_ARGS__) <= MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS,         \
+        MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_ARG_COUNT_UP_TO_32(                                   \
+          __VA_ARGS__)) " args > MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS "                           \
+                        "(" MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_LOGGING_MAX_SUPPORTED_ARGS) ")"   \
+                                                                                           "!"); \
+      if (false) {                                                                               \
+        run_printf_like_func_check_(format, ##__VA_ARGS__);                                      \
+      }                                                                                          \
+    } while (0)
 
 #endif /* MEMFAULT_COMPACT_LOG_ENABLE */
 

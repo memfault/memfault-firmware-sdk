@@ -173,26 +173,22 @@ static const struct {
   char *component_name;
   bool (*booted)(void);
 } s_boot_components[kMfltBootComponent_NumTypes] = {
-  [kMfltBootComponent_EventStorage] =
-    {
-      .component_name = "Event Storage",
-      memfault_event_storage_booted,
-    },
-  [kMfltBootComponent_Logging] =
-    {
-      .component_name = "Logging",
-      memfault_log_booted,
-    },
-  [kMfltBootComponent_RebootTracking] =
-    {
-      .component_name = "Reboot Tracking",
-      memfault_reboot_tracking_booted,
-    },
-  [kMfltBootComponent_TraceEvent] =
-    {
-      .component_name = "Trace Event",
-      memfault_trace_event_booted,
-    },
+  [kMfltBootComponent_EventStorage] = {
+    .component_name = "Event Storage",
+    memfault_event_storage_booted,
+  },
+  [kMfltBootComponent_Logging] = {
+    .component_name = "Logging",
+    memfault_log_booted,
+  },
+  [kMfltBootComponent_RebootTracking] = {
+    .component_name = "Reboot Tracking",
+    memfault_reboot_tracking_booted,
+  },
+  [kMfltBootComponent_TraceEvent] = {
+    .component_name = "Trace Event",
+    memfault_trace_event_booted,
+  },
 };
 
 uint32_t memfault_self_test_component_boot_test(void) {

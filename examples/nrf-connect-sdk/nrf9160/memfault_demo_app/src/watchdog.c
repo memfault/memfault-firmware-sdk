@@ -30,7 +30,7 @@
 K_THREAD_STACK_DEFINE(s_wdt_task_stack_area, WATCHDOG_TASK_STACK_SIZE);
 struct k_thread my_thread_data;
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3,1)
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
 // Between Zephyr 3.1 and 3.2, "label" properties in DTS started to get phased out:
 //   https://github.com/zephyrproject-rtos/zephyr/pull/48360
 //
@@ -38,9 +38,9 @@ struct k_thread my_thread_data;
 // properties. The new preferred approach is accessing resources via the DEVICE_DT_GET macro
 static const struct device *s_wdt = DEVICE_DT_GET(DT_NODELABEL(wdt));
 
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2,1)
+#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
 static const struct device *s_wdt = NULL;
-#else // Zephyr Kernel <= 2.1
+#else  // Zephyr Kernel <= 2.1
 static struct device *s_wdt = NULL;
 #endif
 
@@ -88,12 +88,12 @@ static void prv_wdt_task(void *arg1, void *arg2, void *arg3) {
 void memfault_demo_app_watchdog_boot(void) {
   MEMFAULT_LOG_DEBUG("Initializing WDT Subsystem");
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3,1)
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
   if (!device_is_ready(s_wdt)) {
     printk("Watchdog device not ready");
     return;
   }
-#else // Zephyr <= 3.1
+#else  // Zephyr <= 3.1
   s_wdt = device_get_binding(WDT_DEV_NAME);
   if (s_wdt == NULL) {
     printk("No WDT device available\n");

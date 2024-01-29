@@ -77,14 +77,13 @@
 //!     return &s_coredump_regions[0];
 //!   }
 
-#include "memfault/ports/freertos_coredump.h"
-
 #include <stdint.h>
 
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/ports/freertos_coredump.h"
 
 // Espressif's esp-idf project uses a different include directory by default.
 #if defined(ESP_PLATFORM)
@@ -103,7 +102,7 @@
 #endif  // MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
-#error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
+  #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
 #endif
 
 // This feature is opt-in, since it can fail if the TCB data structures are
@@ -113,8 +112,7 @@
 #endif
 
 #if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE && !INCLUDE_uxTaskGetStackHighWaterMark
-  #warning \
-    MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE requires uxTaskGetStackHighWaterMark() API.\
+  #warning MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE requires uxTaskGetStackHighWaterMark() API.\
     Add '#define INCLUDE_uxTaskGetStackHighWaterMark 1' to FreeRTOSConfig.h to enable it,\
     or set '#define MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE 0' in\
     memfault_platform_config.h to disable this warning.
@@ -124,8 +122,7 @@
 
 #if !defined(MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE)
   #if !configRECORD_STACK_HIGH_ADDRESS
-    #warning \
-      To see FreeRTOS thread stack sizes in coredumps, Add\
+    #warning To see FreeRTOS thread stack sizes in coredumps, Add\
       '#define configRECORD_STACK_HIGH_ADDRESS 1' to FreeRTOSConfig.h. Otherwise, set\
       '#define MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE 0' in\
       memfault_platform_config.h to disable this warning.
@@ -254,8 +251,8 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
       continue;
     }
 
-    const size_t tcb_size = memfault_platform_sanitize_address_range(
-        tcb_address, MEMFAULT_FREERTOS_TCB_SIZE);
+    const size_t tcb_size =
+      memfault_platform_sanitize_address_range(tcb_address, MEMFAULT_FREERTOS_TCB_SIZE);
     if (tcb_size == 0) {
       // An invalid address, scrub the TCB from the list so we don't try to dereference
       // it when grabbing stacks below and move on.
@@ -278,7 +275,7 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
     // pxTopOfStack is always the first entry in the FreeRTOS TCB
     void *top_of_stack = (void *)(*(uintptr_t *)tcb_address);
     const size_t stack_size = memfault_platform_sanitize_address_range(
-        top_of_stack, MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT);
+      top_of_stack, MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT);
     if (stack_size == 0) {
       continue;
     }
@@ -287,7 +284,7 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
     s_memfault_task_watermarks[i].high_watermark = prv_stack_bytes_high_watermark(tcb_address);
 #endif
 
-    regions[region_idx] =  MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
+    regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
     region_idx++;
     if (region_idx == num_regions) {
       return region_idx;
@@ -301,8 +298,8 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
       MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_task_tcbs[0], sizeof(s_task_tcbs));
     region_idx++;
 
-    regions[region_idx] =
-      MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_memfault_task_watermarks[0], sizeof(s_memfault_task_watermarks));
+    regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_memfault_task_watermarks[0],
+                                                               sizeof(s_memfault_task_watermarks));
     region_idx++;
   }
 #endif

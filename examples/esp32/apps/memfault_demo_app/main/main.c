@@ -51,7 +51,8 @@ static const char *TAG = "main";
 
 static void initialize_filesystem() {
   static wl_handle_t wl_handle;
-  const esp_vfs_fat_mount_config_t mount_config = {.max_files = 4, .format_if_mount_failed = true};
+  const esp_vfs_fat_mount_config_t mount_config = { .max_files = 4,
+                                                    .format_if_mount_failed = true };
   esp_err_t err =
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     esp_vfs_fat_spiflash_mount_rw_wl
@@ -198,7 +199,7 @@ static void prv_memfault_ota(void) {
   }
 }
 #else
-static void prv_memfault_ota(void) {}
+static void prv_memfault_ota(void) { }
 #endif  // CONFIG_MEMFAULT_APP_OTA
 
 #if CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
@@ -348,7 +349,7 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
   if (size > 1696) {
     ESP_LOGI("main", "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
 
-    multi_heap_info_t heap_info = {0};
+    multi_heap_info_t heap_info = { 0 };
     heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
     ESP_LOGI("main", "Total free bytes: %d", heap_info.total_free_bytes);
   }
@@ -390,7 +391,7 @@ void app_main() {
   settings_register_shell_commands();
 
   // Attempt to load project key from nvs
-  static char project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = {0};
+  static char project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = { 0 };
   int err = wifi_get_project_key(project_key, sizeof(project_key));
   if (err == 0) {
     project_key[sizeof(project_key) - 1] = '\0';

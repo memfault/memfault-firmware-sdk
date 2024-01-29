@@ -25,17 +25,17 @@ extern "C" {
 
 // For example, decide if you want to use the Gnu Build ID.
 #if defined(__GNUC__)
-#define MEMFAULT_USE_GNU_BUILD_ID 1
+  #define MEMFAULT_USE_GNU_BUILD_ID 1
 #endif
 
-#if defined (__DA14531__)
+#if defined(__DA14531__)
 // Tune some parameters to save additional RAM space on the DA1531
 
-#define MEMFAULT_DATA_SOURCE_RLE_ENABLED 0
-#define MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED 0
-#define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
-#define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 0
-#define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
+  #define MEMFAULT_DATA_SOURCE_RLE_ENABLED 0
+  #define MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED 0
+  #define MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED 0
+  #define MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED 0
+  #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
 #endif
 
 #ifdef __cplusplus

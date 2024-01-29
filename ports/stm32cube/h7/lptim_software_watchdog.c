@@ -14,33 +14,33 @@
 //! MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS to a timeout less than the hardware watchdog, we can
 //! guarantee a capture of a coredump when the system is in a wedged state.
 
-#include "memfault/ports/watchdog.h"
-
 #include <stdbool.h>
-
-#include "stm32h7xx_hal.h"
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
+#include "memfault/ports/watchdog.h"
+#include "stm32h7xx_hal.h"
 
 #ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE
-# define MEMFAULT_SOFWARE_WATCHDOG_SOURCE LPTIM2_BASE
+  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE LPTIM2_BASE
 #endif
 
 #ifndef MEMFAULT_LPTIM_ENABLE_FREEZE_DBGMCU
-// By default, we automatically halt the software watchdog timer when
-// the core is halted in debug mode. This prevents a watchdog from firing
-// immediately upon resumption.
-# define MEMFAULT_LPTIM_ENABLE_FREEZE_DBGMCU 1
+  // By default, we automatically halt the software watchdog timer when
+  // the core is halted in debug mode. This prevents a watchdog from firing
+  // immediately upon resumption.
+  #define MEMFAULT_LPTIM_ENABLE_FREEZE_DBGMCU 1
 #endif
 
 #ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
-# if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == LPTIM2_BASE
-#  error "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPTIM2_IRQHandler"
-# else
-#  error "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPTIM<N>_IRQHandler"
-# endif
+  #if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == LPTIM2_BASE
+    #error \
+      "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPTIM2_IRQHandler"
+  #else
+    #error \
+      "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPTIM<N>_IRQHandler"
+  #endif
 #endif
 
 #if ((MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM1_BASE) && \
@@ -48,7 +48,7 @@
      (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM3_BASE) && \
      (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM4_BASE) && \
      (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM5_BASE))
-# error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be one of LPTIM[1-5]_BASE"
+  #error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be one of LPTIM[1-5]_BASE"
 #endif
 
 //! We wire the LPTIM -> LSI so the clock frequency will be 32kHz
@@ -62,7 +62,7 @@
 #define MEMFAULT_LPTIM_MAX_TIMEOUT_SEC ((MEMFAULT_LPTIM_MAX_COUNT + 1) / MEMFAULT_LPTIM_HZ)
 
 #if MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS > MEMFAULT_LPTIM_MAX_TIMEOUT_SEC
-#error "MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS exceeds maximum value supported by hardware"
+  #error "MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS exceeds maximum value supported by hardware"
 #endif
 
 static LPTIM_HandleTypeDef s_lptim_cfg;
@@ -70,42 +70,32 @@ static LPTIM_HandleTypeDef s_lptim_cfg;
 static void prv_lptim_clock_config(RCC_PeriphCLKInitTypeDef *config) {
   switch ((uint32_t)MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
-      *config = (RCC_PeriphCLKInitTypeDef )  {
-        .PeriphClockSelection = RCC_PERIPHCLK_LPTIM1,
-        .Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI
-      };
+      *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM1,
+                                            .Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI };
       break;
 
     case LPTIM2_BASE:
-      *config = (RCC_PeriphCLKInitTypeDef )  {
-        .PeriphClockSelection = RCC_PERIPHCLK_LPTIM2,
-        .Lptim2ClockSelection = RCC_LPTIM2CLKSOURCE_LSI
-      };
+      *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM2,
+                                            .Lptim2ClockSelection = RCC_LPTIM2CLKSOURCE_LSI };
       break;
 
     case LPTIM3_BASE:
-      *config = (RCC_PeriphCLKInitTypeDef )  {
-        .PeriphClockSelection = RCC_PERIPHCLK_LPTIM3,
-        .Lptim345ClockSelection = RCC_LPTIM3CLKSOURCE_LSI
-      };
+      *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM3,
+                                            .Lptim345ClockSelection = RCC_LPTIM3CLKSOURCE_LSI };
       break;
 
     case LPTIM4_BASE:
-      *config = (RCC_PeriphCLKInitTypeDef )  {
-        .PeriphClockSelection = RCC_PERIPHCLK_LPTIM4,
-        .Lptim345ClockSelection = RCC_LPTIM4CLKSOURCE_LSI
-      };
+      *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM4,
+                                            .Lptim345ClockSelection = RCC_LPTIM4CLKSOURCE_LSI };
       break;
 
     case LPTIM5_BASE:
-      *config = (RCC_PeriphCLKInitTypeDef )  {
-        .PeriphClockSelection = RCC_PERIPHCLK_LPTIM5,
-        .Lptim345ClockSelection = RCC_LPTIM4CLKSOURCE_LSI
-      };
+      *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM5,
+                                            .Lptim345ClockSelection = RCC_LPTIM4CLKSOURCE_LSI };
       break;
 
     default:
-      *config =  (RCC_PeriphCLKInitTypeDef) { 0 };
+      *config = (RCC_PeriphCLKInitTypeDef){ 0 };
       break;
   }
 }
@@ -179,28 +169,28 @@ static void prv_lptim_clk_freeze_during_dbg(void) {
 static void prv_lptim_irq_enable(void) {
   switch (MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
-       NVIC_ClearPendingIRQ(LPTIM1_IRQn);
-       NVIC_EnableIRQ(LPTIM1_IRQn);
+      NVIC_ClearPendingIRQ(LPTIM1_IRQn);
+      NVIC_EnableIRQ(LPTIM1_IRQn);
       break;
 
     case LPTIM2_BASE:
-       NVIC_ClearPendingIRQ(LPTIM2_IRQn);
-       NVIC_EnableIRQ(LPTIM2_IRQn);
+      NVIC_ClearPendingIRQ(LPTIM2_IRQn);
+      NVIC_EnableIRQ(LPTIM2_IRQn);
       break;
 
     case LPTIM3_BASE:
-       NVIC_ClearPendingIRQ(LPTIM3_IRQn);
-       NVIC_EnableIRQ(LPTIM3_IRQn);
+      NVIC_ClearPendingIRQ(LPTIM3_IRQn);
+      NVIC_EnableIRQ(LPTIM3_IRQn);
       break;
 
     case LPTIM4_BASE:
-       NVIC_ClearPendingIRQ(LPTIM4_IRQn);
-       NVIC_EnableIRQ(LPTIM4_IRQn);
+      NVIC_ClearPendingIRQ(LPTIM4_IRQn);
+      NVIC_EnableIRQ(LPTIM4_IRQn);
       break;
 
     case LPTIM5_BASE:
-       NVIC_ClearPendingIRQ(LPTIM5_IRQn);
-       NVIC_EnableIRQ(LPTIM5_IRQn);
+      NVIC_ClearPendingIRQ(LPTIM5_IRQn);
+      NVIC_EnableIRQ(LPTIM5_IRQn);
       break;
 
     default:
@@ -236,7 +226,7 @@ int memfault_software_watchdog_enable(void) {
   prv_lptim_clk_enable();
   prv_lptim_clk_freeze_during_dbg();
 
-  s_lptim_cfg = (LPTIM_HandleTypeDef) {
+  s_lptim_cfg = (LPTIM_HandleTypeDef){
     .Instance = (LPTIM_TypeDef *)MEMFAULT_SOFWARE_WATCHDOG_SOURCE,
     .Init = {
       .Clock = {
@@ -244,7 +234,7 @@ int memfault_software_watchdog_enable(void) {
 #if MEMFAULT_LPTIM_PRESCALER == 128
         .Prescaler = LPTIM_PRESCALER_DIV128,
 #else
-#error "Unexpected Prescaler value"
+  #error "Unexpected Prescaler value"
 #endif
       },
       .Trigger = {
@@ -267,8 +257,7 @@ int memfault_software_watchdog_enable(void) {
 
   prv_lptim_irq_enable();
 
-  const uint32_t desired_timeout_ms =
-      MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * MEMFAULT_MS_PER_SEC;
+  const uint32_t desired_timeout_ms = MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * MEMFAULT_MS_PER_SEC;
   memfault_software_watchdog_update_timeout(desired_timeout_ms);
   return 0;
 }
@@ -296,8 +285,8 @@ int memfault_software_watchdog_update_timeout(uint32_t timeout_ms) {
   __HAL_LPTIM_CLEAR_FLAG(&s_lptim_cfg, LPTIM_IT_ARRM);
   __HAL_LPTIM_DISABLE_IT(&s_lptim_cfg, LPTIM_IT_ARRM);
 
-  const uint32_t ticks = MEMFAULT_MIN((timeout_ms * MEMFAULT_LPTIM_HZ) / MEMFAULT_MS_PER_SEC,
-                                      MEMFAULT_LPTIM_MAX_COUNT);
+  const uint32_t ticks =
+    MEMFAULT_MIN((timeout_ms * MEMFAULT_LPTIM_HZ) / MEMFAULT_MS_PER_SEC, MEMFAULT_LPTIM_MAX_COUNT);
 
   rv = HAL_LPTIM_Counter_Start(&s_lptim_cfg, ticks);
   if (rv != HAL_OK) {

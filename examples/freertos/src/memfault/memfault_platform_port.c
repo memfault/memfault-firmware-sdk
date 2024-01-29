@@ -75,7 +75,7 @@ void memfault_platform_log_raw(const char *fmt, ...) {
 }
 
 void memfault_platform_reboot_tracking_boot(void) {
-  sResetBootupInfo reset_info = {0};
+  sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 }
@@ -96,12 +96,12 @@ int memfault_platform_boot(void) {
 
   memfault_reboot_tracking_collect_reset_info(evt_storage);
 
-  #if defined(MEMFAULT_COMPONENT_metrics_)
+#if defined(MEMFAULT_COMPONENT_metrics_)
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
-  #endif
+#endif
 
   memfault_log_boot(s_log_buf_storage, MEMFAULT_ARRAY_SIZE(s_log_buf_storage));
 

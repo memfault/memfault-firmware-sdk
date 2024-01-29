@@ -18,10 +18,10 @@
 //!
 //! TODO: Fill in FIXMEs below for your platform
 
+#include <stdbool.h>
+
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
-
-#include <stdbool.h>
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   // !FIXME: Populate with platform device information
@@ -30,12 +30,12 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   // or static as they will be used _after_ the function returns
 
   // See https://mflt.io/version-nomenclature for more context
-  *info = (sMemfaultDeviceInfo) {
+  *info = (sMemfaultDeviceInfo){
     // An ID that uniquely identifies the device in your fleet
     // (i.e serial number, mac addr, chip id, etc)
     // Regular expression defining valid device serials: ^[-a-zA-Z0-9_]+$
     .device_serial = "DEMOSERIAL",
-     // A name to represent the firmware running on the MCU.
+    // A name to represent the firmware running on the MCU.
     // (i.e "ble-fw", "main-fw", or a codename for your project)
     .software_type = "app-fw",
     // The version of the "software_type" currently running.
@@ -57,18 +57,16 @@ void memfault_platform_reboot(void) {
 
   // !FIXME: Reset System
   // NVIC_SystemReset()
-  while (1) { } // unreachable
+  while (1) { }  // unreachable
 }
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   // !FIXME: If the device tracks real time, update 'unix_timestamp_secs' with seconds since epoch
   // This will cause events logged by the SDK to be timestamped on the device rather than when they
   // arrive on the server
-  *time = (sMemfaultCurrentTime) {
+  *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
-    .info = {
-      .unix_timestamp_secs = 0
-    },
+    .info = { .unix_timestamp_secs = 0 },
   };
 
   // !FIXME: If device does not track time, return false, else return true if time is valid
@@ -81,7 +79,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
     size_t length;
   } s_mcu_mem_regions[] = {
     // !FIXME: Update with list of valid memory banks to collect in a coredump
-    {.start_addr = 0x00000000, .length = 0xFFFFFFFF},
+    { .start_addr = 0x00000000, .length = 0xFFFFFFFF },
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_mcu_mem_regions); i++) {

@@ -40,18 +40,18 @@ static int prv_mflt_get_latest_url(const struct shell *shell, size_t argc, char 
 
   return rv;
 }
-#endif // CONFIG_MEMFAULT_HTTP_ENABLE
+#endif  // CONFIG_MEMFAULT_HTTP_ENABLE
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-    sub_memfault_nrf_cmds,
-    SHELL_CMD(fota, NULL, "Perform a FOTA using Memfault client",
-              prv_mflt_fota),
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_memfault_nrf_cmds,
+                               SHELL_CMD(fota, NULL, "Perform a FOTA using Memfault client",
+                                         prv_mflt_fota),
 #if CONFIG_MEMFAULT_HTTP_ENABLE
-    SHELL_CMD(get_latest_url, NULL, "Get the latest URL for the latest FOTA",
-              prv_mflt_get_latest_url),
+                               SHELL_CMD(get_latest_url, NULL,
+                                         "Get the latest URL for the latest FOTA",
+                                         prv_mflt_get_latest_url),
 #endif
-    SHELL_SUBCMD_SET_END /* Array terminated. */
+                               SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_CMD_REGISTER(mflt_nrf, &sub_memfault_nrf_cmds,
-                   "Memfault nRF Connect SDK Test Commands", NULL);
+SHELL_CMD_REGISTER(mflt_nrf, &sub_memfault_nrf_cmds, "Memfault nRF Connect SDK Test Commands",
+                   NULL);

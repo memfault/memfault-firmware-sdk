@@ -48,10 +48,9 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
     if (!err) {
       *time = (sMemfaultCurrentTime){
         .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
-        .info =
-          {
-            .unix_timestamp_secs = unix_time_ms / 1000,
-          },
+        .info = {
+          .unix_timestamp_secs = unix_time_ms / 1000,
+        },
       };
       return true;
     }
@@ -97,10 +96,9 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   // load the timestamp and return true for a valid timestamp
   *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
-    .info =
-      {
-        .unix_timestamp_secs = (uint64_t)time_now,
-      },
+    .info = {
+      .unix_timestamp_secs = (uint64_t)time_now,
+    },
   };
   return true;
 }

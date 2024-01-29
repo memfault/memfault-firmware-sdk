@@ -45,11 +45,14 @@
 //!       errors in the BLE stack. SN is reset to 0 anytime a disconnect takes place.
 //!       Errors client can check for:
 //!          - Packets are getting repeated when Last Sequence Number == Current Sequence Number
-//!          - Packets are getting dropped  when abs(Last Sequence Number - Current Sequence Number) != 1
+//!          - Packets are getting dropped  when abs(Last Sequence Number - Current Sequence Number)
+//!          != 1
 //!      bit 5-7: Reserved for future use
 //!
-//!     byte 1-N: opaque payload listener is responsible for forwarding to the URI specified in the Data URI
-//!        Characteristic using the authorization scheme specified in the Authorization Characteristic.
+//!     byte 1-N: opaque payload listener is responsible for forwarding to the URI specified in the
+//!     Data URI
+//!        Characteristic using the authorization scheme specified in the Authorization
+//!        Characteristic.
 //!
 //!   Client Characteristic Configuration Descriptor: (UUID 00002902-0000-1000-8000-00805f9b34fb)
 //!
@@ -98,7 +101,6 @@ void *mds_boot(void);
 //! here, BLE service will return ATT_ERROR_READ_NOT_PERMITTED / ATT_ERROR_WRITE_NOT_PERMITTED
 //! for any read or write operation to the GATT service, respectively
 extern bool mds_access_enabled(uint16_t connection_handle);
-
 
 #ifdef __cplusplus
 }

@@ -6,19 +6,18 @@
 //! A port for recovering reset reason information by reading the Reset
 //! Reason using the PSOC6 Peripheral HAL: https://github.com/Infineon/mtb-pdl-cat1
 
+#include "cy_syslib.h"
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
-
-#include "cy_syslib.h"
 
 //! Note: The default PSOC62 linker scripts have a KEEP(*(.noinit)) that we can use
 MEMFAULT_PUT_IN_SECTION(".mflt_reboot_tracking.noinit")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -54,7 +53,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
       reset_reason = kMfltRebootReason_UnknownError;
       break;
 
-#if defined (CY_IP_M33SYSCPUSS) || defined (CY_IP_M7CPUSS)
+#if defined(CY_IP_M33SYSCPUSS) || defined(CY_IP_M7CPUSS)
     case CY_SYSLIB_RESET_TC_DBGRESET:
       MEMFAULT_PRINT_RESET_INFO(" TC DBGRESET");
       reset_reason = kMfltRebootReason_Assert;
@@ -114,7 +113,6 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
       reset_reason = kMfltRebootReason_Unknown;
       MEMFAULT_PRINT_RESET_INFO(" Unknown");
       break;
-
   }
 
   *info = (sResetBootupInfo){

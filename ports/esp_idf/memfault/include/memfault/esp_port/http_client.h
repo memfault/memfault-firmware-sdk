@@ -8,8 +8,8 @@
 //! @brief
 //! esp-idf port specific functions related to http
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,6 @@ extern "C" {
 //!
 //! @return Allocated buffer or NULL on failure
 void *memfault_http_client_allocate_chunk_buffer(size_t *buffer_size);
-
 
 //! Called to release the buffer that was being to POST data to the Memfault cloud
 //!

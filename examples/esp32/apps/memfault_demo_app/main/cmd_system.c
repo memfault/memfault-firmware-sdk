@@ -44,7 +44,7 @@ void register_system() {
 
 /** 'restart' command restarts the program */
 
-static int restart(int argc, char** argv) {
+static int restart(int argc, char **argv) {
   ESP_LOGI(__func__, "Restarting");
   esp_restart();
 }
@@ -61,12 +61,12 @@ static void register_restart() {
 
 /** 'free' command prints available heap memory */
 
-static int free_mem(int argc, char** argv) {
+static int free_mem(int argc, char **argv) {
   printf("%" PRIu32 "\n", esp_get_free_heap_size());
   return 0;
 }
 
-static int dump_heap(int argc, char** argv) {
+static int dump_heap(int argc, char **argv) {
   heap_caps_print_heap_info(0);
   return 0;
 }
@@ -94,9 +94,9 @@ static void register_heap_dump() {
 /** 'tasks' command prints the list of tasks and related information */
 #if WITH_TASKS_INFO
 
-static int tasks_info(int argc, char** argv) {
+static int tasks_info(int argc, char **argv) {
   const size_t bytes_per_task = 40; /* see vTaskList description */
-  char* task_list_buffer = malloc(uxTaskGetNumberOfTasks() * bytes_per_task);
+  char *task_list_buffer = malloc(uxTaskGetNumberOfTasks() * bytes_per_task);
   if (task_list_buffer == NULL) {
     ESP_LOGE(__func__, "failed to allocate buffer for vTaskList output");
     return 1;

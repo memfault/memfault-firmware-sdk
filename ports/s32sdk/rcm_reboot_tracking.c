@@ -8,19 +8,17 @@
 //!
 //! See "26.4.3 System Reset Status Register" of S32K-RM for more details
 
-#include "memfault/ports/reboot_reason.h"
-
+#include "device_registers.h"
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
-
-#include "device_registers.h"
+#include "memfault/ports/reboot_reason.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -78,7 +76,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
     reset_reason = kMfltRebootReason_ClockFailure;
   }
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

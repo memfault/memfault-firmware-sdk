@@ -42,19 +42,19 @@
 /*      This setting has no effect if the respective module is a BLE Profile           */
 /*      that is not used included in the user's application.                           */
 /***************************************************************************************/
-#define EXCLUDE_DLG_GAP             (0)
-#define EXCLUDE_DLG_TIMER           (0)
-#define EXCLUDE_DLG_MSG             (0)
-#define EXCLUDE_DLG_SEC             (0)
-#define EXCLUDE_DLG_DISS            (0)
-#define EXCLUDE_DLG_PROXR           (0)
-#define EXCLUDE_DLG_BASS            (0)
-#define EXCLUDE_DLG_FINDL           (0)
-#define EXCLUDE_DLG_FINDT           (0)
-#define EXCLUDE_DLG_SUOTAR          (0)
-#define EXCLUDE_DLG_CUSTS1          (0)
-#define EXCLUDE_DLG_CUSTS2          (0)
+#define EXCLUDE_DLG_GAP (0)
+#define EXCLUDE_DLG_TIMER (0)
+#define EXCLUDE_DLG_MSG (0)
+#define EXCLUDE_DLG_SEC (0)
+#define EXCLUDE_DLG_DISS (0)
+#define EXCLUDE_DLG_PROXR (0)
+#define EXCLUDE_DLG_BASS (0)
+#define EXCLUDE_DLG_FINDL (0)
+#define EXCLUDE_DLG_FINDT (0)
+#define EXCLUDE_DLG_SUOTAR (0)
+#define EXCLUDE_DLG_CUSTS1 (0)
+#define EXCLUDE_DLG_CUSTS2 (0)
 
 /// @} APP
 
-#endif // _USER_MODULES_CONFIG_H_
+#endif  // _USER_MODULES_CONFIG_H_

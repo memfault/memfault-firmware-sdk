@@ -13,7 +13,8 @@
 //!
 //! Note: Wireless Coprocessor Binary is programmed to the top of internal flash so
 //! be sure to place coredump region before that. More details can be found in "Release_Notes.html"
-//! within STM32CubeWB SDK: https://github.com/STMicroelectronics/STM32CubeWB/tree/v1.10.1/Projects/STM32WB_Copro_Wireless_Binaries
+//! within STM32CubeWB SDK:
+//! https://github.com/STMicroelectronics/STM32CubeWB/tree/v1.10.1/Projects/STM32WB_Copro_Wireless_Binaries
 //!
 //! To use this port, update your linker script (.ld file) to reserve a region for
 //! coredump storage such as the COREDUMP_STORAGE_FLASH region below.
@@ -27,53 +28,48 @@
 //! __MemfaultCoreStorageStart = ORIGIN(COREDUMP_STORAGE_FLASH);
 //! __MemfaultCoreStorageEnd = ORIGIN(COREDUMP_STORAGE_FLASH) + LENGTH(COREDUMP_STORAGE_FLASH);
 
-#include "memfault/panics/coredump.h"
-#include "memfault/ports/buffered_coredump_storage.h"
-#include "memfault/ports/stm32cube/wb/flash.h"
-
 #include <string.h>
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
-#include "memfault/core/debug_log.h"
-
+#include "memfault/ports/buffered_coredump_storage.h"
+#include "memfault/ports/stm32cube/wb/flash.h"
 #include "stm32wbxx_hal.h"
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
 extern uint32_t __MemfaultCoreStorageStart[];
-#define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
+  #define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
 #endif
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_END_ADDR
 extern uint32_t __MemfaultCoreStorageEnd[];
-#define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
+  #define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
-
-bool memfault_stm32cubewb_flash_clear_ecc_errors(
-    uint32_t start_addr, uint32_t end_addr, uint32_t *corrupted_address) {
+bool memfault_stm32cubewb_flash_clear_ecc_errors(uint32_t start_addr, uint32_t end_addr,
+                                                 uint32_t *corrupted_address) {
   const bool eccd_error = __HAL_FLASH_GET_FLAG(FLASH_FLAG_ECCD);
   if (!eccd_error) {
     if (corrupted_address != NULL) {
-      *corrupted_address = 0; // no error found
+      *corrupted_address = 0;  // no error found
     }
     return 0;
   }
 
   const uint32_t eccr = FLASH->ECCR;
   uint32_t corrupted_flash_address =
-      FLASH_BASE + ((eccr & FLASH_ECCR_ADDR_ECC) >> FLASH_ECCR_ADDR_ECC_Pos);
-
+    FLASH_BASE + ((eccr & FLASH_ECCR_ADDR_ECC) >> FLASH_ECCR_ADDR_ECC_Pos);
 
   if (corrupted_address != NULL) {
-      *corrupted_address = corrupted_flash_address;
+    *corrupted_address = corrupted_flash_address;
   }
 
-  if ((corrupted_flash_address < start_addr) ||
-      (corrupted_flash_address >= end_addr)) {
+  if ((corrupted_flash_address < start_addr) || (corrupted_flash_address >= end_addr)) {
     // There is a ECC error but it is in a range we do not want to zero out
     return -1;
   }
@@ -84,24 +80,21 @@ bool memfault_stm32cubewb_flash_clear_ecc_errors(
   uint32_t res;
   HAL_FLASH_Unlock();
   {
-      uint64_t clear_error = 0;
-      res = HAL_FLASH_Program(
-          FLASH_TYPEPROGRAM_DOUBLEWORD, corrupted_flash_address, clear_error);
+    uint64_t clear_error = 0;
+    res = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, corrupted_flash_address, clear_error);
   }
   HAL_FLASH_Lock();
   return res == HAL_OK ? 0 : res;
 }
 
 void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
-  memfault_stm32cubewb_flash_clear_ecc_errors(
-      MEMFAULT_COREDUMP_STORAGE_START_ADDR, MEMFAULT_COREDUMP_STORAGE_END_ADDR, NULL);
+  memfault_stm32cubewb_flash_clear_ecc_errors(MEMFAULT_COREDUMP_STORAGE_START_ADDR,
+                                              MEMFAULT_COREDUMP_STORAGE_END_ADDR, NULL);
 }
-
 
 // Error writing to flash - should never happen & likely detects a configuration error.
 // Call the reboot handler which will halt the device if a debugger is attached and then reboot.
-MEMFAULT_NO_OPT
-static void prv_coredump_writer_assert_and_reboot(int error_code) {
+MEMFAULT_NO_OPT static void prv_coredump_writer_assert_and_reboot(int error_code) {
   memfault_platform_halt_if_debugging();
   memfault_platform_reboot();
 }
@@ -116,8 +109,8 @@ void memfault_platform_coredump_storage_clear(void) {
   HAL_FLASH_Unlock();
   {
     const uint64_t clear_val = 0x0;
-    const uint32_t res = HAL_FLASH_Program(
-        FLASH_TYPEPROGRAM_DOUBLEWORD, MEMFAULT_COREDUMP_STORAGE_START_ADDR, clear_val);
+    const uint32_t res = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,
+                                           MEMFAULT_COREDUMP_STORAGE_START_ADDR, clear_val);
 
     if (res != HAL_OK) {
       MEMFAULT_LOG_ERROR("Could not clear coredump storage, 0x%" PRIx32, res);
@@ -127,10 +120,9 @@ void memfault_platform_coredump_storage_clear(void) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  const size_t size =
-      MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
+  const size_t size = MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
 
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = size,
     .sector_size = FLASH_PAGE_SIZE,
   };
@@ -159,8 +151,7 @@ bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *b
   return true;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_storage_bounds(offset, read_len)) {
     return false;
   }
@@ -205,15 +196,14 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 
   // make sure region is aligned along page boundaries and
   // is whole page units in size
-  if (((erase_begin_addr + offset) % FLASH_PAGE_SIZE) != 0 ||
-      (erase_size % FLASH_PAGE_SIZE) != 0) {
+  if (((erase_begin_addr + offset) % FLASH_PAGE_SIZE) != 0 || (erase_size % FLASH_PAGE_SIZE) != 0) {
     return false;
   }
 
   const size_t page_start = (erase_begin_addr - FLASH_BASE) / FLASH_PAGE_SIZE;
   const size_t num_pages = (end_addr - erase_begin_addr) / FLASH_PAGE_SIZE;
 
-  if (!prv_erase_pages(page_start,  num_pages)) {
+  if (!prv_erase_pages(page_start, num_pages)) {
     return false;
   }
 

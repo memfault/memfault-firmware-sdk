@@ -13,7 +13,6 @@
 #include <stddef.h>
 
 #include "memfault/config.h"
-
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/panics/platform/coredump.h"
 
@@ -52,7 +51,8 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 //! or print metadata about the fault which occurred
 //!
 //! @note By default this is a weak function which behaves as a no-op.
-extern void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason);
+extern void memfault_platform_fault_handler(const sMfltRegState *regs,
+                                            eMemfaultRebootReason reason);
 
 //! Checks that a coredump can fit in the platform storage allocated
 //!

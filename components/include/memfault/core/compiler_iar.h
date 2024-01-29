@@ -31,11 +31,10 @@ extern "C" {
 #define MEMFAULT_CLZ(a) __iar_builtin_CLZ(a)
 #define MEMFAULT_NO_ALLOC __no_alloc
 
-
-#define MEMFAULT_GET_LR(_a) __asm volatile ("mov %0, lr" : "=r" (_a))
-#define MEMFAULT_GET_PC(_a) __asm volatile ("mov %0, pc" : "=r" (_a))
+#define MEMFAULT_GET_LR(_a) __asm volatile("mov %0, lr" : "=r"(_a))
+#define MEMFAULT_GET_PC(_a) __asm volatile("mov %0, pc" : "=r"(_a))
 #define MEMFAULT_PUT_IN_SECTION(x) _Pragma(MEMFAULT_QUOTE(location=x))
-#define MEMFAULT_BREAKPOINT(val) __asm volatile ("bkpt %0" : : "i"(val))
+#define MEMFAULT_BREAKPOINT(val) __asm volatile("bkpt %0" : : "i"(val))
 
 #define MEMFAULT_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
 

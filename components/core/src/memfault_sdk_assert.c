@@ -3,17 +3,14 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/core/sdk_assert.h"
-
 #include <inttypes.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/core/sdk_assert.h"
 
-
-MEMFAULT_WEAK
-void memfault_sdk_assert_func_noreturn(void) {
+MEMFAULT_WEAK void memfault_sdk_assert_func_noreturn(void) {
   while (1) { }
 }
 

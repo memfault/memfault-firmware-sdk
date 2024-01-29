@@ -40,7 +40,7 @@ size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void) {
 }
 
 // fake
-void memfault_metrics_reliability_collect(void) {}
+void memfault_metrics_reliability_collect(void) { }
 }
 
 bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
@@ -73,23 +73,23 @@ TEST_GROUP(MemfaultSessionMetrics){
 // clang-format on
 
 TEST(MemfaultSessionMetrics, Test_SessionTimer) {
-        MemfaultMetricId key = MEMFAULT_METRICS_KEY(mflt_session_timer_test_key_session);
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY(mflt_session_timer_test_key_session);
 
-        uint64_t expected = 100;
-        int rv = 0;
+  uint64_t expected = 100;
+  int rv = 0;
 
-        mock().expectOneCall("memfault_metrics_session_serialize");
+  mock().expectOneCall("memfault_metrics_session_serialize");
 
-        rv = MEMFAULT_METRICS_SESSION_START(test_key_session);
-        prv_fake_time_set(expected);
-        rv = MEMFAULT_METRICS_SESSION_END(test_key_session);
-        LONGS_EQUAL(0, rv);
+  rv = MEMFAULT_METRICS_SESSION_START(test_key_session);
+  prv_fake_time_set(expected);
+  rv = MEMFAULT_METRICS_SESSION_END(test_key_session);
+  LONGS_EQUAL(0, rv);
 
-        uint32_t val = 0;
-        rv = 0;
-        rv = memfault_metrics_heartbeat_timer_read(key, &val);
-        LONGS_EQUAL(0, rv);
-        LONGS_EQUAL(expected, val);
+  uint32_t val = 0;
+  rv = 0;
+  rv = memfault_metrics_heartbeat_timer_read(key, &val);
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(expected, val);
 }
 
 TEST(MemfaultSessionMetrics, Test_StringKey) {
@@ -99,7 +99,7 @@ TEST(MemfaultSessionMetrics, Test_StringKey) {
   int rv = memfault_metrics_heartbeat_set_string(key, TEST_STRING);
   LONGS_EQUAL(0, rv);
 
-  char actual[32] = {0};
+  char actual[32] = { 0 };
   rv = memfault_metrics_heartbeat_read_string(key, (char *)actual, sizeof(actual));
   LONGS_EQUAL(0, rv);
 

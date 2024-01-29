@@ -50,18 +50,18 @@ TEST(MbedtlsMetrics, MetricUpdate) {
   size_t num = 10;
   size_t size = 5;
 
-  prv_set_expected_calls(num * size, num * size);
+  prv_set_expected_calls(num *size, num *size);
   void *ptr_a = prv_test_calloc(num, size);
   memfault_mbedtls_heartbeat_collect_data();
 
   // Test metric values after free
   __wrap_mbedtls_free(ptr_a);
-  prv_set_expected_calls(0, num * size);
+  prv_set_expected_calls(0, num *size);
   memfault_mbedtls_heartbeat_collect_data();
 
   // Test metric values after mix of calloc/free
   prv_set_expected_calls(2 * num * size, 2 * num * size);
-  prv_set_expected_calls(num * size, 2 * num * size);
+  prv_set_expected_calls(num *size, 2 * num * size);
   prv_set_expected_calls(0, 2 * num * size);
 
   void *ptr_b = prv_test_calloc(num, size);

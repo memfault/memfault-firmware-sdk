@@ -1,11 +1,10 @@
+#include <stddef.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <stddef.h>
-#include <string.h>
-
 #include "memfault/core/data_export.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/math.h"
@@ -37,11 +36,11 @@ TEST_GROUP(MemfaultDataExport) {
       s_fake_chunk2[i] = i & 0xff;
     }
     s_current_chunk_idx = 0;
-     mock().strictOrder();
+    mock().strictOrder();
   }
 
   void teardown() {
-     mock().clear();
+    mock().clear();
   }
 };
 
@@ -69,10 +68,15 @@ bool memfault_packetizer_get_chunk(void *buf, size_t *buf_len) {
 }
 
 TEST(MemfaultDataExport, Test_MemfaultDataExport) {
-  mock().expectOneCall("memfault_data_export_base64_encoded_chunk")
-      .withStringParameter("chunk_str", "MC:AQ==:");
-  mock().expectOneCall("memfault_data_export_base64_encoded_chunk")
-      .withStringParameter("chunk_str", "MC:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk8=:");
+  mock()
+    .expectOneCall("memfault_data_export_base64_encoded_chunk")
+    .withStringParameter("chunk_str", "MC:AQ==:");
+  mock()
+    .expectOneCall("memfault_data_export_base64_encoded_chunk")
+    .withStringParameter(
+      "chunk_str",
+      "MC:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+"
+      "P0BBQkNERUZHSElKS0xNTk8=:");
 
   memfault_data_export_dump_chunks();
 

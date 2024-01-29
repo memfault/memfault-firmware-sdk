@@ -20,37 +20,33 @@ typedef struct FakeMfltStorage {
 static sFakeMfltStorage s_fake_mflt_storage_ctx;
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = s_fake_mflt_storage_ctx.size,
     .sector_size = s_fake_mflt_storage_ctx.sector_size,
   };
 }
 
-
-void fake_memfault_platform_coredump_storage_setup(
-  void *storage_buf, size_t storage_size, size_t sector_size) {
-  s_fake_mflt_storage_ctx = (sFakeMfltStorage) {
+void fake_memfault_platform_coredump_storage_setup(void *storage_buf, size_t storage_size,
+                                                   size_t sector_size) {
+  s_fake_mflt_storage_ctx = (sFakeMfltStorage){
     .buf = storage_buf,
-    .size =  storage_size,
+    .size = storage_size,
     .sector_size = sector_size,
   };
 }
 
-bool fake_memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                                  size_t read_len) {
+bool fake_memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   assert(s_fake_mflt_storage_ctx.buf != NULL);
   if ((offset + read_len) > s_fake_mflt_storage_ctx.size) {
     return false;
   }
-
 
   uint8_t *read_ptr = &s_fake_mflt_storage_ctx.buf[offset];
   memcpy(data, read_ptr, read_len);
   return true;
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   assert(s_fake_mflt_storage_ctx.buf != NULL);
   if ((offset + data_len) > s_fake_mflt_storage_ctx.size) {
     return false;
@@ -69,8 +65,8 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   for (size_t i = offset; i < erase_size; i += sector_size) {
     uint8_t erase_pattern[sector_size];
     memset(erase_pattern, 0xff, sizeof(erase_pattern));
-    if (!memfault_platform_coredump_storage_write(
-            i + offset, erase_pattern, sizeof(erase_pattern))) {
+    if (!memfault_platform_coredump_storage_write(i + offset, erase_pattern,
+                                                  sizeof(erase_pattern))) {
       return false;
     }
   }

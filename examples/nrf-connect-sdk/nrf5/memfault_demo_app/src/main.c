@@ -34,7 +34,7 @@ char *prv_conditional_log_strdup(char *str) {
 }
 
 static void prv_set_device_id(void) {
-  uint8_t dev_id[16] = {0};
+  uint8_t dev_id[16] = { 0 };
   char dev_id_str[sizeof(dev_id) * 2 + 1];
   char *dev_str = "UNKNOWN";
 

@@ -13,42 +13,41 @@
 
 #if MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH
 
-#include "memfault/panics/platform/coredump.h"
+  #include "bsp_memory_defaults.h"
+  #include "memfault/panics/platform/coredump.h"
+  #include "qspi_automode.h"
 
-#include "qspi_automode.h"
-#include "bsp_memory_defaults.h"
+  // We default to the NVMS_LOG_PART if the user doesn't specify a partition.
+  #ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
+    #define MEMFAULT_COREDUMP_STORAGE_START_ADDR NVMS_LOG_PART_START
+  #endif
 
-// We default to the NVMS_LOG_PART if the user doesn't specify a partition.
-#ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
-#define MEMFAULT_COREDUMP_STORAGE_START_ADDR NVMS_LOG_PART_START
-#endif
+  #ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES
+    #define MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES NVMS_LOG_PART_SIZE
+  #endif
 
-#ifndef MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES
-#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES NVMS_LOG_PART_SIZE
-#endif
+  #if (MEMFAULT_COREDUMP_STORAGE_START_ADDR == NVMS_LOG_PART_START) && \
+    (MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES > NVMS_LOG_PART_SIZE)
+    #error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES exceeds size of NVMS_LOG_PART"
+  #endif
 
-#if (MEMFAULT_COREDUMP_STORAGE_START_ADDR == NVMS_LOG_PART_START) && \
-  (MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES > NVMS_LOG_PART_SIZE)
-#error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES exceeds size of NVMS_LOG_PART"
-#endif
+  #if ((MEMFAULT_COREDUMP_STORAGE_START_ADDR % FLASH_SECTOR_SIZE) != 0)
+    #error "MEMFAULT_COREDUMP_STORAGE_START_ADDR should be aligned by the sector size"
+  #endif
 
-#if ((MEMFAULT_COREDUMP_STORAGE_START_ADDR % FLASH_SECTOR_SIZE) != 0)
-#error "MEMFAULT_COREDUMP_STORAGE_START_ADDR should be aligned by the sector size"
-#endif
+  #if ((MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES % FLASH_SECTOR_SIZE) != 0)
+    #error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES should be aligned by the sector size"
+  #endif
 
-#if ((MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES % FLASH_SECTOR_SIZE) != 0)
-#error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES should be aligned by the sector size"
-#endif
-
-//! Note: Backgrounded flash ops rely on FreeRTOS constructs being available and therefore can not
-//! be used while saving a coredump from a fault handler.  To save coredumps and use background
-//! flash ops, sdk/bsp/memory/src/qspi_automode.c in the DA1469x SDK will need to be patched
-#if dg_configDISABLE_BACKGROUND_FLASH_OPS == 0
-#error "dg_configDISABLE_BACKGROUND_FLASH_OPS must be set to 1 in custom_config_*.h"
-#endif
+  //! Note: Backgrounded flash ops rely on FreeRTOS constructs being available and therefore can not
+  //! be used while saving a coredump from a fault handler.  To save coredumps and use background
+  //! flash ops, sdk/bsp/memory/src/qspi_automode.c in the DA1469x SDK will need to be patched
+  #if dg_configDISABLE_BACKGROUND_FLASH_OPS == 0
+    #error "dg_configDISABLE_BACKGROUND_FLASH_OPS must be set to 1 in custom_config_*.h"
+  #endif
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES,
     .sector_size = FLASH_SECTOR_SIZE,
   };
@@ -60,8 +59,7 @@ static bool prv_op_within_flash_bounds(uint32_t offset, size_t data_len) {
   return (offset + data_len) <= info.size;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }
@@ -91,21 +89,18 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   return true;
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }
 
   uint32_t address = MEMFAULT_COREDUMP_STORAGE_START_ADDR + offset;
-  uint32_t bytes_written =  0 ;
+  uint32_t bytes_written = 0;
 
   while (bytes_written < data_len) {
-    bytes_written += qspi_automode_write_flash_page(address + bytes_written,
-                                                    &((const uint8_t *)data)[bytes_written],
-                                                    data_len - bytes_written);
+    bytes_written += qspi_automode_write_flash_page(
+      address + bytes_written, &((const uint8_t *)data)[bytes_written], data_len - bytes_written);
   }
-
 
   return true;
 }

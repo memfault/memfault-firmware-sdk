@@ -11,7 +11,7 @@
 #include "memfault_self_test_private.h"
 
 TEST_GROUP(MemfaultSelfTestUtils) {
-  void setup() {}
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();

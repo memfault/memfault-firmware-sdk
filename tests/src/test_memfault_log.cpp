@@ -41,20 +41,18 @@ TEST_GROUP(MemfaultLog) {
   }
 };
 
-static void prv_run_header_check(uint8_t *log_entry,
-                                 eMemfaultPlatformLogLevel expected_level,
-                                 const char *expected_log,
-                                 size_t expected_log_len) {
+static void prv_run_header_check(uint8_t *log_entry, eMemfaultPlatformLogLevel expected_level,
+                                 const char *expected_log, size_t expected_log_len) {
   // NOTE: Since sMfltRamLogEntry is serialized out, we manually check the header here instead of
   // sharing the struct definition to catch unexpected changes in the layout.
   LONGS_EQUAL(expected_level & 0x7, log_entry[0]);
   LONGS_EQUAL(expected_log_len & 0xff, log_entry[1]);
-  MEMCMP_EQUAL(expected_log, &log_entry[2],expected_log_len);
+  MEMCMP_EQUAL(expected_log, &log_entry[2], expected_log_len);
 }
 
 static void prv_read_log_and_check(eMemfaultPlatformLogLevel expected_level,
-                                   eMemfaultLogRecordType expected_type,
-                                   const void *expected_log, size_t expected_log_len) {
+                                   eMemfaultLogRecordType expected_type, const void *expected_log,
+                                   size_t expected_log_len) {
   sMemfaultLog log;
   // scribble a bad pattern to make sure memfault_log_read inits things
   memset(&log, 0xa5, sizeof(log));
@@ -158,8 +156,8 @@ TEST(MemfaultLog, Test_MemfaultLog_GetRegions) {
 
   // sanity check - first region should be sMfltRamLogger
   const uint8_t *mflt_ram_logger = (const uint8_t *)regions.region[0].region_start;
-  LONGS_EQUAL(1, mflt_ram_logger[0]); // version == 1
-  LONGS_EQUAL(1, mflt_ram_logger[1]); // enabled == 1
+  LONGS_EQUAL(1, mflt_ram_logger[0]);  // version == 1
+  LONGS_EQUAL(1, mflt_ram_logger[1]);  // enabled == 1
 }
 
 #if !MEMFAULT_COMPACT_LOG_ENABLE
@@ -170,8 +168,7 @@ TEST(MemfaultLog, Test_MemfaultHandleSaveCallback) {
 
   mock().enable();
   const char *log0 = "log0";
-  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Debug,
-                                 log0, strlen(log0));
+  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Debug, log0, strlen(log0));
   // should have been filtered so nothing should be called
   mock().checkExpectations();
 
@@ -180,8 +177,7 @@ TEST(MemfaultLog, Test_MemfaultHandleSaveCallback) {
   mock().checkExpectations();
 
   mock().expectOneCall("memfault_log_handle_saved_callback");
-  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Warning,
-                                 log0, strlen(log0));
+  memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Warning, log0, strlen(log0));
   mock().checkExpectations();
 }
 
@@ -214,10 +210,10 @@ TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
   uint8_t s_ram_log_store[10];
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
-  const char *log0 = "0"; // 3 bytes
-  const char *log1 = "12"; // 4 bytes with header
-  const char *log2 = "45678"; // 7 bytes with header
-  const char *log3 = "a"; // 6 bytes with header, should span off 4-9
+  const char *log0 = "0";      // 3 bytes
+  const char *log1 = "12";     // 4 bytes with header
+  const char *log2 = "45678";  // 7 bytes with header
+  const char *log3 = "a";      // 6 bytes with header, should span off 4-9
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
 
   memfault_log_save_preformatted(level, log0, strlen(log0));
@@ -229,26 +225,26 @@ TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
 }
 
 TEST(MemfaultLog, Test_MemfaultLogFrozenBuffer) {
-    // Test that when the log buffer is frozen (because the logging data source
-    // is using it), logs will not be pruned when a log gets written that does
-    // not fit in the remaining space:
+  // Test that when the log buffer is frozen (because the logging data source
+  // is using it), logs will not be pruned when a log gets written that does
+  // not fit in the remaining space:
 
-    mock().enable();
-    mock().expectOneCall("memfault_log_handle_saved_callback");
+  mock().enable();
+  mock().expectOneCall("memfault_log_handle_saved_callback");
 
-    uint8_t s_ram_log_store[10];
-    memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+  uint8_t s_ram_log_store[10];
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
-    const char *log0 = "45678"; // 7 bytes with header
-    eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
-    memfault_log_save_preformatted(level, log0, strlen(log0));
+  const char *log0 = "45678";  // 7 bytes with header
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  memfault_log_save_preformatted(level, log0, strlen(log0));
 
-    s_fake_data_source_has_been_triggered = true;
+  s_fake_data_source_has_been_triggered = true;
 
-    const char *log1 = "abcde"; // 7 bytes with header
-    memfault_log_save_preformatted(level, log1, strlen(log1));
+  const char *log1 = "abcde";  // 7 bytes with header
+  memfault_log_save_preformatted(level, log1, strlen(log1));
 
-    prv_run_header_check(&s_ram_log_store[0], level, log0, strlen(log0));
+  prv_run_header_check(&s_ram_log_store[0], level, log0, strlen(log0));
 }
 
 #if !MEMFAULT_COMPACT_LOG_ENABLE
@@ -313,9 +309,8 @@ TEST(MemfaultLog, Test_DroppedLogs) {
 
 #endif  // !MEMFAULT_COMPACT_LOG_ENABLE
 
-
-static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset,
-                                        const char *buf, size_t buf_len) {
+static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset, const char *buf,
+                                        size_t buf_len) {
   return mock()
     .actualCall(__func__)
     .withPointerParameter("iter", iter)
@@ -325,15 +320,16 @@ static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset,
     .returnBoolValueOrDefault(true);
 }
 
-static bool prv_iterate_callback(sMfltLogIterator *iter){
-  mock().actualCall("prv_iterate_callback")
+static bool prv_iterate_callback(sMfltLogIterator *iter) {
+  mock()
+    .actualCall("prv_iterate_callback")
     .withUnsignedLongIntParameter("read_offset", iter->read_offset);
   memfault_log_iter_copy_msg(iter, prv_log_entry_copy_callback);
   return true;
 }
 
 TEST(MemfaultLog, Test_Iterate) {
-  uint8_t s_ram_log_store[10] = {0};
+  uint8_t s_ram_log_store[10] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
@@ -345,23 +341,23 @@ TEST(MemfaultLog, Test_Iterate) {
   const size_t log1_len = strlen(log1);
   memfault_log_save_preformatted(level, log1, log1_len);
 
-  sMfltLogIterator iterator = (sMfltLogIterator) {0};
+  sMfltLogIterator iterator = (sMfltLogIterator){ 0 };
 
   mock().enable();
 
-  mock().expectOneCall("prv_iterate_callback")
-    .withUnsignedLongIntParameter("read_offset", 0);
+  mock().expectOneCall("prv_iterate_callback").withUnsignedLongIntParameter("read_offset", 0);
 
-  mock().expectOneCall("prv_log_entry_copy_callback")
+  mock()
+    .expectOneCall("prv_log_entry_copy_callback")
     .withPointerParameter("iter", &iterator)
     .withUnsignedLongIntParameter("offset", 0)
     .withConstPointerParameter("buf", &s_ram_log_store[2])
     .withUnsignedLongIntParameter("buf_len", 1);
 
-  mock().expectOneCall("prv_iterate_callback")
-    .withUnsignedLongIntParameter("read_offset", 3);
+  mock().expectOneCall("prv_iterate_callback").withUnsignedLongIntParameter("read_offset", 3);
 
-  mock().expectOneCall("prv_log_entry_copy_callback")
+  mock()
+    .expectOneCall("prv_log_entry_copy_callback")
     .withPointerParameter("iter", &iterator)
     .withUnsignedLongIntParameter("offset", 0)
     .withConstPointerParameter("buf", &s_ram_log_store[5])
@@ -371,7 +367,7 @@ TEST(MemfaultLog, Test_Iterate) {
 }
 
 TEST(MemfaultLog, Test_LogsExport) {
-  uint8_t s_ram_log_store[128] = {0};
+  uint8_t s_ram_log_store[128] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
@@ -394,7 +390,7 @@ void memfault_sdk_assert_func(void) {
 }
 
 TEST(MemfaultLog, Test_LogExportNullLog) {
-  uint8_t s_ram_log_store[128] = {0};
+  uint8_t s_ram_log_store[128] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   if (setjmp(s_assert_jmp_buf) == 0) {
@@ -404,8 +400,7 @@ TEST(MemfaultLog, Test_LogExportNullLog) {
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
-bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder,
-                                     MEMFAULT_UNUSED uint32_t log_id,
+bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, MEMFAULT_UNUSED uint32_t log_id,
                                      MEMFAULT_UNUSED uint32_t compressed_fmt,
                                      MEMFAULT_UNUSED va_list args) {
   uint8_t *mock_compact_log = (uint8_t *)mock().getData("mock_compact_log").getPointerValue();
@@ -420,7 +415,7 @@ TEST(MemfaultLog, Test_CompactLog) {
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
   eMemfaultLogRecordType type = kMemfaultLogRecordType_Compact;
-  uint8_t mock_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+  uint8_t mock_compact_log[] = { 0x01, 0x02, 0x03, 0x04 };
 
   mock().enable();
 
@@ -436,11 +431,11 @@ TEST(MemfaultLog, Test_CompactLog) {
 }
 
 TEST(MemfaultLog, Test_CompactLogsExport) {
-  uint8_t s_ram_log_store[40] = {0};
+  uint8_t s_ram_log_store[40] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
-  uint8_t mock_compact_log[] = {0x01, 0x02, 0x03, 0x04};
+  uint8_t mock_compact_log[] = { 0x01, 0x02, 0x03, 0x04 };
 
   mock().enable();
 
@@ -459,7 +454,7 @@ TEST(MemfaultLog, Test_CompactLogsExport) {
 }
 
 TEST(MemfaultLog, Test_CompactLogsExportMultiChunk) {
-  uint8_t s_ram_log_store[40] = {0};
+  uint8_t s_ram_log_store[40] = { 0 };
   memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
 
   eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;

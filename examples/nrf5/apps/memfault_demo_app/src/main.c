@@ -4,14 +4,17 @@
 //! See License.txt for details
 //!
 //! @brief
-//! A minimal demo app for the NRF52 using the nRF5 v15.2 SDK that allows for crashes to be generated
-//! from a RTT CLI and coredumps to be saved
+//! A minimal demo app for the NRF52 using the nRF5 v15.2 SDK that allows for crashes to be
+//! generated from a RTT CLI and coredumps to be saved
 
 #include <stdint.h>
 #include <string.h>
 
 #include "app_error.h"
 #include "app_timer.h"
+#include "memfault/components.h"
+#include "memfault/ports/watchdog.h"
+#include "mflt_cli.h"
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf_drv_clock.h"
@@ -20,11 +23,6 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_pwr_mgmt.h"
 #include "nrfx_wdt.h"
-
-#include "mflt_cli.h"
-
-#include "memfault/components.h"
-#include "memfault/ports/watchdog.h"
 
 static void timers_init(void) {
   ret_code_t err_code;

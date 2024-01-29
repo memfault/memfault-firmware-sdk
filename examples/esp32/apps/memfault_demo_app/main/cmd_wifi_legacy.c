@@ -40,13 +40,13 @@ const int CONNECTED_BIT = BIT0;
 typedef nvs_handle nvs_handle_t;
 #endif
 
-int wifi_get_project_key(char* project_key, size_t project_key_len) {
+int wifi_get_project_key(char *project_key, size_t project_key_len) {
   // Configurable project key not supported, project key must be compiled in via
   // CONFIG_MEMFAULT_PROJECT_KEY
   return 1;
 }
 
-static esp_err_t event_handler(void* ctx, system_event_t* event) {
+static esp_err_t event_handler(void *ctx, system_event_t *event) {
   switch (event->event_id) {
     case SYSTEM_EVENT_STA_GOT_IP:
       xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
@@ -78,12 +78,12 @@ static void initialise_wifi(void) {
   initialized = true;
 }
 
-bool wifi_join(const char* ssid, const char* pass) {
+bool wifi_join(const char *ssid, const char *pass) {
   initialise_wifi();
-  wifi_config_t wifi_config = {0};
-  strncpy((char*)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+  wifi_config_t wifi_config = { 0 };
+  strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
   if (pass) {
-    strncpy((char*)wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+    strncpy((char *)wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
   }
 
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -98,21 +98,20 @@ bool wifi_join(const char* ssid, const char* pass) {
 
 /** Arguments used by 'join' function */
 static struct {
-  struct arg_str* ssid;
-  struct arg_str* password;
-  struct arg_end* end;
+  struct arg_str *ssid;
+  struct arg_str *password;
+  struct arg_end *end;
 } join_args;
 
-static int connect(int argc, char** argv) {
-  int nerrors = arg_parse(argc, argv, (void**)&join_args);
+static int connect(int argc, char **argv) {
+  int nerrors = arg_parse(argc, argv, (void **)&join_args);
   if (nerrors != 0) {
     arg_print_errors(stderr, join_args.end, argv[0]);
     return 1;
   }
   ESP_LOGI(__func__, "Connecting to '%s'", join_args.ssid->sval[0]);
 
-  bool connected =
-    wifi_join(join_args.ssid->sval[0], join_args.password->sval[0]);
+  bool connected = wifi_join(join_args.ssid->sval[0], join_args.password->sval[0]);
   if (!connected) {
     ESP_LOGW(__func__, "Connection timed out");
     return 1;
@@ -123,7 +122,7 @@ static int connect(int argc, char** argv) {
 
 //! Since the creds are set via cli, we can safely assume there's no null bytes
 //! in the password, despite being theoretically permissible by the spec
-static void prv_save_wifi_creds(const char* ssid, const char* password) {
+static void prv_save_wifi_creds(const char *ssid, const char *password) {
   // Initialize NVS
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -177,7 +176,7 @@ static void prv_save_wifi_creds(const char* ssid, const char* password) {
 }
 
 //! Return ssid + password pointers, or NULL if not found
-void wifi_load_creds(char** ssid, char** password) {
+void wifi_load_creds(char **ssid, char **password) {
   // first check if the creds are already loaded
   if ((strlen(s_wifi_ssid) > 0) && (strlen(s_wifi_pass) > 0)) {
     *ssid = s_wifi_ssid;
@@ -238,15 +237,15 @@ void wifi_load_creds(char** ssid, char** password) {
 // argtable3 requires this data structure to be valid through the entire command
 // session, so we can't just use a local variable.
 static struct {
-  struct arg_str* ssid;
-  struct arg_str* password;
-  struct arg_end* end;
+  struct arg_str *ssid;
+  struct arg_str *password;
+  struct arg_end *end;
 } wifi_creds_args;
 
-static int wifi_creds_set(int argc, char** argv) {
+static int wifi_creds_set(int argc, char **argv) {
   if (argc == 1) {
-    char* ssid;
-    char* password;
+    char *ssid;
+    char *password;
     wifi_load_creds(&ssid, &password);
     if (!ssid || !password) {
       ESP_LOGE(__func__, "failed to load wifi creds");
@@ -256,19 +255,19 @@ static int wifi_creds_set(int argc, char** argv) {
     printf("ssid: %s pw: %s\n", ssid, password);
     return 0;
   }
-  int nerrors = arg_parse(argc, argv, (void**)&wifi_creds_args);
+  int nerrors = arg_parse(argc, argv, (void **)&wifi_creds_args);
   if (nerrors != 0) {
     arg_print_errors(stderr, wifi_creds_args.end, argv[0]);
     return 1;
   }
 
-  const char* ssid = wifi_creds_args.ssid->sval[0];
+  const char *ssid = wifi_creds_args.ssid->sval[0];
   if (strlen(ssid) > 32) {
     ESP_LOGE(__func__, "SSID must be 32 characters or less");
     return 1;
   }
 
-  const char* password = wifi_creds_args.password->sval[0];
+  const char *password = wifi_creds_args.password->sval[0];
   if (strlen(password) > 64) {
     ESP_LOGE(__func__, "Password must be 64 characters or less");
     return 1;
@@ -284,20 +283,20 @@ void register_wifi(void) {
   join_args.password = arg_str0(NULL, NULL, "<pass>", "PSK of AP");
   join_args.end = arg_end(2);
 
-  const esp_console_cmd_t join_cmd = {.command = "join",
-                                      .help = "Join WiFi AP as a station",
-                                      .hint = NULL,
-                                      .func = &connect,
-                                      .argtable = &join_args};
+  const esp_console_cmd_t join_cmd = { .command = "join",
+                                       .help = "Join WiFi AP as a station",
+                                       .hint = NULL,
+                                       .func = &connect,
+                                       .argtable = &join_args };
   ESP_ERROR_CHECK(esp_console_cmd_register(&join_cmd));
 
   wifi_creds_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
   wifi_creds_args.password = arg_str1(NULL, NULL, "<pass>", "PSK of AP");
   wifi_creds_args.end = arg_end(2);
-  const esp_console_cmd_t config_cmd = {.command = "wifi_config",
-                                        .help = "Save WiFi ssid + password to NVS",
-                                        .hint = NULL,
-                                        .func = &wifi_creds_set,
-                                        .argtable = &wifi_creds_args};
+  const esp_console_cmd_t config_cmd = { .command = "wifi_config",
+                                         .help = "Save WiFi ssid + password to NVS",
+                                         .hint = NULL,
+                                         .func = &wifi_creds_set,
+                                         .argtable = &wifi_creds_args };
   ESP_ERROR_CHECK(esp_console_cmd_register(&config_cmd));
 }

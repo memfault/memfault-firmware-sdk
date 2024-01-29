@@ -10,13 +10,12 @@
 
 #if MEMFAULT_COMPILER_ARM_CORTEX_M
 
-#include "memfault/panics/fault_handling.h"
-
-#include "memfault/core/platform/core.h"
-#include "memfault/core/reboot_tracking.h"
-#include "memfault/panics/arch/arm/cortex_m.h"
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/coredump_impl.h"
+  #include "memfault/core/platform/core.h"
+  #include "memfault/core/reboot_tracking.h"
+  #include "memfault/panics/arch/arm/cortex_m.h"
+  #include "memfault/panics/coredump.h"
+  #include "memfault/panics/coredump_impl.h"
+  #include "memfault/panics/fault_handling.h"
 
 static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
 
@@ -40,7 +39,8 @@ typedef MEMFAULT_PACKED_STRUCT MfltCortexMRegs {
   uint32_t psr;
   uint32_t msp;
   uint32_t psp;
-} sMfltCortexMRegs;
+}
+sMfltCortexMRegs;
 
 size_t memfault_coredump_storage_compute_size_required(void) {
   // actual values don't matter since we are just computing the size
@@ -62,10 +62,10 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
-#if defined(__CC_ARM)
+  #if defined(__CC_ARM)
 
 static uint32_t prv_read_psp_reg(void) {
-  register uint32_t reg_val  __asm("psp");
+  register uint32_t reg_val __asm("psp");
   return reg_val;
 }
 
@@ -74,7 +74,7 @@ static uint32_t prv_read_msp_reg(void) {
   return reg_val;
 }
 
-#elif defined(__TI_ARM__)
+  #elif defined(__TI_ARM__)
 
 static uint32_t prv_read_psp_reg(void) {
   return __get_PSP();
@@ -84,33 +84,30 @@ static uint32_t prv_read_msp_reg(void) {
   return __get_MSP();
 }
 
-#elif defined(__GNUC__) || defined(__clang__) || defined(__ICCARM__)
+  #elif defined(__GNUC__) || defined(__clang__) || defined(__ICCARM__)
 
 static uint32_t prv_read_psp_reg(void) {
   uint32_t reg_val;
-  __asm volatile ("mrs %0, psp"  : "=r" (reg_val));
+  __asm volatile("mrs %0, psp" : "=r"(reg_val));
   return reg_val;
 }
 
 static uint32_t prv_read_msp_reg(void) {
   uint32_t reg_val;
-  __asm volatile ("mrs %0, msp"  : "=r" (reg_val));
+  __asm volatile("mrs %0, msp" : "=r"(reg_val));
   return reg_val;
 }
 
-#else
-#  error "New compiler to add support for!"
-#endif
+  #else
+    #error "New compiler to add support for!"
+  #endif
 
-#if !MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM
-MEMFAULT_WEAK
-void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
-                                     MEMFAULT_UNUSED eMemfaultRebootReason reason) {
-}
-#endif /* MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM */
+  #if !MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM
+MEMFAULT_WEAK void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
+                                                   MEMFAULT_UNUSED eMemfaultRebootReason reason) { }
+  #endif /* MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM */
 
-MEMFAULT_USED
-void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
+MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   memfault_platform_fault_handler(regs, reason);
 
   if (s_crash_reason == kMfltRebootReason_Unknown) {
@@ -126,7 +123,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   const bool stack_alignment_forced = ((regs->exception_frame->xpsr & (1 << 9)) != 0);
 
   uint32_t sp_prior_to_exception =
-      (uint32_t)regs->exception_frame + (fpu_stack_space_rsvd ? 0x68 : 0x20);
+    (uint32_t)regs->exception_frame + (fpu_stack_space_rsvd ? 0x68 : 0x20);
 
   if (stack_alignment_forced) {
     sp_prior_to_exception += 0x4;
@@ -183,28 +180,27 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   #endif
 }
 
-
-
 // The fault handling shims below figure out what stack was being used leading up to the exception,
-// build the sMfltRegState argument and pass that as well as the reboot reason to memfault_fault_handler
+// build the sMfltRegState argument and pass that as well as the reboot reason to
+// memfault_fault_handler
 
+  #if defined(__CC_ARM)
 
-#if defined(__CC_ARM)
+    // armcc emits a define for the CPU target.
+    //
+    // Use that information to decide whether or not to pick up the ARMV6M port by default
+    //
+    // Cortex M0 (--cpu=cortex-m0)
+    //   __TARGET_CPU_CORTEX_M0
+    // Cortex M0+ (--cpu=cortex-m0plus or --cpu=cortex-m0+)
+    //   __TARGET_CPU_CORTEX_M0PLUS
+    //   __TARGET_CPU_CORTEX_M0_
+    #if defined(__TARGET_CPU_CORTEX_M0) || defined(__TARGET_CPU_CORTEX_M0_) || \
+      defined(__TARGET_CPU_CORTEX_M0PLUS)
+      #define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+    #endif
 
-// armcc emits a define for the CPU target.
-//
-// Use that information to decide whether or not to pick up the ARMV6M port by default
-//
-// Cortex M0 (--cpu=cortex-m0)
-//   __TARGET_CPU_CORTEX_M0
-// Cortex M0+ (--cpu=cortex-m0plus or --cpu=cortex-m0+)
-//   __TARGET_CPU_CORTEX_M0PLUS
-//   __TARGET_CPU_CORTEX_M0_
-#if defined(__TARGET_CPU_CORTEX_M0) || defined (__TARGET_CPU_CORTEX_M0_) || defined(__TARGET_CPU_CORTEX_M0PLUS)
-#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
-#endif
-
-#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
+    #if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
 
 // clang-format off
 
@@ -295,15 +291,14 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   ALIGN
 }
 
-// clang-format on
+  // clang-format on
 
-#elif defined(__TI_ARM__)
+  #elif defined(__TI_ARM__)
 
 // Note: 'reason' is passed as arg0. However we mark the function
 // as void so the TI compiler does not emit any function prologue
 // pushing args on the stack
-MEMFAULT_NAKED_FUNC
-void memfault_fault_handling_shim(void /* int reason */) {
+MEMFAULT_NAKED_FUNC void memfault_fault_handling_shim(void /* int reason */) {
   __asm(" tst lr, #4 \n"
         " ite eq \n"
         " mrseq r3, msp \n"
@@ -314,238 +309,211 @@ void memfault_fault_handling_shim(void /* int reason */) {
         " b memfault_fault_handler");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
-  __asm(" mov r0, #0x9400 \n" // kMfltRebootReason_HardFault
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+  __asm(" mov r0, #0x9400 \n"  // kMfltRebootReason_HardFault
         " b memfault_fault_handling_shim \n");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
-  __asm(" mov r0, #0x9200 \n" // kMfltRebootReason_MemFault
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+  __asm(" mov r0, #0x9200 \n"  // kMfltRebootReason_MemFault
         " b memfault_fault_handling_shim \n");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
-  __asm(" mov r0, #0x9100 \n" // kMfltRebootReason_BusFault
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+  __asm(" mov r0, #0x9100 \n"  // kMfltRebootReason_BusFault
         " b memfault_fault_handling_shim \n");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
-  __asm(" mov r0, #0x9300 \n" // kMfltRebootReason_UsageFault
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+  __asm(" mov r0, #0x9300 \n"  // kMfltRebootReason_UsageFault
         " b memfault_fault_handling_shim \n");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_NMI(void) {
-  __asm(" mov r0, #0x8004 \n" // kMfltRebootReason_Nmi
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
+  __asm(" mov r0, #0x8004 \n"  // kMfltRebootReason_Nmi
         " b memfault_fault_handling_shim \n");
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
-  __asm(" mov r0, #0x8006 \n" // kMfltRebootReason_SoftwareWatchdog
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+  __asm(" mov r0, #0x8006 \n"  // kMfltRebootReason_SoftwareWatchdog
         " b memfault_fault_handling_shim \n");
 }
 
-#elif defined(__GNUC__) || defined(__clang__)
+  #elif defined(__GNUC__) || defined(__clang__)
 
-#if defined(__ARM_ARCH) && (__ARM_ARCH == 6)
-#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
-#endif
+    #if defined(__ARM_ARCH) && (__ARM_ARCH == 6)
+      #define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+    #endif
 
-// Note: ARMV8-M has a subprofile referred to as the "Baseline" implementation
-// with an instruction set similar to ARMV6-M. See https://mflt.io/armv8m-subprofiles
-// for more details.
-#if defined(__ARM_ARCH_8M_BASE__) && (__ARM_ARCH_8M_BASE__ == 1)
-#define MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER 1
-#endif
+    // Note: ARMV8-M has a subprofile referred to as the "Baseline" implementation
+    // with an instruction set similar to ARMV6-M. See https://mflt.io/armv8m-subprofiles
+    // for more details.
+    #if defined(__ARM_ARCH_8M_BASE__) && (__ARM_ARCH_8M_BASE__ == 1)
+      #define MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER 1
+    #endif
 
-#if (!defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER) && \
-     !defined(MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER))
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "tst lr, #4 \n"                            \
-      "ite eq \n"                                \
-      "mrseq r3, msp \n"                         \
-      "mrsne r3, psp \n"                         \
-      "push {r3-r11, lr} \n"                     \
-      "mov r0, sp \n"                            \
-      "ldr r1, =%c0 \n"                          \
-      "b memfault_fault_handler \n"              \
-      :                                          \
-      : "i" ((uint16_t)_x)                       \
-   )
-#else
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "mov r0, lr \n"                            \
-      "movs r1, #4 \n"                           \
-      "tst  r0,r1 \n"                            \
-      "mrs r12, msp \n"                          \
-      "beq msp_active_at_crash_%= \n"            \
-      "mrs r12, psp \n"                          \
-      "msp_active_at_crash_%=: \n"               \
-      "mov r0, r8 \n"                            \
-      "mov r1, r9 \n"                            \
-      "mov r2, r10 \n"                           \
-      "mov r3, r11 \n"                           \
-      "push {r0-r3, lr} \n"                      \
-      "mov r3, r12 \n"                           \
-      "push {r3-r7} \n"                          \
-      "mov r0, sp \n"                            \
-      "ldr r1, =%c0 \n"                          \
-      "b memfault_fault_handler \n"              \
-      :                                          \
-      : "i" ((uint16_t)_x)                       \
-   )
-#endif
+    #if (!defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER) && \
+         !defined(MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER))
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)    \
+        __asm volatile("tst lr, #4 \n"               \
+                       "ite eq \n"                   \
+                       "mrseq r3, msp \n"            \
+                       "mrsne r3, psp \n"            \
+                       "push {r3-r11, lr} \n"        \
+                       "mov r0, sp \n"               \
+                       "ldr r1, =%c0 \n"             \
+                       "b memfault_fault_handler \n" \
+                       :                             \
+                       : "i"((uint16_t)_x))
+    #else
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
+        __asm volatile("mov r0, lr \n"                 \
+                       "movs r1, #4 \n"                \
+                       "tst  r0,r1 \n"                 \
+                       "mrs r12, msp \n"               \
+                       "beq msp_active_at_crash_%= \n" \
+                       "mrs r12, psp \n"               \
+                       "msp_active_at_crash_%=: \n"    \
+                       "mov r0, r8 \n"                 \
+                       "mov r1, r9 \n"                 \
+                       "mov r2, r10 \n"                \
+                       "mov r3, r11 \n"                \
+                       "push {r0-r3, lr} \n"           \
+                       "mov r3, r12 \n"                \
+                       "push {r3-r7} \n"               \
+                       "mov r0, sp \n"                 \
+                       "ldr r1, =%c0 \n"               \
+                       "b memfault_fault_handler \n"   \
+                       :                               \
+                       : "i"((uint16_t)_x))
+    #endif
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_HardFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_UsageFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_NMI(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Nmi);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
 }
 
-#elif defined(__ICCARM__)
+  #elif defined(__ICCARM__)
 
-#if __ARM_ARCH == 6
-#define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
-#endif
+    #if __ARM_ARCH == 6
+      #define MEMFAULT_USE_ARMV6M_FAULT_HANDLER 1
+    #endif
 
-#if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "tst lr, #4 \n"                            \
-      "ite eq \n"                                \
-      "mrseq r3, msp \n"                         \
-      "mrsne r3, psp \n"                         \
-      "push {r3-r11, lr} \n"                     \
-      "mov r0, sp \n"                            \
-      "mov r1, %0 \n"                            \
-      "b memfault_fault_handler \n"              \
-      :                                          \
-      : "i" (_x)                                 \
-   )
+    #if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)    \
+        __asm volatile("tst lr, #4 \n"               \
+                       "ite eq \n"                   \
+                       "mrseq r3, msp \n"            \
+                       "mrsne r3, psp \n"            \
+                       "push {r3-r11, lr} \n"        \
+                       "mov r0, sp \n"               \
+                       "mov r1, %0 \n"               \
+                       "b memfault_fault_handler \n" \
+                       :                             \
+                       : "i"(_x))
 
-#else
+    #else
 
-// Note: Below IAR will build the enum value
-// as part of the prologue to the asm statement and
-// place the value in r0
-#define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-  __asm volatile(                                \
-      "mov r1, lr \n"                            \
-      "movs r2, #4 \n"                           \
-      "tst  r1,r2 \n"                            \
-      "mrs r12, msp \n"                          \
-      "beq msp_active_at_crash \n"               \
-      "mrs r12, psp \n"                          \
-      "msp_active_at_crash: \n"                  \
-      "mov r3, r11 \n"                           \
-      "mov r2, r10 \n"                           \
-      "mov r1, r9 \n"                            \
-      "mov r9, r0 \n"                            \
-      "mov r0, r8 \n"                            \
-      "push {r0-r3, lr} \n"                      \
-      "mov r3, r12 \n"                           \
-      "push {r3-r7} \n"                          \
-      "mov r0, sp \n"                            \
-      "mov r1, r9 \n"                            \
-      "ldr r2, =memfault_fault_handler \n"       \
-      "bx r2 \n"                                 \
-      :                                          \
-      : "r" (_x)                                 \
-   )
+      // Note: Below IAR will build the enum value
+      // as part of the prologue to the asm statement and
+      // place the value in r0
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)           \
+        __asm volatile("mov r1, lr \n"                      \
+                       "movs r2, #4 \n"                     \
+                       "tst  r1,r2 \n"                      \
+                       "mrs r12, msp \n"                    \
+                       "beq msp_active_at_crash \n"         \
+                       "mrs r12, psp \n"                    \
+                       "msp_active_at_crash: \n"            \
+                       "mov r3, r11 \n"                     \
+                       "mov r2, r10 \n"                     \
+                       "mov r1, r9 \n"                      \
+                       "mov r9, r0 \n"                      \
+                       "mov r0, r8 \n"                      \
+                       "push {r0-r3, lr} \n"                \
+                       "mov r3, r12 \n"                     \
+                       "push {r3-r7} \n"                    \
+                       "mov r0, sp \n"                      \
+                       "mov r1, r9 \n"                      \
+                       "ldr r2, =memfault_fault_handler \n" \
+                       "bx r2 \n"                           \
+                       :                                    \
+                       : "r"(_x))
 
-#endif
+    #endif
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_HardFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_UsageFault);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_NMI(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_Nmi);
 }
 
-MEMFAULT_NAKED_FUNC
-void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
 }
 
-#else
-#  error "New compiler to add support for!"
-#endif
+  #else
+    #error "New compiler to add support for!"
+  #endif
 
-// The ARM architecture has a reserved instruction that is "Permanently Undefined" and always
-// generates an Undefined Instruction exception causing an ARM fault handler to be invoked.
-//
-// We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the immediate
-// value for easy disambiguation from any other udf invocations in a system.
-#if defined(__CC_ARM)
+  // The ARM architecture has a reserved instruction that is "Permanently Undefined" and always
+  // generates an Undefined Instruction exception causing an ARM fault handler to be invoked.
+  //
+  // We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the
+  // immediate value for easy disambiguation from any other udf invocations in a system.
+  #if defined(__CC_ARM)
 __asm __forceinline void MEMFAULT_ASSERT_TRAP(void) {
   PRESERVE8
-  UND #77
-  ALIGN
+  UND #77 ALIGN
 }
-#elif defined(__TI_ARM__)
-// The TI Compiler doesn't support the udf asm instruction
-// so we encode the instruction & a nop as a word literal
+  #elif defined(__TI_ARM__)
+  // The TI Compiler doesn't support the udf asm instruction
+  // so we encode the instruction & a nop as a word literal
 
-#pragma diag_push
-#pragma diag_suppress 1119
+    #pragma diag_push
+    #pragma diag_suppress 1119
 
 void MEMFAULT_ASSERT_TRAP(void) {
-  __asm(" .word 3204505165"); // 0xbf00de4d
+  __asm(" .word 3204505165");  // 0xbf00de4d
 }
 
-#pragma diag_pop
-#else
-#define MEMFAULT_ASSERT_TRAP() __asm volatile ("udf #77")
-#endif
+    #pragma diag_pop
+  #else
+    #define MEMFAULT_ASSERT_TRAP() __asm volatile("udf #77")
+  #endif
 
 static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
   // Only set the crash reason if it's unset, in case we are in a nested assert
@@ -558,9 +526,9 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
     memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
   }
 
-#if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
+  #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
   memfault_platform_halt_if_debugging();
-#endif
+  #endif
 
   MEMFAULT_ASSERT_TRAP();
 
@@ -579,27 +547,26 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
 // Note: These functions are annotated as "noreturn" which can be useful for static analysis.
 // However, this can also lead to compiler optimizations that make recovering local variables
 // difficult (such as ignoring ABI requirements to preserve callee-saved registers)
-MEMFAULT_NO_OPT
-void memfault_fault_handling_assert(void *pc, void *lr) {
+MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
   prv_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
 
-#if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
-  //! tiarmclang does not respect the no optimization request and will
-  //! strip the pushing callee saved registers making it impossible to recover
-  //! an accurate backtrace so we skip over providing the unreachable hint.
-#else
-    MEMFAULT_UNREACHABLE;
-#endif
+  #if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
+    //! tiarmclang does not respect the no optimization request and will
+    //! strip the pushing callee saved registers making it impossible to recover
+    //! an accurate backtrace so we skip over providing the unreachable hint.
+  #else
+  MEMFAULT_UNREACHABLE;
+  #endif
 }
-MEMFAULT_NO_OPT
-void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
+MEMFAULT_NO_OPT void memfault_fault_handling_assert_extra(void *pc, void *lr,
+                                                          sMemfaultAssertInfo *extra_info) {
   prv_fault_handling_assert(pc, lr, extra_info->assert_reason);
 
-#if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
-  //! See comment in memfault_fault_handling_assert for more context
-#else
-    MEMFAULT_UNREACHABLE;
-#endif
+  #if (defined(__clang__) && defined(__ti__)) || defined(__CC_ARM)
+    //! See comment in memfault_fault_handling_assert for more context
+  #else
+  MEMFAULT_UNREACHABLE;
+  #endif
 }
 
   #if defined(__CC_ARM)

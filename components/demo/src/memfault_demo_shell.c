@@ -7,15 +7,14 @@
 //! Minimal shell/console implementation for platforms that do not include one.
 //! NOTE: For simplicity, ANSI escape sequences are not dealt with!
 
-#include "memfault/demo/shell.h"
-#include "memfault/demo/shell_commands.h"
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
+#include "memfault/demo/shell.h"
+#include "memfault/demo/shell_commands.h"
 
 #define MEMFAULT_SHELL_MAX_ARGS (16)
 #define MEMFAULT_SHELL_PROMPT "mflt> "
@@ -28,9 +27,9 @@
   #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                                              \
     const sMemfaultShellCommand *command = g_memfault_shell_commands;                           \
     for (size_t i = 0; i < g_memfault_num_shell_commands + s_mflt_shell.num_extension_commands; \
-         ++i, command = (i < g_memfault_num_shell_commands)                                     \
-                          ? &g_memfault_shell_commands[i]                                       \
-                          : &s_mflt_shell.extension_commands[i - g_memfault_num_shell_commands])
+         ++i, command = (i < g_memfault_num_shell_commands) ?                                   \
+                          &g_memfault_shell_commands[i] :                                       \
+                          &s_mflt_shell.extension_commands[i - g_memfault_num_shell_commands])
 #else
   #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                         \
     for (const sMemfaultShellCommand *command = g_memfault_shell_commands; \
@@ -97,7 +96,7 @@ static void prv_send_prompt(void) {
 }
 
 static const sMemfaultShellCommand *prv_find_command(const char *name) {
-  MEMFAULT_SHELL_FOR_EACH_COMMAND(command) {
+  MEMFAULT_SHELL_FOR_EACH_COMMAND (command) {
     if (strcmp(command->command, name) == 0) {
       return command;
     }
@@ -110,7 +109,7 @@ static void prv_process(void) {
     return;
   }
 
-  char *argv[MEMFAULT_SHELL_MAX_ARGS] = {0};
+  char *argv[MEMFAULT_SHELL_MAX_ARGS] = { 0 };
   int argc = 0;
 
   char *next_arg = NULL;
@@ -189,7 +188,7 @@ void memfault_demo_shell_receive_char(char c) {
 
   const bool is_backspace = (c == '\b');
   if (is_backspace && s_mflt_shell.rx_size == 0) {
-    return; // nothing left to delete so don't echo the backspace
+    return;  // nothing left to delete so don't echo the backspace
   }
 
   // CR are our EOL delimiter. Remap as a LF here since that's what internal handling logic expects
@@ -210,7 +209,7 @@ void memfault_demo_shell_receive_char(char c) {
 }
 
 int memfault_shell_help_handler(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  MEMFAULT_SHELL_FOR_EACH_COMMAND(command) {
+  MEMFAULT_SHELL_FOR_EACH_COMMAND (command) {
     prv_echo_str(command->command);
     prv_echo_str(": ");
     prv_echo_str(command->help);

@@ -5,22 +5,22 @@
 //!
 //! @brief
 
-#include "memfault/util/rle.h"
-
 #include <stdbool.h>
 #include <stddef.h>
 
 #include "memfault/core/compiler.h"
+#include "memfault/util/rle.h"
 #include "memfault/util/varint.h"
 
-MEMFAULT_STATIC_ASSERT(sizeof(((sMemfaultRleWriteInfo *)0x0)->header) == MEMFAULT_UINT32_MAX_VARINT_LENGTH,
+MEMFAULT_STATIC_ASSERT(sizeof(((sMemfaultRleWriteInfo *)0x0)->header) ==
+                         MEMFAULT_UINT32_MAX_VARINT_LENGTH,
                        "header buffer not appropriately sized");
 
 static void prv_handle_rle_change(sMemfaultRleCtx *ctx) {
   // Are we currently encoding a repeat sequence?
   const bool repeated_pattern = ctx->state == kMemfaultRleState_RepeatSeq;
 
-  ctx->write_info = (sMemfaultRleWriteInfo) {
+  ctx->write_info = (sMemfaultRleWriteInfo){
     .available = true,
     .write_start_offset = ctx->seq_start_offset,
     .write_len = repeated_pattern ? 1 : ctx->seq_count,
@@ -53,7 +53,7 @@ size_t memfault_rle_encode(sMemfaultRleCtx *ctx, const void *buf, size_t buf_siz
 
   // NB: The caller should check this between calls to find out if a new sequence to
   // write has been detected so we reset it upon every invocation
-  ctx->write_info = (sMemfaultRleWriteInfo) { 0 };
+  ctx->write_info = (sMemfaultRleWriteInfo){ 0 };
 
   const uint32_t start_offset = ctx->curr_offset;
   const uint8_t *byte_buf = buf;

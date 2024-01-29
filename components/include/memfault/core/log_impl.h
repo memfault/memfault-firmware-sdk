@@ -33,7 +33,8 @@ typedef struct {
   sMemfaultLogMemoryRegion region[MEMFAULT_LOG_NUM_RAM_REGIONS];
 } sMemfaultLogRegions;
 
-//! @note Internal function used to recover the memory regions which need to be collected in order for logs
+//! @note Internal function used to recover the memory regions which need to be collected in order
+//! for logs
 //!   to get decoded in a coredump (https://mflt.io/logging)
 bool memfault_log_get_regions(sMemfaultLogRegions *regions);
 

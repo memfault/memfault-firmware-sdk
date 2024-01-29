@@ -50,8 +50,7 @@ int32_t s_min_rssi;
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 #endif    // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
-MEMFAULT_WEAK
-void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
+MEMFAULT_WEAK void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
   if (handler == NULL) {
     return;
   }
@@ -146,7 +145,7 @@ static void prv_collect_wifi_metrics(void) {
 #if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
 
 static void prv_record_heap_metrics(void) {
-  multi_heap_info_t heap_info = {0};
+  multi_heap_info_t heap_info = { 0 };
   heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
   MEMFAULT_METRIC_SET_UNSIGNED(heap_free_bytes, heap_info.total_free_bytes);
   MEMFAULT_METRIC_SET_UNSIGNED(heap_largest_free_block_bytes, heap_info.largest_free_block);

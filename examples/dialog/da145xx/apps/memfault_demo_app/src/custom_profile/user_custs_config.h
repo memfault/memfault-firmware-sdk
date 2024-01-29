@@ -41,4 +41,4 @@ extern const struct cust_prf_func_callbacks cust_prf_funcs[];
 
 /// @} USER_CONFIG
 
-#endif // _USER_CUSTS_CONFIG_H_
+#endif  // _USER_CUSTS_CONFIG_H_

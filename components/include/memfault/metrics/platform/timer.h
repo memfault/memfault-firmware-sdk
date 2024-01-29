@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 //! A timer callback used by the Memfault library
-typedef void (MemfaultPlatformTimerCallback)(void);
+typedef void(MemfaultPlatformTimerCallback)(void);
 
 //! Start a repeating timer that invokes 'callback' every period_s
 //!
@@ -24,7 +24,8 @@ typedef void (MemfaultPlatformTimerCallback)(void);
 //! @param callback to invoke
 //!
 //! @return true if the timer was successfully created and started, false otherwise
-bool memfault_platform_metrics_timer_boot(uint32_t period_sec, MemfaultPlatformTimerCallback *callback);
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                          MemfaultPlatformTimerCallback *callback);
 
 #ifdef __cplusplus
 }

@@ -6,17 +6,16 @@
 //! @brief
 //! Logic for saving a coredump to backing storage and reading it out
 
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/coredump_impl.h"
-
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/panics/coredump.h"
+#include "memfault/panics/coredump_impl.h"
 #include "memfault/panics/platform/coredump.h"
 
 #define MEMFAULT_COREDUMP_MAGIC 0x45524f43
@@ -33,11 +32,12 @@ typedef MEMFAULT_PACKED_STRUCT MfltCoredumpHeader {
   uint32_t version;
   uint32_t total_size;
   uint8_t data[];
-} sMfltCoredumpHeader;
+}
+sMfltCoredumpHeader;
 
 #define MEMFAULT_COREDUMP_FOOTER_MAGIC 0x504d5544
 
-typedef enum MfltCoredumpFooterFlags  {
+typedef enum MfltCoredumpFooterFlags {
   kMfltCoredumpBlockType_SaveTruncated = 0,
 } eMfltCoredumpFooterFlags;
 
@@ -46,18 +46,21 @@ typedef MEMFAULT_PACKED_STRUCT MfltCoredumpFooter {
   uint32_t flags;
   // reserving for future footer additions such as a CRC over the contents saved
   uint32_t rsvd[2];
-} sMfltCoredumpFooter;
+}
+sMfltCoredumpFooter;
 
 typedef MEMFAULT_PACKED_STRUCT MfltCoredumpBlock {
   eMfltCoredumpBlockType block_type:8;
   uint8_t rsvd[3];
   uint32_t address;
   uint32_t length;
-} sMfltCoredumpBlock;
+}
+sMfltCoredumpBlock;
 
 typedef MEMFAULT_PACKED_STRUCT MfltTraceReasonBlock {
   uint32_t reason;
-} sMfltTraceReasonBlock;
+}
+sMfltTraceReasonBlock;
 
 // Using ELF machine enum values which is a half word:
 //  https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch4.eheader.html
@@ -102,7 +105,8 @@ typedef enum MfltCoredumpMachineType {
 
 typedef MEMFAULT_PACKED_STRUCT MfltMachineTypeBlock {
   uint32_t machine_type;
-} sMfltMachineTypeBlock;
+}
+sMfltMachineTypeBlock;
 
 typedef struct {
   // the space available for saving a coredump
@@ -125,8 +129,7 @@ typedef struct {
 // Callers should ignore the region if failure is returned
 // because the block is not valid.
 static bool prv_fixup_if_cached_block(sMfltCoredumpRegion *region, uint32_t *cached_address) {
-
-  if (region->type ==  kMfltCoredumpRegionType_CachedMemory) {
+  if (region->type == kMfltCoredumpRegionType_CachedMemory) {
     const sMfltCachedBlock *cached_blk = region->region_start;
     if (!cached_blk->valid_cache) {
       // Ignore this block.
@@ -142,14 +145,15 @@ static bool prv_fixup_if_cached_block(sMfltCoredumpRegion *region, uint32_t *cac
     // Remove our header from the size and region_start
     // is where we cached the <cached_address>'s data.
     region->region_size = cached_blk->blk_size;
-    region->region_start = cached_blk->blk; // Must be last operation!
+    region->region_start = cached_blk->blk;  // Must be last operation!
   }
 
   // Success, untouched or fixed up.
   return true;
 }
 
-static bool prv_platform_coredump_write(const void *data, size_t len, sMfltCoredumpWriteCtx *write_ctx) {
+static bool prv_platform_coredump_write(const void *data, size_t len,
+                                        sMfltCoredumpWriteCtx *write_ctx) {
   // if we are just computing the size needed, don't write any data but keep
   // a count of how many bytes would be written.
   if (!write_ctx->compute_size_only &&
@@ -162,9 +166,10 @@ static bool prv_platform_coredump_write(const void *data, size_t len, sMfltCored
   return true;
 }
 
-static bool prv_write_block_with_address(
-    eMfltCoredumpBlockType block_type, const void *block_payload, size_t block_payload_size,
-    uint32_t address, sMfltCoredumpWriteCtx *write_ctx, bool word_aligned_reads_only) {
+static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
+                                         const void *block_payload, size_t block_payload_size,
+                                         uint32_t address, sMfltCoredumpWriteCtx *write_ctx,
+                                         bool word_aligned_reads_only) {
   // nothing to write, ignore the request
   if (block_payload_size == 0 || (block_payload == NULL)) {
     return true;
@@ -172,7 +177,7 @@ static bool prv_write_block_with_address(
 
   const size_t total_length = sizeof(sMfltCoredumpBlock) + block_payload_size;
   const size_t storage_bytes_free =
-      write_ctx->storage_size > write_ctx->offset ?  write_ctx->storage_size - write_ctx->offset : 0;
+    write_ctx->storage_size > write_ctx->offset ? write_ctx->storage_size - write_ctx->offset : 0;
 
   if (!write_ctx->compute_size_only && storage_bytes_free < total_length) {
     // We are trying to write a new block in the coredump and there is not enough
@@ -218,12 +223,11 @@ static bool prv_write_block_with_address(
   return !write_ctx->truncated;
 }
 
-static bool prv_write_non_memory_block(eMfltCoredumpBlockType block_type,
-                                       const void *block_payload, size_t block_payload_size,
-                                       sMfltCoredumpWriteCtx *ctx) {
+static bool prv_write_non_memory_block(eMfltCoredumpBlockType block_type, const void *block_payload,
+                                       size_t block_payload_size, sMfltCoredumpWriteCtx *ctx) {
   const bool word_aligned_reads_only = false;
-  return prv_write_block_with_address(block_type, block_payload, block_payload_size,
-                                      0, ctx, word_aligned_reads_only);
+  return prv_write_block_with_address(block_type, block_payload, block_payload_size, 0, ctx,
+                                      word_aligned_reads_only);
 }
 
 static eMfltCoredumpBlockType prv_region_type_to_storage_type(eMfltCoredumpRegionType type) {
@@ -254,7 +258,8 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
     kMfltCoredumpMachineType_XtensaLx7
 #elif defined(__XTENSA__) && defined(__XTENSA_WINDOWED_ABI__) && defined(CONFIG_IDF_TARGET_ESP32S3)
     // rely on Kconfig provided flag for ESP32-S3; compiler defined symbols are identical to ESP32.
-    // ❯ diff -duw <(xtensa-esp32-elf-gcc -dM -E - < /dev/null)  <(xtensa-esp32s3-elf-gcc -dM -E - < /dev/null)
+    // ❯ diff -duw <(xtensa-esp32-elf-gcc -dM -E - < /dev/null)  <(xtensa-esp32s3-elf-gcc -dM -E - <
+    // /dev/null)
     kMfltCoredumpMachineType_XtensaLx7Dual
 #elif defined(__XTENSA__) && defined(__XTENSA_WINDOWED_ABI__)
     // default xtensa windowed target is vanilla ESP32
@@ -277,37 +282,37 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
 #if MEMFAULT_COREDUMP_INCLUDE_BUILD_ID
   sMemfaultBuildInfo build_info;
   if (memfault_build_info_read(&build_info)) {
-    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_BuildId,
-                                    build_info.build_id, sizeof(build_info.build_id), ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_BuildId, build_info.build_id,
+                                    sizeof(build_info.build_id), ctx)) {
       return false;
     }
   }
 #endif
 
   if (info.device_serial) {
-    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_DeviceSerial,
-                                    info.device_serial, strlen(info.device_serial), ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_DeviceSerial, info.device_serial,
+                                    strlen(info.device_serial), ctx)) {
       return false;
     }
   }
 
   if (info.software_version) {
-    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareVersion,
-                                    info.software_version, strlen(info.software_version), ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareVersion, info.software_version,
+                                    strlen(info.software_version), ctx)) {
       return false;
     }
   }
 
   if (info.software_type) {
-    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareType,
-                                       info.software_type, strlen(info.software_type), ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareType, info.software_type,
+                                    strlen(info.software_type), ctx)) {
       return false;
     }
   }
 
   if (info.hardware_version) {
-    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_HardwareVersion,
-                                       info.hardware_version, strlen(info.hardware_version), ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpRegionType_HardwareVersion, info.hardware_version,
+                                    strlen(info.hardware_version), ctx)) {
       return false;
     }
   }
@@ -316,12 +321,12 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
   const sMfltMachineTypeBlock machine_block = {
     .machine_type = (uint32_t)machine_type,
   };
-  return prv_write_non_memory_block(kMfltCoredumpRegionType_MachineType,
-                                    &machine_block, sizeof(machine_block), ctx);
+  return prv_write_non_memory_block(kMfltCoredumpRegionType_MachineType, &machine_block,
+                                    sizeof(machine_block), ctx);
 }
 
 static bool prv_write_coredump_header(size_t total_coredump_size, sMfltCoredumpWriteCtx *ctx) {
-  sMfltCoredumpHeader hdr = (sMfltCoredumpHeader) {
+  sMfltCoredumpHeader hdr = (sMfltCoredumpHeader){
     .magic = MEMFAULT_COREDUMP_MAGIC,
     .version = MEMFAULT_COREDUMP_VERSION,
     .total_size = total_coredump_size,
@@ -334,32 +339,31 @@ static bool prv_write_trace_reason(sMfltCoredumpWriteCtx *ctx, uint32_t trace_re
     .reason = trace_reason,
   };
 
-  return prv_write_non_memory_block(kMfltCoredumpRegionType_TraceReason,
-                                    &trace_info, sizeof(trace_info), ctx);
+  return prv_write_non_memory_block(kMfltCoredumpRegionType_TraceReason, &trace_info,
+                                    sizeof(trace_info), ctx);
 }
 
 // When copying out some regions (for example, memory or register banks)
 // we want to make sure we can do word-aligned accesses.
 static void prv_insert_padding_if_necessary(sMfltCoredumpWriteCtx *write_ctx) {
-  #define MEMFAULT_WORD_SIZE 4
+#define MEMFAULT_WORD_SIZE 4
   const size_t remainder = write_ctx->offset % MEMFAULT_WORD_SIZE;
   if (remainder == 0) {
     return;
   }
 
-  #define MEMFAULT_MAX_PADDING_BYTES_NEEDED (MEMFAULT_WORD_SIZE - 1)
+#define MEMFAULT_MAX_PADDING_BYTES_NEEDED (MEMFAULT_WORD_SIZE - 1)
   uint8_t pad_bytes[MEMFAULT_MAX_PADDING_BYTES_NEEDED];
 
   size_t padding_needed = MEMFAULT_WORD_SIZE - remainder;
   memset(pad_bytes, 0x0, padding_needed);
 
-  prv_write_non_memory_block(kMfltCoredumpRegionType_PaddingRegion,
-                             &pad_bytes, padding_needed, write_ctx);
+  prv_write_non_memory_block(kMfltCoredumpRegionType_PaddingRegion, &pad_bytes, padding_needed,
+                             write_ctx);
 }
 
 //! Callback that will be called to write coredump data.
-typedef bool(*MfltCoredumpReadCb)(uint32_t offset, void *data, size_t read_len);
-
+typedef bool (*MfltCoredumpReadCb)(uint32_t offset, void *data, size_t read_len);
 
 static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out,
                                     sMfltCoredumpStorageInfo *info_out,
@@ -367,7 +371,7 @@ static bool prv_get_info_and_header(sMfltCoredumpHeader *hdr_out,
   sMfltCoredumpStorageInfo info = { 0 };
   memfault_platform_coredump_storage_get_info(&info);
   if (info.size == 0) {
-    return false; // no space for core files!
+    return false;  // no space for core files!
   }
 
   if (!coredump_read_cb(0, hdr_out, sizeof(*hdr_out))) {
@@ -408,11 +412,11 @@ static bool prv_write_regions(sMfltCoredumpWriteCtx *write_ctx, const sMfltCored
     }
 
     const bool word_aligned_reads_only =
-        (region_copy.type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
+      (region_copy.type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
 
     if (!prv_write_block_with_address(prv_region_type_to_storage_type(region_copy.type),
-                                      region_copy.region_start, region_copy.region_size,
-                                      address, write_ctx, word_aligned_reads_only)) {
+                                      region_copy.region_start, region_copy.region_size, address,
+                                      write_ctx, word_aligned_reads_only)) {
       return false;
     }
   }
@@ -445,7 +449,7 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
     }
 
     if (prv_coredump_header_is_valid(&hdr)) {
-      return false; // don't overwrite what we got!
+      return false;  // don't overwrite what we got!
     }
   }
 
@@ -470,8 +474,8 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   const void *regs = save_info->regs;
   const size_t regs_size = save_info->regs_size;
   if (regs != NULL) {
-    if (!prv_write_non_memory_block(kMfltCoredumpBlockType_CurrentRegisters,
-                                    regs, regs_size, &write_ctx)) {
+    if (!prv_write_non_memory_block(kMfltCoredumpBlockType_CurrentRegisters, regs, regs_size,
+                                    &write_ctx)) {
       return false;
     }
   }
@@ -491,16 +495,15 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   size_t num_sdk_regions = 0;
   const sMfltCoredumpRegion *sdk_regions = memfault_coredump_get_sdk_regions(&num_sdk_regions);
 
-  const bool write_completed =
-      prv_write_regions(&write_ctx, arch_regions, num_arch_regions) &&
-      prv_write_regions(&write_ctx, sdk_regions, num_sdk_regions) &&
-      prv_write_regions(&write_ctx, regions, num_regions);
+  const bool write_completed = prv_write_regions(&write_ctx, arch_regions, num_arch_regions) &&
+                               prv_write_regions(&write_ctx, sdk_regions, num_sdk_regions) &&
+                               prv_write_regions(&write_ctx, regions, num_regions);
 
   if (!write_completed && write_ctx.write_error) {
     return false;
   }
 
-  const sMfltCoredumpFooter footer = (sMfltCoredumpFooter) {
+  const sMfltCoredumpFooter footer = (sMfltCoredumpFooter){
     .magic = MEMFAULT_COREDUMP_FOOTER_MAGIC,
     .flags = write_ctx.truncated ? (1 << kMfltCoredumpBlockType_SaveTruncated) : 0,
   };
@@ -510,7 +513,7 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   }
 
   const size_t end_offset = write_ctx.offset;
-  write_ctx.offset = 0; // we are writing the header so reset our write offset
+  write_ctx.offset = 0;  // we are writing the header so reset our write offset
   const bool success = prv_write_coredump_header(end_offset, &write_ctx);
   if (success) {
     *total_size = end_offset;
@@ -519,8 +522,7 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   return success;
 }
 
-MEMFAULT_WEAK
-bool memfault_platform_coredump_save_begin(void) {
+MEMFAULT_WEAK bool memfault_platform_coredump_save_begin(void) {
   return true;
 }
 
@@ -554,8 +556,7 @@ bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {
   return true;
 }
 
-MEMFAULT_WEAK
-bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len) {
+MEMFAULT_WEAK bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len) {
   return memfault_platform_coredump_storage_read(offset, buf, buf_len);
 }
 

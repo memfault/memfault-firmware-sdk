@@ -6,14 +6,13 @@
 //! @brief
 //! A fake implementation simulating platform logs which can be used for unit tests
 
-#include "memfault/core/platform/debug_log.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "memfault/core/log.h"
 #include "memfault/core/compiler.h"
+#include "memfault/core/log.h"
+#include "memfault/core/platform/debug_log.h"
 
 static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
   switch (level) {
@@ -25,7 +24,7 @@ static const char *prv_severity_level_to_str(eMemfaultPlatformLogLevel level) {
       return "W";
     case kMemfaultPlatformLogLevel_Error:
       return "E";
-    case kMemfaultPlatformLogLevel_NumLevels: // silence error with -Wswitch-enum
+    case kMemfaultPlatformLogLevel_NumLevels:  // silence error with -Wswitch-enum
     default:
       return "U";
   }

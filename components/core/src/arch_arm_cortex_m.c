@@ -23,12 +23,11 @@ void memfault_arch_disable_configurable_faults(void) {
   // Clear MEMFAULTENA, BUSFAULTENA, USGFAULTENA, SECUREFAULTENA
   //
   // This will force all faults to be routed through the HardFault Handler
-  volatile uint32_t *SHCSR = (uint32_t*)0xE000ED24;
+  volatile uint32_t *SHCSR = (uint32_t *)0xE000ED24;
   *SHCSR &= ~((uint32_t)0x000F0000);
 }
 
-MEMFAULT_WEAK
-void memfault_platform_halt_if_debugging(void) {
+MEMFAULT_WEAK void memfault_platform_halt_if_debugging(void) {
   volatile uint32_t *dhcsr = (volatile uint32_t *)0xE000EDF0;
   const uint32_t c_debugen_mask = 0x1;
 

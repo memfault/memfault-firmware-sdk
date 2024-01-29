@@ -26,7 +26,7 @@
 // opaque pointers are used in a header.  To work around, the problem, we pull in the full internal
 // definition for "sMemfaultEventStorageImpl" when the unity framework is being used.
 #if defined(UNITY_INCLUDE_CONFIG_H)
-#include "memfault/core/event_storage_implementation.h"
+  #include "memfault/core/event_storage_implementation.h"
 #endif
 
 #ifdef __cplusplus
@@ -90,7 +90,7 @@ typedef struct MemfaultEventStoragePersistCbStatus {
 //! @note It is safe to call "memfault_event_storage_persist()" both synchronously and
 //!  asynchronously from this callback
 void memfault_event_storage_request_persist_callback(
-    const sMemfaultEventStoragePersistCbStatus *status);
+  const sMemfaultEventStoragePersistCbStatus *status);
 
 //! Saves events which have been collected into non-volatile storage
 //!
@@ -101,8 +101,8 @@ int memfault_event_storage_persist(void);
 //! Returns zero if the storage has not been allocated.
 size_t memfault_event_storage_bytes_used(void);
 
-//! Simple API call to retrieve the number of bytes free (unused) in the allocated event storage buffer.
-//! Returns zero if the storage has not been allocated.
+//! Simple API call to retrieve the number of bytes free (unused) in the allocated event storage
+//! buffer. Returns zero if the storage has not been allocated.
 size_t memfault_event_storage_bytes_free(void);
 
 //! Check if event storage component has booted

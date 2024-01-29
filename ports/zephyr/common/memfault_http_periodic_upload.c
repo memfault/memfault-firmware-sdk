@@ -20,8 +20,8 @@
 // clang-format on
 
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-static K_THREAD_STACK_DEFINE(
-    memfault_http_stack_area, CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(memfault_http_stack_area,
+                             CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE);
 static struct k_work_q memfault_http_work_q;
 #endif
 

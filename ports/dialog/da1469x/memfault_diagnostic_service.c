@@ -10,9 +10,9 @@
 
 #if defined(CONFIG_USE_BLE_SERVICES)
 
-#if defined(dg_configUSE_MEMFAULT)
+  #if defined(dg_configUSE_MEMFAULT)
 
-// clang-format off
+  // clang-format off
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -38,46 +38,48 @@
 
 #include "memfault/components.h"
 
-// clang-format on
+  // clang-format on
 
-#if !defined(MEMFAULT_PROJECT_KEY)
-#error "Memfault Project Key not configured. Please visit https://goto.memfault.com/create-key/da1469x"
-#endif
+    #if !defined(MEMFAULT_PROJECT_KEY)
+      #error \
+        "Memfault Project Key not configured. Please visit https://goto.memfault.com/create-key/da1469x"
+    #endif
 
 //! Profile makes use of the timer task for checking to see if there is any data to send. By
 //! default, the FreeRTOS timer task depth is the absolute minimum configMINIMAL_STACK_SIZE (100),
 //! so we need a little more room to prevent any stack overflows
-MEMFAULT_STATIC_ASSERT(configTIMER_TASK_STACK_DEPTH >= 256,
-                       "configTIMER_TASK_STACK_DEPTH must be >= 256, update your custom_config_*.h");
+MEMFAULT_STATIC_ASSERT(
+  configTIMER_TASK_STACK_DEPTH >= 256,
+  "configTIMER_TASK_STACK_DEPTH must be >= 256, update your custom_config_*.h");
 
-//! ATT Read, Write & Notification responses will have a 3 byte overhead
-//! (1 Byte for Opcode + 2 bytes for length)
-#define MDS_ATT_HEADER_OVERHEAD 3
+    //! ATT Read, Write & Notification responses will have a 3 byte overhead
+    //! (1 Byte for Opcode + 2 bytes for length)
+    #define MDS_ATT_HEADER_OVERHEAD 3
 
-//! Note: Attributes that are greater than the MTU size can be returned via long attribute reads
-//! but the maximum allowed attribute value is 512 bytes. (See "3.2.9 Long attribute values" of BLE
-//! v5.3 Core specification). In practice, all values returned by MDS should be much smaller than
-//! this.
-#define MDS_MAX_READ_LEN  (512)
+    //! Note: Attributes that are greater than the MTU size can be returned via long attribute reads
+    //! but the maximum allowed attribute value is 512 bytes. (See "3.2.9 Long attribute values" of
+    //! BLE v5.3 Core specification). In practice, all values returned by MDS should be much smaller
+    //! than this.
+    #define MDS_MAX_READ_LEN (512)
 
-//! The interval to check for whether or not there is any new data to send
-#ifndef MDS_POLL_INTERVAL_MS
-#define MDS_POLL_INTERVAL_MS (60 * 1000)
-#endif
+    //! The interval to check for whether or not there is any new data to send
+    #ifndef MDS_POLL_INTERVAL_MS
+      #define MDS_POLL_INTERVAL_MS (60 * 1000)
+    #endif
 
-#ifndef MDS_MAX_DATA_URI_LENGTH
-#define MDS_MAX_DATA_URI_LENGTH 64
-#endif
+    #ifndef MDS_MAX_DATA_URI_LENGTH
+      #define MDS_MAX_DATA_URI_LENGTH 64
+    #endif
 
-#ifndef MDS_URI_BASE
-//! i.e https://chunks.memfault.com/api/v0/chunks/
-#define MDS_URI_BASE \
-  (MEMFAULT_HTTP_APIS_DEFAULT_SCHEME "://" MEMFAULT_HTTP_CHUNKS_API_HOST "/api/v0/chunks/")
-#endif
+    #ifndef MDS_URI_BASE
+      //! i.e https://chunks.memfault.com/api/v0/chunks/
+      #define MDS_URI_BASE \
+        (MEMFAULT_HTTP_APIS_DEFAULT_SCHEME "://" MEMFAULT_HTTP_CHUNKS_API_HOST "/api/v0/chunks/")
+    #endif
 
-#ifndef MDS_DYNAMIC_ACCESS_CONTROL
-#define MDS_DYNAMIC_ACCESS_CONTROL 0
-#endif
+    #ifndef MDS_DYNAMIC_ACCESS_CONTROL
+      #define MDS_DYNAMIC_ACCESS_CONTROL 0
+    #endif
 
 //! Payload returned via a read to "MDS Supported Features Characteristic"
 const static uint8_t s_mds_supported_features[] = {
@@ -85,21 +87,21 @@ const static uint8_t s_mds_supported_features[] = {
   0x0
 };
 
-//! Valid SNs used when sending data are 0-31
-#define MDS_TOTAL_SEQ_NUMBERS 32
+    //! Valid SNs used when sending data are 0-31
+    #define MDS_TOTAL_SEQ_NUMBERS 32
 
 typedef enum {
   kMdsDataExportMode_StreamingDisabled = 0x00,
   kMdsDataExportMode_FullStreamingEnabled = 0x01,
 } eMdsDataExportMode;
 
-
 typedef MEMFAULT_PACKED_STRUCT {
   // bits 5-7: rsvd for future use
   // bits 0-4: sequence number
   uint8_t hdr;
   uint8_t chunk[];
-} sMdsDataExportPayload;
+}
+sMdsDataExportPayload;
 
 typedef struct {
   ble_service_t svc;
@@ -119,7 +121,7 @@ typedef struct {
   struct {
     bool active;
     eMdsDataExportMode mode;
-    uint8_t seq_num; // current sequence number to use
+    uint8_t seq_num;  // current sequence number to use
     uint16_t conn_idx;
   } subscriber;
 
@@ -138,17 +140,15 @@ typedef enum {
 
 static md_service_t *s_mds;
 
-#if !MDS_DYNAMIC_ACCESS_CONTROL
+    #if !MDS_DYNAMIC_ACCESS_CONTROL
 //! See mds.h header for more details, we recommend end user override this behavior for production
 //! applications
-MEMFAULT_WEAK
-bool mds_access_enabled(uint16_t connection_handle) {
+MEMFAULT_WEAK bool mds_access_enabled(uint16_t connection_handle) {
   return true;
 }
-#endif
+    #endif
 
-static void prv_handle_disconnected_evt(ble_service_t *svc,
-                                    const ble_evt_gap_disconnected_t *evt) {
+static void prv_handle_disconnected_evt(ble_service_t *svc, const ble_evt_gap_disconnected_t *evt) {
   md_service_t *mds = (md_service_t *)svc;
 
   if (mds->subscriber.active && (mds->subscriber.conn_idx == evt->conn_idx)) {
@@ -189,7 +189,6 @@ static void prv_try_notify(md_service_t *mds, uint16_t conn_idx) {
   }
 
   if (mds->chunk_len != 0) {
-
     rv = ble_gatts_send_event(conn_idx, mds->chunk_val_h, GATT_EVENT_NOTIFICATION,
                               mds->chunk_len + sizeof(*mds->payload), mds->payload);
     if (rv == BLE_STATUS_OK) {
@@ -231,8 +230,7 @@ static void prv_mds_timer_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
   }
 }
 
-static void prv_handle_read_req(ble_service_t *svc,
-                            const ble_evt_gatts_read_req_t *evt) {
+static void prv_handle_read_req(ble_service_t *svc, const ble_evt_gatts_read_req_t *evt) {
   if (!mds_access_enabled(evt->conn_idx)) {
     ble_gatts_read_cfm(evt->conn_idx, evt->handle, ATT_ERROR_READ_NOT_PERMITTED, 0, NULL);
     return;
@@ -268,7 +266,7 @@ static void prv_handle_read_req(ble_service_t *svc,
     value = uri;
     length = total_length;
   } else if (evt->handle == mds->auth_h) {
-    value = "Memfault-Project-Key:"MEMFAULT_PROJECT_KEY;
+    value = "Memfault-Project-Key:" MEMFAULT_PROJECT_KEY;
     length = strlen(value);
   } else if (evt->handle == mds->device_id_h) {
     memfault_platform_get_device_info(&info);
@@ -292,13 +290,11 @@ static void prv_handle_read_req(ble_service_t *svc,
     value = ((uint8_t *)value) + evt->offset;
   }
 
-  ble_gatts_read_cfm(evt->conn_idx, evt->handle, ATT_ERROR_OK,
-                     length, value);
+  ble_gatts_read_cfm(evt->conn_idx, evt->handle, ATT_ERROR_OK, length, value);
 }
 
-static att_error_t prv_handle_cccd_write(md_service_t *mds, uint16_t conn_idx,
-                                         uint16_t offset, uint16_t length,
-                                         const uint8_t *value) {
+static att_error_t prv_handle_cccd_write(md_service_t *mds, uint16_t conn_idx, uint16_t offset,
+                                         uint16_t length, const uint8_t *value) {
   if (offset != 0) {
     return ATT_ERROR_ATTRIBUTE_NOT_LONG;
   }
@@ -358,23 +354,19 @@ static att_error_t prv_handle_data_export_write(md_service_t *mds, uint16_t conn
   return ATT_ERROR_OK;
 }
 
-static void prv_handle_write_req(ble_service_t *svc,
-                             const ble_evt_gatts_write_req_t *evt) {
+static void prv_handle_write_req(ble_service_t *svc, const ble_evt_gatts_write_req_t *evt) {
   if (!mds_access_enabled(evt->conn_idx)) {
     ble_gatts_read_cfm(evt->conn_idx, evt->handle, ATT_ERROR_WRITE_NOT_PERMITTED, 0, NULL);
     return;
   }
 
-
   md_service_t *mds = (md_service_t *)svc;
   att_error_t status = ATT_ERROR_ATTRIBUTE_NOT_FOUND;
 
   if (evt->handle == mds->chunk_cccd_h) {
-    status = prv_handle_cccd_write(mds, evt->conn_idx, evt->offset, evt->length,
-                                   evt->value);
+    status = prv_handle_cccd_write(mds, evt->conn_idx, evt->offset, evt->length, evt->value);
   } else if (evt->handle == mds->chunk_val_h) {
-    status = prv_handle_data_export_write(mds, evt->conn_idx, evt->offset, evt->length,
-                                          evt->value);
+    status = prv_handle_data_export_write(mds, evt->conn_idx, evt->offset, evt->length, evt->value);
   }
 
   ble_gatts_write_cfm(evt->conn_idx, evt->handle, status);
@@ -402,7 +394,7 @@ void *mds_boot(void) {
   memset(mds, 0, sizeof(*mds));
 
   mds->timer = xTimerCreate("mds_timer", pdMS_TO_TICKS(1000), pdFALSE, /* auto reload */
-                             (void *)NULL, prv_mds_timer_callback);
+                            (void *)NULL, prv_mds_timer_callback);
 
   mds->svc.disconnected_evt = prv_handle_disconnected_evt;
   mds->svc.read_req = prv_handle_read_req;
@@ -436,15 +428,15 @@ void *mds_boot(void) {
                                GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->auth_h);
 
   ble_uuid_from_string("54220005-f6a5-4007-a371-722f4ebd8436", &uuid);
-  ble_gatts_add_characteristic(&uuid, GATT_PROP_NOTIFY | GATT_PROP_WRITE, ATT_PERM_RW, sizeof(uint8_t),
-                               GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->chunk_val_h);
+  ble_gatts_add_characteristic(&uuid, GATT_PROP_NOTIFY | GATT_PROP_WRITE, ATT_PERM_RW,
+                               sizeof(uint8_t), GATTS_FLAG_CHAR_READ_REQ, NULL, &mds->chunk_val_h);
 
   ble_uuid_create16(UUID_GATT_CLIENT_CHAR_CONFIGURATION, &uuid);
   ble_gatts_add_descriptor(&uuid, ATT_PERM_RW, 2, 0, &mds->chunk_cccd_h);
 
   ble_gatts_register_service(&mds->svc.start_h, &mds->supported_features_h, &mds->device_id_h,
-                             &mds->data_uri_h, &mds->auth_h, &mds->chunk_val_h,
-                             &mds->chunk_cccd_h, 0);
+                             &mds->data_uri_h, &mds->auth_h, &mds->chunk_val_h, &mds->chunk_cccd_h,
+                             0);
 
   mds->svc.end_h = mds->svc.start_h + num_attr;
 
@@ -454,5 +446,5 @@ void *mds_boot(void) {
   return &mds->svc;
 }
 
-#endif /* defined(dg_configUSE_MEMFAULT) */
-#endif /* defined(CONFIG_USE_BLE_SERVICES) */
+  #endif /* defined(dg_configUSE_MEMFAULT) */
+#endif   /* defined(CONFIG_USE_BLE_SERVICES) */

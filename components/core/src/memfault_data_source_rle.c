@@ -10,16 +10,15 @@
 
 #if MEMFAULT_DATA_SOURCE_RLE_ENABLED
 
-#include "memfault/core/data_source_rle.h"
+  #include <stdbool.h>
+  #include <stdint.h>
+  #include <string.h>
 
-#include <string.h>
-#include <stdint.h>
-#include <stdbool.h>
-
-#include "memfault/core/compiler.h"
-#include "memfault/core/data_packetizer_source.h"
-#include "memfault/core/math.h"
-#include "memfault/util/rle.h"
+  #include "memfault/core/compiler.h"
+  #include "memfault/core/data_packetizer_source.h"
+  #include "memfault/core/data_source_rle.h"
+  #include "memfault/core/math.h"
+  #include "memfault/util/rle.h"
 
 //! Helper function that computes the RLE length of the message being processed
 //!
@@ -80,23 +79,22 @@ bool memfault_data_source_rle_encoder_set_active(const sMemfaultDataSourceImpl *
     return true;
   }
 
-  s_ds_rle_state = (sMemfaultDataSourceRleState) { 0 };
+  s_ds_rle_state = (sMemfaultDataSourceRleState){ 0 };
   s_active_data_source = source;
   return true;
 }
 
-static bool prv_data_source_rle_has_more_msgs_prepare(const void *data,
-                                                      size_t data_len) {
+static bool prv_data_source_rle_has_more_msgs_prepare(const void *data, size_t data_len) {
   const uint8_t *buf = data;
 
   size_t bytes_encoded = 0;
   while (bytes_encoded != data_len) {
-    bytes_encoded += memfault_rle_encode(
-        &s_ds_rle_state.rle_ctx, &buf[bytes_encoded], data_len - bytes_encoded);
+    bytes_encoded +=
+      memfault_rle_encode(&s_ds_rle_state.rle_ctx, &buf[bytes_encoded], data_len - bytes_encoded);
   }
 
   const bool all_bytes_processed =
-      s_ds_rle_state.rle_ctx.curr_offset == s_ds_rle_state.original_size;
+    s_ds_rle_state.rle_ctx.curr_offset == s_ds_rle_state.original_size;
   if (!all_bytes_processed) {
     return false;
   }
@@ -121,14 +119,11 @@ static uint32_t prv_data_source_rle_get_backing_read_offset(void) {
     return write_info->write_start_offset;
   }
 
-  const size_t data_bytes_written =
-      encode_ctx->write_offset - write_info->header_len;
+  const size_t data_bytes_written = encode_ctx->write_offset - write_info->header_len;
   return write_info->write_start_offset + data_bytes_written;
 }
 
-static bool prv_data_source_rle_read_msg_prepare(const void *data,
-                                                 size_t data_len) {
-
+static bool prv_data_source_rle_read_msg_prepare(const void *data, size_t data_len) {
   sMemfaultRleCtx *rle_ctx = &s_ds_rle_state.rle_ctx;
   sMemfaultDataSourceRleEncodeCtx *encode_ctx = &s_ds_rle_state.encode_ctx;
   const size_t bytes_encoded = memfault_rle_encode(rle_ctx, data, data_len);
@@ -144,8 +139,7 @@ static bool prv_data_source_rle_read_msg_prepare(const void *data,
   return write_info->available;
 }
 
-static uint32_t prv_data_source_rle_build_msg_incremental(uint8_t *buf,
-                                                          size_t buf_len) {
+static uint32_t prv_data_source_rle_build_msg_incremental(uint8_t *buf, size_t buf_len) {
   sMemfaultRleWriteInfo *write_info = &s_ds_rle_state.rle_ctx.write_info;
   if (!write_info->available) {
     return 0;
@@ -157,8 +151,7 @@ static uint32_t prv_data_source_rle_build_msg_incremental(uint8_t *buf,
   // write header
   size_t header_bytes_to_write = 0;
   if (write_offset < write_info->header_len) {
-    header_bytes_to_write =
-        MEMFAULT_MIN(buf_len, write_info->header_len - write_offset);
+    header_bytes_to_write = MEMFAULT_MIN(buf_len, write_info->header_len - write_offset);
     memcpy(buf, &write_info->header[write_offset], header_bytes_to_write);
     encode_ctx->write_offset += header_bytes_to_write;
     buf_len -= header_bytes_to_write;
@@ -169,37 +162,33 @@ static uint32_t prv_data_source_rle_build_msg_incremental(uint8_t *buf,
   }
 
   const size_t total_write_len = write_info->header_len + write_info->write_len;
-  size_t data_to_write =
-      MEMFAULT_MIN(buf_len, total_write_len - encode_ctx->write_offset);
+  size_t data_to_write = MEMFAULT_MIN(buf_len, total_write_len - encode_ctx->write_offset);
 
   const uint32_t start_offset = prv_data_source_rle_get_backing_read_offset();
-  s_active_data_source->read_msg_cb(start_offset, &buf[header_bytes_to_write],
-                                    data_to_write);
+  s_active_data_source->read_msg_cb(start_offset, &buf[header_bytes_to_write], data_to_write);
   encode_ctx->write_offset += data_to_write;
 
   const size_t bytes_written = header_bytes_to_write + data_to_write;
   if (encode_ctx->write_offset == total_write_len) {
     encode_ctx->write_offset = 0;
     encode_ctx->state = kMemfaultDataSourceRleState_FindingSeqLength;
-    *write_info = (sMemfaultRleWriteInfo){0};
+    *write_info = (sMemfaultRleWriteInfo){ 0 };
   }
   encode_ctx->curr_encoded_len += bytes_written;
   return bytes_written;
 }
 
 static bool prv_data_source_rle_fill_msg(uint8_t **bufpp, size_t *buf_len) {
-  const size_t bytes_written =
-      prv_data_source_rle_build_msg_incremental(*bufpp, *buf_len);
+  const size_t bytes_written = prv_data_source_rle_build_msg_incremental(*bufpp, *buf_len);
   *buf_len -= bytes_written;
   *bufpp += bytes_written;
   return *buf_len == 0;
 }
 
-static bool prv_data_source_rle_read(uint32_t offset, void *buf,
-                                     size_t buf_len) {
+static bool prv_data_source_rle_read(uint32_t offset, void *buf, size_t buf_len) {
   sMemfaultDataSourceRleEncodeCtx *encode_ctx = &s_ds_rle_state.encode_ctx;
   if (offset != encode_ctx->curr_encoded_len) {
-    return false; // Read happened from an unexpected offset
+    return false;  // Read happened from an unexpected offset
   }
 
   // if there is already a write pending, flush that data first
@@ -213,8 +202,7 @@ static bool prv_data_source_rle_read(uint32_t offset, void *buf,
     uint8_t *working_buf = &encode_ctx->temp_buf[0];
     const size_t working_buf_size = sizeof(encode_ctx->temp_buf);
 
-    const size_t bytes_remaining =
-        s_ds_rle_state.original_size - encode_ctx->bytes_processed;
+    const size_t bytes_remaining = s_ds_rle_state.original_size - encode_ctx->bytes_processed;
     const size_t bytes_read = MEMFAULT_MIN(bytes_remaining, working_buf_size);
 
     const size_t read_offset = prv_data_source_rle_get_backing_read_offset();
@@ -246,20 +234,18 @@ static size_t prv_compute_rle_size(void) {
     const size_t working_buf_size = sizeof(encode_ctx->temp_buf);
     const size_t bytes_left = s_ds_rle_state.original_size - bytes_processed;
     const size_t bytes_to_read = MEMFAULT_MIN(bytes_left, working_buf_size);
-    s_active_data_source->read_msg_cb(bytes_processed, working_buf,
-                                      bytes_to_read);
+    s_active_data_source->read_msg_cb(bytes_processed, working_buf, bytes_to_read);
     prv_data_source_rle_has_more_msgs_prepare(working_buf, bytes_to_read);
     bytes_processed += bytes_to_read;
   }
 
   s_ds_rle_state.total_rle_size = rle_ctx->total_rle_size;
 
-  *rle_ctx = (sMemfaultRleCtx){0};
+  *rle_ctx = (sMemfaultRleCtx){ 0 };
   return s_ds_rle_state.total_rle_size;
 }
 
-MEMFAULT_WEAK
-bool memfault_data_source_rle_read_msg(uint32_t offset, void *buf, size_t buf_len) {
+MEMFAULT_WEAK bool memfault_data_source_rle_read_msg(uint32_t offset, void *buf, size_t buf_len) {
   return prv_data_source_rle_read(offset, buf, buf_len);
 }
 
@@ -282,7 +268,7 @@ bool memfault_data_source_rle_has_more_msgs(size_t *total_size_out) {
 }
 
 void memfault_data_source_rle_mark_msg_read(void) {
-  s_ds_rle_state = (sMemfaultDataSourceRleState) { 0 };
+  s_ds_rle_state = (sMemfaultDataSourceRleState){ 0 };
   s_active_data_source->mark_msg_read_cb();
 }
 

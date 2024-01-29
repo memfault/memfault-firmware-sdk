@@ -19,8 +19,8 @@ uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 static StackType_t heap_task_stack[EXAMPLE_TASK_STACKS];
 static StaticTask_t heap_task_tcb;
 
-static void prv_run_heap_task(MEMFAULT_UNUSED void* pvParameters) {
-  void* heap_pointers[16] = {0};
+static void prv_run_heap_task(MEMFAULT_UNUSED void *pvParameters) {
+  void *heap_pointers[16] = { 0 };
 
   while (true) {
     for (uint8_t i = 0; i < MEMFAULT_ARRAY_SIZE(heap_pointers); i++) {

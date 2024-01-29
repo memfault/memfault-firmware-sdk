@@ -7,21 +7,19 @@
 //! application of the reset reason. This captures the state so it can be
 //! saved and published by Memfault
 
-#include "memfault/ports/reboot_reason.h"
-
-#include "memfault/core/platform/reboot_tracking.h"
-
 #include "datasheet.h"
+#include "memfault/core/platform/reboot_tracking.h"
+#include "memfault/ports/reboot_reason.h"
 
 #if defined(__CC_ARM)
 // To prevent this array from being initialized when using the ARM compiler it must
 // be defined as follows. See https://developer.arm.com/documentation/ka003046/latest
 // for further information.
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE]
-                 __attribute__((section("retention_mem_area0"), zero_init));
+  __attribute__((section("retention_mem_area0"), zero_init));
 #else
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE]
-    __SECTION("retention_mem_area_uninit");
+static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE] __SECTION(
+  "retention_mem_area_uninit");
 #endif
 
 // Since "reset_indication" is called before memfault_platform_boot()
@@ -29,18 +27,18 @@ static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE]
 static eMemfaultRebootReason s_reset_reason;
 static uint32_t s_reset_reason_reg;
 
-#if defined (__DA14531__)
+#if defined(__DA14531__)
 void reset_indication(uint16_t reset_status) {
   s_reset_reason_reg = reset_status;
 
   s_reset_reason = kMfltRebootReason_PowerOnReset;
 
   if (reset_status & HWRESET_STAT) {
-    s_reset_reason =  kMfltRebootReason_PinReset;
+    s_reset_reason = kMfltRebootReason_PinReset;
   } else if (reset_status & SWRESET_STAT) {
-    s_reset_reason =  kMfltRebootReason_SoftwareReset;
+    s_reset_reason = kMfltRebootReason_SoftwareReset;
   } else if (reset_status & WDOGRESET_STAT) {
-    s_reset_reason =  kMfltRebootReason_HardwareWatchdog;
+    s_reset_reason = kMfltRebootReason_HardwareWatchdog;
   }
 }
 #else /* DA14585/6 */
@@ -62,7 +60,7 @@ void memfault_platform_reboot_tracking_boot(void) {
 }
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = s_reset_reason_reg,
     .reset_reason = s_reset_reason,
   };

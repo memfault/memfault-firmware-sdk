@@ -13,9 +13,9 @@
 #include "stm32f7xx_hal.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 //! Reset reason codes come from "5.3.21 RCC clock control & status register

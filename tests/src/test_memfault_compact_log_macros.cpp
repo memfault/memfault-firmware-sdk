@@ -1,18 +1,16 @@
 //! @file
 //!
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <string.h>
-#include <stdlib.h>
-
-#include "memfault_test_compact_log_c.h"
-
-#include "memfault/core/compact_log_helpers.h"
 #include "memfault/core/compact_log_compile_time_checks.h"
+#include "memfault/core/compact_log_helpers.h"
+#include "memfault_test_compact_log_c.h"
 
 TEST_GROUP(MfltCompactLogMacros) {
   void setup() {
@@ -43,14 +41,15 @@ static void prv_compact_log_mock(uint32_t compressed_fmt, ...) {
 }
 
 static void prv_expect_compact_log_call(uint32_t compressed_fmt) {
-  mock().expectOneCall("prv_compact_log_mock").withUnsignedIntParameter(
-      "compressed_fmt", compressed_fmt);
+  mock()
+    .expectOneCall("prv_compact_log_mock")
+    .withUnsignedIntParameter("compressed_fmt", compressed_fmt);
 }
 #define MOCK_CHECK_EXPECTIONS_AND_CLEAR() \
-do { \
-  mock().checkExpectations(); \
-  mock().clear(); \
-} while (0)
+  do {                                    \
+    mock().checkExpectations();           \
+    mock().clear();                       \
+  } while (0)
 
 #include "test_memfault_compact_log_cxx.c"
 

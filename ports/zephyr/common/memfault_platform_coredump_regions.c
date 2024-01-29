@@ -87,8 +87,7 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
   return region_idx;
 }
 
-MEMFAULT_WEAK
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
   const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_ZEPHYR_COREDUMP_REGIONS];
 

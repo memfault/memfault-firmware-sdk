@@ -79,7 +79,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 
 size_t memfault_coredump_storage_compute_size_required(void) {
   // actual values don't matter since we are just computing the size
-  sMfltRegState core_regs = {0};
+  sMfltRegState core_regs = { 0 };
   sMemfaultCoredumpSaveInfo save_info = {
     .regs = &core_regs,
     .regs_size = sizeof(core_regs),

@@ -1,18 +1,17 @@
 //! @file
 //!
 
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/TestHarness.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
-#include "memfault/panics/platform/coredump.h"
-#include "memfault/core/math.h"
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
 #include "fakes/fake_memfault_buffered_coredump_storage.h"
+#include "memfault/core/math.h"
+#include "memfault/panics/platform/coredump.h"
 
-TEST_GROUP(MemfaultBufferedCoredumpStorage){
+TEST_GROUP(MemfaultBufferedCoredumpStorage) {
   void setup() {
     fake_buffered_coredump_storage_reset();
   }
@@ -43,10 +42,9 @@ TEST(MemfaultBufferedCoredumpStorage, Test_BufferedStorageWord) {
   uint32_t start_offset = 3;
   uint8_t data[4];
 
-  for (size_t i = 0; i < MEMFAULT_STORAGE_SIZE ; i += sizeof(data)) {
+  for (size_t i = 0; i < MEMFAULT_STORAGE_SIZE; i += sizeof(data)) {
     const uint32_t addr = (i + start_offset) % MEMFAULT_STORAGE_SIZE;
-    const size_t write_len = MEMFAULT_MIN(MEMFAULT_STORAGE_SIZE - addr,
-                                        sizeof(data));
+    const size_t write_len = MEMFAULT_MIN(MEMFAULT_STORAGE_SIZE - addr, sizeof(data));
     if (write_len != sizeof(data)) {
       // we are wrapping around so do single byte writes
       for (size_t j = 0; j < sizeof(data); j++) {
@@ -87,7 +85,6 @@ TEST(MemfaultBufferedCoredumpStorage, Test_LargeWrite) {
   prv_validate_pattern_written(MEMFAULT_STORAGE_SIZE);
 }
 
-
 TEST(MemfaultBufferedCoredumpStorage, Test_BadSectorSize) {
   fake_buffered_coredump_storage_set_size(7);
   char data[32] = { 0 };
@@ -102,7 +99,6 @@ TEST(MemfaultBufferedCoredumpStorage, Test_BadBlockWrite) {
   fake_buffered_coredump_inject_write_failure();
   bool success = memfault_platform_coredump_storage_write(32, data, sizeof(data));
   CHECK(!success);
-
 
   fake_buffered_coredump_inject_write_failure();
   success = memfault_platform_coredump_storage_write(0, data, sizeof(data));

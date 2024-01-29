@@ -123,11 +123,10 @@ void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
     *new_entry = (sMfltHeapStatEntry){
       .lr = lr,
       .ptr = ptr,
-      .info =
-        {
-          .size = size & (~(1u << 31)),
-          .in_use = 1u,
-        },
+      .info = {
+        .size = size & (~(1u << 31)),
+        .in_use = 1u,
+      },
     };
 
     // Append new entry to head of the list

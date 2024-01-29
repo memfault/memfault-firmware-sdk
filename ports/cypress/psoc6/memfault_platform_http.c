@@ -9,10 +9,9 @@
 
 #include <stdbool.h>
 
-#include "memfault/components.h"
-
 #include "cy_secure_sockets.h"
 #include "cy_tls.h"
+#include "memfault/components.h"
 
 struct MfltHttpClient {
   bool active;
@@ -52,29 +51,27 @@ static cy_rslt_t prv_open_socket(sMfltHttpClient *client) {
     return result;
   }
 
-  cy_socket_opt_callback_t disconnect_listener = {
-      .callback = prv_disconnect_handler, .arg = NULL};
+  cy_socket_opt_callback_t disconnect_listener = { .callback = prv_disconnect_handler,
+                                                   .arg = NULL };
 
-  result = cy_socket_setsockopt(
-      client->handle, CY_SOCKET_SOL_SOCKET, CY_SOCKET_SO_DISCONNECT_CALLBACK,
-      &disconnect_listener, sizeof(cy_socket_opt_callback_t));
+  result =
+    cy_socket_setsockopt(client->handle, CY_SOCKET_SOL_SOCKET, CY_SOCKET_SO_DISCONNECT_CALLBACK,
+                         &disconnect_listener, sizeof(cy_socket_opt_callback_t));
   if (result != CY_RSLT_SUCCESS) {
-    MEMFAULT_LOG_ERROR(
-        "cy_socket_setsockopt CY_SOCKET_SO_DISCONNECT_CALLBACK failed, rv=0x%x", (int)result);
+    MEMFAULT_LOG_ERROR("cy_socket_setsockopt CY_SOCKET_SO_DISCONNECT_CALLBACK failed, rv=0x%x",
+                       (int)result);
     return result;
   }
 
   cy_socket_tls_auth_mode_t tls_auth_mode = CY_SOCKET_TLS_VERIFY_REQUIRED;
-  result = cy_socket_setsockopt(client->handle, CY_SOCKET_SOL_TLS,
-                                CY_SOCKET_SO_TLS_AUTH_MODE, &tls_auth_mode,
-                                sizeof(cy_socket_tls_auth_mode_t));
+  result = cy_socket_setsockopt(client->handle, CY_SOCKET_SOL_TLS, CY_SOCKET_SO_TLS_AUTH_MODE,
+                                &tls_auth_mode, sizeof(cy_socket_tls_auth_mode_t));
   if (result != CY_RSLT_SUCCESS) {
     MEMFAULT_LOG_ERROR("cy_socket_setsockopt CY_SOCKET_SO_TLS_AUTH_MODE failed, rv=0x%x",
                        (int)result);
   }
 
-  result = cy_socket_connect(client->handle, &client->sock_addr,
-                             sizeof(cy_socket_sockaddr_t));
+  result = cy_socket_connect(client->handle, &client->sock_addr, sizeof(cy_socket_sockaddr_t));
   if (result != CY_RSLT_SUCCESS) {
     MEMFAULT_LOG_ERROR("cy_socket_connect failed, 0x%x", (int)result);
   }
@@ -88,14 +85,14 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     return NULL;
   }
 
-  s_client = (sMfltHttpClient) {
+  s_client = (sMfltHttpClient){
     .sock_addr = {
       .port = MEMFAULT_HTTP_GET_CHUNKS_API_PORT(),
     },
   };
 
-  cy_rslt_t result = cy_socket_gethostbyname(
-      MEMFAULT_HTTP_CHUNKS_API_HOST, CY_SOCKET_IP_VER_V4, &s_client.sock_addr.ip_address);
+  cy_rslt_t result = cy_socket_gethostbyname(MEMFAULT_HTTP_CHUNKS_API_HOST, CY_SOCKET_IP_VER_V4,
+                                             &s_client.sock_addr.ip_address);
   if (result != CY_RSLT_SUCCESS) {
     MEMFAULT_LOG_ERROR("DNS lookup failed: 0x%x", (int)result);
     return NULL;
@@ -110,12 +107,12 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   return &s_client;
 }
 
-
 static bool prv_try_send(sMfltHttpClient *client, const uint8_t *buf, size_t buf_len) {
   cy_rslt_t idx = 0;
   while (idx != buf_len) {
     uint32_t bytes_sent = 0;
-    int rv = cy_socket_send(client->handle, &buf[idx], buf_len - idx, CY_SOCKET_FLAGS_NONE, &bytes_sent);
+    int rv =
+      cy_socket_send(client->handle, &buf[idx], buf_len - idx, CY_SOCKET_FLAGS_NONE, &bytes_sent);
     if (rv == CY_RSLT_SUCCESS && bytes_sent > 0) {
       idx += bytes_sent;
       continue;
@@ -123,7 +120,6 @@ static bool prv_try_send(sMfltHttpClient *client, const uint8_t *buf, size_t buf
 
     MEMFAULT_LOG_ERROR("Data Send Error: bytes_sent=%d, cy_rslt=0x%x", (int)bytes_sent, rv);
     return false;
-
   }
   return true;
 }
@@ -135,12 +131,14 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
 
 static bool prv_read_socket_data(sMfltHttpClient *client, void *buf, size_t *buf_len) {
   uint32_t buf_len_out;
-  cy_rslt_t result = cy_socket_recv(client->handle, buf, *buf_len, CY_SOCKET_FLAGS_NONE, &buf_len_out);
+  cy_rslt_t result =
+    cy_socket_recv(client->handle, buf, *buf_len, CY_SOCKET_FLAGS_NONE, &buf_len_out);
   *buf_len = (size_t)buf_len_out;
   return result == CY_RSLT_SUCCESS;
 }
 
-int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
+int memfault_platform_http_response_get_status(const sMfltHttpResponse *response,
+                                               uint32_t *status_out) {
   MEMFAULT_SDK_ASSERT(response != NULL);
 
   *status_out = response->status_code;
@@ -160,16 +158,17 @@ static int prv_wait_for_http_response(sMfltHttpClient *client) {
 
     bool done = memfault_http_parse_response(&ctx, buf, bytes_read);
     if (done) {
-      MEMFAULT_LOG_DEBUG("Response Complete: Parse Status %d HTTP Status %d!",
-                         (int)ctx.parse_error, ctx.http_status_code);
+      MEMFAULT_LOG_DEBUG("Response Complete: Parse Status %d HTTP Status %d!", (int)ctx.parse_error,
+                         ctx.http_status_code);
       MEMFAULT_LOG_DEBUG("Body: %s", ctx.http_body);
       return ctx.http_status_code;
     }
   }
 }
 
-int memfault_platform_http_client_post_data(
-    sMfltHttpClient *client, MemfaultHttpClientResponseCallback callback, void *ctx) {
+int memfault_platform_http_client_post_data(sMfltHttpClient *client,
+                                            MemfaultHttpClientResponseCallback callback,
+                                            void *ctx) {
   if (!client->active) {
     return -1;
   }
@@ -231,8 +230,8 @@ int memfault_platform_http_client_destroy(sMfltHttpClient *client) {
   return 0;
 }
 
-int memfault_platform_http_client_wait_until_requests_completed(
-    sMfltHttpClient *client, uint32_t timeout_ms) {
+int memfault_platform_http_client_wait_until_requests_completed(sMfltHttpClient *client,
+                                                                uint32_t timeout_ms) {
   // No-op because memfault_platform_http_client_post_data() is synchronous
   return 0;
 }

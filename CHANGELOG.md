@@ -1,5 +1,20 @@
 # Memfault Firmware SDK Changelog
 
+## [1.6.2] - 2024-01-29
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Apply `clang-format` to the entire codebase, to ensure consistent code
+    formatting. The formatting rules are defined in
+    [`.clang-format`](.clang-format). No other changes are included in this
+    release. A
+    [`.git-blame-ignore-revs`](https://git-scm.com/docs/git-config#Documentation/git-config.txt-blameignoreRevsFile)
+    entry will be added in the next release, to enable ignoring this commit when
+    running `git blame`. Use this ignore file in your local repo with
+    `git config blame.ignoreRevsFile=.git-blame-ignore-revs`.
+
 ## [1.6.1] - 2024-01-29
 
 ### :chart_with_upwards_trend: Improvements

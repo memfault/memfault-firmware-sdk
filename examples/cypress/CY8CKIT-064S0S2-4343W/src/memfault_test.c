@@ -47,8 +47,7 @@ int memfault_test_fault(void) {
 }
 
 int memfault_test_hang(int argc, char *argv[]) {
-  while (1) {
-  }
+  while (1) { }
   return -1;  // should never get here
 }
 

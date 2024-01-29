@@ -5,19 +5,18 @@
 //!
 //! An example implementation of the logging memfault API for the ESP32 platform
 
-#include "memfault/core/platform/debug_log.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "memfault/config.h"
+#include "memfault/core/platform/debug_log.h"
 
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
-#  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
+  #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif
 
 static const char *TAG __attribute__((unused)) = "mflt";

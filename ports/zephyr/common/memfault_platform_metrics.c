@@ -21,7 +21,7 @@ static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 #if CONFIG_SYS_HEAP_RUNTIME_STATS
 //! _system_heap is the heap used by k_malloc/k_free
 extern struct sys_heap _system_heap;
-#endif  /* CONFIG_SYS_HEAP_RUNTIME_STATS */
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 
 #if CONFIG_THREAD_RUNTIME_STATS
 static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t curr_cycles,
@@ -43,17 +43,17 @@ static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t cur
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
 
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+  #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
   struct k_thread *me = k_current_get();
 
-#if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
+    #if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
   // k_thread_stack_space_get() introduced in v2.2.0
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);
   MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);
-#endif
+    #endif
 
-#if defined(CONFIG_THREAD_RUNTIME_STATS)
+    #if defined(CONFIG_THREAD_RUNTIME_STATS)
   static uint64_t s_prev_thread_execution_cycles = 0;
   static uint64_t s_prev_all_execution_cycles = 0;
 
@@ -66,26 +66,25 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   k_thread_runtime_stats_t rt_stats_all;
   k_thread_runtime_stats_all_get(&rt_stats_all);
   prv_execution_cycles_delta_update(MEMFAULT_METRICS_KEY(AllTasksCpuUsage),
-                                    rt_stats_all.execution_cycles,
-                                    &s_prev_all_execution_cycles);
-#endif
+                                    rt_stats_all.execution_cycles, &s_prev_all_execution_cycles);
+    #endif
 
-#endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */
+  #endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */
 
-#if CONFIG_SYS_HEAP_RUNTIME_STATS
+  #if CONFIG_SYS_HEAP_RUNTIME_STATS
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+    #if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
   // struct sys_memory_stats introduced in v3.2
-  struct sys_memory_stats stats = {0};
-#else
-  struct sys_heap_runtime_stats stats = {0};
-#endif
+  struct sys_memory_stats stats = { 0 };
+    #else
+  struct sys_heap_runtime_stats stats = { 0 };
+    #endif
 
   sys_heap_runtime_stats_get(&_system_heap, &stats);
   MEMFAULT_METRIC_SET_UNSIGNED(Heap_BytesFree, stats.free_bytes);
-#endif /* defined(CONFIG_SYS_HEAP_RUNTIME_STATS) */
+  #endif /* defined(CONFIG_SYS_HEAP_RUNTIME_STATS) */
 
-#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+  #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
   {
     struct fs_statvfs fs_stats;
     int retval = fs_statvfs("/" CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH, &fs_stats);
@@ -95,7 +94,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
       MEMFAULT_METRIC_SET_UNSIGNED(FileSystem_BytesFree, bytes_free);
     }
   }
-#endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
+  #endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
 
 #endif /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
 }
@@ -115,8 +114,8 @@ static void prv_timer_expiry_handler(struct k_timer *dummy) {
 
 K_TIMER_DEFINE(s_metrics_timer, prv_timer_expiry_handler, NULL);
 
-bool memfault_platform_metrics_timer_boot(
-    uint32_t period_sec, MemfaultPlatformTimerCallback callback) {
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                          MemfaultPlatformTimerCallback callback) {
   s_metrics_timer_callback = callback;
 
   k_timer_start(&s_metrics_timer, K_SECONDS(period_sec), K_SECONDS(period_sec));

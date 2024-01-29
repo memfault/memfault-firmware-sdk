@@ -21,7 +21,7 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 };
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-  *info = (sMemfaultDeviceInfo) {
+  *info = (sMemfaultDeviceInfo){
     .device_serial = "DEMOSERIAL",
     .software_type = "zephyr-app",
     .software_version = "1.0.0-dev",

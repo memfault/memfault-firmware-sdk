@@ -3,22 +3,22 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <stdbool.h>
-  #include <string.h>
+#include <stdbool.h>
+#include <string.h>
 
-  #include "memfault/core/data_packetizer_source.h"
-  #include "memfault/panics/coredump.h"
-  #include "memfault/panics/platform/coredump.h"
+#include "memfault/core/data_packetizer_source.h"
+#include "memfault/panics/coredump.h"
+#include "memfault/panics/platform/coredump.h"
 }
 
 uint32_t g_mock_memfault_coredump_total_size = COREDUMP_TOTAL_SIZE;
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
-  const bool rv = mock().actualCall(__func__)
-                        .withUnsignedIntParameter("offset", offset)
-                        .withUnsignedIntParameter("read_len", (unsigned int)read_len)
-                        .returnBoolValueOrDefault(true);
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
+  const bool rv = mock()
+                    .actualCall(__func__)
+                    .withUnsignedIntParameter("offset", offset)
+                    .withUnsignedIntParameter("read_len", (unsigned int)read_len)
+                    .returnBoolValueOrDefault(true);
   if (rv) {
     memset(data, 0xff, read_len);
   }
@@ -26,9 +26,10 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
 }
 
 bool memfault_coredump_has_valid_coredump(size_t *total_size_out) {
-  const bool rv = mock().actualCall(__func__)
-                        .withOutputParameter("total_size_out", total_size_out)
-                        .returnBoolValueOrDefault(true);
+  const bool rv = mock()
+                    .actualCall(__func__)
+                    .withOutputParameter("total_size_out", total_size_out)
+                    .returnBoolValueOrDefault(true);
   if (rv && total_size_out) {
     *total_size_out = g_mock_memfault_coredump_total_size;
   }

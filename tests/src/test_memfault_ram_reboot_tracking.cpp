@@ -1,15 +1,15 @@
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 
-#include <string.h>
-
 extern "C" {
-  #include "memfault/core/reboot_tracking.h"
-  #include "memfault_reboot_tracking_private.h"
+#include "memfault/core/reboot_tracking.h"
+#include "memfault_reboot_tracking_private.h"
 
-  static uint8_t s_mflt_reboot_tracking_region[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+static uint8_t s_mflt_reboot_tracking_region[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 }
 
 TEST_GROUP(MfltStorageTestGroup) {
@@ -251,7 +251,7 @@ TEST(MfltStorageTestGroup, Test_GetRebootReason) {
 TEST(MfltStorageTestGroup, Test_GetUnexpectedRebootOccurred) {
   bool unexpected_reboot = false;
   int rc = 0;
-  sResetBootupInfo info = {.reset_reason = kMfltRebootReason_SoftwareReset};
+  sResetBootupInfo info = { .reset_reason = kMfltRebootReason_SoftwareReset };
 
   // Test invalid if arg is NULL
   rc = memfault_reboot_tracking_get_unexpected_reboot_occurred(NULL);

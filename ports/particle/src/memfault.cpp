@@ -3,17 +3,16 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <functional>
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <functional>
+
 #define PARTICLE_USE_UNSTABLE_API
 #include "deviceid_hal.h"
-#include "system_version.h"
-
-#include "memfault.h"
-
 #include "logging.h"
+#include "memfault.h"
+#include "system_version.h"
 LOG_SOURCE_CATEGORY("memfault_lib")
 
 #define PARTICLE_SYSTEM_VERSION_GET_MAJOR(version) (((version) >> 24) & 0xFF)
@@ -23,8 +22,10 @@ LOG_SOURCE_CATEGORY("memfault_lib")
   #error "Memfault Library is only compatible with Device OS 3.0 or greater"
 #endif
 
-#if ((PARTICLE_SYSTEM_VERSION_GET_MAJOR(SYSTEM_VERSION) != MEMFAULT_PARTICLE_SYSTEM_VERSION_MAJOR) || \
-     (PARTICLE_SYSTEM_VERSION_GET_MINOR(SYSTEM_VERSION) != MEMFAULT_PARTICLE_SYSTEM_VERSION_MINOR))
+#if ((PARTICLE_SYSTEM_VERSION_GET_MAJOR(SYSTEM_VERSION) != \
+      MEMFAULT_PARTICLE_SYSTEM_VERSION_MAJOR) ||           \
+     (PARTICLE_SYSTEM_VERSION_GET_MINOR(SYSTEM_VERSION) != \
+      MEMFAULT_PARTICLE_SYSTEM_VERSION_MINOR))
   #warning "Memfault Library is targetting a different Device OS version than the one configured"
 #endif
 
@@ -59,13 +60,13 @@ void Memfault::process(void) {
 
   static uint32_t s_last_check_time = 0;
   if ((millis() - s_last_check_time) < 1000) {
-    return; // we just sent data, wait a little bit
+    return;  // we just sent data, wait a little bit
   }
 
   s_last_check_time = millis();
 
   if (!memfault_packetizer_data_available()) {
-    return; // no data to send!
+    return;  // no data to send!
   }
 
   const size_t event_data_max_size = Particle.maxEventDataSize();
@@ -105,7 +106,6 @@ static int prv_test_logging(int argc, char *argv[]) {
   return 0;
 }
 
-
 // Triggers an immediate heartbeat capture (instead of waiting for timer
 // to expire)
 static int prv_test_heartbeat(int argc, char *argv[]) {
@@ -130,46 +130,44 @@ static int prv_test_reboot(int argc, char *argv[]) {
 
 static int prv_test_assert(int argc, char *argv[]) {
   MEMFAULT_ASSERT(0);
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_memfault(int argc, char *argv[]) {
   void (*bad_func)(void) = (void (*)())0xEEEEDEAD;
   bad_func();
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_nmi(int argc, char *argv[]) {
   SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_hang(int argc, char *argv[]) {
-  while (1) {}
-  return -1; // should never get here
+  while (1) { }
+  return -1;  // should never get here
 }
 
 static int prv_test_particle_panic(int argc, char *argv[]) {
   panic_(InvalidCase, NULL, HAL_Delay_Microseconds);
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_busfault(int argc, char *argv[]) {
   uint32_t *f = (uint32_t *)0x00000000;
   *f = 0xFFEECAFE;
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_spark_assert(int argc, char *argv[]) {
   SPARK_ASSERT(0);
-  return -1; // should never get here
+  return -1;  // should never get here
 }
 
 static int prv_test_coredump_storage(int argc, char *argv[]) {
   int32_t state = HAL_disable_irq();
-  {
-    memfault_coredump_storage_debug_test_begin();
-  }
+  { memfault_coredump_storage_debug_test_begin(); }
   HAL_enable_irq(state);
   return memfault_coredump_storage_debug_test_finish() ? 0 : -1;
 }
@@ -192,7 +190,7 @@ typedef struct MemfaultTestCommand {
 } sMemfaultTestCommand;
 
 static const sMemfaultTestCommand s_memfault_test_commands[] = {
-  { "coredump_storage", prv_test_coredump_storage},
+  { "coredump_storage", prv_test_coredump_storage },
   { "device_info", prv_test_device_info },
   { "export", prv_test_export },
   { "heartbeat", prv_test_heartbeat },
@@ -227,7 +225,7 @@ int Memfault::run_debug_cli_command(const char *command, int argc, char **argv) 
 
 int Memfault::run_debug_cli_command(const char *command, int argc, char **argv) {
   MEMFAULT_LOG_ERROR(
-      "Debug API disabled, add MEMFAULT_PARTICLE_PORT_DEBUG_API_ENABLE 1 to memfault config");
+    "Debug API disabled, add MEMFAULT_PARTICLE_PORT_DEBUG_API_ENABLE 1 to memfault config");
   return -1;
 }
 #endif /* MEMFAULT_PARTICLE_PORT_DEBUG_API_ENABLE */
@@ -264,7 +262,7 @@ void Memfault::handle_cloud_connectivity_event(system_event_t event, int param) 
       break;
     default:
       break;
-    }
+  }
 #endif
 }
 
@@ -326,7 +324,6 @@ static MemfaultPlatformTimerCallback *s_callback;
 static void prv_metric_timer_callback() {
   MEMFAULT_SDK_ASSERT(s_callback != NULL);
 
-
 #if MEMFAULT_PARTICLE_PORT_HEAP_METRICS_ENABLE
   runtime_info_t info = { 0 };
   info.size = sizeof(info);
@@ -339,11 +336,10 @@ static void prv_metric_timer_callback() {
 #endif
 
   s_callback();
-
 }
 
-bool memfault_platform_metrics_timer_boot(
-    uint32_t period_sec, MemfaultPlatformTimerCallback *callback) {
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                          MemfaultPlatformTimerCallback *callback) {
   static Timer *s_memfault_timer = NULL;
 
   if (s_memfault_timer == NULL) {
@@ -376,11 +372,11 @@ void memfault_platform_reboot(void) {
 
 #if MEMFAULT_PARTICLE_PORT_COREDUMP_TASK_COLLECTION_ENABLE
 
-// TODO: See if we get exact TCB size exposed from device os side
-#define MEMFAULT_FREERTOS_TCB_SIZE 200
+  // TODO: See if we get exact TCB size exposed from device os side
+  #define MEMFAULT_FREERTOS_TCB_SIZE 200
 
-static size_t prv_get_task_region(
-    os_thread_dump_info_t *info, sMfltCoredumpRegion *regions, size_t num_regions, const bool tcb) {
+static size_t prv_get_task_region(os_thread_dump_info_t *info, sMfltCoredumpRegion *regions,
+                                  size_t num_regions, const bool tcb) {
   if ((info == NULL) || (regions == NULL) || (num_regions == 0)) {
     return 0;
   }
@@ -391,21 +387,19 @@ static size_t prv_get_task_region(
   void *tcb_address = info->thread;
 
   if (tcb) {
-    const size_t tcb_size = memfault_platform_sanitize_address_range(
-        tcb_address, MEMFAULT_FREERTOS_TCB_SIZE);
+    const size_t tcb_size =
+      memfault_platform_sanitize_address_range(tcb_address, MEMFAULT_FREERTOS_TCB_SIZE);
 
     if (tcb_size != 0) {
-      regions[region_idx] =
-          MEMFAULT_COREDUMP_MEMORY_REGION_INIT(tcb_address, tcb_size);
+      regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(tcb_address, tcb_size);
       region_idx++;
     }
   } else {
     void *top_of_stack = (void *)(*(uintptr_t *)tcb_address);
     const size_t stack_size = memfault_platform_sanitize_address_range(
-        top_of_stack, MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT);
+      top_of_stack, MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT);
     if (stack_size != 0) {
-      regions[region_idx] =
-          MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
+      regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
       region_idx++;
     }
   }
@@ -415,9 +409,7 @@ static size_t prv_get_task_region(
 
 #endif /* MEMFAULT_PARTICLE_PORT_COREDUMP_TASK_COLLECTION_ENABLE */
 
-
-size_t memfault_platform_sanitize_address_range(void *start_addr,
-                                                size_t desired_size) {
+size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
   // Note: This is grabbed from the linker script and makes the assumption that
   // there is only 1 contiguous RAM region. While this is true for the NRF52840,
   // it does not hold for all MCUs so this may need to be adjusted.
@@ -433,9 +425,8 @@ size_t memfault_platform_sanitize_address_range(void *start_addr,
   return 0;
 }
 
-const sMfltCoredumpRegion *
-memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
-                                       size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   int region_idx = 0;
 
   static sMfltCoredumpRegion s_coredump_regions[16];
@@ -443,9 +434,8 @@ memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
   // first, capture the stack that was active at the time of crash
   const size_t active_stack_size_to_collect = 512;
   s_coredump_regions[region_idx++] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-      crash_info->stack_address,
-      memfault_platform_sanitize_address_range(crash_info->stack_address,
-                                               active_stack_size_to_collect));
+    crash_info->stack_address, memfault_platform_sanitize_address_range(
+                                 crash_info->stack_address, active_stack_size_to_collect));
 
 #if MEMFAULT_PARTICLE_PORT_COREDUMP_TASK_COLLECTION_ENABLE
   const size_t num_coredump_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
@@ -455,48 +445,45 @@ memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
   // space while storing tasks we will still be able to recover the state of all
   // the threads
   os_thread_dump(
-      OS_THREAD_INVALID_HANDLE,
-      [](os_thread_dump_info_t *info, void *data) -> os_result_t {
-        int *region_idx = (int *)data;
-        *region_idx +=
-            prv_get_task_region(info, &s_coredump_regions[*region_idx],
-                                num_coredump_regions - *region_idx, true);
-        return 0;
-      },
-      &region_idx);
+    OS_THREAD_INVALID_HANDLE,
+    [](os_thread_dump_info_t *info, void *data) -> os_result_t {
+      int *region_idx = (int *)data;
+      *region_idx += prv_get_task_region(info, &s_coredump_regions[*region_idx],
+                                         num_coredump_regions - *region_idx, true);
+      return 0;
+    },
+    &region_idx);
 
   // Now we store the region of the stack where context is saved. This way
   // we can unwind the stacks for threads that are not actively running
   os_thread_dump(
-      OS_THREAD_INVALID_HANDLE,
-      [](os_thread_dump_info_t *info, void *data) -> os_result_t {
-        int *region_idx = (int *)data;
-        *region_idx +=
-            prv_get_task_region(info, &s_coredump_regions[*region_idx],
-                                num_coredump_regions - *region_idx, false);
-        return 0;
-      },
-      &region_idx);
+    OS_THREAD_INVALID_HANDLE,
+    [](os_thread_dump_info_t *info, void *data) -> os_result_t {
+      int *region_idx = (int *)data;
+      *region_idx += prv_get_task_region(info, &s_coredump_regions[*region_idx],
+                                         num_coredump_regions - *region_idx, false);
+      return 0;
+    },
+    &region_idx);
 #endif
 
   *num_regions = region_idx;
   return &s_coredump_regions[0];
 }
 
-
 void memfault_platform_reboot_tracking_boot(void) {
   // Read reason why device reset and update Memfault tracking accordingly
   //
   // For a detailed explanation about reboot reason storage options check out the guide at:
   //    https://mflt.io/reboot-reason-storage
-  sResetBootupInfo reset_reason = {0};
+  sResetBootupInfo reset_reason = { 0 };
   prv_memfault_reboot_reason_get(&reset_reason);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_reason);
 }
 
-Memfault::Memfault(const uint16_t product_version, const char *build_metadata, const char *hardware_version)
+Memfault::Memfault(const uint16_t product_version, const char *build_metadata,
+                   const char *hardware_version)
     : m_connected(false) {
-
   System.enableFeature(FEATURE_RESET_INFO);
 
   // register for system events
@@ -517,17 +504,21 @@ Memfault::Memfault(const uint16_t product_version, const char *build_metadata, c
   //
   // We concatenate the application firmware version (PRODUCT_VERSION) with the Device OS (System
   // Firmware Version) to uniquely identify the software version combination on a device.
-  snprintf(s_system_version, sizeof(s_system_version), "v%d.os" MEMFAULT_EXPAND_AND_QUOTE(SYSTEM_VERSION_STRING), (int)product_version);
+  snprintf(s_system_version, sizeof(s_system_version),
+           "v%d.os" MEMFAULT_EXPAND_AND_QUOTE(SYSTEM_VERSION_STRING), (int)product_version);
 
-  // Append metadata version info to avoid the collisions where the same version maps to different build artifacts
+  // Append metadata version info to avoid the collisions where the same version maps to different
+  // build artifacts
   const char *extra_version_info = build_metadata;
   char buildid_str[6] = { 0 };
-  if ((extra_version_info == NULL) && memfault_build_id_get_string(buildid_str, sizeof(buildid_str))) {
+  if ((extra_version_info == NULL) &&
+      memfault_build_id_get_string(buildid_str, sizeof(buildid_str))) {
     extra_version_info = &buildid_str[0];
   }
   if (extra_version_info != NULL) {
     const size_t curr_len = strlen(s_system_version);
-    snprintf(&s_system_version[curr_len], sizeof(s_system_version) - curr_len, "+%s", extra_version_info);
+    snprintf(&s_system_version[curr_len], sizeof(s_system_version) - curr_len, "+%s",
+             extra_version_info);
   }
 
 #if MEMFAULT_PARTICLE_PORT_LOG_STORAGE_ENABLE
@@ -542,10 +533,11 @@ Memfault::Memfault(const uint16_t product_version, const char *build_metadata, c
   memfault_platform_reboot_tracking_boot();
 
   // Initialize event storage
-  static uint8_t s_event_storage[MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE]; // 1/2 day
-  MEMFAULT_STATIC_ASSERT(MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE >= 100, "MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE must be >= 100");
+  static uint8_t s_event_storage[MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE];  // 1/2 day
+  MEMFAULT_STATIC_ASSERT(MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE >= 100,
+                         "MEMFAULT_PARTICLE_PORT_EVENT_STORAGE_SIZE must be >= 100");
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
 
   // Serialize reset information so it gets reported to memfault
@@ -553,23 +545,19 @@ Memfault::Memfault(const uint16_t product_version, const char *build_metadata, c
 
   // Start heartbeat subsystem
   sMemfaultMetricBootInfo boot_info = {
-      .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
+    .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
 
   // hook into all of the ISRs
 #if MEMFAULT_PARTICLE_PORT_FAULT_HANDLERS_ENABLE
   bool isrAttachOK = true;
+  isrAttachOK &= attachInterruptDirect(HardFault_IRQn, MEMFAULT_EXC_HANDLER_HARD_FAULT);
   isrAttachOK &=
-      attachInterruptDirect(HardFault_IRQn, MEMFAULT_EXC_HANDLER_HARD_FAULT);
-  isrAttachOK &= attachInterruptDirect(MemoryManagement_IRQn,
-                                       MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT);
-  isrAttachOK &=
-      attachInterruptDirect(BusFault_IRQn, MEMFAULT_EXC_HANDLER_BUS_FAULT);
-  isrAttachOK &=
-      attachInterruptDirect(UsageFault_IRQn, MEMFAULT_EXC_HANDLER_USAGE_FAULT);
-  isrAttachOK &=
-      attachInterruptDirect(NonMaskableInt_IRQn, MEMFAULT_EXC_HANDLER_NMI);
+    attachInterruptDirect(MemoryManagement_IRQn, MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT);
+  isrAttachOK &= attachInterruptDirect(BusFault_IRQn, MEMFAULT_EXC_HANDLER_BUS_FAULT);
+  isrAttachOK &= attachInterruptDirect(UsageFault_IRQn, MEMFAULT_EXC_HANDLER_USAGE_FAULT);
+  isrAttachOK &= attachInterruptDirect(NonMaskableInt_IRQn, MEMFAULT_EXC_HANDLER_NMI);
   SPARK_ASSERT(isrAttachOK);
 #endif
 

@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH    1
+#define MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH 1
 
 // Note: The default location coredumps are saved is NVMS log storage.
 // This size can be adjusted depending on the amount of RAM regions collected

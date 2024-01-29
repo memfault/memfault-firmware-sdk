@@ -22,7 +22,7 @@ void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_r
 }
 
 TEST_GROUP(MemfaultSelfTestRebootReason) {
-  void setup() {}
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();

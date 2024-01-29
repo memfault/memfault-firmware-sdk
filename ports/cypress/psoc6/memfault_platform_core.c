@@ -8,21 +8,21 @@
 //! ModusToolbox SDK
 
 #include "memfault/components.h"
-#include "memfault/ports/reboot_reason.h"
 #include "memfault/ports/freertos.h"
+#include "memfault/ports/reboot_reason.h"
 
 #if MEMFAULT_PORT_MEMORY_TRACKING_ENABLED
-#if defined(__GNUC__) && !defined(__ARMCC_VERSION)
-#include <malloc.h>
-#endif
+  #if defined(__GNUC__) && !defined(__ARMCC_VERSION)
+    #include <malloc.h>
+  #endif
 #endif /* MEMFAULT_PORT_MEMORY_TRACKING_ENABLED */
 
 #if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
-#include "cy_wcm.h"
+  #include "cy_wcm.h"
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
 
 #ifndef MEMFAULT_EVENT_STORAGE_RAM_SIZE
-#define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
+  #define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
 #endif
 
 #ifndef MEMFAULT_LOG_STORAGE_RAM_SIZE
@@ -35,7 +35,7 @@ static cy_wcm_wlan_statistics_t s_last_wlan_statistics = { 0 };
 
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if MEMFAULT_PORT_MEMORY_TRACKING_ENABLED
-#if defined(__GNUC__) && !defined(__ARMCC_VERSION)
+  #if defined(__GNUC__) && !defined(__ARMCC_VERSION)
 
   struct mallinfo mall_info = mallinfo();
 
@@ -51,14 +51,15 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
   MEMFAULT_METRIC_SET_UNSIGNED(Heap_BytesFree, heap_total_size - mall_info.uordblks);
   #endif /* defined(__GNUC__) && !defined(__ARMCC_VERSION) */
-#endif /* MEMFAULT_PORT_MEMORY_TRACKING_ENABLED */
+#endif   /* MEMFAULT_PORT_MEMORY_TRACKING_ENABLED */
 
 #if MEMFAULT_PORT_WIFI_TRACKING_ENABLED
   cy_wcm_associated_ap_info_t ap_info;
   cy_rslt_t result = cy_wcm_get_associated_ap_info(&ap_info);
   if (result == CY_RSLT_SUCCESS) {
     // Note: RSSI in dBm. (<-90=Very poor, >-30=Excellent)
-    // A good way to determine whether or not issues an device is facing are due to poor signal strength
+    // A good way to determine whether or not issues an device is facing are due to poor signal
+    // strength
     MEMFAULT_METRIC_SET_SIGNED(Wifi_SignalStrength, ap_info.signal_strength);
 
     MEMFAULT_METRIC_SET_UNSIGNED(Wifi_Channel, ap_info.channel);
@@ -68,9 +69,9 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   result = cy_wcm_get_wlan_statistics(CY_WCM_INTERFACE_TYPE_STA, &curr_stat);
   if (result == CY_RSLT_SUCCESS) {
     MEMFAULT_METRIC_SET_UNSIGNED(Wifi_TxBytes,
-                                    curr_stat.tx_bytes - s_last_wlan_statistics.tx_bytes);
+                                 curr_stat.tx_bytes - s_last_wlan_statistics.tx_bytes);
     MEMFAULT_METRIC_SET_UNSIGNED(Wifi_TxBytes,
-                                    curr_stat.rx_bytes - s_last_wlan_statistics.rx_bytes);
+                                 curr_stat.rx_bytes - s_last_wlan_statistics.rx_bytes);
     s_last_wlan_statistics = curr_stat;
   }
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
@@ -129,10 +130,9 @@ void memfault_wcm_metrics_boot(void) {
 
 #endif /* MEMFAULT_PORT_WIFI_TRACKING_ENABLED */
 
-MEMFAULT_WEAK
-void memfault_platform_reboot(void) {
+MEMFAULT_WEAK void memfault_platform_reboot(void) {
   NVIC_SystemReset();
-  while (1) { } // unreachable
+  while (1) { }  // unreachable
 }
 
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
@@ -140,7 +140,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
     uint32_t start_addr;
     size_t length;
   } s_mcu_mem_regions[] = {
-    {.start_addr = CY_SRAM_BASE, .length = CY_SRAM_SIZE},
+    { .start_addr = CY_SRAM_BASE, .length = CY_SRAM_SIZE },
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_mcu_mem_regions); i++) {
@@ -164,7 +164,7 @@ int memfault_platform_boot(void) {
   static uint8_t s_event_storage[MEMFAULT_EVENT_STORAGE_RAM_SIZE];
   static uint8_t s_log_storage[MEMFAULT_LOG_STORAGE_RAM_SIZE];
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
 
   memfault_reboot_tracking_collect_reset_info(evt_storage);

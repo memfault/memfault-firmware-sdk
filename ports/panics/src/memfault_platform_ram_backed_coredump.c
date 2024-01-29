@@ -34,50 +34,48 @@
 
 #if MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_RAM
 
-#include "memfault/panics/platform/coredump.h"
+  #include <stdbool.h>
+  #include <stdint.h>
+  #include <string.h>
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
+  #include "memfault/core/compiler.h"
+  #include "memfault/core/math.h"
+  #include "memfault/panics/platform/coredump.h"
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/math.h"
+  #if !MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM
 
-#if !MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM
-
-#if ((MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE % 4) != 0)
-#error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE must be a multiple of 4"
-#endif
+    #if ((MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE % 4) != 0)
+      #error "MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE must be a multiple of 4"
+    #endif
 
 MEMFAULT_STATIC_ASSERT(sizeof(uint32_t) == 4, "port expects sizeof(uint32_t) == 4");
 
 MEMFAULT_PUT_IN_SECTION(MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME)
 static uint32_t s_ram_backed_coredump_region[MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE / 4];
 
-#define MEMFAULT_PLATFORM_COREDUMP_RAM_START_ADDR ((uint8_t *)&s_ram_backed_coredump_region[0])
+    #define MEMFAULT_PLATFORM_COREDUMP_RAM_START_ADDR ((uint8_t *)&s_ram_backed_coredump_region[0])
 
-#endif /* MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM */
+  #endif /* MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_CUSTOM */
 
-#if !MEMFAULT_PLATFORM_COREDUMP_STORAGE_REGIONS_CUSTOM
+  #if !MEMFAULT_PLATFORM_COREDUMP_STORAGE_REGIONS_CUSTOM
 //! Collect the active stack as part of the coredump capture.
 //! User can implement their own version to override the implementation
-MEMFAULT_WEAK
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
-   static sMfltCoredumpRegion s_coredump_regions[1];
+MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  static sMfltCoredumpRegion s_coredump_regions[1];
 
-   const size_t stack_size = memfault_platform_sanitize_address_range(
-       crash_info->stack_address, MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT);
+  const size_t stack_size = memfault_platform_sanitize_address_range(
+    crash_info->stack_address, MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT);
 
-   s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-       crash_info->stack_address, stack_size);
-   *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
-   return &s_coredump_regions[0];
+  s_coredump_regions[0] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(crash_info->stack_address, stack_size);
+  *num_regions = MEMFAULT_ARRAY_SIZE(s_coredump_regions);
+  return &s_coredump_regions[0];
 }
-#endif
+  #endif
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE,
   };
 }
@@ -88,8 +86,7 @@ static bool prv_op_within_flash_bounds(uint32_t offset, size_t data_len) {
   return (offset + data_len) <= info.size;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }
@@ -111,8 +108,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   return true;
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }

@@ -5,17 +5,16 @@
 //!
 //! @brief
 
-#include "memfault/core/build_info.h"
-#include "memfault/core/device_info.h"
-#include "memfault/core/platform/device_info.h"
-#include "memfault_build_id_private.h"
-
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
+#include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/device_info.h"
 #include "memfault/core/math.h"
+#include "memfault/core/platform/device_info.h"
+#include "memfault_build_id_private.h"
 
 static const void *prv_get_build_id_start_pointer(void) {
   switch (g_memfault_build_id.type) {
@@ -23,8 +22,8 @@ static const void *prv_get_build_id_start_pointer(void) {
       return g_memfault_build_id.storage;
     case kMemfaultBuildIdType_GnuBuildIdSha1: {
       const sMemfaultElfNoteSection *elf =
-          (const sMemfaultElfNoteSection *)g_memfault_build_id.storage;
-      return &elf->namedata[elf->namesz]; // Skip over { 'G', 'N', 'U', '\0' }
+        (const sMemfaultElfNoteSection *)g_memfault_build_id.storage;
+      return &elf->namedata[elf->namesz];  // Skip over { 'G', 'N', 'U', '\0' }
     }
     case kMemfaultBuildIdType_None:
     default:
@@ -69,8 +68,8 @@ bool memfault_build_id_get_string(char *out_buf, size_t buf_len) {
   return true;
 }
 
-const char *memfault_create_unique_version_string(const char * const version) {
-  static char s_version[MEMFAULT_UNIQUE_VERSION_MAX_LEN] = {0};
+const char *memfault_create_unique_version_string(const char *const version) {
+  static char s_version[MEMFAULT_UNIQUE_VERSION_MAX_LEN] = { 0 };
 
   // Immutable once created.
   if (s_version[0]) {
@@ -89,7 +88,7 @@ const char *memfault_create_unique_version_string(const char * const version) {
       s_version[version_len - 1] = '+';
 
       const size_t build_id_num_chars =
-          MEMFAULT_MIN(build_id_chars, sizeof(s_version) - version_len - 1);
+        MEMFAULT_MIN(build_id_chars, sizeof(s_version) - version_len - 1);
 
       if (!memfault_build_id_get_string(&s_version[version_len], build_id_num_chars)) {
         // Tack on something obvious to aid with debug but don't fail.
@@ -117,8 +116,7 @@ void memfault_build_info_dump(void) {
     return;
   }
 
-  const bool is_gnu =
-      (g_memfault_build_id.type == kMemfaultBuildIdType_GnuBuildIdSha1);
+  const bool is_gnu = (g_memfault_build_id.type == kMemfaultBuildIdType_GnuBuildIdSha1);
 
   char build_id_sha[41] = { 0 };
   for (size_t i = 0; i < sizeof(info.build_id); i++) {
@@ -132,7 +130,7 @@ void memfault_build_info_dump(void) {
 }
 
 void memfault_device_info_dump(void) {
-  struct MemfaultDeviceInfo info = {0};
+  struct MemfaultDeviceInfo info = { 0 };
   memfault_platform_get_device_info(&info);
   MEMFAULT_LOG_INFO("S/N: %s", info.device_serial ? info.device_serial : "<NULL>");
   MEMFAULT_LOG_INFO("SW type: %s", info.software_type ? info.software_type : "<NULL>");

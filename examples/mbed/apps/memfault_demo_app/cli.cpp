@@ -16,9 +16,7 @@ static int prv_putchar_shim(char c) {
 }
 
 void cli_init(void) {
-  const sMemfaultShellImpl s_shell_impl = {
-    .send_char = prv_putchar_shim
-  };
+  const sMemfaultShellImpl s_shell_impl = { .send_char = prv_putchar_shim };
   memfault_demo_shell_boot(&s_shell_impl);
 }
 

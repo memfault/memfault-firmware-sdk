@@ -10,24 +10,22 @@
 
 #if CONFIG_MEMFAULT_CLI_ENABLED
 
-#include "esp_console.h"
-#include "esp_err.h"
-#include "esp_system.h"
-
-#include "esp_wifi.h"
-
-#include "memfault/core/data_export.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/debug_log.h"
-#include "memfault/core/trace_event.h"
-#include "memfault/demo/cli.h"
-#include "memfault/esp8266_port/http_client.h"
-#include "memfault/http/platform/http_client.h"
-#include "memfault/metrics/metrics.h"
-#include "memfault/panics/assert.h"
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/platform/coredump.h"
+  #include "esp_console.h"
+  #include "esp_err.h"
+  #include "esp_system.h"
+  #include "esp_wifi.h"
+  #include "memfault/core/data_export.h"
+  #include "memfault/core/debug_log.h"
+  #include "memfault/core/math.h"
+  #include "memfault/core/platform/debug_log.h"
+  #include "memfault/core/trace_event.h"
+  #include "memfault/demo/cli.h"
+  #include "memfault/esp8266_port/http_client.h"
+  #include "memfault/http/platform/http_client.h"
+  #include "memfault/metrics/metrics.h"
+  #include "memfault/panics/assert.h"
+  #include "memfault/panics/coredump.h"
+  #include "memfault/panics/platform/coredump.h"
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -62,8 +60,8 @@ void prv_check4(void) {
   prv_check3(buf4);
 }
 
-static int prv_crash_example(int argc, char** argv) {
-  int crash_type =  0;
+static int prv_crash_example(int argc, char **argv) {
+  int crash_type = 0;
 
   if (argc >= 2) {
     crash_type = atoi(argv[1]);
@@ -86,7 +84,7 @@ static int prv_post_memfault_data(int argc, char **argv) {
   return memfault_esp_port_http_client_post_data();
 }
 
-static int  prv_export_memfault_data(int agrc, char **argv) {
+static int prv_export_memfault_data(int agrc, char **argv) {
   memfault_data_export_dump_chunks();
   return 0;
 }
@@ -117,7 +115,7 @@ static int prv_dump_metric_data(int argc, char **argv) {
 }
 
 static int prv_coredump_storage_test(int argc, char **argv) {
-#if CONFIG_MEMFAULT_CLI_COREDUMP_STORAGE_TEST_CMD
+  #if CONFIG_MEMFAULT_CLI_COREDUMP_STORAGE_TEST_CMD
   // Storage needs to work even if interrupts are disabled
   vPortEnterCritical();
   memfault_coredump_storage_debug_test_begin();
@@ -125,10 +123,10 @@ static int prv_coredump_storage_test(int argc, char **argv) {
   vPortExitCritical();
 
   return success ? 0 : -1;
-#else
+  #else
   MEMFAULT_LOG_INFO("Disabled. Set CONFIG_MEMFAULT_CLI_COREDUMP_STORAGE_TEST_CMD=y");
   return -1;
-#endif
+  #endif
 }
 
 static int prv_trace_event_test(int argc, char **argv) {
@@ -137,75 +135,74 @@ static int prv_trace_event_test(int argc, char **argv) {
 }
 
 void memfault_register_cli(void) {
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "crash",
-      .help = "Trigger a crash to test coredump collection",
-      .hint = NULL,
-      .func = prv_crash_example,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "crash",
+    .help = "Trigger a crash to test coredump collection",
+    .hint = NULL,
+    .func = prv_crash_example,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "get_core",
-      .help = "Get coredump info",
-      .hint = NULL,
-      .func = prv_get_core_cmd,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "get_core",
+    .help = "Get coredump info",
+    .hint = NULL,
+    .func = prv_get_core_cmd,
   }));
 
- ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "test_core_storage",
-      .help = "Test that data can be written to coredump storage region",
-      .hint = NULL,
-      .func = prv_coredump_storage_test,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "test_core_storage",
+    .help = "Test that data can be written to coredump storage region",
+    .hint = NULL,
+    .func = prv_coredump_storage_test,
   }));
 
-
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "trace",
-      .help = "Generate a test trace event",
-      .hint = NULL,
-      .func = prv_trace_event_test,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "trace",
+    .help = "Generate a test trace event",
+    .hint = NULL,
+    .func = prv_trace_event_test,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "clear_core",
-      .help = "Invalidate Coredump",
-      .hint = NULL,
-      .func = prv_clear_core_cmd,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "clear_core",
+    .help = "Invalidate Coredump",
+    .hint = NULL,
+    .func = prv_clear_core_cmd,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "get_device_info",
-      .help = "Display device information",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_get_device_info,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "get_device_info",
+    .help = "Display device information",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_get_device_info,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "post_chunks",
-      .help = "Post Memfault data to cloud",
-      .hint = NULL,
-      .func = prv_post_memfault_data,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "post_chunks",
+    .help = "Post Memfault data to cloud",
+    .hint = NULL,
+    .func = prv_post_memfault_data,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "export_data",
-      .help = "Extract Memfault data via CLI",
-      .hint = NULL,
-      .func = prv_export_memfault_data,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "export_data",
+    .help = "Extract Memfault data via CLI",
+    .hint = NULL,
+    .func = prv_export_memfault_data,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "dump_metrics",
-      .help = "Dump current Memfault Metrics via CLI",
-      .hint = NULL,
-      .func = prv_dump_metric_data,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "dump_metrics",
+    .help = "Dump current Memfault Metrics via CLI",
+    .hint = NULL,
+    .func = prv_dump_metric_data,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "collect_metrics",
-      .help = "Force the generation of a metric event",
-      .hint = NULL,
-      .func = prv_collect_metric_data,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "collect_metrics",
+    .help = "Force the generation of a metric event",
+    .hint = NULL,
+    .func = prv_collect_metric_data,
   }));
 }
 

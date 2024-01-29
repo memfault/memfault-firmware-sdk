@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 #if CONFIG_MEMFAULT_FOTA
-#include "net/fota_download.h"
+  #include "net/fota_download.h"
 
 //! A callback invoked while a FOTA is in progress
 //!

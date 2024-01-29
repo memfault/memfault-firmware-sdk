@@ -5,12 +5,14 @@
 //!
 //! Entry point for initialization of Memfault SDK.
 
-#include "memfault/esp8266_port/core.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
+#include "freertos/semphr.h"
 #include "memfault/config.h"
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
@@ -21,18 +23,13 @@
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/trace_event.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
-#include "freertos/semphr.h"
-
-#include "esp_timer.h"
+#include "memfault/esp8266_port/core.h"
 
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
-#  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
+  #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif
 
 static const char *TAG __attribute__((unused)) = "mflt";
@@ -89,18 +86,16 @@ void memfault_unlock(void) {
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();
-  return  (uint64_t) (time_since_boot_us / 1000) /* us per ms */;
+  return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
 }
 
 bool memfault_arch_is_inside_isr(void) {
   return xPortInIsrContext();
 }
 
-MEMFAULT_WEAK
-void memfault_platform_halt_if_debugging(void) { }
+MEMFAULT_WEAK void memfault_platform_halt_if_debugging(void) { }
 
-MEMFAULT_WEAK
-void memfault_esp_port_boot(void) {
+MEMFAULT_WEAK void memfault_esp_port_boot(void) {
   s_memfault_lock = xSemaphoreCreateRecursiveMutex();
 
   memfault_build_info_dump();

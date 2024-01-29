@@ -16,9 +16,9 @@
 #include "memfault/ports/reboot_reason.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {

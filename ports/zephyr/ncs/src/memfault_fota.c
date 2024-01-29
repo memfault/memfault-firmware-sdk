@@ -22,21 +22,22 @@
 //! as of the latest SDK release (nRF Connect SDK v1.4.x)
 //! See https://mflt.io/nrf-fota for more details.
 #if CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE < 400
-#warning "CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE must be >= 400"
+  #warning "CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE must be >= 400"
 
-#if CONFIG_DOWNLOAD_CLIENT_STACK_SIZE < 1600
-#warning "CONFIG_DOWNLOAD_CLIENT_STACK_SIZE must be >= 1600"
-#endif
+  #if CONFIG_DOWNLOAD_CLIENT_STACK_SIZE < 1600
+    #warning "CONFIG_DOWNLOAD_CLIENT_STACK_SIZE must be >= 1600"
+  #endif
 
-#error "DOWNLOAD_CLIENT_MAX_FILENAME_SIZE range may need to be extended in nrf/subsys/net/lib/download_client/Kconfig"
+  #error \
+    "DOWNLOAD_CLIENT_MAX_FILENAME_SIZE range may need to be extended in nrf/subsys/net/lib/download_client/Kconfig"
 #endif
 
 #if CONFIG_SOC_SERIES_NRF91X
 
-#if CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE > 1024
-#warning "nRF91 modem TLS secure socket buffer limited to 2kB"
-#error "Must use CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_1024=y for FOTA to work reliably"
-#endif
+  #if CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE > 1024
+    #warning "nRF91 modem TLS secure socket buffer limited to 2kB"
+    #error "Must use CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_1024=y for FOTA to work reliably"
+  #endif
 
 #endif
 
@@ -87,26 +88,27 @@ static void prv_fota_download_callback_wrapper(const struct fota_download_evt *e
   }
 }
 
-static const int s_memfault_fota_certs[] = {
-  kMemfaultRootCert_DigicertRootG2,
-  kMemfaultRootCert_AmazonRootCa1,
-  kMemfaultRootCert_DigicertRootCa
-};
+static const int s_memfault_fota_certs[] = { kMemfaultRootCert_DigicertRootG2,
+                                             kMemfaultRootCert_AmazonRootCa1,
+                                             kMemfaultRootCert_DigicertRootCa };
 
 #if MEMFAULT_NCS_VERSION_GT(2, 3) && !MEMFAULT_NCS_VERSION_GT(2, 5)
 
 int __real_download_client_get(struct download_client *client, const char *host,
-                               const struct download_client_cfg *config, const char *file, size_t from);
+                               const struct download_client_cfg *config, const char *file,
+                               size_t from);
 int __wrap_download_client_get(struct download_client *client, const char *host,
-                                const struct download_client_cfg *config, const char *file, size_t from) {
+                               const struct download_client_cfg *config, const char *file,
+                               size_t from) {
   // In NCS 2.4, there were two significant changes to the download client
   //
   //  1. Connecting to the OTA (download_client_connect) server was made asynchronous and no error
-  //     information is exposed to the FOTA client. This makes it impossible to rotate through certificates
-  //     like we did for previous releases.
+  //     information is exposed to the FOTA client. This makes it impossible to rotate through
+  //     certificates like we did for previous releases.
   //        https://github.com/nrfconnect/sdk-nrf/commit/38978c8092#diff-6a4addb1807793400159a4f7592864c3edab770e4919c5708b583115fab54e9aL430
   //
-  //  2. Support was added to the download_client (but not the fota_download handler) to support multiple certificates!
+  //  2. Support was added to the download_client (but not the fota_download handler) to support
+  //  multiple certificates!
   //        https://github.com/nrfconnect/sdk-nrf/commit/0d177a1282a5d9b12c9d5f7d00837d0771f5c2ee
   //
   // In this routine, we intercept the download_client_get() call so we can patch in all the
@@ -123,11 +125,12 @@ int __wrap_download_client_get(struct download_client *client, const char *host,
 }
 
 // Ensure the substituted function signature matches the original function
-_Static_assert(__builtin_types_compatible_p(__typeof__(&download_client_get),
-                                            __typeof__(&__wrap_download_client_get)) &&
-                 __builtin_types_compatible_p(__typeof__(&download_client_get),
-                                              __typeof__(&__real_download_client_get)),
-               "Error: Wrapped functions does not match original download_client_get function signature");
+_Static_assert(
+  __builtin_types_compatible_p(__typeof__(&download_client_get),
+                               __typeof__(&__wrap_download_client_get)) &&
+    __builtin_types_compatible_p(__typeof__(&download_client_get),
+                                 __typeof__(&__real_download_client_get)),
+  "Error: Wrapped functions does not match original download_client_get function signature");
 #endif
 
 int memfault_fota_start(void) {

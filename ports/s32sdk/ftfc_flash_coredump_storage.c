@@ -27,28 +27,26 @@
 //!  - __MemfaultCoreStorageStart & __MemfaultCoreStorageEnd must be aligned on sector
 //!    boundaries
 
-#include "memfault/panics/coredump.h"
-#include "memfault/ports/buffered_coredump_storage.h"
-
 #include <string.h>
 
+#include "device_registers.h"
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
-
-#include "device_registers.h"
+#include "memfault/ports/buffered_coredump_storage.h"
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
 extern uint32_t __MemfaultCoreStorageStart[];
-#define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
+  #define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
 #endif
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_END_ADDR
 extern uint32_t __MemfaultCoreStorageEnd[];
-#define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
+  #define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
 #define MEMFAULT_S32_PF_BASE 0x00000000U
@@ -61,8 +59,7 @@ extern uint32_t __MemfaultCoreStorageEnd[];
 
 // Error writing to flash - should never happen & likely detects a configuration error
 // Call the reboot handler which will halt the device if a debugger is attached and then reboot
-MEMFAULT_NO_OPT
-static void prv_coredump_writer_assert_and_reboot(int error_code) {
+MEMFAULT_NO_OPT static void prv_coredump_writer_assert_and_reboot(int error_code) {
   memfault_platform_halt_if_debugging();
   memfault_platform_reboot();
 }
@@ -74,10 +71,9 @@ static bool prv_op_within_flash_bounds(uint32_t offset, size_t data_len) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  const size_t size =
-      MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
+  const size_t size = MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
 
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = size,
     // Two configurations:
     //  Program Flash: 2kB or 4kB depending on configuration
@@ -86,8 +82,8 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
   };
 }
 
-static bool prv_lookup_flash_info(uint32_t start_addr, uint32_t end_addr,
-                                 uint32_t *sector_size, uint32_t *flash_addr) {
+static bool prv_lookup_flash_info(uint32_t start_addr, uint32_t end_addr, uint32_t *sector_size,
+                                  uint32_t *flash_addr) {
   if ((start_addr >= MEMFAULT_S32_PF_BASE) && (end_addr <= MEMFAULT_S32_PF_END)) {
     *sector_size = FEATURE_FLS_PF_BLOCK_SECTOR_SIZE;
     *flash_addr = start_addr;
@@ -96,7 +92,7 @@ static bool prv_lookup_flash_info(uint32_t start_addr, uint32_t end_addr,
     // address base used to program that range is 0x800000U. We convert to the correct program
     // address below
     *sector_size = FEATURE_FLS_DF_BLOCK_SECTOR_SIZE;
-    *flash_addr =  start_addr + 0x800000U - MEMFAULT_S32_DF_BASE;
+    *flash_addr = start_addr + 0x800000U - MEMFAULT_S32_DF_BASE;
   } else {
     // not in a known flash range or spans across program and data flash which is unsupported
     return false;
@@ -105,12 +101,11 @@ static bool prv_lookup_flash_info(uint32_t start_addr, uint32_t end_addr,
 }
 
 #define MEMFAULT_FSTAT_ERR_MASK \
-  (FTFC_FSTAT_MGSTAT0(1) | FTFC_FSTAT_FPVIOL(1) | FTFC_FSTAT_ACCERR(1) \
-   | FTFC_FSTAT_RDCOLERR(1))
+  (FTFC_FSTAT_MGSTAT0(1) | FTFC_FSTAT_FPVIOL(1) | FTFC_FSTAT_ACCERR(1) | FTFC_FSTAT_RDCOLERR(1))
 
 static void prv_flash_wait_for_ready(void) {
   // wait for any outstanding flash operation to complete
-  while ((FTFC->FSTAT & FTFC_FSTAT_CCIF(1)) == 0) {}
+  while ((FTFC->FSTAT & FTFC_FSTAT_CCIF(1)) == 0) { }
 }
 
 static void prv_flash_clear_errors(void) {
@@ -125,7 +120,7 @@ static bool prv_erase_sector(uint32_t flash_address) {
   prv_flash_wait_for_ready();
   prv_flash_clear_errors();
 
-  FTFC->FCCOB[3] = 0x09; // "Flash Erase Command" - See 37.5.8.2 Flash commands of S32K-RM
+  FTFC->FCCOB[3] = 0x09;  // "Flash Erase Command" - See 37.5.8.2 Flash commands of S32K-RM
   FTFC->FCCOB[2] = (flash_address >> 16) & 0xff;
   FTFC->FCCOB[1] = (flash_address >> 8) & 0xff;
   FTFC->FCCOB[0] = flash_address & 0xff;
@@ -145,16 +140,17 @@ static void prv_erase_sector_assert_success(uint32_t flash_address) {
   }
 }
 
-static void prv_write_double_word(uint32_t flash_address, uint8_t data[MEMFAULT_S32_PROG_PHRASE_LEN]) {
+static void prv_write_double_word(uint32_t flash_address,
+                                  uint8_t data[MEMFAULT_S32_PROG_PHRASE_LEN]) {
   prv_flash_wait_for_ready();
   prv_flash_clear_errors();
 
-  FTFC->FCCOB[3] = 0x07; // "Program Phrase" Command - See 37.5.8.2 Flash commands of S32K-RM
+  FTFC->FCCOB[3] = 0x07;  // "Program Phrase" Command - See 37.5.8.2 Flash commands of S32K-RM
   FTFC->FCCOB[2] = (flash_address >> 16) & 0xff;
   FTFC->FCCOB[1] = (flash_address >> 8) & 0xff;
   FTFC->FCCOB[0] = flash_address & 0xff;
 
-  for (size_t i = 0; i < MEMFAULT_S32_PROG_PHRASE_LEN ; i++) {
+  for (size_t i = 0; i < MEMFAULT_S32_PROG_PHRASE_LEN; i++) {
     FTFC->FCCOB[4 + i] = data[i];
   }
 
@@ -195,8 +191,7 @@ bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *b
   return true;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }
@@ -208,7 +203,6 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
 }
 
 bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size) {
-
   const uint32_t start_addr = MEMFAULT_COREDUMP_STORAGE_START_ADDR + offset;
   const uint32_t end_addr = start_addr + erase_size;
 
@@ -218,8 +212,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
     return false;
   }
 
-  if (((start_addr + offset) % erase_size) != 0 ||
-      (erase_size % sector_size) != 0) {
+  if (((start_addr + offset) % erase_size) != 0 || (erase_size % sector_size) != 0) {
     return false;
   }
 

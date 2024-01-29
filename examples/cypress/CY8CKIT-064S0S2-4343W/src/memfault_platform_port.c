@@ -6,13 +6,12 @@
 //! Glue layer between the Memfault SDK and the underlying platform
 //!
 
-#include <stdbool.h>
-
 #include <FreeRTOSConfig.h>
 #include <core_cm4.h>
 #include <cy_device_headers.h>
 #include <cy_retarget_io.h>
 #include <cy_syslib.h>
+#include <stdbool.h>
 
 #include "memfault/components.h"
 #include "memfault/core/compiler.h"
@@ -28,7 +27,7 @@ typedef struct {
 } sMemRegions;
 
 sMemRegions s_mcu_mem_regions[] = {
-  {.start_addr = 0x08030000, .length = 0xB7000},
+  { .start_addr = 0x08030000, .length = 0xB7000 },
 };
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
@@ -59,15 +58,14 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 //! any final cleanup and then reset the device
 void memfault_platform_reboot(void) {
   NVIC_SystemReset();
-  while (1) {
-  }  // unreachable
+  while (1) { }  // unreachable
 }
 
 //! If device does not track time, return false, else return true if time is valid
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
-    .info = {.unix_timestamp_secs = 0},
+    .info = { .unix_timestamp_secs = 0 },
   };
   return false;
 }
@@ -172,7 +170,7 @@ MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_reboot_tracking_boot(void) {
-  sResetBootupInfo reset_info = {0};
+  sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 }

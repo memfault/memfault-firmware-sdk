@@ -46,11 +46,11 @@ typedef struct MfltHttpClientConfig {
   //! Route used to get information from the Memfault cloud pertaining to a device in your fleet.
   //! For example, the latest firmware release available.
   sMemfaultHttpApi device_api;
-  //! Callback for fetching device info for the OTA'ing device. Typically this callback can be left unset, but
-  //! if the request is on behalf of a downstream device, can be substituted with the downstream
-  //! device's information.
-  //! The function signature is the same as memfault_platform_get_device_info().
-  //! If NULL, memfault_platform_get_device_info() will be used.
+  //! Callback for fetching device info for the OTA'ing device. Typically this callback can be left
+  //! unset, but if the request is on behalf of a downstream device, can be substituted with the
+  //! downstream device's information. The function signature is the same as
+  //! memfault_platform_get_device_info(). If NULL, memfault_platform_get_device_info() will be
+  //! used.
   void (*get_device_info)(sMemfaultDeviceInfo *info);
 } sMfltHttpClientConfig;
 
@@ -69,25 +69,23 @@ MEMFAULT_STATIC_ASSERT(
 #endif
 
 //! Convenience macros to get the currently configured Chunks API hostname & Port
-#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST() \
+#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST()                                                \
   (g_mflt_http_client_config.chunks_api.host ? g_mflt_http_client_config.chunks_api.host : \
                                                MEMFAULT_HTTP_CHUNKS_API_HOST)
-#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT() \
-    (g_mflt_http_client_config.chunks_api.port ? g_mflt_http_client_config.chunks_api.port : \
-                                                 MEMFAULT_HTTP_APIS_DEFAULT_PORT)
-
+#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT()                                                \
+  (g_mflt_http_client_config.chunks_api.port ? g_mflt_http_client_config.chunks_api.port : \
+                                               MEMFAULT_HTTP_APIS_DEFAULT_PORT)
 
 //! Convenience macros to get the currently configured Device API hostname & Port
-#define MEMFAULT_HTTP_GET_DEVICE_API_HOST() \
+#define MEMFAULT_HTTP_GET_DEVICE_API_HOST()                                                \
   (g_mflt_http_client_config.device_api.host ? g_mflt_http_client_config.device_api.host : \
                                                MEMFAULT_HTTP_DEVICE_API_HOST)
-#define MEMFAULT_HTTP_GET_DEVICE_API_PORT() \
-    (g_mflt_http_client_config.device_api.port ? g_mflt_http_client_config.device_api.port : \
-                                                 MEMFAULT_HTTP_APIS_DEFAULT_PORT)
+#define MEMFAULT_HTTP_GET_DEVICE_API_PORT()                                                \
+  (g_mflt_http_client_config.device_api.port ? g_mflt_http_client_config.device_api.port : \
+                                               MEMFAULT_HTTP_APIS_DEFAULT_PORT)
 
 //! Returns the "scheme" part of the URI based on client configuration
-#define MEMFAULT_HTTP_GET_SCHEME() \
-  (g_mflt_http_client_config.disable_tls ? "http" : "https")
+#define MEMFAULT_HTTP_GET_SCHEME() (g_mflt_http_client_config.disable_tls ? "http" : "https")
 
 //! Forward declaration of a HTTP client.
 typedef struct MfltHttpClient sMfltHttpClient;

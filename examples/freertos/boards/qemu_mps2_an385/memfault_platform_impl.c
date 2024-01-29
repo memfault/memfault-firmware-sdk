@@ -25,8 +25,7 @@ void memfault_platform_reboot(void) {
   volatile uint32_t *SCB_AIRCR = (uint32_t *)SCB_AIRCR_ADDR;
   *SCB_AIRCR = SCB_AIRCR_RESET_SYSTEM;
 
-  while (1) {
-  }  // unreachable
+  while (1) { }  // unreachable
 }
 
 size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired_size) {
@@ -34,7 +33,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
     uint32_t start_addr;
     size_t length;
   } s_mcu_mem_regions[] = {
-    {.start_addr = 0x20000000, .length = 0x800000},
+    { .start_addr = 0x20000000, .length = 0x800000 },
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_mcu_mem_regions); i++) {

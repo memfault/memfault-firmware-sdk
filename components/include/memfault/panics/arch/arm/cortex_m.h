@@ -26,7 +26,8 @@ typedef MEMFAULT_PACKED_STRUCT MfltExceptionFrame {
   uint32_t lr;
   uint32_t pc;
   uint32_t xpsr;
-} sMfltExceptionFrame;
+}
+sMfltExceptionFrame;
 
 // Register State collected for Cortex-M at exception entry
 MEMFAULT_PACKED_STRUCT MfltRegState {
@@ -44,7 +45,7 @@ MEMFAULT_PACKED_STRUCT MfltRegState {
   uint32_t r9;
   uint32_t r10;
   uint32_t r11;
-  uint32_t exc_return; // on exception entry, this value is in the LR
+  uint32_t exc_return;  // on exception entry, this value is in the LR
 };
 
 #ifdef __cplusplus

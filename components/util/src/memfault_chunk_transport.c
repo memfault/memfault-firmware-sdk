@@ -8,7 +8,8 @@
 //! Chunk Mesage Types
 //!
 //!  INIT Message:
-//!    HEADER_BYTE || (HEADER_BYTE.MD ? varint(TOTAL_LENGTH) : b"") || CHUNK_DATA  || (HEADER_BYTE.MD ? 0b"" : CRC_16_CCITT)
+//!    HEADER_BYTE || (HEADER_BYTE.MD ? varint(TOTAL_LENGTH) : b"") || CHUNK_DATA  ||
+//!    (HEADER_BYTE.MD ? 0b"" : CRC_16_CCITT)
 //!
 //!    NOTE: If the entire message can fit in a single MTU, no TOTAL_LENGTH is encoded
 //!    NOTE: We expect message integrity from the underlying transport. The CRC16 is only present
@@ -17,13 +18,12 @@
 //! CONTINUATION Message:
 //!   HEADER_BYTE || varint(OFFSET) || CHUNK_DATA || (HEADER_BYTE.MD ? 0b"" : CRC_16_CCITT)
 
-#include "memfault/util/chunk_transport.h"
-
 #include <stdbool.h>
 #include <string.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
+#include "memfault/util/chunk_transport.h"
 #include "memfault/util/crc16_ccitt.h"
 #include "memfault/util/varint.h"
 
@@ -43,7 +43,8 @@ static uint8_t prv_build_hdr(const sMemfaultHeaderSettings *settings) {
   //           For CONTINUATION:
   //            All zeros. Reserved for future use (i.e. to make TOTAL_LENGTH and CRC16_CCITT
   //            optional)
-  // bit 6:    MD: 1 if a CONTINUATION will follow (more data) or 0 if this is the last chunk of this
+  // bit 6:    MD: 1 if a CONTINUATION will follow (more data) or 0 if this is the last chunk of
+  // this
   //           message.  Right now I'm only using it to conditionally include the TOTAL_LENGTH. But
   //           I think it could also be useful as a trigger for the consumer to run a
   //           "basic_recover" to get all messages in the queue when the final one has arrived and
@@ -60,15 +61,16 @@ static uint8_t prv_build_hdr(const sMemfaultHeaderSettings *settings) {
 }
 
 MEMFAULT_STATIC_ASSERT(
-    MEMFAULT_MIN_CHUNK_BUF_LEN == (1 /* hdr */ +  MEMFAULT_UINT32_MAX_VARINT_LENGTH + 2 /* crc16 */ + 1 /* at least one data byte */),
-    "Not enough space to chunk up at least one byte in a maximally sized message");
+  MEMFAULT_MIN_CHUNK_BUF_LEN == (1 /* hdr */ + MEMFAULT_UINT32_MAX_VARINT_LENGTH + 2 /* crc16 */ +
+                                 1 /* at least one data byte */),
+  "Not enough space to chunk up at least one byte in a maximally sized message");
 
 static size_t prv_compute_single_message_chunk_size(sMfltChunkTransportCtx *ctx) {
   return 1 /* hdr */ + 2 /* crc16 */ + ctx->total_size;
 }
 
-bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx,
-                                             void *out_buf, size_t *out_buf_len) {
+bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *out_buf,
+                                             size_t *out_buf_len) {
   // There's not enough space to encode anything. Consumers of this API should be
   // passing a buffer of at least MEMFAULT_MIN_CHUNK_BUF_LEN in length
   if (*out_buf_len < MEMFAULT_MIN_CHUNK_BUF_LEN) {
@@ -92,10 +94,9 @@ bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx,
     const size_t single_msg_size = prv_compute_single_message_chunk_size(ctx);
     more_data = single_msg_size > *out_buf_len;
 
-    const sMemfaultHeaderSettings init_settings = {
-      .md = more_data && !ctx->enable_multi_call_chunk,
-      .continuation = false
-    };
+    const sMemfaultHeaderSettings init_settings = { .md =
+                                                      more_data && !ctx->enable_multi_call_chunk,
+                                                    .continuation = false };
     ctx->single_chunk_message_length = single_msg_size;
 
     chunk_msg[0] = prv_build_hdr(&init_settings);
@@ -132,8 +133,8 @@ bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx,
   if (bytes_to_read != 0) {
     uint8_t *msg_bufp = &chunk_msg[chunk_msg_start_offset];
     ctx->read_msg(ctx->read_offset, msg_bufp, bytes_to_read);
-    ctx->crc16_incremental = memfault_crc16_ccitt_compute(
-        ctx->crc16_incremental, msg_bufp, bytes_to_read);
+    ctx->crc16_incremental =
+      memfault_crc16_ccitt_compute(ctx->crc16_incremental, msg_bufp, bytes_to_read);
     chunk_msg_start_offset += bytes_to_read;
   }
 

@@ -35,15 +35,16 @@ extern "C" {
 //  t = type (0 = formatted log, 1 = compact log)
 //  l = log level (eMemfaultPlatformLogLevel)
 
-#define MEMFAULT_LOG_HDR_LEVEL_POS  0
+#define MEMFAULT_LOG_HDR_LEVEL_POS 0
 #define MEMFAULT_LOG_HDR_LEVEL_MASK 0x07u
-#define MEMFAULT_LOG_HDR_TYPE_POS   3u
-#define MEMFAULT_LOG_HDR_TYPE_MASK  0x08u
-#define MEMFAULT_LOG_HDR_READ_MASK  0x80u  // Log has been read through memfault_log_read()
-#define MEMFAULT_LOG_HDR_SENT_MASK  0x40u  // Log has been sent through g_memfault_log_data_source
+#define MEMFAULT_LOG_HDR_TYPE_POS 3u
+#define MEMFAULT_LOG_HDR_TYPE_MASK 0x08u
+#define MEMFAULT_LOG_HDR_READ_MASK 0x80u  // Log has been read through memfault_log_read()
+#define MEMFAULT_LOG_HDR_SENT_MASK 0x40u  // Log has been sent through g_memfault_log_data_source
 
 static inline eMemfaultPlatformLogLevel memfault_log_get_level_from_hdr(uint8_t hdr) {
-  return (eMemfaultPlatformLogLevel)((hdr & MEMFAULT_LOG_HDR_LEVEL_MASK) >> MEMFAULT_LOG_HDR_LEVEL_POS);
+  return (eMemfaultPlatformLogLevel)((hdr & MEMFAULT_LOG_HDR_LEVEL_MASK) >>
+                                     MEMFAULT_LOG_HDR_LEVEL_POS);
 }
 
 static inline eMemfaultLogRecordType memfault_log_get_type_from_hdr(uint8_t hdr) {
@@ -57,7 +58,8 @@ typedef MEMFAULT_PACKED_STRUCT {
   uint8_t len;
   // underlying message
   uint8_t msg[];
-} sMfltRamLogEntry;
+}
+sMfltRamLogEntry;
 
 typedef struct {
   uint32_t read_offset;
@@ -83,8 +85,8 @@ void memfault_log_iterate(MemfaultLogIteratorCallback callback, sMfltLogIterator
 //! assumes memfault_lock has been taken by the caller).
 bool memfault_log_iter_update_entry(sMfltLogIterator *iter);
 
-typedef bool (* MemfaultLogMsgCopyCallback)(sMfltLogIterator *iter, size_t offset,
-                                            const char *buf, size_t buf_len);
+typedef bool (*MemfaultLogMsgCopyCallback)(sMfltLogIterator *iter, size_t offset, const char *buf,
+                                           size_t buf_len);
 
 //! @note This MUST ONLY be called from a memfault_log_iterate() callback (it
 //! assumes memfault_lock has been taken by the caller).

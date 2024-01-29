@@ -9,7 +9,8 @@
 //! Various data providers for the "data_packetizer" which packetizes data collected by the
 //! Memfault SDK into payloads that can be sent over the transport used up to the cloud
 //!
-//! @note A data source must implement three functions which are documented in the function typedefs below
+//! @note A data source must implement three functions which are documented in the function typedefs
+//! below
 //!
 //! @note A weak function implementation of all the provider functions is defined within the
 //! memfault data packetizer. This way a user can easily add or remove provider functionality by
@@ -34,7 +35,7 @@ extern "C" {
 //!  available for reading or 0 if there is no new message available
 //!
 //! @return true if there is a message which can be read
-typedef bool (MemfaultDataSourceHasMoreMessagesCallback)(size_t *next_msg_size);
+typedef bool(MemfaultDataSourceHasMoreMessagesCallback)(size_t *next_msg_size);
 
 //! Read the requested bytes for the currently queued up message
 //!
@@ -44,13 +45,13 @@ typedef bool (MemfaultDataSourceHasMoreMessagesCallback)(size_t *next_msg_size);
 //!
 //! @return true if the read was successful, false otherwise (for example if the
 //! read goes past the next_msg_size returned from MemfaultDataSourceHasMoreMessagesCallback
-typedef bool (MemfaultDataSourceReadMessageCallback)(uint32_t offset, void *buf, size_t buf_len);
+typedef bool(MemfaultDataSourceReadMessageCallback)(uint32_t offset, void *buf, size_t buf_len);
 
 //! Delete the currently queued up message being read
 //!
 //! A subsequent call to the paired MemfaultDataSourceHasMoreMessagesCallback will return
 //! a info about a new message or nothing if there are no more messages to read
-typedef void (MemfaultDataSourceMarkMessageReadCallback)(void);
+typedef void(MemfaultDataSourceMarkMessageReadCallback)(void);
 
 typedef struct MemfaultDataSourceImpl {
   MemfaultDataSourceHasMoreMessagesCallback *has_more_msgs_cb;

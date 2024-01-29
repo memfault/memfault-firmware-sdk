@@ -183,8 +183,7 @@ static int prv_hang_example(const struct shell *shell, size_t argc, char **argv)
 #else
   MEMFAULT_LOG_DEBUG("Hanging system and waiting for watchdog!");
 #endif
-  while (1) {
-  }
+  while (1) { }
   return -1;
 }
 

@@ -9,19 +9,17 @@
 //! More details can be found in the "RCC clock control & status register (RCC_CSR)"
 //! section of the STM32L4 family reference manual.
 
-#include "memfault/ports/reboot_reason.h"
-
-#include "stm32l4xx_ll_rcc.h"
-
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
+#include "memfault/ports/reboot_reason.h"
+#include "stm32l4xx_ll_rcc.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -70,7 +68,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   // we have read the reset information so clear the bits (since they are sticky across reboots)
   __HAL_RCC_CLEAR_RESET_FLAGS();
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

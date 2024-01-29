@@ -34,7 +34,7 @@ typedef enum {
 } eMemfaultBuildIdType;
 
 typedef struct {
-  uint8_t type; // eMemfaultBuildIdType
+  uint8_t type;  // eMemfaultBuildIdType
   uint8_t len;
   // the length, in bytes, of the build id used when reporting data
   uint8_t short_len;
@@ -48,11 +48,11 @@ MEMFAULT_STATIC_ASSERT(((offsetof(sMemfaultBuildIdStorage, type) == 0) &&
                        "be sure to update fw_build_id.py!");
 
 #if defined(MEMFAULT_UNITTEST)
-//! NB: For unit tests we want to be able to instrument the data in the test
-//! so we drop the `const` qualifier
-#define MEMFAULT_BUILD_ID_QUALIFIER
+  //! NB: For unit tests we want to be able to instrument the data in the test
+  //! so we drop the `const` qualifier
+  #define MEMFAULT_BUILD_ID_QUALIFIER
 #else
-#define MEMFAULT_BUILD_ID_QUALIFIER const
+  #define MEMFAULT_BUILD_ID_QUALIFIER const
 #endif
 
 extern MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id;
@@ -64,8 +64,9 @@ typedef MEMFAULT_PACKED_STRUCT {
   uint32_t namesz;
   uint32_t descsz;
   uint32_t type;
-  char  namedata[];
-} sMemfaultElfNoteSection;
+  char namedata[];
+}
+sMemfaultElfNoteSection;
 
 #ifdef __cplusplus
 }

@@ -9,9 +9,8 @@
 
 #include <stdint.h>
 
-#include "memfault_demo_cli_aux_private.h"
-
 #include "memfault/core/compiler.h"
+#include "memfault_demo_cli_aux_private.h"
 
 // Jump through some hoops to trick the compiler into doing an unaligned 64 bit access
 MEMFAULT_ALIGNED(4) static uint8_t s_test_buffer[16];

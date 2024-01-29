@@ -7,14 +7,13 @@
 //! Dialog DA1468x implementation of the Memfault watchdog API.
 //!
 
-#include "memfault/ports/watchdog.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include "hw_watchdog.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/ports/watchdog.h"
 
 // The Dialog DA1468x CPU has a simple watchdog implementation that contains an 8-bit counter,
 // pause/resume control, and a configurable "last chance" exception capability that routes
@@ -39,9 +38,9 @@ static struct {
   const uint8_t max_count;
   uint8_t reload_value;
 } s_watchdog = {
-    .us_per_tick = 10240,
-    .max_count = dg_configWDOG_RESET_VALUE,
-    .reload_value = dg_configWDOG_RESET_VALUE,
+  .us_per_tick = 10240,
+  .max_count = dg_configWDOG_RESET_VALUE,
+  .reload_value = dg_configWDOG_RESET_VALUE,
 };
 
 int memfault_software_watchdog_enable(void) {

@@ -11,18 +11,16 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/data_source_rle.h"
 #include "memfault/core/math.h"
 #include "memfault/util/chunk_transport.h"
 
-static uint8_t s_fake_coredump[] = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa};
+static uint8_t s_fake_coredump[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
 static bool s_multi_call_chunking_enabled = false;
-static uint8_t s_fake_event[] = {0xa, 0xb, 0xc, 0xd};
+static uint8_t s_fake_event[] = { 0xa, 0xb, 0xc, 0xd };
 static const sMemfaultDataSourceImpl *s_active_rle_data_source = NULL;
-
 
 //
 // Mocks & Fakes to exercise packetizer logic
@@ -82,7 +80,6 @@ bool memfault_data_source_rle_encoder_set_active(const sMemfaultDataSourceImpl *
   return mock().actualCall(__func__).returnBoolValueOrDefault(true);
 }
 
-
 static bool prv_rle_read_data(uint32_t offset, void *buf, size_t buf_len) {
   mock().actualCall(__func__);
   return s_active_rle_data_source->read_msg_cb(offset, buf, buf_len);
@@ -107,8 +104,8 @@ const sMemfaultDataSourceImpl g_memfault_data_rle_source = {
 // For packetizer test purposes, the data within the chunker should be opaque to us
 // so just use this fake implementation which simply copies whatever the backing reader
 // points to
-bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx,
-                                             void *buf, size_t *buf_len) {
+bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *buf,
+                                             size_t *buf_len) {
   LONGS_EQUAL(s_multi_call_chunking_enabled, ctx->enable_multi_call_chunk);
   const size_t bytes_to_read = MEMFAULT_MIN(*buf_len, ctx->total_size - ctx->read_offset);
   ctx->read_msg(ctx->read_offset, buf, bytes_to_read);
@@ -125,7 +122,7 @@ void memfault_chunk_transport_get_chunk_info(sMfltChunkTransportCtx *ctx) {
 static const char *s_log_scope = "log_data_source";
 static const char *s_cdr_scope = "cdr_source";
 
-TEST_GROUP(MemfaultDataPacketizer){
+TEST_GROUP(MemfaultDataPacketizer) {
   void setup() {
     // abort any in-progress transactions
     mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
@@ -157,7 +154,7 @@ static void prv_setup_expect_coredump_call_expectations(bool has_core) {
 }
 
 static void prv_begin_transfer(bool data_expected, size_t expected_raw_msg_size) {
- sPacketizerConfig cfg = {
+  sPacketizerConfig cfg = {
     .enable_multi_packet_chunk = s_multi_call_chunking_enabled,
   };
   sPacketizerMetadata metadata;
@@ -518,10 +515,10 @@ static void prv_logs_mark_sent(void) {
   mock(s_log_scope).actualCall(__func__);
 }
 
-const sMemfaultDataSourceImpl g_memfault_log_data_source  = {
-    .has_more_msgs_cb = prv_has_logs,
-    .read_msg_cb = prv_logs_read,
-    .mark_msg_read_cb = prv_logs_mark_sent,
+const sMemfaultDataSourceImpl g_memfault_log_data_source = {
+  .has_more_msgs_cb = prv_has_logs,
+  .read_msg_cb = prv_logs_read,
+  .mark_msg_read_cb = prv_logs_mark_sent,
 };
 
 TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
@@ -571,7 +568,7 @@ static void prv_cdr_mark_sent(void) {
   mock(s_cdr_scope).actualCall(__func__);
 }
 
-const sMemfaultDataSourceImpl g_memfault_cdr_source  = {
+const sMemfaultDataSourceImpl g_memfault_cdr_source = {
   .has_more_msgs_cb = prv_has_cdr,
   .read_msg_cb = prv_cdr_read,
   .mark_msg_read_cb = prv_cdr_mark_sent,
@@ -657,8 +654,7 @@ TEST(MemfaultDataPacketizer, Test_ActiveSources) {
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   // note the cast to eMfltDataSourceMask
-  memfault_packetizer_set_active_sources(
-    (kMfltDataSourceMask_Event | kMfltDataSourceMask_Log));
+  memfault_packetizer_set_active_sources((kMfltDataSourceMask_Event | kMfltDataSourceMask_Log));
   mock().expectOneCall("prv_heartbeat_metric_has_event").andReturnValue(false);
   mock(s_log_scope).expectOneCall("prv_has_logs").andReturnValue(true);
   more_data = memfault_packetizer_get_chunk(packet, &buf_len);

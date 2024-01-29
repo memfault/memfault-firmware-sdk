@@ -10,36 +10,35 @@
 
 #if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
 
-#include <string.h>
+  #include <string.h>
 
-#include "esp_http_client.h"
-#include "esp_https_ota.h"
-#include "esp_wifi.h"
-#include "memfault/components.h"
-#include "memfault/esp_port/core.h"
-#include "memfault/esp_port/http_client.h"
-#include "memfault/esp_port/version.h"
+  #include "esp_http_client.h"
+  #include "esp_https_ota.h"
+  #include "esp_wifi.h"
+  #include "memfault/components.h"
+  #include "memfault/esp_port/core.h"
+  #include "memfault/esp_port/http_client.h"
+  #include "memfault/esp_port/version.h"
 
-#ifndef MEMFAULT_HTTP_DEBUG
-#define MEMFAULT_HTTP_DEBUG (0)
-#endif
+  #ifndef MEMFAULT_HTTP_DEBUG
+    #define MEMFAULT_HTTP_DEBUG (0)
+  #endif
 
-//! Default buffer size for the URL-encoded device info parameters. This may
-//! need to be set higher by the user if there are particularly long device info
-//! strings
-#ifndef MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN
-#define MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN (48)
-#endif
+  //! Default buffer size for the URL-encoded device info parameters. This may
+  //! need to be set higher by the user if there are particularly long device info
+  //! strings
+  #ifndef MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN
+    #define MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN (48)
+  #endif
 
-MEMFAULT_STATIC_ASSERT(sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
-                       "Memfault Project Key not configured. Please visit https://mflt.io/project-key "
-                       "and add CONFIG_MEMFAULT_PROJECT_KEY=\"YOUR_KEY\" to sdkconfig.defaults");
+MEMFAULT_STATIC_ASSERT(
+  sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
+  "Memfault Project Key not configured. Please visit https://mflt.io/project-key "
+  "and add CONFIG_MEMFAULT_PROJECT_KEY=\"YOUR_KEY\" to sdkconfig.defaults");
 
-sMfltHttpClientConfig g_mflt_http_client_config = {
-  .api_key = CONFIG_MEMFAULT_PROJECT_KEY
-};
+sMfltHttpClientConfig g_mflt_http_client_config = { .api_key = CONFIG_MEMFAULT_PROJECT_KEY };
 
-#if MEMFAULT_HTTP_DEBUG
+  #if MEMFAULT_HTTP_DEBUG
 static esp_err_t prv_http_event_handler(esp_http_client_event_t *evt) {
   switch (evt->event_id) {
     case HTTP_EVENT_ERROR:
@@ -75,7 +74,7 @@ static esp_err_t prv_http_event_handler(esp_http_client_event_t *evt) {
   }
   return ESP_OK;
 }
-#endif  // MEMFAULT_HTTP_DEBUG
+  #endif  // MEMFAULT_HTTP_DEBUG
 
 static int prv_post_chunks(esp_http_client_handle_t client, void *buffer, size_t buf_len) {
   // drain all the chunks we have
@@ -108,9 +107,9 @@ static char s_mflt_base_url_buffer[MEMFAULT_HTTP_URL_BUFFER_SIZE];
 sMfltHttpClient *memfault_platform_http_client_create(void) {
   memfault_http_build_url(s_mflt_base_url_buffer, "");
   const esp_http_client_config_t config = {
-#if MEMFAULT_HTTP_DEBUG
+  #if MEMFAULT_HTTP_DEBUG
     .event_handler = prv_http_event_handler,
-#endif
+  #endif
     .url = s_mflt_base_url_buffer,
     .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = g_mflt_http_client_config.disable_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
@@ -328,25 +327,26 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
     goto cleanup;
   }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   esp_https_ota_config_t config = {
-    .http_config = &(esp_http_client_config_t) {
-      .url = download_url,
-      .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
-      .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
-    },
+    .http_config =
+      &(esp_http_client_config_t){
+        .url = download_url,
+        .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
+        .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
+      },
     .http_client_init_cb = NULL,
     .bulk_flash_erase = false,
     .partial_http_download = false,
     .max_http_request_size = 0,
   };
-#else
+  #else
   esp_http_client_config_t config = {
     .url = download_url,
     .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
   };
-#endif
+  #endif
 
   const esp_err_t err = esp_https_ota(&config);
   if (err != ESP_OK) {

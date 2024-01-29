@@ -3,9 +3,8 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/core/platform/core.h"
-
 #include "memfault/core/compiler.h"
+#include "memfault/core/platform/core.h"
 #include "stm32f4xx.h"
 
 int memfault_platform_boot(void) {

@@ -17,28 +17,28 @@
 
 #if MEMFAULT_PLATFORM_COREDUMP_STORAGE_USE_FLASH
 
-#include "memfault/panics/platform/coredump.h"
+  #include <stdbool.h>
+  #include <stdint.h>
 
-#include <stdbool.h>
-#include <stdint.h>
+  #include "arch_wdg.h"
+  #include "memfault/panics/platform/coredump.h"
+  #include "spi_flash.h"
 
-#include "arch_wdg.h"
-#include "spi_flash.h"
+  #if !defined(MEMFAULT_COREDUMP_STORAGE_START_ADDR) || !defined(MEMFAULT_COREDUMP_STORAGE_END_ADDR)
+    #error \
+      "MEMFAULT_COREDUMP_STORAGE_START_ADDR & MEMFAULT_COREDUMP_STORAGE_END_ADDR must be specified in memfault_platform_config.h"
+  #endif
 
-#if !defined(MEMFAULT_COREDUMP_STORAGE_START_ADDR) || !defined(MEMFAULT_COREDUMP_STORAGE_END_ADDR)
-#error "MEMFAULT_COREDUMP_STORAGE_START_ADDR & MEMFAULT_COREDUMP_STORAGE_END_ADDR must be specified in memfault_platform_config.h"
-#endif
+  #if ((MEMFAULT_COREDUMP_STORAGE_START_ADDR % SPI_FLASH_SECTOR_SIZE) != 0)
+    #error "MEMFAULT_COREDUMP_STORAGE_START_ADDR should be aligned by the sector size"
+  #endif
 
-#if ((MEMFAULT_COREDUMP_STORAGE_START_ADDR % SPI_FLASH_SECTOR_SIZE) != 0)
-#error "MEMFAULT_COREDUMP_STORAGE_START_ADDR should be aligned by the sector size"
-#endif
-
-#if ((MEMFAULT_COREDUMP_STORAGE_END_ADDR % SPI_FLASH_SECTOR_SIZE) != 0)
-#error "MEMFAULT_COREDUMP_STORAGE_END_ADDR should be aligned by the sector size"
-#endif
+  #if ((MEMFAULT_COREDUMP_STORAGE_END_ADDR % SPI_FLASH_SECTOR_SIZE) != 0)
+    #error "MEMFAULT_COREDUMP_STORAGE_END_ADDR should be aligned by the sector size"
+  #endif
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR,
     .sector_size = SPI_FLASH_SECTOR_SIZE,
   };
@@ -50,8 +50,7 @@ static bool prv_op_within_flash_bounds(uint32_t offset, size_t data_len) {
   return (offset + data_len) <= info.size;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }
@@ -62,8 +61,8 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
   wdg_reload(WATCHDOG_DEFAULT_PERIOD);
 
   uint32_t actual_size = 0;
-  if (spi_flash_read_data((uint8_t *)data, address, (uint32_t)read_len,
-                          &actual_size) != SPI_FLASH_ERR_OK) {
+  if (spi_flash_read_data((uint8_t *)data, address, (uint32_t)read_len, &actual_size) !=
+      SPI_FLASH_ERR_OK) {
     return false;
   }
 
@@ -94,8 +93,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   return true;
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }
@@ -106,8 +104,8 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   wdg_reload(WATCHDOG_DEFAULT_PERIOD);
 
   uint32_t actual_size = 0;
-  if (spi_flash_write_data((uint8_t *)data, address, (uint32_t)data_len,
-                           &actual_size) != SPI_FLASH_ERR_OK) {
+  if (spi_flash_write_data((uint8_t *)data, address, (uint32_t)data_len, &actual_size) !=
+      SPI_FLASH_ERR_OK) {
     return false;
   }
 

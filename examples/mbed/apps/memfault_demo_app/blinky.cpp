@@ -22,6 +22,7 @@ static void prv_blinky_thread(void) {
 static uint64_t s_blinky_thread_stack[OS_STACK_SIZE / 8];
 
 void blinky_init(void) {
-  static Thread t(osPriorityNormal, OS_STACK_SIZE, (uint8_t *)&s_blinky_thread_stack[0], "blinky_thread");
+  static Thread t(osPriorityNormal, OS_STACK_SIZE, (uint8_t *)&s_blinky_thread_stack[0],
+                  "blinky_thread");
   t.start(callback(prv_blinky_thread));
 }

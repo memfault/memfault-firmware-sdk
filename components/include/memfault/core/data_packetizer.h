@@ -29,8 +29,8 @@ extern "C" {
 //! @param[out] buf The buffer to copy data to be sent into
 //! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated
 //! with the amount of data, in bytes, that was copied into the buffer. If a buffer with a length
-//! less than MEMFAULT_PACKETIZER_MIN_BUF_LEN is passed, no data will be copied and the size returned
-//! will be 0.
+//! less than MEMFAULT_PACKETIZER_MIN_BUF_LEN is passed, no data will be copied and the size
+//! returned will be 0.
 //!
 //! @return true if the buffer was filled, false otherwise
 bool memfault_packetizer_get_chunk(void *buf, size_t *buf_len);
@@ -93,10 +93,10 @@ bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata
 //! Fills the provided buffer with data to be sent.
 //!
 //! @note It's expected that memfault_packetizer_begin() is called prior to invoking this call for
-//! the first time and each time kMemfaultPacketizerStatus_EndOfChunk is returned. If it is not called
-//! this routine will return kMemfaultPacketizerStatus_NoMoreData
-//! @note It's expected that this API will be called periodically (i.e when a connection to the internet
-//! becomes available) to drain data collected by Memfault up to the cloud.
+//! the first time and each time kMemfaultPacketizerStatus_EndOfChunk is returned. If it is not
+//! called this routine will return kMemfaultPacketizerStatus_NoMoreData
+//! @note It's expected that this API will be called periodically (i.e when a connection to the
+//! internet becomes available) to drain data collected by Memfault up to the cloud.
 //! @note To completely drain the data "memfault_packetizer_get_next()" must be called until the
 //! function returns kMemfaultPacketizerStatus_NoMoreData. It is _not_ required that all the data be
 //! drained at once. It is perfectly fine to drain data a little bit at a time each time a
@@ -104,14 +104,14 @@ bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata
 //!
 //! @note It is expected that the customer has a mechanism to send the packets returned from
 //! this API up to the cloud _reliably_ and _in-order_.
-//! @note The api is not threadsafe. The expectation is that a user will drain data from a single thread
-//! or otherwise wrap the call with a mutex
+//! @note The api is not threadsafe. The expectation is that a user will drain data from a single
+//! thread or otherwise wrap the call with a mutex
 //!
 //! @param[out] buf The buffer to copy data to be sent into
 //! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated
 //! with the amount of data, in bytes, that was copied into the buffer. If a buffer with a length
-//! less than MEMFAULT_PACKETIZER_MIN_BUF_LEN is passed, no data will be copied and the size returned
-//! will be 0.
+//! less than MEMFAULT_PACKETIZER_MIN_BUF_LEN is passed, no data will be copied and the size
+//! returned will be 0.
 //!
 //! @return The status of the packetization. See comments in enum for more details.
 eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_len);
@@ -143,8 +143,8 @@ typedef enum {
   kMfltDataSourceMask_Cdr = (1 << 4),
 
   // A convenience mask which enables all active sources
-  kMfltDataSourceMask_All =
-    (kMfltDataSourceMask_Coredump | kMfltDataSourceMask_Event | kMfltDataSourceMask_Log | kMfltDataSourceMask_Cdr)
+  kMfltDataSourceMask_All = (kMfltDataSourceMask_Coredump | kMfltDataSourceMask_Event |
+                             kMfltDataSourceMask_Log | kMfltDataSourceMask_Cdr)
 } eMfltDataSourceMask;
 
 //! Set the data sources which will be drained by the packetizer

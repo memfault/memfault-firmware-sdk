@@ -1,15 +1,13 @@
+#include <stddef.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <stddef.h>
-#include <string.h>
-
 #include "memfault/panics/assert.h"
 
-
-static sMemfaultAssertInfo p_assert_info = {0};
+static sMemfaultAssertInfo p_assert_info = { 0 };
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   (void)pc, (void)lr;

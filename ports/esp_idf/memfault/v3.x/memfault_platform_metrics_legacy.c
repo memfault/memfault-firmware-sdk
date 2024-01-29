@@ -29,8 +29,7 @@
   #include "memfault/ports/mbedtls/metrics.h"
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
 
-MEMFAULT_WEAK
-void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
+MEMFAULT_WEAK void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
   if (handler == NULL) {
     return;
   }

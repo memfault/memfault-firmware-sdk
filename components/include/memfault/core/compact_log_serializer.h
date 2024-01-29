@@ -29,11 +29,11 @@ extern "C" {
 //!
 //! @return true if serialization succeeded, false otherwise
 bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log_id,
-    uint32_t compressed_fmt, va_list args);
+                                     uint32_t compressed_fmt, va_list args);
 
 //! Same as "memfault_vlog_compact_serialize" but takes a variable list of arguments
 bool memfault_log_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log_id,
-    uint32_t compressed_fmt,  ...);
+                                    uint32_t compressed_fmt, ...);
 
 #ifdef __cplusplus
 }

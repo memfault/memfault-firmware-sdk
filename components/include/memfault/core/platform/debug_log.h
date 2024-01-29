@@ -43,8 +43,7 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
 //!
 //! @note it's expected that the implementation will terminate the log with a newline
 //! but NOT suffix or append anything other than that.
-MEMFAULT_PRINTF_LIKE_FUNC(1, 2)
-void memfault_platform_log_raw(const char *fmt, ...);
+MEMFAULT_PRINTF_LIKE_FUNC(1, 2) void memfault_platform_log_raw(const char *fmt, ...);
 
 //! Routine for displaying (or capturing) hexdumps
 void memfault_platform_hexdump(eMemfaultPlatformLogLevel level, const void *data, size_t data_len);

@@ -106,8 +106,7 @@ __attribute__((noreturn)) void Reset_Handler(void) {
   (void)main();
 
   // shouldn't return
-  while (1) {
-  };
+  while (1) { };
 }
 
 // These are defined in the FreeRTOS port

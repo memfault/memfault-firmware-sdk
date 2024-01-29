@@ -23,15 +23,13 @@ typedef struct {
 static const NRF_FICR_Type s_nrf_ficr = {
   .SIZERAMBLOCKS = 0x00000000,
   .NUMRAMBLOCK = 0x00000000,
-  .INFO =
-    {
-      .RAM = 256,
-    },
+  .INFO = {
+    .RAM = 256,
+  },
 };
-static const NRF_FICR_Type* const NRF_FICR = &s_nrf_ficr;
+static const NRF_FICR_Type *const NRF_FICR = &s_nrf_ficr;
 
-MEMFAULT_USED
-static uintptr_t s_get_stack_top(void) {
+MEMFAULT_USED static uintptr_t s_get_stack_top(void) {
   uint32_t i;
   uintptr_t retval = (uintptr_t)&i;
   return retval;

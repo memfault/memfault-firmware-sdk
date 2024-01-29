@@ -1,21 +1,18 @@
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-
-#include <string.h>
-#include <stddef.h>
-#include <stdio.h>
-
 #include "memfault/config.h"
 #include "memfault/core/math.h"
 #include "memfault/demo/shell.h"
-
 #include "memfault/demo/shell_commands.h"
 
 static size_t s_num_chars_sent = 0;
-static char s_chars_sent_buffer[1024] = {0};
+static char s_chars_sent_buffer[1024] = { 0 };
 
 static int prv_send_char(char c) {
   CHECK(s_num_chars_sent < sizeof(s_chars_sent_buffer));
@@ -26,7 +23,7 @@ static int prv_send_char(char c) {
 static int prv_test_handler(int argc, char **argv) {
   MockActualCall &m = mock().actualCall(__func__);
   for (int i = 0; i < argc; i++) {
-    char buffer[11] = {0};
+    char buffer[11] = { 0 };
     snprintf(buffer, MEMFAULT_ARRAY_SIZE(buffer), "%d", i);
     m.withStringParameter(buffer, argv[i]);
   }
@@ -34,8 +31,8 @@ static int prv_test_handler(int argc, char **argv) {
 }
 
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
-    {"test", prv_test_handler, "test command"},
-    {"help", memfault_shell_help_handler, "Lists all commands"},
+  { "test", prv_test_handler, "test command" },
+  { "help", memfault_shell_help_handler, "Lists all commands" },
 };
 
 const sMemfaultShellCommand *const g_memfault_shell_commands = s_memfault_shell_commands;
@@ -52,10 +49,10 @@ static void prv_reset_sent_buffer(void) {
   memset(s_chars_sent_buffer, 0, sizeof(s_chars_sent_buffer));
 }
 
-TEST_GROUP(MfltDemoShell){
+TEST_GROUP(MfltDemoShell) {
   void setup() {
     const sMemfaultShellImpl impl = {
-        .send_char = prv_send_char,
+      .send_char = prv_send_char,
     };
     memfault_demo_shell_boot(&impl);
     STRCMP_EQUAL("\r\nmflt> ", s_chars_sent_buffer);
@@ -78,8 +75,7 @@ TEST(MfltDemoShell, Test_MfltDemoShellEcho) {
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellEchoBackspace) {
-  mock().expectOneCall("prv_test_handler")
-        .withParameter("0", "test");
+  mock().expectOneCall("prv_test_handler").withParameter("0", "test");
   prv_receive_str("x\x08test\n");
   STRCMP_EQUAL("x\x08\x20\x08test\r\nmflt> ", s_chars_sent_buffer);
 }
@@ -119,11 +115,13 @@ TEST(MfltDemoShell, Test_MfltDemoShellEnterLFCR) {
 
 TEST(MfltDemoShell, Test_MfltDemoShellUnknownCmd) {
   prv_receive_str("foo\n");
-  STRCMP_EQUAL("foo\r\nUnknown command: foo\r\nType 'help' to list all commands\r\nmflt> ", s_chars_sent_buffer);
+  STRCMP_EQUAL("foo\r\nUnknown command: foo\r\nType 'help' to list all commands\r\nmflt> ",
+               s_chars_sent_buffer);
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellTestCmd) {
-  mock().expectOneCall("prv_test_handler")
+  mock()
+    .expectOneCall("prv_test_handler")
     .withParameter("0", "test")
     .withParameter("1", "123")
     .withParameter("2", "abc")
@@ -134,15 +132,15 @@ TEST(MfltDemoShell, Test_MfltDemoShellTestCmd) {
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellStripLeadingSpaces) {
-  mock().expectOneCall("prv_test_handler")
-        .withParameter("0", "test");
+  mock().expectOneCall("prv_test_handler").withParameter("0", "test");
   prv_receive_str("    test\n");
   STRCMP_EQUAL("    test\r\nmflt> ", s_chars_sent_buffer);
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellHelpCmd) {
   prv_receive_str("help\n");
-  STRCMP_EQUAL("help\r\ntest: test command\r\nhelp: Lists all commands\r\nmflt> ", s_chars_sent_buffer);
+  STRCMP_EQUAL("help\r\ntest: test command\r\nhelp: Lists all commands\r\nmflt> ",
+               s_chars_sent_buffer);
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellRxBufferFull) {
@@ -150,17 +148,17 @@ TEST(MfltDemoShell, Test_MfltDemoShellRxBufferFull) {
     memfault_demo_shell_receive_char('X');
   }
   STRCMP_EQUAL(
-      "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n" // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE + 1 X's
-      "Unknown command: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n" // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE X's
-      "Type 'help' to list all commands\r\n"
-      "mflt> ",
-      s_chars_sent_buffer);
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n"  // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE
+                                                                            // + 1 X's
+    "Unknown command: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\r\n"  // MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE
+                                                                                            // X's
+    "Type 'help' to list all commands\r\n"
+    "mflt> ",
+    s_chars_sent_buffer);
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellBackspaces) {
-  mock().expectOneCall("prv_test_handler")
-      .withParameter("0", "test")
-      .withParameter("1", "1");
+  mock().expectOneCall("prv_test_handler").withParameter("0", "test").withParameter("1", "1");
   prv_receive_str("\b\bnop\b\b\btest 1\n");
   mock().checkExpectations();
 
@@ -169,10 +167,10 @@ TEST(MfltDemoShell, Test_MfltDemoShellBackspaces) {
 }
 
 TEST(MfltDemoShell, Test_MfltDemoShellNotBooted) {
-   const sMemfaultShellImpl impl = {
-     .send_char = NULL,
-   };
-   memfault_demo_shell_boot(&impl);
+  const sMemfaultShellImpl impl = {
+    .send_char = NULL,
+  };
+  memfault_demo_shell_boot(&impl);
 
   prv_receive_str("test 1\n");
   LONGS_EQUAL(0, s_num_chars_sent);
@@ -188,7 +186,7 @@ TEST(MfltDemoShell, Test_Extension_Commands) {
 
   // attach an extension command table
   static const sMemfaultShellCommand s_extension_commands[] = {
-    {"test2", prv_test_handler, "test2 command"},
+    { "test2", prv_test_handler, "test2 command" },
   };
   memfault_shell_command_set_extensions(s_extension_commands,
                                         MEMFAULT_ARRAY_SIZE(s_extension_commands));

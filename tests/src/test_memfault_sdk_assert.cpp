@@ -1,11 +1,11 @@
+#include <setjmp.h>
+#include <stddef.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <setjmp.h>
-#include <stddef.h>
-#include <string.h>
 
 static jmp_buf s_assert_jmp_buf;
 

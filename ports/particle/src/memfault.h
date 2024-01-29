@@ -17,7 +17,6 @@
 
 class Memfault {
  public:
-
   //! Constructor for Memfault library
   //!
   //! @param product_version The particle version of the application running on the device

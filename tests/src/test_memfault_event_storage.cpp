@@ -2,15 +2,14 @@
 //!
 //! @brief
 
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_platform_metrics_locking.h"
 #include "memfault/core/batched_events.h"
 #include "memfault/core/data_packetizer_source.h"
@@ -128,7 +127,7 @@ TEST(MemfaultEventStorage, Test_ApiMisuse) {
   CHECK(!success);
 }
 
-#if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED == 0
+  #if MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED == 0
 
 TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
   // queue up 3 one byte events which due to 2-byte overhead should take up 9 bytes
@@ -194,10 +193,10 @@ TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
   prv_fake_event_impl_mark_event_read();
 }
 
-#else /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
+  #else /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
 
-void memfault_batched_events_build_header(
-    size_t num_events, sMemfaultBatchedEventsHeader *header_out) {
+void memfault_batched_events_build_header(size_t num_events,
+                                          sMemfaultBatchedEventsHeader *header_out) {
   if (num_events <= 1) {
     return;
   }
@@ -222,7 +221,7 @@ TEST(MemfaultEventStorage, Test_MemfaultMultiEvent) {
   bool has_event;
   size_t event_size;
 
-  const uint8_t fake_header[] = { 0xAB, 0x02};
+  const uint8_t fake_header[] = { 0xAB, 0x02 };
 
   has_event = prv_fake_event_impl_has_event(&event_size);
   CHECK(has_event);
@@ -301,13 +300,13 @@ TEST(MemfaultEventStorage, Test_MemfaultMultiEventLimited) {
   LONGS_EQUAL(0, event_size);
 }
 
-#endif /* MEMFAULT_EVENT_STORAGE_MAX_READ_BATCH_LEN */
+  #endif /* MEMFAULT_EVENT_STORAGE_MAX_READ_BATCH_LEN */
 //
 // We use a compilation flag and run the test suite twice so we can test the default stub
 // persistent source implementation as well as a real one
 //
 
-#else /* !MEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE */
+#else  /* !MEMFAULT_TEST_PERSISTENT_EVENT_STORAGE_DISABLE */
 
 typedef struct {
   const uint8_t *data;
@@ -315,22 +314,14 @@ typedef struct {
 } sFakePersistedEvent;
 
 const uint8_t test_event0[] = {
-  0xa7,
-  0x02, 0x01,
-  0x03, 0x01,
-  0x07, 0x69, 'D', 'A', 'A', 'B', 'B', 'C', 'C', 'D', 'D',
-  0x0a, 0x64, 'm', 'a', 'i', 'n',
-  0x09, 0x65, '1' ,'.', '2', '.', '3',
-  0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+  0xa7, 0x02, 0x01, 0x03, 0x01, 0x07, 0x69, 'D', 'A', 'A',  'B',  'B', 'C',
+  'C',  'D',  'D',  0x0a, 0x64, 'm',  'a',  'i', 'n', 0x09, 0x65, '1', '.',
+  '2',  '.',  '3',  0x06, 0x66, 'e',  'v',  't', '_', '2',  '4',
 };
 
 const uint8_t test_event1[] = {
-  0xa6,
-  0x02, 0x01,
-  0x03, 0x01,
-  0x0a, 0x64, 'm', 'a', 'i', 'n',
-  0x09, 0x65, '1' ,'.', '2', '.', '3',
-  0x06, 0x66, 'e', 'v', 't', '_', '2','4',
+  0xa6, 0x02, 0x01, 0x03, 0x01, 0x0a, 0x64, 'm', 'a', 'i', 'n', 0x09, 0x65,
+  '1',  '.',  '2',  '.',  '3',  0x06, 0x66, 'e', 'v', 't', '_', '2',  '4',
 };
 
 typedef struct {
@@ -341,14 +332,8 @@ typedef struct {
 static sFakePersistentEventStorageState s_persistent_event_storage_state = { 0 };
 
 static const sFakePersistedEvent s_fake_persisted_events[] = {
-  {
-    .data = &test_event0[0],
-    .len = sizeof(test_event0)
-  },
-  {
-    .data = &test_event1[0],
-    .len = sizeof(test_event1)
-  },
+  { .data = &test_event0[0], .len = sizeof(test_event0) },
+  { .data = &test_event1[0], .len = sizeof(test_event1) },
 };
 
 static bool prv_platform_nv_event_storage_read_has_event(size_t *event_size) {
@@ -370,7 +355,7 @@ static bool prv_platform_nv_event_storage_read(uint32_t offset, void *buf, size_
   CHECK(s_persistent_event_storage_state.num_events <=
         MEMFAULT_ARRAY_SIZE(s_fake_persisted_events));
   const sFakePersistedEvent *event =
-      &s_fake_persisted_events[s_persistent_event_storage_state.events_read];
+    &s_fake_persisted_events[s_persistent_event_storage_state.events_read];
   CHECK(offset + buf_len <= event->len);
 
   memcpy(buf, &event->data[offset], buf_len);
@@ -383,9 +368,8 @@ static void prv_platform_nv_event_storage_consume(void) {
 
 static int s_expected_write_payload_len = 1;
 
-static bool prv_platform_nv_event_storage_write(
-    MemfaultEventReadCallback event_read_cb, size_t total_size) {
-
+static bool prv_platform_nv_event_storage_write(MemfaultEventReadCallback event_read_cb,
+                                                size_t total_size) {
   const bool success = mock().actualCall(__func__).returnBoolValueOrDefault(true);
   if (!success) {
     return success;
@@ -395,7 +379,7 @@ static bool prv_platform_nv_event_storage_write(
 
   uint8_t expected_data[total_size];
   for (size_t i = 0; i < total_size; i++) {
-    expected_data[i]= (uint8_t)i;
+    expected_data[i] = (uint8_t)i;
   }
 
   uint8_t actual_data[total_size];
@@ -409,8 +393,10 @@ static bool prv_platform_nv_event_storage_write(
 }
 
 void memfault_event_storage_request_persist_callback(
-    const sMemfaultEventStoragePersistCbStatus *status) {
-  const bool async_persist = mock().actualCall(__func__)
+  const sMemfaultEventStoragePersistCbStatus *status) {
+  const bool async_persist =
+    mock()
+      .actualCall(__func__)
       .withParameter("volatile_storage_bytes_used", status->volatile_storage.bytes_used)
       .withParameter("volatile_storage_bytes_free", status->volatile_storage.bytes_free)
       .returnBoolValueOrDefault(true);
@@ -422,12 +408,12 @@ void memfault_event_storage_request_persist_callback(
   LONGS_EQUAL(1, events_persisted);
 }
 
-static void prv_write_and_expect_persist_callback(
-    bool async_persist, const void *data, size_t data_len, bool rollback) {
-
-  mock().expectOneCall("memfault_event_storage_request_persist_callback")
-      .ignoreOtherParameters()
-      .andReturnValue(async_persist);
+static void prv_write_and_expect_persist_callback(bool async_persist, const void *data,
+                                                  size_t data_len, bool rollback) {
+  mock()
+    .expectOneCall("memfault_event_storage_request_persist_callback")
+    .ignoreOtherParameters()
+    .andReturnValue(async_persist);
   if (!async_persist) {
     s_expected_write_payload_len = data_len;
     mock().expectOneCall("prv_platform_nv_event_storage_write");
@@ -454,7 +440,7 @@ const sMemfaultNonVolatileEventStorageImpl g_memfault_platform_nv_event_storage_
 
 TEST(MemfaultEventStorage, Test_ReadPersistedEvents) {
   const size_t num_persisted_events = MEMFAULT_ARRAY_SIZE(s_fake_persisted_events);
-  s_persistent_event_storage_state = (sFakePersistentEventStorageState) {
+  s_persistent_event_storage_state = (sFakePersistentEventStorageState){
     .num_events = num_persisted_events,
     .events_read = 0,
   };
@@ -469,9 +455,10 @@ TEST(MemfaultEventStorage, Test_ReadPersistedEvents) {
     }
     if (i >= 1) {
       const size_t bytes_used = sizeof(byte) + MEMFAULT_STORAGE_OVERHEAD;
-      mock().expectOneCall("memfault_event_storage_request_persist_callback")
-          .withParameter("volatile_storage_bytes_used", bytes_used)
-          .withParameter("volatile_storage_bytes_free", s_ram_store_size - bytes_used);
+      mock()
+        .expectOneCall("memfault_event_storage_request_persist_callback")
+        .withParameter("volatile_storage_bytes_used", bytes_used)
+        .withParameter("volatile_storage_bytes_free", s_ram_store_size - bytes_used);
     }
 
     const sFakePersistedEvent *event = &s_fake_persisted_events[i];
@@ -486,7 +473,7 @@ TEST(MemfaultEventStorage, Test_ReadPersistedEvents) {
 
 TEST(MemfaultEventStorage, Test_PersistStorageFatalError) {
   const size_t num_persisted_events = MEMFAULT_ARRAY_SIZE(s_fake_persisted_events);
-  s_persistent_event_storage_state = (sFakePersistentEventStorageState) {
+  s_persistent_event_storage_state = (sFakePersistentEventStorageState){
     .num_events = num_persisted_events,
     .events_read = 0,
   };
@@ -498,9 +485,10 @@ TEST(MemfaultEventStorage, Test_PersistStorageFatalError) {
   prv_write_and_expect_persist_callback(async, &two_bytes, sizeof(two_bytes), rollback);
 
   const size_t bytes_used = sizeof(two_bytes) + MEMFAULT_STORAGE_OVERHEAD;
-  mock().expectOneCall("memfault_event_storage_request_persist_callback")
-      .withParameter("volatile_storage_bytes_used", bytes_used)
-      .withParameter("volatile_storage_bytes_free", s_ram_store_size - bytes_used);
+  mock()
+    .expectOneCall("memfault_event_storage_request_persist_callback")
+    .withParameter("volatile_storage_bytes_used", bytes_used)
+    .withParameter("volatile_storage_bytes_free", s_ram_store_size - bytes_used);
 
   const sFakePersistedEvent *event = &s_fake_persisted_events[0];
   prv_assert_read((void *)event->data, event->len);
@@ -538,7 +526,6 @@ TEST(MemfaultEventStorage, Test_PersistEvents) {
   prv_write_and_expect_persist_callback(async, &byte, sizeof(byte), rollback);
   prv_write_and_expect_persist_callback(async, &two_bytes, sizeof(two_bytes), rollback);
 
-
   mock().expectNCalls(2, "prv_platform_nv_event_storage_write");
   events_persisted = memfault_event_storage_persist();
   LONGS_EQUAL(2, events_persisted);
@@ -562,13 +549,13 @@ TEST(MemfaultEventStorage, Test_PersistEvents) {
 
 TEST(MemfaultEventStorage, Test_UsedFreeSizes) {
   const size_t per_event_overhead = 2;
-  const size_t first_half = s_ram_store_size / 2; // Integer truncation is fine
+  const size_t first_half = s_ram_store_size / 2;  // Integer truncation is fine
   const size_t second_half = s_ram_store_size - first_half;
   const bool async = true;
   const bool no_rollback = false;
 
   // We'll write the same buffer data twice.
-  uint8_t my_buffer[sizeof s_ram_store / 2 + 1] = {0};
+  uint8_t my_buffer[sizeof s_ram_store / 2 + 1] = { 0 };
 
   // 1. Initially empty
   size_t bytes_used = memfault_event_storage_bytes_used();
@@ -580,8 +567,8 @@ TEST(MemfaultEventStorage, Test_UsedFreeSizes) {
   // bytes used based on total bytes written to event storage.
 
   // 2. Partially full
-  prv_write_and_expect_persist_callback(
-      async, my_buffer, first_half-per_event_overhead, no_rollback);
+  prv_write_and_expect_persist_callback(async, my_buffer, first_half - per_event_overhead,
+                                        no_rollback);
 
   bytes_used = memfault_event_storage_bytes_used();
   bytes_free = memfault_event_storage_bytes_free();
@@ -589,8 +576,8 @@ TEST(MemfaultEventStorage, Test_UsedFreeSizes) {
   LONGS_EQUAL(bytes_free, second_half);
 
   // 3. Full
-  prv_write_and_expect_persist_callback(
-      async, my_buffer, second_half-per_event_overhead, no_rollback);
+  prv_write_and_expect_persist_callback(async, my_buffer, second_half - per_event_overhead,
+                                        no_rollback);
 
   bytes_used = memfault_event_storage_bytes_used();
   bytes_free = memfault_event_storage_bytes_free();

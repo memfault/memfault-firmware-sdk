@@ -33,8 +33,7 @@ extern "C" {
 //! @param buf_len The amount of data to be copied.
 //! @note The chunk transport will _never_ invoke this callback and request data that is past the
 //! total_size of the message being operated on
-typedef void (MfltChunkTransportMsgReaderCb)(uint32_t offset, void *buf,
-                                             size_t buf_len);
+typedef void(MfltChunkTransportMsgReaderCb)(uint32_t offset, void *buf, size_t buf_len);
 
 //! Context used to hold the state of the current message being chunked
 typedef struct {
@@ -69,8 +68,8 @@ typedef struct {
 //! at least MEMFAULT_MIN_CHUNK_BUF_LEN
 //!
 //! @return true if there is more data to send in the message, false otherwise
-bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx,
-                                             void *buf, size_t *buf_len);
+bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *buf,
+                                             size_t *buf_len);
 
 //! Computes info about the current chunk being operated on and populates the output arguments of
 //! sMfltChunkTransportCtx with the info

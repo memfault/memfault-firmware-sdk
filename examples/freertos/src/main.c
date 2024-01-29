@@ -8,15 +8,15 @@
 #include "FreeRTOS.h"
 #include "compact_log.h"
 #include "console.h"
+#include "heap_task.h"
 #include "memfault/components.h"
 #include "metrics.h"
-#include "heap_task.h"
 
 // Next two functions from:
 // https://github.com/FreeRTOS/FreeRTOS/blob/6f7f9fd9ed56fbb34d5314af21f17cfa571133a7/FreeRTOS/Demo/CORTEX_M3_MPS2_QEMU_GCC/main.c#L156-L204
-void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
-                                   StackType_t** ppxIdleTaskStackBuffer,
-                                   uint32_t* pulIdleTaskStackSize) {
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize) {
   /* If the buffers to be provided to the Idle task are declared inside this
    * function then they must be declared static - otherwise they will be allocated on
    * the stack and so not exists after this function exits. */
@@ -38,9 +38,9 @@ void vApplicationGetIdleTaskMemory(StaticTask_t** ppxIdleTaskTCBBuffer,
 
 StackType_t uxTimerTaskStack[configTIMER_TASK_STACK_DEPTH];
 
-void vApplicationGetTimerTaskMemory(StaticTask_t** ppxTimerTaskTCBBuffer,
-                                    StackType_t** ppxTimerTaskStackBuffer,
-                                    uint32_t* pulTimerTaskStackSize) {
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+                                    StackType_t **ppxTimerTaskStackBuffer,
+                                    uint32_t *pulTimerTaskStackSize) {
   /* If the buffers to be provided to the Timer task are declared inside this
    * function then they must be declared static - otherwise they will be allocated on
    * the stack and so not exists after this function exits. */
@@ -91,7 +91,6 @@ int main(void) {
   vTaskStartScheduler();
 
   // Should never reach here
-  while (1) {
-  };
+  while (1) { };
   return 0;
 }

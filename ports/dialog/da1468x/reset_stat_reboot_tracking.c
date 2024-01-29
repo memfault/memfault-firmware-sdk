@@ -8,37 +8,36 @@
 //!
 //! More details can be found in the "CRG Register File" (RESET_STAT_REG)"
 //! section of the datasheet document for your specific chip.
-#include "hw_cpm.h"
-#include "osal.h"
-#include "sdk_defs.h"
-
-#include "memfault/config.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/reboot_reason_types.h"
-#include "memfault/core/sdk_assert.h"
-#include "memfault/ports/reboot_reason.h"
-
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "hw_cpm.h"
+#include "memfault/config.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/core/reboot_reason_types.h"
+#include "memfault/core/sdk_assert.h"
+#include "memfault/ports/reboot_reason.h"
+#include "osal.h"
+#include "sdk_defs.h"
+
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 // Use Dialog's way of locating variables to a no-init section. This allocation is very
 // Dialog specific so we can put it here within the chip implementation.
-__RETAINED_UNINIT MEMFAULT_ALIGNED(8)
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+__RETAINED_UNINIT MEMFAULT_ALIGNED(8) static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 // Called by the user application to get our reboot allocation registered with the core.
 void memfault_platform_reboot_tracking_boot(void) {
   // For a detailed explanation about reboot reason storage options check out the guide at:
   //    https://mflt.io/reboot-reason-storage
-  sResetBootupInfo reset_reason = {0};
+  sResetBootupInfo reset_reason = { 0 };
   memfault_reboot_reason_get(&reset_reason);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_reason);
 }
@@ -50,7 +49,7 @@ static uint32_t prv_reset_reason_get(void) {
 }
 
 static void prv_reset_reason_clear(uint32_t reset_reas_clear_mask) {
-  (void) reset_reas_clear_mask;
+  (void)reset_reas_clear_mask;
 
   // Write zero to clear, not ones.
   CRG_TOP->RESET_STAT_REG = 0;
@@ -101,8 +100,8 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
     reset_reason = kMfltRebootReason_PinReset;
   }
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_reason_reg,
-    .reset_reason     = reset_reason,
+    .reset_reason = reset_reason,
   };
 }

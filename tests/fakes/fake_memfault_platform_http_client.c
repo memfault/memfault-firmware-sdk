@@ -6,12 +6,11 @@
 //! @brief
 //! Fake implementation of the http client platform API
 
+#include "memfault/core/compiler.h"
 #include "memfault/http/platform/http_client.h"
 
-#include "memfault/core/compiler.h"
-
-int memfault_platform_http_response_get_status(
-    MEMFAULT_UNUSED const sMfltHttpResponse *response, uint32_t *status_out) {
+int memfault_platform_http_response_get_status(MEMFAULT_UNUSED const sMfltHttpResponse *response,
+                                               uint32_t *status_out) {
   if (status_out) {
     *status_out = 200;
   }
@@ -25,15 +24,13 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
 }
 
 int memfault_platform_http_client_post_data(
-    MEMFAULT_UNUSED sMfltHttpClient *client,
-    MEMFAULT_UNUSED MemfaultHttpClientResponseCallback callback,
-    MEMFAULT_UNUSED void *ctx) {
+  MEMFAULT_UNUSED sMfltHttpClient *client,
+  MEMFAULT_UNUSED MemfaultHttpClientResponseCallback callback, MEMFAULT_UNUSED void *ctx) {
   return 0;
 }
 
 int memfault_platform_http_client_wait_until_requests_completed(
-    MEMFAULT_UNUSED sMfltHttpClient *client,
-    MEMFAULT_UNUSED uint32_t timeout_ms) {
+  MEMFAULT_UNUSED sMfltHttpClient *client, MEMFAULT_UNUSED uint32_t timeout_ms) {
   return 0;
 }
 

@@ -6,9 +6,8 @@
 //! @brief
 //! A stub implementation of memfault_log_save() for unit testing
 
-#include "memfault/core/log.h"
-
 #include "memfault/core/compiler.h"
+#include "memfault/core/log.h"
 
 void memfault_log_save(MEMFAULT_UNUSED eMemfaultPlatformLogLevel level,
                        MEMFAULT_UNUSED const char *fmt, ...) { }

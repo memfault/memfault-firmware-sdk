@@ -8,27 +8,26 @@
 //!
 //! More details can be found in the "RESETREAS" section in an NRF reference manual
 
-#include "memfault/ports/reboot_reason.h"
+#include <hal/nrf_power.h>
+#include <nrfx.h>
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
-
-#include <nrfx.h>
-#include <hal/nrf_power.h>
+#include "memfault/ports/reboot_reason.h"
 
 //! Note: Nordic uses different headers for reset reason information depending on platform. NRF52 &
 //! NRF91 reasons are defined in nrf_power.h whereas nrf53 reasons are defined in nrf_reset.h
 #if !NRF_POWER_HAS_RESETREAS
-#include <hal/nrf_reset.h>
+  #include <hal/nrf_reset.h>
 #endif
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 #if NRF_POWER_HAS_RESETREAS
@@ -46,19 +45,19 @@ static eMemfaultRebootReason prv_decode_power_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_POWER_RESETREAS_LOCKUP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Lockup");
     reset_reason = kMfltRebootReason_Lockup;
-#if defined (POWER_RESETREAS_LPCOMP_Msk)
+  #if defined(POWER_RESETREAS_LPCOMP_Msk)
   } else if (reset_cause & NRF_POWER_RESETREAS_LPCOMP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" LPCOMP Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-#endif
+  #endif
   } else if (reset_cause & NRF_POWER_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-#if defined (NRF_POWER_RESETREAS_VBUS_MASK)
+  #if defined(NRF_POWER_RESETREAS_VBUS_MASK)
   } else if (reset_cause & NRF_POWER_RESETREAS_VBUS_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" VBUS Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-#endif
+  #endif
   } else if (reset_cause == 0) {
     // absence of a value, means a power on reset took place
     MEMFAULT_PRINT_RESET_INFO(" Power on Reset");
@@ -96,7 +95,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-#if NRF_RESET_HAS_NETWORK
+  #if NRF_RESET_HAS_NETWORK
   } else if (reset_cause & NRF_RESET_RESETREAS_LSREQ_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Software (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
@@ -112,7 +111,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_LCTRLAP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debugger (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
-#endif
+  #endif
   } else if (reset_cause & NRF_RESET_RESETREAS_VBUS_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" VBUS Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
@@ -135,8 +134,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
 }
 #endif
 
-MEMFAULT_WEAK
-void memfault_reboot_reason_get(sResetBootupInfo *info) {
+MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   MEMFAULT_SDK_ASSERT(info != NULL);
 
 #if NRF_POWER_HAS_RESETREAS
@@ -161,7 +159,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   *resetreas_reg |= reset_cause;
 #endif
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

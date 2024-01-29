@@ -5,21 +5,19 @@
 //!
 //! A port of dependency functions for Memfault core subsystem using FreeRTOS.
 
-#include "memfault/ports/freertos.h"
-
-#include "memfault/core/platform/overrides.h"
-#include "memfault/core/platform/core.h"
-
 #include "FreeRTOS.h"
+#include "memfault/core/platform/core.h"
+#include "memfault/core/platform/overrides.h"
+#include "memfault/ports/freertos.h"
 #include "semphr.h"
 #include "task.h"
 
 #if configUSE_MUTEXES == 0
-#error "configUSE_MUTEXES must be enabled to use Memfault FreeRTOS port"
+  #error "configUSE_MUTEXES must be enabled to use Memfault FreeRTOS port"
 #endif
 
 #if configUSE_RECURSIVE_MUTEXES == 0
-#error "configUSE_RECURSIVE_MUTEXES must be enabled to use Memfault FreeRTOS port"
+  #error "configUSE_RECURSIVE_MUTEXES must be enabled to use Memfault FreeRTOS port"
 #endif
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {

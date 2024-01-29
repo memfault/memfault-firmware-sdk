@@ -10,13 +10,13 @@
 
 #include <string.h>
 
-#define INITIAL_FAKE_BUILD_ID (sMemfaultBuildInfo) { \
-  .build_id = { \
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, \
-    0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, \
-    0x01, 0x23, 0x45, 0x67, \
-  }, \
-}
+#define INITIAL_FAKE_BUILD_ID                                     \
+  (sMemfaultBuildInfo) {                                          \
+    .build_id = {                                                 \
+      0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, \
+      0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, \
+    },                                                            \
+  }
 
 eMemfaultBuildIdType g_fake_memfault_build_id_type = kMemfaultBuildIdType_None;
 sMemfaultBuildInfo g_fake_memfault_build_id_info = INITIAL_FAKE_BUILD_ID;

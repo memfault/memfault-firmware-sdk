@@ -7,7 +7,7 @@
 #include "mocks/mock_memfault_platform_debug_log.h"
 
 TEST_GROUP(MemfaultSelfTestDeviceInfo) {
-  void setup() {}
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();

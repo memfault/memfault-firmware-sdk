@@ -2,15 +2,14 @@
 //!
 //! @brief
 
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
-#include <string.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include "memfault/core/heap_stats.h"
 #include "memfault/core/heap_stats_impl.h"
 #include "memfault/core/log_impl.h"
@@ -20,7 +19,7 @@
 sMfltHeapStats g_memfault_heap_stats;
 sMfltHeapStatEntry g_memfault_heap_stats_pool[MEMFAULT_HEAP_STATS_MAX_COUNT];
 
-TEST_GROUP(MemfaultSdkRegions){
+TEST_GROUP(MemfaultSdkRegions) {
   void setup() {
     mock().strictOrder();
   }
@@ -59,7 +58,6 @@ static void prv_check_heap_stats_pool_region(const sMfltCoredumpRegion *region) 
   LONGS_EQUAL((uintptr_t)&g_memfault_heap_stats_pool, (uintptr_t)region->region_start);
   LONGS_EQUAL(sizeof(g_memfault_heap_stats_pool), (uint32_t)region->region_size);
 }
-
 
 TEST(MemfaultSdkRegions, Test_MemfaultSdkRegions_Enabled) {
 

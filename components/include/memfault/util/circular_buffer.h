@@ -11,9 +11,9 @@
 //! Note: the implementation does not have any locking. If the user is accessing the buffer
 //! from multiple contexts, it is their responsibility to lock things
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,8 +48,8 @@ bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf, void *stor
 //!
 //! @return true if the requested data_len was read, false otherwise (i.e trying to read more bytes
 //! than are available or past the end of available bytes)
-bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t offset,
-                                   void *data, size_t data_len);
+bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t offset, void *data,
+                                   size_t data_len);
 
 //! Populates the read_ptr with a set of contigous bytes which can be read.
 //!
@@ -74,8 +74,8 @@ bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf
 //! @param buf The payload to write to the storage
 //! @param buf_len The size of the payload to write
 //! @return false if writing was not successful.
-typedef bool (*MemfaultCircularBufferReadCallback)(void *ctx, size_t offset,
-                                                   const void *buf, size_t buf_len);
+typedef bool (*MemfaultCircularBufferReadCallback)(void *ctx, size_t offset, const void *buf,
+                                                   size_t buf_len);
 
 //! Convenience wrapper around "memfault_circular_buffer_get_read_pointer", to directly access
 //! all the data in the circular buffer from a callback, without needing to copy the data to a
@@ -89,8 +89,8 @@ typedef bool (*MemfaultCircularBufferReadCallback)(void *ctx, size_t offset,
 //! is data in the buffer and it is stored in a contiguous block of memory, the callback argument
 //! gets invoked once. If the data is stored in non-contiguous blocks of memory, the callback will
 //! be called for each block.
-bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf,
-                                                 size_t offset, size_t data_len, void *ctx,
+bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf, size_t offset,
+                                                 size_t data_len, void *ctx,
                                                  MemfaultCircularBufferReadCallback callback);
 
 //! Flush the requested number of bytes from the circular buffer
@@ -102,7 +102,6 @@ bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_b
 //! @return true if the bytes were consumed, false otherwise (i.e trying to consume more bytes than
 //!   exist)
 bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t consume_len);
-
 
 //! Same as "memfault_circular_buffer_consume" but flush the requested number of bytes from
 //! the _end_ of the circular buffer
@@ -126,15 +125,18 @@ bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf, const voi
 //! Copy data into the circular buffer starting at the provided offset from the end
 //!
 //! @param circular_buffer The buffer to clear bytes from
-//! @param offset_from_end Where to begin the write. For example if 10 bytes were written to the buffer
-//!  and offset_from_end is 1, a write will begin at offset 9 within the buffer. offset_from_end must
+//! @param offset_from_end Where to begin the write. For example if 10 bytes were written to the
+//! buffer
+//!  and offset_from_end is 1, a write will begin at offset 9 within the buffer. offset_from_end
+//!  must
 //! be less than or equal to the current amount of bytes currently stored in the buffer
 //! @param data The buffer to copy
 //! @param data_len Length of buffer to copy
 //!
 //! @return true if there was enough space and the _entire_ buffer was copied, false otherwise
-bool memfault_circular_buffer_write_at_offset(
-    sMfltCircularBuffer *circular_buf, size_t offset_from_end, const void *data, size_t data_len);
+bool memfault_circular_buffer_write_at_offset(sMfltCircularBuffer *circular_buf,
+                                              size_t offset_from_end, const void *data,
+                                              size_t data_len);
 
 //! @return Amount of bytes available to read
 size_t memfault_circular_buffer_get_read_size(const sMfltCircularBuffer *circular_buf);

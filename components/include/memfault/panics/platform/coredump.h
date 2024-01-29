@@ -10,7 +10,8 @@
 //!
 //! @note The expectation is that all these functions are safe to call from ISRs and with
 //!   interrupts disabled.
-//! @note It's also expected the caller has implemented memfault_platform_get_device_info(). That way
+//! @note It's also expected the caller has implemented memfault_platform_get_device_info(). That
+//! way
 //!   we can save off information that allows for the coredump to be further decoded server side
 
 #include <inttypes.h>
@@ -35,11 +36,9 @@ typedef enum MfltCoredumpRegionType {
 } eMfltCoredumpRegionType;
 
 //! Convenience macro to define a sMfltCoredumpRegion of type kMfltCoredumpRegionType_Memory.
-#define MEMFAULT_COREDUMP_MEMORY_REGION_INIT(_start, _size) \
-  (sMfltCoredumpRegion) { \
-    .type = kMfltCoredumpRegionType_Memory, \
-    .region_start = _start, \
-    .region_size = _size, \
+#define MEMFAULT_COREDUMP_MEMORY_REGION_INIT(_start, _size)                               \
+  (sMfltCoredumpRegion) {                                                                 \
+    .type = kMfltCoredumpRegionType_Memory, .region_start = _start, .region_size = _size, \
   }
 
 typedef struct MfltCoredumpRegion {
@@ -75,7 +74,7 @@ typedef struct CoredumpCrashInfo {
 //!   example ideas can be found in the comments for the struct above
 //! @param num_regions The number of regions in the list returned
 const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-    const sCoredumpCrashInfo *crash_info, size_t *num_regions);
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions);
 
 //! Given a pointer and size returns the actual size which should be collected.
 //!
@@ -114,16 +113,14 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 //! @param offset the offset within the platform coredump storage region to write to
 //! @param data opaque data to write
 //! @param data_len length of data to write in bytes
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len);
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len);
 
 //! Read from platforms coredump storage region
 //!
 //! @param offset the offset within the platform coredump storage region to read from
 //! @param data the buffer to read the data into
 //! @param read_len length of data to read in bytes
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len);
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len);
 
 //! Erase a region of the platforms coredump storage
 //!
@@ -144,9 +141,9 @@ void memfault_platform_coredump_storage_clear(void);
 //! Used to read coredumps out of storage when the system is not in a _crashed_ state
 //!
 //! @note A weak version of this API is defined in memfault_coredump.c and it will just use the
-//! implementation defined in memfault_platform_coredump_storage_read(). If the storage read implementation
-//! differs between when a coredump is saved and when it is read (i.e needs mutex locking), you can override the
-//! the function by defining it in your port file.
+//! implementation defined in memfault_platform_coredump_storage_read(). If the storage read
+//! implementation differs between when a coredump is saved and when it is read (i.e needs mutex
+//! locking), you can override the the function by defining it in your port file.
 //!
 //! @param offset The offset to start reading at
 //! @param buf The buffer to copy data to
@@ -157,8 +154,8 @@ extern bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len);
 
 //! Called prior to invoking any platform_storage_[read/write/erase] calls upon crash
 //!
-//! @note a weak no-op version of this API is defined in memfault_coredump.c because many platforms will
-//! not need to implement this at all. Some potential use cases:
+//! @note a weak no-op version of this API is defined in memfault_coredump.c because many platforms
+//! will not need to implement this at all. Some potential use cases:
 //!   - re-configured platform storage driver to be poll instead of interrupt based
 //!   - give watchdog one last feed prior to storage code getting called it
 //! @return true if to continue saving the coredump, false to abort

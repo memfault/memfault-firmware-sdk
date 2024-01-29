@@ -11,22 +11,20 @@
 
 #if CONFIG_MEMFAULT_COREDUMP_STORAGE_FLASH
 
-#include "memfault/panics/coredump.h"
-#include "memfault/panics/platform/coredump.h"
+  #include <esp_ota_ops.h>
+  #include <stdio.h>
 
-#include <stdio.h>
+  #include "memfault/core/compiler.h"
+  #include "memfault/core/debug_log.h"
+  #include "memfault/core/math.h"
+  #include "memfault/core/task_watchdog.h"
+  #include "memfault/esp8266_port/core.h"
+  #include "memfault/panics/coredump.h"
+  #include "memfault/panics/platform/coredump.h"
+  #include "memfault/util/crc16_ccitt.h"
+  #include "rom/ets_sys.h"
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/math.h"
-#include "memfault/core/task_watchdog.h"
-#include "memfault/esp8266_port/core.h"
-#include "memfault/util/crc16_ccitt.h"
-
-#include <esp_ota_ops.h>
-#include "rom/ets_sys.h"
-
-#define MEMFAULT_COREDUMP_PART_INIT_MAGIC 0x45524f43
+  #define MEMFAULT_COREDUMP_PART_INIT_MAGIC 0x45524f43
 
 typedef struct {
   uint32_t magic;
@@ -50,13 +48,12 @@ void memfault_esp_port_coredump_storage_boot(void) {
     return;
   }
 
-  MEMFAULT_LOG_INFO("Coredumps will be saved at 0x%x (%dB)",
-                    core_part->address, core_part->size);
+  MEMFAULT_LOG_INFO("Coredumps will be saved at 0x%x (%dB)", core_part->address, core_part->size);
 
   // NB: Since we will be accessing this once the system has crashed, we
   // CRC it just to be extra sure the data is valid and has not been
   // corrupted
-  s_coredump_partition_info = (sEspIdfCoredumpPartitionInfo) {
+  s_coredump_partition_info = (sEspIdfCoredumpPartitionInfo){
     .magic = MEMFAULT_COREDUMP_PART_INIT_MAGIC,
     .partition = *core_part,
   };
@@ -66,7 +63,6 @@ void memfault_esp_port_coredump_storage_boot(void) {
   // being tracked
   memfault_coredump_storage_check_size();
 }
-
 
 static const esp_partition_t *prv_get_core_partition(void) {
   if (s_coredump_partition_info.magic != MEMFAULT_COREDUMP_PART_INIT_MAGIC) {
@@ -95,8 +91,7 @@ void memfault_platform_coredump_storage_clear(void) {
   if (core_part->size < sizeof(invalidate)) {
     return;
   }
-  const esp_err_t err = spi_flash_write(core_part->address, &invalidate,
-                                                     sizeof(invalidate));
+  const esp_err_t err = spi_flash_write(core_part->address, &invalidate, sizeof(invalidate));
   if (err != ESP_OK) {
     MEMFAULT_LOG_ERROR("Failed to write data to flash (%d)!", err);
   }
@@ -108,11 +103,11 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
   const esp_partition_t *core_part = prv_validate_and_get_core_partition();
   if (core_part == NULL) {
     MEMFAULT_ESP_PANIC_PRINTF("No valid coredump storage region found\r\n!");
-    *info = (sMfltCoredumpStorageInfo) { 0 };
+    *info = (sMfltCoredumpStorageInfo){ 0 };
     return;
   }
 
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = core_part->size,
     .sector_size = SPI_FLASH_SEC_SIZE,
   };
@@ -144,18 +139,17 @@ static bool prv_coredump_storage_write(uint32_t offset, const void *data, size_t
   const size_t address = core_part->address + offset;
   const esp_err_t err = spi_flash_write(address, data, data_len);
   if (err != ESP_OK) {
-    MEMFAULT_ESP_PANIC_PRINTF("coredump write failed: 0x%x %d rv=%d\r\n",
-                              (int)address, (int)data_len, (int)err);
+    MEMFAULT_ESP_PANIC_PRINTF("coredump write failed: 0x%x %d rv=%d\r\n", (int)address,
+                              (int)data_len, (int)err);
   }
   return (err == ESP_OK);
 }
 
 bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
-
   // Empirically, esp8266 spi_flash_write() routine seems to only support writes up to ~70kB or
   // so. Since we may be copying a large hunk of RAM as part of a coredump we split the write into
   // smaller portions.
-  const size_t max_program_length = 4096; // arbitrary
+  const size_t max_program_length = 4096;  // arbitrary
   const uint8_t *datap = data;
   while (data_len > 0) {
     const uint32_t bytes_to_write = MEMFAULT_MIN(max_program_length, data_len);
@@ -194,8 +188,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   const size_t address = core_part->address + offset;
   const esp_err_t err = spi_flash_erase_range(address, erase_size);
   if (err != ESP_OK) {
-    MEMFAULT_ESP_PANIC_PRINTF("coredump erase failed: 0x%x %d\r\n",
-                              (int)offset, (int)erase_size);
+    MEMFAULT_ESP_PANIC_PRINTF("coredump erase failed: 0x%x %d\r\n", (int)offset, (int)erase_size);
   } else {
     MEMFAULT_ESP_PANIC_PRINTF("coredump erase complete\r\n");
   }

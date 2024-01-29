@@ -5,15 +5,14 @@
 //!
 //! Map memfault logging dependencies to da145xx arch_printf implementation.
 
-#include "memfault/core/platform/debug_log.h"
-
-#include "memfault/config.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "memfault/config.h"
+#include "memfault/core/platform/debug_log.h"
+
 #ifdef CFG_PRINTF
-#include "arch_console.h"
+  #include "arch_console.h"
 #endif
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES

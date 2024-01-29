@@ -44,5 +44,5 @@ void memfault_metrics_reliability_collect(void) {
   // reboot. This only applies to the first hour of uptime, which is where the
   // crash is counted.
   MEMFAULT_METRIC_ADD(operational_crashfree_hours,
-                         (int32_t)(uptime_hours - (uint32_t)unexpected_reboot));
+                      (int32_t)(uptime_hours - (uint32_t)unexpected_reboot));
 }

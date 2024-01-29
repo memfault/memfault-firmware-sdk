@@ -18,8 +18,8 @@
 extern "C" {
 #endif
 
-#include "memfault/core/compiler.h"
 #include "memfault/config.h"
+#include "memfault/core/compiler.h"
 
 //! Defines a user-defined trace reason.
 //!
@@ -39,34 +39,33 @@ extern "C" {
 //! @param reason The name of reason, without quotes. This gets surfaced in the Memfault UI, so
 //! it's useful to make these names human readable. C variable naming rules apply.
 //! @note reason must be unique
-#define MEMFAULT_TRACE_REASON_DEFINE(reason) \
-  kMfltTraceReasonUser_##reason,
+#define MEMFAULT_TRACE_REASON_DEFINE(reason) kMfltTraceReasonUser_##reason,
 
 //! Uses a user-defined trace reason. Before you can use a user-defined trace reason, it should
 //! defined using MEMFAULT_TRACE_REASON_DEFINE in memfault_trace_reason_user_config.def
 //! @param reason The name of the reason, without quotes, as defined using
 //! MEMFAULT_TRACE_REASON_DEFINE.
-#define MEMFAULT_TRACE_REASON(reason) \
-  kMfltTraceReasonUser_##reason
+#define MEMFAULT_TRACE_REASON(reason) kMfltTraceReasonUser_##reason
 
 //! If trace events are not being used, including the user config file can be disabled
 //! by adding -DMEMFAULT_DISABLE_USER_TRACE_REASONS=1 to CFLAGs
 #if !defined(MEMFAULT_DISABLE_USER_TRACE_REASONS)
-#define MEMFAULT_DISABLE_USER_TRACE_REASONS 0
+  #define MEMFAULT_DISABLE_USER_TRACE_REASONS 0
 #endif /* MEMFAULT_DISABLE_USER_TRACE_REASONS */
 
 //! For compilers which support the __has_include macro display a more friendly error message
 //! when the user defined header is not found on the include path
 //!
 //! NB: ARMCC and IAR define __has_include but they don't work as expected
-# if !MEMFAULT_DISABLE_USER_TRACE_REASONS
-#  if !defined(__CC_ARM) && !defined(__ICCARM__)
-#   if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
-#     pragma message("ERROR: " MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_TRACE_REASON_USER_DEFS_FILE) " must be in header search path")
-#     error "See trace_reason_user.h for more details"
-#   endif
-#  endif
-# endif
+#if !MEMFAULT_DISABLE_USER_TRACE_REASONS
+  #if !defined(__CC_ARM) && !defined(__ICCARM__)
+    #if defined(__has_include) && !__has_include(MEMFAULT_TRACE_REASON_USER_DEFS_FILE)
+      #pragma message("ERROR: " MEMFAULT_EXPAND_AND_QUOTE( \
+        MEMFAULT_TRACE_REASON_USER_DEFS_FILE) " must be in header search path")
+      #error "See trace_reason_user.h for more details"
+    #endif
+  #endif
+#endif
 
 typedef enum MfltTraceReasonUser {
   MEMFAULT_TRACE_REASON_DEFINE(Unknown)
@@ -80,7 +79,7 @@ typedef enum MfltTraceReasonUser {
   // (memfault_demo_cli_cmd_trace_event.c) and can be used for a user test command as well.
   MEMFAULT_TRACE_REASON_DEFINE(MemfaultCli_Test)
 
-  kMfltTraceReasonUser_NumReasons,
+    kMfltTraceReasonUser_NumReasons,
 } eMfltTraceReasonUser;
 
 #ifdef __cplusplus

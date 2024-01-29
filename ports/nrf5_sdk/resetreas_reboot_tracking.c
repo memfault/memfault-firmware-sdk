@@ -9,29 +9,28 @@
 //! More details can be found in the "Reset Reason" (RESETREAS)"
 //! section of the nRF528xx product specification document for you
 //! specific chip.
-#include "nrf_power.h"
-#include "nrf_sdh.h"
-#include "nrf_soc.h"
-#include "nrf_stack_guard.h"
+#include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/ports/reboot_reason.h"
-
-#include <stddef.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdlib.h>
+#include "nrf_power.h"
+#include "nrf_sdh.h"
+#include "nrf_soc.h"
+#include "nrf_stack_guard.h"
 
 #ifndef MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
+  #define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
 #endif
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 // Private helper functions deal with the details of the soft device
@@ -62,12 +61,12 @@ void memfault_platform_reboot_tracking_boot(void) {
   // For a detailed explanation about reboot reason storage options check out the guide at:
   //    https://mflt.io/reboot-reason-storage
 
-  uint32_t reboot_tracking_start_addr = (uint32_t) STACK_BASE;
+  uint32_t reboot_tracking_start_addr = (uint32_t)STACK_BASE;
 #if NRF_STACK_GUARD_ENABLED
   reboot_tracking_start_addr += STACK_GUARD_SIZE;
 #endif
 
-  sResetBootupInfo reset_reason = {0};
+  sResetBootupInfo reset_reason = { 0 };
   memfault_reboot_reason_get(&reset_reason);
   memfault_reboot_tracking_boot((void *)reboot_tracking_start_addr, &reset_reason);
 }
@@ -109,7 +108,6 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
   }
-
   // The following are decided based on some #define logic provided by Nordic
   // whereby they use the _Msk suffixed #defines to create (or not) an entry
   // in an enum with an NRF_ prefix and a _MASK suffix.
@@ -135,8 +133,8 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   }
 #endif
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_reason_reg,
-    .reset_reason     = reset_reason,
+    .reset_reason = reset_reason,
   };
 }

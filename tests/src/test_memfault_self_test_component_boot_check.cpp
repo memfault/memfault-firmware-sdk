@@ -30,7 +30,7 @@ bool memfault_trace_event_booted(void) {
 }
 
 TEST_GROUP(MemfaultSelfTestComponentBooted) {
-  void setup() {}
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();

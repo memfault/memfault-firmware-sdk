@@ -8,13 +8,12 @@
 //! We use this in testing to verify that the buffered writer is working
 //! as expected
 
-#include "memfault/ports/buffered_coredump_storage.h"
-
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "fakes/fake_memfault_buffered_coredump_storage.h"
+#include "memfault/ports/buffered_coredump_storage.h"
 
 uint8_t g_ram_backed_storage[MEMFAULT_STORAGE_SIZE];
 static size_t s_active_storage_size = MEMFAULT_STORAGE_SIZE;
@@ -25,9 +24,7 @@ void fake_buffered_coredump_inject_write_failure(void) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  *info = (sMfltCoredumpStorageInfo) {
-    .size = s_active_storage_size
-  };
+  *info = (sMfltCoredumpStorageInfo){ .size = s_active_storage_size };
 }
 
 bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *block) {

@@ -10,7 +10,6 @@
 //! "SAM L10/L11 Family" Datasheet
 
 #include "memfault/ports/reboot_reason.h"
-
 #include "sam.h"
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -31,7 +30,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
     reset_reason = kMfltRebootReason_SoftwareReset;
   }
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

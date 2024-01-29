@@ -6,17 +6,12 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
 #include "memfault/core/batched_events.h"
 
-
-TEST_GROUP(MemfaultBatchedEvents){
-  void setup() {
-  }
-  void teardown() {
-  }
+TEST_GROUP(MemfaultBatchedEvents) {
+  void setup() { }
+  void teardown() { }
 };
-
 
 TEST(MemfaultBatchedEvents, Test_MemfaultBatchedHeader) {
   sMemfaultBatchedEventsHeader header;

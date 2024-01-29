@@ -7,13 +7,12 @@
 //!
 //! A simple test app which can be used for testing the Particle Memfault library
 
-#include "Particle.h"
 #include "application.h"
-#include "spark_wiring_json.h"
 
-#include "memfault.h"
-
+#include "Particle.h"
 #include "logging.h"
+#include "memfault.h"
+#include "spark_wiring_json.h"
 LOG_SOURCE_CATEGORY("memfault_app")
 
 SYSTEM_MODE(MANUAL);
@@ -27,7 +26,6 @@ PRODUCT_VERSION(EXAMPLE_APP_VERSION)
 
 // Enable USB logging and enable full verbosity for debug purposes
 static SerialLogHandler s_usb_log_handler(115200, LOG_LEVEL_ALL);
-
 
 // Note: For test purposes, we defer initializing the Memfault library to
 // give time for the USB serial to be initialized and console logs to be up and running
@@ -43,7 +41,7 @@ static SerialLogHandler s_usb_log_handler(115200, LOG_LEVEL_ALL);
 static Memfault *s_memfault = NULL;
 
 #if Wiring_WiFi
-#error "Support for WiFi transport not implemented yet"
+  #error "Support for WiFi transport not implemented yet"
 #endif
 
 void setup() {
@@ -62,7 +60,7 @@ void loop() {
   Particle.process();
 }
 
-JSONValue getValue(const JSONValue& obj, const char* name) {
+JSONValue getValue(const JSONValue &obj, const char *name) {
   JSONObjectIterator it(obj);
   while (it.next()) {
     if (it.name() == name) {
@@ -72,7 +70,7 @@ JSONValue getValue(const JSONValue& obj, const char* name) {
   return JSONValue();
 }
 
-void ctrl_request_custom_handler(ctrl_request* req) {
+void ctrl_request_custom_handler(ctrl_request *req) {
   LOG(INFO, "Received Command: %.*s", req->request_size, req->request_data);
 
   auto d = JSONValue::parse(req->request_data, req->request_size);
@@ -83,5 +81,6 @@ void ctrl_request_custom_handler(ctrl_request* req) {
 
   //! No support for argv / argc forwarding today
   const bool success = s_memfault->run_debug_cli_command(command, 0, NULL);
-  system_ctrl_set_result(req, success ? SYSTEM_ERROR_NONE : SYSTEM_ERROR_NOT_SUPPORTED, nullptr, nullptr, nullptr);
+  system_ctrl_set_result(req, success ? SYSTEM_ERROR_NONE : SYSTEM_ERROR_NOT_SUPPORTED, nullptr,
+                         nullptr, nullptr);
 }

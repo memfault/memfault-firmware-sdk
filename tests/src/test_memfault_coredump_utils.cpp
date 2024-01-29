@@ -1,13 +1,12 @@
 //! @file
 //!
 
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
 #include <string.h>
 
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "memfault/panics/coredump.h"
 
 static sMfltCoredumpStorageInfo s_fake_coredump_info;
@@ -20,16 +19,13 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return 10;
 }
 
-
 TEST_GROUP(MfltCoredumpUtilTestGroup) {
-  void setup() {
-  }
+  void setup() { }
 
   void teardown() {
     memset(&s_fake_coredump_info, 0x0, sizeof(s_fake_coredump_info));
   }
 };
-
 
 TEST(MfltCoredumpUtilTestGroup, Test_MfltCoredumpUtilSizeCheck) {
   bool check_passed = memfault_coredump_storage_check_size();

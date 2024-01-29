@@ -20,7 +20,7 @@
  * @addtogroup APP
  * @ingroup RICOW
  *
- * @brief 
+ * @brief
  *
  * @{
  ****************************************************************************************
@@ -31,13 +31,13 @@
  ****************************************************************************************
  */
 
-#include "rwble_config.h"
-#include "app_task.h"                  // application task
-#include "gapc_task.h"                 // gap functions and messages
-#include "gapm_task.h"                 // gap functions and messages
-#include "app.h"                       // application definitions
-#include "co_error.h"                  // error code definitions
+#include "app.h"       // application definitions
+#include "app_task.h"  // application task
 #include "arch_api.h"
+#include "co_error.h"   // error code definitions
+#include "gapc_task.h"  // gap functions and messages
+#include "gapm_task.h"  // gap functions and messages
+#include "rwble_config.h"
 
 /****************************************************************************
 Add here supported profiles' application header files.
@@ -68,8 +68,8 @@ arch_main_loop_callback_ret_t user_app_on_system_powered(void);
 
 void user_on_connection(uint8_t connection_idx, struct gapc_connection_req_ind const *param);
 
-void user_on_disconnect( struct gapc_disconnect_ind const *param );
+void user_on_disconnect(struct gapc_disconnect_ind const *param);
 
 /// @} APP
 
-#endif // _USER_APP_H_
+#endif  // _USER_APP_H_

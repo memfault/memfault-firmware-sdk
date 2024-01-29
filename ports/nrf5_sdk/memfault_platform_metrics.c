@@ -8,15 +8,14 @@
 //!  MEMFAULT_PLATFORM_BOOT_TIMER_CUSTOM (default = 0)
 //!   When set to 1, user must define memfault_platform_get_time_since_boot_ms.
 
+#include "app_timer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/metrics/platform/timer.h"
-
-#include "app_timer.h"
 #include "nrf_log.h"
 
 #if !MEMFAULT_PLATFORM_BOOT_TIMER_CUSTOM
-#define MEMFAULT_PLATFORM_BOOT_TIMER_CUSTOM 0
+  #define MEMFAULT_PLATFORM_BOOT_TIMER_CUSTOM 0
 #endif
 
 APP_TIMER_DEF(m_mflt_metric_log_timer);
@@ -48,7 +47,8 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 
 static void prv_update_boot_time(void) {
   const uint32_t ticks_current = app_timer_cnt_get();
-  const uint32_t ticks_diff = app_timer_cnt_diff_compute(ticks_current, s_uptime_ctx.last_tick_count);
+  const uint32_t ticks_diff =
+    app_timer_cnt_diff_compute(ticks_current, s_uptime_ctx.last_tick_count);
 
   s_uptime_ctx.time_since_boot_ticks += ticks_diff;
   s_uptime_ctx.last_tick_count = ticks_current;
@@ -61,9 +61,9 @@ static void prv_update_boot_time(void) { }
 static void prv_mflt_metric_timer(void *p_context) {
   prv_update_boot_time();
 
-  // The customer can configure the PRESCALAR off them but by default it's a 24 bit counter running at 32kHz so it
-  // overflows every 511 seconds. When a period is passed that is larger than this, use a 1 minute base timer and
-  // fire on the nearest requested minute:
+  // The customer can configure the PRESCALAR off them but by default it's a 24 bit counter running
+  // at 32kHz so it overflows every 511 seconds. When a period is passed that is larger than this,
+  // use a 1 minute base timer and fire on the nearest requested minute:
   if (s_interval_minutes != 0) {
     ++s_minutes_elapsed;
     if ((s_minutes_elapsed % s_interval_minutes) != 0) {
@@ -75,14 +75,15 @@ static void prv_mflt_metric_timer(void *p_context) {
   }
 }
 
-bool memfault_platform_metrics_timer_boot(uint32_t period_sec, MemfaultPlatformTimerCallback callback) {
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                          MemfaultPlatformTimerCallback callback) {
   if (s_registered_cb != NULL) {
     MEMFAULT_LOG_ERROR("%s should only be called once", __func__);
     return false;
   }
 
-  uint32_t err_code = app_timer_create(
-      &m_mflt_metric_log_timer, APP_TIMER_MODE_REPEATED, prv_mflt_metric_timer);
+  uint32_t err_code =
+    app_timer_create(&m_mflt_metric_log_timer, APP_TIMER_MODE_REPEATED, prv_mflt_metric_timer);
   APP_ERROR_CHECK(err_code);
 
   s_registered_cb = callback;

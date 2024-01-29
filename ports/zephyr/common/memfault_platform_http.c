@@ -40,15 +40,16 @@
 // Sanity check that SNI extension is enabled when using Mbed TLS since as of 2.4 Zephyr doesn't
 // enable it by default
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+  #if !defined(MBEDTLS_CONFIG_FILE)
+    #include "mbedtls/config.h"
+  #else
+    #include MBEDTLS_CONFIG_FILE
+  #endif
 
-#if !defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
-#error "MBEDTLS_SSL_SERVER_NAME_INDICATION must be enabled for Memfault HTTPS. This can be done with CONFIG_MBEDTLS_USER_CONFIG_ENABLE/FILE"
-#endif
+  #if !defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
+    #error \
+      "MBEDTLS_SSL_SERVER_NAME_INDICATION must be enabled for Memfault HTTPS. This can be done with CONFIG_MBEDTLS_USER_CONFIG_ENABLE/FILE"
+  #endif
 
 #endif /* CONFIG_MEMFAULT_HTTP_USES_MBEDTLS */
 
@@ -72,7 +73,7 @@ static void prv_free(void *ptr) {
   k_free(ptr);
 }
 #else
-#error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
+  #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
 #endif
 
 static bool prv_install_cert(eMemfaultRootCert cert_id) {
@@ -125,7 +126,7 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
     .ai_socktype = SOCK_STREAM,
   };
 
-  char port[10] = {0};
+  char port[10] = { 0 };
   snprintf(port, sizeof(port), "%d", port_num);
 
   int rv = getaddrinfo(host, port, &hints, res);
@@ -153,10 +154,9 @@ static int prv_create_socket(struct addrinfo **res, const char *host, int port_n
 }
 
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
-  const sec_tag_t sec_tag_opt[] = {
-    kMemfaultRootCert_DigicertRootG2,
-    kMemfaultRootCert_AmazonRootCa1,
-    kMemfaultRootCert_DigicertRootCa };
+  const sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2,
+                                    kMemfaultRootCert_AmazonRootCa1,
+                                    kMemfaultRootCert_DigicertRootCa };
   int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;
@@ -361,8 +361,8 @@ static bool prv_wait_for_http_response(int sock_fd) {
 
     bool done = memfault_http_parse_response(&ctx, buf, bytes_read);
     if (done) {
-      MEMFAULT_LOG_DEBUG("Response Complete: Parse Status %d HTTP Status %d!",
-                         (int)ctx.parse_error, ctx.http_status_code);
+      MEMFAULT_LOG_DEBUG("Response Complete: Parse Status %d HTTP Status %d!", (int)ctx.parse_error,
+                         ctx.http_status_code);
       MEMFAULT_LOG_DEBUG("Body: %s", ctx.http_body);
       return true;
     }
@@ -410,8 +410,7 @@ static bool prv_wait_for_http_response_header(int sock_fd, sMemfaultHttpResponse
   return true;
 }
 
-static bool prv_install_ota_payload(int sock_fd,
-                                    const sMemfaultOtaUpdateHandler *handler) {
+static bool prv_install_ota_payload(int sock_fd, const sMemfaultOtaUpdateHandler *handler) {
   sMemfaultHttpResponseContext ctx = { 0 };
   size_t buf_len = handler->buf_len;
   if (!prv_wait_for_http_response_header(sock_fd, &ctx, handler->buf, &buf_len)) {
@@ -447,8 +446,7 @@ static bool prv_install_ota_payload(int sock_fd,
   return handler->handle_download_complete(handler->user_ctx);
 }
 
-static bool prv_fetch_ota_payload(const char *url,
-                                  const sMemfaultOtaUpdateHandler *handler) {
+static bool prv_fetch_ota_payload(const char *url, const sMemfaultOtaUpdateHandler *handler) {
   bool success = false;
 
   sMemfaultUriInfo uri_info;
@@ -497,7 +495,7 @@ static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_
   }
 
   if (ctx.http_status_code != 200) {
-    return true; // up to date!
+    return true;  // up to date!
   }
 
   const size_t url_len = ctx.content_length + 1 /* for '\0' */;
@@ -565,11 +563,11 @@ cleanup:
 int memfault_zephyr_port_get_download_url(char **download_url) {
   const bool success = prv_check_for_ota_update(download_url);
   if (!success) {
-    return -1; // error
+    return -1;  // error
   }
 
   if (*download_url == NULL) {
-    return 0; // up to date
+    return 0;  // up to date
   }
 
   return 1;
@@ -582,21 +580,18 @@ int memfault_zephyr_port_release_download_url(char **download_url) {
 }
 
 int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
-  MEMFAULT_ASSERT(
-      (handler != NULL) &&
-      (handler->buf != NULL) && (handler->buf > 0) &&
-      (handler->handle_update_available != NULL) &&
-      (handler->handle_data != NULL) &&
-      (handler->handle_download_complete != NULL));
+  MEMFAULT_ASSERT((handler != NULL) && (handler->buf != NULL) && (handler->buf > 0) &&
+                  (handler->handle_update_available != NULL) && (handler->handle_data != NULL) &&
+                  (handler->handle_download_complete != NULL));
 
   char *download_url = NULL;
   bool success = prv_check_for_ota_update(&download_url);
   if (!success) {
-    return -1; // error
+    return -1;  // error
   }
 
   if (download_url == NULL) {
-    return 0; // up to date
+    return 0;  // up to date
   }
 
   success = prv_fetch_ota_payload(download_url, handler);
@@ -605,7 +600,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 }
 
 int memfault_zephyr_port_post_data(void) {
-  sMemfaultHttpContext ctx = {0};
+  sMemfaultHttpContext ctx = { 0 };
   ctx.sock_fd = -1;
 
   int rv = memfault_zephyr_port_http_open_socket(&ctx);
@@ -693,7 +688,9 @@ void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
   }
 }
 
-bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) { return ctx->sock_fd >= 0; }
+bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) {
+  return ctx->sock_fd >= 0;
+}
 
 int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   int max_messages_to_send = 5;

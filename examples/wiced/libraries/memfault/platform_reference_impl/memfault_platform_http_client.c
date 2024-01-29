@@ -7,22 +7,20 @@
 //! Reference implementation of platform dependencies for the Memfault HTTP Client when using the
 //! WICED SDK
 
-#include "memfault/http/platform/http_client.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "http.h"
+#include "http_client.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/errors.h"
 #include "memfault/core/math.h"
+#include "memfault/http/platform/http_client.h"
 #include "memfault/panics/assert.h"
 #include "memfault_platform_wiced.h"
-
-#include "http.h"
-#include "http_client.h"
 #include "wiced_management.h"
 #include "wiced_tls.h"
 #include "wwd_debug.h"
@@ -48,12 +46,13 @@ typedef struct MfltHttpClient {
   void *callback_ctx;
 } sMfltHttpClient;
 
-int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
+int memfault_platform_http_response_get_status(const sMfltHttpResponse *response,
+                                               uint32_t *status_out) {
   MEMFAULT_ASSERT(response);
   http_response_t *wiced_response = (http_response_t *)response;
-  http_status_line_t status_line = {0};
-  if (WICED_SUCCESS != http_get_status_line(
-      wiced_response->response_hdr, wiced_response->response_hdr_length, &status_line)) {
+  http_status_line_t status_line = { 0 };
+  if (WICED_SUCCESS != http_get_status_line(wiced_response->response_hdr,
+                                            wiced_response->response_hdr_length, &status_line)) {
     return -1;
   }
   if (status_out) {
@@ -62,17 +61,18 @@ int memfault_platform_http_response_get_status(const sMfltHttpResponse *response
   return 0;
 }
 
-static void prv_finalize_request_and_run_callback(sMfltHttpClient *client, http_response_t *response) {
+static void prv_finalize_request_and_run_callback(sMfltHttpClient *client,
+                                                  http_response_t *response) {
   if (!client->is_request_pending) {
     return;
   }
   if (client->callback) {
-    client->callback((const sMfltHttpResponse *) response, client->callback_ctx);
+    client->callback((const sMfltHttpResponse *)response, client->callback_ctx);
   }
 
   uint32_t http_status = 0;
-  const int rv = memfault_platform_http_response_get_status((const sMfltHttpResponse *)response,
-                                                            &http_status);
+  const int rv =
+    memfault_platform_http_response_get_status((const sMfltHttpResponse *)response, &http_status);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("Request failed. No HTTP status: %d", rv);
     return;
@@ -95,15 +95,18 @@ static void prv_handle_data_received(sMfltHttpClient *client, http_response_t *r
     return;
   }
   http_status_line_t status_line;
-  if (WICED_SUCCESS != http_get_status_line(response->response_hdr, response->response_hdr_length, &status_line)) {
+  if (WICED_SUCCESS !=
+      http_get_status_line(response->response_hdr, response->response_hdr_length, &status_line)) {
     MEMFAULT_LOG_DEBUG("Couldn't parse status line");
     return;
   }
   prv_finalize_request_and_run_callback(client, response);
 }
 
-static void prv_http_event_handler(http_client_t *wiced_client, http_event_t event, http_response_t *response) {
-  MEMFAULT_STATIC_ASSERT(offsetof(sMfltHttpClient, client) == 0, "Expecting first member to be http_client_t client");
+static void prv_http_event_handler(http_client_t *wiced_client, http_event_t event,
+                                   http_response_t *response) {
+  MEMFAULT_STATIC_ASSERT(offsetof(sMfltHttpClient, client) == 0,
+                         "Expecting first member to be http_client_t client");
   sMfltHttpClient *client = (sMfltHttpClient *)wiced_client;
 
   switch (event) {
@@ -127,7 +130,8 @@ static void prv_http_event_handler(http_client_t *wiced_client, http_event_t eve
 
 sMfltHttpClient *memfault_platform_http_client_create(void) {
   if (wiced_network_is_up(WICED_STA_INTERFACE) == WICED_FALSE) {
-    // If the network is not up (WiFi is not joined) http_client_init() will trip an assert... :/ Race prone?
+    // If the network is not up (WiFi is not joined) http_client_init() will trip an assert... :/
+    // Race prone?
     goto error;
   }
   sMfltHttpClient *client = malloc(sizeof(sMfltHttpClient));
@@ -136,24 +140,25 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   }
   memset(client, 0, sizeof(*client));
 
-  if (WICED_SUCCESS != http_client_init(&client->client, WICED_STA_INTERFACE, prv_http_event_handler, NULL)) {
+  if (WICED_SUCCESS !=
+      http_client_init(&client->client, WICED_STA_INTERFACE, prv_http_event_handler, NULL)) {
     goto error;
   }
 
   const char *hostname = MEMFAULT_HTTP_GET_CHUNKS_API_HOST();
-  client->config = (http_client_configuration_info_t) {
-      .flag = (http_client_configuration_flags_t)(
-          HTTP_CLIENT_CONFIG_FLAG_SERVER_NAME | HTTP_CLIENT_CONFIG_FLAG_MAX_FRAGMENT_LEN),
-      .server_name = (uint8_t *)hostname,
-      .max_fragment_length = TLS_FRAGMENT_LENGTH_1024,
+  client->config = (http_client_configuration_info_t){
+    .flag = (http_client_configuration_flags_t)(HTTP_CLIENT_CONFIG_FLAG_SERVER_NAME |
+                                                HTTP_CLIENT_CONFIG_FLAG_MAX_FRAGMENT_LEN),
+    .server_name = (uint8_t *)hostname,
+    .max_fragment_length = TLS_FRAGMENT_LENGTH_1024,
   };
   if (WICED_SUCCESS != http_client_configure(&client->client, &client->config)) {
     http_client_deinit(&client->client);
     goto error;
   }
 
-  /* if you set hostname, library will make sure subject name in the server certificate is matching with host name
-   * you are trying to connect. pass NULL if you don't want to enable this check */
+  /* if you set hostname, library will make sure subject name in the server certificate is matching
+   * with host name you are trying to connect. pass NULL if you don't want to enable this check */
   client->client.peer_cn = (uint8_t *)hostname;
 
   return client;
@@ -167,8 +172,9 @@ static bool prv_do_dns_lookup(sMfltHttpClient *client) {
   if (client->is_dns_lookup_done) {
     return true;
   }
-  const wiced_result_t dns_rv = wiced_hostname_lookup((const char *)client->config.server_name, &client->ip_address,
-      MEMFAULT_DNS_TIMEOUT_MS, WICED_STA_INTERFACE);
+  const wiced_result_t dns_rv =
+    wiced_hostname_lookup((const char *)client->config.server_name, &client->ip_address,
+                          MEMFAULT_DNS_TIMEOUT_MS, WICED_STA_INTERFACE);
   if (WICED_SUCCESS != dns_rv) {
     MEMFAULT_LOG_ERROR("DNS lookup failed: %d", dns_rv);
     return false;
@@ -177,9 +183,9 @@ static bool prv_do_dns_lookup(sMfltHttpClient *client) {
   return true;
 }
 
-static wiced_result_t prv_send_chunk_in_http_request(
-    sMfltHttpClient *client, const char *url,
-    MemfaultHttpClientResponseCallback callback, void *ctx) {
+static wiced_result_t prv_send_chunk_in_http_request(sMfltHttpClient *client, const char *url,
+                                                     MemfaultHttpClientResponseCallback callback,
+                                                     void *ctx) {
   uint8_t *buffer = malloc(MEMFAULT_HTTP_POST_DATA_READ_BUFFER_SIZE);
   if (!buffer) {
     MEMFAULT_LOG_ERROR("%s: malloc fail", __func__);
@@ -197,35 +203,34 @@ static wiced_result_t prv_send_chunk_in_http_request(
     goto error;
   }
 
-  char content_length[12] = {0};
-  snprintf(content_length, sizeof(content_length), "%d",
-           (int)metadata.single_chunk_message_length);
+  char content_length[12] = { 0 };
+  snprintf(content_length, sizeof(content_length), "%d", (int)metadata.single_chunk_message_length);
 
   const http_header_field_t headers[] = {
-      [0] = {
-          .field = HTTP_HEADER_HOST,
-          .field_length = sizeof(HTTP_HEADER_HOST) - 1,
-          .value = (char *)client->config.server_name,
-          .value_length = strlen((const char *)client->config.server_name),
-      },
-      [1] = {
-          .field = MEMFAULT_HTTP_PROJECT_KEY_HEADER_WICED,
-          .field_length = sizeof(MEMFAULT_HTTP_PROJECT_KEY_HEADER_WICED) - 1,
-          .value = (char *)g_mflt_http_client_config.api_key,
-          .value_length = strlen((const char *)g_mflt_http_client_config.api_key),
-      },
-      [2] = {
-          .field = HTTP_HEADER_CONTENT_LENGTH,
-          .field_length = sizeof(HTTP_HEADER_CONTENT_LENGTH) - 1,
-          .value = content_length,
-          .value_length = strlen(content_length),
-      },
-      [3] = {
-          .field = HTTP_HEADER_CONTENT_TYPE,
-          .field_length = sizeof(HTTP_HEADER_CONTENT_TYPE) - 1,
-          .value = MEMFAULT_HTTP_MIME_TYPE_BINARY,
-          .value_length = sizeof(MEMFAULT_HTTP_MIME_TYPE_BINARY) - 1,
-      }
+    [0] = {
+      .field = HTTP_HEADER_HOST,
+      .field_length = sizeof(HTTP_HEADER_HOST) - 1,
+      .value = (char *)client->config.server_name,
+      .value_length = strlen((const char *)client->config.server_name),
+    },
+    [1] = {
+      .field = MEMFAULT_HTTP_PROJECT_KEY_HEADER_WICED,
+      .field_length = sizeof(MEMFAULT_HTTP_PROJECT_KEY_HEADER_WICED) - 1,
+      .value = (char *)g_mflt_http_client_config.api_key,
+      .value_length = strlen((const char *)g_mflt_http_client_config.api_key),
+    },
+    [2] = {
+      .field = HTTP_HEADER_CONTENT_LENGTH,
+      .field_length = sizeof(HTTP_HEADER_CONTENT_LENGTH) - 1,
+      .value = content_length,
+      .value_length = strlen(content_length),
+    },
+    [3] = {
+      .field = HTTP_HEADER_CONTENT_TYPE,
+      .field_length = sizeof(HTTP_HEADER_CONTENT_TYPE) - 1,
+      .value = MEMFAULT_HTTP_MIME_TYPE_BINARY,
+      .value_length = sizeof(MEMFAULT_HTTP_MIME_TYPE_BINARY) - 1,
+    }
   };
 
   http_request_t *const request = &client->request;
@@ -237,8 +242,7 @@ static wiced_result_t prv_send_chunk_in_http_request(
   eMemfaultPacketizerStatus packetizer_status;
   do {
     size_t buffer_len = MEMFAULT_HTTP_POST_DATA_READ_BUFFER_SIZE;
-    packetizer_status =
-        memfault_packetizer_get_next(buffer, &buffer_len);
+    packetizer_status = memfault_packetizer_get_next(buffer, &buffer_len);
     if (packetizer_status == kMemfaultPacketizerStatus_NoMoreData) {
       break;
     }
@@ -278,8 +282,9 @@ typedef enum {
   kMemfaultPlatformHttpPost_HttpRequestFailure = -5,
 } eMemfaultPlatformHttpPost;
 
-int memfault_platform_http_client_post_data(
-    sMfltHttpClient *client, MemfaultHttpClientResponseCallback callback, void *ctx) {
+int memfault_platform_http_client_post_data(sMfltHttpClient *client,
+                                            MemfaultHttpClientResponseCallback callback,
+                                            void *ctx) {
   if (client->is_request_pending) {
     MEMFAULT_LOG_ERROR("Data post request already pending!");
     return kMemfaultPlatformHttpPost_AlreadyPending;
@@ -300,9 +305,11 @@ int memfault_platform_http_client_post_data(
   }
   MEMFAULT_LOG_DEBUG("Posting data to %s", url_buffer);
 
-  const http_security_t security = g_mflt_http_client_config.disable_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
-  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address, MEMFAULT_HTTP_GET_CHUNKS_API_PORT(),
-                                   security, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
+  const http_security_t security =
+    g_mflt_http_client_config.disable_tls ? HTTP_NO_SECURITY : HTTP_USE_TLS;
+  WICED_VERIFY(http_client_connect(&client->client, &client->ip_address,
+                                   MEMFAULT_HTTP_GET_CHUNKS_API_PORT(), security,
+                                   MEMFAULT_HTTP_CONNECT_TIMEOUT_MS));
 
   // Drain all the data that is available to be sent
   while (memfault_packetizer_data_available()) {
@@ -312,8 +319,8 @@ int memfault_platform_http_client_post_data(
     }
 
     // Wait for the in-flight http request to complete
-    memfault_platform_http_client_wait_until_requests_completed(
-        client, MEMFAULT_HTTP_CONNECT_TIMEOUT_MS);
+    memfault_platform_http_client_wait_until_requests_completed(client,
+                                                                MEMFAULT_HTTP_CONNECT_TIMEOUT_MS);
 
     if (client->request_error_occurred) {
       MEMFAULT_LOG_ERROR("Terminating data transfer because error occurred");
@@ -325,8 +332,8 @@ int memfault_platform_http_client_post_data(
   return 0;
 }
 
-int memfault_platform_http_client_wait_until_requests_completed(
-    sMfltHttpClient *client, uint32_t timeout_ms) {
+int memfault_platform_http_client_wait_until_requests_completed(sMfltHttpClient *client,
+                                                                uint32_t timeout_ms) {
   uint32_t waited_ms = 0;
   while (client->is_request_pending) {
     // Could also be implemented using a semaphore

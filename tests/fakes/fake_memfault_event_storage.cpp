@@ -3,13 +3,12 @@
 //! @brief
 //! A very simple fake storage implementation
 
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
+#include "fakes/fake_memfault_event_storage.h"
 
 #include <string.h>
 
-#include "fakes/fake_memfault_event_storage.h"
-
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/event_storage_implementation.h"
 
@@ -71,7 +70,7 @@ void fake_memfault_event_storage_set_available_space(size_t space_available) {
 }
 
 const sMemfaultEventStorageImpl *memfault_events_storage_boot(void *buf, size_t buf_len) {
-  s_event_storage_state = (sFakeEventStorageState) {
+  s_event_storage_state = (sFakeEventStorageState){
     .buf = (uint8_t *)buf,
     .total_size = buf_len,
     .space_available = buf_len,

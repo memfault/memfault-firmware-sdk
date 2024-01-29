@@ -5,8 +5,8 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 //! Initializes the device memfault_platform_device_info module.
 bool memfault_platform_device_info_boot(void);

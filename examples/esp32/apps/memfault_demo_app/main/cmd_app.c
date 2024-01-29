@@ -21,7 +21,7 @@
 
 #if MEMFAULT_TASK_WATCHDOG_ENABLE
 //! cause the task watchdog to fire by deadlocking the example task
-static int test_task_watchdog(int argc, char** argv) {
+static int test_task_watchdog(int argc, char **argv) {
   (void)argc, (void)argv;
   ESP_LOGI(__func__, "Setting the example_task to stuck, will cause the task watchdog to fire");
 
@@ -122,7 +122,7 @@ static int prv_heap_task_stats(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char **
   static heap_task_totals_t s_totals_arr[MAX_TASK_NUM];
   static heap_task_block_t s_block_arr[MAX_BLOCK_NUM];
 
-  heap_task_info_params_t heap_info = {0};
+  heap_task_info_params_t heap_info = { 0 };
   heap_info.caps[0] = MALLOC_CAP_8BIT;  // Gets heap with CAP_8BIT capabilities
   heap_info.mask[0] = MALLOC_CAP_8BIT;
   heap_info.caps[1] = MALLOC_CAP_32BIT;  // Gets heap info with CAP_32BIT capabilities

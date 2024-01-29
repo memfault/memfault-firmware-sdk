@@ -26,7 +26,7 @@
 // Deal with CONFIG_LOG_IMMEDIATE getting renamed to CONFIG_LOG_MODE_IMMEDIATE in v3.0.0 release:
 //  https://github.com/zephyrproject-rtos/zephyr/commit/262cc55609b73ea61b5f999c6c6daaba20bc5240
 #if defined(CONFIG_LOG_IMMEDIATE) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
-#define CONFIG_LOG_MODE_IMMEDIATE CONFIG_LOG_IMMEDIATE
+  #define CONFIG_LOG_MODE_IMMEDIATE CONFIG_LOG_IMMEDIATE
 #endif
 
 // Can't be zero but should be reasonably sized. See ports/zephyr/Kconfig to change this size.
@@ -51,7 +51,7 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx);
 static uint8_t s_zephyr_render_buf[128];
 LOG_OUTPUT_DEFINE(s_log_output_mflt, prv_log_out, s_zephyr_render_buf, sizeof(s_zephyr_render_buf));
 // store the log backend ID, so we can disable it during the panic handler
-const struct log_backend * s_memfault_log_backend;
+const struct log_backend *s_memfault_log_backend;
 
 // Zephyr will call our init function so we can establish some storage.
 static void prv_log_init(const struct log_backend *const backend) {
@@ -69,7 +69,7 @@ static void prv_log_init(const struct log_backend *const backend) {
 // full prv_log_process() function is called, which has reentrancy protection.
 // See here:
 // https://github.com/zephyrproject-rtos/zephyr/blob/v3.5.0/subsys/logging/log_core.c#L393-L403
-static void prv_log_panic(struct log_backend const *const backend) {}
+static void prv_log_panic(struct log_backend const *const backend) { }
 
 void memfault_zephyr_log_backend_disable(void) {
   log_backend_deactivate(s_memfault_log_backend);
@@ -77,10 +77,10 @@ void memfault_zephyr_log_backend_disable(void) {
 
 static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephyr_level) {
   //     Map             From            To
-  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error
-       : zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning
-       : zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info
-       :              /* LOG_LEVEL_DBG */kMemfaultPlatformLogLevel_Debug;
+  return zephyr_level == LOG_LEVEL_ERR ? kMemfaultPlatformLogLevel_Error :
+         zephyr_level == LOG_LEVEL_WRN ? kMemfaultPlatformLogLevel_Warning :
+         zephyr_level == LOG_LEVEL_INF ? kMemfaultPlatformLogLevel_Info :
+                                         /* LOG_LEVEL_DBG */ kMemfaultPlatformLogLevel_Debug;
 }
 
 typedef struct MfltLogProcessCtx {
@@ -97,13 +97,12 @@ typedef struct MfltLogProcessCtx {
 // LOG2 was moved to LOG in Zephyr 3.2
 // https://github.com/zephyrproject-rtos/zephyr/issues/46500
 #if !MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
-#define log_msg_generic log_msg2_generic
-#define log_output_msg_process log_output_msg2_process
-#define log_msg_get_level log_msg2_get_level
+  #define log_msg_generic log_msg2_generic
+  #define log_output_msg_process log_output_msg2_process
+  #define log_msg_get_level log_msg2_get_level
 #endif
 
-static void prv_log_process(const struct log_backend *const backend,
-                            union log_msg_generic *msg) {
+static void prv_log_process(const struct log_backend *const backend, union log_msg_generic *msg) {
   // This can be called in IMMEDIATE mode from an ISR, so in that case,
   // immediately bail. We currently can't safely serialize to the Memfault
   // buffer from ISR context
@@ -114,9 +113,9 @@ static void prv_log_process(const struct log_backend *const backend,
 #endif
 
   // Copied flagging from Zephry's ring buffer (rb) implementation.
-  const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)
-                       ? LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL
-                       : LOG_OUTPUT_FLAG_LEVEL;
+  const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP) ?
+                           LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL :
+                           LOG_OUTPUT_FLAG_LEVEL;
 
   // Note: This is going to trigger calls to our prv_log_out() handler
 
@@ -144,12 +143,12 @@ static void prv_log_dropped(const struct log_backend *const backend, uint32_t cn
 }
 
 const struct log_backend_api log_backend_mflt_api = {
-  .process          = prv_log_process,
-  .panic            = prv_log_panic,
-  .init             = prv_log_init,
+  .process = prv_log_process,
+  .panic = prv_log_panic,
+  .init = prv_log_init,
   // dropped handler is only used in deferred mode, so save some space by not
   // including it when immediate mode is enabled.
-  .dropped          = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_dropped,
+  .dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : prv_log_dropped,
 };
 
 // Define a couple of structs needed by the logging backend infrastructure.
@@ -186,13 +185,13 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   //     flushed. log_output_msg_process() always calls log_output_flush() but in immediate mode
   //     there is no buffer filled to be flushed so the length will be zero
   if (length > 0 && mflt_ctx->write_idx < sizeof(s_zephyr_render_buf)) {
-      s_zephyr_render_buf[mflt_ctx->write_idx] = data[0];
-      mflt_ctx->write_idx++;
+    s_zephyr_render_buf[mflt_ctx->write_idx] = data[0];
+    mflt_ctx->write_idx++;
   }
 
   const bool flush = (length == 0);
   if (!flush) {
-      return (int)length;
+    return (int)length;
   }
 
   // Strip EOL characters at end of log since we are storing _lines_
@@ -213,5 +212,5 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   MEMFAULT_SDK_ASSERT(mflt_ctx != NULL);
   memfault_log_save_preformatted_nolock(mflt_ctx->memfault_level, data, save_length);
 
-  return (int) length;
+  return (int)length;
 }

@@ -3,14 +3,13 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
+#include "esp_flash.h"
+#include "esp_flash_internal.h"
+#include "esp_spi_flash.h"
 #include "memfault/esp_port/spi_flash.h"
 
-#include "esp_flash.h"
-#include "esp_spi_flash.h"
-#include "esp_flash_internal.h"
-
 #ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#error "The v4.x esp-idf port expects CONFIG_SPI_FLASH_USE_LEGACY_IMPL=n"
+  #error "The v4.x esp-idf port expects CONFIG_SPI_FLASH_USE_LEGACY_IMPL=n"
 #endif
 
 int memfault_esp_spi_flash_coredump_begin(void) {

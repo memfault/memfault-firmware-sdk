@@ -1,12 +1,11 @@
 //! @file
 
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
 #include <string.h>
 
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
@@ -25,25 +24,21 @@ static uint8_t s_ram_backed_coredump_region[200];
 static bool s_inject_get_info_failure = false;
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
   if (s_inject_get_info_failure) {
-    return; // fail to populate information
+    return;  // fail to populate information
   }
 
   const size_t coredump_region_size = sizeof(s_ram_backed_coredump_region);
 
-  *info = (sMfltCoredumpStorageInfo) {
-    .size = coredump_region_size,
-    .sector_size = coredump_region_size
-  };
+  *info =
+    (sMfltCoredumpStorageInfo){ .size = coredump_region_size, .sector_size = coredump_region_size };
 }
 
 static int s_inject_read_failure_offset;
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if ((offset + read_len) > COREDUMP_REGION_SIZE) {
     return false;
   }
-
 
   const uint8_t *read_ptr = &s_ram_backed_coredump_region[offset];
 
@@ -59,8 +54,7 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
   return (s_inject_read_failure_offset != 0);
 }
 
-bool memfault_coredump_read(uint32_t offset, void *data,
-                            size_t read_len) {
+bool memfault_coredump_read(uint32_t offset, void *data, size_t read_len) {
   return memfault_platform_coredump_storage_read(offset, data, read_len);
 }
 
@@ -108,8 +102,7 @@ typedef enum {
 
 static eMemfaultWriteFailureMode s_inject_write_failure;
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if ((offset + data_len) > COREDUMP_REGION_SIZE) {
     return false;
   }
@@ -126,7 +119,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
 
     case kMemfaultWriteFailureMode_WordUnaligned:
       if ((offset % 4) != 0) {
-        return true; // silent fail
+        return true;  // silent fail
       }
       break;
     case kMemfaultWriteFailureMode_PartialWriteFail:
@@ -164,8 +157,7 @@ TEST_GROUP(MfltCoredumpStorageTestGroup) {
     s_inject_prepare_failure = false;
   }
 
-  void teardown() {
-  }
+  void teardown() { }
 };
 
 TEST(MfltCoredumpStorageTestGroup, Test_StorageImplementationGood) {

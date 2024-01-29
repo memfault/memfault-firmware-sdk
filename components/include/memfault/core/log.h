@@ -87,18 +87,16 @@ void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level);
 
 #if MEMFAULT_COMPACT_LOG_ENABLE
 
-//! Same as MEMFAULT_LOG_SAVE except logs use Memfault's "compact" log strategy which offloads
-//! formatting to the Memfault cloud to reduce on device codespace and cpu consumption. See
-//! https://mflt.io/compact-logs for more details.
-#define MEMFAULT_COMPACT_LOG_SAVE(level, format, ...)                   \
-  do {                                                                  \
-    MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ## __VA_ARGS__);   \
-    MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ## __VA_ARGS__);         \
-    memfault_compact_log_save(level,                                    \
-                              MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY_PTR,   \
-                              MFLT_GET_COMPRESSED_LOG_FMT(__VA_ARGS__), \
-                              ## __VA_ARGS__);                          \
-  } while (0)
+  //! Same as MEMFAULT_LOG_SAVE except logs use Memfault's "compact" log strategy which offloads
+  //! formatting to the Memfault cloud to reduce on device codespace and cpu consumption. See
+  //! https://mflt.io/compact-logs for more details.
+  #define MEMFAULT_COMPACT_LOG_SAVE(level, format, ...)                                   \
+    do {                                                                                  \
+      MEMFAULT_LOGGING_RUN_COMPILE_TIME_CHECKS(format, ##__VA_ARGS__);                    \
+      MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ##__VA_ARGS__);                          \
+      memfault_compact_log_save(level, MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY_PTR,            \
+                                MFLT_GET_COMPRESSED_LOG_FMT(__VA_ARGS__), ##__VA_ARGS__); \
+    } while (0)
 
   #define MEMFAULT_LOG_SAVE MEMFAULT_COMPACT_LOG_SAVE
 
@@ -196,7 +194,8 @@ void memfault_log_export_logs(void);
 //!
 //! @note This is a weak function that by default calls `memfault_platform_log_raw`. It can be
 //! overriden to change the formatting of the output, as well as where it is stored.
-extern void memfault_log_export_msg(eMemfaultPlatformLogLevel level, const char *msg, size_t msg_len);
+extern void memfault_log_export_msg(eMemfaultPlatformLogLevel level, const char *msg,
+                                    size_t msg_len);
 
 //! Invoked every time a new log has been saved
 //!

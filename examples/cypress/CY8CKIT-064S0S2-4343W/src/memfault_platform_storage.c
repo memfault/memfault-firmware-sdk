@@ -53,7 +53,7 @@ static bool prv_write_blk(sCoredumpWorkingBuffer *blk) {
     return false;
   }
 
-  *blk = (sCoredumpWorkingBuffer){0};
+  *blk = (sCoredumpWorkingBuffer){ 0 };
 
   return true;
 }

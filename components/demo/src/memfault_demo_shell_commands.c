@@ -22,18 +22,18 @@ static int prv_panics_component_required(void) {
   return -1;
 }
 
-MEMFAULT_WEAK
-int memfault_demo_cli_cmd_get_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+MEMFAULT_WEAK int memfault_demo_cli_cmd_get_core(MEMFAULT_UNUSED int argc,
+                                                 MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 
-MEMFAULT_WEAK
-int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+MEMFAULT_WEAK int memfault_demo_cli_cmd_clear_core(MEMFAULT_UNUSED int argc,
+                                                   MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 
-MEMFAULT_WEAK
-int memfault_demo_cli_cmd_crash(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+MEMFAULT_WEAK int memfault_demo_cli_cmd_crash(MEMFAULT_UNUSED int argc,
+                                              MEMFAULT_UNUSED char *argv[]) {
   return prv_panics_component_required();
 }
 
@@ -44,13 +44,11 @@ int memfault_demo_cli_cmd_export(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char 
 }
 
 // Provide weak implementations in the case where the metrics component is not enabled
-MEMFAULT_WEAK
-void memfault_metrics_heartbeat_debug_print(void) {
+MEMFAULT_WEAK void memfault_metrics_heartbeat_debug_print(void) {
   MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
 }
 
-MEMFAULT_WEAK
-void memfault_metrics_heartbeat_debug_trigger(void) {
+MEMFAULT_WEAK void memfault_metrics_heartbeat_debug_trigger(void) {
   MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
 }
 
@@ -123,7 +121,7 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
 };
 
 // Note: Declared as weak so an end user can override the command table
-MEMFAULT_WEAK
-const sMemfaultShellCommand *const g_memfault_shell_commands = s_memfault_shell_commands;
-MEMFAULT_WEAK
-const size_t g_memfault_num_shell_commands = MEMFAULT_ARRAY_SIZE(s_memfault_shell_commands);
+MEMFAULT_WEAK const sMemfaultShellCommand *const g_memfault_shell_commands =
+  s_memfault_shell_commands;
+MEMFAULT_WEAK const size_t g_memfault_num_shell_commands =
+  MEMFAULT_ARRAY_SIZE(s_memfault_shell_commands);

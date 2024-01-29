@@ -25,30 +25,28 @@
 //! See also nrf5_coredump_regions.c for information on which areas are captured
 //! during a coredump.
 
-#include "memfault/panics/coredump.h"
-
 #include <string.h>
 
 #include "app_util.h"
+#include "memfault/config.h"
+#include "memfault/core/compiler.h"
+#include "memfault/core/math.h"
+#include "memfault/panics/coredump.h"
+#include "memfault/panics/platform/coredump.h"
 #include "nrf_log.h"
 #include "nrf_nvmc.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_soc.h"
 
-#include "memfault/config.h"
-#include "memfault/core/compiler.h"
-#include "memfault/core/math.h"
-#include "memfault/panics/platform/coredump.h"
-
 #ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
 extern uint32_t __MemfaultCoreStorageStart[];
-#define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
+  #define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
 #endif
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_END_ADDR
 extern uint32_t __MemfaultCoreStorageEnd[];
-#define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
+  #define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
 typedef enum {
@@ -61,11 +59,10 @@ static eMemfaultCoredumpClearState s_coredump_clear_state;
 
 static void prv_handle_flash_op_complete(bool success) {
   if (s_coredump_clear_state == kMemfaultCoredumpClearState_Idle) {
-    return; // not a flash op we care about
+    return;  // not a flash op we care about
   }
 
-  if (s_coredump_clear_state == kMemfaultCoredumpClearState_ClearInProgress &&
-      success) {
+  if (s_coredump_clear_state == kMemfaultCoredumpClearState_ClearInProgress && success) {
     // The erase is complete!
     s_coredump_clear_state = kMemfaultCoredumpClearState_Idle;
     return;
@@ -80,7 +77,7 @@ static void prv_handle_flash_op_complete(bool success) {
   memfault_platform_coredump_storage_clear();
 }
 
-static void prv_coredump_handle_soc_update(uint32_t sys_evt, void * p_context) {
+static void prv_coredump_handle_soc_update(uint32_t sys_evt, void *p_context) {
   switch (sys_evt) {
     case NRF_EVT_FLASH_OPERATION_SUCCESS:
     case NRF_EVT_FLASH_OPERATION_ERROR: {
@@ -112,7 +109,8 @@ void memfault_platform_coredump_storage_clear(void) {
     // More details can be found in Section 8 "Flash memory API" of the SoftDevice Spec
     //    https://infocenter.nordicsemi.com/pdf/S140_SDS_v2.1.pdf
     s_coredump_clear_state = kMemfaultCoredumpClearState_ClearRequested;
-    const uint32_t rv = sd_flash_write((void *)MEMFAULT_COREDUMP_STORAGE_START_ADDR, &invalidate, 1);
+    const uint32_t rv =
+      sd_flash_write((void *)MEMFAULT_COREDUMP_STORAGE_START_ADDR, &invalidate, 1);
     if (rv == NRF_SUCCESS) {
       s_coredump_clear_state = kMemfaultCoredumpClearState_ClearInProgress;
     } else if (rv == NRF_ERROR_BUSY) {
@@ -120,7 +118,8 @@ void memfault_platform_coredump_storage_clear(void) {
       // prv_handle_flash_op_complete() is invoked when the in-flight flash op completes.
       NRF_LOG_INFO("Coredump clear deferred, flash busy");
     } else {
-      // NB: Any error except for NRF_ERROR_BUSY is indicative of a configuration error of some sort.
+      // NB: Any error except for NRF_ERROR_BUSY is indicative of a configuration error of some
+      // sort.
       NRF_LOG_ERROR("Unexpected error clearing coredump! %d", rv);
     }
   } else {
@@ -129,10 +128,9 @@ void memfault_platform_coredump_storage_clear(void) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  const size_t size =
-      MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
+  const size_t size = MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
 
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = size,
     .sector_size = NRF_FICR->CODEPAGESIZE,
   };
@@ -159,8 +157,7 @@ bool memfault_coredump_read(uint32_t offset, void *data, size_t read_len) {
   return memfault_platform_coredump_storage_read(offset, data, read_len);
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }
@@ -183,8 +180,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   return true;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }

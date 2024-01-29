@@ -23,9 +23,9 @@
 //!
 //! See documentation below for more tips on how to implement the API.
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "memfault/core/platform/system_time.h"
 
@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define MEMFAULT_CDR_BINARY  "application/octet-stream"
+#define MEMFAULT_CDR_BINARY "application/octet-stream"
 #define MEMFAULT_CDR_TEXT "text/plain"
 #define MEMFAULT_CDR_CSV "text/csv"
 
@@ -69,7 +69,7 @@ typedef struct MemfaultCdrMetadata {
   uint32_t data_size_bytes;
 
   //! The duration of time the recording tracks (can be 0 if unknown).
-  uint32_t duration_ms; // optional
+  uint32_t duration_ms;  // optional
 
   //! The reason the data was captured (i.e "ble connection failure", "wifi stack crash")
   //!
@@ -116,8 +116,8 @@ typedef struct MemfaultCdrSourceImpl {
 //! @note We recommend invoking this function at bootup and expect that the "impl" passed
 //! is of static or global scope
 //!
-//! @return true if registration was succesful or false if the storage was full. If false is returned
-//! MEMFAULT_CDR_MAX_DATA_SOURCES needs to be increased.
+//! @return true if registration was succesful or false if the storage was full. If false is
+//! returned MEMFAULT_CDR_MAX_DATA_SOURCES needs to be increased.
 bool memfault_cdr_register_source(const sMemfaultCdrSourceImpl *impl);
 
 #ifdef __cplusplus

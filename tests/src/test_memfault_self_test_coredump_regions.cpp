@@ -64,12 +64,13 @@ static void prv_set_coredump_region_mocks(sTestParameters *params) {
     .andReturnValue((const void *)params->sdk_regions);
 }
 
-TEST_GROUP(MemfaultSelfTestCoredumpRegions){
-  void setup(){} void teardown(){mock().checkExpectations();
-mock().clear();
-}
-}
-;
+TEST_GROUP(MemfaultSelfTestCoredumpRegions) {
+  void setup() { }
+  void teardown() {
+    mock().checkExpectations();
+    mock().clear();
+  }
+};
 
 TEST(MemfaultSelfTestCoredumpRegions, Test_NoRegions) {
   sTestParameters params = { 0 };

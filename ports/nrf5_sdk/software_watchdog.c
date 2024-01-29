@@ -45,15 +45,13 @@
 //!     memfault_software_watchdog_feed();
 //!
 
-#include "memfault/ports/watchdog.h"
-
-#include "memfault/components.h"
-
-#include "nrfx_rtc.h"
 #include "app_error.h"
+#include "memfault/components.h"
+#include "memfault/ports/watchdog.h"
+#include "nrfx_rtc.h"
 
 #if NRFX_WDT_ENABLED
-#include <nrfx_wdt.h>
+  #include <nrfx_wdt.h>
 #endif
 
 //
@@ -63,51 +61,52 @@
 //
 
 #if defined(RTC_ENABLED)
-#if !RTC_ENABLED
-#error "Set RTC_ENABLED 1 to use the Software Watchdog port"
-#endif
+  #if !RTC_ENABLED
+    #error "Set RTC_ENABLED 1 to use the Software Watchdog port"
+  #endif
 #elif !NRFX_RTC_ENABLED
-#error "Set NRFX_RTC_ENABLED 1 to use the Software Watchdog port"
+  #error "Set NRFX_RTC_ENABLED 1 to use the Software Watchdog port"
 #endif
 
 #if defined(RTC2_ENABLED)
-#if !RTC2_ENABLED
-#error "Set RTC2_ENABLED 1 to use the Software Watchdog port"
-#endif
+  #if !RTC2_ENABLED
+    #error "Set RTC2_ENABLED 1 to use the Software Watchdog port"
+  #endif
 #elif !NRFX_RTC2_ENABLED
-#error "Set NRFX_RTC2_ENABLED 1 to use the Software Watchdog port"
+  #error "Set NRFX_RTC2_ENABLED 1 to use the Software Watchdog port"
 #endif
 
 //! Note: We set PRESCALE to 2^12-1 which results in a 125ms resolution per RTC tick
 #define MEMFAULT_PRESCALE_RESOLUTION_MS 125
 
-
 #ifndef MEMFAULT_NRF5_WATCHDOG_SW_AUTOCONFIG
-//! Auto configure software watchdog timeout relative to hardware watchdog
-#define MEMFAULT_NRF5_WATCHDOG_SW_AUTOCONFIG NRFX_WDT_ENABLED
+  //! Auto configure software watchdog timeout relative to hardware watchdog
+  #define MEMFAULT_NRF5_WATCHDOG_SW_AUTOCONFIG NRFX_WDT_ENABLED
 #endif
 
 #if MEMFAULT_NRF5_WATCHDOG_SW_AUTOCONFIG
 
-#if NRFX_WDT_CONFIG_RELOAD_VALUE < MEMFAULT_PRESCALE_RESOLUTION_MS
-#error "NRFX_WDT_CONFIG_RELOAD_VALUE must be > MEMFAULT_PRESCALE_RESOLUTION_MS (125ms)"
-#endif
+  #if NRFX_WDT_CONFIG_RELOAD_VALUE < MEMFAULT_PRESCALE_RESOLUTION_MS
+    #error "NRFX_WDT_CONFIG_RELOAD_VALUE must be > MEMFAULT_PRESCALE_RESOLUTION_MS (125ms)"
+  #endif
 
-#define MEMFAULT_NRF5_WATCHDOG_SW_TIMEOUT_MS \
-  (NRFX_WDT_CONFIG_RELOAD_VALUE - MEMFAULT_PRESCALE_RESOLUTION_MS)
+  #define MEMFAULT_NRF5_WATCHDOG_SW_TIMEOUT_MS \
+    (NRFX_WDT_CONFIG_RELOAD_VALUE - MEMFAULT_PRESCALE_RESOLUTION_MS)
 
 #else
 
-#if (NRFX_WDT_ENABLED && (NRFX_WDT_CONFIG_RELOAD_VALUE < (MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000)))
-#error "Set MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS must be less than hardware watchdog timeout (NRFX_WDT_CONFIG_RELOAD_VALUE)"
-#endif
+  #if (NRFX_WDT_ENABLED && \
+       (NRFX_WDT_CONFIG_RELOAD_VALUE < (MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000)))
+    #error \
+      "Set MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS must be less than hardware watchdog timeout (NRFX_WDT_CONFIG_RELOAD_VALUE)"
+  #endif
 
-#define MEMFAULT_NRF5_WATCHDOG_SW_TIMEOUT_MS  (MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000)
+  #define MEMFAULT_NRF5_WATCHDOG_SW_TIMEOUT_MS (MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000)
 
 #endif /* MEMFAULT_NRF5_WATCHDOG_SW_AUTOCONFIG */
 
 #ifndef MEMFAULT_NRF5_WATCHDOG_SW_CHANNEL
-#define MEMFAULT_NRF5_WATCHDOG_SW_CHANNEL 0
+  #define MEMFAULT_NRF5_WATCHDOG_SW_CHANNEL 0
 #endif
 
 //! The nRF5 MCU has 3 RTC peripheral instances. RTC0 is used for scheduling by the SoftDevice,

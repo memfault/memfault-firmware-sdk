@@ -35,7 +35,8 @@ typedef struct MemfaultCborEncoder sMemfaultCborEncoder;
 //! buffer with no state-tracking of it's own
 //! @param buf The payload to write to the storage
 //! @param buf_len The size of the payload to write
-typedef void (MemfaultCborWriteCallback)(void *ctx, uint32_t offset, const void *buf, size_t buf_len);
+typedef void(MemfaultCborWriteCallback)(void *ctx, uint32_t offset, const void *buf,
+                                        size_t buf_len);
 
 //! Initializes the 'encoder' structure. Must be called at the start of any new encoding
 //!
@@ -66,7 +67,6 @@ size_t memfault_cbor_encoder_deinit(sMemfaultCborEncoder *encoder);
 //!
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_dictionary_begin(sMemfaultCborEncoder *encoder, size_t num_elements);
-
 
 //! Called to begin the encoding of an array (also referred to as a list, sequence, or tuple)
 //!
@@ -145,7 +145,6 @@ bool memfault_cbor_encode_byte_string_begin(sMemfaultCborEncoder *encoder, size_
 //!
 //! @return true on success, false otherwise
 bool memfault_cbor_encode_uint64_as_double(sMemfaultCborEncoder *encoder, uint64_t value);
-
 
 //! Called to encode a signed 64 bit data item
 //!

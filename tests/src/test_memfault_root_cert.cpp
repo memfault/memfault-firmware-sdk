@@ -16,7 +16,7 @@
 #include "memfault/http/root_certs.h"
 #include "memfault/util/base64.h"
 
-TEST_GROUP(MemfaultRootCert){
+TEST_GROUP(MemfaultRootCert) {
   void setup() { }
   void teardown() { }
 };
@@ -77,12 +77,7 @@ static bool check_for_newlines(char *pemstring) {
 
 TEST(MemfaultRootCert, Test_certs) {
 #define FILL_CERT_ENTRY(certname, refdata) \
-  { \
-    .name = "" #certname "", \
-    .ref_data = refdata, \
-    .len = certname##_len, \
-    .data = certname, \
-  }
+  { .name = "" #certname "", .ref_data = refdata, .len = certname##_len, .data = certname, }
 
   struct cert_refs {
     const char *name;
@@ -92,8 +87,7 @@ TEST(MemfaultRootCert, Test_certs) {
   } cert_refs[] = {
     FILL_CERT_ENTRY(g_memfault_cert_digicert_global_root_g2,
                     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2),
-    FILL_CERT_ENTRY(g_memfault_cert_amazon_root_ca1,
-                    MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1),
+    FILL_CERT_ENTRY(g_memfault_cert_amazon_root_ca1, MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1),
     FILL_CERT_ENTRY(g_memfault_cert_digicert_global_root_ca,
                     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA),
   };

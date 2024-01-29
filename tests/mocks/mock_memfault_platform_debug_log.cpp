@@ -25,8 +25,10 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   vsnprintf(log_buf, sizeof(log_buf), fmt, args);
   va_end(args);
 
-  // Let's avoid dealing with the va_list, we usually really care only about the resulting string anyway:
-  mock().actualCall(__func__)
+  // Let's avoid dealing with the va_list, we usually really care only about the resulting string
+  // anyway:
+  mock()
+    .actualCall(__func__)
     .withLongIntParameter("level", level)
     .withStringParameter("output", log_buf);
 }
@@ -39,9 +41,9 @@ void memfault_platform_log_raw(const char *fmt, ...) {
   vsnprintf(log_buf, sizeof(log_buf), fmt, args);
   va_end(args);
 
-  // Let's avoid dealing with the va_list, we usually really care only about the resulting string anyway:
-  mock().actualCall(__func__)
-    .withStringParameter("output", log_buf);
+  // Let's avoid dealing with the va_list, we usually really care only about the resulting string
+  // anyway:
+  mock().actualCall(__func__).withStringParameter("output", log_buf);
 }
 
 void memfault_platform_log_set_mock(eMemfaultPlatformLogLevel level, const char *const lines[],

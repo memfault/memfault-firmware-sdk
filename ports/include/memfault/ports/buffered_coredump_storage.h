@@ -44,7 +44,7 @@
 #include "memfault/panics/platform/coredump.h"
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE
-# define MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE 32
+  #define MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE 32
 #endif
 
 #ifdef __cplusplus
@@ -102,7 +102,6 @@ static bool prv_try_flush(void) {
     // of our write size so let's flush whatever is queued up. (Unused bytes
     // are just zero'd since the working buffer is memset to 0 before each use)
     if (data_block->bytes_written != 0) {
-
       if (!prv_write_blk(data_block)) {
         return false;
       }
@@ -130,21 +129,19 @@ static bool memfault_coredump_storage_buffered_write(uint32_t offset, const void
   if (((offset + data_len) > info.size) ||
       ((info.size % MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) != 0) ||
       (info.size < MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE)) {
-    return false; // out of bounds write
+    return false;  // out of bounds write
   }
 
   const uint8_t *datap = (const uint8_t *)data;
   uint32_t start_addr = offset;
   uint32_t page_aligned_start_address =
-      (start_addr / MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) * MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE;
+    (start_addr / MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) * MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE;
 
   // we have to copy data into a temporary buffer because we can only issue aligned writes
   if (page_aligned_start_address != start_addr) {
-    sCoredumpWorkingBuffer *working_buffer =
-        prv_get_working_buf(page_aligned_start_address);
+    sCoredumpWorkingBuffer *working_buffer = prv_get_working_buf(page_aligned_start_address);
     uint32_t bytes_to_write = MEMFAULT_MIN(
-        (page_aligned_start_address + MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) - start_addr,
-        data_len);
+      (page_aligned_start_address + MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) - start_addr, data_len);
     uint32_t write_offset = start_addr - page_aligned_start_address;
     memmove(&working_buffer->data[write_offset], datap, bytes_to_write);
     working_buffer->bytes_written += bytes_to_write;
@@ -161,10 +158,8 @@ static bool memfault_coredump_storage_buffered_write(uint32_t offset, const void
   // now that we have copied data into a temporary buffer and are aligned by the expected
   // write size, let's flush complete blocks to flash
   for (uint32_t i = 0; i < data_len; i += MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE) {
-    const uint32_t size =
-        MEMFAULT_MIN(MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE, data_len - i);
-    sCoredumpWorkingBuffer *working_buffer =
-        prv_get_working_buf(start_addr + i);
+    const uint32_t size = MEMFAULT_MIN(MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE, data_len - i);
+    sCoredumpWorkingBuffer *working_buffer = prv_get_working_buf(start_addr + i);
     memmove(&working_buffer->data, &datap[i], size);
     working_buffer->bytes_written += size;
     working_buffer->write_offset = start_addr + i;

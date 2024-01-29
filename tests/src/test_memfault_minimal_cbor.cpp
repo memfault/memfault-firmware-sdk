@@ -8,30 +8,26 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <string.h>
-  #include <stddef.h>
+#include <stddef.h>
+#include <string.h>
 
-  #include "memfault/core/math.h"
-  #include "memfault/util/cbor.h"
+#include "memfault/core/math.h"
+#include "memfault/util/cbor.h"
 
-
-  static void prv_write_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
-    CHECK(ctx != NULL);
-    uint8_t *result_buf = (uint8_t *)ctx;
-    memcpy(&result_buf[offset], buf, buf_len);
-  }
+static void prv_write_cb(void *ctx, uint32_t offset, const void *buf, size_t buf_len) {
+  CHECK(ctx != NULL);
+  uint8_t *result_buf = (uint8_t *)ctx;
+  memcpy(&result_buf[offset], buf, buf_len);
+}
 }
 
-TEST_GROUP(MemfaultMinimalCbor){
-  void setup() {
-  }
-  void teardown() {
-  }
+TEST_GROUP(MemfaultMinimalCbor) {
+  void setup() { }
+  void teardown() { }
 };
 
-static void prv_run_unsigned_integer_encoder_check(
-    uint32_t value, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_unsigned_integer_encoder_check(uint32_t value, const uint8_t *expected_seq,
+                                                   size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -50,42 +46,42 @@ static void prv_run_unsigned_integer_encoder_check(
 TEST(MemfaultMinimalCbor, Test_EncodeUnsignedInt) {
 
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_0[] =  { 0 };
+  const uint8_t expected_enc_0[] = { 0 };
   prv_run_unsigned_integer_encoder_check(0, expected_enc_0, sizeof(expected_enc_0));
 
-  const uint8_t expected_enc_1[] =  { 1 };
+  const uint8_t expected_enc_1[] = { 1 };
   prv_run_unsigned_integer_encoder_check(1, expected_enc_1, sizeof(expected_enc_1));
 
-  const uint8_t expected_enc_10[] =  { 0x0a };
+  const uint8_t expected_enc_10[] = { 0x0a };
   prv_run_unsigned_integer_encoder_check(10, expected_enc_10, sizeof(expected_enc_10));
 
-  const uint8_t expected_enc_23[] =  { 0x17 };
+  const uint8_t expected_enc_23[] = { 0x17 };
   prv_run_unsigned_integer_encoder_check(23, expected_enc_23, sizeof(expected_enc_23));
 
-  const uint8_t expected_enc_24[] =  { 0x18, 0x18 };
+  const uint8_t expected_enc_24[] = { 0x18, 0x18 };
   prv_run_unsigned_integer_encoder_check(24, expected_enc_24, sizeof(expected_enc_24));
 
-  const uint8_t expected_enc_25[] =  { 0x18, 0x19 };
+  const uint8_t expected_enc_25[] = { 0x18, 0x19 };
   prv_run_unsigned_integer_encoder_check(25, expected_enc_25, sizeof(expected_enc_25));
 
-  const uint8_t expected_enc_100[] =  { 0x18, 0x64 };
+  const uint8_t expected_enc_100[] = { 0x18, 0x64 };
   prv_run_unsigned_integer_encoder_check(100, expected_enc_100, sizeof(expected_enc_100));
 
-  const uint8_t expected_enc_1000[] =  { 0x19, 0x03, 0xe8 };
+  const uint8_t expected_enc_1000[] = { 0x19, 0x03, 0xe8 };
   prv_run_unsigned_integer_encoder_check(1000, expected_enc_1000, sizeof(expected_enc_1000));
 
   const uint8_t expected_enc_1000000[] = { 0x1a, 0x00, 0x0f, 0x42, 0x40 };
-  prv_run_unsigned_integer_encoder_check(1000000, expected_enc_1000000, sizeof(expected_enc_1000000));
+  prv_run_unsigned_integer_encoder_check(1000000, expected_enc_1000000,
+                                         sizeof(expected_enc_1000000));
 
   // Also try a UINT32_MAX
   const uint8_t expected_enc_uint32_max[] = { 0x1a, 0xff, 0xff, 0xff, 0xff };
   prv_run_unsigned_integer_encoder_check(UINT32_MAX, expected_enc_uint32_max,
-                                 sizeof(expected_enc_uint32_max));
+                                         sizeof(expected_enc_uint32_max));
 }
 
-static void prv_run_array_encoder_check(
-    const uint32_t *values, size_t num_values, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_array_encoder_check(const uint32_t *values, size_t num_values,
+                                        const uint8_t *expected_seq, size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -157,24 +153,18 @@ TEST(MemfaultMinimalCbor, Test_EncodeArray) {
                               sizeof(three_num_array_expected_encode));
 
   // [ 1, 2, 3 .. 25 ]
-  const uint32_t longer_array[] = {
-    1,  2,  3,  4,  5,  6,  7,  8,  9,
-    10, 11, 12, 13, 14, 15, 16, 17, 18,
-    19, 20, 21, 22, 23, 24, 25
-  };
-  const uint8_t longer_array_expected_encode[] = {
-      0x98, 0x19, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-      0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
-      0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x18, 0x18, 0x19
-  };
+  const uint32_t longer_array[] = { 1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13,
+                                    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 };
+  const uint8_t longer_array_expected_encode[] = { 0x98, 0x19, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                                                   0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+                                                   0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
+                                                   0x17, 0x18, 0x18, 0x18, 0x19 };
   prv_run_array_encoder_check(longer_array, MEMFAULT_ARRAY_SIZE(longer_array),
-                              longer_array_expected_encode,
-                              sizeof(longer_array_expected_encode));
+                              longer_array_expected_encode, sizeof(longer_array_expected_encode));
 }
 
-static void prv_run_signed_integer_encoder_check(
-    int32_t value, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_signed_integer_encoder_check(int32_t value, const uint8_t *expected_seq,
+                                                 size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -191,16 +181,16 @@ static void prv_run_signed_integer_encoder_check(
 
 TEST(MemfaultMinimalCbor, Test_EncodeSignedInt) {
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_neg1[] =  { 0x20 };
+  const uint8_t expected_enc_neg1[] = { 0x20 };
   prv_run_signed_integer_encoder_check(-1, expected_enc_neg1, sizeof(expected_enc_neg1));
 
-  const uint8_t expected_enc_neg10[] =  { 0x29 };
+  const uint8_t expected_enc_neg10[] = { 0x29 };
   prv_run_signed_integer_encoder_check(-10, expected_enc_neg10, sizeof(expected_enc_neg10));
 
-  const uint8_t expected_enc_neg100[] =  { 0x38, 0x63 };
+  const uint8_t expected_enc_neg100[] = { 0x38, 0x63 };
   prv_run_signed_integer_encoder_check(-100, expected_enc_neg100, sizeof(expected_enc_neg100));
 
-  const uint8_t expected_enc_neg1000[] =  { 0x39, 0x03, 0xe7 };
+  const uint8_t expected_enc_neg1000[] = { 0x39, 0x03, 0xe7 };
   prv_run_signed_integer_encoder_check(-1000, expected_enc_neg1000, sizeof(expected_enc_neg1000));
 
   // positive values should wind up getting encoded as an unsigned integer
@@ -210,13 +200,11 @@ TEST(MemfaultMinimalCbor, Test_EncodeSignedInt) {
   // Also try a INT32_MIN
   const uint8_t expected_enc_int32_min[] = { 0x3a, 0x7f, 0xff, 0xff, 0xff };
   prv_run_signed_integer_encoder_check(INT32_MIN, expected_enc_int32_min,
-                                 sizeof(expected_enc_int32_min));
+                                       sizeof(expected_enc_int32_min));
 }
 
-
-static void prv_run_long_signed_integer_encoder_check(
-    int64_t value, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_long_signed_integer_encoder_check(int64_t value, const uint8_t *expected_seq,
+                                                      size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -231,15 +219,15 @@ static void prv_run_long_signed_integer_encoder_check(
   MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
 }
 
-
 TEST(MemfaultMinimalCbor, Test_EncodeLongSignedInt) {
   // We'll re-run a few of the tests for signed ints because the results should be identical
-  const uint8_t expected_enc_neg1[] =  { 0x20 };
+  const uint8_t expected_enc_neg1[] = { 0x20 };
   prv_run_long_signed_integer_encoder_check(-1, expected_enc_neg1, sizeof(expected_enc_neg1));
 
   // positive values should wind up getting encoded as an unsigned integer
   const uint8_t expected_enc_1000000[] = { 0x1a, 0x00, 0x0f, 0x42, 0x40 };
-  prv_run_long_signed_integer_encoder_check(1000000, expected_enc_1000000, sizeof(expected_enc_1000000));
+  prv_run_long_signed_integer_encoder_check(1000000, expected_enc_1000000,
+                                            sizeof(expected_enc_1000000));
 
   const uint8_t expected_enc_int32_min[] = { 0x3a, 0x7f, 0xff, 0xff, 0xff };
   prv_run_long_signed_integer_encoder_check(INT32_MIN, expected_enc_int32_min,
@@ -248,18 +236,19 @@ TEST(MemfaultMinimalCbor, Test_EncodeLongSignedInt) {
   // NB: Anything > INT32_MIN/MAX should wind up being 9 bytes
 
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_1000000000000[] = { 0x1b, 0x00, 0x00, 0x00, 0xe8, 0xd4, 0xa5, 0x10, 0x00 };
+  const uint8_t expected_enc_1000000000000[] = { 0x1b, 0x00, 0x00, 0x00, 0xe8,
+                                                 0xd4, 0xa5, 0x10, 0x00 };
   prv_run_long_signed_integer_encoder_check(1000000000000, expected_enc_1000000000000,
                                             sizeof(expected_enc_1000000000000));
 
-  const uint8_t expected_enc_neg123456789101112[] = { 0x3b, 0x00, 0x00, 0x70, 0x48, 0x86, 0x0f, 0x3a, 0x37};
+  const uint8_t expected_enc_neg123456789101112[] = { 0x3b, 0x00, 0x00, 0x70, 0x48,
+                                                      0x86, 0x0f, 0x3a, 0x37 };
   prv_run_long_signed_integer_encoder_check(-123456789101112, expected_enc_neg123456789101112,
                                             sizeof(expected_enc_neg123456789101112));
 }
 
-static void prv_run_string_encoder_check(
-    const char *str, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_string_encoder_check(const char *str, const uint8_t *expected_seq,
+                                         size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -274,26 +263,24 @@ static void prv_run_string_encoder_check(
   MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
 }
 
-
 TEST(MemfaultMinimalCbor, Test_EncodeString) {
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_empty[] =  { 0x60 };
+  const uint8_t expected_enc_empty[] = { 0x60 };
   prv_run_string_encoder_check("", expected_enc_empty, sizeof(expected_enc_empty));
 
-  const uint8_t expected_enc_a[] =  { 0x61, 0x61 };
+  const uint8_t expected_enc_a[] = { 0x61, 0x61 };
   prv_run_string_encoder_check("a", expected_enc_a, sizeof(expected_enc_a));
 
   const uint8_t expected_enc_IETF[] = { 0x64, 0x49, 0x45, 0x54, 0x46 };
   prv_run_string_encoder_check("IETF", expected_enc_IETF, sizeof(expected_enc_IETF));
 
-  const uint8_t expected_enc_quote_backslash[] = { 0x62, 0x22, 0x5c};
-  prv_run_string_encoder_check("\"\\", expected_enc_quote_backslash, sizeof(expected_enc_quote_backslash));
+  const uint8_t expected_enc_quote_backslash[] = { 0x62, 0x22, 0x5c };
+  prv_run_string_encoder_check("\"\\", expected_enc_quote_backslash,
+                               sizeof(expected_enc_quote_backslash));
 }
 
-
-static void prv_run_incremental_string_encoder_check(
-  const char *str, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_incremental_string_encoder_check(const char *str, const uint8_t *expected_seq,
+                                                     size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -312,25 +299,24 @@ static void prv_run_incremental_string_encoder_check(
   MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
 }
 
-
 TEST(MemfaultMinimalCbor, Test_EncodeStringIncremental) {
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_empty[] =  { 0x60 };
+  const uint8_t expected_enc_empty[] = { 0x60 };
   prv_run_incremental_string_encoder_check("", expected_enc_empty, sizeof(expected_enc_empty));
 
-  const uint8_t expected_enc_a[] =  { 0x61, 0x61 };
+  const uint8_t expected_enc_a[] = { 0x61, 0x61 };
   prv_run_incremental_string_encoder_check("a", expected_enc_a, sizeof(expected_enc_a));
 
   const uint8_t expected_enc_IETF[] = { 0x64, 0x49, 0x45, 0x54, 0x46 };
   prv_run_incremental_string_encoder_check("IETF", expected_enc_IETF, sizeof(expected_enc_IETF));
 
-  const uint8_t expected_enc_quote_backslash[] = { 0x62, 0x22, 0x5c};
-  prv_run_incremental_string_encoder_check("\"\\", expected_enc_quote_backslash, sizeof(expected_enc_quote_backslash));
+  const uint8_t expected_enc_quote_backslash[] = { 0x62, 0x22, 0x5c };
+  prv_run_incremental_string_encoder_check("\"\\", expected_enc_quote_backslash,
+                                           sizeof(expected_enc_quote_backslash));
 }
 
-static void prv_run_binary_encoder_check(
-    const void *buf, size_t buf_len, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_binary_encoder_check(const void *buf, size_t buf_len,
+                                         const uint8_t *expected_seq, size_t expected_seq_len) {
   sMemfaultCborEncoder encoder;
   uint8_t result[expected_seq_len];
   memset(result, 0x0, sizeof(result));
@@ -347,18 +333,17 @@ static void prv_run_binary_encoder_check(
 
 TEST(MemfaultMinimalCbor, Test_EncodeBinaryString) {
   // RFC Appendix A.  Examples
-  const uint8_t expected_enc_empty[] =  { 0x40 };
+  const uint8_t expected_enc_empty[] = { 0x40 };
   prv_run_binary_encoder_check(NULL, 0, expected_enc_empty, sizeof(expected_enc_empty));
 
   const uint8_t expected_enc_1234[] = { 0x44, 0x01, 0x02, 0x03, 0x04 };
-  const uint8_t binary_str[] = { 1, 2, 3, 4};
-  prv_run_binary_encoder_check(binary_str, sizeof(binary_str),
-                               expected_enc_1234, sizeof(expected_enc_1234));
+  const uint8_t binary_str[] = { 1, 2, 3, 4 };
+  prv_run_binary_encoder_check(binary_str, sizeof(binary_str), expected_enc_1234,
+                               sizeof(expected_enc_1234));
 }
 
-static void prv_run_uint64_as_double_encoder_check(
-    double g, const uint8_t *expected_seq, size_t expected_seq_len) {
-
+static void prv_run_uint64_as_double_encoder_check(double g, const uint8_t *expected_seq,
+                                                   size_t expected_seq_len) {
   uint64_t value = 0;
   memcpy(&value, &g, sizeof(g));
 
@@ -376,15 +361,14 @@ static void prv_run_uint64_as_double_encoder_check(
   MEMCMP_EQUAL(expected_seq, result, expected_seq_len);
 }
 
-
 TEST(MemfaultMinimalCbor, Test_EncodeFLoatString) {
   // RFC Appendix A.  Examples
-  const uint8_t expected_float_pos[] =  { 0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c };
+  const uint8_t expected_float_pos[] = { 0xfb, 0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c };
 
   const double g_pos = 1.0e+300;
   prv_run_uint64_as_double_encoder_check(g_pos, expected_float_pos, sizeof(expected_float_pos));
 
-  const uint8_t expected_float_neg[] =  { 0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66 };
+  const uint8_t expected_float_neg[] = { 0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66 };
   const double g_neg = -4.1;
   prv_run_uint64_as_double_encoder_check(g_neg, expected_float_neg, sizeof(expected_float_neg));
 }
@@ -403,7 +387,7 @@ static void prv_encode_test_dictionary(sMemfaultCborEncoder *encoder) {
   const char *enc[] = { "a", "b", "c", "d", "e" };
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(enc); i++) {
     char value[2] = { 0 };
-    value[0] = *enc[i] - 32; // get capital representation
+    value[0] = *enc[i] - 32;  // get capital representation
 
     success = memfault_cbor_encode_string(encoder, enc[i]);
     CHECK(success);
@@ -420,12 +404,9 @@ TEST(MemfaultMinimalCbor, Test_EncodeDictionary) {
   prv_encode_test_dictionary(&encoder);
   const size_t size_needed = memfault_cbor_encoder_deinit(&encoder);
 
-  const uint8_t expected_encoding[] = { 0xa5, 0x61, 0x61, 0x61,
-                                      0x41, 0x61, 0x62, 0x61,
-                                      0x42, 0x61, 0x63, 0x61,
-                                      0x43, 0x61, 0x64, 0x61,
-                                      0x44, 0x61, 0x65, 0x61,
-                                      0x45 };
+  const uint8_t expected_encoding[] = { 0xa5, 0x61, 0x61, 0x61, 0x41, 0x61, 0x62,
+                                        0x61, 0x42, 0x61, 0x63, 0x61, 0x43, 0x61,
+                                        0x64, 0x61, 0x44, 0x61, 0x65, 0x61, 0x45 };
   LONGS_EQUAL(sizeof(expected_encoding), size_needed);
 
   uint8_t result[size_needed];
@@ -443,10 +424,7 @@ TEST(MemfaultMinimalCbor, Test_EncodeNestedDictionary) {
   //     "b": "c"
   //    }
   // }
-  const uint8_t expected_encoding[] = {
-    0xa1, 0x61, 0x61, 0xa1,
-    0x61, 0x62, 0x61, 0x63
-  };
+  const uint8_t expected_encoding[] = { 0xa1, 0x61, 0x61, 0xa1, 0x61, 0x62, 0x61, 0x63 };
 
   uint8_t result[sizeof(expected_encoding)];
   memset(result, 0x0, sizeof(result));

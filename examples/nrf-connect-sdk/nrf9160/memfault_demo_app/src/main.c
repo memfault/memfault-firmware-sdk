@@ -104,9 +104,9 @@ static char s_device_serial[IMEI_LEN + 1 /* '\0' */] = "unknown";
 
 static char s_fw_version[16] = "1.0.0-dev";
 
-#ifndef MEMFAULT_NCS_PROJECT_KEY
-#define MEMFAULT_NCS_PROJECT_KEY "<YOUR PROJECT KEY HERE>"
-#endif
+  #ifndef MEMFAULT_NCS_PROJECT_KEY
+    #define MEMFAULT_NCS_PROJECT_KEY "<YOUR PROJECT KEY HERE>"
+  #endif
 
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = MEMFAULT_NCS_PROJECT_KEY,
@@ -114,7 +114,7 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   // platform specific version information
-  *info = (sMemfaultDeviceInfo) {
+  *info = (sMemfaultDeviceInfo){
     .device_serial = s_device_serial,
     .software_type = "nrf91ns-fw",
     .software_version = s_fw_version,

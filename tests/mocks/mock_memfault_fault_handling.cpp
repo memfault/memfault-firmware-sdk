@@ -2,9 +2,8 @@
 //!
 //! Mock implementation of memfault fault handling functions
 
-#include "memfault/panics/fault_handling.h"
-
 #include "CppUTestExt/MockSupport.h"
+#include "memfault/panics/fault_handling.h"
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   mock()

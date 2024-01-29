@@ -6,14 +6,11 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
-
 #include "memfault/components.h"
 
-TEST_GROUP(MemfaultNrf5Port){
-  void setup() {
-  }
-  void teardown() {
-  }
+TEST_GROUP(MemfaultNrf5Port) {
+  void setup() { }
+  void teardown() { }
 };
 
 TEST(MemfaultNrf5Port, Test_RunsOk) {

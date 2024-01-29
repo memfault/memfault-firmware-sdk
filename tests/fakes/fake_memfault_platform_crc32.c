@@ -16,7 +16,6 @@ static uint32_t prv_crc32_for_byte(uint32_t b) {
   return b ^ (uint32_t)0xFF000000L;
 }
 
-
 uint32_t memfault_platform_crc32(const void *data, size_t data_len) {
   const uint8_t *byte = data;
 

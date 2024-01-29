@@ -7,4 +7,4 @@
 //! circa-2005 'ar' utility installed by default on macs
 
 void stub_assert(void);
-void stub_assert(void) {}
+void stub_assert(void) { }

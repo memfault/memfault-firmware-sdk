@@ -8,16 +8,16 @@
 //! @brief
 //! esp-idf port specific functions related to http
 
-#include "sdkconfig.h"
-
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define MEMFAULT_HTTP_CLIENT_MAX_BUFFER_SIZE  CONFIG_MEMFAULT_HTTP_CLIENT_BUFFER_SIZE
+#define MEMFAULT_HTTP_CLIENT_MAX_BUFFER_SIZE CONFIG_MEMFAULT_HTTP_CLIENT_BUFFER_SIZE
 #define MEMFAULT_HTTP_CLIENT_MIN_BUFFER_SIZE 512
 
 //! Called to get a buffer to use for POSTing data to the Memfault cloud

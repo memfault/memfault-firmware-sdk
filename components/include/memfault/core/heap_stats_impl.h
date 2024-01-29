@@ -36,9 +36,9 @@ typedef struct MfltHeapStatEntry {
   // Size of this allocation. 0 means the entry is invalid and should be ignored
   struct {
     // 31 bits to represent the size passed to malloc
-    uint32_t size : 31;
+    uint32_t size:31;
     // 1 bit indicating whether this entry is still in use or has been freed
-    uint32_t in_use : 1;
+    uint32_t in_use:1;
     // Index to next oldest entry in heap stats entry array,
     uint16_t next_entry_index;
   } info;

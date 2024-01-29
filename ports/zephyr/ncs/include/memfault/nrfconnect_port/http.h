@@ -8,8 +8,8 @@
 //! @brief
 //! Zephyr specific http utility for interfacing with Memfault HTTP utilities
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "memfault/ports/zephyr/http.h"
 
@@ -24,7 +24,7 @@ extern "C" {
 
 #define memfault_nrfconnect_port_install_root_certs memfault_zephyr_port_install_root_certs
 #define memfault_nrfconnect_port_post_data memfault_zephyr_port_post_data
-#define memfault_nrfconnect_port_ota_update   memfault_zephyr_port_ota_update
+#define memfault_nrfconnect_port_ota_update memfault_zephyr_port_ota_update
 
 #ifdef __cplusplus
 }

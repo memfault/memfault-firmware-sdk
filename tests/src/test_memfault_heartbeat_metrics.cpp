@@ -129,7 +129,7 @@ TEST(MemfaultHeartbeatMetrics, Test_BootStorageTooSmall) {
     .expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
     .andReturnValue(FAKE_STORAGE_SIZE + 1);
 
-  sMemfaultMetricBootInfo boot_info = {.unexpected_reboot_count = 1};
+  sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
   int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(-5, rv);
   mock().checkExpectations();
@@ -142,7 +142,7 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerInitFailed) {
     .withParameter("period_sec", 3600)
     .andReturnValue(false);
 
-  sMemfaultMetricBootInfo boot_info = {.unexpected_reboot_count = 1};
+  sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
   int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(-6, rv);
   mock().checkExpectations();
@@ -234,8 +234,7 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatValueSimple) {
   LONGS_EQUAL(10, val);
 }
 
-TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatReadWhileRunning)
-{
+TEST(MemfaultHeartbeatMetrics, Test_TimerHeartBeatReadWhileRunning) {
   MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_timer);
 
   // start the timer
@@ -404,7 +403,7 @@ TEST(MemfaultHeartbeatMetrics, Test_String) {
 }
 
 TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
-  sMemfaultMetricBootInfo info = {.unexpected_reboot_count = 1};
+  sMemfaultMetricBootInfo info = { .unexpected_reboot_count = 1 };
 
   int rv = memfault_metrics_boot(NULL, &info);
   LONGS_EQUAL(-3, rv);
@@ -425,7 +424,7 @@ TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
 TEST(MemfaultHeartbeatMetrics, Test_KeyDNE) {
   // NOTE: Using the macro MEMFAULT_METRICS_KEY, it's impossible for a non-existent key to trigger a
   // compilation error so we just create an invalid key.
-  MemfaultMetricId key = (MemfaultMetricId){INT32_MAX};
+  MemfaultMetricId key = (MemfaultMetricId){ INT32_MAX };
 
   int rv = memfault_metrics_heartbeat_set_signed(key, 0);
   CHECK(rv != 0);

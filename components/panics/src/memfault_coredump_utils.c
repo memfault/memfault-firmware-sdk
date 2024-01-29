@@ -6,9 +6,8 @@
 //! @brief
 //! Convenience utilities that can be used with coredumps
 
-#include "memfault/panics/coredump.h"
-
 #include "memfault/core/debug_log.h"
+#include "memfault/panics/coredump.h"
 
 bool memfault_coredump_storage_check_size(void) {
   sMfltCoredumpStorageInfo storage_info = { 0 };
@@ -18,8 +17,8 @@ bool memfault_coredump_storage_check_size(void) {
     return true;
   }
 
-  MEMFAULT_LOG_ERROR("Coredump storage is %dB but need %dB",
-                     (int)storage_info.size, (int)size_needed);
+  MEMFAULT_LOG_ERROR("Coredump storage is %dB but need %dB", (int)storage_info.size,
+                     (int)size_needed);
   return false;
 }
 

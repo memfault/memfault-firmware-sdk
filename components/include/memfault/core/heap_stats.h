@@ -43,7 +43,6 @@
 //!
 //! #define MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 0
 
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

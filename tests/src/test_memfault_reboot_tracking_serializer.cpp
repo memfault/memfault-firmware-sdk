@@ -1,8 +1,7 @@
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
 #include <string.h>
 
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_event_storage.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer_source.h"
@@ -26,9 +25,8 @@ void memfault_reboot_tracking_clear_reset_info(void) {
 TEST_GROUP(MfltRebootTrackingSerializer) {
   void setup() {
     static uint8_t s_storage[100];
-    s_fake_event_storage_impl = memfault_events_storage_boot(
-        &s_storage, sizeof(s_storage));
-    s_fake_reset_reason_info = (sMfltResetReasonInfo) {
+    s_fake_event_storage_impl = memfault_events_storage_boot(&s_storage, sizeof(s_storage));
+    s_fake_reset_reason_info = (sMfltResetReasonInfo){
       .reason = kMfltRebootReason_Assert,
       .pc = 0xbadcafe,
       .lr = 0xdeadbeef,
@@ -57,20 +55,12 @@ static void prv_run_reset_reason_serializer_test(const void *expected_data,
 }
 
 TEST(MfltRebootTrackingSerializer, Test_Serialize) {
-  const uint8_t expected_data_all[] = {
-    0xa6,
-    0x02, 0x02,
-    0x03, 0x01,
-    0x0a, 0x64, 'm', 'a', 'i', 'n',
-    0x09, 0x65,'1', '.', '2', '.', '3',
-    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-    0x04, 0xa5,
-    0x01, 0x19, 0x80, 0x01,
-    0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe,
-    0x03, 0x1a, 0xde, 0xad, 0xbe, 0xef,
-    0x04, 0x1a, 0x12, 0x34, 0x56, 0x78,
-    0x05, 0x00
-  };
+  const uint8_t expected_data_all[] = { 0xa6, 0x02, 0x02, 0x03, 0x01, 0x0a, 0x64, 'm',  'a',
+                                        'i',  'n',  0x09, 0x65, '1',  '.',  '2',  '.',  '3',
+                                        0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4',  0x04,
+                                        0xa5, 0x01, 0x19, 0x80, 0x01, 0x02, 0x1a, 0x0b, 0xad,
+                                        0xca, 0xfe, 0x03, 0x1a, 0xde, 0xad, 0xbe, 0xef, 0x04,
+                                        0x1a, 0x12, 0x34, 0x56, 0x78, 0x05, 0x00 };
   // make sure short if there isn't enough storage, the write just fails
   for (size_t i = 0; i < sizeof(expected_data_all) - 1; i++) {
     fake_memfault_event_storage_clear();
@@ -86,49 +76,27 @@ TEST(MfltRebootTrackingSerializer, Test_Serialize) {
 
   s_fake_reset_reason_info.reset_reason_reg0 = 0;
   const uint8_t expected_data_pc_lr[] = {
-    0xa6,
-    0x02, 0x02,
-    0x03, 0x01,
-    0x0a, 0x64, 'm', 'a', 'i', 'n',
-    0x09, 0x65,'1', '.', '2', '.', '3',
-    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-    0x04, 0xa4,
-    0x01, 0x19, 0x80, 0x01,
-    0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe,
-    0x03, 0x1a, 0xde, 0xad, 0xbe, 0xef,
-    0x05, 0x00
+    0xa6, 0x02, 0x02, 0x03, 0x01, 0x0a, 0x64, 'm',  'a',  'i',  'n',  0x09, 0x65, '1',  '.',  '2',
+    '.',  '3',  0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4',  0x04, 0xa4, 0x01, 0x19, 0x80, 0x01,
+    0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe, 0x03, 0x1a, 0xde, 0xad, 0xbe, 0xef, 0x05, 0x00
   };
   prv_run_reset_reason_serializer_test(expected_data_pc_lr, sizeof(expected_data_pc_lr));
 
   s_fake_reset_reason_info.lr = 0;
-  const uint8_t expected_data_pc[] = {
-    0xa6,
-    0x02, 0x02,
-    0x03, 0x01,
-    0x0a, 0x64, 'm', 'a', 'i', 'n',
-    0x09, 0x65,'1', '.', '2', '.', '3',
-    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-    0x04, 0xa3,
-    0x01, 0x19, 0x80, 0x01,
-    0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe,
-    0x05, 0x00
-  };
+  const uint8_t expected_data_pc[] = { 0xa6, 0x02, 0x02, 0x03, 0x01, 0x0a, 0x64, 'm',  'a',  'i',
+                                       'n',  0x09, 0x65, '1',  '.',  '2',  '.',  '3',  0x06, 0x66,
+                                       'e',  'v',  't',  '_',  '2',  '4',  0x04, 0xa3, 0x01, 0x19,
+                                       0x80, 0x01, 0x02, 0x1a, 0x0b, 0xad, 0xca, 0xfe, 0x05, 0x00 };
   prv_run_reset_reason_serializer_test(expected_data_pc, sizeof(expected_data_pc));
 
   s_fake_reset_reason_info.pc = 0;
   // indicate that there is a coredump to go along with it
   s_fake_reset_reason_info.coredump_saved = true;
-  const uint8_t expected_data_no_optionals[] = {
-    0xa6,
-    0x02, 0x02,
-    0x03, 0x01,
-    0x0a, 0x64, 'm', 'a', 'i', 'n',
-    0x09, 0x65,'1', '.', '2', '.', '3',
-    0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-    0x04, 0xa2,
-    0x01, 0x19, 0x80, 0x01,
-    0x05, 0x01
-  };
+  const uint8_t expected_data_no_optionals[] = { 0xa6, 0x02, 0x02, 0x03, 0x01, 0x0a, 0x64,
+                                                 'm',  'a',  'i',  'n',  0x09, 0x65, '1',
+                                                 '.',  '2',  '.',  '3',  0x06, 0x66, 'e',
+                                                 'v',  't',  '_',  '2',  '4',  0x04, 0xa2,
+                                                 0x01, 0x19, 0x80, 0x01, 0x05, 0x01 };
   prv_run_reset_reason_serializer_test(expected_data_no_optionals,
                                        sizeof(expected_data_no_optionals));
 }

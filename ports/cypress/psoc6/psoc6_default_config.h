@@ -18,12 +18,12 @@ extern "C" {
 //! Enable collection of metrics around heap utilization using heartbeat metrics
 
 #ifndef MEMFAULT_PORT_MEMORY_TRACKING_ENABLED
-#define MEMFAULT_PORT_MEMORY_TRACKING_ENABLED 1
+  #define MEMFAULT_PORT_MEMORY_TRACKING_ENABLED 1
 #endif
 
 //! Enables collection of statistics around Wi-Fi using heartbeat metrics
 #ifndef MEMFAULT_PORT_WIFI_TRACKING_ENABLED
-#define MEMFAULT_PORT_WIFI_TRACKING_ENABLED 1
+  #define MEMFAULT_PORT_WIFI_TRACKING_ENABLED 1
 #endif
 
 #ifdef __cplusplus

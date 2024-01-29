@@ -4,15 +4,14 @@
 //! See License.txt for details
 //!
 
-#include "memfault/core/batched_events.h"
-
 #include <string.h>
 
+#include "memfault/core/batched_events.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/util/cbor.h"
 
-void memfault_batched_events_build_header(
-    size_t num_events, sMemfaultBatchedEventsHeader *header_out) {
+void memfault_batched_events_build_header(size_t num_events,
+                                          sMemfaultBatchedEventsHeader *header_out) {
   MEMFAULT_SDK_ASSERT(header_out != NULL);
 
   if (num_events <= 1) {

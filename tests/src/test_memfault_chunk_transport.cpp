@@ -8,37 +8,37 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <stddef.h>
-  #include <stdint.h>
-  #include <stdio.h>
-  #include <string.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-  #include "memfault/core/math.h"
-  #include "memfault/util/chunk_transport.h"
+#include "memfault/core/math.h"
+#include "memfault/util/chunk_transport.h"
 
-  static const uint8_t s_test_msg[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
-  static const uint8_t *s_active_msg = NULL;
-  static sMfltChunkTransportCtx s_chunk_ctx;
+static const uint8_t s_test_msg[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa };
+static const uint8_t *s_active_msg = NULL;
+static sMfltChunkTransportCtx s_chunk_ctx;
 
-  typedef struct {
-    size_t total_bytes_read;
-    size_t last_offset;
-  } sMfltChunkReadStats;
+typedef struct {
+  size_t total_bytes_read;
+  size_t last_offset;
+} sMfltChunkReadStats;
 
-  static sMfltChunkReadStats s_chunk_read_stats;
+static sMfltChunkReadStats s_chunk_read_stats;
 
-  static void prv_chunk_msg(uint32_t offset, void *out_buf, size_t out_buf_len) {
-    // One property enforced on the chunker is that all the reads are performed sequentially. This
-    // way the offsets which will be accessed prior to invoking the chunker are known.
-    CHECK(offset >= s_chunk_read_stats.last_offset);
-    s_chunk_read_stats.last_offset = offset;
-    s_chunk_read_stats.total_bytes_read += out_buf_len;
-    CHECK(s_active_msg != NULL);
-    memcpy(out_buf, &s_active_msg[offset], out_buf_len);
-  }
+static void prv_chunk_msg(uint32_t offset, void *out_buf, size_t out_buf_len) {
+  // One property enforced on the chunker is that all the reads are performed sequentially. This
+  // way the offsets which will be accessed prior to invoking the chunker are known.
+  CHECK(offset >= s_chunk_read_stats.last_offset);
+  s_chunk_read_stats.last_offset = offset;
+  s_chunk_read_stats.total_bytes_read += out_buf_len;
+  CHECK(s_active_msg != NULL);
+  memcpy(out_buf, &s_active_msg[offset], out_buf_len);
+}
 }
 
-TEST_GROUP(MemfaultChunkTransport){
+TEST_GROUP(MemfaultChunkTransport) {
   void setup() {
     s_active_msg = &s_test_msg[0];
     memset(&s_chunk_read_stats, 0x0, sizeof(s_chunk_read_stats));
@@ -50,7 +50,7 @@ TEST_GROUP(MemfaultChunkTransport){
   }
   void teardown() {
     if (s_chunk_read_stats.total_bytes_read == 0) {
-      return; // a failure test case where no data got read
+      return;  // a failure test case where no data got read
     }
 
     // Another property we impose on the chunker is that it should only need to read the message
@@ -67,12 +67,10 @@ static void prv_check_chunk(sMfltChunkTransportCtx *ctx, bool expect_md, size_t 
   bool md = memfault_chunk_transport_get_next_chunk(ctx, &actual_chunk[0], &receive_buf_len);
   LONGS_EQUAL(ctx->total_size + 1 + 2, ctx->single_chunk_message_length);
 
-
   LONGS_EQUAL(expect_md, md);
   LONGS_EQUAL(expected_chunk_len, receive_buf_len);
   MEMCMP_EQUAL(expected_chunk, actual_chunk, expected_chunk_len);
 }
-
 
 TEST(MemfaultChunkTransport, Test_ChunkerMultiPart) {
   const size_t receive_buf_size = 9;
@@ -107,11 +105,9 @@ TEST(MemfaultChunkTransport, Test_ChunkerMultiPartLastMessageJustCrc) {
   prv_check_chunk(&s_chunk_ctx, !md, receive_buf_size, &expected_msg_3, sizeof(expected_msg_3));
 }
 
-
 TEST(MemfaultChunkTransport, Test_ChunkerMultiCallChunkLastMessageJustCrc) {
-  static const uint8_t test_msg_long[] = {
-    0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8,
-    0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x11 };
+  static const uint8_t test_msg_long[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,  0x8, 0x9,
+                                           0xa, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x11 };
   s_chunk_ctx.total_size = sizeof(test_msg_long);
   s_active_msg = &test_msg_long[0];
   s_chunk_ctx.enable_multi_call_chunk = true;
@@ -135,7 +131,8 @@ TEST(MemfaultChunkTransport, Test_ChunkerMultiCallChunkLastMessageJustCrc) {
 TEST(MemfaultChunkTransport, Test_BufTooSmall) {
   size_t receive_buf_len = 8;
   uint8_t receive_buf[receive_buf_len];
-  bool md = memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &receive_buf[0], &receive_buf_len);
+  bool md =
+    memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &receive_buf[0], &receive_buf_len);
   CHECK(md);
   LONGS_EQUAL(0, receive_buf_len);
 }
@@ -143,12 +140,17 @@ TEST(MemfaultChunkTransport, Test_BufTooSmall) {
 TEST(MemfaultChunkTransport, Test_ChunkerSingleMsg) {
   const bool md = true;
 
-  const uint8_t expected_msg_all[] = { 0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13 };
-  prv_check_chunk(&s_chunk_ctx, !md, sizeof(expected_msg_all), &expected_msg_all, sizeof(expected_msg_all));
+  const uint8_t expected_msg_all[] = {
+    0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13
+  };
+  prv_check_chunk(&s_chunk_ctx, !md, sizeof(expected_msg_all), &expected_msg_all,
+                  sizeof(expected_msg_all));
 }
 
 TEST(MemfaultChunkTransport, Test_ChunkerSingleMsgOversizeBuffer) {
-  const uint8_t expected_msg_all[] = { 0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13 };
+  const uint8_t expected_msg_all[] = {
+    0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13
+  };
   const size_t expected_chunk_len = sizeof(expected_msg_all);
   const size_t known_pattern_len = 10;
   uint8_t actual_chunk[expected_chunk_len + known_pattern_len];
@@ -167,7 +169,6 @@ TEST(MemfaultChunkTransport, Test_ChunkerSingleMsgOversizeBuffer) {
   MEMCMP_EQUAL(&actual_chunk[expected_chunk_len], pattern, sizeof(pattern));
 }
 
-
 TEST(MemfaultChunkTransport, Test_ChunkerBigMessage) {
   uint8_t s_big_msg[4072] = { 0x1, 0x2, 0x3 };
   s_active_msg = &s_big_msg[0];
@@ -181,14 +182,16 @@ TEST(MemfaultChunkTransport, Test_ChunkerBigMessage) {
 
   // Let's just make sure the sequencer does okay when it takes more than 1 byte to encode a varint
   const bool md = true;
-  const uint8_t expected_msg_1[] = { 0x48, 0xe8, 0x1f, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0};
-  prv_check_chunk(&s_chunk_ctx, md, sizeof(expected_msg_1), &expected_msg_1, sizeof(expected_msg_1));
+  const uint8_t expected_msg_1[] = { 0x48, 0xe8, 0x1f, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0 };
+  prv_check_chunk(&s_chunk_ctx, md, sizeof(expected_msg_1), &expected_msg_1,
+                  sizeof(expected_msg_1));
 
   // read 4000 bytes (& 1 byte hdr & 1 byte varint)
   uint8_t read_buffer[4067];
   size_t read_buffer_size = sizeof(read_buffer);
-  bool md_avail = memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &read_buffer[0], &read_buffer_size);
-  LONGS_EQUAL(read_buffer[0], 0xC0); // should be a continuation header
+  bool md_avail =
+    memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &read_buffer[0], &read_buffer_size);
+  LONGS_EQUAL(read_buffer[0], 0xC0);  // should be a continuation header
   CHECK(md_avail);
   LONGS_EQUAL(sizeof(read_buffer), read_buffer_size);
 
@@ -197,8 +200,9 @@ TEST(MemfaultChunkTransport, Test_ChunkerBigMessage) {
   LONGS_EQUAL(s_chunk_ctx.total_size + 1 + 2, s_chunk_ctx.single_chunk_message_length);
   LONGS_EQUAL(4071, s_chunk_ctx.read_offset);
 
-  const uint8_t expected_msg_2[] = { 0x80, 0xe7, 0x1f, 0x0, 0xF4, 0x79};
-  prv_check_chunk(&s_chunk_ctx, !md, 20 /* oversize buffer */, &expected_msg_2, sizeof(expected_msg_2));
+  const uint8_t expected_msg_2[] = { 0x80, 0xe7, 0x1f, 0x0, 0xF4, 0x79 };
+  prv_check_chunk(&s_chunk_ctx, !md, 20 /* oversize buffer */, &expected_msg_2,
+                  sizeof(expected_msg_2));
 }
 
 TEST(MemfaultChunkTransport, Test_ChunkerSingleMsgMultiChunkEnabled) {
@@ -206,8 +210,11 @@ TEST(MemfaultChunkTransport, Test_ChunkerSingleMsgMultiChunkEnabled) {
 
   const bool md = true;
 
-  const uint8_t expected_msg_all[] = { 0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13 };
-  prv_check_chunk(&s_chunk_ctx, !md, sizeof(expected_msg_all), &expected_msg_all, sizeof(expected_msg_all));
+  const uint8_t expected_msg_all[] = {
+    0x08, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa, 0x1b, 0x13
+  };
+  prv_check_chunk(&s_chunk_ctx, !md, sizeof(expected_msg_all), &expected_msg_all,
+                  sizeof(expected_msg_all));
 }
 
 TEST(MemfaultChunkTransport, Test_ChunkerMultiCallSingleChunk) {
@@ -220,15 +227,18 @@ TEST(MemfaultChunkTransport, Test_ChunkerMultiCallSingleChunk) {
   // Let's just make sure the sequencer does okay when it takes more than 1 byte to encode a varint
   const bool md = true;
   const uint8_t expected_msg_1[] = { 0x08, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x0 };
-  prv_check_chunk(&s_chunk_ctx, md, sizeof(expected_msg_1), &expected_msg_1, sizeof(expected_msg_1));
+  prv_check_chunk(&s_chunk_ctx, md, sizeof(expected_msg_1), &expected_msg_1,
+                  sizeof(expected_msg_1));
 
   // read all bytes except for the last one
   uint8_t read_buffer[4063];
   size_t read_buffer_size = sizeof(read_buffer);
-  bool md_avail = memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &read_buffer[0], &read_buffer_size);
+  bool md_avail =
+    memfault_chunk_transport_get_next_chunk(&s_chunk_ctx, &read_buffer[0], &read_buffer_size);
   CHECK(md_avail);
   LONGS_EQUAL(sizeof(read_buffer), read_buffer_size);
 
   const uint8_t expected_msg_2[] = { 0x0, /* crc */ 0xF4, 0x79 };
-  prv_check_chunk(&s_chunk_ctx, !md, 20 /* oversize buffer */, &expected_msg_2, sizeof(expected_msg_2));
+  prv_check_chunk(&s_chunk_ctx, !md, 20 /* oversize buffer */, &expected_msg_2,
+                  sizeof(expected_msg_2));
 }

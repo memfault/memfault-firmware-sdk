@@ -43,13 +43,13 @@
 #endif
 
 // Factor out issues with Espressif's ESP32 to ESP conversion in sdkconfig
-#define COREDUMPS_ENABLED \
-  (CONFIG_ESP32_ENABLE_COREDUMP || CONFIG_ESP_COREDUMP_ENABLE)
+#define COREDUMPS_ENABLED (CONFIG_ESP32_ENABLE_COREDUMP || CONFIG_ESP_COREDUMP_ENABLE)
 #define COREDUMP_TO_FLASH_ENABLED \
   (CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH || CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH)
 
 #if !COREDUMPS_ENABLED || !COREDUMP_TO_FLASH_ENABLED
-#error "Memfault SDK integration requires CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y sdkconfig setting"
+  #error \
+    "Memfault SDK integration requires CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y sdkconfig setting"
 #endif
 
 #define ESP_IDF_COREDUMP_PART_INIT_MAGIC 0x45524f43
@@ -57,19 +57,18 @@
 // If there is no coredump partition defined or one cannot be defined
 // the user can try using an OTA slot instead.
 #if CONFIG_MEMFAULT_COREDUMP_USE_OTA_SLOT
-#include "esp_ota_ops.h"
-#define GET_COREDUMP_PARTITION() \
-  esp_ota_get_next_update_partition(NULL);
+  #include "esp_ota_ops.h"
+  #define GET_COREDUMP_PARTITION() esp_ota_get_next_update_partition(NULL);
 #else
-#define GET_COREDUMP_PARTITION() \
-  esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
+  #define GET_COREDUMP_PARTITION() \
+    esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
 #endif
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   // Memory regions used for esp-idf >= 4.4.3
-  //Active stack (1) + task/timer and bss/common regions (4) + freertos tasks
+  // Active stack (1) + task/timer and bss/common regions (4) + freertos tasks
   //(MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + task_tcbs(1) + task_watermarks(1) +
-  //bss(1) + data(1) + heap(1)
+  // bss(1) + data(1) + heap(1)
   #define MEMFAULT_ESP_PORT_NUM_REGIONS \
     (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1 + 1 + 1)
 #else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
@@ -177,8 +176,7 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
 //! @note The function is intentionally defined as weak so someone can
 //! easily override the port defaults by re-defining a non-weak version of
 //! the function in another file
-MEMFAULT_WEAK
-const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
   const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_ESP_PORT_NUM_REGIONS];
   int region_idx = 0;
@@ -234,12 +232,11 @@ void __wrap_esp_core_dump_init(void) {
     return;
   }
 
-  MEMFAULT_LOG_INFO("Coredumps will be saved to '%s' partition",
-                    core_part->label);
-  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08" PRIX32,
-                    core_part, core_part->address);
+  MEMFAULT_LOG_INFO("Coredumps will be saved to '%s' partition", core_part->label);
+  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08" PRIX32, core_part,
+                    core_part->address);
 
-  s_esp32_coredump_partition_info = (sEspIdfCoredumpPartitionInfo) {
+  s_esp32_coredump_partition_info = (sEspIdfCoredumpPartitionInfo){
     .magic = ESP_IDF_COREDUMP_PART_INIT_MAGIC,
     .partition = *core_part,
   };
@@ -249,7 +246,7 @@ void __wrap_esp_core_dump_init(void) {
   memfault_coredump_storage_check_size();
 }
 
-esp_err_t __wrap_esp_core_dump_image_get(size_t* out_addr, size_t *out_size) {
+esp_err_t __wrap_esp_core_dump_image_get(size_t *out_addr, size_t *out_size) {
   if (out_addr == NULL || out_size == NULL) {
     return ESP_ERR_INVALID_ARG;
   }
@@ -258,7 +255,6 @@ esp_err_t __wrap_esp_core_dump_image_get(size_t* out_addr, size_t *out_size) {
   if (core_part == NULL) {
     return ESP_FAIL;
   }
-
 
   if (!memfault_coredump_has_valid_coredump(out_size)) {
     return ESP_ERR_INVALID_SIZE;
@@ -287,11 +283,11 @@ void memfault_platform_coredump_storage_clear(void) {
   if (core_part->size < sizeof(invalidate)) {
     return;
   }
-  const esp_err_t err = memfault_esp_spi_flash_write(core_part->address, &invalidate,
-                                                     sizeof(invalidate));
+  const esp_err_t err =
+    memfault_esp_spi_flash_write(core_part->address, &invalidate, sizeof(invalidate));
   if (err != ESP_OK) {
-    memfault_platform_log(kMemfaultPlatformLogLevel_Error,
-                          "Failed to write data to flash (%d)!", err);
+    memfault_platform_log(kMemfaultPlatformLogLevel_Error, "Failed to write data to flash (%d)!",
+                          err);
   }
 }
 
@@ -300,7 +296,7 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
   // sanity check that the memory holding the info is populated and not corrupted
   const esp_partition_t *core_part = prv_validate_and_get_core_partition();
   if (core_part == NULL) {
-    *info = (sMfltCoredumpStorageInfo){0};
+    *info = (sMfltCoredumpStorageInfo){ 0 };
     return;
   }
 
@@ -362,8 +358,7 @@ bool memfault_platform_coredump_save_begin(void) {
   return (memfault_esp_spi_flash_coredump_begin() == 0);
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   const esp_partition_t *core_part = prv_get_core_partition();
   if (core_part == NULL) {
     return false;
@@ -377,8 +372,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   return (err == ESP_OK);
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   const esp_partition_t *core_part = prv_get_core_partition();
   if (core_part == NULL) {
     return false;

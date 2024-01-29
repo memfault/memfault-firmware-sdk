@@ -2,26 +2,23 @@
 //!
 //! @brief Tests for CDR implementation
 
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
-#include "CppUTest/TestHarness.h"
-#include "CppUTestExt/MockSupport.h"
-
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
+#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
+#include "CppUTest/MemoryLeakDetectorNewMacros.h"
+#include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_platform_metrics_locking.h"
 #include "fakes/fake_memfault_platform_time.h"
-
+#include "memfault/config.h"
+#include "memfault/core/compiler.h"
 #include "memfault/core/custom_data_recording.h"
 #include "memfault/core/data_packetizer_source.h"
-#include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
-#include "memfault/config.h"
-
 #include "memfault_custom_data_recording_private.h"
 
 typedef struct {
@@ -33,9 +30,9 @@ typedef struct {
 
 static sCdrFakeInfo s_cdr_fake_info;
 
-static void prv_set_fake_info(const sMemfaultCdrMetadata *metadata,
-                              const void *recording, size_t recording_len) {
-  s_cdr_fake_info = (sCdrFakeInfo) {
+static void prv_set_fake_info(const sMemfaultCdrMetadata *metadata, const void *recording,
+                              size_t recording_len) {
+  s_cdr_fake_info = (sCdrFakeInfo){
     .has_data = true,
     .metadata = *metadata,
     .recording = (const uint8_t *)recording,
@@ -60,7 +57,7 @@ static bool prv_read_data_cb(uint32_t offset, void *buf, size_t buf_len) {
 }
 
 static void prv_mark_cdr_read_cb(void) {
-  s_cdr_fake_info = (sCdrFakeInfo) {
+  s_cdr_fake_info = (sCdrFakeInfo){
     .has_data = false,
   };
 }
@@ -69,9 +66,8 @@ static bool prv_stub_has_cdr_cb(MEMFAULT_UNUSED sMemfaultCdrMetadata *metadata) 
   return false;
 }
 
-static bool prv_stub_read_data_cb(MEMFAULT_UNUSED uint32_t offset,
-                                       MEMFAULT_UNUSED void *buf,
-                                       MEMFAULT_UNUSED size_t buf_len) {
+static bool prv_stub_read_data_cb(MEMFAULT_UNUSED uint32_t offset, MEMFAULT_UNUSED void *buf,
+                                  MEMFAULT_UNUSED size_t buf_len) {
   return false;
 }
 
@@ -90,31 +86,25 @@ static sMemfaultCdrSourceImpl s_memfault_cdr_stub_source = {
 };
 
 static const uint8_t s_expected_encoded_buffer[] = {
-  0xA7,
-  0x02, 0x05,
-  0x03, 0x01,
-  0x0A, 0x64, 'm', 'a', 'i', 'n',
-  0x09, 0x65, '1', '.', '2',  '.', '3',
-  0x06, 0x66, 'e', 'v', 't', '_', '2', '4',
-  0x01, 0x14,
-  0x04, 0xa4,
+  0xA7, 0x02, 0x05, 0x03, 0x01, 0x0A, 0x64, 'm', 'a', 'i', 'n', 0x09, 0x65, '1', '.', '2', '.', '3',
+  0x06, 0x66, 'e', 'v', 't', '_', '2', '4', 0x01, 0x14, 0x04, 0xa4,
   // kMemfaultCdrInfoKey_DurationMs
   0x01, 0x00,
   // kMemfaultCdrInfoKey_Mimetypes
-  0x02, 0x82, 0x6A, 't', 'e', 'x', 't', '/', 'p', 'l', 'a', 'i', 'n', 0x68, 't', 'e', 'x', 't', '/', 'c', 's', 'v',
+  0x02, 0x82, 0x6A, 't', 'e', 'x', 't', '/', 'p', 'l', 'a', 'i', 'n', 0x68, 't', 'e', 'x', 't', '/',
+  'c', 's', 'v',
   // kMemfaultCdrInfoKey_Reason
   0x03, 0x65, 'e', 'r', 'r', 'o', 'r',
   // kMemfaultCdrInfoKey_Data
-  0x04, 0x4f, 0x6d, 0x65, 0x6d, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x72, 0x6f, 0x63, 0x6b, 0x73, 0x21, 0x0a
+  0x04, 0x4f, 0x6d, 0x65, 0x6d, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x72, 0x6f, 0x63, 0x6b, 0x73, 0x21,
+  0x0a
 };
 const size_t s_expected_encoded_size = sizeof(s_expected_encoded_buffer);
 
-
 static const char *s_cdr_mimetypes[] = { MEMFAULT_CDR_TEXT, MEMFAULT_CDR_CSV };
 
-static const uint8_t s_cdr_bin[] = {
-  0x6d, 0x65, 0x6d, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x72, 0x6f, 0x63, 0x6b, 0x73, 0x21, 0x0a
-};
+static const uint8_t s_cdr_bin[] = { 0x6d, 0x65, 0x6d, 0x66, 0x61, 0x75, 0x6c, 0x74,
+                                     0x72, 0x6f, 0x63, 0x6b, 0x73, 0x21, 0x0a };
 static const sMemfaultCdrMetadata s_cdr_metadata = {
   .start_time = {
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,

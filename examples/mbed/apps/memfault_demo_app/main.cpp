@@ -5,12 +5,11 @@
 //! implementation.  It also spins up a separate "blinky" thread that
 //! is intended to make coredumps more interesting.
 
+#include "blinky.h"
+#include "cli.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/http/platform/http_client.h"
-
-#include "blinky.h"
-#include "cli.h"
 
 // configure your project key in mbed_app.json
 // find the key on memfault under settings > general

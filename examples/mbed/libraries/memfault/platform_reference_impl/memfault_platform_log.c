@@ -4,15 +4,15 @@
 //! See License.txt for details
 //! @brief
 //! An example implementation of the logging Memfault API for the Mbed platform
-#include "memfault/core/platform/debug_log.h"
-
 #include <stdarg.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "memfault/core/platform/debug_log.h"
 
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
-#  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
+  #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif
 
 static const char *s_log_prefix = "MFLT:";
@@ -72,7 +72,7 @@ void memfault_platform_hexdump(eMemfaultPlatformLogLevel level, const void *data
 
   /* we could build a line and call memfault_platform_log() with it but that would
      require another large buffer so we just printf() each byte here */
-  for (size_t i=0; i<data_len; i++) {
+  for (size_t i = 0; i < data_len; i++) {
     if (bytes_on_current_line == 0) {
       printf("%s [%s] Hexdump: ", s_log_prefix, level_name);
     }
@@ -82,7 +82,7 @@ void memfault_platform_hexdump(eMemfaultPlatformLogLevel level, const void *data
     if (++bytes_on_current_line == max_bytes_per_line) {
       bytes_on_current_line = 0;
       printf("\n");
-      fflush(stdout); // after each line to ensure we don't overrun stdout
+      fflush(stdout);  // after each line to ensure we don't overrun stdout
     }
   }
 

@@ -16,38 +16,38 @@
 //! with DOZE_EN. This way a hang in stop mode will also be caught.
 //!  LPIT0->MSR |= LPIT_MCR_DOZE_EN(1)
 
-#include "memfault/ports/watchdog.h"
-
 #include <inttypes.h>
 
+#include "device_registers.h"
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
-
-#include "device_registers.h"
+#include "memfault/ports/watchdog.h"
 
 // The Low Power Interrupt Timer Channel to use. The S32K has 4 channels (0-3).
 #ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE
-# define MEMFAULT_SOFWARE_WATCHDOG_SOURCE 0
+  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE 0
 #endif
 
 // If the LPIT is driven by SIRC or FIRC we can automatically derive the clock frequency. If
 // SPLL_CLK or SOS_CLK are used, we need a define to be specified because we can't programmatically
 // resolve the external source clock frequency
 #ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ
-# define MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ 0
+  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ 0
 #endif
 
 #if MEMFAULT_SOFWARE_WATCHDOG_SOURCE < 0 || MEMFAULT_SOFWARE_WATCHDOG_SOURCE > 4
-# error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be between 0 and 3"
+  #error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be between 0 and 3"
 #endif
 
 #ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
-# if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == 0
-#  error "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPIT0_Ch0_IRQHandler"
-# else
-#  error "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPIT0_Ch<N>_IRQHandler"
-# endif
+  #if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == 0
+    #error \
+      "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPIT0_Ch0_IRQHandler"
+  #else
+    #error \
+      "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPIT0_Ch<N>_IRQHandler"
+  #endif
 #endif
 
 static void prv_configure_irq(IRQn_Type irqn) {
@@ -78,7 +78,8 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
       clock_name = "SIRCDIV2";
       clock_div2 = (SCG->SIRCDIV & SCG_SIRCDIV_SIRCDIV2_MASK) >> SCG_SIRCDIV_SIRCDIV2_SHIFT;
       src_clock_freq = ((SCG->SIRCCFG & SCG_SIRCCFG_RANGE_MASK) != 0) ?
-          FEATURE_SCG_SIRC_HIGH_RANGE_FREQ : 2000000U;
+                         FEATURE_SCG_SIRC_HIGH_RANGE_FREQ :
+                         2000000U;
       break;
     case 3:
       clock_name = "FIRCDIV2";
@@ -90,7 +91,8 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
       clock_div2 = (SCG->SPLLDIV & SCG_SPLLDIV_SPLLDIV2_MASK) >> SCG_SPLLDIV_SPLLDIV2_SHIFT;
       src_clock_freq = MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ;
     default:
-      MEMFAULT_LOG_ERROR("Illegal clock source for LPIT. PCC=0x%" PRIx32" PCS=0x%" PRIx32, pcc, pcs);
+      MEMFAULT_LOG_ERROR("Illegal clock source for LPIT. PCC=0x%" PRIx32 " PCS=0x%" PRIx32, pcc,
+                         pcs);
       return -1;
   }
 
@@ -106,13 +108,13 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
 
   const uint32_t clock_freq_hz = src_clock_freq >> (clock_div2 - 1);
 
-  MEMFAULT_LOG_DEBUG("Configuring SW Watchdog. Source=%s, Timeout=%dms, Src Clock=%dHz",
-                     clock_name, (int)timeout_ms, (int)clock_freq_hz);
+  MEMFAULT_LOG_DEBUG("Configuring SW Watchdog. Source=%s, Timeout=%dms, Src Clock=%dHz", clock_name,
+                     (int)timeout_ms, (int)clock_freq_hz);
 
   const uint64_t desired_tval = ((uint64_t)timeout_ms * clock_freq_hz) / 1000;
   if (desired_tval > UINT32_MAX) {
     const uint32_t max_seconds = ((uint64_t)UINT32_MAX * 1000) / clock_freq_hz;
-    MEMFAULT_LOG_ERROR("Can't configure software watchdog of %d sec. Max=%"PRIu32" sec",
+    MEMFAULT_LOG_ERROR("Can't configure software watchdog of %d sec. Max=%" PRIu32 " sec",
                        MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS, max_seconds);
     return -4;
   }
@@ -166,15 +168,14 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
   }
 
   LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL =
-      LPIT_TMR_TCTRL_MODE(0) | // 32 bit count down mode
-      LPIT_TMR_TCTRL_T_EN(1);
+    LPIT_TMR_TCTRL_MODE(0) |  // 32 bit count down mode
+    LPIT_TMR_TCTRL_T_EN(1);
 
   return 0;
 }
 
 int memfault_software_watchdog_enable(void) {
-  const uint32_t timeout_ms = \
-      MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000;
+  const uint32_t timeout_ms = MEMFAULT_WATCHDOG_SW_TIMEOUT_SECS * 1000;
   return prv_lpit_with_timeout(timeout_ms);
 }
 

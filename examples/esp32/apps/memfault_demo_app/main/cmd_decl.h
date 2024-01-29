@@ -18,8 +18,8 @@ void register_system(void);
 void register_wifi(void);
 
 // Attempt to join a wifi network
-bool wifi_join(const char* ssid, const char* pass);
-void wifi_load_creds(char** ssid, char** password);
+bool wifi_join(const char *ssid, const char *pass);
+void wifi_load_creds(char **ssid, char **password);
 
 #define MEMFAULT_PROJECT_KEY_LEN 32
 // if gcc < 11, disable -Wattributes, "access" attribute is not supported
@@ -27,7 +27,7 @@ void wifi_load_creds(char** ssid, char** password);
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wattributes"
 #endif
-__attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char* project_key,
+__attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char *project_key,
                                                                    size_t project_key_len);
 #if __GNUC__ < 11
   #pragma GCC diagnostic pop

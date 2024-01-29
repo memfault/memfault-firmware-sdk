@@ -7,15 +7,13 @@
 //! CLI commands that exercises the MEMFAULT_LOG_... and
 //! memfault_log_trigger_collection() APIs. See debug_log.h and log.h for more info.
 
+#include "memfault/config.h"
+#include "memfault/core/compiler.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/core/log.h"
 #include "memfault/demo/cli.h"
 
-#include "memfault/core/compiler.h"
-#include "memfault/core/log.h"
-#include "memfault/config.h"
-#include "memfault/core/debug_log.h"
-
-int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc,
-                                   MEMFAULT_UNUSED char *argv[]) {
+int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   MEMFAULT_LOG_RAW("Raw log!");
   MEMFAULT_LOG_DEBUG("Debug log!");
   MEMFAULT_LOG_INFO("Info log!");
@@ -33,8 +31,7 @@ int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc,
   return 0;
 }
 
-int memfault_demo_cli_cmd_trigger_logs(MEMFAULT_UNUSED int argc,
-                                       MEMFAULT_UNUSED char *argv[]) {
+int memfault_demo_cli_cmd_trigger_logs(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   memfault_log_trigger_collection();
   return 0;
 }

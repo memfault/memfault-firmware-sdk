@@ -14,7 +14,8 @@
 //! facilities or during initial bringup before another transport is in place.
 //!
 //! The extracted data can be published to the Memfault cloud using the memfault-cli:
-//! $ memfault --project-key ${YOUR_PROJECT_KEY} post-chunk --encoding sdk_data_export your_exported_data.txt
+//! $ memfault --project-key ${YOUR_PROJECT_KEY} post-chunk --encoding sdk_data_export
+//! your_exported_data.txt
 //!
 //! A step-by-step integration guide with more details can be found at:
 //!   https://mflt.io/chunk-data-export
@@ -66,7 +67,7 @@ void memfault_data_export_base64_encoded_chunk(const char *chunk_str);
 //!  or equal to MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN
 void memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len);
 
-#define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX "MC:" // *M*emfault *C*hunk
+#define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX "MC:"  // *M*emfault *C*hunk
 #define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX_LEN \
   MEMFAULT_STATIC_STRLEN(MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX)
 
@@ -74,11 +75,10 @@ void memfault_data_export_chunk(void *chunk_data, size_t chunk_data_len);
 #define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_SUFFIX_LEN \
   MEMFAULT_STATIC_STRLEN(MEMFAULT_DATA_EXPORT_BASE64_CHUNK_SUFFIX)
 
-#define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN                       \
-  (MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX_LEN +                       \
-   MEMFAULT_BASE64_ENCODE_LEN(MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN) +     \
-   MEMFAULT_DATA_EXPORT_BASE64_CHUNK_SUFFIX_LEN +                       \
-   1 /* '\0' */ )
+#define MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN                   \
+  (MEMFAULT_DATA_EXPORT_BASE64_CHUNK_PREFIX_LEN +                   \
+   MEMFAULT_BASE64_ENCODE_LEN(MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN) + \
+   MEMFAULT_DATA_EXPORT_BASE64_CHUNK_SUFFIX_LEN + 1 /* '\0' */)
 
 #ifdef __cplusplus
 }

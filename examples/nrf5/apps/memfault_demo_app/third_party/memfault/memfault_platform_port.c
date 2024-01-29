@@ -6,17 +6,16 @@
 //! Glue layer between the Memfault SDK and the underlying platform
 
 #include "app_util_platform.h"
-#include "nrf.h"
-
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
+#include "nrf.h"
 
 #if !defined(CONFIG_MEMFAULT_EVENT_STORAGE_SIZE)
-#define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 512
+  #define CONFIG_MEMFAULT_EVENT_STORAGE_SIZE 512
 #endif
 
 #if !defined(CONFIG_MEMFAULT_LOGGING_RAM_SIZE)
-#define CONFIG_MEMFAULT_LOGGING_RAM_SIZE 512
+  #define CONFIG_MEMFAULT_LOGGING_RAM_SIZE 512
 #endif
 
 static void prv_get_device_serial(char *buf, size_t buf_len) {
@@ -27,15 +26,14 @@ static void prv_get_device_serial(char *buf, size_t buf_len) {
   for (size_t i = 0; i < nrf_uid_num_words; i++) {
     uint32_t lsw = NRF_FICR->DEVICEID[i];
 
-    const size_t bytes_per_word =  4;
+    const size_t bytes_per_word = 4;
     for (size_t j = 0; j < bytes_per_word; j++) {
-
       size_t space_left = buf_len - curr_idx;
       uint8_t val = (lsw >> (j * 8)) & 0xff;
       size_t bytes_written = snprintf(&buf[curr_idx], space_left, "%02X", (int)val);
       if (bytes_written < space_left) {
         curr_idx += bytes_written;
-      } else { // we are out of space, return what we got, it's NULL terminated
+      } else {  // we are out of space, return what we got, it's NULL terminated
         return;
       }
     }
@@ -51,7 +49,7 @@ void memfault_platform_get_device_info(struct MemfaultDeviceInfo *info) {
     s_init = true;
   }
 
-  *info = (struct MemfaultDeviceInfo) {
+  *info = (struct MemfaultDeviceInfo){
     .device_serial = s_device_serial,
     .hardware_version = "pca10056",
     .software_version = "1.0.0-dev",
@@ -83,7 +81,7 @@ int memfault_platform_boot(void) {
 
   static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
 
   memfault_reboot_tracking_collect_reset_info(evt_storage);

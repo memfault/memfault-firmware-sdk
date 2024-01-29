@@ -42,62 +42,62 @@ TEST_GROUP(MemfaultMetricsSerializer){
 //
 
 void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void *ctx) {
-    sMemfaultMetricInfo info = {0};
-    // Note: info.key._impl is not needed for serialization so leaving blank
+  sMemfaultMetricInfo info = { 0 };
+  // Note: info.key._impl is not needed for serialization so leaving blank
 
-    info.session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
-    info.type = kMemfaultMetricType_Unsigned;
-    info.val.u32 = 1000;
-    info.is_set = true;
-    cb(ctx, &info);
+  info.session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
+  info.type = kMemfaultMetricType_Unsigned;
+  info.val.u32 = 1000;
+  info.is_set = true;
+  cb(ctx, &info);
 
-    // Test a session metric
-    info.session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
-    cb(ctx, &info);
+  // Test a session metric
+  info.session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
+  cb(ctx, &info);
 
-    // Test an unset unsigned metric
-    info.session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
-    info.is_set = false;
-    cb(ctx, &info);
+  // Test an unset unsigned metric
+  info.session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
+  info.is_set = false;
+  cb(ctx, &info);
 
-    info.type = kMemfaultMetricType_Signed;
-    info.val.i32 = -1000;
-    info.is_set = true;
-    cb(ctx, &info);
+  info.type = kMemfaultMetricType_Signed;
+  info.val.i32 = -1000;
+  info.is_set = true;
+  cb(ctx, &info);
 
-    // Test an unset signed metric
-    info.is_set = false;
-    cb(ctx, &info);
+  // Test an unset signed metric
+  info.is_set = false;
+  cb(ctx, &info);
 
-    info.type = kMemfaultMetricType_Timer;
-    info.val.u32 = 1234;
-    cb(ctx, &info);
+  info.type = kMemfaultMetricType_Timer;
+  info.val.u32 = 1234;
+  cb(ctx, &info);
 
-    info.type = kMemfaultMetricType_String;
+  info.type = kMemfaultMetricType_String;
 // chosen to be exactly 16 bytes to match the max storage set in
 // tests/stub_includes/memfault_metrics_heartbeat_config.def
 #define SAMPLE_STRING "123456789abcde"
-    uint8_t sample_string[sizeof(SAMPLE_STRING)];
-    info.val.ptr = sample_string;
-    memcpy(info.val.ptr, SAMPLE_STRING, sizeof(SAMPLE_STRING));
-    cb(ctx, &info);
+  uint8_t sample_string[sizeof(SAMPLE_STRING)];
+  info.val.ptr = sample_string;
+  memcpy(info.val.ptr, SAMPLE_STRING, sizeof(SAMPLE_STRING));
+  cb(ctx, &info);
 }
 
 size_t memfault_metrics_session_get_num_metrics(eMfltMetricsSessionIndex session_key) {
-    // if this fails, it means we need to add add a report for the new type
-    // to the fake "memfault_metrics_heartbeat_iterate"
-    LONGS_EQUAL(kMemfaultMetricType_NumTypes, 4);
+  // if this fails, it means we need to add add a report for the new type
+  // to the fake "memfault_metrics_heartbeat_iterate"
+  LONGS_EQUAL(kMemfaultMetricType_NumTypes, 4);
 
-    size_t num_metrics = 0;
-    if (session_key == MEMFAULT_METRICS_SESSION_KEY(heartbeat)) {
-      // Additionally we test that unset integers (signed + unsigned) are set to null
-      num_metrics = kMemfaultMetricType_NumTypes + 2;
-    } else {
-      // We only have one session metric
-      num_metrics = 1;
-    }
+  size_t num_metrics = 0;
+  if (session_key == MEMFAULT_METRICS_SESSION_KEY(heartbeat)) {
+    // Additionally we test that unset integers (signed + unsigned) are set to null
+    num_metrics = kMemfaultMetricType_NumTypes + 2;
+  } else {
+    // We only have one session metric
+    num_metrics = 1;
+  }
 
-    return num_metrics;
+  return num_metrics;
 }
 
 TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
@@ -121,7 +121,8 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultMetricSerialize) {
     0xa6, 0x02, 0x01, 0x03, 0x01, 0x0a, 0x64, 'm',  'a',  'i',  'n',  0x09, 0x65, '1',  '.',
     '2',  '.',  '3',  0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4',  0x04, 0xa2, 0x02, 0x01,
     0x01, 0x86, 0x19, 0x03, 0xe8, 0xf6, 0x39, 0x03, 0xe7, 0xf6, 0x19, 0x04, 0xd2, 0x6e, '1',
-    '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  'a',  'b',  'c',  'd',  'e'};
+    '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  'a',  'b',  'c',  'd',  'e'
+  };
 
   fake_event_storage_assert_contents_match(expected_serialization, sizeof(expected_serialization));
 }
@@ -144,10 +145,10 @@ TEST(MemfaultMetricsSerializer, Test_MemfaultSessionMetricSerialize) {
   //  "1": [ 1000 ]
   //  }
   // }
-  const uint8_t expected_serialization[] = {0xa6, 0x02, 0x01, 0x03, 0x01, 0x0a, 0x64, 'm', 'a',
-                                            'i',  'n',  0x09, 0x65, '1',  '.',  '2',  '.', '3',
-                                            0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4', 0x04,
-                                            0xa2, 0x02, 0x00, 0x01, 0x81, 0x19, 0x03, 0xE8};
+  const uint8_t expected_serialization[] = { 0xa6, 0x02, 0x01, 0x03, 0x01, 0x0a, 0x64, 'm', 'a',
+                                             'i',  'n',  0x09, 0x65, '1',  '.',  '2',  '.', '3',
+                                             0x06, 0x66, 'e',  'v',  't',  '_',  '2',  '4', 0x04,
+                                             0xa2, 0x02, 0x00, 0x01, 0x81, 0x19, 0x03, 0xE8 };
 
   fake_event_storage_assert_contents_match(expected_serialization, sizeof(expected_serialization));
 }

@@ -8,20 +8,19 @@
 #include "CppUTestExt/MockSupport.h"
 
 extern "C" {
-  #include <string.h>
-  #include <stddef.h>
+#include <stddef.h>
+#include <string.h>
 
-  #include "memfault/util/varint.h"
+#include "memfault/util/varint.h"
 
-  static uint8_t s_varint_test_buf[MEMFAULT_UINT32_MAX_VARINT_LENGTH];
+static uint8_t s_varint_test_buf[MEMFAULT_UINT32_MAX_VARINT_LENGTH];
 }
 
-TEST_GROUP(MemfaultVarint){
+TEST_GROUP(MemfaultVarint) {
   void setup() {
     memset(s_varint_test_buf, 0x0, sizeof(s_varint_test_buf));
   }
-  void teardown() {
-  }
+  void teardown() { }
 };
 
 TEST(MemfaultVarint, Test_1byteEncoding) {

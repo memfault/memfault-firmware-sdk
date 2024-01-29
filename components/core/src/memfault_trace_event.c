@@ -57,7 +57,7 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl) {
   }
 
   if (!memfault_serializer_helper_check_storage_size(
-      storage_impl, memfault_trace_event_compute_worst_case_storage_size, "trace")) {
+        storage_impl, memfault_trace_event_compute_worst_case_storage_size, "trace")) {
     return MEMFAULT_TRACE_EVENT_STORAGE_TOO_SMALL;
   }
 
@@ -79,27 +79,28 @@ static bool prv_encode_cb(sMemfaultCborEncoder *encoder, void *ctx) {
   }
 
   sMemfaultTraceEventHelperInfo helper_info = {
-      .reason_key = kMemfaultTraceInfoEventKey_UserReason,
-      .reason_value = info->reason,
-      .pc = (uint32_t)(uintptr_t)info->pc_addr,
-      .lr = (uint32_t)(uintptr_t)info->return_addr,
-      .extra_event_info_pairs = extra_event_info_pairs,
+    .reason_key = kMemfaultTraceInfoEventKey_UserReason,
+    .reason_value = info->reason,
+    .pc = (uint32_t)(uintptr_t)info->pc_addr,
+    .lr = (uint32_t)(uintptr_t)info->return_addr,
+    .extra_event_info_pairs = extra_event_info_pairs,
   };
 
   bool success = memfault_serializer_helper_encode_trace_event(encoder, &helper_info);
 
   if (success && status_present) {
-    success = memfault_serializer_helper_encode_int32_kv_pair(encoder,
-        kMemfaultTraceInfoEventKey_StatusCode, info->status_code);
+    success = memfault_serializer_helper_encode_int32_kv_pair(
+      encoder, kMemfaultTraceInfoEventKey_StatusCode, info->status_code);
   }
 
   if (success && log_present) {
 #if !MEMFAULT_COMPACT_LOG_ENABLE
-    success = memfault_serializer_helper_encode_byte_string_kv_pair(encoder,
-        kMemfaultTraceInfoEventKey_Log, info->log, info->log_len);
+    success = memfault_serializer_helper_encode_byte_string_kv_pair(
+      encoder, kMemfaultTraceInfoEventKey_Log, info->log, info->log_len);
 #else
-    success = memfault_cbor_encode_unsigned_integer(encoder, kMemfaultTraceInfoEventKey_CompactLog) &&
-        memfault_cbor_join(encoder, info->log, info->log_len);
+    success =
+      memfault_cbor_encode_unsigned_integer(encoder, kMemfaultTraceInfoEventKey_CompactLog) &&
+      memfault_cbor_join(encoder, info->log, info->log_len);
 #endif
   }
 
@@ -146,7 +147,7 @@ static int prv_trace_event_capture_from_isr(sMemfaultTraceEventInfo *trace_info)
 static int prv_trace_event_capture(sMemfaultTraceEventInfo *info) {
   sMemfaultCborEncoder encoder = { 0 };
   const bool success = memfault_serializer_helper_encode_to_storage(
-      &encoder, s_memfault_trace_event_ctx.storage_impl, prv_encode_cb, info);
+    &encoder, s_memfault_trace_event_ctx.storage_impl, prv_encode_cb, info);
 
   if (!success) {
     return MEMFAULT_TRACE_EVENT_STORAGE_OUT_OF_SPACE;
@@ -188,8 +189,7 @@ static int prv_capture_trace_event_info(sMemfaultTraceEventInfo *info) {
   return prv_trace_event_capture(info);
 }
 
-int memfault_trace_event_capture(eMfltTraceReasonUser reason, void *pc_addr,
-                                 void *lr_addr) {
+int memfault_trace_event_capture(eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr) {
   sMemfaultTraceEventInfo event_info = {
     .reason = reason,
     .pc_addr = pc_addr,
@@ -212,15 +212,14 @@ int memfault_trace_event_with_status_capture(eMfltTraceReasonUser reason, void *
 
 #if !MEMFAULT_COMPACT_LOG_ENABLE
 
-int memfault_trace_event_with_log_capture(
-    eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr, const char *fmt, ...) {
-
-#if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+int memfault_trace_event_with_log_capture(eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr,
+                                          const char *fmt, ...) {
+  #if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
   // If a log capture takes place while in an ISR we just record a normal trace event
   if (memfault_arch_is_inside_isr()) {
     return memfault_trace_event_capture(reason, pc_addr, lr_addr);
   }
-#endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
+  #endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
 
   // Note: By performing the vsnprintf in this function (rather than forward vargs in event_info),
   // the stdlib dependency only gets pulled in when using trace event logs and not for all trace
@@ -245,16 +244,15 @@ int memfault_trace_event_with_log_capture(
 
 #else
 
-int memfault_trace_event_with_compact_log_capture(
-    eMfltTraceReasonUser reason, void *lr_addr,
-    uint32_t log_id, uint32_t compressed_fmt, ...) {
+int memfault_trace_event_with_compact_log_capture(eMfltTraceReasonUser reason, void *lr_addr,
+                                                  uint32_t log_id, uint32_t compressed_fmt, ...) {
 
-#if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
+  #if !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED
   // If a log capture takes place while in an ISR we just record a normal trace event
   if (memfault_arch_is_inside_isr()) {
     return memfault_trace_event_capture(reason, 0, lr_addr);
   }
-#endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
+  #endif /* !MEMFAULT_TRACE_EVENT_WITH_LOG_FROM_ISR_ENABLED */
 
   va_list args;
   va_start(args, compressed_fmt);
@@ -283,7 +281,7 @@ int memfault_trace_event_with_compact_log_capture(
 
 size_t memfault_trace_event_compute_worst_case_storage_size(void) {
   sMemfaultTraceEventInfo event_info = {
-    .reason =  kMfltTraceReasonUser_NumReasons,
+    .reason = kMfltTraceReasonUser_NumReasons,
     .pc_addr = (void *)(uintptr_t)UINT32_MAX,
     .return_addr = (void *)(uintptr_t)UINT32_MAX,
     .opt_fields = TRACE_EVENT_OPT_FIELD_STATUS_MASK,
@@ -295,7 +293,7 @@ size_t memfault_trace_event_compute_worst_case_storage_size(void) {
 
 void memfault_trace_event_reset(void) {
   s_memfault_trace_event_ctx.storage_impl = NULL;
-  s_isr_trace_event = (sMemfaultIsrTraceEvent) { 0 };
+  s_isr_trace_event = (sMemfaultIsrTraceEvent){ 0 };
 }
 
 bool memfault_trace_event_booted(void) {

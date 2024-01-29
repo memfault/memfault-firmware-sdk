@@ -19,39 +19,37 @@
 //! __MemfaultCoreStorageEnd = ORIGIN(COREDUMP_STORAGE_FLASH) + LENGTH(COREDUMP_STORAGE_FLASH);
 //! __MemfaultCoreStorageSectorNumber = 23;
 
-#include "memfault/panics/coredump.h"
-
 #include <string.h>
 
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
+#include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
-
 #include "stm32f4xx_hal.h"
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_START_ADDR
 extern uint32_t __MemfaultCoreStorageStart[];
-#define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
+  #define MEMFAULT_COREDUMP_STORAGE_START_ADDR ((uint32_t)__MemfaultCoreStorageStart)
 #endif
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_END_ADDR
 extern uint32_t __MemfaultCoreStorageEnd[];
-#define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
+  #define MEMFAULT_COREDUMP_STORAGE_END_ADDR ((uint32_t)__MemfaultCoreStorageEnd)
 #endif
 
 #ifndef MEMFAULT_COREDUMP_STORAGE_FLASH_SECTOR_NUMBER
 //! The sector number to write to. This ID can be found in the "Embedded Flash memory"
 //! section of the reference manual for the STM32 family
 extern uint32_t __MemfaultCoreStorageSectorNumber[];
-#define MEMFAULT_COREDUMP_STORAGE_FLASH_SECTOR_NUMBER ((uint32_t)__MemfaultCoreStorageSectorNumber)
+  #define MEMFAULT_COREDUMP_STORAGE_FLASH_SECTOR_NUMBER \
+    ((uint32_t)__MemfaultCoreStorageSectorNumber)
 #endif
 
 // Error writing to flash - should never happen & likely detects a configuration error
 // Call the reboot handler which will halt the device if a debugger is attached and then reboot
-MEMFAULT_NO_OPT
-static void prv_coredump_writer_assert_and_reboot(int error_code) {
+MEMFAULT_NO_OPT static void prv_coredump_writer_assert_and_reboot(int error_code) {
   memfault_platform_halt_if_debugging();
   memfault_platform_reboot();
 }
@@ -68,17 +66,15 @@ void memfault_platform_coredump_storage_clear(void) {
 }
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
-  const size_t size =
-      MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
+  const size_t size = MEMFAULT_COREDUMP_STORAGE_END_ADDR - MEMFAULT_COREDUMP_STORAGE_START_ADDR;
 
-  *info  = (sMfltCoredumpStorageInfo) {
+  *info = (sMfltCoredumpStorageInfo){
     .size = size,
     .sector_size = size,
   };
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   if (!prv_op_within_flash_bounds(offset, data_len)) {
     return false;
   }
@@ -98,8 +94,7 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
   return true;
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   if (!prv_op_within_flash_bounds(offset, read_len)) {
     return false;
   }

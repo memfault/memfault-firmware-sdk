@@ -20,9 +20,9 @@ extern "C" {
 
 #if MEMFAULT_SDK_ASSERT_ENABLED
 
-//! A user of the SDK may optionally override the default assert macro by adding a CFLAG such as:
-//! -DMEMFAULT_SDK_ASSERT=MY_PLATFORM_ASSERT
-#ifndef MEMFAULT_SDK_ASSERT
+  //! A user of the SDK may optionally override the default assert macro by adding a CFLAG such as:
+  //! -DMEMFAULT_SDK_ASSERT=MY_PLATFORM_ASSERT
+  #ifndef MEMFAULT_SDK_ASSERT
 
 //! An end user can override the implementation to trigger a fault/reboot the system.
 //!
@@ -37,13 +37,13 @@ MEMFAULT_NORETURN void memfault_sdk_assert_func_noreturn(void);
 //!  - calls memfault_sdk_assert_func_noreturn
 void memfault_sdk_assert_func(void);
 
-#define MEMFAULT_SDK_ASSERT(expr) ((expr) ? (void)0 : memfault_sdk_assert_func())
+    #define MEMFAULT_SDK_ASSERT(expr) ((expr) ? (void)0 : memfault_sdk_assert_func())
 
-#endif /* MEMFAULT_SDK_ASSERT */
+  #endif /* MEMFAULT_SDK_ASSERT */
 
 #else
 
-#define MEMFAULT_SDK_ASSERT(expr) (void)0
+  #define MEMFAULT_SDK_ASSERT(expr) (void)0
 
 #endif /* MEMFAULT_SDK_ASSERT_ENABLED */
 

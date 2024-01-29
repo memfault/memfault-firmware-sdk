@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 //! Coredump block types
-typedef enum MfltCoredumpBlockType  {
+typedef enum MfltCoredumpBlockType {
   kMfltCoredumpBlockType_CurrentRegisters = 0,
   kMfltCoredumpBlockType_MemoryRegion = 1,
   kMfltCoredumpRegionType_DeviceSerial = 2,
@@ -69,7 +69,6 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
 //! @return memory regions with the SDK to collect or NULL if there are no extra
 //!   regions to collect
 const sMfltCoredumpRegion *memfault_coredump_get_sdk_regions(size_t *num_regions);
-
 
 #ifdef __cplusplus
 }

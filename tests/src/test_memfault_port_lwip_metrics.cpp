@@ -7,7 +7,7 @@
 #include "memfault/ports/lwip/metrics.h"
 
 static MemfaultMetricIdsComparator s_metric_id_comparator;
-struct mock_stats lwip_stats = {0};
+struct mock_stats lwip_stats = { 0 };
 
 static MemfaultMetricId s_tcp_tx_count_id = MEMFAULT_METRICS_KEY(tcp_tx_count);
 static MemfaultMetricId s_tcp_rx_count_id = MEMFAULT_METRICS_KEY(tcp_rx_count);

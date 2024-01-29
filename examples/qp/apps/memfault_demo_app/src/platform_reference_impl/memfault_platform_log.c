@@ -4,17 +4,16 @@
 //! See License.txt for details
 //! @brief
 //! An example implementation of the logging Memfault API
-#include "memfault/core/platform/debug_log.h"
-
-#include "bsp.h"
-
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "bsp.h"
+#include "memfault/core/platform/debug_log.h"
+
 #ifndef MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES
-#  define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
+  #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
 #endif
 
 static void prv_send_log_to_uart(const char *str, size_t size) {

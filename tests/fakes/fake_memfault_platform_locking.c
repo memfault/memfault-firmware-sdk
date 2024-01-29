@@ -6,10 +6,9 @@
 //! @brief
 //! Fake implementation of memfault_metrics_platform_locking APIs
 
-#include "fakes/fake_memfault_platform_metrics_locking.h"
-
 #include <stdint.h>
 
+#include "fakes/fake_memfault_platform_metrics_locking.h"
 #include "memfault/core/platform/overrides.h"
 
 typedef struct {
@@ -28,7 +27,7 @@ void memfault_unlock(void) {
 }
 
 void fake_memfault_metrics_platorm_locking_reboot(void) {
-    s_metric_lock_stats = (sMetricLockStats) { 0 };
+  s_metric_lock_stats = (sMetricLockStats){ 0 };
 }
 
 bool fake_memfault_platform_metrics_lock_calls_balanced(void) {

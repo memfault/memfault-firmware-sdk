@@ -5,12 +5,13 @@
 //!
 //! A minimal example app for exercising and trying out the Memfault SDK with the DA145xx SDK.
 
-#include "app_api.h"
 #include "user_app.h"
 
+#include "app_api.h"
+
 #ifdef CFG_PRINTF
-#include "uart.h"
-#include "arch_console.h"
+  #include "arch_console.h"
+  #include "uart.h"
 #endif
 
 #include "memfault/components.h"
@@ -34,8 +35,7 @@ void user_app_on_init(void) {
   default_app_on_init();
 }
 
-void user_on_connection(uint8_t connection_idx,
-                        struct gapc_connection_req_ind const *param) {
+void user_on_connection(uint8_t connection_idx, struct gapc_connection_req_ind const *param) {
   default_app_on_connection(connection_idx, param);
 }
 
@@ -43,7 +43,7 @@ void user_on_disconnect(struct gapc_disconnect_ind const *param) {
   default_app_on_disconnect(param);
 }
 
-#if !defined (__DA14531__)
+#if !defined(__DA14531__)
 static int prv_test_storage(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   GLOBAL_INT_DISABLE();
   memfault_coredump_storage_debug_test_begin();
@@ -59,17 +59,17 @@ static int prv_export_data(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[
 }
 
 static const sMemfaultShellCommand s_memfault_shell_commands[] = {
-  {"crash", memfault_demo_cli_cmd_crash, ""},
-#if !defined (__DA14531__) // Don't use on DA14531 to reduce memory usage
-  {"trace", memfault_demo_cli_cmd_trace_event_capture, ""},
-  {"get_core", memfault_demo_cli_cmd_get_core, ""},
-  {"clear_core", memfault_demo_cli_cmd_clear_core, ""},
-  {"test_storage", prv_test_storage, ""},
-  {"get_device_info", memfault_demo_cli_cmd_get_device_info, ""},
+  { "crash", memfault_demo_cli_cmd_crash, "" },
+#if !defined(__DA14531__)  // Don't use on DA14531 to reduce memory usage
+  { "trace", memfault_demo_cli_cmd_trace_event_capture, "" },
+  { "get_core", memfault_demo_cli_cmd_get_core, "" },
+  { "clear_core", memfault_demo_cli_cmd_clear_core, "" },
+  { "test_storage", prv_test_storage, "" },
+  { "get_device_info", memfault_demo_cli_cmd_get_device_info, "" },
 #endif
-  {"reboot", memfault_demo_cli_cmd_system_reboot, ""},
-  {"export", prv_export_data, ""},
-  {"help", memfault_shell_help_handler, ""},
+  { "reboot", memfault_demo_cli_cmd_system_reboot, "" },
+  { "export", prv_export_data, "" },
+  { "help", memfault_shell_help_handler, "" },
 };
 
 const sMemfaultShellCommand *const g_memfault_shell_commands = s_memfault_shell_commands;

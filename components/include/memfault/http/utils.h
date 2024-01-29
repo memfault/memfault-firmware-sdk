@@ -31,7 +31,7 @@ extern "C" {
 //!
 //! For example, this would be where a user of the API would make a call to send() to push data
 //! over a socket
-typedef bool(*MfltHttpClientSendCb)(const void *data, size_t data_len, void *ctx);
+typedef bool (*MfltHttpClientSendCb)(const void *data, size_t data_len, void *ctx);
 
 //! Builds the HTTP 'Request-Line' and Headers for a POST to the Memfault Chunk Endpoint
 //!
@@ -44,8 +44,8 @@ typedef bool(*MfltHttpClientSendCb)(const void *data, size_t data_len, void *ctx
 //!  will be populated in the HTTP "Content-Length" header.
 //!
 //! @return true if the post was successful, false otherwise
-bool memfault_http_start_chunk_post(
-    MfltHttpClientSendCb callback, void *ctx, size_t content_body_length);
+bool memfault_http_start_chunk_post(MfltHttpClientSendCb callback, void *ctx,
+                                    size_t content_body_length);
 
 //! Builds the HTTP GET request to query the Memfault cloud to see if a new OTA Payload is available
 //!
@@ -75,8 +75,8 @@ bool memfault_http_get_latest_ota_payload_url(MfltHttpClientSendCb write_callbac
 //!   the request response body can be read where the Content-Length will contain the size
 //!   of the OTA payload and the message-body will be the OTA Payload that was uploaded via
 //!   the Memfault UI
-bool memfault_http_get_ota_payload(MfltHttpClientSendCb write_callback, void *ctx,
-                                   const char *url, size_t url_len);
+bool memfault_http_get_ota_payload(MfltHttpClientSendCb write_callback, void *ctx, const char *url,
+                                   size_t url_len);
 
 typedef enum MfltHttpParseStatus {
   kMfltHttpParseStatus_Ok = 0,
@@ -113,7 +113,6 @@ typedef struct {
   char line_buf[128];
 } sMemfaultHttpResponseContext;
 
-
 //! A *minimal* HTTP response parser for Memfault API calls
 //!
 //! @param ctx The context to be used while a parsing is in progress. It's
@@ -124,8 +123,8 @@ typedef struct {
 //! @return True if parsing completed or false if more data is needed for the response
 //!   Upon completion the 'parse_error' & 'http_status_code' fields can be checked
 //!   within the 'ctx' for the results
-bool memfault_http_parse_response(
-    sMemfaultHttpResponseContext *ctx, const void *data, size_t data_len);
+bool memfault_http_parse_response(sMemfaultHttpResponseContext *ctx, const void *data,
+                                  size_t data_len);
 
 //! Same as memfault_http_parse_response but only parses the response header
 //!
@@ -139,8 +138,8 @@ bool memfault_http_parse_response(
 //!                     | entity-header ) CRLF)
 //!                    CRLF
 //!                    [ message-body ]          ; **NOT Consumed**
-bool memfault_http_parse_response_header(
-    sMemfaultHttpResponseContext *ctx, const void *data, size_t data_len);
+bool memfault_http_parse_response_header(sMemfaultHttpResponseContext *ctx, const void *data,
+                                         size_t data_len);
 
 typedef enum {
   kMemfaultUriScheme_Unrecognized = 0,

@@ -3,9 +3,8 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "memfault/esp_port/spi_flash.h"
-
 #include "esp_spi_flash.h"
+#include "memfault/esp_port/spi_flash.h"
 
 int memfault_esp_spi_flash_coredump_begin(void) {
   // re-configure flash driver to be call-able from an Interrupt context

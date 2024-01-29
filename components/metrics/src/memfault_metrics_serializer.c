@@ -122,7 +122,7 @@ static bool prv_encode_cb(MEMFAULT_UNUSED sMemfaultCborEncoder *encoder, void *c
 }
 
 static size_t prv_compute_worst_case_size(eMfltMetricsSessionIndex session) {
-  sMemfaultSerializerState state = {.compute_worst_case_size = true, .session = session};
+  sMemfaultSerializerState state = { .compute_worst_case_size = true, .session = session };
 
   return memfault_serializer_helper_compute_size(&state.encoder, prv_encode_cb, &state);
 }
@@ -158,7 +158,7 @@ bool memfault_metrics_session_serialize(const sMemfaultEventStorageImpl *storage
 
   // NOTE: We'll always attempt to serialize the heartbeat and rollback if we are out of space
   // avoiding the need to serialize the data twice
-  sMemfaultSerializerState state = {0};
+  sMemfaultSerializerState state = { 0 };
   state.session = session;
   const bool success = memfault_serializer_helper_encode_to_storage(&state.encoder, storage_impl,
                                                                     prv_encode_cb, &state);

@@ -19,27 +19,32 @@
 
 extern "C" {
 static uint64_t s_fake_time_ms = 0;
-uint64_t memfault_platform_get_time_since_boot_ms(void) { return s_fake_time_ms; }
+uint64_t memfault_platform_get_time_since_boot_ms(void) {
+  return s_fake_time_ms;
+}
 }
 
-void memfault_task_watchdog_platform_refresh_callback(void) { mock().actualCall(__func__); }
+void memfault_task_watchdog_platform_refresh_callback(void) {
+  mock().actualCall(__func__);
+}
 
 static Mflt_sMemfaultAssertInfo_Comparator s_assert_info_comparator;
 
-TEST_GROUP(MemfaultTaskWatchdog){void setup(){mock().strictOrder();
-mock().installComparator("sMemfaultAssertInfo", s_assert_info_comparator);
+TEST_GROUP(MemfaultTaskWatchdog) {
+  void setup() {
+    mock().strictOrder();
+    mock().installComparator("sMemfaultAssertInfo", s_assert_info_comparator);
 
-s_fake_time_ms = 0;
+    s_fake_time_ms = 0;
 
-memfault_task_watchdog_init();
-}
-void teardown() {
-  mock().checkExpectations();
-  mock().removeAllComparatorsAndCopiers();
-  mock().clear();
-}
-}
-;
+    memfault_task_watchdog_init();
+  }
+  void teardown() {
+    mock().checkExpectations();
+    mock().removeAllComparatorsAndCopiers();
+    mock().clear();
+  }
+};
 
 TEST(MemfaultTaskWatchdog, Test_Basic) {
   // no channels started
@@ -113,7 +118,7 @@ TEST(MemfaultTaskWatchdog, Test_ExpireWrapAround) {
     UINT64_MAX,
   };
 
-  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(wrap_start_points); i++){
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(wrap_start_points); i++) {
     s_fake_time_ms = wrap_start_points[i] - MEMFAULT_TASK_WATCHDOG_TIMEOUT_INTERVAL_MS;
     MEMFAULT_TASK_WATCHDOG_START(task_1);
 

@@ -13,7 +13,6 @@
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
 #include "fakes/fake_memfault_platform_metrics_locking.h"
-
 #include "memfault/core/heap_stats.h"
 #include "memfault/core/heap_stats_impl.h"
 #include "memfault/core/math.h"
@@ -34,9 +33,9 @@ TEST_GROUP(MemfaultHeapStats) {
 
 static bool prv_heap_stat_equality(const sMfltHeapStatEntry *expected,
                                    const sMfltHeapStatEntry *actual) {
-  bool match = (expected->lr == actual->lr) &&    //
-               (expected->ptr == actual->ptr) &&  //
-               (expected->info.size == actual->info.size) && //
+  bool match = (expected->lr == actual->lr) &&                //
+               (expected->ptr == actual->ptr) &&              //
+               (expected->info.size == actual->info.size) &&  //
                (expected->info.in_use == actual->info.in_use);
   if (!match) {
     fprintf(stderr,
@@ -59,11 +58,10 @@ TEST(MemfaultHeapStats, Test_Basic) {
     {
       .lr = lr,
       .ptr = (void *)0x12345679,
-      .info =
-        {
-          .size = 1234,
-          .in_use = 1,
-        },
+      .info = {
+        .size = 1234,
+        .in_use = 1,
+      },
     },
   };
 
@@ -90,20 +88,18 @@ TEST(MemfaultHeapStats, Test_Free) {
       {
         .lr = lr,
         .ptr = (void *)0x12345679,
-        .info =
-          {
-            .size = 1234,
-            .in_use = 1,
-          },
+        .info = {
+          .size = 1234,
+          .in_use = 1,
+        },
       },
       {
         .lr = lr,
         .ptr = (void *)0x1234567A,
-        .info =
-          {
-            .size = 12345,
-            .in_use = 0,
-          },
+        .info = {
+          .size = 12345,
+          .in_use = 0,
+        },
       },
     };
 
@@ -161,22 +157,20 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
       {
         .lr = lr,
         .ptr = (void *)0x12345679,
-        .info =
-          {
-            .size = 1234,
-            .in_use = 1,
-          },
+        .info = {
+          .size = 1234,
+          .in_use = 1,
+        },
       },
       {
         .lr = lr,
         // this entry should not appear when checking at the end of this test,
         // so set the data to something exceptional
         .ptr = (void *)0xabcdef,
-        .info =
-          {
-            .size = 123456,
-            .in_use = 0,
-          },
+        .info = {
+          .size = 123456,
+          .in_use = 0,
+        },
       },
     };
 
@@ -211,11 +205,10 @@ TEST(MemfaultHeapStats, Test_MaxEntriesRollover) {
     sMfltHeapStatEntry expected = {
       .lr = lr,
       .ptr = (void *)(0x12345679 + offset),
-      .info =
-        {
-          .size = 1234 + (uint32_t)offset,
-          .in_use = 1,
-        },
+      .info = {
+        .size = 1234 + (uint32_t)offset,
+        .in_use = 1,
+      },
     };
 
     if (pthis->info.size != 0) {
@@ -236,20 +229,18 @@ TEST(MemfaultHeapStats, Test_AddressReuse) {
     {
       .lr = lr,
       .ptr = (void *)0x12345679,
-      .info =
-        {
-          .size = 1234,
-          .in_use = 0,
-        },
+      .info = {
+        .size = 1234,
+        .in_use = 0,
+      },
     },
     {
       .lr = lr,
       .ptr = (void *)0x12345679,
-      .info =
-        {
-          .size = 1234,
-          .in_use = 0,
-        },
+      .info = {
+        .size = 1234,
+        .in_use = 0,
+      },
     },
   };
 
@@ -350,11 +341,10 @@ TEST(MemfaultHeapStats, Test_Reuse) {
     sMfltHeapStatEntry expected = {
       .lr = lr,
       .ptr = (void *)(0x12345679 + i),
-      .info =
-        {
-          .size = 1234 + (uint32_t)i,
-          .in_use = 1,
-        },
+      .info = {
+        .size = 1234 + (uint32_t)i,
+        .in_use = 1,
+      },
     };
 
     if (pthis->info.size != 0) {
@@ -442,11 +432,11 @@ TEST(MemfaultHeapStats, Test_NeverUsedVsUnused) {
 
   // walk the allocated entries and confirm correct values
   for (size_t i = 1; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
-      bool match = prv_heap_stat_equality(&reference_pool[i], &g_memfault_heap_stats_pool[i]);
-      if (!match) {
-        fprintf(stderr, "Mismatch at index %zu\n", i);
-      }
-      CHECK(match);
+    bool match = prv_heap_stat_equality(&reference_pool[i], &g_memfault_heap_stats_pool[i]);
+    if (!match) {
+      fprintf(stderr, "Mismatch at index %zu\n", i);
+    }
+    CHECK(match);
   }
   // Now allocate again, and confirm the "unused" entry is used now.
   MEMFAULT_HEAP_STATS_MALLOC((void *)((uintptr_t)expected_heap_stats.ptr + end_offset + 1),

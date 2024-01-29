@@ -9,26 +9,24 @@
 //! More details can be found in the "RCC Reset Status Register (RCC_RSR)"
 //! section of the STM32H7 family reference manual.
 
-#include "memfault/ports/reboot_reason.h"
-
-#include "stm32h7xx_ll_rcc.h"
-
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/sdk_assert.h"
+#include "memfault/ports/reboot_reason.h"
+#include "stm32h7xx_ll_rcc.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 //! Mappings come from "8.4.4 Reset source identification" of
 //! "STM32H742, STM32H743/753 and STM32H750" Reference Manual
 typedef enum ResetSource {
-  kResetSource_PwrPor = (RCC_RSR_PORRSTF | RCC_RSR_PINRSTF | RCC_RSR_BORRSTF |
-                         RCC_RSR_D2RSTF | RCC_RSR_D1RSTF | RCC_RSR_CPURSTF),
+  kResetSource_PwrPor = (RCC_RSR_PORRSTF | RCC_RSR_PINRSTF | RCC_RSR_BORRSTF | RCC_RSR_D2RSTF |
+                         RCC_RSR_D1RSTF | RCC_RSR_CPURSTF),
   kResetSource_Pin = (RCC_RSR_PINRSTF | RCC_RSR_CPURSTF),
   kResetSource_PwrBor = (RCC_RSR_PINRSTF | RCC_RSR_BORRSTF | RCC_RSR_CPURSTF),
   kResetSource_Software = (RCC_RSR_SFTRSTF | RCC_RSR_PINRSTF | RCC_RSR_CPURSTF),
@@ -37,8 +35,7 @@ typedef enum ResetSource {
   kResetSource_Iwdg = (RCC_RSR_IWDG1RSTF | RCC_RSR_PINRSTF | RCC_RSR_CPURSTF),
   kResetSource_D1Exit = RCC_RSR_D1RSTF,
   kResetSource_D2Exit = RCC_RSR_D2RSTF,
-  kResetSource_LowPowerError =
-      (RCC_RSR_LPWRRSTF | RCC_RSR_PINRSTF | RCC_RSR_CPURSTF),
+  kResetSource_LowPowerError = (RCC_RSR_LPWRRSTF | RCC_RSR_PINRSTF | RCC_RSR_CPURSTF),
 } eResetSource;
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -50,9 +47,8 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");
 
   const uint32_t reset_mask_all =
-      (RCC_RSR_IWDG1RSTF | RCC_RSR_CPURSTF | RCC_RSR_D1RSTF | RCC_RSR_D2RSTF |
-       RCC_RSR_BORRSTF | RCC_RSR_PINRSTF | RCC_RSR_PORRSTF | RCC_RSR_SFTRSTF |
-       RCC_RSR_WWDG1RSTF | RCC_RSR_LPWRRSTF);
+    (RCC_RSR_IWDG1RSTF | RCC_RSR_CPURSTF | RCC_RSR_D1RSTF | RCC_RSR_D2RSTF | RCC_RSR_BORRSTF |
+     RCC_RSR_PINRSTF | RCC_RSR_PORRSTF | RCC_RSR_SFTRSTF | RCC_RSR_WWDG1RSTF | RCC_RSR_LPWRRSTF);
 
   switch (reset_cause & reset_mask_all) {
     case kResetSource_PwrPor:
@@ -106,7 +102,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   __HAL_RCC_CLEAR_RESET_FLAGS();
 #endif
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = reset_cause,
     .reset_reason = reset_reason,
   };

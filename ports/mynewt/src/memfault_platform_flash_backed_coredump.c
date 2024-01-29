@@ -12,39 +12,35 @@
 #include "flash_map/flash_map.h"
 #include "hal/hal_bsp.h"
 #include "img_mgmt/img_mgmt.h"
+#include "memfault/components.h"
 #include "syscfg/syscfg.h"
 #include "sysflash/sysflash.h"
 
-#include "memfault/components.h"
-
 #if MYNEWT_VAL(MEMFAULT_ENABLE)
 
-const sMfltCoredumpRegion *
-memfault_platform_coredump_get_regions(const sCoredumpCrashInfo *crash_info,
-                                       size_t *num_regions) {
+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[MYNEWT_VAL(MEMFAULT_COREDUMP_MAX_AREA_COUNT)];
 
-#if MYNEWT_VAL(MEMFAULT_COREDUMP_CAPTURE_MINIMAL)
+  #if MYNEWT_VAL(MEMFAULT_COREDUMP_CAPTURE_MINIMAL)
   const size_t active_stack_size_to_collect = MEMFAULT_PLATFORM_ACTIVE_STACK_SIZE_TO_COLLECT;
   s_coredump_regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
-    crash_info->stack_address,
-    memfault_platform_sanitize_address_range(crash_info->stack_address,
-                                             active_stack_size_to_collect));
+    crash_info->stack_address, memfault_platform_sanitize_address_range(
+                                 crash_info->stack_address, active_stack_size_to_collect));
 
   *num_regions = 1;
-#else
+  #else
   int area_cnt = 0;
   const struct hal_bsp_mem_dump *mem = hal_bsp_core_dump(&area_cnt);
 
-  const size_t areas_to_collect = MEMFAULT_MIN(MEMFAULT_ARRAY_SIZE(s_coredump_regions),
-                                            area_cnt);
+  const size_t areas_to_collect = MEMFAULT_MIN(MEMFAULT_ARRAY_SIZE(s_coredump_regions), area_cnt);
   for (size_t i = 0; i < areas_to_collect; i++) {
     s_coredump_regions[i] =
-        MEMFAULT_COREDUMP_MEMORY_REGION_INIT(mem[i].hbmd_start, mem[i].hbmd_size);
+      MEMFAULT_COREDUMP_MEMORY_REGION_INIT(mem[i].hbmd_start, mem[i].hbmd_size);
   }
 
   *num_regions = areas_to_collect;
-#endif
+  #endif
 
   return s_coredump_regions;
 }
@@ -63,8 +59,7 @@ static int prv_flash_open(const struct flash_area **fa) {
   return OS_OK;
 }
 
-void memfault_platform_coredump_storage_get_info(
-    sMfltCoredumpStorageInfo *info) {
+void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
   const struct flash_area *fa;
 
   if (prv_flash_open(&fa)) {
@@ -73,12 +68,11 @@ void memfault_platform_coredump_storage_get_info(
 
   *info = (sMfltCoredumpStorageInfo){
     .size = fa->fa_size,
-    .sector_size = 0, // Not needed for port
+    .sector_size = 0,  // Not needed for port
   };
 }
 
-bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
-                                             size_t read_len) {
+bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t read_len) {
   const struct flash_area *fa;
 
   if (prv_flash_open(&fa)) {
@@ -96,8 +90,7 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data,
   return true;
 }
 
-bool memfault_platform_coredump_storage_erase(uint32_t offset,
-                                              size_t erase_size) {
+bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size) {
   const struct flash_area *fa;
 
   if (prv_flash_open(&fa)) {
@@ -115,8 +108,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset,
   return true;
 }
 
-bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
-                                              size_t data_len) {
+bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data, size_t data_len) {
   const struct flash_area *fa;
 
   if (prv_flash_open(&fa)) {

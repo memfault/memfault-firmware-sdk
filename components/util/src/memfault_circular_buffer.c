@@ -6,17 +6,16 @@
 //! @brief
 //! Convenience circular buffer utility
 
-#include "memfault/util/circular_buffer.h"
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "memfault/core/math.h"
+#include "memfault/util/circular_buffer.h"
 
-bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf,
-                                   void *storage_buf, size_t storage_len) {
+bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf, void *storage_buf,
+                                   size_t storage_len) {
   if ((circular_buf == NULL) || (storage_buf == NULL) || (storage_len == 0)) {
     return false;
   }
@@ -24,16 +23,15 @@ bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf,
   // doesn't really matter but put buffer in a clean state for easier debug
   memset(storage_buf, 0x0, storage_len);
 
-  *circular_buf = (sMfltCircularBuffer){.read_offset = 0,
-                                        .read_size = 0,
-                                        .total_space = storage_len,
-                                        .storage = storage_buf};
+  *circular_buf = (sMfltCircularBuffer){
+    .read_offset = 0, .read_size = 0, .total_space = storage_len, .storage = storage_buf
+  };
 
   return true;
 }
 
-bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf,
-                                   size_t offset, void *data, size_t data_len) {
+bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t offset, void *data,
+                                   size_t data_len) {
   if ((circular_buf == NULL) || (data == NULL)) {
     return false;
   }
@@ -42,12 +40,10 @@ bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf,
     return false;
   }
 
-  size_t read_idx =
-      (circular_buf->read_offset + offset) % circular_buf->total_space;
+  size_t read_idx = (circular_buf->read_offset + offset) % circular_buf->total_space;
   size_t contiguous_space_available = circular_buf->total_space - read_idx;
-  size_t bytes_to_read = (contiguous_space_available > data_len)
-                             ? data_len
-                             : contiguous_space_available;
+  size_t bytes_to_read =
+    (contiguous_space_available > data_len) ? data_len : contiguous_space_available;
 
   uint8_t *buf = data;
   memcpy(buf, &circular_buf->storage[read_idx], bytes_to_read);
@@ -70,8 +66,7 @@ bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf
     return false;
   }
 
-  const size_t read_idx =
-      (circular_buf->read_offset + offset) % circular_buf->total_space;
+  const size_t read_idx = (circular_buf->read_offset + offset) % circular_buf->total_space;
   const size_t max_bytes_to_read = circular_buf->read_size - offset;
   const size_t contiguous_space_available = circular_buf->total_space - read_idx;
 
@@ -80,8 +75,8 @@ bool memfault_circular_buffer_get_read_pointer(sMfltCircularBuffer *circular_buf
   return true;
 }
 
-bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf,
-                                                 size_t offset, size_t data_len, void *ctx,
+bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_buf, size_t offset,
+                                                 size_t data_len, void *ctx,
                                                  MemfaultCircularBufferReadCallback callback) {
   if (circular_buf == NULL) {
     return false;
@@ -98,11 +93,11 @@ bool memfault_circular_buffer_read_with_callback(sMfltCircularBuffer *circular_b
   size_t read_ptr_len = 0;
   while (bytes_left) {
     const size_t dst_offset = data_len - bytes_left;
-    if (!memfault_circular_buffer_get_read_pointer(
-      circular_buf, offset + dst_offset, &read_ptr, &read_ptr_len)) {
-      // Note: At this point, the memfault_circular_buffer_get_read_pointer() calls should never fail. A
-      // failure is indicative of memory corruption (e.g calls taking place from multiple tasks without
-      // having implemented memfault_lock() / memfault_unlock())
+    if (!memfault_circular_buffer_get_read_pointer(circular_buf, offset + dst_offset, &read_ptr,
+                                                   &read_ptr_len)) {
+      // Note: At this point, the memfault_circular_buffer_get_read_pointer() calls should never
+      // fail. A failure is indicative of memory corruption (e.g calls taking place from multiple
+      // tasks without having implemented memfault_lock() / memfault_unlock())
       return false;
     }
     const size_t bytes_to_read = MEMFAULT_MIN(bytes_left, read_ptr_len);
@@ -123,14 +118,13 @@ bool memfault_circular_buffer_consume(sMfltCircularBuffer *circular_buf, size_t 
     return false;
   }
 
-  circular_buf->read_offset =
-      (circular_buf->read_offset + consume_len) % circular_buf->total_space;
+  circular_buf->read_offset = (circular_buf->read_offset + consume_len) % circular_buf->total_space;
   circular_buf->read_size -= consume_len;
   return true;
 }
 
-bool memfault_circular_buffer_consume_from_end(
-    sMfltCircularBuffer *circular_buf, size_t consume_len) {
+bool memfault_circular_buffer_consume_from_end(sMfltCircularBuffer *circular_buf,
+                                               size_t consume_len) {
   if (circular_buf == NULL) {
     return false;
   }
@@ -175,9 +169,8 @@ static bool prv_write_at_offset_from_end(sMfltCircularBuffer *circular_buf, size
                      circular_buf->total_space;
   size_t contiguous_space_available = circular_buf->total_space - write_idx;
 
-  size_t bytes_to_write = (contiguous_space_available > data_len)
-                              ? data_len
-                              : contiguous_space_available;
+  size_t bytes_to_write =
+    (contiguous_space_available > data_len) ? data_len : contiguous_space_available;
 
   const uint8_t *buf = data;
   memcpy(&circular_buf->storage[write_idx], buf, bytes_to_write);
@@ -191,13 +184,14 @@ static bool prv_write_at_offset_from_end(sMfltCircularBuffer *circular_buf, size
   return true;
 }
 
-bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf,
-                                    const void *data, size_t data_len) {
+bool memfault_circular_buffer_write(sMfltCircularBuffer *circular_buf, const void *data,
+                                    size_t data_len) {
   return prv_write_at_offset_from_end(circular_buf, 0, data, data_len);
 }
 
-bool memfault_circular_buffer_write_at_offset(
-    sMfltCircularBuffer *circular_buf, size_t offset_from_end, const void *data, size_t data_len) {
+bool memfault_circular_buffer_write_at_offset(sMfltCircularBuffer *circular_buf,
+                                              size_t offset_from_end, const void *data,
+                                              size_t data_len) {
   return prv_write_at_offset_from_end(circular_buf, offset_from_end, data, data_len);
 }
 

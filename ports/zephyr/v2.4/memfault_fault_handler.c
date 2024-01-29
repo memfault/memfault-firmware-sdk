@@ -100,9 +100,7 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
 #endif
 }
 
-MEMFAULT_WEAK
-MEMFAULT_NORETURN
-void memfault_platform_reboot(void) {
+MEMFAULT_WEAK MEMFAULT_NORETURN void memfault_platform_reboot(void) {
   memfault_platform_halt_if_debugging();
 
   sys_arch_reboot(0);

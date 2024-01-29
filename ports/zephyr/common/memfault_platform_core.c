@@ -29,14 +29,14 @@
 // When support for Zephyr <= 2.5 is removed, we should adopt an approach like the following
 //  https://github.com/memfault/memfault-firmware-sdk/pull/26
 
-#if !CONFIG_OPENOCD_SUPPORT
-#error "CONFIG_OPENOCD_SUPPORT=y must be added to your prj.conf"
-#endif
+  #if !CONFIG_OPENOCD_SUPPORT
+    #error "CONFIG_OPENOCD_SUPPORT=y must be added to your prj.conf"
+  #endif
 
 #endif
 
 #if CONFIG_MEMFAULT_METRICS
-#include "memfault/metrics/metrics.h"
+  #include "memfault/metrics/metrics.h"
 #endif
 
 #if CONFIG_MEMFAULT_CACHE_FAULT_REGS
@@ -63,7 +63,7 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 
   // Now let the Zephyr fault handler complete as normal.
   void __real_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
-                          _callee_saved_t *callee_regs);
+                          _callee_saved_t * callee_regs);
   __real_z_arm_fault(msp, psp, exc_return, callee_regs);
 }
 #endif
@@ -75,16 +75,16 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 //! Provide a strong implementation of assert_post_action for Zephyr's built-in
 //! __ASSERT() macro.
 #if CONFIG_MEMFAULT_CATCH_ZEPHYR_ASSERT
-#ifdef CONFIG_ASSERT_NO_FILE_INFO
+  #ifdef CONFIG_ASSERT_NO_FILE_INFO
 void assert_post_action(void)
-#else
+  #else
 void assert_post_action(const char *file, unsigned int line)
-#endif
+  #endif
 {
-#ifndef CONFIG_ASSERT_NO_FILE_INFO
+  #ifndef CONFIG_ASSERT_NO_FILE_INFO
   ARG_UNUSED(file);
   ARG_UNUSED(line);
-#endif
+  #endif
   MEMFAULT_ASSERT(0);
 }
 #endif
@@ -98,9 +98,8 @@ static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
 #if !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
-MEMFAULT_WEAK
-void memfault_reboot_reason_get(sResetBootupInfo *info) {
-  *info = (sResetBootupInfo) {
+MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
+  *info = (sResetBootupInfo){
     .reset_reason = kMfltRebootReason_Unknown,
   };
 }
@@ -118,10 +117,9 @@ static int prv_init_and_log_reboot() {
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
   const sMemfaultEventStorageImpl *evt_storage =
-      memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_reboot_tracking_collect_reset_info(evt_storage);
   memfault_trace_event_boot(evt_storage);
-
 
 #if CONFIG_MEMFAULT_METRICS
   sMemfaultMetricBootInfo boot_info = {

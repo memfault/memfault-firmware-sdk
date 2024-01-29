@@ -93,8 +93,7 @@ void memfault_emlib_cli_assert(sl_cli_command_arg_t *arguments) {
 void memfault_emlib_cli_hang(sl_cli_command_arg_t *arguments) {
   (void)arguments;
   MEMFAULT_LOG_INFO("Hanging system and waiting for watchdog!");
-  while (1) {
-  }
+  while (1) { }
 }
 
 void memfault_emlib_cli_busfault(sl_cli_command_arg_t *arguments) {

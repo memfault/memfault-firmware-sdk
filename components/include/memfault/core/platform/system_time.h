@@ -32,9 +32,9 @@ typedef struct {
 
 //! Returns the current system time
 //!
-//! This dependency can (optionally) be implemented if a device keeps track of time and wants to track the
-//! exact time events occurred on device. If no time is provided, the Memfault backend will
-//! automatically create a timestamp based on when an event is received by the chunks endpoint.
+//! This dependency can (optionally) be implemented if a device keeps track of time and wants to
+//! track the exact time events occurred on device. If no time is provided, the Memfault backend
+//! will automatically create a timestamp based on when an event is received by the chunks endpoint.
 //!
 //! @note By default, a weak version of this function is implemented which always returns false (no
 //! time available)

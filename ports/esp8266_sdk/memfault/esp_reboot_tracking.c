@@ -7,22 +7,20 @@
 //! I believe this info itself is copied by the bootloader from another register but
 //! could not find any documentation about it.
 
-#include "memfault/ports/reboot_reason.h"
-
-#include "sdkconfig.h"
+#include "esp8266/rom_functions.h"
+#include "esp8266/rtc_register.h"
+#include "esp_libc.h"
 #include "esp_system.h"
 #include "internal/esp_system_internal.h"
-#include "esp8266/rtc_register.h"
-#include "esp8266/rom_functions.h"
-#include "esp_libc.h"
-
-#include "memfault/core/debug_log.h"
 #include "memfault/config.h"
+#include "memfault/core/debug_log.h"
+#include "memfault/ports/reboot_reason.h"
+#include "sdkconfig.h"
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-#define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
+  #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)
 #else
-#define MEMFAULT_PRINT_RESET_INFO(...)
+  #define MEMFAULT_PRINT_RESET_INFO(...)
 #endif
 
 void memfault_reboot_reason_get(sResetBootupInfo *info) {
@@ -72,7 +70,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
       break;
   }
 
-  *info = (sResetBootupInfo) {
+  *info = (sResetBootupInfo){
     .reset_reason_reg = esp_reset_cause,
     .reset_reason = reboot_reason,
   };

@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 //! Callback passed into the non-volatile storage write() dependency to read an event
-typedef bool (MemfaultEventReadCallback)(uint32_t offset, void *buf, size_t buf_len);
+typedef bool(MemfaultEventReadCallback)(uint32_t offset, void *buf, size_t buf_len);
 
 typedef struct MemfaultNonVolatileEventStorageImpl {
   //! @return if true, the Memfault SDK will persist events here when

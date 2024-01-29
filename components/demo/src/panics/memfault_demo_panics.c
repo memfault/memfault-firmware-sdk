@@ -29,36 +29,30 @@
   #define MEMFAULT_DEMO_DISABLE_CASSERT 0
 #endif
 
-MEMFAULT_NO_OPT
-static void do_some_work_base(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work_base(char *argv[]) {
   // An assert that is guaranteed to fail. We perform
   // the check against argv so that the compiler can't
   // perform any optimizations
   MEMFAULT_ASSERT((uint32_t)(uintptr_t)argv == 0xdeadbeef);
 }
 
-MEMFAULT_NO_OPT
-static void do_some_work1(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work1(char *argv[]) {
   do_some_work_base(argv);
 }
 
-MEMFAULT_NO_OPT
-static void do_some_work2(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work2(char *argv[]) {
   do_some_work1(argv);
 }
 
-MEMFAULT_NO_OPT
-static void do_some_work3(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work3(char *argv[]) {
   do_some_work2(argv);
 }
 
-MEMFAULT_NO_OPT
-static void do_some_work4(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work4(char *argv[]) {
   do_some_work3(argv);
 }
 
-MEMFAULT_NO_OPT
-static void do_some_work5(char *argv[]) {
+MEMFAULT_NO_OPT static void do_some_work5(char *argv[]) {
   do_some_work4(argv);
 }
 

@@ -43,7 +43,7 @@ static void prv_run_single_component_test(const char *test_name, eMemfaultSelfTe
 }
 
 TEST_GROUP(MemfaultSelfTest) {
-  void setup() {}
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();

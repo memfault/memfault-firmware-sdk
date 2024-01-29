@@ -18,34 +18,32 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_cache.h"
 #include "mbedtls/x509.h"
-
 #include "memfault/components.h"
 
 //! lwIP is by far the most popular port used with Mbed TLS with embedded stacks so by default
 //! include a port which implements a minimal mbedtls/net_sockets.h interface.
 #ifndef MEMFAULT_PORT_MBEDTLS_USE_LWIP
-#define MEMFAULT_PORT_MBEDTLS_USE_LWIP 1
+  #define MEMFAULT_PORT_MBEDTLS_USE_LWIP 1
 #endif
 
 #if MEMFAULT_PORT_MBEDTLS_USE_LWIP
 
-#include "lwip/debug.h"
-#include "lwip/netdb.h"
-#include "lwip/opt.h"
-#include "lwip/sockets.h"
-#include "lwip/stats.h"
-#include "lwip/tcp.h"
+  #include "lwip/debug.h"
+  #include "lwip/netdb.h"
+  #include "lwip/opt.h"
+  #include "lwip/sockets.h"
+  #include "lwip/stats.h"
+  #include "lwip/tcp.h"
 
 void mbedtls_net_init(mbedtls_net_context *ctx) {
-    ctx->fd = -1;
+  ctx->fd = -1;
 }
 
-int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host,
-                        const char *port, int proto) {
+int mbedtls_net_connect(mbedtls_net_context *ctx, const char *host, const char *port, int proto) {
   struct addrinfo hints = {
-    .ai_family   = AF_INET,
+    .ai_family = AF_INET,
     .ai_socktype = SOCK_STREAM,
-    .ai_flags    = AI_PASSIVE,
+    .ai_flags = AI_PASSIVE,
   };
   struct addrinfo *res = NULL;
 
@@ -72,8 +70,7 @@ int mbedtls_net_send(void *ctx, unsigned char const *buf, size_t len) {
   return lwip_send(net_ctx->fd, buf, len, 0);
 }
 
-
-int mbedtls_net_recv(void *ctx, unsigned char *buf, size_t len ) {
+int mbedtls_net_recv(void *ctx, unsigned char *buf, size_t len) {
   mbedtls_net_context *net_ctx = (mbedtls_net_context *)ctx;
   return lwip_recv(net_ctx->fd, (void *)buf, len, 0);
 }
@@ -135,16 +132,17 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   mbedtls_entropy_init(&s_client.entropy);
   const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
 
-  #define HMAC_PERS "memfault"
-  int ret = mbedtls_hmac_drbg_seed(&s_client.hmac_drbg, md_info, mbedtls_entropy_func,
-                                   &s_client.entropy, (const unsigned char *)HMAC_PERS,
-                                   sizeof(HMAC_PERS) - 1);
+#define HMAC_PERS "memfault"
+  int ret =
+    mbedtls_hmac_drbg_seed(&s_client.hmac_drbg, md_info, mbedtls_entropy_func, &s_client.entropy,
+                           (const unsigned char *)HMAC_PERS, sizeof(HMAC_PERS) - 1);
   if (ret != 0) {
     MEMFAULT_LOG_ERROR("mbedtls_hmac_drbg_seed returned -0x%x", -ret);
     goto cleanup;
   }
 
-  ret = mbedtls_x509_crt_parse(&s_client.cacert, (const unsigned char *)MEMFAULT_ROOT_CERTS_PEM, sizeof(MEMFAULT_ROOT_CERTS_PEM));
+  ret = mbedtls_x509_crt_parse(&s_client.cacert, (const unsigned char *)MEMFAULT_ROOT_CERTS_PEM,
+                               sizeof(MEMFAULT_ROOT_CERTS_PEM));
   if (ret != 0) {
     MEMFAULT_LOG_ERROR("mbedtls_x509_crt_parse returned -0x%x", -ret);
     goto cleanup;
@@ -153,14 +151,13 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
   // Perform DNS lookup for Memfault server and open connection
   char port[10] = { 0 };
   snprintf(port, sizeof(port), "%d", MEMFAULT_HTTP_GET_CHUNKS_API_PORT());
-  ret = mbedtls_net_connect(&s_client.net_ctx, MEMFAULT_HTTP_CHUNKS_API_HOST, port, MBEDTLS_NET_PROTO_TCP);
+  ret = mbedtls_net_connect(&s_client.net_ctx, MEMFAULT_HTTP_CHUNKS_API_HOST, port,
+                            MBEDTLS_NET_PROTO_TCP);
   if (ret != 0) {
     MEMFAULT_LOG_ERROR("mbedtls_net_connect returned -0x%x", -ret);
   }
-  ret = mbedtls_ssl_config_defaults(&s_client.conf,
-                                    MBEDTLS_SSL_IS_CLIENT,
-                                    MBEDTLS_SSL_TRANSPORT_STREAM,
-                                    MBEDTLS_SSL_PRESET_DEFAULT);
+  ret = mbedtls_ssl_config_defaults(&s_client.conf, MBEDTLS_SSL_IS_CLIENT,
+                                    MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
   if (ret != 0) {
     MEMFAULT_LOG_ERROR("mbedtls_ssl_config_defaults returned -0x%x", -ret);
     goto cleanup;
@@ -181,7 +178,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     goto cleanup;
   }
 
-  mbedtls_ssl_set_bio(&s_client.ssl, &s_client.net_ctx, mbedtls_net_send, mbedtls_net_recv, NULL );
+  mbedtls_ssl_set_bio(&s_client.ssl, &s_client.net_ctx, mbedtls_net_send, mbedtls_net_recv, NULL);
 
   do {
     ret = mbedtls_ssl_handshake(&s_client.ssl);
@@ -218,7 +215,7 @@ int memfault_platform_http_client_destroy(sMfltHttpClient *client) {
 }
 
 int memfault_platform_http_client_wait_until_requests_completed(
-    MEMFAULT_UNUSED sMfltHttpClient *client, MEMFAULT_UNUSED uint32_t timeout_ms) {
+  MEMFAULT_UNUSED sMfltHttpClient *client, MEMFAULT_UNUSED uint32_t timeout_ms) {
   // No-op because memfault_platform_http_client_post_data() is synchronous
   return 0;
 }
@@ -279,8 +276,9 @@ static int prv_wait_for_http_response(sMfltHttpClient *client) {
   }
 }
 
-int memfault_platform_http_client_post_data(
-    sMfltHttpClient *client, MemfaultHttpClientResponseCallback callback, void *ctx) {
+int memfault_platform_http_client_post_data(sMfltHttpClient *client,
+                                            MemfaultHttpClientResponseCallback callback,
+                                            void *ctx) {
   if (!client->active) {
     return -1;
   }
@@ -333,7 +331,8 @@ int memfault_platform_http_client_post_data(
   return response.status_code != 202 ? response.status_code : 0;
 }
 
-int memfault_platform_http_response_get_status(const sMfltHttpResponse *response, uint32_t *status_out) {
+int memfault_platform_http_response_get_status(const sMfltHttpResponse *response,
+                                               uint32_t *status_out) {
   MEMFAULT_SDK_ASSERT(response != NULL);
 
   *status_out = (uint32_t)response->status_code;

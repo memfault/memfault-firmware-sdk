@@ -30,8 +30,9 @@
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"
 
-#define TIMER_DIVIDER  (16)  //  Hardware timer clock divider
-#define TIMER_SCALE_TICKS_PER_MS(_baseFrequency)  (((_baseFrequency) / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
+#define TIMER_DIVIDER (16)  //  Hardware timer clock divider
+#define TIMER_SCALE_TICKS_PER_MS(_baseFrequency) \
+  (((_baseFrequency) / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -105,27 +106,26 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
 }
 #else
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
-// Always clear the interrupt:
-#if CONFIG_IDF_TARGET_ESP32
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  // Always clear the interrupt:
+  #if CONFIG_IDF_TARGET_ESP32
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   TIMERG0.int_clr_timers.t0_int_clr = 1;
-  #else
+    #else
   TIMERG0.int_clr_timers.t0 = 1;
-  #endif
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    #endif
+  #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
   TIMERG0.int_clr_timers.t0_int_clr = 1;
-#endif
+  #endif
 
   // Crash from ISR:
   ESP_ERROR_CHECK(-1);
 }
 
-static void prv_timer_init(void)
-{
+static void prv_timer_init(void) {
   const timer_config_t config = {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     .clk_src = TIMER_SRC_CLK_DEFAULT,
-#endif
+  #endif
     .divider = TIMER_DIVIDER,
     .counter_dir = TIMER_COUNT_UP,
     .counter_en = TIMER_PAUSE,
@@ -141,15 +141,16 @@ static void prv_timer_init(void)
 static void prv_timer_start(uint32_t timer_interval_ms) {
   uint32_t clock_hz = esp_clk_apb_freq();
   timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
+  timer_set_alarm_value(TIMER_GROUP_0, TIMER_0,
+                        timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }
 #endif
 
-static int prv_esp32_assert_example(int argc, char** argv) {
+static int prv_esp32_assert_example(int argc, char **argv) {
   // default to assert()
-  int assert_type =  1;
+  int assert_type = 1;
 
   if (argc >= 2) {
     assert_type = atoi(argv[1]);
@@ -166,8 +167,8 @@ static int prv_esp32_assert_example(int argc, char** argv) {
   return 0;
 }
 
-static int prv_esp32_crash_example(int argc, char** argv) {
-  int crash_type =  0;
+static int prv_esp32_crash_example(int argc, char **argv) {
+  int crash_type = 0;
 
   if (argc >= 2) {
     crash_type = atoi(argv[1]);
@@ -215,7 +216,7 @@ static int prv_esp32_memfault_heartbeat(int argc, char **argv) {
   return 0;
 }
 
-static int prv_esp32_memfault_heartbeat_dump(int argc, char** argv) {
+static int prv_esp32_memfault_heartbeat_dump(int argc, char **argv) {
   memfault_metrics_heartbeat_debug_print();
   return 0;
 }
@@ -303,25 +304,26 @@ static int prv_chunk_data_export(int argc, char **argv) {
 void memfault_register_cli(void) {
   prv_timer_init();
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "assert",
-      .help = "Trigger an assert; optional arg of 1=assert(), 2=MEMFAULT_ASSERT(), 3=ESP_ERROR_CHECK(-1)",
-      .hint = "assert type",
-      .func = prv_esp32_assert_example,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "assert",
+    .help =
+      "Trigger an assert; optional arg of 1=assert(), 2=MEMFAULT_ASSERT(), 3=ESP_ERROR_CHECK(-1)",
+    .hint = "assert type",
+    .func = prv_esp32_assert_example,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "crash",
-      .help = "Trigger a crash",
-      .hint = "crash type",
-      .func = memfault_demo_cli_cmd_crash,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "crash",
+    .help = "Trigger a crash",
+    .hint = "crash type",
+    .func = memfault_demo_cli_cmd_crash,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "esp_crash",
-      .help = "Trigger a timer isr crash",
-      .hint = NULL,
-      .func = prv_esp32_crash_example,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "esp_crash",
+    .help = "Trigger a timer isr crash",
+    .hint = NULL,
+    .func = prv_esp32_crash_example,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
@@ -331,53 +333,53 @@ void memfault_register_cli(void) {
     .func = prv_esp32_leak_cmd,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "test_log",
-      .help = "Writes test logs to log buffer",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_test_log,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "test_log",
+    .help = "Writes test logs to log buffer",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_test_log,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "trigger_logs",
-      .help = "Trigger capture of current log buffer contents",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_trigger_logs,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "trigger_logs",
+    .help = "Trigger capture of current log buffer contents",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_trigger_logs,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "clear_core",
-      .help = "Clear an existing coredump",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_clear_core,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "clear_core",
+    .help = "Clear an existing coredump",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_clear_core,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "get_core",
-      .help = "Get coredump info",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_get_core,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "get_core",
+    .help = "Get coredump info",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_get_core,
   }));
 
-  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t) {
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "coredump_size",
     .help = "Print the coredump storage capacity and the capacity required",
     .hint = NULL,
     .func = &memfault_demo_cli_cmd_coredump_size,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "get_device_info",
-      .help = "Display device information",
-      .hint = NULL,
-      .func = memfault_demo_cli_cmd_get_device_info,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "get_device_info",
+    .help = "Display device information",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_get_device_info,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "export",
-      .help = "Can be used to dump chunks to console or post via GDB",
-      .hint = NULL,
-      .func = prv_chunk_data_export,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "export",
+    .help = "Can be used to dump chunks to console or post via GDB",
+    .hint = NULL,
+    .func = prv_chunk_data_export,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
@@ -387,26 +389,26 @@ void memfault_register_cli(void) {
     .func = prv_esp32_memfault_heartbeat,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "heartbeat_dump",
-      .help = "Dump current Memfault metrics heartbeat state",
-      .hint = NULL,
-      .func = prv_esp32_memfault_heartbeat_dump,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "heartbeat_dump",
+    .help = "Dump current Memfault metrics heartbeat state",
+    .hint = NULL,
+    .func = prv_esp32_memfault_heartbeat_dump,
   }));
 
 #if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "post_chunks",
-      .help = "Post Memfault data to cloud",
-      .hint = NULL,
-      .func = prv_post_memfault_data,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "post_chunks",
+    .help = "Post Memfault data to cloud",
+    .hint = NULL,
+    .func = prv_post_memfault_data,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "memfault_ota_check",
-      .help = "Checks Memfault to see if a new OTA is available",
-      .hint = NULL,
-      .func = prv_memfault_ota_check,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "memfault_ota_check",
+    .help = "Checks Memfault to see if a new OTA is available",
+    .hint = NULL,
+    .func = prv_memfault_ota_check,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
