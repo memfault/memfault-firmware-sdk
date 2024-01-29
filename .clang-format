@@ -1,0 +1,48 @@
+# Please keep each property in alphabetical order to help compare between the other .clang-format
+# files.
+# This file is used by code editor formatting plugins
+---
+BasedOnStyle: Google
+---
+Language: Cpp
+
+AlignArrayOfStructures: None
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: false
+AttributeMacros:
+  - 'MEMFAULT_PACKED'
+  - 'MEMFAULT_PACKED_STRUCT'
+  - 'MEMFAULT_NORETURN'
+  - 'MEMFAULT_NAKED_FUNC'
+  - 'MEMFAULT_UNREACHABLE'
+  - 'MEMFAULT_NO_OPT'
+  - 'MEMFAULT_ALIGNED'
+  - 'MEMFAULT_UNUSED'
+  - 'MEMFAULT_USED'
+  - 'MEMFAULT_WEAK'
+  - 'MEMFAULT_PRINTF_LIKE_FUNC'
+  - 'MEMFAULT_PUT_IN_SECTION'
+BitFieldColonSpacing: None
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: false
+ColumnLimit: 100
+ContinuationIndentWidth: 2
+Cpp11BracedListStyle: false
+DerivePointerAlignment: false
+FixNamespaceComments: false
+ForEachMacros:
+  - 'MEMFAULT_SHELL_FOR_EACH_COMMAND'
+IndentPPDirectives: BeforeHash
+IndentWidth: 2
+NamespaceIndentation: All
+NamespaceMacros:
+  - 'TEST_GROUP'
+  - 'TEST'
+PointerAlignment: Right
+SpaceInEmptyBlock: true
+WhitespaceSensitiveMacros:
+  - 'MEMFAULT_ZEPHYR_INCLUDE'
+  - 'MEMFAULT_QUOTE'
+  - 'Pragma'
+...

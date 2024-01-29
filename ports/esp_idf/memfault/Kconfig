@@ -23,6 +23,11 @@ menu "Memfault"
             By default, Memfault will register CLI commands for pushing data,
             dumping state of the SDK, and performing device updates.
 
+    config MEMFAULT_CLI_SELF_TEST
+        bool "Enables the self test command via CLI"
+        default n
+        depends on MEMFAULT_CLI_ENABLED
+
     config MEMFAULT_COREDUMP_USE_OTA_SLOT
         bool "Enables the use of an OTA slot for coredump storage"
         default n

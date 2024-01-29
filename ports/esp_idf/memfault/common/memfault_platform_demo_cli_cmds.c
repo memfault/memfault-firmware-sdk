@@ -409,11 +409,20 @@ void memfault_register_cli(void) {
       .func = prv_memfault_ota_check,
   }));
 
-  ESP_ERROR_CHECK( esp_console_cmd_register(&(esp_console_cmd_t) {
-      .command = "memfault_ota_perform",
-      .help = "Performs an OTA is an updates is available from Memfault",
-      .hint = NULL,
-      .func = prv_memfault_ota_perform,
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "memfault_ota_perform",
+    .help = "Performs an OTA is an updates is available from Memfault",
+    .hint = NULL,
+    .func = prv_memfault_ota_perform,
   }));
 #endif /* MEMFAULT_ESP_HTTP_CLIENT_ENABLE */
+
+#if defined(CONFIG_MEMFAULT_CLI_SELF_TEST)
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "memfault_self_test",
+    .help = "Performs on-device tests to validate integration with Memfault",
+    .hint = NULL,
+    .func = memfault_demo_cli_cmd_self_test,
+  }));
+#endif
 }

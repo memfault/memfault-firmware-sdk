@@ -34,7 +34,7 @@ class Type:
 @dataclasses.dataclass
 class Value:
     _value: Any
-    type: Type  # noqa: A003
+    type: Type
 
     def __int__(self) -> int:
         return int(self._value)

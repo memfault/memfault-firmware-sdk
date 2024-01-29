@@ -12,6 +12,8 @@
 
 #if defined(dg_configUSE_MEMFAULT)
 
+// clang-format off
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -35,6 +37,8 @@
 #include "timers.h"
 
 #include "memfault/components.h"
+
+// clang-format on
 
 #if !defined(MEMFAULT_PROJECT_KEY)
 #error "Memfault Project Key not configured. Please visit https://goto.memfault.com/create-key/da1469x"

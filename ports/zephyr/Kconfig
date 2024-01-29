@@ -154,6 +154,11 @@ config MEMFAULT_SHELL
         help
           CLI Utilities for interfacing with the Memfault SDK
 
+config MEMFAULT_SHELL_SELF_TEST
+        bool "Execute self test via a shell command"
+        default n
+        depends on MEMFAULT_SHELL
+
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
         bool "Fallback to printk for platform logging"
         default y if ! LOG

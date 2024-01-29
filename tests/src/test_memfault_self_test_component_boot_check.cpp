@@ -38,51 +38,80 @@ TEST_GROUP(MemfaultSelfTestComponentBooted) {
 };
 
 TEST(MemfaultSelfTestComponentBooted, Test_ComponentBootNoneBooted) {
+  // clang-format off
   const char *output_lines[] = {
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component Boot Test",
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component       | Booted?|",
-    "-----------------------------", "Event Storage   |      no|",
-    "Logging         |      no|",    "Reboot Tracking |      no|",
-    "Trace Event     |      no|",    MEMFAULT_SELF_TEST_END_OUTPUT,
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component Boot Test",
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component       | Booted?|",
+    "-----------------------------",
+    MEMFAULT_SELF_TEST_END_OUTPUT,
   };
+
+  const char *error_output_lines[] = {
+    "Event Storage   |      no|",
+    "Logging         |      no|",
+    "Reboot Tracking |      no|",
+    "Trace Event     |      no|",
+  };
+  // clang-format on
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
                                  MEMFAULT_ARRAY_SIZE(output_lines));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Error, error_output_lines,
+                                 MEMFAULT_ARRAY_SIZE(error_output_lines));
 
   mock().expectOneCall("memfault_event_storage_booted").andReturnValue(false);
   mock().expectOneCall("memfault_log_booted").andReturnValue(false);
   mock().expectOneCall("memfault_reboot_tracking_booted").andReturnValue(false);
   mock().expectOneCall("memfault_trace_event_booted").andReturnValue(false);
-  memfault_self_test_component_boot_test();
+  uint32_t result = memfault_self_test_component_boot_test();
+  UNSIGNED_LONGS_EQUAL(0xf, result);
 }
 
 TEST(MemfaultSelfTestComponentBooted, Test_ComponentBootSingleBoot) {
+  // clang-format off
   const char *output_lines[] = {
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component Boot Test",
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component       | Booted?|",
-    "-----------------------------", "Event Storage   |      no|",
-    "Logging         |      no|",    "Reboot Tracking |     yes|",
-    "Trace Event     |      no|",    MEMFAULT_SELF_TEST_END_OUTPUT,
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component Boot Test",
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component       | Booted?|",
+    "-----------------------------",
+    MEMFAULT_SELF_TEST_END_OUTPUT,
   };
+
+  const char *error_output_lines[] = {
+    "Event Storage   |      no|",
+    "Logging         |      no|",
+    "Trace Event     |      no|",
+  };
+  // clang-format on
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
                                  MEMFAULT_ARRAY_SIZE(output_lines));
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Error, error_output_lines,
+                                 MEMFAULT_ARRAY_SIZE(error_output_lines));
 
   mock().expectOneCall("memfault_event_storage_booted").andReturnValue(false);
   mock().expectOneCall("memfault_log_booted").andReturnValue(false);
   mock().expectOneCall("memfault_reboot_tracking_booted").andReturnValue(true);
   mock().expectOneCall("memfault_trace_event_booted").andReturnValue(false);
-  memfault_self_test_component_boot_test();
+  uint32_t result = memfault_self_test_component_boot_test();
+  UNSIGNED_LONGS_EQUAL(0xb, result);
 }
 
 TEST(MemfaultSelfTestComponentBooted, Test_ComponentBootAllBooted) {
+  // clang-format off
   const char *output_lines[] = {
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component Boot Test",
-    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Component       | Booted?|",
-    "-----------------------------", "Event Storage   |     yes|",
-    "Logging         |     yes|",    "Reboot Tracking |     yes|",
-    "Trace Event     |     yes|",    MEMFAULT_SELF_TEST_END_OUTPUT,
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component Boot Test",
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Component       | Booted?|",
+    "-----------------------------",
+    "All components booted",
+    MEMFAULT_SELF_TEST_END_OUTPUT,
   };
+  // clang-format on
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
                                  MEMFAULT_ARRAY_SIZE(output_lines));
@@ -91,5 +120,6 @@ TEST(MemfaultSelfTestComponentBooted, Test_ComponentBootAllBooted) {
   mock().expectOneCall("memfault_log_booted").andReturnValue(true);
   mock().expectOneCall("memfault_reboot_tracking_booted").andReturnValue(true);
   mock().expectOneCall("memfault_trace_event_booted").andReturnValue(true);
-  memfault_self_test_component_boot_test();
+  uint32_t result = memfault_self_test_component_boot_test();
+  UNSIGNED_LONGS_EQUAL(0, result);
 }

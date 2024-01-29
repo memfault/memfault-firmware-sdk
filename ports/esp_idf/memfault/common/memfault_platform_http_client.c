@@ -211,7 +211,7 @@ static int prv_build_latest_release_url(char *buf, size_t buf_len) {
                   device_info.software_type, urlencoded_software_version);
 }
 
-static int prv_get_ota_update_url(char **download_url_out) {
+int memfault_esp_port_ota_get_release_url(char **download_url_out) {
   sMfltHttpClient *http_client = memfault_http_client_create();
   char *url = NULL;
   char *download_url = NULL;
@@ -314,7 +314,7 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   }
 
   char *download_url = NULL;
-  int rv = prv_get_ota_update_url(&download_url);
+  int rv = memfault_esp_port_ota_get_release_url(&download_url);
 
   if ((rv != 0) || (download_url == NULL)) {
     return rv;

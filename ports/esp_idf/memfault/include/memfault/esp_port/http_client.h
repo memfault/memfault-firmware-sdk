@@ -77,6 +77,20 @@ int memfault_esp_port_http_client_post_data(void);
 //! @return true if connected to WiFi, false otherwise
 bool memfault_esp_port_wifi_connected(void);
 
+//! Returns the URL to download the latest OTA release for current HTTP(S) client configuration
+//!
+//! Uses current HTTP(S) client configuration to construct an HTTP(S) GET /releases/latest/url
+//! request. The response contains a URL which should be used to download the release.
+//!
+//! This function can be used to query a Memfault release on behalf of a downstream device.
+//! Before calling this function, set the appropriate .api_key and .get_device_info fields for
+//! the downstream device.
+//!
+//! @param[out] download_url Pointer to store download url C string into. The caller is
+//! responsible for freeing this string. Parameter is set to NULL on failure.
+//! @return 0 if request succeeded, otherwise error code
+int memfault_esp_port_ota_get_release_url(char **download_url);
+
 #ifdef __cplusplus
 }
 #endif

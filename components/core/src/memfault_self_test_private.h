@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "memfault/core/compiler.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,13 +38,23 @@ bool memfault_self_test_valid_sw_version(unsigned char c);
 uint32_t memfault_self_test_device_info_test(void);
 
 //! Runs component boot test
-void memfault_self_test_component_boot_test(void);
+uint32_t memfault_self_test_component_boot_test(void);
 
 //! Data export test
 void memfault_self_test_data_export_test(void);
 
 //! Runs coredump regions test
 uint32_t memfault_self_test_coredump_regions_test(void);
+
+//! Runs reboot reason test
+//!
+//! This function begins the test by setting a known reboot reason and then rebooting the device
+//! After the device reboots, memfault_self_test_reboot_reason_test_verify should be used to verify
+//! the test results
+MEMFAULT_NORETURN void memfault_self_test_reboot_reason_test(void);
+
+//! Verifies reboot reason test results
+uint32_t memfault_self_test_reboot_reason_test_verify(void);
 
 #ifdef __cplusplus
 }

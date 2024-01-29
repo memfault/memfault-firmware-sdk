@@ -205,6 +205,9 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 #endif
 
 #if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
+
+// clang-format off
+
 __asm __forceinline void memfault_fault_handling_shim(int reason) {
   extern memfault_fault_handler;
   tst lr, #4
@@ -291,6 +294,8 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   bx r1
   ALIGN
 }
+
+// clang-format on
 
 #elif defined(__TI_ARM__)
 

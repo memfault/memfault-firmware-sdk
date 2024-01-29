@@ -480,6 +480,14 @@ extern "C" {
 #define MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE 64
 #endif
 
+//! Enable the Self Test command through the Demo CLI component
+//!
+//! Setting this config to 1 will add a new command to trigger self test functionality.
+//! The self test can be used to validate a Memfault integration
+#ifndef MEMFAULT_DEMO_CLI_SELF_TEST
+  #define MEMFAULT_DEMO_CLI_SELF_TEST 0
+#endif
+
 //
 // Custom Data Recording configuration options [EXPERIMENTAL]
 //

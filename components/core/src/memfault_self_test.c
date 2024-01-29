@@ -16,6 +16,7 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/core/event_storage.h"
 #include "memfault/core/math.h"
+#include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/self_test.h"
@@ -23,6 +24,8 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/coredump_impl.h"
 #include "memfault_self_test_private.h"
+
+#if !defined(MEMFAULT_UNITTEST_SELF_TEST)
 
 typedef enum {
   kDeviceInfoField_DeviceSerial = 0,
@@ -130,8 +133,6 @@ static uint32_t prv_validate_build_id(void) {
 }
 
 static void prv_device_info_test_describe(uint32_t results) {
-  MEMFAULT_SELF_TEST_PRINT_HEADER("Device Info Test");
-
   if (results == 0) {
     MEMFAULT_LOG_INFO("All fields valid");
     return;
@@ -144,17 +145,19 @@ static void prv_device_info_test_describe(uint32_t results) {
       MEMFAULT_LOG_ERROR("%s invalid", s_device_info_field_names[i]);
     }
   }
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
 }
 
 uint32_t memfault_self_test_device_info_test(void) {
   uint32_t results = 0;
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Device Info Test");
+
   // Validate the build ID
   results |= prv_validate_build_id();
   // Valid device info fields
   results |= prv_validate_device_info();
 
   prv_device_info_test_describe(results);
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
   return results;
 }
 
@@ -192,15 +195,24 @@ static const struct {
     },
 };
 
-void memfault_self_test_component_boot_test(void) {
+uint32_t memfault_self_test_component_boot_test(void) {
+  uint32_t result = 0;
   MEMFAULT_SELF_TEST_PRINT_HEADER("Component Boot Test");
   MEMFAULT_LOG_INFO("%-16s|%8s|", "Component", "Booted?");
   MEMFAULT_LOG_INFO("-----------------------------");
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_boot_components); i++) {
     bool booted = s_boot_components[i].booted();
-    MEMFAULT_LOG_INFO("%-16s|%8s|", s_boot_components[i].component_name, booted ? "yes" : "no");
+    if (!booted) {
+      MEMFAULT_LOG_ERROR("%-16s|%8s|", s_boot_components[i].component_name, "no");
+      result |= (1 << i);
+    }
+  }
+
+  if (result == 0) {
+    MEMFAULT_LOG_INFO("All components booted");
   }
   MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  return result;
 }
 
 void memfault_self_test_data_export_test(void) {
@@ -271,10 +283,59 @@ uint32_t memfault_self_test_coredump_regions_test(void) {
   return result;
 }
 
-int memfault_self_test_run(void) {
-  // Run each test one at a time and return result of all runs OR'd together
-  memfault_self_test_component_boot_test();
-  memfault_self_test_data_export_test();
-  memfault_self_test_coredump_regions_test();
-  return (memfault_self_test_device_info_test() != 0);
+MEMFAULT_NORETURN void memfault_self_test_reboot_reason_test(void) {
+  // Set a known reason and allow the device to reboot
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Reboot Reason Test");
+  MEMFAULT_LOG_INFO("This test will now reboot the device to test reboot reason tracking");
+  MEMFAULT_LOG_INFO("After the device reboots, please run with reboot_verify argument");
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_SelfTest);
+  memfault_platform_reboot();
+}
+
+uint32_t memfault_self_test_reboot_reason_test_verify(void) {
+  // Use explicit initializer to avoid ti-armcl warning
+  sMfltRebootReason reboot_reason = {
+    .prior_stored_reason = kMfltRebootReason_Unknown,
+    .reboot_reg_reason = kMfltRebootReason_Unknown,
+  };
+  int result = memfault_reboot_tracking_get_reboot_reason(&reboot_reason);
+
+  bool success = (result == 0) && (reboot_reason.prior_stored_reason == kMfltRebootReason_SelfTest);
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Reboot Reason Test");
+  if (success) {
+    MEMFAULT_LOG_INFO("Reboot reason test successful");
+  } else {
+    MEMFAULT_LOG_ERROR("Reboot reason test failed:");
+    MEMFAULT_LOG_ERROR("get_reboot_reason result: %d, "
+                       "prior_stored_reason: 0x%08" PRIx32,
+                       result, (uint32_t)reboot_reason.prior_stored_reason);
+  }
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  return success ? 0 : 1;
+}
+
+#endif  // defined(MEMFAULT_UNITTEST_SELF_TEST)
+
+int memfault_self_test_run(uint32_t run_flags) {
+  uint32_t result = 0;
+  if (run_flags & kMemfaultSelfTestFlag_DeviceInfo) {
+    result |= memfault_self_test_device_info_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_ComponentBoot) {
+    result |= memfault_self_test_component_boot_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_CoredumpRegions) {
+    result |= memfault_self_test_coredump_regions_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_DataExport) {
+    memfault_self_test_data_export_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_RebootReason) {
+    memfault_self_test_reboot_reason_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_RebootReasonVerify) {
+    result = memfault_self_test_reboot_reason_test_verify();
+  }
+  return (result == 0) ? 0 : 1;
 }

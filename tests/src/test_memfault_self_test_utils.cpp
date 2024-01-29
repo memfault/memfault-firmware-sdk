@@ -1,3 +1,4 @@
+#include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -5,6 +6,8 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
+#include "memfault/core/sdk_assert.h"
+#include "memfault/core/self_test.h"
 #include "memfault_self_test_private.h"
 
 TEST_GROUP(MemfaultSelfTestUtils) {
@@ -42,5 +45,32 @@ TEST(MemfaultSelfTestUtils, Test_ValidHwVersionSwType) {
     } else {
       CHECK_FALSE(result);
     }
+  }
+}
+
+static void prv_arg_to_test_flag_helper(const char *arg, uint32_t expected_flags) {
+  uint32_t actual_flags = memfault_self_test_arg_to_flag(arg);
+  LONGS_EQUAL(expected_flags, actual_flags);
+}
+
+TEST(MemfaultSelfTestUtils, Test_ArgToTestFlag) {
+  prv_arg_to_test_flag_helper("", kMemfaultSelfTestFlag_Default);
+  prv_arg_to_test_flag_helper("bad_arg", kMemfaultSelfTestFlag_Default);
+  prv_arg_to_test_flag_helper("reboot", kMemfaultSelfTestFlag_RebootReason);
+  prv_arg_to_test_flag_helper("reboot_verify", kMemfaultSelfTestFlag_RebootReasonVerify);
+}
+
+static jmp_buf s_assert_jmp_buf;
+
+void memfault_sdk_assert_func(void) {
+  mock().actualCall(__func__);
+  longjmp(s_assert_jmp_buf, -1);
+}
+
+TEST(MemfaultSelfTestUtils, Test_NullArg) {
+  // We expect a call to the SDK assert
+  mock().expectOneCall("memfault_sdk_assert_func");
+  if (setjmp(s_assert_jmp_buf) == 0) {
+    memfault_self_test_arg_to_flag(NULL);
   }
 }

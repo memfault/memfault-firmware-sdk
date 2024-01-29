@@ -270,10 +270,11 @@ static int prv_timer_isr_crash_example(const struct shell *shell, size_t argc, c
   return 0;
 }
 
-static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, MEMFAULT_UNUSED size_t argc,
-                         MEMFAULT_UNUSED char **argv) {
-  return memfault_self_test_run();
+#if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)
+static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc, char **argv) {
+  return memfault_demo_cli_cmd_self_test(argc, argv);
 }
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
@@ -300,7 +301,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(log_capture, NULL, "trigger capture of current log buffer contents", prv_trigger_logs),
   SHELL_CMD(logs, NULL, "writes test logs to log buffer", prv_test_log),
   SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),
+#if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)
   SHELL_CMD(self, NULL, "test Memfault components on-device", prv_self_test),
+#endif
 
   SHELL_SUBCMD_SET_END /* Array terminated. */
 );

@@ -11,6 +11,7 @@
 #include "memfault/ports/buffered_coredump_storage.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "fakes/fake_memfault_buffered_coredump_storage.h"

@@ -119,8 +119,8 @@ void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_r
     void *mflt_lr;                                                         \
     MEMFAULT_GET_LR(mflt_lr);                                              \
     sMfltRebootTrackingRegInfo mflt_reg_info = {                           \
-      .pc = (uint32_t)mflt_pc,                                             \
-      .lr = (uint32_t)mflt_lr,                                             \
+      .pc = (uint32_t)(uintptr_t)mflt_pc,                                  \
+      .lr = (uint32_t)(uintptr_t)mflt_lr,                                  \
     };                                                                     \
     memfault_reboot_tracking_mark_reset_imminent(reason_, &mflt_reg_info); \
   } while (0)

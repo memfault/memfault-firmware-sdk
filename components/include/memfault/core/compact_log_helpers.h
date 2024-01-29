@@ -116,6 +116,8 @@ struct MemfaultLogArgPromotionType<const char *>
   #pragma clang diagnostic ignored "-Wsizeof-array-decay"
 #endif
 
+// clang-format off
+
 #define _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg)                           \
   _Generic((arg) + 0,                                                   \
            float:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,                 \
@@ -125,6 +127,8 @@ struct MemfaultLogArgPromotionType<const char *>
            const char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,              \
            default: sizeof((arg) + 0) <= sizeof(int) ?                  \
               MEMFAULT_LOG_ARG_PROMOTED_TO_INT32 : MEMFAULT_LOG_ARG_PROMOTED_TO_INT64) \
+
+// clang-format on
 
 #endif  // __cplusplus
 

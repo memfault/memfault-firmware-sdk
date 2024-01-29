@@ -93,7 +93,7 @@ static const int s_memfault_fota_certs[] = {
   kMemfaultRootCert_DigicertRootCa
 };
 
-#if MEMFAULT_NCS_VERSION_GT(2, 3)
+#if MEMFAULT_NCS_VERSION_GT(2, 3) && !MEMFAULT_NCS_VERSION_GT(2, 5)
 
 int __real_download_client_get(struct download_client *client, const char *host,
                                const struct download_client_cfg *config, const char *file, size_t from);
@@ -147,22 +147,27 @@ int memfault_fota_start(void) {
     goto cleanup;
   }
 
+#if MEMFAULT_NCS_VERSION_GT(2, 5)
+  // NCS 2.6 introduced a new API to support multiple certificates, so no need to iterate through
+  // to find a matching one
+  rv = fota_download_any(s_download_url, s_download_url, s_memfault_fota_certs,
+                         MEMFAULT_ARRAY_SIZE(s_memfault_fota_certs), 0 /* pdn_id */, 0);
+#else
   // Note: The nordic FOTA API only supports passing one root CA today. So we cycle through the
   // list of required Root CAs in use by Memfault to find the appropriate one
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_memfault_fota_certs); i++) {
-
-#if MEMFAULT_NCS_VERSION_GT(1, 7)
+  #if MEMFAULT_NCS_VERSION_GT(1, 7)
     // In NCS 1.8 signature was changed "to accept an integer parameter specifying the PDN ID,
     // which replaces the parameter used to specify the APN"
     //
     // https://github.com/nrfconnect/sdk-nrf/blob/v1.8.0/include/net/fota_download.h#L88-L106
     rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
                              0 /* pdn_id */, 0);
-#else // NCS <= 1.7
+  #else  // NCS <= 1.7
     // https://github.com/nrfconnect/sdk-nrf/blob/v1.4.1/include/net/fota_download.h#L88-L106
     rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
                              NULL /* apn */, 0);
-#endif
+  #endif
     if (rv == 0) {
       // success -- we are ready to start the FOTA download!
       break;
@@ -185,8 +190,8 @@ int memfault_fota_start(void) {
     // Therefore we print a friendly message when an _expected_ failure takes place
     // but retry regardless of error condition in case value returned changes again in the future.
     //
-    // Note: For NCS >= 2.4, server connect() has been moved to the download_client thread and TLS
-    // error codes are no longer bubbled up here so we do not expect to fall into this logic
+    // Note: For NCS >= 2.4 <= 2.5, server connect() has been moved to the download_client thread
+    // and TLS error codes are no longer bubbled up here so we do not expect to fall into this logic
     // anymore.  See workaround above in __wrap_download_client_get() for more details.
     if (((errno == EOPNOTSUPP) || (errno == ECONNREFUSED)) &&
         (i != (MEMFAULT_ARRAY_SIZE(s_memfault_fota_certs) - 1))) {
@@ -196,6 +201,8 @@ int memfault_fota_start(void) {
       MEMFAULT_LOG_ERROR("fota_download_start unexpected failure, errno=%d", (int)errno);
     }
   }
+#endif  // MEMFAULT_NCS_VERSION_GT(2, 5)
+
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("FOTA start failed, rv=%d", rv);
     goto cleanup;

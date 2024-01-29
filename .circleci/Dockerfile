@@ -24,9 +24,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 ARG MEMFAULT_SDK_APT_DEPS="\
     build-essential \
     cpputest \
+    curl \
     gcc-12 \
     g++-12 \
     git \
+    gnupg \
     python3.10 \
     python3.10-venv\
 "
@@ -73,6 +75,13 @@ RUN \
     rm -rf ./lcov* && \
     lcov --version && \
     genhtml --version
+
+# Install clang-17
+RUN \
+    echo deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main >> /etc/apt/sources.list.d/llvm.list && \
+    echo deb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main >> /etc/apt/sources.list.d/llvm.list && \
+    wget -q -O - http://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - && \
+    apt-get update && apt-get install -y clang-17 llvm-17
 
 ENV PATH=/home/circleci/lcov-${LCOV_VERSION}/bin:$PATH
 

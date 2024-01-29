@@ -198,6 +198,10 @@ void memfault_boot(void) {
 #endif
 }
 
+MEMFAULT_NORETURN void memfault_platform_reboot(void) {
+  esp_restart();
+}
+
 #if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
 // register an initialization routine that will be run from do_global_ctors()
 static void __attribute__((constructor)) prv_memfault_boot(void) {

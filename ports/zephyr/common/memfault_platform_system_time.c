@@ -64,14 +64,12 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
 
 #if defined(CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_RTC)
 // Zephyr RTC subsystem based system time
-// clang-format off
-#include <time.h>
-#include MEMFAULT_ZEPHYR_INCLUDE(drivers/rtc.h)
+  #include <time.h>
+  #include MEMFAULT_ZEPHYR_INCLUDE(drivers/rtc.h)
 
-#if !DT_NODE_EXISTS(DT_NODELABEL(rtc))
-  #error "Error, requires rtc device tree entry"
-#endif
-// clang-format on
+  #if !DT_NODE_EXISTS(DT_NODELABEL(rtc))
+    #error "Error, requires rtc device tree entry"
+  #endif
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   struct rtc_time rtctime;

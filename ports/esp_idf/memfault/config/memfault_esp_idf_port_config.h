@@ -21,6 +21,10 @@ extern "C" {
   #define MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS 1
 #endif
 
+#if defined(CONFIG_MEMFAULT_CLI_SELF_TEST)
+  #define MEMFAULT_DEMO_CLI_SELF_TEST 1
+#endif
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL

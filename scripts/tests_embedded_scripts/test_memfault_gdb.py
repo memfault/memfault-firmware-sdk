@@ -223,11 +223,9 @@ def _settings_coredump_allowed(test_config):
 
 
 def test_parse_maintenance_info_sections_no_file():
-    fn, sections = parse_maintenance_info_sections(
-        """Remote serial target in gdb-specific protocol:
+    fn, sections = parse_maintenance_info_sections("""Remote serial target in gdb-specific protocol:
 Debugging a target over a serial line.
-"""
-    )
+""")
     assert fn is None
     assert sections is None
 

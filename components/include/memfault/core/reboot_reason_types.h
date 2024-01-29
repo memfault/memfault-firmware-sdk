@@ -34,6 +34,8 @@ typedef enum MfltResetReason {
   kMfltRebootReason_DeepSleep = 0x0009,
   // MCU reset pin was toggled
   kMfltRebootReason_PinReset = 0x000A,
+  // Self Test generated reboot
+  kMfltRebootReason_SelfTest = 0x000B,
 
   //
   // Error Resets

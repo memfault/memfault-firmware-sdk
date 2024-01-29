@@ -1,5 +1,49 @@
 # Memfault Firmware SDK Changelog
 
+## [1.6.1] - 2024-01-29
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Add a reboot reason self test, which validates the reboot reason data is
+    correctly preserved through device reboot. This test first sets a custom
+    reboot reason, then calls `memfault_platform_reboot()` to reboot the system.
+    To verify the operation succeeded, the self test is called again to check
+    the reboot reason was saved. The reboot reason self test can be performed by
+    passing the appropriate flags when calling the `memfault_self_test_run()`
+    file (see
+    [`components/include/memfault/core/self_test.h`](components/include/memfault/core/self_test.h)
+    for details), and from the demo CLI as
+    `self_test reboot`/`self_test reboot_verify`.
+
+  - Fix a `ti-armcl` compiler warning due to enumeration mismatch in
+    initialization (`#190-D`).
+
+  - Add a compile-time option to enable the self-test module. Enabling the
+    self-test increases code space utilization, and is usually of use during
+    set-up and SDK integration testing. The self-test can be enabled by setting
+    `#define MEMFAULT_SELF_TEST_ENABLED 1` in `memfault_platform_config.h`, or
+    via `CONFIG_MEMFAULT_CLI_SELF_TEST=y` for ESP-IDF and
+    `CONFIG_MEMFAULT_SHELL_SELF_TEST=y` for Zephyr.
+
+- ESP-IDF:
+
+  - Expose a new function `memfault_esp_port_ota_get_release_url()` for fetching
+    the OTA release URL without performing a download. This is useful for cases
+    where the URL is needed for other purposes, such as for fetching a
+    downstream device OTA artifact. See
+    [`ports/esp_idf/memfault/include/memfault/esp_port/http_client.h`](ports/esp_idf/memfault/include/memfault/esp_port/http_client.h)
+    for details.
+
+- nRF-Connect SDK:
+
+  - Add support for the new `fota_download_any()` (see documentation
+    [here](https://github.com/nrfconnect/sdk-nrf/blob/0692684d0e0b924335882969bc7bf474c673ac81/doc/nrf/releases_and_maturity/releases/release-notes-changelog.rst#L847-L848)),
+    which accepts a list of certificates to use when executing FOTA downloads.
+    This API is expected to be included in the upcoming nRF-Connect SDK v2.6.0
+    release.
+
 ## [1.6.0] - 2024-01-09
 
 ### :chart_with_upwards_trend: Improvements

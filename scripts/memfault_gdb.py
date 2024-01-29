@@ -1007,7 +1007,7 @@ class MemfaultGdbArgumentParseError(Exception):
 
 
 class MemfaultGdbArgumentParser(argparse.ArgumentParser):
-    def exit(self, status=0, message=None):  # noqa: A003
+    def exit(self, status=0, message=None):
         if message:
             self._print_message(message)
         # Don't call sys.exit()
@@ -1190,11 +1190,9 @@ class GdbMemfaultPostChunkBreakpoint(gdb.Breakpoint):
     def stop(self):
         params = self._determine_param_names()
         if params is None:
-            print(
-                """ERROR: Could not determine names of parameters holding chunk buffer and size
+            print("""ERROR: Could not determine names of parameters holding chunk buffer and size
                 Disabling Memfault GDB Chunk Handler & Halting
-                """
-            )
+                """)
             self.enabled = False
             return True
 
@@ -1363,8 +1361,7 @@ class MemfaultCoredump(MemfaultGdbCommand):
             analytics_props["permission"] = "accepted-stored"
             return True
 
-        y = MEMFAULT_CONFIG.prompt(
-            """
+        y = MEMFAULT_CONFIG.prompt("""
 You are about to capture a coredump from the attached target.
 This means that memory contents of the target will be captured
 and sent to Memfault's web server for analysis. The currently
@@ -1376,8 +1373,7 @@ Memfault will never share your data, coredumps, binary files (.elf)
 or other proprietary information with other companies or anyone else.
 
 Proceed? [y/n]
-"""
-        )  # This last newline is important! If it's not here, the last line is not shown on Windows!
+""")  # This last newline is important! If it's not here, the last line is not shown on Windows!
         if "Y" not in y.upper():
             print("Aborting...")
             analytics_props["user_input"] = y
@@ -1458,7 +1454,7 @@ Proceed? [y/n]
             print("Coredump uploaded successfully!")
             print("Once it has been processed, it will appear here:")
             # TODO: Print direct link to trace
-            # https://memfault.myjetbrains.com/youtrack/issue/MFLT-461
+            # MFLT-461
             print(_infer_issues_html_url(parsed_args.ingress_uri, config))
         else:
             print("Error occurred... HTTP Status {} {}".format(status, reason))
@@ -1627,10 +1623,8 @@ Proceed? [y/n]
         info_sections_output = gdb.execute("maintenance info sections", to_string=True)
         elf_fn, sections = parse_maintenance_info_sections(info_sections_output)
         if elf_fn is None or sections is None:
-            print(
-                """Could not find file and sections.
-This command requires that you use the 'load' command to load a binary/symbol (.elf) file first"""
-            )
+            print("""Could not find file and sections.
+This command requires that you use the 'load' command to load a binary/symbol (.elf) file first""")
             error = "Failed to parse sections"
             analytics_props["error"] = error
             ANALYTICS.error(error, info=info_sections_output)

@@ -132,7 +132,7 @@ static ssize_t prv_stack_bytes_unused(uintptr_t stack_start, size_t stack_size) 
   // Return the "bytes unused" count for the stack
   const ssize_t bytes_unused = (uintptr_t)stack_max - stack_start;
   // In the case of a fully exhausted stack, return -1. This is converted back
-  // to 0 in the backend. We can't use 0 h  ere, because that's also the
+  // to 0 in the backend. We can't use 0 here, because that's also the
   // initialization value of the s_memfault_task_watermarks_v2 data structure, and if
   // this routine isn't called before coredump saving for some reason (eg
   // programming error) we don't want to incorrectly show the stacks as fully
@@ -152,8 +152,11 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
 
   size_t region_idx = 0;
 
-  // First we will try to store all the task TCBs. This way if we run out of space
-  // while storing tasks we will still be able to recover the state of all the threads
+  // First we will try to store all the task TCBs. This way if we run out of
+  // space while storing task stacks, we will still be able to recover the state
+  // of all the threads. Zephyr stores the thread list as a linked list, so we
+  // need to successfully capture all the TCBs in the coredump to be able to
+  // decode the full thread list.
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_task_tcbs) && region_idx < num_regions; i++) {
     struct k_thread *thread = s_task_tcbs[i];
     if (thread == EMPTY_SLOT) {
