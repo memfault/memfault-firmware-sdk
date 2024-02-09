@@ -41,7 +41,11 @@ int _read(__attribute__((unused)) int file, __attribute__((unused)) char *buf,
           __attribute__((unused)) int len) {
   for (int i = 0; i < len; i++) {
     if (UART0_ADDR->STATE & UART_STATE_RXRDY) {
-      buf[i] = UART0_ADDR->DATA;
+      char data = UART0_ADDR->DATA;
+      // for some reason, BACKSPACE=0x7f, DEL=0x7e, so remap those
+      data = (data == 0x7f) ? '\b' : data;
+      data = (data == 0x7e) ? 0x7f : data;
+      buf[i] = data;
     } else {
       return i;
     }

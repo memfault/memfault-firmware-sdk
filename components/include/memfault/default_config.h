@@ -268,6 +268,20 @@ extern "C" {
   #define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
 #endif
 
+//
+// Custom Reboot Reason Configuration
+//
+
+//! Enables the use of custom reboot reasons
+#ifndef MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
+  #define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 0
+#endif
+
+//! Defines the user file containing custom reboots
+#ifndef MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #define MEMFAULT_REBOOT_REASON_USER_DEFS_FILE "memfault_reboot_reason_user_config.def"
+#endif
+
 //! Enables use of "compact" logs.
 //!
 //! Compact logs convert format strings to an integer index at compile time and serialize an "id"

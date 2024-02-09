@@ -15,12 +15,14 @@
 #include "memfault/panics/platform/coredump.h"
 #include "memfault/ports/zephyr/version.h"
 
+#if CONFIG_ARM
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 4)
   #include <cmsis_core.h>
 #elif MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
   #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/cortex_m/cmsis.h)
 #else
   #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/cortex_m/cmsis.h)
+#endif
 #endif
 
 #include "memfault/core/compiler.h"
@@ -38,14 +40,15 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
   size_t region_idx = 0;
 
 #if CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
-  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 2)) == 0;
-
   size_t stack_size_to_collect = memfault_platform_sanitize_address_range(
     crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
 
   regions[region_idx] =
     MEMFAULT_COREDUMP_MEMORY_REGION_INIT(crash_info->stack_address, stack_size_to_collect);
   region_idx++;
+
+  #if CONFIG_ARM
+  const bool msp_was_active = (crash_info->exception_reg_state->exc_return & (1 << 2)) == 0;
 
   if (msp_was_active) {
     // System crashed in an ISR but the running task state is on PSP so grab that too
@@ -59,6 +62,7 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(psp, stack_size_to_collect);
     region_idx++;
   }
+  #endif  // CONFIG_ARM
 #endif
 
 #if CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION

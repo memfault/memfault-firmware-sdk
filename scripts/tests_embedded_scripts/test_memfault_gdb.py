@@ -22,7 +22,7 @@ scripts_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, scripts_dir)
 
 
-from memfault_gdb import (  # noqa: E402  # pyright: ignore[reportGeneralTypeIssues]
+from memfault_gdb import (  # noqa: E402  # pyright: ignore[reportArgumentType]
     ArmCortexMCoredumpArch,
     MemfaultConfig,
     MemfaultCoredump,
@@ -329,7 +329,7 @@ def test_coredump_writer(snapshot):
         arch, device_serial, software_type, software_version, hardware_revision
     )
     cd_writer.trace_reason = 5
-    cd_writer.regs = [  # pyright: ignore[reportGeneralTypeIssues]
+    cd_writer.regs = [  # pyright: ignore[reportAttributeAccessIssue]
         {
             "r0": 4 * b"\x00",
             "r1": 4 * b"\x01",
@@ -354,7 +354,7 @@ def test_coredump_writer(snapshot):
             "control": 4 * b"\x14",
         },
     ]
-    section = Section(4, 32, ".test", "")  # pyright: ignore[reportGeneralTypeIssues]
+    section = Section(4, 32, ".test", "")  # pyright: ignore[reportArgumentType]
     section.data = b"hello world"
     cd_writer.add_section(section)
 

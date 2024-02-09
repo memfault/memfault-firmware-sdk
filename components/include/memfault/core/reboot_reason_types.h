@@ -12,13 +12,25 @@
 extern "C" {
 #endif
 
+#include "memfault/config.h"
+#include "memfault/core/compiler.h"
+
+#define MEMFAULT_REBOOT_REASON_EXPECTED_CUSTOM_BASE 0x1000
+#define MEMFAULT_REBOOT_REASON_EXPECTED_CUSTOM_MAX 0x1100
+
+#define MEMFAULT_REBOOT_REASON_UNEXPECTED_CUSTOM_BASE 0xA000
+#define MEMFAULT_REBOOT_REASON_UNEXPECTED_CUSTOM_MAX 0xA100
+
+#undef MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE
+#undef MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE
+
 typedef enum MfltResetReason {
   // A reboot reason was not determined either by hardware or a previously marked reboot reason
   // This reason is classified as a crash when calculating the operational_crashfree_hours metric
   kMfltRebootReason_Unknown = 0x0000,
 
   //
-  // Normal Resets
+  // Expected Resets
   //
 
   kMfltRebootReason_UserShutdown = 0x0001,
@@ -37,8 +49,21 @@ typedef enum MfltResetReason {
   // Self Test generated reboot
   kMfltRebootReason_SelfTest = 0x000B,
 
+//
+// User Defined Expected Resets
+//
+
+#if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
+  kMfltRebootReason_ExpectedBase = MEMFAULT_REBOOT_REASON_EXPECTED_CUSTOM_BASE,
+  #define MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE(name) kMfltRebootReason_##name,
+  #define MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE(name)
+  #include MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #undef MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE
+  #undef MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE
+#endif
+
   //
-  // Error Resets
+  // Unexpected Resets
   //
 
   // Can be used to flag an unexpected reset path. i.e NVIC_SystemReset()
@@ -82,7 +107,35 @@ typedef enum MfltResetReason {
   // A reset which is triggered when the processor faults while already
   // executing from a fault handler.
   kMfltRebootReason_Lockup = 0x9401,
+
+//
+// User Defined Unexpected Resets
+//
+
+#if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
+  kMfltRebootReason_UnexpectedBase = MEMFAULT_REBOOT_REASON_UNEXPECTED_CUSTOM_BASE,
+  #define MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE(name)
+  #define MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE(name) kMfltRebootReason_##name,
+  #include MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #undef MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE
+  #undef MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE
+#endif
+
 } eMemfaultRebootReason;
+
+#if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
+  // Ensure that the custom reboot reasons are within the expected range
+  #define MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE(name)                                            \
+    MEMFAULT_STATIC_ASSERT(kMfltRebootReason_##name < MEMFAULT_REBOOT_REASON_EXPECTED_CUSTOM_MAX, \
+                           "User defined expected reboot is out of range");
+  #define MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE(name)                       \
+    MEMFAULT_STATIC_ASSERT(                                                    \
+      kMfltRebootReason_##name < MEMFAULT_REBOOT_REASON_UNEXPECTED_CUSTOM_MAX, \
+      "User defined unexpected reboot is out of range");
+  #include MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #undef MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE
+  #undef MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE
+#endif
 
 #ifdef __cplusplus
 }

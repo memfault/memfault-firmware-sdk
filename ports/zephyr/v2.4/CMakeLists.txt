@@ -1,4 +1,12 @@
-zephyr_library_sources(memfault_fault_handler.c)
+if (CONFIG_RISCV)
+    zephyr_library_sources(memfault_fault_handler_riscv.c)
+elseif(CONFIG_ARM)
+    zephyr_library_sources(memfault_fault_handler.c)
+else()
+    # Unsupported configuration
+    message(FATAL_ERROR "Unsupported chip architecture")
+endif()
+
 zephyr_include_directories(.)
 
 # Zephyr fatals for ARM Cortex-M's take the following path:

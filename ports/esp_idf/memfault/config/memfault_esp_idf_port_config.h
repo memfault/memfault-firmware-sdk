@@ -25,6 +25,10 @@ extern "C" {
   #define MEMFAULT_DEMO_CLI_SELF_TEST 1
 #endif
 
+#if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
+  #define MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME 1
+#endif
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL

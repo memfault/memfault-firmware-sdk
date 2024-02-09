@@ -76,22 +76,41 @@ static void prv_free(void *ptr) {
   #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
 #endif
 
+// Select either PEM or DER format to install to certificate storage.
+// clang-format off
+#if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr g_memfault_cert_digicert_global_root_ca
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len g_memfault_cert_digicert_global_root_ca_len
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr g_memfault_cert_digicert_global_root_g2
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len g_memfault_cert_digicert_global_root_g2_len
+  #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr g_memfault_cert_amazon_root_ca1
+  #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len g_memfault_cert_amazon_root_ca1_len
+#else
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA)
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2)
+  #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+  #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1)
+#endif
+// clang-format on
+
 static bool prv_install_cert(eMemfaultRootCert cert_id) {
   const char *cert;
   size_t cert_len;
 
   switch (cert_id) {
     case kMemfaultRootCert_DigicertRootCa:
-      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA);
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len;
       break;
     case kMemfaultRootCert_DigicertRootG2:
-      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2);
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len;
       break;
     case kMemfaultRootCert_AmazonRootCa1:
-      cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1;
-      cert_len = sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1);
+      cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len;
       break;
 
     default:
@@ -132,6 +151,12 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   int rv = getaddrinfo(host, port, &hints, res);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
+  } else {
+    struct sockaddr_in *addr = net_sin((*res)->ai_addr);
+
+    MEMFAULT_LOG_DEBUG("DNS lookup for %s = %d.%d.%d.%d", host, addr->sin_addr.s4_addr[0],
+                       addr->sin_addr.s4_addr[1], addr->sin_addr.s4_addr[2],
+                       addr->sin_addr.s4_addr[3]);
   }
 
   return rv;
@@ -178,6 +203,13 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
 
   const size_t host_name_len = strlen(host);
   return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
+
+// Set TLS cert parse + copy to optional, which will allow us to use either
+// PEM or DER formatted certs. This feature was added in Zephyr v3.0.0.
+#if defined(TLS_CERT_NOCOPY_OPTIONAL)
+  const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
+  rv = setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
+#endif
 }
 
 static int prv_configure_socket(int fd, const char *host) {
@@ -629,6 +661,8 @@ int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
   const int port = MEMFAULT_HTTP_GET_CHUNKS_API_PORT();
 
   memfault_zephyr_port_http_close_socket(ctx);
+
+  MEMFAULT_LOG_DEBUG("Opening socket to %s:%d", host, port);
 
   ctx->sock_fd = prv_open_socket(&(ctx->res), host, port);
 

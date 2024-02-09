@@ -16,6 +16,7 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
 #include "memfault/components.h"
+#include "memfault/ports/zephyr/core.h"
 // clang-format on
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
@@ -38,9 +39,7 @@ static struct k_thread *s_main_thread = NULL;
 
 // Blink code taken from the zephyr/samples/basic/blinky example.
 static void blink_forever(void) {
-#if CONFIG_QEMU_TARGET
-  k_sleep(K_FOREVER);
-#else
+#if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
   /* 1000 msec = 1 sec */
   #define SLEEP_TIME_MS 1000
 
@@ -58,7 +57,10 @@ static void blink_forever(void) {
     gpio_pin_toggle_dt(&led);
     k_msleep(SLEEP_TIME_MS);
   }
-#endif  // CONFIG_QEMU_TARGET
+#else
+  // no led on this board, just sleep forever
+  k_sleep(K_FOREVER);
+#endif
 }
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
@@ -204,6 +206,10 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
+
+#if !defined(MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT)
+  memfault_zephyr_collect_reset_info();
+#endif
 
 #if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
   s_main_thread = k_current_get();

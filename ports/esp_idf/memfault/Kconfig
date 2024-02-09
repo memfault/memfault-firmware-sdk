@@ -139,6 +139,13 @@ menu "Memfault"
             Collects Memfault metrics measuring the minimum RSSI, time connected to
             WiFi, and the number of WiFi disconnects.
 
+    config MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS
+        bool "Enable Memfault Core Metric: connectivity_connected_time"
+        default y
+        help
+            Collects the core metric for connectivity_connected_time based on
+            WiFi connection state.
+
     config MEMFAULT_ESP_HEAP_METRICS
         bool "Collect basic heap metrics"
         default y

@@ -119,6 +119,10 @@ if (CONFIG_MEMFAULT_MBEDTLS_METRICS)
   list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/mbedtls/config)
 endif()
 
+if (CONFIG_MEMFAULT_CLI_SELF_TEST)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_self_test_platform.c)
+endif()
+
 # For version >= 4.4.3, we can collect smaller coredumps by default
 # by prioritizing active stack and FreeRTOS regions first. ESP-IDF < 4.4.3
 # uses a simpler scheme collecting all of DRAM. See
@@ -168,6 +172,20 @@ register_component()
 get_filename_component(this_directory_name . ABSOLUTE DIRECTORY)
 get_filename_component(this_directory_name ${this_directory_name} NAME)
 mflt_esp32_component_get_target(this_component ${this_directory_name})
+
+# Each esp-idf component is compiled into a static library. esp-idf then links each of these
+# libraries to the program ELF. This can cause quirks when working with weak and strong symbol
+# definitions within a static library causing the weak definition to be kept over the strong.
+# To keep the strong definition around, we can define an undefined symbol to force the linker
+# to reconsider different outputs. This allows the strong definition to be selected for inclusion
+# in the program. When we're adding new strong definitions to weak functions internal to the SDK,
+# the following is needed:
+# 1. Add an empty stub function in the source file
+# 2. Add a corresponding target_link_libraries call (see below) with the linker option -u
+#    and specify the stub function name
+if(CONFIG_MEMFAULT_CLI_SELF_TEST)
+  target_link_libraries(${this_component} INTERFACE "-u memfault_include_self_test_impl")
+endif()
 
 # The below compilation options need to be set after register_component().
 if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)

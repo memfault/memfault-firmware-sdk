@@ -4,13 +4,20 @@
 //! See License.txt for details
 
 // clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include <stdbool.h>
 
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/ports/zephyr/version.h"
-
+#if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/net_stats.h)
+// Directory traversal is needed to access the header for net_stats_reset(),
+// which is not in the global Zephyr search path.
+#include MEMFAULT_ZEPHYR_INCLUDE(../../subsys/net/ip/net_stats.h)
+#endif
 #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
 #include MEMFAULT_ZEPHYR_INCLUDE(fs/fs.h)
 #endif
@@ -36,6 +43,33 @@ static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t cur
   *prev_cycles = curr_cycles;
 }
 #endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
+static void prv_collect_ip_statistics(void) {
+  struct net_stats data;
+
+  int err = net_mgmt(NET_REQUEST_STATS_GET_ALL, NULL, &data, sizeof(data));
+  if (err) {
+    return;
+  }
+
+  // save the most interesting stats as metrics, and reset the stats structure
+  #if defined(CONFIG_NET_STATISTICS_UDP)
+  MEMFAULT_METRIC_SET_UNSIGNED(net_udp_recv, data.udp.recv);
+  MEMFAULT_METRIC_SET_UNSIGNED(net_udp_sent, data.udp.sent);
+  #endif
+  #if defined(CONFIG_NET_STATISTICS_TCP)
+  MEMFAULT_METRIC_SET_UNSIGNED(net_tcp_recv, data.tcp.recv);
+  MEMFAULT_METRIC_SET_UNSIGNED(net_tcp_sent, data.tcp.sent);
+  #endif
+
+  MEMFAULT_METRIC_SET_UNSIGNED(net_bytes_received, data.bytes.received);
+  MEMFAULT_METRIC_SET_UNSIGNED(net_bytes_sent, data.bytes.sent);
+
+  // reset the stats
+  net_stats_reset(NULL);
+}
+#endif  // defined(MEMFAULT_METRICS_TCP_IP)
 
 // Written as a function vs. in-line b/c we might want to extern this at some point?
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
@@ -97,6 +131,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   #endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
 
 #endif /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
+
+#if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
+  prv_collect_ip_statistics();
+#endif
 }
 
 static void prv_metrics_work_handler(struct k_work *work) {
