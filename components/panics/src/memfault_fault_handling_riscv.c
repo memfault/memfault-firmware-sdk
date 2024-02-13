@@ -46,8 +46,8 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
 // For non-esp-idf riscv implementations, provide a full assert handler and
 // other utilities.
   #if defined(__ZEPHYR__) && defined(CONFIG_SOC_FAMILY_ESP32)
-
     #include "hal/cpu_hal.h"
+    #include "zephyr/kernel.h"
 
 void memfault_platform_halt_if_debugging(void) {
   if (cpu_ll_is_debugger_attached()) {
@@ -55,19 +55,14 @@ void memfault_platform_halt_if_debugging(void) {
   }
 }
 
-static inline uint32_t prv_read_mstatus(void) {
-  uint32_t mstatus;
-  __asm volatile("csrr %0, mstatus" : "=r"(mstatus));
-  return mstatus;
-}
-
 bool memfault_arch_is_inside_isr(void) {
-  // Read the value of mstatus CSR
-  uint32_t mstatus = prv_read_mstatus();
-
-  // Check the MPIE (Machine Previous Interrupt Enable) bit
-  // If MPIE is set, then the processor is inside an ISR
-  return (mstatus & (1U << 7)) != 0;
+  // Use the Zephyr-specific implementation.
+  //
+  // It's not clear if there's a RISC-V standard way to check if the CPU is in
+  // an exception mode. The mcause register comes close but it won't tell us if
+  // a trap was taken due to a non-interrupt cause:
+  // https://five-embeddev.com/riscv-isa-manual/latest/machine.html#sec:mcause
+  return k_is_in_isr();
 }
 
 static void prv_fault_handling_assert_native(void *pc, void *lr, eMemfaultRebootReason reason) {
