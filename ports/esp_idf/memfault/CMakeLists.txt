@@ -119,6 +119,10 @@ if (CONFIG_MEMFAULT_MBEDTLS_METRICS)
   list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/mbedtls/config)
 endif()
 
+if (CONFIG_MEMFAULT_CLI_SELF_TEST)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_self_test_platform.c)
+endif()
+
 # For version >= 4.4.3, we can collect smaller coredumps by default
 # by prioritizing active stack and FreeRTOS regions first. ESP-IDF < 4.4.3
 # uses a simpler scheme collecting all of DRAM. See
@@ -168,6 +172,20 @@ register_component()
 get_filename_component(this_directory_name . ABSOLUTE DIRECTORY)
 get_filename_component(this_directory_name ${this_directory_name} NAME)
 mflt_esp32_component_get_target(this_component ${this_directory_name})
+
+# Each esp-idf component is compiled into a static library. esp-idf then links each of these
+# libraries to the program ELF. This can cause quirks when working with weak and strong symbol
+# definitions within a static library causing the weak definition to be kept over the strong.
+# To keep the strong definition around, we can define an undefined symbol to force the linker
+# to reconsider different outputs. This allows the strong definition to be selected for inclusion
+# in the program. When we're adding new strong definitions to weak functions internal to the SDK,
+# the following is needed:
+# 1. Add an empty stub function in the source file
+# 2. Add a corresponding target_link_libraries call (see below) with the linker option -u
+#    and specify the stub function name
+if(CONFIG_MEMFAULT_CLI_SELF_TEST)
+  target_link_libraries(${this_component} INTERFACE "-u memfault_include_self_test_impl")
+endif()
 
 # The below compilation options need to be set after register_component().
 if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
@@ -230,8 +248,6 @@ else()
     "${compile_options}"
     APPEND
   )
-  # idf_build_get_property(bleh COMPILE_OPTIONS)
-  # message(FATAL_ERROR "COMPILE_OPTIONS=${bleh}")
 endif()
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
@@ -254,12 +270,14 @@ if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
 endif()
 
 # Include a linker script fragment to support compact logs, when enabled
-get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
-target_link_libraries(
-    ${this_component}
-    INTERFACE
-    -T ${compact_log_linker_script}
-)
+if(CONFIG_MEMFAULT_COMPACT_LOG_ENABLE)
+  get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
+  target_link_libraries(
+      ${this_component}
+      INTERFACE
+      -T ${compact_log_linker_script}
+  )
+endif()
 
 # Link required libraries and add compiler flags to enable FreeRTOS region collection
 # in >= 4.4.3. Note: CMake does not short-circuit logic statements, nested ifs required
@@ -279,16 +297,26 @@ if(DEFINED ENV{IDF_VERSION})
     # Link this component to FreeRTOS, use INTERFACE because we're only sharing headers
     target_link_libraries(${freertos_lib} INTERFACE ${this_component})
 
-    # Lastly ensure that our FreeRTOS trace hooks are defined first by adding this
-    # compile option to the FreeRTOS target to include with all source
-    # This method is an alternative to #include within FreeRTOSConfig.h which esp-idf
-    # makes very difficult to do.
-    get_filename_component(freertos_trace_header ${MEMFAULT_SDK_ROOT}/ports/include/memfault/ports/freertos_trace.h ABSOLUTE)
     target_compile_options(${freertos_lib} INTERFACE
       "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
       "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
       "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
-      -include ${freertos_trace_header}
     )
+    
+    # Lastly ensure that our FreeRTOS trace hooks are defined first by adding this
+    # compile option to the FreeRTOS target to include with all source
+    # This method is an alternative to #include within FreeRTOSConfig.h which esp-idf
+    # makes very difficult to do.
+    #
+    # We exclude PlatformIO projects because PlatformIO's build system mechansim inserts other flags
+    # in between the -include and the freertos_trace.h compile option. PlatformIO projects will need
+    # to include the header independently in their project's .ini file. An example of how to do this
+    # is at https://github.com/memfault/platformio-esp32-espidf
+    if(NOT DEFINED PLATFORMIO_ENABLED)
+      get_filename_component(freertos_trace_header ${MEMFAULT_SDK_ROOT}/ports/include/memfault/ports/freertos_trace.h ABSOLUTE)
+      target_compile_options(${freertos_lib} INTERFACE
+        -include ${freertos_trace_header}
+      )
+    endif()
   endif()
 endif()

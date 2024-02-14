@@ -1,0 +1,10 @@
+# https://docs.github.com/en/repositories/working-with-files/using-files/viewing-a-file#ignore-commits-in-the-blame-view
+#
+# This file contains a list of commits that are not likely what you
+# are looking for in a blame, such as mass reformatting or renaming.
+# You can set this file as a default ignore file for blame by running
+# the following command.
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+0ca1a2a16f7cbf0420d795ca3a4f508fe09f95bd # SDK v1.6.2 clang-format run

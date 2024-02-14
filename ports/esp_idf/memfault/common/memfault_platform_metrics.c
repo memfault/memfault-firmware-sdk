@@ -20,6 +20,7 @@
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
 #include "memfault/esp_port/version.h"
+#include "memfault/metrics/connectivity.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 #include "sdkconfig.h"
@@ -74,6 +75,11 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
   switch (event_id) {
+    case WIFI_EVENT_STA_START:
+      memfault_metrics_connectivity_connected_state_change(
+        kMemfaultMetricsConnectivityState_Started);
+      break;
+
     case WIFI_EVENT_STA_CONNECTED:
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
       // The RSSI threshold needs to be set when WIFI is already initialized.
@@ -82,12 +88,19 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
       ESP_ERROR_CHECK(esp_wifi_set_rssi_threshold(MAXIMUM_RSSI));
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
       MEMFAULT_METRIC_TIMER_START(wifi_connected_time_ms);
+
+      memfault_metrics_connectivity_connected_state_change(
+        kMemfaultMetricsConnectivityState_Connected);
       break;
+
     case WIFI_EVENT_STA_DISCONNECTED:
       MEMFAULT_METRIC_ADD(wifi_disconnect_count, 1);
       MEMFAULT_METRIC_TIMER_STOP(wifi_connected_time_ms);
 
+      memfault_metrics_connectivity_connected_state_change(
+        kMemfaultMetricsConnectivityState_ConnectionLost);
       break;
+
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
     case WIFI_EVENT_STA_BSS_RSSI_LOW:
       rssi_data = (wifi_event_bss_rssi_low_t *)event_data;
@@ -96,6 +109,7 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
       esp_wifi_set_rssi_threshold(s_min_rssi);
       break;
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+
     default:
       break;
   }

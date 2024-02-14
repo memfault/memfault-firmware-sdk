@@ -41,7 +41,7 @@ endif
 export SILENCE ?= @
 
 export CPPUTEST_USE_EXTENSIONS=Y
-export CPPUTEST_USE_MEM_LEAK_DETECTION=Y
+export CPPUTEST_USE_MEM_LEAK_DETECTION?=Y
 export CPPUTEST_USE_GCOV=Y
 # Enable branch coverage reporting
 export GCOV_ARGS=-b -c
@@ -110,6 +110,16 @@ endif
 
 # Permit disabling the sanitizers via environment variable
 ifneq ($(MEMFAULT_DISABLE_ASAN),1)
+
+# The leak sanitizers work best on Linux, so only enable them for that platform
+ifeq ($(shell uname),Linux)
+CPPUTEST_WARNINGFLAGS += \
+  -fsanitize=leak
+
+CPPUTEST_LDFLAGS += \
+  -fsanitize=leak
+endif
+
 # Enable sanitizers, and crash on error (don't attempt to recover sanely) so the
 # test fails on sanitizer violation
 CPPUTEST_WARNINGFLAGS += \

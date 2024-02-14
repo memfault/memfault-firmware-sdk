@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "memfault/core/compiler.h"
@@ -55,6 +56,21 @@ MEMFAULT_NORETURN void memfault_self_test_reboot_reason_test(void);
 
 //! Verifies reboot reason test results
 uint32_t memfault_self_test_reboot_reason_test_verify(void);
+
+//! Runs tests against platform time functions
+uint32_t memfault_self_test_time_test(void);
+
+//! Internal implementation of strnlen
+//!
+//! Support for strnlen is inconsistent across a lot of libc implementations so we implement this
+//! here for compatibility reasons. See
+//! https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
+//! @param str Pointer to a C string. Pointer must not be NULL
+//! @param n Maximum number of characters to examine when determining the length of the string
+//! @returns The strnlen() function shall return the number of bytes preceding the first null byte
+//! in the array to which s points, if s contains a null byte within the first maxlen bytes;
+//! otherwise, it shall return maxlen
+size_t memfault_strnlen(const char *str, size_t n);
 
 #ifdef __cplusplus
 }

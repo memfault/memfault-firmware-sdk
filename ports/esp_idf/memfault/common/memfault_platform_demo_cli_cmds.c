@@ -221,17 +221,16 @@ static int prv_esp32_memfault_heartbeat_dump(int argc, char **argv) {
   return 0;
 }
 
-static bool prv_wifi_connected_check(const char *op) {
-  if (memfault_esp_port_wifi_connected()) {
+static bool prv_netif_connected_check(const char *op) {
+  if (memfault_esp_port_netif_connected()) {
     return true;
   }
 
-  MEMFAULT_LOG_ERROR("Must be connected to WiFi to %s. Use 'join <ssid> <pass>'", op);
+  MEMFAULT_LOG_ERROR("Must be connected to Network to %s. For WiFi, use 'join <ssid> <pass>'", op);
   return false;
 }
 
 #if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
-
 typedef struct {
   bool perform_ota;
 } sMemfaultOtaUserCtx;
@@ -253,7 +252,7 @@ static bool prv_handle_ota_download_complete(void *user_ctx) {
 }
 
 static int prv_memfault_ota(sMemfaultOtaUserCtx *ctx) {
-  if (!prv_wifi_connected_check("perform an OTA")) {
+  if (!prv_netif_connected_check("perform an OTA")) {
     return -1;
   }
 

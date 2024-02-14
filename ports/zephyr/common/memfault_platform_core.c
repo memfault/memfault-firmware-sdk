@@ -17,6 +17,7 @@
 
 #include "memfault/components.h"
 #include "memfault/ports/reboot_reason.h"
+#include "memfault/ports/zephyr/core.h"
 #include "memfault/ports/zephyr/log_backend.h"
 #include "zephyr_release_specific_headers.h"
 // clang-format on
@@ -38,6 +39,8 @@
 #if CONFIG_MEMFAULT_METRICS
   #include "memfault/metrics/metrics.h"
 #endif
+
+static const sMemfaultEventStorageImpl *s_memfault_event_storage;
 
 #if CONFIG_MEMFAULT_CACHE_FAULT_REGS
 // Zephy's z_arm_fault() function consumes and clears
@@ -105,6 +108,10 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
 }
 #endif
 
+void memfault_zephyr_collect_reset_info(void) {
+  memfault_reboot_tracking_collect_reset_info(s_memfault_event_storage);
+}
+
 // Note: the function signature has changed here across zephyr releases
 // "struct device *dev" -> "const struct device *dev"
 //
@@ -113,19 +120,19 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
 static int prv_init_and_log_reboot() {
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
-
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
 
-  const sMemfaultEventStorageImpl *evt_storage =
-    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
-  memfault_reboot_tracking_collect_reset_info(evt_storage);
-  memfault_trace_event_boot(evt_storage);
+  s_memfault_event_storage = memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+#if defined(CONFIG_MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT)
+  memfault_zephyr_collect_reset_info();
+#endif
+  memfault_trace_event_boot(s_memfault_event_storage);
 
 #if CONFIG_MEMFAULT_METRICS
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
-  memfault_metrics_boot(evt_storage, &boot_info);
+  memfault_metrics_boot(s_memfault_event_storage, &boot_info);
 #endif
 
 #if defined(CONFIG_MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK)

@@ -52,3 +52,21 @@ uint32_t memfault_self_test_arg_to_flag(const char *arg) {
   MEMFAULT_LOG_WARN("No test type found for arg: %s. Default tests selected", arg);
   return kMemfaultSelfTestFlag_Default;
 }
+
+// Include an implementation of strnlen, based on picolibc/newlib
+// For reference: https://github.com/picolibc/picolibc/blob/main/newlib/libc/string/strnlen.c
+size_t memfault_strnlen(const char *str, size_t n) {
+  size_t count = 0;
+
+  // Must check n first to prevent out of bounds access
+  while (n-- && *str) {
+    count++;
+    str++;
+  }
+
+  return count;
+}
+
+MEMFAULT_WEAK void memfault_self_test_platform_delay(MEMFAULT_UNUSED uint32_t delay_ms) {
+  MEMFAULT_LOG_ERROR("%s not implemented for this platform", __func__);
+}

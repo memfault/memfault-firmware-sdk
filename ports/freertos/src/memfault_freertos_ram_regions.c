@@ -102,7 +102,9 @@
 #endif  // MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
 
 #if !defined(MEMFAULT_FREERTOS_TRACE_ENABLED)
-  #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h"
+  #error "'#include "memfault/ports/freertos_trace.h"' must be added to FreeRTOSConfig.h \
+    Note: For PlatformIO projects, memfault/ports/freertos_trace.h must be added with -include in your .ini file. \
+    See 'https://github.com/memfault/platformio-esp32-espidf' for an example"
 #endif
 
 // This feature is opt-in, since it can fail if the TCB data structures are

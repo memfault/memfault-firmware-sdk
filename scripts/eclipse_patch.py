@@ -171,7 +171,7 @@ def patch_project(
     # added. We will just be adding them back below.
     for link in linked_resources.findall("link"):
         name = link.find(".//name")
-        if name is not None and "memfault_" in name.text:  # pyright: ignore[reportGeneralTypeIssues]
+        if name is not None and "memfault_" in name.text:  # pyright: ignore[reportOperatorIssue]
             linked_resources.remove(link)
 
     comp_folder_name = "memfault_components"

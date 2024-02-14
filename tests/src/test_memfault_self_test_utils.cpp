@@ -6,6 +6,7 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
+#include "memfault/core/math.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/core/self_test.h"
 #include "memfault_self_test_private.h"
@@ -73,4 +74,36 @@ TEST(MemfaultSelfTestUtils, Test_NullArg) {
   if (setjmp(s_assert_jmp_buf) == 0) {
     memfault_self_test_arg_to_flag(NULL);
   }
+}
+
+TEST(MemfaultSelfTestUtils, Test_Strnlen) {
+  const char *test_str = "test_stri\0ng";
+  const char test_no_null[5] = {
+    'a', 'b', 'c', 'd', 'e',
+  };
+
+  // Test zero length
+  size_t n = 0;
+  size_t result = memfault_strnlen(test_str, n);
+  LONGS_EQUAL(n, result);
+
+  // Test length 1
+  n = 1;
+  result = memfault_strnlen(test_str, n);
+  LONGS_EQUAL(n, result);
+
+  // Test NULL at index >= n
+  n = 9;
+  result = memfault_strnlen(test_str, n);
+  LONGS_EQUAL(n, result);
+
+  // Test NULL at index < n
+  n = 12;
+  result = memfault_strnlen(test_str, n);
+  LONGS_EQUAL(9, result);
+
+  // Test no NULL in string
+  n = MEMFAULT_ARRAY_SIZE(test_no_null);
+  result = memfault_strnlen(test_no_null, n);
+  LONGS_EQUAL(n, result);
 }

@@ -2,44 +2,59 @@
 
 #include "memfault/ports/zephyr/version.h"
 
-#if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
+#if defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
 
-#if CONFIG_THREAD_STACK_INFO && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
+  #if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
 MEMFAULT_METRICS_KEY_DEFINE(TimerTaskFreeStack, kMemfaultMetricType_Unsigned)
-#endif
+  #endif
 
-#if CONFIG_THREAD_RUNTIME_STATS
+  #if defined(CONFIG_THREAD_RUNTIME_STATS)
 MEMFAULT_METRICS_KEY_DEFINE(TimerTaskCpuUsage, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
-#endif
+  #endif
 
-#if CONFIG_SYS_HEAP_RUNTIME_STATS
+  #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS)
 MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
-#endif
+  #endif
 
-#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+  #if defined(CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC)
 MEMFAULT_METRICS_KEY_DEFINE(FileSystem_BytesFree, kMemfaultMetricType_Unsigned)
-#endif
+  #endif
 
-#endif  /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */
+#endif  // defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
 
-#if CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE
-#include "memfault_metrics_heartbeat_extra.def"
+#if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
+  // save the most interesting stats as metrics, and reset the stats structure
+  #if defined(CONFIG_NET_STATISTICS_UDP)
+MEMFAULT_METRICS_KEY_DEFINE(net_udp_recv, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(net_udp_sent, kMemfaultMetricType_Unsigned)
+  #endif  // defined(CONFIG_NET_STATISTICS_UDP)
+  #if defined(CONFIG_NET_STATISTICS_TCP)
+MEMFAULT_METRICS_KEY_DEFINE(net_tcp_recv, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(net_tcp_sent, kMemfaultMetricType_Unsigned)
+  #endif  // defined(CONFIG_NET_STATISTICS_TCP)
+
+MEMFAULT_METRICS_KEY_DEFINE(net_bytes_received, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(net_bytes_sent, kMemfaultMetricType_Unsigned)
+#endif  // defined(MEMFAULT_METRICS_TCP_IP)
+
+#if defined(CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE)
+  #include "memfault_metrics_heartbeat_extra.def"
 #endif
 
 // Pull in the user's heartbeat defs
-#if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
+#if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 
-#if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+  #if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 
-# if __has_include("memfault_metrics_heartbeat_config.def")
-#   include "memfault_metrics_heartbeat_config.def"
-# endif
+    #if __has_include("memfault_metrics_heartbeat_config.def")
+      #include "memfault_metrics_heartbeat_config.def"
+    #endif
 
-#else
+  #else
 
-#include "memfault_metrics_heartbeat_config.def"
+    #include "memfault_metrics_heartbeat_config.def"
 
-#endif /* CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL */
+  #endif  // defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 
 #endif

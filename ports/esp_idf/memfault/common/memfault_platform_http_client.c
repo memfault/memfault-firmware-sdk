@@ -414,11 +414,36 @@ bool memfault_esp_port_wifi_connected(void) {
   return connected;
 }
 
+bool memfault_esp_port_netif_connected(void) {
+  // The netif component was added in ESP-IDF v4.1
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
+  // iterate over all netifs and check if any of them are connected
+  esp_netif_t *netif = NULL;
+  while ((netif = esp_netif_next(netif)) != NULL) {
+    if (!esp_netif_is_netif_up(netif)) {
+      continue;
+    }
+    esp_netif_ip_info_t ip_info;
+    esp_err_t err = esp_netif_get_ip_info(netif, &ip_info);
+    if ((err == ESP_OK) && (ip_info.ip.addr != 0)) {
+      return true;
+    }
+  }
+
+  // didn't find a netif with a non-zero IP address, return not connected
+  return false;
+  #else   // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
+  // Previous versions, just check if wifi is connected. This won't work for
+  // non-wifi devices.
+  return memfault_esp_port_wifi_connected();
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
+}
+
 // Similar to memfault_platform_http_client_post_data() but just posts
 // whatever is pending, if anything.
 int memfault_esp_port_http_client_post_data(void) {
-  if (!memfault_esp_port_wifi_connected()) {
-    MEMFAULT_LOG_INFO("%s: Wifi unavailable", __func__);
+  if (!memfault_esp_port_netif_connected()) {
+    MEMFAULT_LOG_INFO("%s: Network unavailable", __func__);
     return -1;
   }
 

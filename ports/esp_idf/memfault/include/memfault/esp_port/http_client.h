@@ -76,6 +76,10 @@ int memfault_esp_port_http_client_post_data(void);
 //! @return true if connected to WiFi, false otherwise
 bool memfault_esp_port_wifi_connected(void);
 
+//! @return true if any available netif is connected (link up and ip address is
+//! set), false otherwise
+bool memfault_esp_port_netif_connected(void);
+
 //! Returns the URL to download the latest OTA release for current HTTP(S) client configuration
 //!
 //! Uses current HTTP(S) client configuration to construct an HTTP(S) GET /releases/latest/url

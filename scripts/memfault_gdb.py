@@ -54,7 +54,7 @@ except ImportError:
     error_str = """
     This script can only be run within gdb!
     """
-    raise ImportError(error_str)  # noqa: B904  (no raise-from in Python 2.7)
+    raise ImportError(error_str)  # (no raise-from in Python 2.7)
 
 
 # Note: not using `requests` but using the built-in http.client instead, so

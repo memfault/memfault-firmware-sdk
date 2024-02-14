@@ -16,6 +16,7 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
 #include "memfault/components.h"
+#include "memfault/ports/zephyr/core.h"
 // clang-format on
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
@@ -204,6 +205,10 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
+
+#if !defined(MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT)
+  memfault_zephyr_collect_reset_info();
+#endif
 
 #if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
   s_main_thread = k_current_get();

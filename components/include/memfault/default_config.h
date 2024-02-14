@@ -149,6 +149,15 @@ extern "C" {
   #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 0
 #endif
 
+//! Enables use of "compact" logs.
+//!
+//! Compact logs convert format strings to an integer index at compile time and serialize an "id"
+//! and format arguments on the device. The Memfault cloud will decode the log and format the full
+//! log greatly reducing the storage and overhead on the device side.
+#ifndef MEMFAULT_COMPACT_LOG_ENABLE
+  #define MEMFAULT_COMPACT_LOG_ENABLE 0
+#endif
+
 //! Controls whether or not multiple events will be batched into a single
 //! message when reading information via the event storage data source.
 //!
@@ -268,13 +277,18 @@ extern "C" {
   #define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
 #endif
 
-//! Enables use of "compact" logs.
-//!
-//! Compact logs convert format strings to an integer index at compile time and serialize an "id"
-//! and format arguments on the device. The Memfault cloud will decode the log and format the full
-//! log greatly reducing the storage and overhead on the device side.
-#ifndef MEMFAULT_COMPACT_LOG_ENABLE
-  #define MEMFAULT_COMPACT_LOG_ENABLE 0
+//
+// Custom Reboot Reason Configuration
+//
+
+//! Enables the use of custom reboot reasons
+#ifndef MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
+  #define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 0
+#endif
+
+//! Defines the user file containing custom reboots
+#ifndef MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #define MEMFAULT_REBOOT_REASON_USER_DEFS_FILE "memfault_reboot_reason_user_config.def"
 #endif
 
 //
