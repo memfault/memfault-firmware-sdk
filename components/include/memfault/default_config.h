@@ -149,6 +149,15 @@ extern "C" {
   #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 0
 #endif
 
+//! Enables use of "compact" logs.
+//!
+//! Compact logs convert format strings to an integer index at compile time and serialize an "id"
+//! and format arguments on the device. The Memfault cloud will decode the log and format the full
+//! log greatly reducing the storage and overhead on the device side.
+#ifndef MEMFAULT_COMPACT_LOG_ENABLE
+  #define MEMFAULT_COMPACT_LOG_ENABLE 0
+#endif
+
 //! Controls whether or not multiple events will be batched into a single
 //! message when reading information via the event storage data source.
 //!
@@ -191,6 +200,15 @@ extern "C" {
 
 #ifndef MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS
   #define MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS 0
+#endif
+
+//! Insert the Memfault Project Key in the message header. This will override
+//! the Project Key used in any requests sent to chunks.memfault.com . When
+//! enabled, a '#define MEMFAULT_PROJECT_KEY "<project key string>"' must be
+//! provided in the project's memfault_platform_config.h . This is intended for
+//! systems where the Project Key in the data uploader cannot be modified.
+#ifndef MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  #define MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY 0
 #endif
 
 //
@@ -268,13 +286,18 @@ extern "C" {
   #define MEMFAULT_TRACE_EVENT_MAX_LOG_LEN 80
 #endif
 
-//! Enables use of "compact" logs.
-//!
-//! Compact logs convert format strings to an integer index at compile time and serialize an "id"
-//! and format arguments on the device. The Memfault cloud will decode the log and format the full
-//! log greatly reducing the storage and overhead on the device side.
-#ifndef MEMFAULT_COMPACT_LOG_ENABLE
-  #define MEMFAULT_COMPACT_LOG_ENABLE 0
+//
+// Custom Reboot Reason Configuration
+//
+
+//! Enables the use of custom reboot reasons
+#ifndef MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
+  #define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 0
+#endif
+
+//! Defines the user file containing custom reboots
+#ifndef MEMFAULT_REBOOT_REASON_USER_DEFS_FILE
+  #define MEMFAULT_REBOOT_REASON_USER_DEFS_FILE "memfault_reboot_reason_user_config.def"
 #endif
 
 //

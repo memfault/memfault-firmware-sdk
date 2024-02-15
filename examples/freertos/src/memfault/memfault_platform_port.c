@@ -10,7 +10,7 @@
 #include "memfault/ports/reboot_reason.h"
 
 // Buffer used to store formatted string for output
-#define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (128)
+#define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN)
 
 // Reboot tracking storage, must be placed in no-init RAM to keep state after reboot
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")

@@ -1,5 +1,70 @@
 # Memfault Firmware SDK Changelog
 
+## [1.7.0] - 2024-01-29
+
+### :rocket: New Features
+
+- General:
+
+  - :tada:Custom Reboot Reasons!:tada: The SDK now allows creating custom reboot
+    reasons in addition to those defined in
+    [`components/include/memfault/core/reboot_reason_types.h`](components/include/memfault/core/reboot_reason_types.h).
+    Users can create custom reboot reasons for both expected and unexpected
+    reboots. For more information see
+    [`components/include/memfault/core/reboot_tracking.h`](components/include/memfault/core/reboot_tracking.h).
+    Enable this feature with Kconfigs in Zephyr and ESP-IDF
+    (`CONFIG_MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE=y`) or by adding
+    `#define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 1` to your
+    `memfault_platform_config.h`.
+  - Added an option to include a Project Key in a chunk message header. This
+    allows a chunk to specify which project the included data should be sent to.
+    The default behavior is to use the project specified by the Project Key
+    header in the POST upload. To enable, add
+    `#define MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY 1` and
+    `#define MEMFAULT_PROJECT_KEY "<project key string>"` to your
+    `memfault_platform_config.h`. Any chunks sent using this configuration will
+    be sent to the project routed with `MEMFAULT_PROJECT_KEY` rather than the
+    project routed with the POST header's Project Key.
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Improved suggested linker snippets defining coredump memory regions
+  - Added a self test to validate platform time functions,
+    `memfault_platform_get_time_since_boot_ms()` and
+    `memfault_platform_time_get_current()`. This test will catch errors like
+    non-monotonically increasing counters and current time reported as near
+    epoch time
+  - Fixed backspace handling in the FreeRTOS QEMU example console
+  - Added `-fsanitize=leak` to the SDK unit tests (Linux only)
+  - Fixed a missing `strnlen()` definition when enabling the self test with some
+    libc implementations. This function is part of a POSIX standard that might
+    be missing from some libc implementations
+  - Added the previous release commit for 1.6.2 to `.git-blame-ignore-revs` to
+    allow for better `git blame` output since this commit contains _only_
+    formatting changes.
+
+- Zephyr:
+
+  - Added an example CDR implementation to the example QEMU app
+  - Added a Kconfig, (`CONFIG_MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT`) to allow
+    deferring reboot reason collection to a later point in time. Setting this
+    option to `n` is intended to help when device info is only available after
+    boot completes.
+  - Added built-in metrics for Zephyr's IP subsystem,
+    (`CONFIG_MEMFAULT_METRICS_TCP_IP`)
+  - Added Kconfig to select either PEM or DER formats for TLS certificates,
+    (`CONFIG_MEMFAULT_TLS_CERTS_USE_DER`)
+
+- ESP-IDF:
+  - Added a Kconfig to enable/disable compact logging
+    (`CONFIG_MEMFAULT_COMPACT_LOG_ENABLE`)
+  - Improved build compatibility when building with PlatformIO
+  - Added support for networking over Ethernet interfaces
+  - Added a built-in `connectivity_connected_time` core metric for WiFi devices,
+    (`CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS`)
+
 ## [1.6.2] - 2024-01-29
 
 ### :chart_with_upwards_trend: Improvements

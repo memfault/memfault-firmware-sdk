@@ -11,6 +11,7 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
+#include "memfault/config.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/data_packetizer_source.h"
 #include "memfault/core/data_source_rle.h"
@@ -21,6 +22,20 @@ static uint8_t s_fake_coredump[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xa
 static bool s_multi_call_chunking_enabled = false;
 static uint8_t s_fake_event[] = { 0xa, 0xb, 0xc, 0xd };
 static const sMemfaultDataSourceImpl *s_active_rle_data_source = NULL;
+
+// type bits are LS 6 bits of the header
+#define PACKETIZER_HEADER_TYPE_MASK 0x3f
+
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  #define MEMFAULT_PROJECT_KEY_LEN sizeof(MEMFAULT_PROJECT_KEY)
+#else
+  #define MEMFAULT_PROJECT_KEY_LEN 0
+#endif
+
+#define PACKETIZER_HEADER_SIZE_BYTES            \
+  (1                          /* hdr */         \
+   + MEMFAULT_PROJECT_KEY_LEN /* project key */ \
+  )
 
 //
 // Mocks & Fakes to exercise packetizer logic
@@ -160,7 +175,8 @@ static void prv_begin_transfer(bool data_expected, size_t expected_raw_msg_size)
   sPacketizerMetadata metadata;
   bool md = memfault_packetizer_begin(&cfg, &metadata);
   LONGS_EQUAL(data_expected, md);
-  const uint32_t expected_data_len = data_expected ? expected_raw_msg_size + 1 /* hdr */ : 0;
+  const uint32_t expected_data_len =
+    data_expected ? (expected_raw_msg_size + PACKETIZER_HEADER_SIZE_BYTES) : 0;
   LONGS_EQUAL(expected_data_len, metadata.single_chunk_message_length);
   CHECK(!metadata.send_in_progress);
 }
@@ -184,7 +200,7 @@ TEST(MemfaultDataPacketizer, Test_GetPacketNoActiveMessages) {
 }
 
 static void prv_run_single_packet_test(void) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectOneCall("prv_coredump_read_core");
@@ -199,13 +215,18 @@ static void prv_run_single_packet_test(void) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_fake_coredump) + 1 /* hdr */, buf_len);
-  // packet should be a coredump type
-  LONGS_EQUAL(1, packet[0]);
-}
+  LONGS_EQUAL(sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
+  // packet should be a coredump type. see definition of sMfltPacketizerHdr for
+  // bitmask- filtering only the type bits
+  LONGS_EQUAL(1, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
 
-static void prv_enable_multi_packet_chunks(void) {
-  s_multi_call_chunking_enabled = true;
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  // packet header should contain the project key
+  MEMCMP_EQUAL(MEMFAULT_PROJECT_KEY, &packet[1], MEMFAULT_PROJECT_KEY_LEN);
+#endif
+
+  // packet payload should be the coredump data
+  MEMCMP_EQUAL(s_fake_coredump, &packet[PACKETIZER_HEADER_SIZE_BYTES], sizeof(s_fake_coredump));
 }
 
 TEST(MemfaultDataPacketizer, Test_MessageFitsInSinglePacket) {
@@ -217,7 +238,7 @@ TEST(MemfaultDataPacketizer, Test_MessageUsesRle) {
   // What we verify is:
   //   1. The type bit is correctly set to indicate RLE was used
   //   2. All data source accesses route through the rle data source
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active").andReturnValue(true);
   mock().expectOneCall("prv_rle_has_msg");
@@ -238,13 +259,18 @@ TEST(MemfaultDataPacketizer, Test_MessageUsesRle) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_fake_coredump) + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a coredump type with RLE bit set
-  LONGS_EQUAL(1 | 0x80, packet[0]);
+  const uint8_t expected_type_byte = 1 | 0x80
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+                                     | 0x40 /* project key */
+#endif
+    ;
+  LONGS_EQUAL(expected_type_byte, packet[0]);
 }
 
 TEST(MemfaultDataPacketizer, Test_EventMessageFitsInSinglePacket) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   prv_setup_expect_coredump_call_expectations(false);
   mock().expectOneCall("prv_heartbeat_metric_has_event");
@@ -260,9 +286,9 @@ TEST(MemfaultDataPacketizer, Test_EventMessageFitsInSinglePacket) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_fake_event) + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(sizeof(s_fake_event) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a heartbeat metric type
-  LONGS_EQUAL(2, packet[0]);
+  LONGS_EQUAL(2, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
 }
 
 TEST(MemfaultDataPacketizer, Test_MoreDataAvailable) {
@@ -279,7 +305,7 @@ TEST(MemfaultDataPacketizer, Test_MoreDataAvailable) {
   CHECK(prv_data_available());
   CHECK(memfault_packetizer_data_available());
 
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
   mock().expectOneCall("prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
@@ -292,9 +318,13 @@ TEST(MemfaultDataPacketizer, Test_MoreDataAvailable) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_fake_coredump) + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a coredump type
-  LONGS_EQUAL(1, packet[0]);
+  LONGS_EQUAL(1, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
+}
+
+static void prv_enable_multi_packet_chunks(void) {
+  s_multi_call_chunking_enabled = true;
 }
 
 TEST(MemfaultDataPacketizer, Test_MultiPacketChunking) {
@@ -306,10 +336,17 @@ TEST(MemfaultDataPacketizer, Test_MultiPacketChunking) {
 
 static void prv_test_msg_fits_in_multiple_packets(void) {
   uint8_t packet[2];
-  const size_t num_calls = (sizeof(s_fake_coredump) + sizeof(packet)) / sizeof(packet);
+  // calls to the coredump mock data source. note: using integer division ceil trick
+  const size_t num_coredump_calls = (sizeof(s_fake_coredump) + sizeof(packet) / 2) / sizeof(packet);
+  // total number of incremental packetizer calls
+  const size_t num_calls =
+    (sizeof(s_fake_coredump) + sizeof(packet) / 2 + PACKETIZER_HEADER_SIZE_BYTES) / sizeof(packet);
+
+  printf("num_coredump_calls: %zu\n", num_coredump_calls);
+  printf("num_calls: %zu\n", num_calls);
 
   prv_setup_expect_coredump_call_expectations(true);
-  mock().expectNCalls(num_calls, "prv_coredump_read_core");
+  mock().expectNCalls(num_coredump_calls, "prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
@@ -317,7 +354,7 @@ static void prv_test_msg_fits_in_multiple_packets(void) {
   prv_begin_transfer(data_expected, sizeof(s_fake_coredump));
 
   // the fake chunker has 0 overhead
-  size_t total_packet_length = sizeof(s_fake_coredump) + 1 /* hdr */;
+  size_t total_packet_length = sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES;
   for (size_t i = 0; i < num_calls; i++) {
     size_t buf_len = sizeof(packet);
     eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet, &buf_len);
@@ -326,7 +363,7 @@ static void prv_test_msg_fits_in_multiple_packets(void) {
     total_packet_length -= buf_len;
     if (i == 0) {
       // packet should be a coredump type
-      LONGS_EQUAL(1, packet[0]);
+      LONGS_EQUAL(1, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
     }
 
     if ((i != (num_calls - 1)) && s_multi_call_chunking_enabled) {
@@ -349,15 +386,19 @@ TEST(MemfaultDataPacketizer, Test_OneChunkMultiplePackets) {
 TEST(MemfaultDataPacketizer, Test_SimpleGetChunkApi) {
   uint8_t packet[2];
   bool got_data;
-  const size_t num_calls = (sizeof(s_fake_coredump) + sizeof(packet)) / sizeof(packet);
+  // calls to the coredump mock data source. note: uusing integer division ceil trick
+  const size_t num_coredump_calls = (sizeof(s_fake_coredump) + sizeof(packet) / 2) / sizeof(packet);
+  // total number of incremental packetizer calls
+  const size_t num_calls =
+    (sizeof(s_fake_coredump) + sizeof(packet) / 2 + PACKETIZER_HEADER_SIZE_BYTES) / sizeof(packet);
 
   prv_setup_expect_coredump_call_expectations(true);
-  mock().expectNCalls(num_calls, "prv_coredump_read_core");
+  mock().expectNCalls(num_coredump_calls, "prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
 
   // the fake chunker has 0 overhead
-  size_t total_packet_length = sizeof(s_fake_coredump) + 1 /* hdr */;
+  size_t total_packet_length = sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES;
   for (size_t i = 0; i < num_calls; i++) {
     size_t buf_len = sizeof(packet);
     got_data = memfault_packetizer_get_chunk(packet, &buf_len);
@@ -367,7 +408,7 @@ TEST(MemfaultDataPacketizer, Test_SimpleGetChunkApi) {
     total_packet_length -= buf_len;
     if (i == 0) {
       // packet should be a coredump type
-      LONGS_EQUAL(1, packet[0]);
+      LONGS_EQUAL(1, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
     }
   }
   mock().checkExpectations();
@@ -380,7 +421,9 @@ TEST(MemfaultDataPacketizer, Test_SimpleGetChunkApi) {
 }
 
 TEST(MemfaultDataPacketizer, Test_MessageSendAbort) {
-  uint8_t packet[5];
+  // set the destination buffer size sufficient to hold the header and all but
+  // 1 byte of the payload
+  uint8_t packet[sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES - 1];
 
   // start sending a packet and abort after we have received one packet
   // we should re-wind and see the entire message transmitted again
@@ -392,7 +435,7 @@ TEST(MemfaultDataPacketizer, Test_MessageSendAbort) {
 
   size_t buf_len = sizeof(packet);
   eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet, &buf_len);
-  LONGS_EQUAL(5, buf_len);
+  LONGS_EQUAL(sizeof(packet), buf_len);
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
   memfault_packetizer_abort();
@@ -402,7 +445,7 @@ TEST(MemfaultDataPacketizer, Test_MessageSendAbort) {
 }
 
 TEST(MemfaultDataPacketizer, Test_MessageWithCoredumpReadFailure) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   prv_setup_expect_coredump_call_expectations(true);
   mock().expectOneCall("prv_coredump_read_core").andReturnValue(false);
@@ -417,14 +460,14 @@ TEST(MemfaultDataPacketizer, Test_MessageWithCoredumpReadFailure) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_fake_coredump) + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a coredump type
-  LONGS_EQUAL(1, packet[0]);
+  LONGS_EQUAL(1, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
 }
 
 TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
   // NOTE: for the fake transport, the chunker has zero overhead
-  uint8_t packet_only_hdr[1];
+  uint8_t packet_only_hdr[PACKETIZER_HEADER_SIZE_BYTES];
   prv_setup_expect_coredump_call_expectations(true);
 
   const bool data_expected = true;
@@ -434,18 +477,18 @@ TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
   eMemfaultPacketizerStatus rv = memfault_packetizer_get_next(packet_only_hdr, &buf_len);
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
   LONGS_EQUAL(sizeof(packet_only_hdr), buf_len);
-  LONGS_EQUAL(1, packet_only_hdr[0]);
+  LONGS_EQUAL(1, packet_only_hdr[0] & PACKETIZER_HEADER_TYPE_MASK);
   mock().checkExpectations();
 
-  // if we call memfault_packetizer_begin() while in the middle of sending a message, there should
-  // we should see that a send is in progress
+  // if we call memfault_packetizer_begin() while in the middle of sending a
+  // message, we should see that a send is in progress
   sPacketizerConfig cfg = {
     .enable_multi_packet_chunk = s_multi_call_chunking_enabled,
   };
   sPacketizerMetadata metadata;
   bool md = memfault_packetizer_begin(&cfg, &metadata);
   LONGS_EQUAL(data_expected, md);
-  const uint32_t expected_data_len = sizeof(s_fake_coredump) + 1 /* hdr */;
+  const uint32_t expected_data_len = sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES;
   LONGS_EQUAL(expected_data_len, metadata.single_chunk_message_length);
   CHECK(metadata.send_in_progress);
 
@@ -453,7 +496,7 @@ TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
   mock().expectOneCall("prv_coredump_read_core");
   mock().expectOneCall("prv_mark_core_read");
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");
-  uint8_t packet[16];
+  uint8_t packet[sizeof(s_fake_coredump)];
   buf_len = sizeof(packet);
   rv = memfault_packetizer_get_next(packet, &buf_len);
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
@@ -522,7 +565,7 @@ const sMemfaultDataSourceImpl g_memfault_log_data_source = {
 };
 
 TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   mock(s_log_scope).enable();
 
@@ -542,10 +585,10 @@ TEST(MemfaultDataPacketizer, Test_LogSourceIsHookedUp) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(LOG_SIZE + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(LOG_SIZE + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a log type
-  BYTES_EQUAL(3, packet[0]);
-  BYTES_EQUAL('A', packet[1]);
+  BYTES_EQUAL(3, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
+  BYTES_EQUAL('A', packet[PACKETIZER_HEADER_SIZE_BYTES]);
 }
 
 static const uint8_t s_cdr_payload[] = { 0x1, 0x2, 0x3, 0x4 };
@@ -575,7 +618,7 @@ const sMemfaultDataSourceImpl g_memfault_cdr_source = {
 };
 
 TEST(MemfaultDataPacketizer, Test_CdrSourceIsHookedUp) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   mock(s_cdr_scope).enable();
 
@@ -595,14 +638,14 @@ TEST(MemfaultDataPacketizer, Test_CdrSourceIsHookedUp) {
   LONGS_EQUAL(kMemfaultPacketizerStatus_EndOfChunk, rv);
 
   // the fake chunker has 0 overhead
-  LONGS_EQUAL(sizeof(s_cdr_payload) + 1 /* hdr */, buf_len);
+  LONGS_EQUAL(sizeof(s_cdr_payload) + PACKETIZER_HEADER_SIZE_BYTES, buf_len);
   // packet should be a log type
-  BYTES_EQUAL(4, packet[0]);
-  MEMCMP_EQUAL(s_cdr_payload, &packet[1], sizeof(s_cdr_payload));
+  BYTES_EQUAL(4, packet[0] & PACKETIZER_HEADER_TYPE_MASK);
+  MEMCMP_EQUAL(s_cdr_payload, &packet[PACKETIZER_HEADER_SIZE_BYTES], sizeof(s_cdr_payload));
 }
 
 TEST(MemfaultDataPacketizer, Test_ActiveSources) {
-  uint8_t packet[16];
+  uint8_t packet[16 + MEMFAULT_PROJECT_KEY_LEN];
 
   // changing the sources will abort any in-progress transmissions
   mock().expectOneCall("memfault_data_source_rle_encoder_set_active");

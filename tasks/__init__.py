@@ -85,7 +85,7 @@ def fw_sdk_unit_test(
     else:
         try:
             # Only available on Linux, but it's better
-            cpus = len(os.sched_getaffinity(0))  # pyright: ignore[reportGeneralTypeIssues]
+            cpus = len(os.sched_getaffinity(0))  # pyright: ignore[reportAttributeAccessIssue]
         except AttributeError:
             # Available on Mac
             cpus = int((os.cpu_count() or 4) / 2)

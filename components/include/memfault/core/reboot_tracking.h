@@ -180,6 +180,36 @@ int memfault_reboot_tracking_get_unexpected_reboot_occurred(bool *unexpected_reb
 //!
 //! @returns true if reboot tracking component booted or false if not
 bool memfault_reboot_tracking_booted(void);
+
+#if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
+  //! Defines a customer specific reboot reason.
+  //!
+  //! These allow for custom reboot reasons to be defined which can be used to track
+  //! the root cause of a reboot that is not captured by the default set of reboot reasons.
+  //!
+  //! There are two types of reboot reasons:
+  //! 1. Expected: These are reboots which are expected to happen as part of normal operation.
+  //!    For example, a user initiated reboot. These can be specified using
+  //!    MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE.
+  //! 2. Unexpected: These are reboots which are not expected to happen as part of normal operation.
+  //!    For example, a watchdog reset, or overcurrent event. These can be specified using
+  //!    MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE.
+  #define MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE(_name) MEMFAULT_REBOOT_REASON_DEFINE_TRAP_()
+  #define MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE(_name) MEMFAULT_REBOOT_REASON_DEFINE_TRAP_()
+
+  //! Stub define to detect accidental usage outside of the user reboot reason file
+  #define MEMFAULT_REBOOT_REASON_DEFINE_TRAP_()                                                 \
+    MEMFAULT_STATIC_ASSERT(false, "MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE should only be used " \
+                                  "in " MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE);
+#endif
+
+//! Convenience macro to use a custom reboot reason key
+//!
+//! This macro is used to convert a custom reboot reason name to a key that can be used to
+//! track the reboot reason since
+//! @param name The name of the custom reboot reason
+#define MEMFAULT_REBOOT_REASON_KEY(name) kMfltRebootReason_##name
+
 #ifdef __cplusplus
 }
 #endif

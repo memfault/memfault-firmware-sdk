@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mflt-build-id"
-version = "1.0.0"
+version = "1.0.1"
 description = "Memfault Build Id injector"
 authors = ["Memfault Inc <hello@memfault.com>"]
 repository = "https://github.com/memfault/memfault-firmware-sdk"
@@ -14,18 +14,13 @@ mflt_build_id = 'mflt_build_id:main'
 
 [tool.poetry.dependencies]
 python = "^3.6" # must match memfault-cli
-pyelftools = ">=0.26,<=0.29"
+mflt-pyelftools = "^0.30.1"
 
 [tool.poetry.dev-dependencies]
 pytest = ">=6"
 pytest-cov = "^2"
 pytest-timeout = "^2.0"
 wasmer = "0.3.0"
-
-[tool.ruff]
-extend = "../../ruff.toml"
-target-version = "py37" # ruff does not support 3.6
-extend-ignore = ["UP"]
 
 #
 # NB: Uncommenting these lines will prevent installing the project in editable mode.

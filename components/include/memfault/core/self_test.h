@@ -21,11 +21,13 @@ typedef enum {
   kMemfaultSelfTestFlag_DataExport = (1 << 3),
   kMemfaultSelfTestFlag_RebootReason = (1 << 4),
   kMemfaultSelfTestFlag_RebootReasonVerify = (1 << 5),
+  kMemfaultSelfTestFlag_PlatformTime = (1 << 6),
 
   // A convenience mask which runs the default tests
   kMemfaultSelfTestFlag_Default =
     (kMemfaultSelfTestFlag_DeviceInfo | kMemfaultSelfTestFlag_ComponentBoot |
-     kMemfaultSelfTestFlag_CoredumpRegions | kMemfaultSelfTestFlag_DataExport),
+     kMemfaultSelfTestFlag_CoredumpRegions | kMemfaultSelfTestFlag_DataExport |
+     kMemfaultSelfTestFlag_PlatformTime),
 } eMemfaultSelfTestFlag;
 
 //! Main entry point to performing a self test
@@ -41,6 +43,11 @@ int memfault_self_test_run(uint32_t run_flags);
 //! @returns eMemfaultSelfTestFlag mapped to argument, or kMemfaultSelfTestFlag_Default if no
 //! matches found.
 uint32_t memfault_self_test_arg_to_flag(const char *arg);
+
+//! Delays or puts to sleep current context for specified milliseconds
+//!
+//! @note This function must be implemented by your platform to perform all self tests completely
+void memfault_self_test_platform_delay(uint32_t delay_ms);
 
 #ifdef __cplusplus
 }

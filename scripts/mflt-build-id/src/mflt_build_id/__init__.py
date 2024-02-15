@@ -49,7 +49,7 @@ try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import NoteSection, Section, Symbol, SymbolTableSection
 except ImportError:
-    raise ImportError(  # noqa: B904  (no raise-from in Python 2.7)
+    raise ImportError(  # (no raise-from in Python 2.7)
         """
     Script depends on pyelftools. Add it to your requirements.txt or run:
     $ pip install pyelftools

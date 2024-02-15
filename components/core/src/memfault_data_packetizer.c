@@ -133,8 +133,36 @@ typedef struct {
   sMfltChunkTransportCtx curr_msg_ctx;
 } sMfltTransportState;
 
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+MEMFAULT_STATIC_ASSERT(
+  sizeof(MEMFAULT_PROJECT_KEY) > 1,
+  "MEMFAULT_PROJECT_KEY must be a string literal of at least 1 character + null terminator");
+#endif
+
 typedef MEMFAULT_PACKED_STRUCT {
-  uint8_t mflt_msg_type;  // eMfltMessageType
+// The first byte of the header is the message type. Bit layout:
+//   ┌───────────┬─┬─┐
+//   │0|1|2|3|4|5│6│7│
+//   └─────┬─────┴┬┴┬┘
+//         │      │ │
+//         │      │ └►RLE in use:
+//         │      │    0b0=no RLE
+//         │      │    0b1=RLE
+//         │      │
+//         │      └──►Project Key follows:
+//         │           0b0=no Project Key
+//         │           0b1=32 byte Project Key follows header byte
+//         │
+//         └─────────►eMfltMessageType
+//                     6 bits (63 values)
+#define MEMFAULT_MESSAGE_HEADER_RLE_ENABLE_MASK (1u << 7)
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  #define MEMFAULT_MESSAGE_HEADER_PROJECT_KEY_ENABLE_MASK (1u << 6)
+#endif
+  uint8_t mflt_msg_type;
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  uint8_t project_key[sizeof(MEMFAULT_PROJECT_KEY)];  // including null term
+#endif
 }
 sMfltPacketizerHdr;
 
@@ -162,12 +190,20 @@ static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *bu
 
   const sMessageMetadata *msg_metadata = &s_mflt_packetizer_state.msg_metadata;
   if (offset < hdr_size) {
-    const uint8_t rle_enable_mask = 0x80;
     const uint8_t msg_type = (uint8_t)msg_metadata->source.type;
 
     sMfltPacketizerHdr hdr = {
-      .mflt_msg_type = msg_metadata->source.use_rle ? msg_type | rle_enable_mask : msg_type,
+      .mflt_msg_type = msg_type,
     };
+    if (msg_metadata->source.use_rle) {
+      const uint8_t rle_enable_mask = MEMFAULT_MESSAGE_HEADER_RLE_ENABLE_MASK;
+      hdr.mflt_msg_type |= rle_enable_mask;
+    }
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+    const uint8_t prj_key_enable_mask = MEMFAULT_MESSAGE_HEADER_PROJECT_KEY_ENABLE_MASK;
+    hdr.mflt_msg_type |= prj_key_enable_mask;
+    memcpy(hdr.project_key, MEMFAULT_PROJECT_KEY, sizeof(hdr.project_key));
+#endif
     uint8_t *hdr_bytes = (uint8_t *)&hdr;
 
     const size_t bytes_to_copy = MEMFAULT_MIN(hdr_size - offset, buf_len);
@@ -245,12 +281,14 @@ static bool prv_load_next_message_to_send(bool enable_multi_packet_chunks,
     return false;
   }
 
+  const size_t hdr_size = sizeof(sMfltPacketizerHdr);
+
   *state = (sMfltTransportState){
     .active_message = true,
     .msg_metadata = msg_metadata,
     .curr_msg_ctx =
       (sMfltChunkTransportCtx){
-        .total_size = msg_metadata.total_size + sizeof(sMfltPacketizerHdr),
+        .total_size = msg_metadata.total_size + hdr_size,
         .read_msg = prv_data_source_chunk_transport_msg_reader,
         .enable_multi_call_chunk = enable_multi_packet_chunks,
       },

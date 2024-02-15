@@ -10,7 +10,7 @@
 #include "memfault/components.h"
 #include "task.h"
 
-#define CONSOLE_INPUT_STACK_SIZE 300
+#define CONSOLE_INPUT_STACK_SIZE 500
 
 /* Structure that will hold the TCB of the task being created. */
 static StaticTask_t console_input_task;

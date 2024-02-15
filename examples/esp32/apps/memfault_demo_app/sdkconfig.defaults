@@ -41,3 +41,9 @@ CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT=y
 
 # Trigger an assert if any malloc fails
 CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE=y
+
+# Enable custom reboot reasons
+CONFIG_MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE=y
+
+# Enable compact logging
+CONFIG_MEMFAULT_ENABLE_COMPACT_LOGGING=y

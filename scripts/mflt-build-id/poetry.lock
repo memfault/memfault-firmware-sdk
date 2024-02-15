@@ -135,6 +135,17 @@ files = [
 ]
 
 [[package]]
+name = "mflt-pyelftools"
+version = "0.30.1"
+description = "Fork of pyelftools. Library for analyzing ELF files and DWARF debugging information"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "mflt_pyelftools-0.30.1-py2.py3-none-any.whl", hash = "sha256:0d6d7d73a900db1d008fdade73b0e94707ce29f5fdd8a591f4e6bd9c504cd9d2"},
+]
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -178,18 +189,6 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
-]
-
-[[package]]
-name = "pyelftools"
-version = "0.28"
-description = "Library for analyzing ELF files and DWARF debugging information"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pyelftools-0.28-py2.py3-none-any.whl", hash = "sha256:1509d30756a14a8c9a6670778144fb9a04b311751ddac019dcc0c2f28da03ccc"},
-    {file = "pyelftools-0.28.tar.gz", hash = "sha256:53e5609cac016471d40bd88dc410cd90755942c25e58a61021cfdf7abdfeacff"},
 ]
 
 [[package]]
@@ -328,4 +327,4 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=4.6)", "pytest-black (
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.6" # must match memfault-cli
-content-hash = "18edcdf9c11c872ce59414cec53aa8ef6751816e00161c2566cf0f82eb4853da"
+content-hash = "c4911a150609a8c148a4217e4386b208f584fd21c216ad31030cb6c0a4c35d8e"

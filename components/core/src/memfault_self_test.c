@@ -18,6 +18,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/core/platform/system_time.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/self_test.h"
 #include "memfault/core/trace_event.h"
@@ -76,7 +77,7 @@ static bool is_field_valid(const char *str, eDeviceInfoField field) {
   }
   // First validate min and max length
   // Max + 1 needed determine if we exceeded bounds before NULL found
-  size_t len = strnlen(str, MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE + 1);
+  size_t len = memfault_strnlen(str, MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE + 1);
   if ((len < 1) || (len > MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE)) {
     MEMFAULT_LOG_ERROR("Invalid length %zu for %s", len, s_device_info_field_names[field]);
     return false;
@@ -311,6 +312,72 @@ uint32_t memfault_self_test_reboot_reason_test_verify(void) {
   return success ? 0 : 1;
 }
 
+// Use MEMFAULT_NO_OPT to prevent busy loop from being removed
+MEMFAULT_NO_OPT static uint32_t prv_get_time_since_boot_test(void) {
+  uint64_t start_time_ms = memfault_platform_get_time_since_boot_ms();
+
+  if (start_time_ms == 0) {
+    MEMFAULT_LOG_ERROR("Time since boot reported as 0");
+    return (1 << 0);
+  }
+
+  // Force a 100ms delay to ensure enough time has passed to yield a different timestamp
+  memfault_self_test_platform_delay(100);
+
+  uint64_t end_time_ms = memfault_platform_get_time_since_boot_ms();
+  if ((end_time_ms <= start_time_ms)) {
+    MEMFAULT_LOG_ERROR("Time since boot not monotonically increasing: start[%" PRIu64
+                       "] vs end[%" PRIu64 "]",
+                       start_time_ms, end_time_ms);
+    return (1 << 1);
+  }
+
+  MEMFAULT_LOG_INFO("Time since boot test succeeded");
+  return 0;
+}
+
+// Arbitrary point in recent history
+// The time test did not exist before 2024/01/29 UTC
+  #define MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR (1706486400)
+
+static uint32_t prv_platform_time_get_current_test(void) {
+  sMemfaultCurrentTime time = {
+    .type = kMemfaultCurrentTimeType_Unknown,
+    .info = {
+      .unix_timestamp_secs = 0,
+    },
+  };
+  bool result = memfault_platform_time_get_current(&time);
+  if (!result) {
+    MEMFAULT_LOG_ERROR("Current timestamp could not be recovered");
+    return (1 << 2);
+  }
+
+  if (time.type != kMemfaultCurrentTimeType_UnixEpochTimeSec) {
+    MEMFAULT_LOG_ERROR("Invalid time type returned: %u", time.type);
+    return (1 << 3);
+  }
+
+  if (time.info.unix_timestamp_secs < MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR) {
+    MEMFAULT_LOG_ERROR("Timestamp too far in the past: %" PRIu64, time.info.unix_timestamp_secs);
+    return (1 << 4);
+  }
+
+  MEMFAULT_LOG_INFO("Verify received timestamp for accuracy. Timestamp received %" PRIu64,
+                    time.info.unix_timestamp_secs);
+  return 0;
+}
+
+uint32_t memfault_self_test_time_test(void) {
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Time Test");
+
+  uint32_t result = prv_get_time_since_boot_test();
+  result |= prv_platform_time_get_current_test();
+
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  return result;
+}
+
 #endif  // defined(MEMFAULT_UNITTEST_SELF_TEST)
 
 int memfault_self_test_run(uint32_t run_flags) {
@@ -332,6 +399,9 @@ int memfault_self_test_run(uint32_t run_flags) {
   }
   if (run_flags & kMemfaultSelfTestFlag_RebootReasonVerify) {
     result = memfault_self_test_reboot_reason_test_verify();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_PlatformTime) {
+    result |= memfault_self_test_time_test();
   }
   return (result == 0) ? 0 : 1;
 }

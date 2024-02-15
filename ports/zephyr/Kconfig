@@ -167,6 +167,14 @@ config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
           to printk if Zephyr LOG is disabled. This is useful for testing when
           Zephyr LOG is not enabled (eg due to code space limitations).
 
+config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
+        bool "Allows users to create custom reboot reasons outside of the predefined set"
+        default n
+        help
+          Enable the ability to define custom reboot reasons. This is useful
+          for tracking down the root cause of a reboot when it is not supported
+          by the default set of reboot reasons.
+
 config MEMFAULT_COMPACT_LOG
         bool "Enable compact logging"
         default n
@@ -292,6 +300,14 @@ config MEMFAULT_HTTP_USES_MBEDTLS
           TLS is offloaded to the underlying socket, this check is invalid, and
           should be explicitly set to 'n'.
 
+config MEMFAULT_TLS_CERTS_USE_DER
+        bool "Use DER format for TLS certificates"
+        default n
+        help
+          When enabled, Memfault will use DER format for TLS certificates.
+          When disabled, PEM format will be used. DER format may reduce runtime
+          memory requirements (for example if using mbedTLS).
+
 endif # MEMFAULT_HTTP_ENABLE
 
 config MEMFAULT_EVENT_STORAGE_SIZE
@@ -369,6 +385,13 @@ config MEMFAULT_SYNC_MEMFAULT_METRICS
          Collects Memfault metrics for the number of successful and failed
          syncs to the Memfault cloud.
 
+config MEMFAULT_METRICS_TCP_IP
+        bool "Enable collection of TCP/IP metrics"
+        default y
+        depends on NET_STATISTICS && NET_STATISTICS_USER_API
+        help
+         Collects Memfault metrics for TCP/IP statistics.
+
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
@@ -384,6 +407,16 @@ config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
 config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
        int "The time, in seconds, to configure the software watchdog expiration for"
        default 15
+
+config MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT
+       bool "Record reboot reason during system initialization"
+       default y
+       help
+        Record the reboot reason event during system initialization. Disable
+        this if device info is not valid until later in startup, then call
+        `memfault_zephyr_collect_reset_info()` from
+        `#include "memfault/ports/zephyr/core.h"` to store the reboot reason
+        event.
 
 config MEMFAULT_INIT_PRIORITY
         int "The priority of Memfault initialization on system start"
@@ -467,6 +500,13 @@ config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
          if it's needed elsewhere, this option should be disabled and the
          memfault_zephyr_date_time_evt_handler() function should be called from
          the application's date_time event handler.
+
+config MEMFAULT_CDR_ENABLE
+        bool "Enable the Memfault CDR component"
+        default y
+        help
+         Permits usage of the Memfault CDR feature. See
+         https://mflt.io/custom-data-recordings for more information.
 
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         default y

@@ -14,7 +14,7 @@
 //! MEMORY
 //! {
 //!    /* ... other regions ... */
-//!    COREDUMP_STORAGE_FLASH (rx) : ORIGIN = 0x80f0000, LENGTH = 64K
+//!    COREDUMP_STORAGE_FLASH (rw) : ORIGIN = 0x80f0000, LENGTH = 64K
 //! }
 //! __MemfaultCoreStorageStart = ORIGIN(COREDUMP_STORAGE_FLASH);
 //! __MemfaultCoreStorageEnd = ORIGIN(COREDUMP_STORAGE_FLASH) + LENGTH(COREDUMP_STORAGE_FLASH);
