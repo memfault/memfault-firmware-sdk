@@ -87,7 +87,7 @@ Step-by-step instructions can be found in the
 
 ### Memfault Project Key
 
-An API key will need to be baked into the [demo app](https://mflt.io/demo-cli)
+An API key will need to be baked into the demo app
 to enable it to communicate with Memfault's web services. Go to
 https://app.memfault.com/, navigate to the project you want to use and select
 'Settings'. Copy the 'Project Key' and paste it into
@@ -126,7 +126,9 @@ arm-none-eabi-gdb-py --eval-command="target remote localhost:2331"  --ex="mon re
 
 ### Using the App:
 
-At this point, the application should be running and you can open a console:
+At this point, the application should be running and you can open a console
+to run the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `mflt help` to
+see short descriptions of each command.
 
 ```bash
 $ miniterm.py /dev/cu.usbmodem* 115200 --raw
@@ -172,11 +174,6 @@ Subcommands:
   log_capture  :trigger capture of current log buffer contents
   logs         :writes test logs to log buffer
   trace        :capture an example trace event
-```
-
-For example, to test the coredump functionality:
-
-1. run `mflt test hardfault` and wait for the board to reset
 ```
 
 ### Causing a crash
@@ -255,4 +252,6 @@ uart:~$ mflt export
 ```
 
 You can then copy and paste the output into the "Chunks Debug" view in the
-Memfault UI for your project https://app.memfault.com/
+Memfault UI for your project https://app.memfault.com/.
+
+For more details on how to use the CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).

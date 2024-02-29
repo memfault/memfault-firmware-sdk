@@ -55,6 +55,10 @@ static void session_end_cb(void) {
   mock().actualCall(__func__);
 }
 
+static void session_start_cb(void) {
+  mock().actualCall(__func__);
+}
+
 // clang-format off
 TEST_GROUP(MemfaultSessionMetrics){
     void setup() {
@@ -63,7 +67,9 @@ TEST_GROUP(MemfaultSessionMetrics){
         s_fake_event_storage_impl = memfault_events_storage_boot(&s_storage, sizeof(s_storage));
     }
     void teardown() {
-        // Clear session end CBs
+        // Clear session CBs
+        memfault_metrics_session_register_start_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
+                                                (MemfaultMetricsSessionStartCb)NULL);
         memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
                                                 (MemfaultMetricsSessionEndCb)NULL);
         mock().checkExpectations();
@@ -131,12 +137,34 @@ TEST(MemfaultSessionMetrics, Test_UnexpectedRebootResetOnlyOnHeartbeatStart) {
   MEMFAULT_METRICS_SESSION_END(test_key_session);
 }
 
+TEST(MemfaultSessionMetrics, Test_RegisterSessionStartCb) {
+  mock().expectOneCall("memfault_metrics_session_serialize");
+  mock().expectOneCall("session_start_cb");
+
+  memfault_metrics_session_register_start_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
+                                             session_start_cb);
+  MEMFAULT_METRICS_SESSION_START(test_key_session);
+  MEMFAULT_METRICS_SESSION_END(test_key_session);
+}
+
 TEST(MemfaultSessionMetrics, Test_RegisterSessionEndCb) {
   mock().expectOneCall("memfault_metrics_session_serialize");
   mock().expectOneCall("session_end_cb");
 
   memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
                                            session_end_cb);
+  MEMFAULT_METRICS_SESSION_START(test_key_session);
+  MEMFAULT_METRICS_SESSION_END(test_key_session);
+}
+
+TEST(MemfaultSessionMetrics, Test_UnRegisterSessionStartCb) {
+  mock().expectOneCall("memfault_metrics_session_serialize");
+
+  memfault_metrics_session_register_start_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
+                                             session_start_cb);
+  memfault_metrics_session_register_start_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
+                                             (MemfaultMetricsSessionStartCb)NULL);
+
   MEMFAULT_METRICS_SESSION_START(test_key_session);
   MEMFAULT_METRICS_SESSION_END(test_key_session);
 }

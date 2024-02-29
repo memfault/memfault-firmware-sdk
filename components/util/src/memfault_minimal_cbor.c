@@ -122,7 +122,9 @@ static void prv_encode_uint64(uint8_t buf[8], uint64_t val) {
 #define MEMFAULT_CBOR_UINT64_MAX_ITEM_SIZE_BYTES 9
 
 bool memfault_cbor_encode_long_signed_integer(sMemfaultCborEncoder *encoder, int64_t value) {
-  // Logic derived from "Appendix C Pseudocode" of RFC 7049
+  // Logic derived from "Appendix C Pseudocode" of RFC 7049. Suppress
+  // CodeChecker violation, this has predictable output on supported compilers
+  // codechecker_suppress [cppcheck-shiftTooManyBitsSigned]
   int64_t ui = (value >> 63);
   // Figure out if we are encoding a Negative or Unsigned Integer by reading the sign extension bit
   const uint8_t cbor_major_type = ui & 0x1;
@@ -158,7 +160,9 @@ bool memfault_cbor_join(sMemfaultCborEncoder *encoder, const void *cbor_data,
 }
 
 bool memfault_cbor_encode_signed_integer(sMemfaultCborEncoder *encoder, int32_t value) {
-  // Logic derived from "Appendix C Pseudocode" of RFC 7049
+  // Logic derived from "Appendix C Pseudocode" of RFC 7049. Suppress
+  // CodeChecker violation, this has predictable output on supported compilers
+  // codechecker_suppress [cppcheck-shiftTooManyBitsSigned]
   int32_t ui = (value >> 31);
   // Figure out if we are encoding a Negative or Unsigned Integer by reading a sign extension bit
   const uint8_t cbor_major_type = ui & 0x1;

@@ -41,19 +41,54 @@ int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert,
 #endif
 
   if (err != 0) {
-    MEMFAULT_LOG_ERROR("Failed to install cert %d, rv=%d\n", cert_id, err);
+    MEMFAULT_LOG_ERROR("Failed to check if cert %d exists in storage, rv=%d", cert_id, err);
     return err;
   }
 
   if (exists) {
-    return 0;
+    err = modem_key_mgmt_cmp(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, cert, cert_length - 1);
+    if (err == 0) {
+      MEMFAULT_LOG_DEBUG("Cert %d in storage is up-to-date", cert_id);
+      return 0;
+    }
+    // if key is mismatched, continue with writing over the entry with the correct key
+    MEMFAULT_LOG_INFO("Cert %d in storage is not up-to-date", cert_id);
   }
 
   MEMFAULT_LOG_INFO("Installing Root CA %d", cert_id);
   err = modem_key_mgmt_write(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, cert, strlen(cert));
   if (err != 0) {
-    MEMFAULT_LOG_ERROR("Failed to provision certificate, err %d\n", err);
+    MEMFAULT_LOG_ERROR("Failed to provision certificate, err %d", err);
   }
 
+  return err;
+}
+
+int memfault_root_cert_storage_remove(eMemfaultRootCert cert_id) {
+  bool exists;
+// Note: modem_key_mgmt_exists() signature changed between nRF Connect SDK 1.7 & 1.8
+//   https://github.com/nrfconnect/sdk-nrf/pull/5631
+#if MEMFAULT_NCS_VERSION_GT(1, 7)
+  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists);
+#else
+  uint8_t unused;
+  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists, &unused);
+#endif
+
+  if (err != 0) {
+    MEMFAULT_LOG_ERROR("Failed to check if cert %d exists in storage, rv=%d", cert_id, err);
+    return err;
+  }
+
+  if (!exists) {
+    MEMFAULT_LOG_DEBUG("Cert %d not found in storage, skipping removal", cert_id);
+    return 0;
+  }
+
+  MEMFAULT_LOG_INFO("Removing Root CA %d", cert_id);
+  err = modem_key_mgmt_delete(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN);
+  if (err != 0) {
+    MEMFAULT_LOG_ERROR("Failed to delete cert, err %d", err);
+  }
   return err;
 }

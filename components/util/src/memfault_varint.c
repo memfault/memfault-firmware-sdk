@@ -24,6 +24,10 @@ size_t memfault_encode_varint_si32(int32_t value, void *buf) {
   // -1 -> 1
   //  1 -> 2
   // -2 -> 3
+
+  // Disable codechecker violation for unsigned shift by 31 bits. This has
+  // predictable output on the compilers we support.
+  // codechecker_suppress [cppcheck-shiftTooManyBitsSigned]
   uint32_t u32_repr = ((uint32_t)value << 1) ^ (uint32_t)(value >> 31);
   return memfault_encode_varint_u32(u32_repr, buf);
 }

@@ -40,3 +40,10 @@ int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert,
                                    size_t cert_length) {
   return tls_credential_add(cert_id, TLS_CREDENTIAL_CA_CERTIFICATE, cert, cert_length);
 }
+
+//! Placeholder implementation. Most setups do not save certs to NVM so removing unused certs is
+//! unnecessary
+int memfault_root_cert_storage_remove(eMemfaultRootCert cert_id) {
+  // TODO: use tls_credential_delete()
+  return 0;
+}

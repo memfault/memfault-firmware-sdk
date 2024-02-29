@@ -60,7 +60,7 @@ with error "multiple definition of `HardFaultException'".
 ### Building the demo app
 
 The SDK should now be able to automatically find the Memfault components and
-build the [demo app](https://mflt.io/demo-cli). Now you can build the demo app:
+build the demo app. Now you can build the demo app:
 
 using pyinvoke:
 
@@ -110,8 +110,8 @@ or
 $ miniterm.py --raw /dev/cu.usbserial-* 115200
 ```
 
-You can now type commands and view debug log output. To get the list of
-commands, type `help` and press enter:
+You can now type commands from the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `help` to
+see short descriptions of each command.
 
 ```bash
 $ invoke wiced.console
@@ -244,6 +244,9 @@ Result: 0
 The coredump is now being processed by Memfault's services and will show up
 shortly under Issues. If it does not, take a look at the FAQ in the `README.md`
 in the root of the SDK.
+
+For more details on how to use
+to CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).
 
 # Integrating into existing WICED projects
 

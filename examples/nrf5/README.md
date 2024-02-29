@@ -51,8 +51,7 @@ Example fix:
 
 ### Update Demo App with your Memfault Project Key
 
-A Project Key will need to be baked into the
-[demo app](https://mflt.io/demo-cli) to enable it to communicate with Memfault's
+A Project Key will need to be baked into the demo app to enable it to communicate with Memfault's
 web services. Go to https://app.memfault.com/, navigate to the project you want
 to use and select 'Settings'. Copy the 'Project Key' and paste it into
 `apps/memfault_demo_app/src/cli.c`, replacing `<YOUR PROJECT KEY HERE>` with
@@ -136,6 +135,9 @@ or
 ```bash
 JLinkRTTClient -LocalEcho Off
 ```
+
+You can now type commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
+To get started, run `help` to see short descriptions of each command.
 
 ## Using the demo app
 
@@ -246,6 +248,9 @@ New coredumps are only written if the coredump storage area is not already
 occupied. Typically coredumps are cleared once they have been posted to the
 memfault cloud by using the `memfault_platform_coredump_storage_clear` function.
 You can invoke this command from the cli by running `clear_core`.
+
+For more details on how to use the CLI to explore each of Memfault's subsystems,
+see the [Memfault docs](https://mflt.io/demo-cli).
 
 # Integrating into existing NRF52 projects
 

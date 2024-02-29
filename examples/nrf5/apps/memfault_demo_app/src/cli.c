@@ -12,10 +12,6 @@
 #include "nrf_cli_rtt.h"
 #include "nrf_log.h"
 
-// The nRF board is not capable of doing HTTP requests directly, but the 'print_chunk' command
-// will use this information to print out a cURL command that you can copy & paste into a shell
-// to post the chunk data to Memfault:
-
 // Find your key on https://app.memfault.com/ under 'Settings':
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = "<YOUR PROJECT KEY HERE>",

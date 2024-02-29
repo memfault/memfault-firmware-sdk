@@ -329,6 +329,8 @@ static bool prv_save_event_to_persistent_storage(void) {
     return false;
   }
 
+  MEMFAULT_SDK_ASSERT(g_memfault_platform_nv_event_storage_impl.write != NULL);
+
   const bool success =
     g_memfault_platform_nv_event_storage_impl.write(prv_event_storage_read_ram, total_size);
   if (success) {

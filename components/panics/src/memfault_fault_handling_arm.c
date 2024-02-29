@@ -202,6 +202,7 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
 
     #if !defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER)
 
+// Disable formatting; clang-format puts the ALIGN directive on the previous line
 // clang-format off
 
 __asm __forceinline void memfault_fault_handling_shim(int reason) {
@@ -494,11 +495,17 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   //
   // We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the
   // immediate value for easy disambiguation from any other udf invocations in a system.
+  //
+  // Disable formatting; clang-format puts the ALIGN directive on the previous line
+  // clang-format off
   #if defined(__CC_ARM)
 __asm __forceinline void MEMFAULT_ASSERT_TRAP(void) {
   PRESERVE8
-  UND #77 ALIGN
+  UND #77
+  ALIGN
 }
+  // clang-format on
+
   #elif defined(__TI_ARM__)
   // The TI Compiler doesn't support the udf asm instruction
   // so we encode the instruction & a nop as a word literal

@@ -7,6 +7,7 @@
 //! Command definitions for the minimal shell/console implementation.
 
 #include <stddef.h>
+#include <string.h>
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_export.h"
@@ -52,8 +53,25 @@ MEMFAULT_WEAK void memfault_metrics_heartbeat_debug_trigger(void) {
   MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
 }
 
-int memfault_demo_cli_cmd_heartbeat_dump(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  memfault_metrics_heartbeat_debug_print();
+MEMFAULT_WEAK void memfault_metrics_all_sessions_debug_print(void) {
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+}
+
+static int memfault_demo_cli_cmd_metrics_dump(int argc, char *argv[]) {
+  if (argc < 2) {
+    MEMFAULT_LOG_RAW("Enter 'heartbeat' or 'sessions'");
+    return 0;
+  }
+
+  if (!strncmp(argv[1], "sessions", sizeof("sessions"))) {
+    memfault_metrics_all_sessions_debug_print();
+  } else if (!strncmp(argv[1], "heartbeat", sizeof("heartbeat"))) {
+    memfault_metrics_heartbeat_debug_print();
+  } else {
+    MEMFAULT_LOG_RAW("Unknown option. Enter 'heartbeat' or 'sessions'");
+    return 0;
+  }
+
   return 0;
 }
 
@@ -83,9 +101,8 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   { "get_core", memfault_demo_cli_cmd_get_core, "Get coredump info" },
   { "get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info" },
   { "coredump_size", memfault_demo_cli_cmd_coredump_size, "Print the coredump storage capacity" },
-  { "heartbeat_dump", memfault_demo_cli_cmd_heartbeat_dump,
-    "Dump current Memfault metrics heartbeat state" },
-  { "heartbeat", memfault_demo_cli_cmd_heartbeat, "Trigger a heartbeat" },
+  { "metrics_dump", memfault_demo_cli_cmd_metrics_dump,
+    "Dump current heartbeat or session metrics" },
   //
   // Test commands for validating SDK functionality: https://mflt.io/mcu-test-commands
   //

@@ -24,6 +24,7 @@
 #include "memfault/panics/assert.h"
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/root_cert_storage.h"
+#include "memfault/ports/zephyr/deprecated_root_cert.h"
 
 #if defined(CONFIG_POSIX_API)
   #include MEMFAULT_ZEPHYR_INCLUDE(posix/netdb.h)
@@ -122,6 +123,11 @@ static bool prv_install_cert(eMemfaultRootCert cert_id) {
 }
 
 int memfault_zephyr_port_install_root_certs(void) {
+  for (eMemfaultDeprecatedRootCert cert_id = kMemfaultDeprecatedRootCert_DuplicateAmazonRootCa1;
+       cert_id < kMemfaultDeprecatedRootCert_MaxIndex; cert_id++) {
+    memfault_root_cert_storage_remove(cert_id);
+  }
+
   for (eMemfaultRootCert cert_id = kMemfaultRootCert_DigicertRootG2;
        cert_id < kMemfaultRootCert_MaxIndex; cert_id++) {
     const int rv = prv_install_cert(cert_id);

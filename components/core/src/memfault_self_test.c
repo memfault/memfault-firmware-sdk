@@ -26,6 +26,14 @@
 #include "memfault/panics/coredump_impl.h"
 #include "memfault_self_test_private.h"
 
+// Wrap this definition to prevent unused macro warning
+#if !MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
+  #ifndef MEMFAULT_SELF_TEST_COREDUMP_STORAGE_DISABLE_MSG
+    #define MEMFAULT_SELF_TEST_COREDUMP_STORAGE_DISABLE_MSG \
+      "Set MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE in memfault_platform_config.h"
+  #endif  // !MEMFAULT_SELF_TEST_COREDUMP_STORAGE_DISABLE_MSG
+#endif    // !MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
+
 #if !defined(MEMFAULT_UNITTEST_SELF_TEST)
 
 typedef enum {
@@ -140,9 +148,9 @@ static void prv_device_info_test_describe(uint32_t results) {
   }
 
   MEMFAULT_LOG_ERROR("One or more fields is invalid. Check for correct length and contents");
-  for (uint8_t i = 0; i < kDeviceInfoField_Max; i++) {
+  for (size_t i = 0; i < kDeviceInfoField_Max; i++) {
     // Check if bit cleared, cleared bits indicate an invalid field
-    if ((results & (1 << i))) {
+    if ((results & (1u << i))) {
       MEMFAULT_LOG_ERROR("%s invalid", s_device_info_field_names[i]);
     }
   }
@@ -232,7 +240,7 @@ static void prv_print_region_group_info(const char *group_name, const sMfltCored
   MEMFAULT_LOG_INFO("-----------------------------");
   MEMFAULT_LOG_INFO("%10s|%10s|%6s|", "Address", "Length", "Type");
   MEMFAULT_LOG_INFO("-----------------------------");
-  for (size_t i = 0; i < num_regions; i++) {
+  for (size_t i = 0; (regions != NULL) && (i < num_regions); i++) {
     sMfltCoredumpRegion region = regions[i];
     MEMFAULT_LOG_INFO("0x%08" PRIxPTR "|%10" PRIu32 "|%6u|", (uintptr_t)region.region_start,
                       region.region_size, region.type);
@@ -378,6 +386,42 @@ uint32_t memfault_self_test_time_test(void) {
   return result;
 }
 
+uint32_t memfault_self_test_coredump_storage_capacity_test(void) {
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Coredump Storage Capacity Test");
+  bool result = memfault_coredump_storage_check_size();
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  return result ? 0 : 1;
+}
+
+uint32_t memfault_self_test_coredump_storage_test(void) {
+  MEMFAULT_SELF_TEST_PRINT_HEADER("Coredump Storage Test");
+
+  if (memfault_coredump_has_valid_coredump(NULL)) {
+    MEMFAULT_LOG_ERROR("Aborting test, valid coredump present");
+    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+    return (1 << 0);
+  }
+
+  // Wrap test with calls to disable/enable irqs to allow test to run uninterrupted
+  // Abort if we cannot disable irqs
+  bool irqs_disabled = memfault_self_test_platform_disable_irqs();
+  if (!irqs_disabled) {
+    MEMFAULT_LOG_ERROR("Aborting test, could not disable interrupts");
+    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+    return (1 << 1);
+  }
+
+  memfault_coredump_storage_debug_test_begin();
+  if (!memfault_self_test_platform_enable_irqs()) {
+    MEMFAULT_LOG_WARN("Failed to enable interrupts after test completed");
+  }
+
+  bool result = memfault_coredump_storage_debug_test_finish();
+
+  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  return result ? 0 : (1 << 2);
+}
+
 #endif  // defined(MEMFAULT_UNITTEST_SELF_TEST)
 
 int memfault_self_test_run(uint32_t run_flags) {
@@ -402,6 +446,18 @@ int memfault_self_test_run(uint32_t run_flags) {
   }
   if (run_flags & kMemfaultSelfTestFlag_PlatformTime) {
     result |= memfault_self_test_time_test();
+  }
+  if (run_flags & kMemfaultSelfTestFlag_CoredumpStorage) {
+#if MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
+    result |= memfault_self_test_coredump_storage_test();
+#else
+    MEMFAULT_LOG_ERROR("Coredump storage test not enabled");
+    MEMFAULT_LOG_ERROR(MEMFAULT_SELF_TEST_COREDUMP_STORAGE_DISABLE_MSG);
+    result = 1;
+#endif
+  }
+  if (run_flags & kMemfaultSelfTestFlag_CoredumpStorageCapacity) {
+    result |= memfault_self_test_coredump_storage_capacity_test();
   }
   return (result == 0) ? 0 : 1;
 }

@@ -161,7 +161,7 @@ the top for build & test coverage status of the `master` branch.
 - I'm getting error XYZ, what to do now?
 
   - Don't hesitate to contact us for help! You can reach us through
-    [support@memfault.com](mailto:support@memfault.com).
+    <https://mflt.io/contact-support>.
 
 # License
 

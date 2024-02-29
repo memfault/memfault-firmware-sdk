@@ -155,9 +155,29 @@ config MEMFAULT_SHELL
           CLI Utilities for interfacing with the Memfault SDK
 
 config MEMFAULT_SHELL_SELF_TEST
-        bool "Execute self test via a shell command"
+        bool "Execute self test via a shell command `mflt test self`"
         default n
         depends on MEMFAULT_SHELL
+        help
+            Adds a command, `mflt test self`, to run a suite of tests used to verify the device's
+            integration with the Memfault SDK. By default, this will run tests to validate device
+            info, component boot, coredump regions, coredump storage capacity, data export, and
+            platform time. A reboot test is available by running `memfault_self_test reboot`
+
+if MEMFAULT_SHELL_SELF_TEST
+
+    config MEMFAULT_SHELL_SELF_TEST_COREDUMP_STORAGE
+        bool "Adds option to run coredump storage test [EXPERIMENTAL]"
+        select EXPERIMENTAL
+        help
+            Enabling this option adds an experimental coredump storage test.
+            The test exercises the coredump storage implementation by erasing, reading,
+            and writing the entire coredump partition. This test may fail due to Flash
+            cache issues on some platforms. The test requires disabling any watchdogs
+            (hardware, software, etc) to allow the test to complete. This test may be run with
+            `mflt test self coredump_storage`.
+
+endif
 
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
         bool "Fallback to printk for platform logging"

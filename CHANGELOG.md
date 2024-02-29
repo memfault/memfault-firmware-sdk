@@ -1,6 +1,58 @@
 # Memfault Firmware SDK Changelog
 
-## [1.7.0] - 2024-01-29
+## [1.7.1] - 2024-02-28
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Fix a reboot reason test on MacOS by adding a stub implementation of a
+    function to avoid an empty archive not allowed by the system clang install
+  - Add a new macro `MEMFAULT_REBOOT_MARK_RESET_IMMINENT_CUSTOM()` that is more
+    concise for custom reboot reasons by taking the reboot reason name directly.
+    Previously, `MEMFAULT_REBOOT_MARK_RESET_IMMINENT()` was the only option,
+    which requires passing a key with `MEMFAULT_REBOOT_REASON_KEY()`.
+  - Add a session start callback with
+    `memfault_metrics_session_register_start_cb()`. This change enables, for
+    example, tracking battery percent drop across sessions; battery state
+    tracking variables can now be initialized at the start of a session.
+  - Add a coredump storage test to the self test which will now test the
+    coredump storage implementations and check available storage capacity. This
+    is currently experimental and must be explicitly enabled with the Kconfig
+    `CONFIG_MEMFAULT_SHELL_SELF_TEST_COREDUMP_STORAGE=y` on Zephyr,
+    `CONFIG_MEMFAULT_CLI_SELF_TEST_COREDUMP_STORAGE=y` on ESP-IDF, or by adding
+    `#define MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE 1` to your
+    `memfault_platform_config.h` for other platforms.
+  - Convert the previous `heartbeat_dump` command to `metrics_dump` that can
+    either dump all current heartbeat metrics with `metrics_dump heartbeat` or
+    all session metrics with `metrics_dump sessions` that haven't yet been
+    exported. These commands help with testing metrics collection locally
+    without needing to push chunks to Memfault.
+  - Apply a handful of changes to fix items raised by a new static analyzer
+  - Fix a minor formatting issue that was causing a compilation error for CC ARM
+  - Update support links to refer to the preferred site
+    https://mflt.io/contact-support instead of the Memfault support email. This
+    link will redirect to a form where questions can be sent to the Memfault
+    support team.
+  - Update the `README.md`s in example apps to point to the
+    [Demo CLI](https://docs.memfault.com/docs/mcu/demo-cli) page on the Memfault
+    docs website where comprehensive information is available on commands and
+    their output
+
+- nRF-Connect SDK:
+
+  - Fix a problem caused by mismatched root certificates in modem storage. This
+    change will ensure that all certificates are updated if they do not match
+    expected contents. Prior to v1.7.1, the SDK would only update a certificate
+    by checking each tag for certificate existence, not certificate content. In
+    v1.3.0, the order of root certificates was changed and one was removed. On
+    devices running pre-1.3.0 firmware, updating to later versions can hit a
+    mismatch between the expected certificates and those in modem storage.
+  - Remove a root certificate deprecated in v1.3.0 if present in modem storage.
+    Devices using an SDK version before v1.3.0 may contain a now deprecated root
+    certificate.
+
+## [1.7.0] - 2024-02-15
 
 ### :rocket: New Features
 

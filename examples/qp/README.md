@@ -42,7 +42,7 @@ running the snippets, i.e.
 ### Memfault Project Key
 
 A Project Key will need to be baked into the
-[demo app](https://mflt.io/demo-cli) to enable it to communicate with Memfault's
+demo app to enable it to communicate with Memfault's
 web services. Go to https://app.memfault.com/, navigate to the project you want
 to use and select 'Settings'. Copy the 'Project API Key' and paste it into
 `$MEMFAULT_SDK_ROOT/examples/qp/apps/memfault_demo_app/src/main.c`, replacing
@@ -90,7 +90,9 @@ Follow the instructions in the
 (see section 6.1.3 "ST-LINK/V2-A VCP configuration") to connect the RX/TX to
 either the on-board or an external USB-to-serial adapter.
 
-Then use any serial terminal program to connect to it:
+At this point, the application should be running and you can open a console
+to run the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `help` to
+see short descriptions of each command.
 
 ```
 $ miniterm.py --raw /dev/cu.usbserial* 115200
@@ -100,8 +102,7 @@ Memfault QP demo app started...
 mflt> help
 get_core: Get coredump info
 clear_core: Clear an existing coredump
-print_chunk: Get next Memfault data chunk to send and print as a curl command
-crash: Trigger a crash
+export: Export base64-encoded chunks. To upload data see https://mflt.io/chunk-data-export
 get_device_info: Get device info
 help: Lists all commands
 ```
@@ -116,7 +117,7 @@ Command `test_hardfault` will trigger a hard fault due to a bad instruction fetc
 non-existing address, `0xbadcafe`:
 
 ```
-mflt> mflt test_hardfault
+mflt> test_hardfault
 Memfault QP demo app started...
 
 mflt>
@@ -149,16 +150,25 @@ symbols (debug information) amongst other things.
 
 The STM32F407 board does not have the capability to connect to the internet
 directly. Therefore, for debug purposes, the messages to push to the Memfault
-cloud can also be dumped from the CLI using the `print_chunk` command:
+cloud can also be dumped from the CLI using the `export` command:
 
 ```
-mflt> print_chunk
-echo \
-[...]
-| xxd -p -r | curl -X POST https://chunks.memfault.com/api/v0/chunks/DEMOSERIAL\
- -H 'Memfault-Project-Key:<YOUR_PROJECT_KEY>\
- -H 'Content-Type:application/octet-stream' --data-binary @- -i
+mflt> export
+MC:SLMTgQlDT1JFAgYAA/QNFAABTAYAGwGAAADQHwAgSHEAIOnhDAABAQYAIbYlAQDgHwAgYCAAIAD2AAACDgAbtiUBANAfACCldAAApHQKABM=:
+MC:wE0hsEgAINAfACAMDgABFAYAKYGX7c6KNvuWbdNF6vmTpvwqJEu6Ag4AAQoGABVERU1PU0VSSUFMCg4AARAGACExLjAuMCs4Y2VkMjQ2YjY=:
+MC:wJsBZgsOAAEKBgAVemVwaHlyLWFwcAQOAAEOBgAdcWVtdV9jb3J0ZXhfbTMHDgABBAYAASgGAAEFDgABBAYACQGAAAAGDgABAgoAAQEGAAk=:
+MC:wOgBJO0A4BwGAAUIAAcGAAEBKgABAQYACRjtAOAMGgAF4CABBgAJBOAA4BAGAAEBFgABBwYAAQEGAAkE7QDgCAYAAwYIDAABAQYACfztAOA=:
+MC:wLUCBA4AAQEIAAfhAOAEBgABYAYAAQEIAAfiAOAEDgABAQgAB+MA4AQOAAEBCAAH5ADgIAYACiAEgDIgAQEGAAlUDAAgKAYABgEKAAELBgA=:
+MC:wIIDC/MBAADYAQYAJwIAAHgXACB4FwAgAAIAAD3mAAABBgAPeBcAIAACAAAGIElUaW1lclRhc2tGcmVlU3RhY2s6IDMyMjQBIjxpbmY+IG0=:
+MC:wM8DZmx0OgYgQUhlYXBfQnl0ZXNGcmVlOiA0MDIwASo8aW5mPiBtZmx0OgYgmQFNYWluU3RhY2tfTWluQnl0ZXNGcmVlOiAzMjI0ASI8aW4=:
+MC:wJwEZj4gbWZsdDogSGVhcnRiZWF0IGtleXMvdmFsdWVzOgEtPGluZj4gbWZsdDoGIFdNZW1mYXVsdFNka01ldHJpY19JbnRlcnZhbE1zOiA=:
+MC:wOkEMAE7PGluZj4gbWZsdDoGIHNNZW1mYXVsdFNka01ldHJpY19VbmV4cGVjdGVkUmVib290Q291bnQ6IG51bGwBJTxpbmY+IG1mbHQ6BiA=:
+...
 ```
 
-You can copy and paste the output into a terminal to upload the captured data to
-Memfault.
+The command will print out a sequence of base64-encoded chunks like above.
+You can copy & paste this output into the ["Chunks Debug" view](https://mflt.io/chunks-debug) in the Memfault UI
+or upload using the [desktop CLI tool](https://mflt.io/chunk-data-export).
+
+For more details on how to use
+to CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).

@@ -55,6 +55,12 @@ MEMFAULT_DISABLE_WARNING("-Wunused-macros")
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key)
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) NULL,
 
+static MemfaultMetricsSessionStartCb s_session_start_cbs[] = {
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  NULL,  // dummy entry to prevent empty array
+};
+
 static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
@@ -918,6 +924,11 @@ int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
 }
 
 int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
+  MemfaultMetricsSessionStartCb session_start_cb = s_session_start_cbs[session_key];
+  if (session_start_cb != NULL) {
+    session_start_cb();
+  }
+
   int rv;
   memfault_lock();
   {
@@ -958,6 +969,13 @@ int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
   return rv;
 }
 
+void memfault_metrics_session_register_start_cb(eMfltMetricsSessionIndex session_key,
+                                                MemfaultMetricsSessionStartCb session_start_cb) {
+  memfault_lock();
+  { s_session_start_cbs[session_key] = session_start_cb; }
+  memfault_unlock();
+}
+
 void memfault_metrics_session_register_end_cb(eMfltMetricsSessionIndex session_key,
                                               MemfaultMetricsSessionEndCb session_end_cb) {
   memfault_lock();
@@ -973,6 +991,10 @@ typedef struct {
 static bool prv_metrics_heartbeat_iterate_cb(void *ctx, const sMemfaultMetricKVPair *key_info,
                                              const sMemfaultMetricValueInfo *value_info) {
   sMetricHeartbeatIterateCtx *ctx_info = (sMetricHeartbeatIterateCtx *)ctx;
+
+  if (value_info->valuep == NULL) {
+    return false;
+  }
 
   sMemfaultMetricInfo info = {
     .key = key_info->key,
@@ -1037,9 +1059,17 @@ static const char *s_idx_to_metric_name[] = {
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
 };
 
-static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
-                                      const sMemfaultMetricInfo *metric_info) {
-  if (metric_info->session_key != MEMFAULT_METRICS_SESSION_KEY(heartbeat)) {
+typedef bool(MemfaultMetricDebugPrintFilterCb)(eMfltMetricsSessionIndex ctx_key,
+                                               eMfltMetricsSessionIndex current_key);
+
+typedef struct {
+  MemfaultMetricDebugPrintFilterCb *print_filter;
+  eMfltMetricsSessionIndex session_key;
+} sMetricDebugPrintCtx;
+
+static bool prv_metrics_debug_print(void *ctx, const sMemfaultMetricInfo *metric_info) {
+  sMetricDebugPrintCtx *cb_ctx = (sMetricDebugPrintCtx *)ctx;
+  if (!cb_ctx->print_filter(cb_ctx->session_key, metric_info->session_key)) {
     return true;
   }
 
@@ -1079,10 +1109,39 @@ static bool prv_heartbeat_debug_print(MEMFAULT_UNUSED void *ctx,
   return true;  // continue iterating
 }
 
-void memfault_metrics_heartbeat_debug_print(void) {
+//! Print all session metrics, skip heartbeat metrics
+static bool prv_all_sessions_debug_print_filter(MEMFAULT_UNUSED eMfltMetricsSessionIndex ctx_key,
+                                                eMfltMetricsSessionIndex current_key) {
+  return (current_key != MEMFAULT_METRICS_SESSION_KEY(heartbeat));
+}
+
+//! Print all metrics from one session only
+static bool prv_session_debug_print_filter(eMfltMetricsSessionIndex ctx_key,
+                                           eMfltMetricsSessionIndex current_key) {
+  return (current_key == ctx_key);
+}
+
+void memfault_metrics_session_debug_print(eMfltMetricsSessionIndex session_key) {
   prv_heartbeat_timer_update();
-  MEMFAULT_LOG_INFO("Heartbeat keys/values:");
-  memfault_metrics_heartbeat_iterate(prv_heartbeat_debug_print, NULL);
+  MEMFAULT_LOG_INFO("Metrics keys/values:");
+  sMetricDebugPrintCtx ctx = {
+    .session_key = session_key,
+    .print_filter = &prv_session_debug_print_filter,
+  };
+  memfault_metrics_heartbeat_iterate(prv_metrics_debug_print, (void *)&ctx);
+}
+
+void memfault_metrics_all_sessions_debug_print(void) {
+  prv_heartbeat_timer_update();
+  MEMFAULT_LOG_INFO("Metrics keys/values:");
+  sMetricDebugPrintCtx ctx = {
+    .print_filter = &prv_all_sessions_debug_print_filter,
+  };
+  memfault_metrics_heartbeat_iterate(prv_metrics_debug_print, (void *)&ctx);
+}
+
+void memfault_metrics_heartbeat_debug_print(void) {
+  memfault_metrics_session_debug_print(MEMFAULT_METRICS_SESSION_KEY(heartbeat));
 }
 
 void memfault_metrics_heartbeat_debug_trigger(void) {

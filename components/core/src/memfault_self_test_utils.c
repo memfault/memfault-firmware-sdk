@@ -37,6 +37,10 @@ static const struct {
     .name = "reboot_verify",
     .value = kMemfaultSelfTestFlag_RebootReasonVerify,
   },
+  {
+    .name = "coredump_storage",
+    .value = kMemfaultSelfTestFlag_CoredumpStorage,
+  },
 };
 
 #define SELF_TEST_MAX_NAME_LEN 30
@@ -69,4 +73,14 @@ size_t memfault_strnlen(const char *str, size_t n) {
 
 MEMFAULT_WEAK void memfault_self_test_platform_delay(MEMFAULT_UNUSED uint32_t delay_ms) {
   MEMFAULT_LOG_ERROR("%s not implemented for this platform", __func__);
+}
+
+MEMFAULT_WEAK bool memfault_self_test_platform_disable_irqs(void) {
+  MEMFAULT_LOG_ERROR("%s not implemented for this platform", __func__);
+  return false;
+}
+
+MEMFAULT_WEAK bool memfault_self_test_platform_enable_irqs(void) {
+  MEMFAULT_LOG_ERROR("%s not implemented for this platform", __func__);
+  return false;
 }

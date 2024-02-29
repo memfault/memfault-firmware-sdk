@@ -33,6 +33,14 @@ uint32_t memfault_self_test_reboot_reason_test_verify(void) {
 uint32_t memfault_self_test_time_test(void) {
   return mock().actualCall(__func__).returnUnsignedIntValue();
 }
+
+uint32_t memfault_self_test_coredump_storage_test(void) {
+  return mock().actualCall(__func__).returnUnsignedIntValue();
+}
+
+uint32_t memfault_self_test_coredump_storage_capacity_test(void) {
+  return mock().actualCall(__func__).returnUnsignedIntValue();
+}
 }
 
 // Helper function for tests that return a result rather than just running
@@ -93,12 +101,29 @@ TEST(MemfaultSelfTest, Test_PlatformTimeTest) {
   prv_run_single_component_test("memfault_self_test_time_test", kMemfaultSelfTestFlag_PlatformTime);
 }
 
+TEST(MemfaultSelfTest, Test_CoredumpStorageTest) {
+#if MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
+  prv_run_single_component_test("memfault_self_test_coredump_storage_test",
+                                kMemfaultSelfTestFlag_CoredumpStorage);
+#else
+  mock().expectNoCall("memfault_self_test_coredump_storage_test");
+  int result = memfault_self_test_run(kMemfaultSelfTestFlag_CoredumpStorage);
+  LONGS_EQUAL(1, result);
+#endif
+}
+
+TEST(MemfaultSelfTest, Test_CoredumpStorageCapacityTest) {
+  prv_run_single_component_test("memfault_self_test_coredump_storage_capacity_test",
+                                kMemfaultSelfTestFlag_CoredumpStorageCapacity);
+}
+
 TEST(MemfaultSelfTest, Test_SelfTestDefaultHappyPath) {
   mock().expectOneCall("memfault_self_test_device_info_test").andReturnValue(0);
   mock().expectOneCall("memfault_self_test_component_boot_test").andReturnValue(0);
   mock().expectOneCall("memfault_self_test_coredump_regions_test").andReturnValue(0);
   mock().expectOneCall("memfault_self_test_data_export_test");
   mock().expectOneCall("memfault_self_test_time_test").andReturnValue(0);
+  mock().expectOneCall("memfault_self_test_coredump_storage_capacity_test").andReturnValue(0);
 
   int result = memfault_self_test_run(kMemfaultSelfTestFlag_Default);
   LONGS_EQUAL(0, result);
@@ -110,6 +135,7 @@ TEST(MemfaultSelfTest, Test_SelfTestDefaultComponentBootFail) {
   mock().expectOneCall("memfault_self_test_coredump_regions_test").andReturnValue(0);
   mock().expectOneCall("memfault_self_test_data_export_test");
   mock().expectOneCall("memfault_self_test_time_test").andReturnValue(0);
+  mock().expectOneCall("memfault_self_test_coredump_storage_capacity_test").andReturnValue(0);
 
   int result = memfault_self_test_run(kMemfaultSelfTestFlag_Default);
   LONGS_EQUAL(1, result);

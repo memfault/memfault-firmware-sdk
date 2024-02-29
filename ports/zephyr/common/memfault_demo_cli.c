@@ -157,9 +157,21 @@ static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **
 #endif
 }
 
-static int prv_heartbeat_dump(const struct shell *shell, size_t argc, char **argv) {
+static int prv_metrics_dump(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_METRICS)
-  memfault_metrics_heartbeat_debug_print();
+  if (argc < 2) {
+    shell_print(shell, "Enter 'heartbeat' or 'sessions'");
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "sessions")) {
+    memfault_metrics_all_sessions_debug_print();
+  } else if (!strcmp(argv[1], "heartbeat")) {
+    memfault_metrics_heartbeat_debug_print();
+  } else {
+    shell_print(shell, "Unknown option. Enter 'heartbeat' or 'sessions'");
+    return 0;
+  }
 #else
   shell_print(shell, "CONFIG_MEMFAULT_METRICS not enabled");
 #endif
@@ -318,8 +330,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_check_and_fetch_ota_payload_cmd),
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
-  SHELL_CMD(heartbeat_dump, NULL, "dump current Memfault metrics heartbeat state",
-            prv_heartbeat_dump),
+  SHELL_CMD(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump),
   SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
   SHELL_CMD(test, &sub_memfault_crash_cmds,
             "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",

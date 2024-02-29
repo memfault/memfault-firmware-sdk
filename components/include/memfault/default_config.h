@@ -509,6 +509,17 @@ extern "C" {
   #define MEMFAULT_DEMO_CLI_SELF_TEST 0
 #endif
 
+//! Enable the experimental coredump storage self test
+//!
+//! Setting this config will add a new self test to exercise the platform's coredump storage
+//! implementation. This test requires implementing `memfault_self_test_platform_disable_irqs` and
+//! `memfault_self_test_platform_enable_irqs` to run. Additionaly, you should disable any
+//! watchdogs (hardware, or software) on your system to prevent interrupting or restarting
+//! your device while running this test.
+#ifndef MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
+  #define MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE 0
+#endif
+
 //
 // Custom Data Recording configuration options [EXPERIMENTAL]
 //

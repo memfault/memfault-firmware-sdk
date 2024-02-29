@@ -120,7 +120,7 @@ if (CONFIG_MEMFAULT_MBEDTLS_METRICS)
 endif()
 
 if (CONFIG_MEMFAULT_CLI_SELF_TEST)
-  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_self_test_platform.c)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_self_test_platform.c)
 endif()
 
 # For version >= 4.4.3, we can collect smaller coredumps by default
@@ -184,7 +184,7 @@ mflt_esp32_component_get_target(this_component ${this_directory_name})
 # 2. Add a corresponding target_link_libraries call (see below) with the linker option -u
 #    and specify the stub function name
 if(CONFIG_MEMFAULT_CLI_SELF_TEST)
-  target_link_libraries(${this_component} INTERFACE "-u memfault_include_self_test_impl")
+  target_link_libraries(${this_component} INTERFACE "-u memfault_esp_idf_include_self_test_impl")
 endif()
 
 # The below compilation options need to be set after register_component().

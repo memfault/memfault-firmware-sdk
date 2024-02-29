@@ -63,8 +63,8 @@ replace the text `<YOUR PROJECT KEY HERE>` with your Project Key.
 
 ### Building and flashing the demo app
 
-You should now be able to compile the [demo app](https://mflt.io/demo-cli) with
-the Memfault components included and run it!
+You should now be able to compile the demo app with the Memfault components included
+and run it!
 
 Connect the target, then run this command to build and flash:
 
@@ -90,10 +90,11 @@ target, you can open a serial console interact with it:
 $ invoke mbed.console
 ```
 
-Press enter and you should see the `mflt>` prompt. Type `help` and press enter
-to see a list of commands.
+Press enter and you should see the `mflt>` prompt. Enter the `help` command
+to see a list of commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
 
-The demo app can cause the target to crash in several ways. Upon crashing, the
+The demo app is a simple console based app that has commands to cause a crash in
+several ways. Upon crashing, the
 `memfault/panics` component of the Memfault SDK will capture a coredump and save
 it to the internal device flash. For the purposes of this demo, once a coredump
 is captured, it can be dumped out over the console and posted to the Memfault
@@ -168,41 +169,40 @@ it directly to Memfault over wifi. If you are interested in an implementation,
 please don't hesitate to reach out!
 
 For the purposes of this demo, we will just grab the core information from the
-CLI. Enter the `print_chunk` command:
+CLI. Enter the `export` command:
 
 ```
-mflt> print_chunk
-
-echo \
-434f5245010000004881030000000000000000004400000001000000025b002000000000feca\
-[...]
-| xxd -p -r | curl -X POST https://ingress.memfault.com/api/v0/upload/coredump\
- -H 'Memfault-Project-Key:<YOUR PROJECT KEY HERE>'\
- -H 'Content-Type:application/octet-stream' --data-binary @- -
+mflt> export
+MC:SLMTgQlDT1JFAgYAA/QNFAABTAYAGwGAAADQHwAgSHEAIOnhDAABAQYAIbYlAQDgHwAgYCAAIAD2AAACDgAbtiUBANAfACCldAAApHQKABM=:
+MC:wE0hsEgAINAfACAMDgABFAYAKYGX7c6KNvuWbdNF6vmTpvwqJEu6Ag4AAQoGABVERU1PU0VSSUFMCg4AARAGACExLjAuMCs4Y2VkMjQ2YjY=:
+MC:wJsBZgsOAAEKBgAVemVwaHlyLWFwcAQOAAEOBgAdcWVtdV9jb3J0ZXhfbTMHDgABBAYAASgGAAEFDgABBAYACQGAAAAGDgABAgoAAQEGAAk=:
+MC:wOgBJO0A4BwGAAUIAAcGAAEBKgABAQYACRjtAOAMGgAF4CABBgAJBOAA4BAGAAEBFgABBwYAAQEGAAkE7QDgCAYAAwYIDAABAQYACfztAOA=:
+MC:wLUCBA4AAQEIAAfhAOAEBgABYAYAAQEIAAfiAOAEDgABAQgAB+MA4AQOAAEBCAAH5ADgIAYACiAEgDIgAQEGAAlUDAAgKAYABgEKAAELBgA=:
+MC:wIIDC/MBAADYAQYAJwIAAHgXACB4FwAgAAIAAD3mAAABBgAPeBcAIAACAAAGIElUaW1lclRhc2tGcmVlU3RhY2s6IDMyMjQBIjxpbmY+IG0=:
+MC:wM8DZmx0OgYgQUhlYXBfQnl0ZXNGcmVlOiA0MDIwASo8aW5mPiBtZmx0OgYgmQFNYWluU3RhY2tfTWluQnl0ZXNGcmVlOiAzMjI0ASI8aW4=:
+MC:wJwEZj4gbWZsdDogSGVhcnRiZWF0IGtleXMvdmFsdWVzOgEtPGluZj4gbWZsdDoGIFdNZW1mYXVsdFNka01ldHJpY19JbnRlcnZhbE1zOiA=:
+MC:wOkEMAE7PGluZj4gbWZsdDoGIHNNZW1mYXVsdFNka01ldHJpY19VbmV4cGVjdGVkUmVib290Q291bnQ6IG51bGwBJTxpbmY+IG1mbHQ6BiA=:
+...
 ```
 
-The coredump should look like the above. Assuming you are still interacting with
-the CLI through `invoke mbed.console`, the Invoke wrapper should detect that a
-core was printed and offer to post it for you:
-
-```
-Invoke CLI wrapper detected 'print_chunk' call
-Would you like to run the command displayed above? [y/n]
-```
-
-Otherwise, you can copy & paste this output to a terminal to send the coredump
-to the Memfault cloud. The coredump will be processed by Memfault and then show
+The console will print out a sequence of base64-encoded chunks like above.
+You can copy & paste this output into the ["Chunks Debug" view](https://mflt.io/chunks-debug) in the Memfault UI
+or upload using the [desktop CLI tool](https://mflt.io/chunk-data-export).
+The coredump will be processed by Memfault and then show
 up shortly under Issues. If it does not, take a look at the FAQ in the
 `README.md` in the root of the SDK.
 
-After printing a coredump with `print_chunk`, it will be automatically cleared
+After printing a coredump with `export`, it will be automatically cleared
 from the flash storage.
 
 Note:
 
 - A new coredump will only be saved to the flash storage if it is not already
-  occupied. If you do not use `print_chunk`, you can also clear the storage
+  occupied. If you do not use `export`, you can also clear the storage
   manually with the `clear_core` command.
+
+For more details on how to use the CLI to explore each of Memfault's subsystems,
+see the [Memfault docs](https://mflt.io/demo-cli).
 
 # Debugger Notes
 
@@ -309,7 +309,7 @@ In the file `memfault_platform_coredump.cpp`:
   and the system comes back online, one of your RTOS threads will need to
   transfer the coredump to the Memfault cloud. Study the demo application to
   understand how to retrieve the coredump information (particularly the
-  `get_core`, `print_chunk`, and `clear_core` functions. Implement your
+  `get_core`, `export`, and `clear_core` functions). Implement your
   transport based on your product's requirements.
 
 - If your app is using `MBED_ERROR()` and related functions, you may want to use

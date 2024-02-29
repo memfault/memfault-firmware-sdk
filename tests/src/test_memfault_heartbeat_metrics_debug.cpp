@@ -85,7 +85,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
 
   // this should output the system reset values
   const char *heartbeat_debug_print_on_boot[] = {
-    "Heartbeat keys/values:",
+    "Metrics keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 1",
     "  operational_hours: null",
@@ -106,7 +106,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
 
   // debug trigger will update, save, and zero the values
   const char *heartbeat_debug_print_after_collected[] = {
-    "Heartbeat keys/values:",
+    "Metrics keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 5678",
     "  MemfaultSdkMetric_UnexpectedRebootCount: 1",
     "  operational_hours: null",
@@ -126,7 +126,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
 
   // after trigger, metrics should be zeroed now
   const char *heartbeat_debug_print_reset[] = {
-    "Heartbeat keys/values:",
+    "Metrics keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: null",
     "  operational_hours: null",
@@ -144,7 +144,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   // Finally test that memfault_metrics_heartbeat_add by itself sets the metric
   // to is_set
   const char *heartbeat_add_non_null[] = {
-    "Heartbeat keys/values:",
+    "Metrics keys/values:",
     "  MemfaultSdkMetric_IntervalMs: 0",
     "  MemfaultSdkMetric_UnexpectedRebootCount: null",
     "  operational_hours: null",

@@ -22,12 +22,14 @@ typedef enum {
   kMemfaultSelfTestFlag_RebootReason = (1 << 4),
   kMemfaultSelfTestFlag_RebootReasonVerify = (1 << 5),
   kMemfaultSelfTestFlag_PlatformTime = (1 << 6),
+  kMemfaultSelfTestFlag_CoredumpStorage = (1 << 7),
+  kMemfaultSelfTestFlag_CoredumpStorageCapacity = (1 << 8),
 
   // A convenience mask which runs the default tests
   kMemfaultSelfTestFlag_Default =
     (kMemfaultSelfTestFlag_DeviceInfo | kMemfaultSelfTestFlag_ComponentBoot |
      kMemfaultSelfTestFlag_CoredumpRegions | kMemfaultSelfTestFlag_DataExport |
-     kMemfaultSelfTestFlag_PlatformTime),
+     kMemfaultSelfTestFlag_PlatformTime | kMemfaultSelfTestFlag_CoredumpStorageCapacity),
 } eMemfaultSelfTestFlag;
 
 //! Main entry point to performing a self test
@@ -46,8 +48,20 @@ uint32_t memfault_self_test_arg_to_flag(const char *arg);
 
 //! Delays or puts to sleep current context for specified milliseconds
 //!
-//! @note This function must be implemented by your platform to perform all self tests completely
+//! @note This function must be implemented by your platform to perform platform time test
 void memfault_self_test_platform_delay(uint32_t delay_ms);
+
+//! Disables all interrupts
+//!
+//! @note This function must be implemented by your platform to perform coredump storage test
+//! @returns True if interrupts were disabled, otherwise false
+bool memfault_self_test_platform_disable_irqs(void);
+
+//! Enables all interrupts
+//!
+//! @note This function must be implemented by your platform to perform coredump storage test
+//! @returns True if interrupts were enabled, otherwise false
+bool memfault_self_test_platform_enable_irqs(void);
 
 #ifdef __cplusplus
 }

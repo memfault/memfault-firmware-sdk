@@ -133,10 +133,13 @@ or
 miniterm.py ftdi://ftdi:2232/2 115200
 ```
 
+Press enter and you should see the `esp32>` prompt. Enter the `help` command
+to see a list of commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
+
 ## Using the demo app
 
-The [demo app](https://mflt.io/demo-cli) is a simple console based app that has
-commands to cause a crash in several ways. Once a coredump is captured, it can
+The demo app is a simple console based app that has commands to cause a crash in
+several ways. Once a coredump is captured, it can
 be sent via WiFi to Memfault's web services to get analyzed and desymbolicated.
 The `memfault/http` component of the Memfault SDK is used to talk to Memfault's
 web services.
@@ -337,3 +340,5 @@ The following steps can be used to exercise OTA functionality:
    I (8358) mflt: SW version: 1.0.1-dev
    I (8358) mflt: HW version: esp32-proto
    ```
+
+For more details on how to use the CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).

@@ -13,6 +13,8 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_STUB_DIR)/stub_memfault_log_save.c \
   $(MFLT_TEST_STUB_DIR)/stub_component_booted.c \
   $(MFLT_TEST_STUB_DIR)/stub_memfault_coredump_regions.c \
+  $(MFLT_TEST_STUB_DIR)/stub_memfault_coredump_storage_debug.c \
+  $(MFLT_TEST_STUB_DIR)/stub_memfault_coredump.c \
 
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_self_test_reboot_reason.cpp \

@@ -214,6 +214,20 @@ int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
 //! a metrics collection).
 void memfault_metrics_heartbeat_debug_print(void);
 
+//! For debugging purposes: prints the current session values using
+//! MEMFAULT_LOG_DEBUG(). Before printing, any active timer values are computed.
+//! Other metrics will print the current values. This can be called from the
+//! user-supplied session end callback to print values at the end of a session
+//! use memfault_metrics_session_register_end_cb() to register a callback.
+//! @param session_key The key of the session
+void memfault_metrics_session_debug_print(eMfltMetricsSessionIndex session_key);
+
+//! For debugging purposes: prints the current values for all sessions (i.e. all metrics
+//! that are not heartbeat metrics) using MEMFAULT_LOG_DEBUG(). Before printing, any
+//! active timer values are computed. Other metrics will print the current values.
+//! This function is primarily used for printing session metrics from the Memfault demo CLI.
+void memfault_metrics_all_sessions_debug_print(void);
+
 //! For debugging purposes: triggers the heartbeat data collection handler, as if the heartbeat
 //! timer had fired. We recommend also testing that the heartbeat timer fires by itself. To get the
 //! periodic data collection triggering rapidly for testing and debugging, consider using a small
@@ -227,12 +241,25 @@ int memfault_metrics_heartbeat_timer_read(MemfaultMetricId key, uint32_t *read_v
 int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
                                            size_t read_val_len);
 
+//! Callback used to collect custom metrics at the start of a session.
+//!
+//! This CB is called when a session is ended. It can be used to set any state that is needed
+//! for metric collection during a session.
+typedef void (*MemfaultMetricsSessionStartCb)(void);
+
 //! Callback used to collect custom metrics at the end of a session.
 //!
 //! This CB is called when a session is ended. It can be used to collect custom metrics
 //! whose value at the end of a session are all that matters. For example, if you wanted to
 //! track the battery life over the course of an LTE session.
 typedef void (*MemfaultMetricsSessionEndCb)(void);
+
+//! Register a callback to be called when a session is started.
+//!
+//! @param session_key The key of the session to register the callback for
+//! @param session_start_cb The callback to be called when the session has started
+void memfault_metrics_session_register_start_cb(eMfltMetricsSessionIndex session_key,
+                                                MemfaultMetricsSessionStartCb session_start_cb);
 
 //! Register a callback to be called when a session is ended.
 //!

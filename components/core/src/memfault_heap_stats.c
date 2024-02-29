@@ -68,10 +68,10 @@ bool memfault_heap_stats_empty(void) {
 static uint16_t prv_get_previous_entry(uint16_t search_entry_index) {
   uint16_t index = MEMFAULT_HEAP_STATS_LIST_END;
 
-  for (uint16_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
     sMfltHeapStatEntry *entry = &g_memfault_heap_stats_pool[i];
     if (entry->info.in_use && entry->info.next_entry_index == search_entry_index) {
-      index = i;
+      index = (uint16_t)i;
       break;
     }
   }
@@ -87,16 +87,16 @@ static uint16_t prv_get_new_entry_index(void) {
   sMfltHeapStatEntry *entry;
   uint16_t unused_index = MEMFAULT_HEAP_STATS_LIST_END;
 
-  for (uint16_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
     entry = &g_memfault_heap_stats_pool[i];
 
     if (!entry->info.in_use) {
       if (entry->info.size == 0) {
-        return i;  // favor never used entries
+        return (uint16_t)i;  // favor never used entries
       }
       // save the first inactive entry found
       if (unused_index == MEMFAULT_HEAP_STATS_LIST_END) {
-        unused_index = i;
+        unused_index = (uint16_t)i;
       }
     }
   }
@@ -152,13 +152,13 @@ void memfault_heap_stats_free(const void *ptr) {
     g_memfault_heap_stats.in_use_block_count--;
 
     // if the pointer exists in the tracked stats, mark it as freed
-    for (uint16_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
+    for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {
       sMfltHeapStatEntry *entry = &g_memfault_heap_stats_pool[i];
       if ((entry->ptr == ptr) && entry->info.in_use) {
         entry->info.in_use = 0;
 
         // Find the entry previous to the removed entry
-        uint16_t previous_entry_index = prv_get_previous_entry(i);
+        uint16_t previous_entry_index = prv_get_previous_entry((uint16_t)i);
 
         // If list head removed, set next entry as new list head
         if (g_memfault_heap_stats.stats_pool_head == i) {

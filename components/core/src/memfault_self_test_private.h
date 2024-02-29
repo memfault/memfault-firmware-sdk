@@ -60,6 +60,15 @@ uint32_t memfault_self_test_reboot_reason_test_verify(void);
 //! Runs tests against platform time functions
 uint32_t memfault_self_test_time_test(void);
 
+//! Runs tests against platform coredump storage implementation
+//!
+//! This test will check for the existence of a valid coredump before proceeding and abort if one is
+//! found to prevent overwriting valid data
+uint32_t memfault_self_test_coredump_storage_test(void);
+
+//! Runs test to check capacity of coredump storage against worst case
+uint32_t memfault_self_test_coredump_storage_capacity_test(void);
+
 //! Internal implementation of strnlen
 //!
 //! Support for strnlen is inconsistent across a lot of libc implementations so we implement this

@@ -71,4 +71,4 @@ application demonstrating how to use Memfault.
 ## Questions
 
 Don't hesitate to contact us for help! You can reach us through
-[support@memfault.com](mailto:support@memfault.com).
+<https://mflt.io/contact-support>

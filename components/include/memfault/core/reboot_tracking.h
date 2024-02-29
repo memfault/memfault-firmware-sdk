@@ -125,6 +125,12 @@ void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_r
     memfault_reboot_tracking_mark_reset_imminent(reason_, &mflt_reg_info); \
   } while (0)
 
+//! Helper macro that behaves the same as `MEMFAULT_REBOOT_MARK_RESET_IMMINENT` but allows
+//! for a custom reboot reason to be specified without needed to use the
+//! `MEMFAULT_REBOOT_REASON_KEY` macro
+#define MEMFAULT_REBOOT_MARK_RESET_IMMINENT_CUSTOM(reason_) \
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(MEMFAULT_REBOOT_REASON_KEY(reason_))
+
 //! Collects recent reset info and pushes it to memfault_event_storage so that the data can
 //! can be sent out using the Memfault data packetizer
 //!

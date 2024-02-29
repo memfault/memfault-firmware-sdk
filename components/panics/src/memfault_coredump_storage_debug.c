@@ -241,7 +241,7 @@ static bool prv_verify_coredump_clear_operation(void) {
   return true;
 }
 
-static void prv_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) {
+static void prv_log_error_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) {
 #define MAX_BUF_LEN (sizeof(s_read_buf) * 2 + 1)
   char hex_buffer[MAX_BUF_LEN];
   for (uint32_t j = 0; j < buf_len; ++j) {
@@ -249,7 +249,7 @@ static void prv_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) 
   }
   // make sure buffer is NUL terminated even if buf_len = 0
   hex_buffer[buf_len * 2] = '\0';
-  MEMFAULT_LOG_INFO("%s: %s", prefix, hex_buffer);
+  MEMFAULT_LOG_ERROR("%s: %s", prefix, hex_buffer);
 }
 
 bool memfault_coredump_storage_debug_test_finish(void) {
@@ -259,7 +259,7 @@ bool memfault_coredump_storage_debug_test_finish(void) {
     return true;
   }
 
-  MEMFAULT_LOG_INFO("Coredump Storage Verification Failed");
+  MEMFAULT_LOG_ERROR("Coredump Storage Verification Failed");
 
   const char *op_suffix;
   switch (s_test_result.op) {
@@ -310,18 +310,18 @@ bool memfault_coredump_storage_debug_test_finish(void) {
       break;
   }
 
-  MEMFAULT_LOG_INFO("%s memfault_platform_coredump_storage_%s() test", reason_str, op_suffix);
-  MEMFAULT_LOG_INFO("Storage offset: 0x%08" PRIx32 ", %s size: %d", s_test_result.offset, op_suffix,
-                    (int)s_test_result.size);
+  MEMFAULT_LOG_ERROR("%s memfault_platform_coredump_storage_%s() test", reason_str, op_suffix);
+  MEMFAULT_LOG_ERROR("Storage offset: 0x%08" PRIx32 ", %s size: %d", s_test_result.offset,
+                     op_suffix, (int)s_test_result.size);
 
   if (s_test_result.result == kMemfaultCoredumpStorageResult_CompareFailed) {
     if (s_test_result.expected_buf != NULL) {
-      prv_hexdump("Expected", s_test_result.expected_buf, s_test_result.size);
+      prv_log_error_hexdump("Expected", s_test_result.expected_buf, s_test_result.size);
     } else if (s_test_result.op != kMemfaultCoredumpStorageTestOp_Write) {
-      MEMFAULT_LOG_INFO("expected erase pattern is 0xff or 0x00");
+      MEMFAULT_LOG_ERROR("expected erase pattern is 0xff or 0x00");
     }
 
-    prv_hexdump("Actual  ", s_read_buf, s_test_result.size);
+    prv_log_error_hexdump("Actual  ", s_read_buf, s_test_result.size);
   }
 
   return false;

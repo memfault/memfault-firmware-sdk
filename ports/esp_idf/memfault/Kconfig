@@ -24,9 +24,31 @@ menu "Memfault"
             dumping state of the SDK, and performing device updates.
 
     config MEMFAULT_CLI_SELF_TEST
-        bool "Enables the self test command via CLI"
+        bool "Enables the self test command via CLI, `memfault_self_test`"
         default n
         depends on MEMFAULT_CLI_ENABLED
+        help
+            Adds a command, `memfault_self_test`, to run a suite of tests used to verify the
+            device's integration with the Memfault SDK. By default, this will run tests to validate
+            device info, component boot, coredump regions, coredump storage capacity, data export,
+            and platform time. A reboot test is available by running `memfault_self_test reboot`
+
+if MEMFAULT_CLI_SELF_TEST
+
+    config MEMFAULT_CLI_SELF_TEST_COREDUMP_STORAGE
+        bool "Adds option to run coredump storage test [EXPERIMENTAL]"
+        depends on !BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+        depends on !ESP_INT_WDT
+        depends on !ESP_TASK_WDT_EN
+        help
+            Enabling this option adds an experimental coredump storage test.
+            The test exercises the coredump storage implementation by erasing, reading,
+            and writing the entire coredump partition. This test may fail due to Flash
+            cache issues. The test requires disabling the three watchdogs (RTC, INT, Task)
+            and will stall the other core while running.
+            This test may be run with `memfault_self_test coredump_storage`.
+
+endif
 
     config MEMFAULT_COREDUMP_USE_OTA_SLOT
         bool "Enables the use of an OTA slot for coredump storage"

@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+// These cert ids are used to identify certs when using them for TLS handshakes.
+// They persist in modem flash storage with the stored cert. If a required cert is already
+// stored, it should be checked to make sure it is up-to-date, and any deprecated certs should
+// be removed. Deprecated cert ids are kept in deprecated_root_cert.h
 typedef enum {
   // arbitrarily high base so as not to conflict with id used for other certs in use by the system
   kMemfaultRootCert_Base = 1000,
@@ -33,6 +37,13 @@ typedef enum {
 //!
 //! @return 0 on success or if the cert was already loaded, else error code
 int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert, size_t cert_length);
+
+//! Remove specified certificate from backing store
+//!
+//! @param cert_id Identifier to be used to reference the certificate
+//!
+//! @return 0 on success or if the cert was not already loaded, else error code
+int memfault_root_cert_storage_remove(eMemfaultRootCert cert_id);
 
 #ifdef __cplusplus
 }
