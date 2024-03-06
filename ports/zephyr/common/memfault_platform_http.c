@@ -42,7 +42,11 @@
 // enable it by default
 
   #if !defined(MBEDTLS_CONFIG_FILE)
-    #include "mbedtls/config.h"
+    #if MEMFAULT_ZEPHYR_VERSION_GT(3, 5)
+      #include <mbedtls/build_info.h>
+    #else
+      #include "mbedtls/config.h"
+    #endif
   #else
     #include MBEDTLS_CONFIG_FILE
   #endif

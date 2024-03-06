@@ -72,6 +72,8 @@ if(CONFIG_MEMFAULT)
   zephyr_library_link_libraries(memfault)
   target_link_libraries(memfault INTERFACE zephyr_interface)
 
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+
   # The Zephyr includes moved from /include to /include/zephyr in Zephyr 3.2:
   # https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350
   # Add the old path for backwards compatibility. Note that Zephyr itself
