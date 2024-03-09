@@ -25,17 +25,6 @@ if(CONFIG_MEMFAULT)
   # Add Memfault SDK sources to memfault library
   zephyr_interface_library_named(memfault)
   zephyr_library()
-  # Memfault uses strnlen, which is defined by a POSIX extension to libc.
-  # Normally we would just set -std=gnu11 and be done, but Zephyr requires
-  # setting _ANSI_SOURCE for newlib/picolibc due to clashes with the posix
-  # functions provided with these libraries. With _ANSI_SOURCE defined, the
-  # normal -std flag does not pull in the strnlen definition from
-  # newlib/picolibc; a workaround is to define _POSIX_C_SOURCE=200809L. Note
-  # that in order to avoid compiler warnings, we need to apply this selectively;
-  # PICOLIBC enables this already.
-  if (CONFIG_NEWLIB_LIBC)
-    zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
-  endif()
 
   zephyr_library_sources(${MEMFAULT_COMPONENTS_SRCS})
   zephyr_include_directories(
@@ -71,6 +60,8 @@ if(CONFIG_MEMFAULT)
   # Link Memfault Library
   zephyr_library_link_libraries(memfault)
   target_link_libraries(memfault INTERFACE zephyr_interface)
+
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
   # The Zephyr includes moved from /include to /include/zephyr in Zephyr 3.2:
   # https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350

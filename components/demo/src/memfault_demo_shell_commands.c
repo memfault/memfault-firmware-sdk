@@ -101,6 +101,7 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
   { "get_core", memfault_demo_cli_cmd_get_core, "Get coredump info" },
   { "get_device_info", memfault_demo_cli_cmd_get_device_info, "Get device info" },
   { "coredump_size", memfault_demo_cli_cmd_coredump_size, "Print the coredump storage capacity" },
+  { "heartbeat", memfault_demo_cli_cmd_heartbeat, "Trigger a heartbeat" },
   { "metrics_dump", memfault_demo_cli_cmd_metrics_dump,
     "Dump current heartbeat or session metrics" },
   //

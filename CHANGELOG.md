@@ -1,5 +1,53 @@
 # Memfault Firmware SDK Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.7.2] - 2024-03-09
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - The Memfault Self Test component boot check now prints all components that
+    are booted (previously only un-booted components would print):
+
+    ```plaintext
+    MFLT:[INFO] =============================
+    MFLT:[INFO] Component Boot Test
+    MFLT:[INFO] =============================
+    MFLT:[INFO] Component       | Booted?|
+    MFLT:[INFO] -----------------------------
+    MFLT:[INFO] Event Storage   |     yes|
+    MFLT:[INFO] Logging         |     yes|
+    MFLT:[INFO] Reboot Tracking |     yes|
+    MFLT:[INFO] Trace Event     |     yes|
+    MFLT:[INFO] All components booted
+    MFLT:[INFO] =============================
+    ```
+
+  - Restore the Memfault Demo CLI `heartbeat` command, which was unintentionally
+    removed in v1.7.1. This command triggers a heartbeat on-demand, for testing
+    heartbeat functionality.
+
+- Zephyr:
+
+  - A few minor changes to support the upcoming Zephyr 3.6 release, specifically
+    for devices that use mbedTLS for TLS connections.
+
+- ESP-IDF:
+
+  - v1.7.0 of the SDK added a Kconfig flag to enabled Compact Logs,
+    `CONFIG_MEMFAULT_COMPACT_LOG_ENABLE`. Updating from older versions of the
+    SDK would require opting in to that option, even if Compact Logging was
+    enabled via the Memfault config flag, `MEMFAULT_COMPACT_LOG_ENABLE`.
+    Instead, support enabling Compact Logs both via the Memfault config flag or
+    the Kconfig flag, to require no changes when updating the SDK for existing
+    users.
+
 ## [1.7.1] - 2024-02-28
 
 ### :chart_with_upwards_trend: Improvements

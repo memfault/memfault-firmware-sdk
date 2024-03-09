@@ -114,6 +114,10 @@ CFLAGS += \
 	-Og \
 	-MD \
 
+# Enable the self test by default
+MEMFAULT_DEMO_CLI_SELF_TEST ?= 1
+CFLAGS += -DMEMFAULT_DEMO_CLI_SELF_TEST=$(MEMFAULT_DEMO_CLI_SELF_TEST)
+
 LINKER_SCRIPT = $(BOARD_DIR)/linker.ld
 
 LDFLAGS += \

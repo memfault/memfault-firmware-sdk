@@ -207,7 +207,9 @@ uint32_t memfault_self_test_component_boot_test(void) {
   MEMFAULT_LOG_INFO("-----------------------------");
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_boot_components); i++) {
     bool booted = s_boot_components[i].booted();
-    if (!booted) {
+    if (booted) {
+      MEMFAULT_LOG_INFO("%-16s|%8s|", s_boot_components[i].component_name, "yes");
+    } else {
       MEMFAULT_LOG_ERROR("%-16s|%8s|", s_boot_components[i].component_name, "no");
       result |= (1 << i);
     }

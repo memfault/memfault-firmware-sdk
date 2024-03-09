@@ -269,15 +269,21 @@ if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=mbedtls_calloc -Wl,--wrap=mbedtls_free")
 endif()
 
-# Include a linker script fragment to support compact logs, when enabled
-if(CONFIG_MEMFAULT_COMPACT_LOG_ENABLE)
-  get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
-  target_link_libraries(
-      ${this_component}
-      INTERFACE
-      -T ${compact_log_linker_script}
-  )
-endif()
+# Include a linker script fragment to support compact logs unconditionally. It's
+# Include a linker script fragment to support compact logs unconditionally. It's
+# only populated if compact logs are enabled, and otherwise is ignored. We keep
+# it unconditionally included for backwards compatibility, so users updating the
+# SDK don't need to change any build configuration.
+get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
+target_link_libraries(
+    ${this_component}
+    INTERFACE
+    # Note: there is intentionally no space between -T and the linker script
+    # file name. This is required for PlatformIO compatibility- the PlatformIO
+    # build system inserts arguments into the linker command line, so we need to
+    # make sure it can't separate the -T and the linker script file name.
+    -T${compact_log_linker_script}
+)
 
 # Link required libraries and add compiler flags to enable FreeRTOS region collection
 # in >= 4.4.3. Note: CMake does not short-circuit logic statements, nested ifs required
