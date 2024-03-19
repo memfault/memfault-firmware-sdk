@@ -29,6 +29,12 @@ include(${memfault_firmare_sdk_dir}/ports/esp_idf/memfault.cmake)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(${PROJECT_NAME})
 
+# Enable a compilation error if any deprecated APIs are used. This helps detect
+# bleeding edge changes in the ESP-IDF.
+if (IDF_VERSION_MAJOR VERSION_GREATER_EQUAL 5)
+  idf_build_set_property(COMPILE_OPTIONS "-Werror=deprecated-declarations" APPEND)
+endif()
+
 # Check for invalid partition table configurations
 if (
   CONFIG_APP_MEMFAULT_TRANSPORT_HTTP AND

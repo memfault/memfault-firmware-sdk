@@ -117,7 +117,7 @@ void memfault_zephyr_collect_reset_info(void) {
 //
 // Since we don't use the arguments we match anything with () to avoid
 // compiler warnings and share the same bootup logic
-static int prv_init_and_log_reboot() {
+static int prv_boot_memfault() {
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
@@ -133,6 +133,10 @@ static int prv_init_and_log_reboot() {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(s_memfault_event_storage, &boot_info);
+#endif
+
+#if defined(CONFIG_MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT)
+  memfault_metrics_battery_boot();
 #endif
 
 #if defined(CONFIG_MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK)
@@ -169,7 +173,7 @@ void __wrap_k_free(void *ptr) {
 }
 #endif
 
-SYS_INIT(prv_init_and_log_reboot,
+SYS_INIT(prv_boot_memfault,
 #if CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL
          POST_KERNEL,
 #else

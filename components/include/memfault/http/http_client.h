@@ -46,11 +46,12 @@ typedef struct MfltHttpClientConfig {
   //! Route used to get information from the Memfault cloud pertaining to a device in your fleet.
   //! For example, the latest firmware release available.
   sMemfaultHttpApi device_api;
-  //! Callback for fetching device info for the OTA'ing device. Typically this callback can be left
-  //! unset, but if the request is on behalf of a downstream device, can be substituted with the
-  //! downstream device's information. The function signature is the same as
-  //! memfault_platform_get_device_info(). If NULL, memfault_platform_get_device_info() will be
-  //! used.
+  //! Callback for fetching device info, used when uploading chunks and
+  //! performing OTA checks. Typically this callback can be left unset, but if
+  //! the request is on behalf of a downstream device, can be substituted with
+  //! the downstream device's information. The function signature is the same as
+  //! memfault_platform_get_device_info(). If unset (the default),
+  //! memfault_platform_get_device_info() will be used.
   void (*get_device_info)(sMemfaultDeviceInfo *info);
 } sMfltHttpClientConfig;
 

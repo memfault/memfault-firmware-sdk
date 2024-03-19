@@ -35,6 +35,10 @@
 #include "nvs_flash.h"
 #include "settings.h"
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  #include "driver/uart_vfs.h"
+#endif
+
 // Conditionally enable the logging tag variable only when it's used
 #if defined(CONFIG_STORE_HISTORY) || defined(CONFIG_HEAP_USE_HOOKS)
 static const char *TAG = "main";
@@ -86,7 +90,13 @@ static void initialize_console() {
   setvbuf(stdin, NULL, _IONBF, 0);
   setvbuf(stdout, NULL, _IONBF, 0);
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+  // These APIs vary depending on ESP-IDF version.
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+  uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
+  /* Move the caret to the beginning of the next line on '\n' */
+  uart_vfs_dev_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+#elif ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
   esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
   /* Move the caret to the beginning of the next line on '\n' */
@@ -102,7 +112,11 @@ static void initialize_console() {
   ESP_ERROR_CHECK(uart_driver_install(CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
 
   /* Tell VFS to use UART driver */
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  uart_vfs_dev_use_driver(CONFIG_CONSOLE_UART_NUM);
+#else
   esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+#endif
 
   /* Initialize the console */
   esp_console_config_t console_config = {
@@ -173,7 +187,7 @@ static void prv_memfault_ota(void) {
 
   int rv = memfault_esp_port_ota_update(&handler);
 
-  #if MEMFAULT_METRICS_SYNC_SUCCESS
+  #if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
   // Record the OTA check result using the built-in sync success metric
   if (rv == 0 || rv == 1) {
     memfault_metrics_connectivity_record_sync_success();

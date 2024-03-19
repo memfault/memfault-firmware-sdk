@@ -7,17 +7,23 @@
 
 #include <stdlib.h>
 
+#include "memfault/esp_port/version.h"
+// keep the version.h include above, to support ESP-IDF < v4
+
 #include "esp_attr.h"
 #include "esp_core_dump.h"
 #include "esp_err.h"
 #ifdef __XTENSA__
-  #include "freertos/xtensa_api.h"
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+    #include "xtensa_api.h"
+  #else
+    #include "freertos/xtensa_api.h"
+  #endif
   #include "memfault/panics/arch/xtensa/xtensa.h"
 #elif __riscv
   #include "memfault/panics/arch/riscv/riscv.h"
   #include "riscv/rvruntime-frames.h"
 #endif
-#include "memfault/esp_port/version.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
 
@@ -88,9 +94,14 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! @note The signature for the wrapped function changed in esp-idf v4.3+, then
 //! later backported to the 4.2 branch in v4.2.3. Support that change with a
 //! version check (see static assert below for verifying the signature is
-//! correct)
+//! correct).
+//! The signature also changed in esp-idf v5.3.0.
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+void __wrap_esp_core_dump_write(panic_info_t *info) {
+  #else
 void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
+  #endif
   #ifdef __XTENSA__
   XtExcFrame *fp = (void *)info->frame;
   #elif __riscv
@@ -241,6 +252,10 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
 }
 
 // Ensure the substituted function signature matches the original function
-_Static_assert(__builtin_types_compatible_p(__typeof__(&esp_core_dump_to_flash),
-                                            __typeof__(&__wrap_esp_core_dump_to_flash)),
+_Static_assert(__builtin_types_compatible_p(
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+                 __typeof__(&esp_core_dump_write), __typeof__(&__wrap_esp_core_dump_write)),
+#else
+                 __typeof__(&esp_core_dump_to_flash), __typeof__(&__wrap_esp_core_dump_to_flash)),
+#endif
                "Error: core dump handler is not compatible with esp-idf's default implementation");

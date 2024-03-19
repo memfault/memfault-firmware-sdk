@@ -174,12 +174,34 @@ endif
         help
             Collects Memfault metrics for basic heap utilization.
 
-    config MEMFAULT_SYNC_MEMFAULT_METRICS
-        bool "Enable sync_memfault_successful metric"
-        default y
-        help
-            Collects Memfault metrics for the number of successful and failed
-            syncs to the Memfault cloud.
+    config MEMFAULT_METRICS_SYNC_SUCCESS
+            bool "Enable collection of sync success metrics"
+            default y
+            help
+             Memfault user-defined sync success metric component. More information
+             at https://mflt.io/core-metrics .
+
+    config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
+            bool "Enable collection of memfault sync success metrics"
+            default y
+            help
+             Collects Memfault metrics for the number of successful and failed
+             syncs to the Memfault cloud. More information at
+             https://mflt.io/core-metrics .
+
+    config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+            bool "Enable collection of memfault connectivity time metrics"
+            default y
+            help
+             Memfault connectivity time metric component. More information at
+             https://mflt.io/core-metrics .
+
+    config MEMFAULT_METRICS_BATTERY_ENABLE
+           bool "Enable collection of battery metrics"
+           default n
+           help
+             Memfault battery metric component. More information at
+             https://mflt.io/core-metrics .
 
     config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
         bool "Assert on allocation failure"

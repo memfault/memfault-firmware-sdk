@@ -419,7 +419,13 @@ bool memfault_esp_port_netif_connected(void) {
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
   // iterate over all netifs and check if any of them are connected
   esp_netif_t *netif = NULL;
-  while ((netif = esp_netif_next(netif)) != NULL) {
+  while ((netif =
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+            esp_netif_next_unsafe
+    #else
+            esp_netif_next
+    #endif
+          (netif)) != NULL) {
     if (!esp_netif_is_netif_up(netif)) {
       continue;
     }
@@ -463,7 +469,7 @@ int memfault_esp_port_http_client_post_data(void) {
     MEMFAULT_LOG_INFO("No new data found");
   } else {
     MEMFAULT_LOG_INFO("Result: %d", (int)rv);
-  #if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+  #if defined(CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS)
     if (rv == 0) {
       memfault_metrics_connectivity_record_memfault_sync_success();
     } else {

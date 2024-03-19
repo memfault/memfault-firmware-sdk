@@ -655,7 +655,7 @@ int memfault_zephyr_port_post_data(void) {
     memfault_zephyr_port_http_close_socket(&ctx);
   }
 
-#if defined(CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS)
+#if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
   if (rv == 0) {
     memfault_metrics_connectivity_record_memfault_sync_success();
   } else {

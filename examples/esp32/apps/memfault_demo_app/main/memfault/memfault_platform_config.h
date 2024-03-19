@@ -9,6 +9,3 @@
 //! Default configuration settings can be found in "memfault/config.h"
 
 #define MEMFAULT_TASK_WATCHDOG_ENABLE 1
-
-// Enable the sync_successful metric
-#define MEMFAULT_METRICS_SYNC_SUCCESS 1

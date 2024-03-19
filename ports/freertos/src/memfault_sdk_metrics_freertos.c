@@ -13,6 +13,7 @@
 #ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
+  #include "memfault/esp_port/version.h"
 #else
   #include "FreeRTOS.h"
   #include "task.h"
@@ -76,7 +77,17 @@ static configRUN_TIME_COUNTER_TYPE prv_get_total_runtime(void) {
 
 #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
 static configRUN_TIME_COUNTER_TYPE prv_get_idle_counter_for_core(uint32_t core) {
-  TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core);
+  TaskHandle_t idle_task_handle =
+  #ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
+    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+    xTaskGetIdleTaskHandleForCore(core)
+    #else
+    xTaskGetIdleTaskHandleForCPU(core)
+    #endif
+  #else
+    xTaskGetIdleTaskHandleForCPU(core)
+  #endif
+    ;
   TaskStatus_t idle_task_status;
 
   // This could be a bit cleaner if we could use `ulTaskGetRunTimeCounter`, but that API

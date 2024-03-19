@@ -5,6 +5,9 @@
 //!
 //! @brief
 //! Logic for saving a coredump to backing storage and reading it out
+//!
+//! See https://mflt.io/mcu-coredump-format for a tabular view of the
+//! Memfault coredump format
 
 #include <stdbool.h>
 #include <string.h>

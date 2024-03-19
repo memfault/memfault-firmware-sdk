@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2024-03-19
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add new Kconfig flags for the following Memfault Core Metrics:
+
+    - `MEMFAULT_METRICS_SYNC_SUCCESS` (default=y)
+    - `MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS` (default=y)
+    - `MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME` (default=y)
+    - `MEMFAULT_METRICS_BATTERY_ENABLE` (default=n)
+
+    Additionally, a Kconfig flag `MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT`
+    will enable auto-initialization of battery metrics on system init (requires
+    `memfault_platform_get_stateofcharge()` to be implemented).
+
+    See https://mflt.io/core-metrics for more information on Core Metrics.
+
+- ESP-IDF:
+
+  - Add preliminary support for the upcoming ESP-IDF v5.3.0 release.
+
 ## [1.7.2] - 2024-03-09
 
 ### :chart_with_upwards_trend: Improvements
