@@ -80,7 +80,7 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 
   //! Records same info as MEMFAULT_TRACE_EVENT as well as a log
   //!
-  //! @note The log alows one to capture arbitrary metadata when a system error is detected
+  //! @note The log allows one to capture arbitrary metadata when a system error is detected
   //! such as the value of several registers or current state machine state.
   //!
   //! @note Trace events with the same 'reason' but a different 'log' are classified as

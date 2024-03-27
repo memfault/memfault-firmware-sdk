@@ -114,7 +114,7 @@ TEST(MemfaultMinimalCbor, Test_Join) {
   bool success = memfault_cbor_encode_array_begin(&encoder, MEMFAULT_ARRAY_SIZE(values123));
   CHECK(success);
 
-  // build list of integers in a seperate encoder context
+  // build list of integers in a separate encoder context
   sMemfaultCborEncoder encoder2;
   char cbor_ints[3];
   memfault_cbor_encoder_init(&encoder2, prv_write_cb, cbor_ints, sizeof(cbor_ints));

@@ -25,23 +25,23 @@
 #include "memfault/ports/watchdog.h"
 
 // The Low Power Interrupt Timer Channel to use. The S32K has 4 channels (0-3).
-#ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE
-  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE 0
+#ifndef MEMFAULT_SOFTWARE_WATCHDOG_SOURCE
+  #define MEMFAULT_SOFTWARE_WATCHDOG_SOURCE 0
 #endif
 
 // If the LPIT is driven by SIRC or FIRC we can automatically derive the clock frequency. If
 // SPLL_CLK or SOS_CLK are used, we need a define to be specified because we can't programmatically
 // resolve the external source clock frequency
-#ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ
-  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ 0
+#ifndef MEMFAULT_SOFTWARE_WATCHDOG_SOURCE_CLOCK_FREQ
+  #define MEMFAULT_SOFTWARE_WATCHDOG_SOURCE_CLOCK_FREQ 0
 #endif
 
-#if MEMFAULT_SOFWARE_WATCHDOG_SOURCE < 0 || MEMFAULT_SOFWARE_WATCHDOG_SOURCE > 4
-  #error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be between 0 and 3"
+#if MEMFAULT_SOFTWARE_WATCHDOG_SOURCE < 0 || MEMFAULT_SOFTWARE_WATCHDOG_SOURCE > 4
+  #error "MEMFAULT_SOFTWARE_WATCHDOG_SOURCE must be between 0 and 3"
 #endif
 
 #ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
-  #if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == 0
+  #if MEMFAULT_SOFTWARE_WATCHDOG_SOURCE == 0
     #error \
       "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPIT0_Ch0_IRQHandler"
   #else
@@ -72,7 +72,7 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
     case 1:
       clock_name = "SOSCDIV2";
       clock_div2 = (SCG->SOSCDIV & SCG_SOSCDIV_SOSCDIV2_MASK) >> SCG_SOSCDIV_SOSCDIV2_SHIFT;
-      src_clock_freq = MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ;
+      src_clock_freq = MEMFAULT_SOFTWARE_WATCHDOG_SOURCE_CLOCK_FREQ;
       break;
     case 2:
       clock_name = "SIRCDIV2";
@@ -89,7 +89,7 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
     case 6:
       clock_name = "SPLLDIV2";
       clock_div2 = (SCG->SPLLDIV & SCG_SPLLDIV_SPLLDIV2_MASK) >> SCG_SPLLDIV_SPLLDIV2_SHIFT;
-      src_clock_freq = MEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ;
+      src_clock_freq = MEMFAULT_SOFTWARE_WATCHDOG_SOURCE_CLOCK_FREQ;
     default:
       MEMFAULT_LOG_ERROR("Illegal clock source for LPIT. PCC=0x%" PRIx32 " PCS=0x%" PRIx32, pcc,
                          pcs);
@@ -102,7 +102,7 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
   }
 
   if (src_clock_freq == 0) {
-    MEMFAULT_LOG_ERROR("-DMEMFAULT_SOFWARE_WATCHDOG_SOURCE_CLOCK_FREQ=<freq_hz> required");
+    MEMFAULT_LOG_ERROR("-DMEMFAULT_SOFTWARE_WATCHDOG_SOURCE_CLOCK_FREQ=<freq_hz> required");
     return -3;
   }
 
@@ -131,10 +131,10 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
   }
 
   // disable the timer, we are about to configure it!
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
 
   // Set up the countdown to match the desired watchdog timeout
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TVAL = (uint32_t)desired_tval;
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TVAL = (uint32_t)desired_tval;
 
   // Steps
   //  1. Clear any pending ISRs
@@ -142,7 +142,7 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
   //  3. Enable ISR in NVIC
   //  4. Use highest priority so we can catch hangs in ISRs
   //     of lower priorities
-  switch (MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
+  switch (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE) {
     case 0:
       LPIT0->MSR |= LPIT_MSR_TIF0(0);
       LPIT0->MIER |= LPIT_MIER_TIE0(1);
@@ -167,7 +167,7 @@ static int prv_lpit_with_timeout(uint32_t timeout_ms) {
       break;
   }
 
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL =
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TCTRL =
     LPIT_TMR_TCTRL_MODE(0) |  // 32 bit count down mode
     LPIT_TMR_TCTRL_T_EN(1);
 
@@ -180,7 +180,7 @@ int memfault_software_watchdog_enable(void) {
 }
 
 int memfault_software_watchdog_disable(void) {
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
   return 0;
 }
 
@@ -188,8 +188,8 @@ int memfault_software_watchdog_feed(void) {
   // PER S32K-RM, "To abort the current timer cycle and start a timer period with a new value, the
   // timer channel must be disabled and enabled again"
 
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
-  LPIT0->TMR[MEMFAULT_SOFWARE_WATCHDOG_SOURCE].TCTRL |= LPIT_TMR_TCTRL_T_EN(1);
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TCTRL &= ~LPIT_TMR_TCTRL_T_EN(1);
+  LPIT0->TMR[MEMFAULT_SOFTWARE_WATCHDOG_SOURCE].TCTRL |= LPIT_TMR_TCTRL_T_EN(1);
 
   return 0;
 }

@@ -138,7 +138,7 @@ static struct MfltTaskWatermarks {
 #endif
 
 // If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is set to 0, apply a default
-// to MEMFAULT_FREERTOS_TCB_SIZE here. This value can be overriden by setting
+// to MEMFAULT_FREERTOS_TCB_SIZE here. This value can be overridden by setting
 // MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE in memfault_platform_config.h. See
 // include/memfault/default_config.h for more information.
 #if MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE

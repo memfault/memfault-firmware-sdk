@@ -27,7 +27,7 @@ bool memfault_log_data_source_has_been_triggered(void) {
 
 TEST_GROUP(MemfaultLog) {
   void setup() {
-    fake_memfault_metrics_platorm_locking_reboot();
+    fake_memfault_metrics_platform_locking_reboot();
     s_fake_data_source_has_been_triggered = false;
 
     // we selectively enable memfault_log_handle_saved_callback() for certain tests

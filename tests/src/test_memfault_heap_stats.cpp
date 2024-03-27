@@ -19,7 +19,7 @@
 
 TEST_GROUP(MemfaultHeapStats) {
   void setup() {
-    fake_memfault_metrics_platorm_locking_reboot();
+    fake_memfault_metrics_platform_locking_reboot();
 
     mock().disable();
   }

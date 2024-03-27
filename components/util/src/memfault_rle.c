@@ -81,7 +81,7 @@ size_t memfault_rle_encode(sMemfaultRleCtx *ctx, const void *buf, size_t buf_siz
         // NB: If we only have two repeating bytes and leading non-repeating bytes we
         // want to encode this as one sequence to save space:
         //
-        // 1, 2, 2, 3 encoded as a non repeat + repeast is 6 bytes: (-1), 1, (2), 2, (-1), 3
+        // 1, 2, 2, 3 encoded as a non repeat + repeats is 6 bytes: (-1), 1, (2), 2, (-1), 3
         // whereas
         // 1, 2, 2, 3 encoded as one sequence is 5 bytes: (-4), 1, 2, 2, 3
 

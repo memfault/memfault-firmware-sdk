@@ -45,10 +45,10 @@ static void prv_expect_compact_log_call(uint32_t compressed_fmt) {
     .expectOneCall("prv_compact_log_mock")
     .withUnsignedIntParameter("compressed_fmt", compressed_fmt);
 }
-#define MOCK_CHECK_EXPECTIONS_AND_CLEAR() \
-  do {                                    \
-    mock().checkExpectations();           \
-    mock().clear();                       \
+#define MOCK_CHECK_EXPECTATIONS_AND_CLEAR() \
+  do {                                      \
+    mock().checkExpectations();             \
+    mock().clear();                         \
   } while (0)
 
 #include "test_memfault_compact_log_cxx.c"

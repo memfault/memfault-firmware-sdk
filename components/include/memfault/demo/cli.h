@@ -102,7 +102,7 @@ int memfault_demo_cli_cmd_system_reboot(int argc, char *argv[]);
 
 //! Drains _all_ queued up chunks by calling user_transport_send_chunk_data
 //!
-//! @note user_transport_send_chunk_data is defined as a weak function so it can be overriden.
+//! @note user_transport_send_chunk_data is defined as a weak function so it can be overridden.
 //! The default implementation is a no-op.
 //! @note When "memfault install_chunk_handler" has been run, this can be used as a way to post
 //! chunks to the Memfault cloud directly from GDB. See https://mflt.io/posting-chunks-with-gdb

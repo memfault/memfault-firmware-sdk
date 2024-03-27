@@ -62,7 +62,7 @@ typedef enum MemfaultMetricValueType {
 //!
 //! // memfault_metrics_heartbeat_config.def
 //! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(battery_level, kMemfaultMetricType_Unsigned, 0, 100)
-//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(ambient_temperature_celcius, kMemfaultMetricType_Signed,
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(ambient_temperature_celsius, kMemfaultMetricType_Signed,
 //! -40, 40)
 //!
 //! @param key_name The name of the key, without quotes. This gets surfaced in the Memfault UI, so

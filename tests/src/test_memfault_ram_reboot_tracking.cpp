@@ -65,7 +65,7 @@ TEST(MfltStorageTestGroup, Test_SetAndGetCrashInfo) {
   CHECK(!crash_found);
 }
 
-TEST(MfltStorageTestGroup, Test_NoRamRegionIntialized) {
+TEST(MfltStorageTestGroup, Test_NoRamRegionInitialized) {
   memfault_reboot_tracking_boot(NULL, NULL);
   CHECK_FALSE(memfault_reboot_tracking_booted());
   memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_Assert, NULL);

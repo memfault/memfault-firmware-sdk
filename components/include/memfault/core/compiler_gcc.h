@@ -83,7 +83,7 @@ extern "C" {
   // NB: OSX linker has slightly different placement syntax and requirements
   //
   // Notably,
-  // 1. Comma seperated where first item is top level section (i.e __DATA), i.e
+  // 1. Comma separated where first item is top level section (i.e __DATA), i.e
   //   __attribute__((section("__DATA," x)))
   // 2. total length of name must be between 1-16 characters
   //

@@ -94,7 +94,7 @@ static void prv_coredump_handle_soc_update(uint32_t sys_evt, void *p_context) {
 NRF_SDH_SOC_OBSERVER(m_soc_evt_observer, 0, prv_coredump_handle_soc_update, NULL);
 
 void memfault_platform_coredump_storage_clear(void) {
-  // static because sd_flash_write may take place asynchrnously
+  // static because sd_flash_write may take place asynchronously
   const static uint32_t invalidate = 0x0;
 
   // If the soft device is enabled we need to route our flash operation through it (Code saving

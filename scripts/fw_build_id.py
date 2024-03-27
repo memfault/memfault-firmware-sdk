@@ -13,10 +13,19 @@ import sys
 
 scripts_dir = os.path.dirname(os.path.realpath(__file__))
 bundled_mflt_build_id_src_dir = os.path.join(scripts_dir, "mflt-build-id", "src")
+internal_mflt_build_id_src_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(scripts_dir))),
+    "py-packages",
+    "mflt-build-id",
+    "src",
+)
+
 
 if os.path.exists(bundled_mflt_build_id_src_dir):
     # Released SDK:
     sys.path.insert(0, bundled_mflt_build_id_src_dir)
+if os.path.isdir(internal_mflt_build_id_src_dir):
+    sys.path.append(internal_mflt_build_id_src_dir)
 
 from mflt_build_id import *  # noqa: E402, F403  # pyright: ignore[reportWildcardImportFromLibrary]
 

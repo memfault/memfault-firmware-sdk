@@ -32,7 +32,7 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   // Find the RMU_RSTCAUSE Register data sheet for the EFM/EFR part for more details
   // For example, in the EFM32PG12 it's in section "8.3.2 RMU_RSTCAUSE Register"
   //
-  // Note that some reset types are shared across EFM/EFR MCU familes. For the ones
+  // Note that some reset types are shared across EFM/EFR MCU families. For the ones
   // that are not, we wrap the reason with an ifdef.
   if (reset_cause & RMU_RSTCAUSE_PORST) {
     MEMFAULT_PRINT_RESET_INFO(" Power on Reset");
@@ -80,7 +80,7 @@ static eMemfaultRebootReason prv_get_and_print_reason(uint32_t reset_cause) {
   // Find the EMU_RSTCAUSE Register data sheet for the EFM/EFR part for more details
   // For example, in the EFR32xG21 it's in section "12.5.13 EMU_RSTCAUSE - Reset cause"
   //
-  // Note that some reset types are shared across EFM/EFR MCU familes. For the ones
+  // Note that some reset types are shared across EFM/EFR MCU families. For the ones
   // that are not, we wrap the reason with an ifdef.
 
   if (reset_cause & EMU_RSTCAUSE_POR) {

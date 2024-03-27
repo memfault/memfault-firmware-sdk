@@ -69,7 +69,7 @@ def arduinoify_memfault_sdk(sdk_root_dir: str, result_dir: str, port: str):
     if not os.path.exists(sdk_root_dir):
         raise FileNotFoundError(f"Memfault SDK directory does not exist: {sdk_root_dir}")
 
-    # We will be re-packag'ing the SDK into a library with the following structure:
+    # We will be re-package'ing the SDK into a library with the following structure:
     #
     # |-- LICENSE
     # |-- README.md (sourced from port_dir if provided)

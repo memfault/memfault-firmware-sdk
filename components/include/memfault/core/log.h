@@ -193,7 +193,7 @@ void memfault_log_export_logs(void);
 //! Called as part of memfault_log_export() for every time a log message needs to be exported.
 //!
 //! @note This is a weak function that by default calls `memfault_platform_log_raw`. It can be
-//! overriden to change the formatting of the output, as well as where it is stored.
+//! overridden to change the formatting of the output, as well as where it is stored.
 extern void memfault_log_export_msg(eMemfaultPlatformLogLevel level, const char *msg,
                                     size_t msg_len);
 

@@ -34,7 +34,7 @@ $ ln -s path/to/nrf5_sdk/ nrf5_sdk
 
 The nRF5 SDK defines a couple assert macros that Memfault needs to override in
 order to capture a coredump at the exact location an assert is hit. To do this,
-the `app_error.h` is overriden at
+the `app_error.h` is overridden at
 `libraries/memfault/platform_reference_impl/sdk_overrides/app_error.h`. You
 simply need to move the original file from the sdk to pick up this definition.
 Otherwise, you will see an error like:

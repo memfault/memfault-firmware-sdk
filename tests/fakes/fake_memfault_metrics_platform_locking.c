@@ -25,7 +25,7 @@ void memfault_unlock(void) {
   s_metric_lock_stats.unlock_count++;
 }
 
-void fake_memfault_metrics_platorm_locking_reboot(void) {
+void fake_memfault_metrics_platform_locking_reboot(void) {
   s_metric_lock_stats = (sMetricLockStats){ 0 };
 }
 

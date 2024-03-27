@@ -19,7 +19,7 @@ extern "C" {
 //!
 //! There is a weak implementation defined by default which checks for locally collected memfault
 //! data. If multiple MCUs are forwarding data to the ESP32 for transport, this function can
-//! be overriden to check the sources for data as well.
+//! be overridden to check the sources for data as well.
 //!
 //! @return true if there is memfault data available to send, false otherwise
 bool memfault_esp_port_data_available(void);
@@ -31,7 +31,7 @@ bool memfault_esp_port_data_available(void);
 //!
 //! There is a weak implementation defined by default which checks for locally collected memfault
 //! data. If multiple MCUs are forwarding data to the ESP32 for transport, this function can
-//! be overriden to check the sources for data as well.
+//! be overridden to check the sources for data as well.
 //!
 //! @param[out] buf The buffer to copy data to be sent into
 //! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated
@@ -40,7 +40,7 @@ bool memfault_esp_port_data_available(void);
 //! @return true if the buffer was filled, false otherwise
 bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len);
 
-//! Intializes the Memfault system, and should be called one time by the application during boot.
+//! Initializes the Memfault system, and should be called one time by the application during boot.
 void memfault_boot(void);
 
 #ifdef __cplusplus

@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-//! Note: With aarch64, it is the programmer's responsiblity to store an exception frame
+//! Note: With aarch64, it is the programmer's responsibility to store an exception frame
 //! so there is no standard layout.
 MEMFAULT_PACKED_STRUCT MfltRegState {
   uint64_t sp;  // sp prior to exception entry

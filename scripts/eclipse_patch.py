@@ -311,7 +311,7 @@ def patch_cproject(
 
     #
     # Overwrite original .cproject file with updates and pull back in processing instruction text
-    # which was exctracted earlier
+    # which was extracted earlier
     #
 
     output_location = cproject_file if output_dir is None else os.path.join(output_dir, ".cproject")
@@ -423,6 +423,6 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
     )
 
     logging.info(
-        "Hurray, .project & .cproject have been succesfully patched! Be sure to 'Refresh' project"
+        "Hurray, .project & .cproject have been successfully patched! Be sure to 'Refresh' project"
         " to synchronize changes!"
     )

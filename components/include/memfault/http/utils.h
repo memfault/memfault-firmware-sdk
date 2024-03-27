@@ -200,7 +200,7 @@ bool memfault_http_needs_escape(const char *str, size_t len);
 //! URL encode a string. See https://www.ietf.org/rfc/rfc3986.html#section-2.1
 //!
 //! @param inbuf String to encode; must be null-terminated
-//! @param[out] outbuf Endcoded string. Should be sized to fit possible encoding
+//! @param[out] outbuf Encoded string. Should be sized to fit possible encoding
 //! overhead, eg 3 * strlen(inbuf)
 //! @param outbuf_len Size of outbuf
 //!

@@ -305,7 +305,7 @@ extern "C" {
 //
 
 //! The frequency in seconds to collect heartbeat metrics. The suggested
-//! interval is once per hour but the value can be overriden to be as low as
+//! interval is once per hour but the value can be overridden to be as low as
 //! once every 15 minutes.
 #ifndef MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
   #define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS 3600
@@ -513,7 +513,7 @@ extern "C" {
 //!
 //! Setting this config will add a new self test to exercise the platform's coredump storage
 //! implementation. This test requires implementing `memfault_self_test_platform_disable_irqs` and
-//! `memfault_self_test_platform_enable_irqs` to run. Additionaly, you should disable any
+//! `memfault_self_test_platform_enable_irqs` to run. Additionally, you should disable any
 //! watchdogs (hardware, or software) on your system to prevent interrupting or restarting
 //! your device while running this test.
 #ifndef MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE
@@ -610,7 +610,7 @@ extern "C" {
 #endif
 
 //! Controls the section name used for the noinit region a RAM backed coredump is saved to
-//! Some vendor SDKs have pre-defined no-init regions in which case this can be overriden
+//! Some vendor SDKs have pre-defined no-init regions in which case this can be overridden
 #ifndef MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME
   #define MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME ".noinit.mflt_coredump"
 #endif

@@ -24,10 +24,10 @@ static void prv_expect_compact_log_call(uint32_t compressed_fmt) {
     ->withUnsignedIntParameters("compressed_fmt", compressed_fmt);
 }
 
-#define MOCK_CHECK_EXPECTIONS_AND_CLEAR() \
-  do {                                    \
-    mock_c()->checkExpectations();        \
-    mock_c()->clear();                    \
+#define MOCK_CHECK_EXPECTATIONS_AND_CLEAR() \
+  do {                                      \
+    mock_c()->checkExpectations();          \
+    mock_c()->clear();                      \
   } while (0)
 
 #include "test_memfault_compact_log_cxx.c"

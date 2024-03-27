@@ -1,3 +1,15 @@
+config MEMFAULT
+    bool
+    default y
+    help
+      This symbol is used to provide a CONFIG_MEMFAULT symbol when compiling.
+      Normally the Memfault component is added at the cmake or idf_component.yml
+      level. If Memfault inclusion needs to be controlled at build time instead,
+      use the environment variable MEMFAULT_DISABLE=1 when building to control
+      whether the Memfault component is included or not.
+
+if MEMFAULT
+
 menu "Memfault"
 
     config MEMFAULT_PROJECT_KEY
@@ -231,3 +243,5 @@ endif
             information here: https://mflt.io/compact-logs
 
 endmenu
+
+endif  # !MEMFAULT_DISABLE

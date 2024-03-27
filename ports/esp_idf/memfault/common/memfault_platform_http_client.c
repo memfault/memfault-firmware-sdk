@@ -289,7 +289,7 @@ int memfault_esp_port_ota_get_release_url(char **download_url_out) {
     goto cleanup;
   }
 
-  // Lookup to see if a release is available was succesful!
+  // Lookup to see if a release is available was successful!
   rv = 0;
 
 cleanup:

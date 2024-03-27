@@ -99,7 +99,7 @@ typedef struct MemfaultCdrSourceImpl {
   //! @param data The buffer to populate with CDR data
   //! @param data_len The size of data to fill in the buffer
   //!
-  //! return true if read was succesful and buf was entirely filled, false otherwise
+  //! return true if read was successful and buf was entirely filled, false otherwise
   bool (*read_data_cb)(uint32_t offset, void *data, size_t data_len);
 
   //! Called once the recording has been processed
@@ -116,7 +116,7 @@ typedef struct MemfaultCdrSourceImpl {
 //! @note We recommend invoking this function at bootup and expect that the "impl" passed
 //! is of static or global scope
 //!
-//! @return true if registration was succesful or false if the storage was full. If false is
+//! @return true if registration was successful or false if the storage was full. If false is
 //! returned MEMFAULT_CDR_MAX_DATA_SOURCES needs to be increased.
 bool memfault_cdr_register_source(const sMemfaultCdrSourceImpl *impl);
 

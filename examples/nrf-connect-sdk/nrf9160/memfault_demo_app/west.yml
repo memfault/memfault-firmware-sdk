@@ -2,7 +2,7 @@ manifest:
   projects:
     - name: nrf
       url: https://github.com/nrfconnect/sdk-nrf
-      revision: v2.4.0
+      revision: v2.6.0
       import: true
       import:
         path-blocklist: modules/lib/memfault-firmware-sdk

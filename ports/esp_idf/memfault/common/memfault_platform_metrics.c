@@ -143,7 +143,7 @@ static void prv_collect_wifi_metrics(void) {
   if (s_min_rssi <= MAXIMUM_RSSI) {
     MEMFAULT_METRIC_SET_SIGNED(wifi_sta_min_rssi, s_min_rssi);
     // Error checking is ignored here, as it's possible that WIFI is not
-    // intialized yet at time of heartbeat. In that case, the RSSI threshold
+    // initialized yet at time of heartbeat. In that case, the RSSI threshold
     // will be set reset on the first connection, and any errors here can be
     // safely ignored.
     (void)esp_wifi_set_rssi_threshold(MAXIMUM_RSSI);

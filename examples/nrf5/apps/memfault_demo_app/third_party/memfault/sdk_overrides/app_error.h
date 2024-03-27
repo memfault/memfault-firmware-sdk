@@ -102,7 +102,7 @@ typedef struct {
   uint8_t const *p_file_name; /**< The file in which the error occurred. */
 } assert_info_t;
 
-  /**@brief Defines required by app_error_handler assembler intructions.
+  /**@brief Defines required by app_error_handler assembler instructions.
    */
   #define APP_ERROR_ERROR_INFO_OFFSET_LINE_NUM (offsetof(error_info_t, line_num))
   #define APP_ERROR_ERROR_INFO_OFFSET_P_FILE_NAME (offsetof(error_info_t, p_file_name))
@@ -151,7 +151,7 @@ void app_error_log_handle(uint32_t id, uint32_t pc, uint32_t info);
  */
 
   #define APP_ERROR_HANDLER(ERR_CODE) MEMFAULT_ASSERT_RECORD(ERR_CODE)
-  #if 0  // Overriden by memfault
+  #if 0  // Overridden by memfault
     #ifdef DEBUG
       #define APP_ERROR_HANDLER(ERR_CODE)                               \
         do {                                                            \

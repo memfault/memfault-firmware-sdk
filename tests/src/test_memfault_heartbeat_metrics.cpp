@@ -74,7 +74,7 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
   void setup(){
     s_fake_time_ms = 0;
     s_serializer_check_cb = NULL;
-    fake_memfault_metrics_platorm_locking_reboot();
+    fake_memfault_metrics_platform_locking_reboot();
     static uint8_t s_storage[FAKE_STORAGE_SIZE];
     mock().strictOrder();
 
@@ -421,7 +421,7 @@ TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
   LONGS_EQUAL(-4, rv);
 }
 
-TEST(MemfaultHeartbeatMetrics, Test_KeyDNE) {
+TEST(MemfaultHeartbeatMetrics, Test_KeyDONE) {
   // NOTE: Using the macro MEMFAULT_METRICS_KEY, it's impossible for a non-existent key to trigger a
   // compilation error so we just create an invalid key.
   MemfaultMetricId key = (MemfaultMetricId){ INT32_MAX };

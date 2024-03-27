@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.4] - 2024-03-26
+
+### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect SDK:
+
+  - Update the Memfault SDK's nRF-Connect SDK
+    [example apps](examples/nrf-connect-sdk) to nRF-Connect SDK v2.6.0
+
+  - In the Memfault SDK [nRF9160 example app](examples/nrf-connect-sdk/nrf9160),
+    set the Kconfig flag `CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_1024=y` in
+    `prj.conf` instead of via a conditional `CMakeLists.txt` expression. This
+    makes the setting more explicit for users that are referencing the sample
+    app.
+
+- ESP-IDF:
+
+  - Enable disabling the Memfault component by setting the `MEMFAULT_DISABLE=1`
+    environment variable in the build environment (ex:
+    `MEMFAULT_DISABLE=1 idf.py build`). This is useful in cases where the
+    Memfault component can not be n-selected in the application's root
+    `CMakeLists.txt` but needs to be conditionally excluded, for example when
+    building a reduced factory firmware image.
+
 ## [1.7.3] - 2024-03-19
 
 ### :chart_with_upwards_trend: Improvements
@@ -571,7 +595,7 @@ and this project adheres to
 
   - Improve the quality of Assert backtraces when using the ARM C Compiler v5.
     Certain frames in the assert call stack were missing link register
-    inforation, due to compiler optimizations based on the `noreturn` and
+    information, due to compiler optimizations based on the `noreturn` and
     unreachable compiler hints. These hints have been removed for `armcc`, which
     should permit full stack unwinding for Assert coredumps generated from
     builds on that toolchain.
@@ -1293,7 +1317,7 @@ are enough 🤞.
   - Add log capture during coredump to port
 
 - Demo CLI
-  - Add `mflt test loadaddr` command. This comamnd is used to test specific
+  - Add `mflt test loadaddr` command. This command is used to test specific
     faults due to protected regions
 
 #### :boom: Breaking Changes
@@ -1330,7 +1354,7 @@ are enough 🤞.
     with Kconfig
 
 - The [Heap Stats tracing component](https://mflt.io/mcu-heap-stats) has been
-  revamped to make more efficient usage of the bookeeping structure. Usage
+  revamped to make more efficient usage of the bookkeeping structure. Usage
   should be the same as before, but now should provide more data without
   significantly expanding the memory utilization.
 
@@ -1905,7 +1929,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 - Update the STM32 QP/C example ([`examples/qp`](examples/qp)) to compile and
   run correctly now
-- Add intructions for exercising Memfault OTA in the ESP32 example, see the
+- Add instructions for exercising Memfault OTA in the ESP32 example, see the
   "Testing OTA" section in
   [`examples/esp32/README.md`](examples/esp32/README.md)
 - Update the Memfault HTTP client to URL-encode query params when checking for
@@ -2004,7 +2028,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 - Updated
   [`modem_key_mgmt_exists`](ports/zephyr/ncs/src/memfault_nrf91_root_cert_storage.c)
-  API usage to be compatible with changes upcomming in nRF Connect SDK 1.8.
+  API usage to be compatible with changes upcoming in nRF Connect SDK 1.8.
 
 ### Changes between Memfault SDK 0.26.0 and SDK 0.25.0 - Sept 15, 2021
 
@@ -2202,7 +2226,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 - Zephyr / nRF Connect SDK port:
   - Made periodic upload a named choice,
-    `MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT`, so the default can be overriden
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT`, so the default can be overridden
     from other Kconfig files.
   - Added prompt text for `MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE`
 
@@ -2423,7 +2447,7 @@ Added clarifications around licensing in ports and examples folders. See
 - Dialog DA1468x
   [QSPI coredump storage port](ports/dialog/da1468x/qspi_coredump_storage.c#L1)
   updates:
-  - default storage parition (`NVMS_LOG_PART`) can be overridden
+  - default storage partition (`NVMS_LOG_PART`) can be overridden
     `MEMFAULT_PLATFORM_COREDUMP_STORAGE_PARTITION`
   - Max space used within partition can be limited using
     `MEMFAULT_PLATFORM_COREDUMP_STORAGE_MAX_SIZE_BYTES`
@@ -2508,7 +2532,7 @@ Added clarifications around licensing in ports and examples folders. See
 #### :house: Internal
 
 - [Demo CLI Shell commands](components/demo/src/memfault_demo_shell_commands.c#L50)
-  are now defined as weak symbols so they can be overriden with a custom set.
+  are now defined as weak symbols so they can be overridden with a custom set.
 
 #### :boom: Breaking Changes
 
@@ -2848,8 +2872,8 @@ path needs to be updated to `examples`:
   [`ports/freertos/include/memfault/ports/freertos_coredump.h`](ports/freertos/include/memfault/ports/freertos_coredump.h)
 - Previously, if the Memfault event storage buffer was out of space, a "storage
   out of space" error would be printed every time. Now, an error message is
-  printed when the issue first happend and an info message is printed when space
-  is free again.
+  printed when the issue first happened and an info message is printed when
+  space is free again.
 - Added a reference software watchdog port for the STM32H7 series LPTIM
   peripheral. Users of the STM32 HAL can now compile in the reference port and
   the `MemfaultWatchdog_Handler`. The handler will save a coredump so the full
@@ -3062,7 +3086,7 @@ void record_temperature(void) {
 #### :chart_with_upwards_trend: Improvements
 
 - Fixed a :bug: that would cause the demo shell to get stuck if backspace
-  chracters were entered while no other characters had been entered.
+  characters were entered while no other characters had been entered.
 - Updated the [GDB chunk test utility](https://mflt.io/send-chunks-via-gdb) to
   automatically detect when the data export API is integrated and post-chunks to
   the cloud directly from GDB when the function is invoked.
@@ -3080,7 +3104,7 @@ void record_temperature(void) {
 
 #### :chart_with_upwards_trend: Improvements
 
-- Updated code to support compilations with `-Wunused-paramater`, GNU GCC's
+- Updated code to support compilations with `-Wunused-parameter`, GNU GCC's
   `-Wformat-signedness`, and Clang's `-Wno-missing-prototypes` &
   `-Wno-missing-variable-declarations`.
 - Updated unit test setup to compile with newly supported warnings treated as
@@ -3182,7 +3206,7 @@ void record_temperature(void) {
   also make use of two new APIs:
   - `memfault_build_info_dump()` can be called on boot to display the build that
     is running. This can be a useful way to sanity check that your debugger
-    succesfully flashed a new image.
+    successfully flashed a new image.
   - `memfault_build_info_read()` can be used to read the build id for your own
     use cases. For example you could append a portion of it to a debug version
     to make it unique.
@@ -3219,7 +3243,7 @@ void record_temperature(void) {
 
 - Added an assert used internally by the SDK which makes it easier to debug API
   misuse during bringup. The assert is enabled by default but can easily be
-  disabled or overriden. For more details see
+  disabled or overridden. For more details see
   [`memfault/core/sdk_assert.h`](components/include/memfault/core/sdk_assert.h#L6).
 - Added a default implementation of
   [`memfault_platform_halt_if_debugging()`](components/core/src/arch_arm_cortex_m.c#L20-L34)

@@ -22,8 +22,8 @@
 #include "memfault/ports/watchdog.h"
 #include "stm32h7xx_hal.h"
 
-#ifndef MEMFAULT_SOFWARE_WATCHDOG_SOURCE
-  #define MEMFAULT_SOFWARE_WATCHDOG_SOURCE LPTIM2_BASE
+#ifndef MEMFAULT_SOFTWARE_WATCHDOG_SOURCE
+  #define MEMFAULT_SOFTWARE_WATCHDOG_SOURCE LPTIM2_BASE
 #endif
 
 #ifndef MEMFAULT_LPTIM_ENABLE_FREEZE_DBGMCU
@@ -34,7 +34,7 @@
 #endif
 
 #ifndef MEMFAULT_EXC_HANDLER_WATCHDOG
-  #if MEMFAULT_SOFWARE_WATCHDOG_SOURCE == LPTIM2_BASE
+  #if MEMFAULT_SOFTWARE_WATCHDOG_SOURCE == LPTIM2_BASE
     #error \
       "Port expects following define to be set: -DMEMFAULT_EXC_HANDLER_WATCHDOG=LPTIM2_IRQHandler"
   #else
@@ -43,12 +43,12 @@
   #endif
 #endif
 
-#if ((MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM1_BASE) && \
-     (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM2_BASE) && \
-     (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM3_BASE) && \
-     (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM4_BASE) && \
-     (MEMFAULT_SOFWARE_WATCHDOG_SOURCE != LPTIM5_BASE))
-  #error "MEMFAULT_SOFWARE_WATCHDOG_SOURCE must be one of LPTIM[1-5]_BASE"
+#if ((MEMFAULT_SOFTWARE_WATCHDOG_SOURCE != LPTIM1_BASE) && \
+     (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE != LPTIM2_BASE) && \
+     (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE != LPTIM3_BASE) && \
+     (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE != LPTIM4_BASE) && \
+     (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE != LPTIM5_BASE))
+  #error "MEMFAULT_SOFTWARE_WATCHDOG_SOURCE must be one of LPTIM[1-5]_BASE"
 #endif
 
 //! We wire the LPTIM -> LSI so the clock frequency will be 32kHz
@@ -68,7 +68,7 @@
 static LPTIM_HandleTypeDef s_lptim_cfg;
 
 static void prv_lptim_clock_config(RCC_PeriphCLKInitTypeDef *config) {
-  switch ((uint32_t)MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
+  switch ((uint32_t)MEMFAULT_SOFTWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
       *config = (RCC_PeriphCLKInitTypeDef){ .PeriphClockSelection = RCC_PERIPHCLK_LPTIM1,
                                             .Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI };
@@ -101,7 +101,7 @@ static void prv_lptim_clock_config(RCC_PeriphCLKInitTypeDef *config) {
 }
 
 static void prv_lptim_clk_enable(void) {
-  switch (MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
+  switch (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
       __HAL_RCC_LPTIM1_CLK_ENABLE();
       __HAL_RCC_LPTIM1_FORCE_RESET();
@@ -139,7 +139,7 @@ static void prv_lptim_clk_enable(void) {
 
 static void prv_lptim_clk_freeze_during_dbg(void) {
 #if MEMFAULT_LPTIM_ENABLE_FREEZE_DBGMCU
-  switch (MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
+  switch (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
       __HAL_DBGMCU_FREEZE_LPTIM1();
       break;
@@ -167,7 +167,7 @@ static void prv_lptim_clk_freeze_during_dbg(void) {
 }
 
 static void prv_lptim_irq_enable(void) {
-  switch (MEMFAULT_SOFWARE_WATCHDOG_SOURCE) {
+  switch (MEMFAULT_SOFTWARE_WATCHDOG_SOURCE) {
     case LPTIM1_BASE:
       NVIC_ClearPendingIRQ(LPTIM1_IRQn);
       NVIC_EnableIRQ(LPTIM1_IRQn);
@@ -227,7 +227,7 @@ int memfault_software_watchdog_enable(void) {
   prv_lptim_clk_freeze_during_dbg();
 
   s_lptim_cfg = (LPTIM_HandleTypeDef){
-    .Instance = (LPTIM_TypeDef *)MEMFAULT_SOFWARE_WATCHDOG_SOURCE,
+    .Instance = (LPTIM_TypeDef *)MEMFAULT_SOFTWARE_WATCHDOG_SOURCE,
     .Init = {
       .Clock = {
         .Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC,

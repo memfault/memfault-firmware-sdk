@@ -26,17 +26,20 @@
 #include "freertos/timers.h"
 #include "led.h"
 #include "linenoise/linenoise.h"
-#include "memfault/components.h"
-#include "memfault/esp_port/cli.h"
-#include "memfault/esp_port/core.h"
-#include "memfault/esp_port/http_client.h"
-#include "memfault/esp_port/version.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "settings.h"
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
   #include "driver/uart_vfs.h"
+#endif
+
+#if defined(CONFIG_MEMFAULT)
+  #include "memfault/components.h"
+  #include "memfault/esp_port/cli.h"
+  #include "memfault/esp_port/core.h"
+  #include "memfault/esp_port/http_client.h"
+  #include "memfault/esp_port/version.h"
+  #include "settings.h"
 #endif
 
 // Conditionally enable the logging tag variable only when it's used
@@ -147,13 +150,15 @@ static void initialize_console() {
 #endif
 }
 
+#if defined(CONFIG_MEMFAULT)
+
 // Put this buffer in the IRAM region. Accesses on the instruction bus must be word-aligned
 // while data accesses don't have to be. See "1.3.1 Address Mapping" in the ESP32 technical
 // reference manual.
 MEMFAULT_ALIGNED(4) static IRAM_ATTR uint8_t s_my_buf[10];
 void *g_unaligned_buffer;
 
-#if CONFIG_MEMFAULT_APP_OTA
+  #if CONFIG_MEMFAULT_APP_OTA
 
 static bool prv_handle_ota_upload_available(void *user_ctx) {
   // set blue when performing update
@@ -187,14 +192,14 @@ static void prv_memfault_ota(void) {
 
   int rv = memfault_esp_port_ota_update(&handler);
 
-  #if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
+    #if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
   // Record the OTA check result using the built-in sync success metric
   if (rv == 0 || rv == 1) {
     memfault_metrics_connectivity_record_sync_success();
   } else {
     memfault_metrics_connectivity_record_sync_failure();
   }
-  #endif
+    #endif
 
   if (rv == 0) {
     MEMFAULT_LOG_INFO("Up to date!");
@@ -212,11 +217,11 @@ static void prv_memfault_ota(void) {
     led_set_color(kLedColor_Red);
   }
 }
-#else
+  #else
 static void prv_memfault_ota(void) { }
-#endif  // CONFIG_MEMFAULT_APP_OTA
+  #endif  // CONFIG_MEMFAULT_APP_OTA
 
-#if CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
+  #if CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 void memfault_esp_port_wifi_autojoin(void) {
   if (memfault_esp_port_wifi_connected()) {
     return;
@@ -235,7 +240,7 @@ void memfault_esp_port_wifi_autojoin(void) {
   }
 }
 
-#endif  // CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
+  #endif  // CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 
 // Periodically post any Memfault data that has not yet been posted.
 static void prv_poster_task(void *args) {
@@ -278,21 +283,21 @@ static void prv_poster_task(void *args) {
   }
 }
 
-// Example showing how to use the task watchdog
-#if MEMFAULT_TASK_WATCHDOG_ENABLE
+  // Example showing how to use the task watchdog
+  #if MEMFAULT_TASK_WATCHDOG_ENABLE
 
 SemaphoreHandle_t g_example_task_lock;
 
 static void prv_example_task(void *args) {
   (void)args;
 
-  // set up the semaphore used to programmatically make this task stuck
-  #if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+    // set up the semaphore used to programmatically make this task stuck
+    #if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
   static StaticSemaphore_t s_memfault_lock_context;
   g_example_task_lock = xSemaphoreCreateRecursiveMutexStatic(&s_memfault_lock_context);
-  #else
+    #else
   g_example_task_lock = xSemaphoreCreateRecursiveMutex();
-  #endif
+    #endif
 
   MEMFAULT_ASSERT(g_example_task_lock != NULL);
 
@@ -330,14 +335,14 @@ static void prv_initialize_task_watchdog(void) {
 
   TimerHandle_t timer;
 
-  #if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+    #if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
   static StaticTimer_t s_task_watchdog_timer_context;
   timer = xTimerCreateStatic(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL,
                              prv_task_watchdog_timer_callback, &s_task_watchdog_timer_context);
-  #else
+    #else
   timer =
     xTimerCreate(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL, prv_task_watchdog_timer_callback);
-  #endif
+    #endif
 
   MEMFAULT_ASSERT(timer != 0);
 
@@ -348,11 +353,13 @@ static void prv_initialize_task_watchdog(void) {
                                         ESP_TASK_MAIN_PRIO, NULL);
   MEMFAULT_ASSERT(res == pdTRUE);
 }
-#else
+  #else
 static void prv_initialize_task_watchdog(void) {
   // task watchdog disabled, do nothing
 }
-#endif
+  #endif
+
+#endif  // defined(CONFIG_MEMFAULT)
 
 #if defined(CONFIG_HEAP_USE_HOOKS)
 // This callback is triggered when a heap allocation is made. It prints large
@@ -372,12 +379,14 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
 
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
-#if !CONFIG_MEMFAULT_AUTOMATIC_INIT
+#if defined(CONFIG_MEMFAULT)
+  #if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
   memfault_boot();
-#endif
+  #endif
   memfault_device_info_dump();
 
   g_unaligned_buffer = &s_my_buf[1];
+#endif
 
   initialize_nvs();
 
@@ -389,16 +398,19 @@ void app_main() {
 
   led_init();
 
+  /* Register commands */
+  esp_console_register_help_command();
+
+#if defined(CONFIG_MEMFAULT)
   prv_initialize_task_watchdog();
 
   // We need another task to post data since we block waiting for user
   // input in this task.
   const portBASE_TYPE res =
     xTaskCreate(prv_poster_task, "poster", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL);
-  MEMFAULT_ASSERT(res == pdTRUE);
+  assert(res == pdTRUE);
 
-  /* Register commands */
-  esp_console_register_help_command();
+  // Register the app commands
   register_system();
   register_wifi();
   register_app();
@@ -412,18 +424,18 @@ void app_main() {
     g_mflt_http_client_config.api_key = project_key;
   }
 
-#if MEMFAULT_COMPACT_LOG_ENABLE
+  #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
-#endif
+  #endif
+
+  const char banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
+  puts(banner);
+#endif  // defined(CONFIG_MEMFAULT)
 
   /* Prompt to be printed before each line.
    * This can be customized, made dynamic, etc.
    */
   const char *prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
-
-  const char banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
-
-  puts(banner);
 
   /* Figure out if the terminal supports escape sequences */
   int probe_status = linenoiseProbe();

@@ -13,7 +13,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "settings.h"
+#include "sdkconfig.h"
+
+#if defined(CONFIG_MEMFAULT)
+  #include "memfault/components.h"
+  #include "settings.h"
+#endif
 
 #if CONFIG_BLINK_LED_RMT
   #include "led_strip.h"
@@ -23,7 +28,6 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
-#include "memfault/components.h"
 
 // System state LED color:
 // Red:   System is running, has not checked in to memfault (wifi might be bad)
@@ -128,7 +132,8 @@ static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
 }
 
 #else  // CONFIG_BLINK_LED_RMT
-static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
+static void prv_heartbeat_led_callback(TimerHandle_t handle) {
+  (void)handle;
   static bool s_led_state = false;
   s_led_state = !s_led_state;
 
@@ -156,22 +161,24 @@ static void led_config(void) {
 
 void led_init(void) {
   led_config();
+  int32_t led_interval_ms = 500;
 
+#if defined(CONFIG_MEMFAULT)
   size_t len = sizeof(s_led_brightness);
   (void)settings_get(kSettingsLedBrightness, &s_led_brightness, &len);
+  len = sizeof(led_interval_ms);
+  (void)settings_get(kSettingsLedBlinkIntervalMs, &led_interval_ms, &len);
+#endif
+
   ESP_LOGI(__func__, "LED brightness: %" PRIi32, s_led_brightness);
+  ESP_LOGI(__func__, "LED blink interval: %" PRIi32, led_interval_ms);
 
   // create a timer that blinks the LED, indicating the app is alive
   const char *const pcTimerName = "HeartbeatLED";
-  int32_t led_interval_ms = 500;
-  len = sizeof(led_interval_ms);
-  (void)settings_get(kSettingsLedBlinkIntervalMs, &led_interval_ms, &len);
-  ESP_LOGI(__func__, "LED blink interval: %" PRIi32, led_interval_ms);
   const TickType_t xTimerPeriodInTicks = pdMS_TO_TICKS(led_interval_ms);
 
   TimerHandle_t timer;
-
-#if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
+#if defined(CONFIG_MEMFAULT) && (MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0)
   static StaticTimer_t s_heartbeat_led_timer_context;
   timer = xTimerCreateStatic(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL,
                              prv_heartbeat_led_callback, &s_heartbeat_led_timer_context);
@@ -179,7 +186,7 @@ void led_init(void) {
   timer = xTimerCreate(pcTimerName, xTimerPeriodInTicks, pdTRUE, NULL, prv_heartbeat_led_callback);
 #endif
 
-  MEMFAULT_ASSERT(timer != 0);
+  assert(timer != 0);
 
   xTimerStart(timer, 0);
 }

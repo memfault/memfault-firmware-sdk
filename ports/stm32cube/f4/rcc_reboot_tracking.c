@@ -36,7 +36,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
     MEMFAULT_PRINT_RESET_INFO(" Standby Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
 
-    // clear the standy wakeup
+    // clear the standby wakeup
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
   } else if (reset_cause & LL_RCC_CSR_LPWRRSTF) {
     MEMFAULT_PRINT_RESET_INFO(" Low Power");

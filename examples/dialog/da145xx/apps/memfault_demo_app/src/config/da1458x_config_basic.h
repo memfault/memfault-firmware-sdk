@@ -80,7 +80,7 @@
   /****************************************************************************************************************/
   /* UART Console Print. If CFG_PRINTF is defined, serial interface logging mechanism will be
    * enabled.            */
-  /* If CFG_PRINTF_UART2 is defined, then serial interface logging mechanism is implented using
+  /* If CFG_PRINTF_UART2 is defined, then serial interface logging mechanism is implemented using
    * UART2, else UART1 */
   /* will be used. */
   /****************************************************************************************************************/
@@ -90,7 +90,7 @@
   #endif
 
   /****************************************************************************************************************/
-  /* UART1 Driver Implementation. If CFG_UART1_SDK is defined, UART1 ROM driver will be overriden
+  /* UART1 Driver Implementation. If CFG_UART1_SDK is defined, UART1 ROM driver will be overridden
    * and UART SDK    */
   /* driver will be used, else ROM driver will be used for UART1 module. */
   /****************************************************************************************************************/
@@ -176,7 +176,7 @@
   /****************************************************************************************************************/
   /* UART Console Print. If CFG_PRINTF is defined, serial interface logging mechanism will be
    * enabled.            */
-  /* If CFG_PRINTF_UART2 is defined, then serial interface logging mechanism is implented using
+  /* If CFG_PRINTF_UART2 is defined, then serial interface logging mechanism is implemented using
    * UART2, else UART1 */
   /* will be used. */
   /****************************************************************************************************************/
@@ -186,7 +186,7 @@
   #endif
 
   /****************************************************************************************************************/
-  /* UART1 Driver Implementation. If CFG_UART1_SDK is defined, UART1 ROM driver will be overriden
+  /* UART1 Driver Implementation. If CFG_UART1_SDK is defined, UART1 ROM driver will be overridden
    * and UART SDK    */
   /* driver will be used, else ROM driver will be used for UART1 module. */
   /****************************************************************************************************************/

@@ -5,7 +5,7 @@
 //!
 //! See header for more details around the motivation
 //!
-//! Chunk Mesage Types
+//! Chunk Message Types
 //!
 //!  INIT Message:
 //!    HEADER_BYTE || (HEADER_BYTE.MD ? varint(TOTAL_LENGTH) : b"") || CHUNK_DATA  ||
@@ -39,7 +39,7 @@ static uint8_t prv_build_hdr(const sMemfaultHeaderSettings *settings) {
   //           For INIT Packet
   //            0b000 indicates crc16 is written in the init chunk
   //            0b001 indicates crc16 is written at the end of the last chunk which makes up the msg
-  //            Remaing Values: Reserved for future use
+  //            Remaining Values: Reserved for future use
   //           For CONTINUATION:
   //            All zeros. Reserved for future use (i.e. to make TOTAL_LENGTH and CRC16_CCITT
   //            optional)

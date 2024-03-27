@@ -84,7 +84,7 @@ def wiced_flash(ctx):
 
     # See doc/make_target_examples.txt:
     # "* For the BCM943364WCD1, BCM943438WCD1, and BCM9433634WCD1 examples you must also add "download_apps" to the end of
-    #    the target string to download the WLAN firmare to the external flash":
+    #    the target string to download the WLAN firmware to the external flash":
     _wiced_make(ctx, DEMO_APP_TARGET, "download", "download_apps")
 
     # The WICED SDK flash commands leaves the CoreDebug->DHCSR DEBUGEN bit set when the flash

@@ -65,7 +65,7 @@ static void prv_assert_no_more_events(void) {
 
 TEST_GROUP(MemfaultEventStorage) {
   void setup() {
-    fake_memfault_metrics_platorm_locking_reboot();
+    fake_memfault_metrics_platform_locking_reboot();
     s_storage_impl = memfault_events_storage_boot(s_ram_store, s_ram_store_size);
     LONGS_EQUAL(s_ram_store_size, s_storage_impl->get_storage_size_cb());
   }

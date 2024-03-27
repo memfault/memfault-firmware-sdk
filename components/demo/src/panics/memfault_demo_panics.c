@@ -162,7 +162,7 @@ int memfault_demo_cli_cmd_memmanage(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED ch
   //  System space, that is, for addresses 0xE0000000 and higher. System space is always marked as
   //  XN, Execute Never."
   //
-  // So we can trip a MemManage exception by simply attempting to execute any addresss >=
+  // So we can trip a MemManage exception by simply attempting to execute any address >=
   // 0xE000.0000
   void (*bad_func)(void) = (void (*)(void))0xEEEEDEAD;
   bad_func();
@@ -213,7 +213,7 @@ int memfault_demo_cli_cmd_dataabort(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED ch
 }
 
 int memfault_demo_cli_cmd_prefetchabort(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  // We can trip a PrefetchAbort exception by simply attempting to execute any addresss >=
+  // We can trip a PrefetchAbort exception by simply attempting to execute any address >=
   // 0xE000.0000
   void (*bad_func)(void) = (void (*)(void))0xEEEEDEAD;
   bad_func();

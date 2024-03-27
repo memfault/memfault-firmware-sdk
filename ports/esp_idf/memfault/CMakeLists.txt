@@ -1,3 +1,10 @@
+# Memfault component inclusion can be disabled by setting the environment
+# variable MEMFAULT_DISABLE=1 when building. This can't be done at the Kconfig
+# level because we need to load the component before Kconfig runs.
+if(DEFINED ENV{MEMFAULT_DISABLE})
+  return()
+endif()
+
 if (CONFIG_MEMFAULT_AUTOMATIC_INIT)
   message(FATAL_ERROR "CONFIG_MEMFAULT_AUTOMATIC_INIT has been deprecated.
     Please complete the following steps:
@@ -52,7 +59,7 @@ if(DEFINED IDF_VERSION_MAJOR)
   elseif(IDF_VERSION_MAJOR VERSION_EQUAL 3)
     set(MEMFAULT_ESP_IDF_PORT v3.x)
   else()
-    message(FATAL_ERROR "IDF_VERSION_MAJOR=${IDF_VERSION_MAJOR} provided is not currenly supported")
+    message(FATAL_ERROR "IDF_VERSION_MAJOR=${IDF_VERSION_MAJOR} provided is not currently supported")
   endif()
 else()
   message(STATUS "No IDF_VERSION_MAJOR provided, using esp-idf v3.x Memfault port")
@@ -69,14 +76,14 @@ include(${CMAKE_CURRENT_LIST_DIR}/${MEMFAULT_ESP_IDF_PORT}/Memfault-esp-idf-comp
 # This directory holds ports that are common across v3.x and v4.x esp-idf releases
 set(MEMFAULT_ESP_IDF_PORT_COMMON common)
 list(APPEND MEMFAULT_COMPONENTS_SRCS
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_fault_handler.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_core.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_coredump.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_debug_log.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_device_info.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client_buffer.c
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_fault_handler.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_core.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_coredump.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_debug_log.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_device_info.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client_buffer.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c
 )
 
 # Add a legacy metrics file for now. To be removed in the near future when v3.x
@@ -92,11 +99,11 @@ else()
 endif()
 
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
-   include
-   include/${MEMFAULT_ESP_IDF_PORT}
-   ${MEMFAULT_SDK_ROOT}/ports/include
-   $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
-   config
+  include
+  include/${MEMFAULT_ESP_IDF_PORT}
+  ${MEMFAULT_SDK_ROOT}/ports/include
+  $ENV{MEMFAULT_PLATFORM_EXTRA_INCLUDES}
+  config
 )
 
 if (CONFIG_MEMFAULT_LWIP_METRICS)
@@ -145,15 +152,15 @@ endif()
 set(COMPONENT_SRCS ${MEMFAULT_COMPONENTS_SRCS})
 set(COMPONENT_ADD_INCLUDEDIRS ${MEMFAULT_COMPONENTS_INC_FOLDERS})
 list(APPEND COMPONENT_REQUIRES
-    ${MEMFAULT_ESP_IDF_VERSION_SPECIFIC_REQUIRES}
-    $ENV{MEMFAULT_PLATFORM_PORT_COMPONENTS}
-    freertos
-    heap
-    log
-    soc
-    spi_flash
-    console
-    driver
+  ${MEMFAULT_ESP_IDF_VERSION_SPECIFIC_REQUIRES}
+  $ENV{MEMFAULT_PLATFORM_PORT_COMPONENTS}
+  freertos
+  heap
+  log
+  soc
+  spi_flash
+  console
+  driver
 )
 
 if(CONFIG_MEMFAULT_LWIP_METRICS)
@@ -291,13 +298,13 @@ endif()
 # SDK don't need to change any build configuration.
 get_filename_component(compact_log_linker_script ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_compact_log.ld ABSOLUTE)
 target_link_libraries(
-    ${this_component}
-    INTERFACE
-    # Note: there is intentionally no space between -T and the linker script
-    # file name. This is required for PlatformIO compatibility- the PlatformIO
-    # build system inserts arguments into the linker command line, so we need to
-    # make sure it can't separate the -T and the linker script file name.
-    -T${compact_log_linker_script}
+  ${this_component}
+  INTERFACE
+  # Note: there is intentionally no space between -T and the linker script
+  # file name. This is required for PlatformIO compatibility- the PlatformIO
+  # build system inserts arguments into the linker command line, so we need to
+  # make sure it can't separate the -T and the linker script file name.
+  -T${compact_log_linker_script}
 )
 
 # Link required libraries and add compiler flags to enable FreeRTOS region collection
@@ -323,13 +330,13 @@ if(DEFINED ENV{IDF_VERSION})
       "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
       "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
     )
-    
+
     # Lastly ensure that our FreeRTOS trace hooks are defined first by adding this
     # compile option to the FreeRTOS target to include with all source
     # This method is an alternative to #include within FreeRTOSConfig.h which esp-idf
     # makes very difficult to do.
     #
-    # We exclude PlatformIO projects because PlatformIO's build system mechansim inserts other flags
+    # We exclude PlatformIO projects because PlatformIO's build system mechanism inserts other flags
     # in between the -include and the freertos_trace.h compile option. PlatformIO projects will need
     # to include the header independently in their project's .ini file. An example of how to do this
     # is at https://github.com/memfault/platformio-esp32-espidf

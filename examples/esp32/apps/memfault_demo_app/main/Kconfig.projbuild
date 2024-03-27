@@ -5,13 +5,14 @@ config STORE_HISTORY
     default n
     help
         Linenoise line editing library provides functions to save and load
-        command history. If this option is enabled, initalizes a FAT filesystem
+        command history. If this option is enabled, initializes a FAT filesystem
         and uses it to store command history.
         Note that this adds a ~22kB heap allocation on system boot.
 
 config MEMFAULT_APP_OTA
     bool "Enable automatic periodic check+update for OTA"
     default y
+    depends on MEMFAULT
     help
         Enables the Memfault OTA subsystem. This will periodically check for
         updates and apply them if available.
@@ -19,6 +20,7 @@ config MEMFAULT_APP_OTA
 config MEMFAULT_APP_WIFI_AUTOJOIN
     bool "Enable automatic WiFi connection"
     default y
+    depends on MEMFAULT
     help
         Automatically join if credentials are configured.
 

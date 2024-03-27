@@ -438,7 +438,7 @@ def test_coredump_command_non_arm(mocker, capsys):
 def test_coredump_command_with_project_key(http_expect_request, test_config):
     """Test coredump command project key"""
 
-    # Expect to use ingress_uri from config if not provided explicitely to the command invocation
+    # Expect to use ingress_uri from config if not provided explicitly to the command invocation
     test_config.ingress_uri = "https://custom-ingress.memfault.com"
 
     http_expect_request(

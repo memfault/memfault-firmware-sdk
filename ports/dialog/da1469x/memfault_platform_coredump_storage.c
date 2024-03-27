@@ -7,7 +7,7 @@
 //! on the external SPI flash connected to the DA1469xx for coredump capture
 //!
 //! By default, coredumps are saved in the log partition of NVMS Storage but
-//! the location can be overriden by configuring the macros below.
+//! the location can be overridden by configuring the macros below.
 
 #include "memfault/config.h"
 

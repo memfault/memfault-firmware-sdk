@@ -60,7 +60,7 @@
 #  Other flags users can initialize to sneak in their settings
 #	CPPUTEST_CXXFLAGS - flags for the C++ compiler
 #	CPPUTEST_CPPFLAGS - flags for the C++ AND C preprocessor
-#	CPPUTEST_CFLAGS - flags for the C complier
+#	CPPUTEST_CFLAGS - flags for the C compiler
 #	CPPUTEST_LDFLAGS - Linker flags
 #----------
 
@@ -77,14 +77,14 @@ MINGW_STR = MINGW
 CYGWIN_STR = CYGWIN
 LINUX_STR = Linux
 SUNOS_STR = SunOS
-UNKNWOWN_OS_STR = Unknown
+UNKNOWN_OS_STR = Unknown
 
 # Compilers
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"
 CLANG_STR = clang
 SUNSTUDIO_CXX_STR = SunStudio
 
-UNAME_OS = $(UNKNWOWN_OS_STR)
+UNAME_OS = $(UNKNOWN_OS_STR)
 
 ifeq ($(findstring $(MINGW_STR),$(UNAME_OUTPUT)),$(MINGW_STR))
 	UNAME_OS = $(MINGW_STR)
@@ -133,7 +133,7 @@ ifeq ($(UNAME_OS),$(CYGWIN_STR))
 endif
 
 
-#Kludge for MacOsX gcc compiler on Darwin9 who can't handle pendantic
+#Kludge for MacOsX gcc compiler on Darwin9 who can't handle pedantic
 ifeq ($(UNAME_OS),$(MACOSX_STR))
 ifeq ($(findstring Version 9,$(UNAME_OUTPUT)),Version 9)
 	CPPUTEST_PEDANTIC_ERRORS = N
@@ -240,7 +240,7 @@ else
 endif
 endif
 
-# Default dir for the outout library
+# Default dir for the output library
 ifndef CPPUTEST_LIB_DIR
 ifndef TARGET_PLATFORM
     CPPUTEST_LIB_DIR = lib
@@ -254,7 +254,7 @@ ifndef CPPUTEST_MAP_FILE
 	CPPUTEST_MAP_FILE = N
 endif
 
-# No extentions is default
+# No extensions is default
 ifndef CPPUTEST_USE_EXTENSIONS
 	CPPUTEST_USE_EXTENSIONS = N
 endif

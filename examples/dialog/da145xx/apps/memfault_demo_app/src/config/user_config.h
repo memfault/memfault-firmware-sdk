@@ -62,8 +62,8 @@
 
 /*************************************************************************
  * Controller Privacy Mode:
- * - APP_CFG_CNTL_PRIV_MODE_NETWORK Controler Privacy Network mode (default)
- * - APP_CFG_CNTL_PRIV_MODE_DEVICE  Controler Privacy Device mode
+ * - APP_CFG_CNTL_PRIV_MODE_NETWORK Controller Privacy Network mode (default)
+ * - APP_CFG_CNTL_PRIV_MODE_DEVICE  Controller Privacy Device mode
  *
  * Select only one option for controller privacy mode configuration.
  **************************************************************************

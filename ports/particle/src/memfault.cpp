@@ -26,7 +26,7 @@ LOG_SOURCE_CATEGORY("memfault_lib")
       MEMFAULT_PARTICLE_SYSTEM_VERSION_MAJOR) ||           \
      (PARTICLE_SYSTEM_VERSION_GET_MINOR(SYSTEM_VERSION) != \
       MEMFAULT_PARTICLE_SYSTEM_VERSION_MINOR))
-  #warning "Memfault Library is targetting a different Device OS version than the one configured"
+  #warning "Memfault Library is targeting a different Device OS version than the one configured"
 #endif
 
 using namespace std::placeholders;

@@ -219,7 +219,14 @@ int main(void) {
   }
 
   printk("Waiting for network...\n");
-  err = lte_lc_init_and_connect();
+  // lte_lc_init_and_connect is deprecated in NCS 2.6
+  err =
+#if MEMFAULT_NCS_VERSION_GT(2, 5)
+    lte_lc_connect();
+#else
+    lte_lc_init_and_connect();
+#endif
+
   if (err) {
     printk("Failed to connect to the LTE network, err %d\n", err);
     goto cleanup;

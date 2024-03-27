@@ -43,7 +43,7 @@ TEST(MfltCrc16CcittGroup, Test_MfltCrc16CcittGroupComputeTestPatternOneByte) {
   LONGS_EQUAL(0x58E5, crc);
 }
 
-TEST(MfltCrc16CcittGroup, Test_MfltCrc16CcittGroupComputeTestPatternIncemental) {
+TEST(MfltCrc16CcittGroup, Test_MfltCrc16CcittGroupComputeTestPatternIncremental) {
   uint16_t crc = MEMFAULT_CRC16_CCITT_INITIAL_VALUE;
   for (char i = '1'; i <= '9'; i++) {
     crc = memfault_crc16_ccitt_compute(crc, &i, sizeof(i));

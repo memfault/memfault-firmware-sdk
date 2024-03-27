@@ -51,7 +51,7 @@ bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf, void *stor
 bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t offset, void *data,
                                    size_t data_len);
 
-//! Populates the read_ptr with a set of contigous bytes which can be read.
+//! Populates the read_ptr with a set of contiguous bytes which can be read.
 //!
 //! This can be useful to avoid the need of doing double buffering or implementing something like a
 //! circular buffer array

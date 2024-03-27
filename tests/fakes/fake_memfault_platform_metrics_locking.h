@@ -18,7 +18,7 @@ extern "C" {
 bool fake_memfault_platform_metrics_lock_calls_balanced(void);
 
 //! Reset the state of the fake locking tracker
-void fake_memfault_metrics_platorm_locking_reboot(void);
+void fake_memfault_metrics_platform_locking_reboot(void);
 
 #ifdef __cplusplus
 }

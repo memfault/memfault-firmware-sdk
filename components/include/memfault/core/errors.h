@@ -37,7 +37,7 @@ typedef enum MemfaultInternalReturnCode {
 //! A convenience macro for mapping a platform specific error code to a reserved range. For
 //! example, this could be used to map the error codes returned from calls to a MCUs flash driver
 //! implementation. This way, meaningful error information can still be surfaced for diagnostics.
-//! The goal here is to allow a way to avoid the following pattern where a userful error code
+//! The goal here is to allow a way to avoid the following pattern where a useful error code
 //! always gets mapped down to one value, i.e
 //!
 //! int rv = some_platform_specific_api()

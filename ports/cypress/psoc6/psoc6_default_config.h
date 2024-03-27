@@ -8,7 +8,7 @@
 //! Defines configuration specific to PSOC6 Port
 //!
 //! These options can be changed from the DEFINES section in a MTB Makefile, i.e
-//! DEFINES+=MEMFAULT_PORT_MEMORY_TRACKING_ENABLED=0 or overriden with a custom
+//! DEFINES+=MEMFAULT_PORT_MEMORY_TRACKING_ENABLED=0 or overridden with a custom
 //! "memfault_platform_config.h"
 
 #ifdef __cplusplus

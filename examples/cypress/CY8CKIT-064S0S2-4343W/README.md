@@ -190,7 +190,7 @@ Upload the symbol file either with the web UI or
 
 ### TLS error
 
-If you get a TLS error when trying to estabilish a connection to the IoT MQTT
+If you get a TLS error when trying to establish a connection to the IoT MQTT
 Broker saying that your certificate/key is incorrect, you might need to use a
 different IoT endpoint - try replacing the default address with:
 `aws iot describe-endpoint --endpoint-type iot:Data-ATS`.

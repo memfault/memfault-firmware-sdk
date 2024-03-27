@@ -58,7 +58,7 @@ MEMFAULT_STATIC_ASSERT(((offsetof(sMemfaultBuildIdStorage, type) == 0) &&
 extern MEMFAULT_BUILD_ID_QUALIFIER sMemfaultBuildIdStorage g_memfault_build_id;
 extern MEMFAULT_BUILD_ID_QUALIFIER uint8_t g_memfault_sdk_derived_build_id[];
 
-//! The layout of a Note section in an ELF. This is how Build Id information is layed out when
+//! The layout of a Note section in an ELF. This is how Build Id information is laid out when
 //! using kMemfaultBuildIdType_GnuBuildIdSha1
 typedef MEMFAULT_PACKED_STRUCT {
   uint32_t namesz;

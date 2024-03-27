@@ -105,7 +105,7 @@ bool memfault_coredump_storage_debug_test_begin(void);
 //! @note This function tests memfault_platform_coredump_storage_clear() which gets called
 //! while the system is running.
 //!
-//! @return if the entire storage test was succesful. On error, information is dumped
+//! @return if the entire storage test was successful. On error, information is dumped
 //!  to the CLI for further debug.
 bool memfault_coredump_storage_debug_test_finish(void);
 

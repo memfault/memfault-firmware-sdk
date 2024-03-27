@@ -91,7 +91,7 @@ void __wrap_z_thread_abort(struct k_thread *thread) {
 MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
                                                               size_t desired_size) {
   // NB: This only works for MCUs which have a contiguous RAM address range. (i.e Any MCU in the
-  // nRF53, nRF52, and nRF91 family). All of these MCUs have a contigous RAM address range so it is
+  // nRF53, nRF52, and nRF91 family). All of these MCUs have a contiguous RAM address range so it is
   // sufficient to just look at _image_ram_start/end from the Zephyr linker script
   extern uint32_t _image_ram_start[];
   extern uint32_t _image_ram_end[];

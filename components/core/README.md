@@ -46,7 +46,7 @@ your project.
   touched by any firmware except for reboot tracking API functions. Reboot info
   can be pushed to the event storage for packetization to be sent to Memfault.
 
-# `memfault_trace_event_boot()`: not an allocation but connects a trace event context into the event storge allocation.
+# `memfault_trace_event_boot()`: not an allocation but connects a trace event context into the event storage allocation.
 
 - `memfault_log_boot()` to reserve storage for the logging module. The logging
   storage gets sent to Memfault as part of the core dump data if enabled.

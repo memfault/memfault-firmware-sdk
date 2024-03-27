@@ -1,9 +1,13 @@
 
 menu "MEMFAULT_APP"
 
-# Set Memfault fw_version to the same as the mcuboot image version
+# Set Memfault software_version from the VERSION file in the application. This
+# is also used by MCUBoot to set CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION, so the
+# MCUBoot image version will match the Memfault-reported version with this
+# setting. Note: the Kconfig flag MEMFAULT_NCS_FW_VERSION is defined in the NCS
+# repo, here it's just overriding the default string to be set to the desired value.
 config MEMFAULT_NCS_FW_VERSION
-    default MCUBOOT_IMAGE_VERSION
+    default "$(APP_VERSION_TWEAK_STRING)"
 
 config MEMFAULT_APP_CAPTURE_ALL_RAM
     bool "Capture all RAM"
@@ -21,7 +25,7 @@ config MEMFAULT_APP_CAPTURE_ALL_RAM
 # https://github.com/nrfconnect/sdk-nrf/blob/96f97684565fbf711f1ceb7da061fed0bfe7b60b/subsys/partition_manager/Kconfig.template.partition_size
 #
 # Keep 'source "Kconfig.zephyr"' at the end of this file so this default takes
-# precendence.
+# precedence.
 config PM_PARTITION_SIZE_MEMFAULT_STORAGE
     hex "Size of the Memfault storage partition"
     # The default size is set to one page above the total RAM size on the

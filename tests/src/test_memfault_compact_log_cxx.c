@@ -51,7 +51,7 @@ static void test_compact_log_cxx_argument_expansion(void) {
 }
 
 static void test_compact_log_cxx_multi_arg(void) {
-  MOCK_CHECK_EXPECTIONS_AND_CLEAR();
+  MOCK_CHECK_EXPECTATIONS_AND_CLEAR();
 
   prv_expect_compact_log_call(0x1C9);
   const uint8_t u8 = 8;
@@ -59,7 +59,7 @@ static void test_compact_log_cxx_multi_arg(void) {
 
   MEMFAULT_COMPACT_LOG_CHECK("Assorted Types: %s %" PRIx8 " %f %" PRIx64, "hello", u8, (double)2.1f,
                              u64);
-  MOCK_CHECK_EXPECTIONS_AND_CLEAR();
+  MOCK_CHECK_EXPECTATIONS_AND_CLEAR();
 
   const char *s1 = NULL;
   const char s2[] = "s2";

@@ -240,7 +240,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpEmptyStorage) {
   CHECK(!has_coredump);
 }
 
-TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNothinWritten) {
+TEST(MfltCoredumpTestGroup, Test_MfltCoredumpNothingWritten) {
   prv_assert_storage_empty();
 }
 

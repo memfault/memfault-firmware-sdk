@@ -32,7 +32,7 @@ typedef struct MfltPlatformBatterySoc {
 //!
 //! @param soc A pointer to a sMfltPlatformBatterySoc struct to be populated
 //!
-//! @return 0 if SoC is succesfully resolved, non-zero otherwise.
+//! @return 0 if SoC is successfully resolved, non-zero otherwise.
 int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc);
 
 #ifdef __cplusplus

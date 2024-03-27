@@ -77,7 +77,7 @@ SDK and apply the following patches:
 
 `git apply --ignore-whitespace ./sdk/middleware/memfault/memfault-firmware-sdk/ports/dialog/da1469x/fault-handlers.patch`
 
-Next, open SmartSnippert Studio and import the demo application project, which
+Next, open SmartSnippet Studio and import the demo application project, which
 can be found in the following location:
 
 `<DIALOG_SDK_ROOT>/sdk/middleware/memfault/memfault-firmware-sdk/examples/dialog/da1469x/apps/memfault_demo_app`
