@@ -8,6 +8,7 @@
 
 #include "FreeRTOS.h"
 #include "memfault/components.h"
+#include "timers.h"
 
 #define EXAMPLE_TASK_STACKS 300
 
@@ -36,10 +37,21 @@ void metrics_task_init(void) {
     &metrics_task_tcb);
 }
 
+static void prv_record_timer_stack_free_bytes(void) {
+  TaskHandle_t timer_task_handle = xTimerGetTimerDaemonTaskHandle();
+
+  UBaseType_t free_space = uxTaskGetStackHighWaterMark(timer_task_handle);
+
+  // uxTaskGetStackHighWaterMark() returns units of "words", so convert to bytes
+  MEMFAULT_METRIC_SET_UNSIGNED(timer_task_stack_free_bytes, free_space * sizeof(StackType_t));
+}
+
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
   MEMFAULT_STATIC_ASSERT(
     MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS <= (60 * 60),
     "Heartbeat must be an hour or less for runtime metrics to mitigate counter overflow");
+
+  prv_record_timer_stack_free_bytes();
 
   memfault_freertos_port_task_runtime_metrics();
 }

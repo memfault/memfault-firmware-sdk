@@ -17,8 +17,8 @@ bool memfault_coredump_storage_check_size(void) {
     return true;
   }
 
-  MEMFAULT_LOG_ERROR("Coredump storage is %dB but need %dB", (int)storage_info.size,
-                     (int)size_needed);
+  MEMFAULT_LOG_WARN("Coredump storage is %dB but need %dB", (int)storage_info.size,
+                    (int)size_needed);
   return false;
 }
 

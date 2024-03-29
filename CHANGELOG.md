@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.5] - 2024-03-29
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Modify a message when coredump storage is detected to be too small from an
+    error to a warning
+
+- FreeRTOS:
+
+  - Fix an integer overflow issue affecting long heartbeat intervals (>> 1
+    hour), due to a limitation in the implementation of `pdMS_TO_TICKS()` in
+    older FreeRTOS versions. Newer version of FreeRTOS (as of `V11.0.0`
+    published December 2023) have fixed this
+    [issue](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/9c649ea7d1dd0206092697d73c894fd2c4fe29b3).
+  - Add a stack usage metric to the FreeRTOS example app
+
 ## [1.7.4] - 2024-03-26
 
 ### :chart_with_upwards_trend: Improvements
