@@ -13,10 +13,12 @@
 #ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
+  #include "freertos/timers.h"
   #include "memfault/esp_port/version.h"
 #else
   #include "FreeRTOS.h"
   #include "task.h"
+  #include "timers.h"
 #endif
 
 #if MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
@@ -97,6 +99,25 @@ static configRUN_TIME_COUNTER_TYPE prv_get_idle_counter_for_core(uint32_t core) 
 }
 #endif
 
+#if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES
+// FreeRTOS v9.0.0 made the xTimerGetTimerDaemonTaskHandle() API always
+// available:
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/6568ba6eb08a5ed0adf5141291d31f2144a79d08#diff-343560675a0f127a21d52dd3379ff23b01fe59fe87db61669efd3c903621fc22R427-R433
+  #if (tskKERNEL_VERSION_MAJOR < 9) && (!INCLUDE_xTimerGetTimerDaemonTaskHandle)
+    #error \
+      "MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES requires FreeRTOS v9.0.0 or later, or INCLUDE_xTimerGetTimerDaemonTaskHandle=1 in FreeRTOSConfig.h"
+  #endif
+
+static void prv_record_timer_stack_free_bytes(void) {
+  TaskHandle_t timer_task_handle = xTimerGetTimerDaemonTaskHandle();
+
+  UBaseType_t free_space = uxTaskGetStackHighWaterMark(timer_task_handle);
+
+  // uxTaskGetStackHighWaterMark() returns units of "words", so convert to bytes
+  MEMFAULT_METRIC_SET_UNSIGNED(timer_task_stack_free_bytes, free_space * sizeof(StackType_t));
+}
+#endif
+
 void memfault_freertos_port_task_runtime_metrics(void) {
 #if MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
   static configRUN_TIME_COUNTER_TYPE s_prev_idle0_runtime = 0;
@@ -145,4 +166,8 @@ void memfault_freertos_port_task_runtime_metrics(void) {
   }
   #endif
 #endif  // MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
+
+#if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES
+  prv_record_timer_stack_free_bytes();
+#endif
 }

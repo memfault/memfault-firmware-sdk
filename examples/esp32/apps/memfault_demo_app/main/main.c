@@ -380,7 +380,7 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
 #if defined(CONFIG_MEMFAULT)
-  #if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
+  #if !defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
   memfault_boot();
   #endif
   memfault_device_info_dump();

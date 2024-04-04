@@ -8,7 +8,7 @@
 #endif  // CONFIG_MEMFAULT_LWIP_METRICS
 
 #if defined(CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
-  #include "memfault_metrics_heartbeat_freertos_task_runtime_config.def"
+  #include "memfault_metrics_heartbeat_freertos_config.def"
 #endif  // CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
 
 #if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)

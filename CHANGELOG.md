@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.6] - 2024-04-03
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix missing call to `memfault_boot()` in the
+    [ESP32 example app](examples/esp32) that was causing the device to not boot
+    correctly. This was a regression in v1.7.4.
+
+- FreeRTOS:
+
+  - Add a built-in metric for tracking the FreeRTOS Timer Task stack bytes free,
+    `timer_task_stack_free_bytes`. This metric is enabled by default and can be
+    disabled by setting
+    `#define MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES 0` in
+    `memfault_platform_config.h`.
+
 ## [1.7.5] - 2024-03-29
 
 ### :chart_with_upwards_trend: Improvements

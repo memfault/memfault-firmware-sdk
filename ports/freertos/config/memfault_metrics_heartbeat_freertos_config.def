@@ -6,3 +6,7 @@
 #elif MEMFAULT_FREERTOS_RUN_TIME_STATS_SINGLE_CORE
     MEMFAULT_METRICS_KEY_DEFINE(idle_task_run_time_percent, kMemfaultMetricType_Unsigned)
 #endif
+
+#if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES
+MEMFAULT_METRICS_KEY_DEFINE(timer_task_stack_free_bytes, kMemfaultMetricType_Unsigned)
+#endif

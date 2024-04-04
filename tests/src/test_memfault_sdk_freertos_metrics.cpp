@@ -10,6 +10,8 @@ static uint32_t s_idle_task_run_time = 0;
 static uint32_t s_total_run_time = 0;
 
 static MemfaultMetricId idle_runtime_id = MEMFAULT_METRICS_KEY(idle_task_run_time_percent);
+static MemfaultMetricId timer_task_stack_free_bytes_id =
+  MEMFAULT_METRICS_KEY(timer_task_stack_free_bytes);
 
 static void prv_set_expected_idle_time(uint32_t expected_value) {
   mock().expectOneCall("xTaskGetIdleRunTimeCounter");
@@ -18,6 +20,10 @@ static void prv_set_expected_idle_time(uint32_t expected_value) {
     .expectOneCall("memfault_metrics_heartbeat_set_unsigned")
     .withParameterOfType("MemfaultMetricId", "key", &idle_runtime_id)
     .withParameter("unsigned_value", expected_value);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_set_unsigned")
+    .withParameterOfType("MemfaultMetricId", "key", &timer_task_stack_free_bytes_id)
+    .withParameter("unsigned_value", 0);
 }
 
 static void prv_set_runtimes(uint32_t idle_time, uint32_t total_time) {

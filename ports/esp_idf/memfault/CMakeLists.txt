@@ -219,6 +219,30 @@ component_compile_options(
   -DMEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG_INCLUDE="memfault_platform_freertos_error_log.h"
 )
 
+# Extra compilation options set globally
+if (NOT DEFINED ENV{IDF_VERSION})
+  set(IDF_VERSION "3.3.5")
+else()
+  set(IDF_VERSION $ENV{IDF_VERSION})
+endif()
+if (IDF_VERSION VERSION_GREATER_EQUAL "5.0.0")
+  # Empty for now, reserving for the future
+elseif (IDF_VERSION VERSION_GREATER_EQUAL "4.4.0")
+  # ESP-IDF v4.4 forces the FreeRTOS config
+  # INCLUDE_xTimerGetTimerDaemonTaskHandle=0, which is used to record timer task
+  # stack in the SDK. Just disable the usage unconditionally.
+  list(APPEND MEMFAULT_EXTRA_COMPILE_OPTIONS
+    "-DMEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES=0"
+  )
+else()
+  # ESP-IDF < 4.4 don't force this setting, so set it ourselves to the correct
+  # value.
+  list(APPEND MEMFAULT_EXTRA_COMPILE_OPTIONS
+    "-DINCLUDE_xTimerGetTimerDaemonTaskHandle=1"
+  )
+endif()
+
+
 # Set the heartbeat config file to use the ESP-IDF port file, which will bring
 # in the user's heartbeat config automatically. Set it as a global compiler
 # option so it properly affects both component compilation and when the metric
@@ -232,6 +256,7 @@ if (IDF_VERSION_MAJOR VERSION_EQUAL 3)
     "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\\\"memfault_esp_metrics_heartbeat_config.def\\\""
     "-DMEMFAULT_PLATFORM_CONFIG_FILE=\\\"memfault_esp_idf_port_config.h\\\""
     "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\\\"memfault_trace_reason_esp_idf_port_config.def\\\""
+    ${MEMFAULT_EXTRA_COMPILE_OPTIONS}
   )
   # convert from list to string before setting
   list(JOIN memfault_c_flags " " memfault_c_flags)
@@ -249,6 +274,7 @@ else()
     "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
     "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
     "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
+    ${MEMFAULT_EXTRA_COMPILE_OPTIONS}
   )
   idf_build_set_property(
     COMPILE_OPTIONS
