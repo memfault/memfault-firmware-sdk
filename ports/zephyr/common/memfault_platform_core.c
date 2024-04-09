@@ -6,6 +6,7 @@
 // clang-format off
 #include "memfault/core/platform/core.h"
 
+#include MEMFAULT_ZEPHYR_INCLUDE(drivers/hwinfo.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log_ctrl.h)
@@ -101,9 +102,67 @@ static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
 #if !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
+  #if defined(CONFIG_HWINFO)
+static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset_reason_reg) {
+  eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
+
+  // Map the Zephyr HWINFO reset reason to a Memfault reset reason. The order is
+  // important- the first bit match will be used.
+  //
+  // We know that the Zephyr bits + Memfault reboot codes all fit within 16
+  // bits, so to cut the table size in half, use uint16_t. If either one grows
+  // beyond 16 bits, this will need to be updated.
+  //
+  // A further optimization (that saves a few more bytes) is to omit the
+  // bitmask, since they're consecutive in the current zephyr implementation.
+  // That forces us to keep the reset reason priority in the zephyr bit order.
+  const struct hwinfo_bit_to_memfault_reset_reason {
+    uint16_t hwinfo_bit;
+    uint16_t memfault_reason;
+  } s_hwinfo_to_memfault[] = {
+    { RESET_PIN, kMfltRebootReason_PinReset },
+    { RESET_SOFTWARE, kMfltRebootReason_SoftwareReset },
+    { RESET_BROWNOUT, kMfltRebootReason_BrownOutReset },
+    { RESET_POR, kMfltRebootReason_PowerOnReset },
+    { RESET_WATCHDOG, kMfltRebootReason_HardwareWatchdog },
+    { RESET_DEBUG, kMfltRebootReason_DebuggerHalted },
+    { RESET_SECURITY, kMfltRebootReason_SecurityViolation },
+    { RESET_LOW_POWER_WAKE, kMfltRebootReason_LowPower },
+    { RESET_CPU_LOCKUP, kMfltRebootReason_Lockup },
+    { RESET_PARITY, kMfltRebootReason_ParityError },
+    { RESET_PLL, kMfltRebootReason_ClockFailure },
+    { RESET_CLOCK, kMfltRebootReason_ClockFailure },
+    { RESET_HARDWARE, kMfltRebootReason_Hardware },
+    { RESET_USER, kMfltRebootReason_UserReset },
+    { RESET_TEMPERATURE, kMfltRebootReason_Temperature },
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_hwinfo_to_memfault); i++) {
+    if (reset_reason_reg & (uint32_t)s_hwinfo_to_memfault[i].hwinfo_bit) {
+      reset_reason = (eMemfaultRebootReason)s_hwinfo_to_memfault[i].memfault_reason;
+      break;
+    }
+  }
+
+  return reset_reason;
+}
+  #endif  // CONFIG_HWINFO
+
 MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
+  eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
+  uint32_t reset_reason_reg = 0;
+  #if defined(CONFIG_HWINFO)
+  int rv = hwinfo_get_reset_cause(&reset_reason_reg);
+
+  if (rv == 0) {
+    reset_reason = prv_zephyr_to_memfault_reboot_reason(reset_reason_reg);
+  }
+
+  #endif
+
   *info = (sResetBootupInfo){
-    .reset_reason = kMfltRebootReason_Unknown,
+    .reset_reason = reset_reason,
+    .reset_reason_reg = reset_reason_reg,
   };
 }
 #endif
