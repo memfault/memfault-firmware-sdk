@@ -123,6 +123,7 @@ void memfault_unlock(void) {
   xSemaphoreGiveRecursive(s_memfault_lock);
 }
 
+#if defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
 // The esp32 uses vprintf() for dumping to console. The libc implementation used requires a lot of
 // stack space. We therefore prevent this function from being inlined so the log_buf allocation
 // does not wind up in that path.
@@ -150,6 +151,7 @@ static int prv_memfault_log_wrapper(const char *fmt, va_list args) {
   // flush to stdout
   return vprintf(fmt, args);
 }
+#endif  // defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
 
 #if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
   (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
@@ -168,7 +170,9 @@ void memfault_boot(void) {
 
   // set up log collection so recent logs can be viewed in coredump
   memfault_log_boot(s_log_buf_storage, sizeof(s_log_buf_storage));
+#if defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
   esp_log_set_vprintf(&prv_memfault_log_wrapper);
+#endif
 
   prv_record_reboot_reason();
 

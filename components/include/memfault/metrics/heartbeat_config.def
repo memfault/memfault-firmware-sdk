@@ -30,10 +30,10 @@ MEMFAULT_METRICS_KEY_DEFINE(operational_hours, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(operational_crashfree_hours, kMemfaultMetricType_Unsigned)
 
 #if MEMFAULT_METRICS_BATTERY_ENABLE
-// State of Charge drop since the last heartbeat was collected, in percent
-MEMFAULT_METRICS_KEY_DEFINE(battery_soc_pct_drop, kMemfaultMetricType_Unsigned)
+// State of Charge drop since the last heartbeat was collected, use scale factor for non 0-100% representations
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_soc_pct_drop, kMemfaultMetricType_Unsigned, MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE)
 MEMFAULT_METRICS_KEY_DEFINE(battery_discharge_duration_ms, kMemfaultMetricType_Unsigned)
 // Intentionally leave the range unset for this metric. Some platforms will
-// require a 0-100% range, some will require 0-1000 (0-100.0%), etc.
-MEMFAULT_METRICS_KEY_DEFINE(battery_soc_pct, kMemfaultMetricType_Unsigned)
+// require a 0-100% range, some will require 0-1000 (0-100.0%), etc. Use scale factor for non 0-100% representations
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_soc_pct, kMemfaultMetricType_Unsigned, MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE)
 #endif

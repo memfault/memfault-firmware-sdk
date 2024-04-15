@@ -24,12 +24,14 @@
   // the extension commands. This construct, despite being pretty intricate,
   // saves about ~28 bytes of code space over running the iteration twice in a
   // row, and keeps the iterator in one macro, instead of two.
-  #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                                              \
-    const sMemfaultShellCommand *command = g_memfault_shell_commands;                           \
-    for (size_t i = 0; i < g_memfault_num_shell_commands + s_mflt_shell.num_extension_commands; \
-         ++i, command = (i < g_memfault_num_shell_commands) ?                                   \
-                          &g_memfault_shell_commands[i] :                                       \
-                          &s_mflt_shell.extension_commands[i - g_memfault_num_shell_commands])
+  #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                                                 \
+    const sMemfaultShellCommand *command = g_memfault_shell_commands;                              \
+    for (size_t i = 0; i < g_memfault_num_shell_commands + s_mflt_shell.num_extension_commands;    \
+         ++i, command = (i < g_memfault_num_shell_commands) ?                                      \
+                          &g_memfault_shell_commands[i] :                                          \
+                          (s_mflt_shell.extension_commands ?                                       \
+                             &s_mflt_shell.extension_commands[i - g_memfault_num_shell_commands] : \
+                             NULL))
 #else
   #define MEMFAULT_SHELL_FOR_EACH_COMMAND(command)                         \
     for (const sMemfaultShellCommand *command = g_memfault_shell_commands; \

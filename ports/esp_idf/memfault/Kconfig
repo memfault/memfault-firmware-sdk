@@ -176,6 +176,7 @@ endif
     config MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS
         bool "Enable Memfault Core Metric: connectivity_connected_time"
         default y
+        depends on MEMFAULT_ESP_WIFI_METRICS && MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
         help
             Collects the core metric for connectivity_connected_time based on
             WiFi connection state.
@@ -241,6 +242,14 @@ endif
             When enabled, the Memfault SDK will use a compact representation
             for log messages written using the 'MEMFAULT_LOG_x' macros. Find more
             information here: https://mflt.io/compact-logs
+
+    config MEMFAULT_LOG_USE_VPRINTF_HOOK
+        bool "Hook into ESP-IDF logging with esp_log_set_vprintf to send logs to Memfault"
+        default y
+        help
+            ESP-IDF logging provides a hook, `esp_log_set_vprintf()`, to redirect logs to a handler
+            parameter. Enabling this config will call this function automatically in `memfault_boot()`.
+            Disabling this config allows your application to use this hook instead.
 
 endmenu
 

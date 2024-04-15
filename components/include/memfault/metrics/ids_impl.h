@@ -39,6 +39,13 @@ extern "C" {
                                                            max_value, session_name)         \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) MEMFAULT_METRICS_KEY_DEFINE_(key_name)
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
@@ -50,6 +57,8 @@ extern "C" {
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 
 #define MEMFAULT_METRICS_KEY_DEFINE_(key_name) kMfltMetricsIndex_##key_name,
 
@@ -73,6 +82,13 @@ extern "C" {
                                                            max_value, session_name)         \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) MEMFAULT_METRICS_KEY_DEFINE_(key_name)
 
 typedef enum MfltMetricsIndex {
@@ -85,6 +101,8 @@ typedef enum MfltMetricsIndex {
 #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 } eMfltMetricsIndex;
 
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) kMfltMetricsSessionKey_##key_name,
@@ -95,6 +113,10 @@ typedef enum MfltMetricsIndex {
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_name)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_name)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
+                                                                 session_key, scale_value)
 
 typedef enum MfltMetricSessionIndex {
 #include "memfault/metrics/heartbeat_config.def"
@@ -107,6 +129,8 @@ typedef enum MfltMetricSessionIndex {
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 } eMfltMetricsSessionIndex;
 
 //! Stub define to detect accidental usage outside of the heartbeat config files

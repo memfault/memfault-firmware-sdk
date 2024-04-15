@@ -76,8 +76,10 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
 
   switch (event_id) {
     case WIFI_EVENT_STA_START:
+  #if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
       memfault_metrics_connectivity_connected_state_change(
         kMemfaultMetricsConnectivityState_Started);
+  #endif
       break;
 
     case WIFI_EVENT_STA_CONNECTED:
@@ -89,16 +91,20 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
       MEMFAULT_METRIC_TIMER_START(wifi_connected_time_ms);
 
+  #if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
       memfault_metrics_connectivity_connected_state_change(
         kMemfaultMetricsConnectivityState_Connected);
+  #endif
       break;
 
     case WIFI_EVENT_STA_DISCONNECTED:
       MEMFAULT_METRIC_ADD(wifi_disconnect_count, 1);
       MEMFAULT_METRIC_TIMER_STOP(wifi_connected_time_ms);
 
+  #if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
       memfault_metrics_connectivity_connected_state_change(
         kMemfaultMetricsConnectivityState_ConnectionLost);
+  #endif
       break;
 
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)

@@ -335,6 +335,13 @@ extern "C" {
   #define MEMFAULT_METRICS_BATTERY_ENABLE 0
 #endif
 
+//! Set a scale factor to be used with battery_soc_pct and battery_soc_pct_drop. On ingestion,
+//! Memfault will scale down the received integer value of these metrics by
+//! MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE. The default value is 1 (i.e. no change)
+#ifndef MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE
+  #define MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE 1
+#endif
+
 //
 // Panics Component Configs
 //

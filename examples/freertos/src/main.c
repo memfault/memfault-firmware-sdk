@@ -11,6 +11,7 @@
 #include "heap_task.h"
 #include "memfault/components.h"
 #include "metrics.h"
+#include "task.h"
 
 // Next two functions from:
 // https://github.com/FreeRTOS/FreeRTOS/blob/6f7f9fd9ed56fbb34d5314af21f17cfa571133a7/FreeRTOS/Demo/CORTEX_M3_MPS2_QEMU_GCC/main.c#L156-L204

@@ -309,8 +309,14 @@ TEST(MemfaultLog, Test_DroppedLogs) {
 
 #endif  // !MEMFAULT_COMPACT_LOG_ENABLE
 
-static bool prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset, const char *buf,
-                                        size_t buf_len) {
+#if defined(__clang__)
+__attribute__((no_sanitize("undefined")))
+#else
+__attribute__((no_sanitize_undefined))
+#endif
+static bool
+prv_log_entry_copy_callback(sMfltLogIterator *iter, size_t offset, const char *buf,
+                            size_t buf_len) {
   return mock()
     .actualCall(__func__)
     .withPointerParameter("iter", iter)

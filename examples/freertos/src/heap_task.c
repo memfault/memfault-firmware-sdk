@@ -10,6 +10,7 @@
 
 #include "FreeRTOS.h"
 #include "memfault/components.h"
+#include "task.h"
 
 #define EXAMPLE_TASK_STACKS 300
 

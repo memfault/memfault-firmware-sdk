@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET  # noqa: N817
 
 
 def get_depth_from_parent(project_dir, memfault_dir):
-    common_prefix = os.path.commonprefix([memfault_dir, project_dir])
+    common_prefix = os.path.commonpath([memfault_dir, project_dir])
     depth = 1
     dirname = project_dir
 

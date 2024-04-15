@@ -66,6 +66,7 @@ CPPUTEST_WARNINGFLAGS += \
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"
 CLANG_STR = clang
 ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
+# Clang-only warning flags
 COMPILER_SPECIFIC_WARNINGS += \
   -Wno-bad-function-cast \
   -Wno-c++11-extensions \
@@ -96,16 +97,19 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-cast-function-type-strict \
 
 else
-
 # GCC-only warnings
 COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness \
+  -fno-extended-identifiers \
+  -Wbidi-chars \
 
 # Only enable -fanalyzer if GCC version is >= 12
 GCC_VERSION_GTEQ_12 := $(shell expr $$($(CC) -dumpversion | cut -f1 -d.) \>= 12)
 ifeq "$(GCC_VERSION_GTEQ_12)" "1"
 CFLAGS += \
   -fanalyzer
+endif
+
 endif
 
 # Permit disabling the sanitizers via environment variable
@@ -131,9 +135,6 @@ CPPUTEST_LDFLAGS += \
   -fsanitize=address \
   -fsanitize=undefined \
   -fno-sanitize-recover=all
-endif
-
-
 endif
 
 CPPUTEST_WARNINGFLAGS += $(COMPILER_SPECIFIC_WARNINGS)

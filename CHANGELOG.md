@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.7] - 2024-04-15
+
+- FreeRTOS:
+
+  - Add a compile time error when the
+    [`ports/freertos/config/memfault_metrics_heartbeat_freertos_config.def`](memfault_metrics_heartbeat_freertos_config.def)
+    file is not included from the user `memfault_metrics_heartbeat_config.def`
+    file. Compilation would fail previously with hard-to-follow errors due to
+    missing metrics definitions. This change makes the compilation error
+    explicit.
+
+- ESP-IDF:
+
+  - Permit disabling the Memfault logging hook into `esp_log_set_vprintf()` (by
+    default this is enabled on system boot). Use
+    `CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK=n` to disable the Memfault hook. Note
+    that this will disable capturing ESP-IDF logs in Memfault.
+
+  - Allow disabling the built-in Connectivity
+    [Core Metric](https://mflt.io/core-metrics?platform=MCU) collection, which
+    is enabled by default to track WiFi uptime. Use
+    `CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS=n` to disable the
+    built-in implementation.
+
+- General:
+
+  - EXPERIMENTAL: Add the option to set a scale factor when defining a Metric.
+    The scale factor will in the future be used to divide the uploaded metric
+    values. For example, if a Metric is defined with a scale factor of `10`, all
+    values reported for that Metric will be divided by `10` when received by
+    Memfault. The resulting value is stored as a floating point number in
+    Memfault.
+
+  - Minor tweak to the [Eclipse patcher script](scripts/eclipse_patch.py) to
+    better handler folders with partially common path prefixes.
+
 ## [1.7.6] - 2024-04-03
 
 ### :chart_with_upwards_trend: Improvements

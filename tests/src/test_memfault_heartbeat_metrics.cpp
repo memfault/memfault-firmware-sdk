@@ -97,10 +97,13 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
 
     // IntervalMs & RebootCount & operational_hours * operational_crashfree_hours
     const size_t num_memfault_sdk_metrics = 4;
+    // One heartbeat metric defined using _WITH_SCALE_VALUE
+    const size_t num_scale_value_metrics = 1;
+
 
     // We should test all the types of available metrics so if this
     // fails it means there's a new type we aren't yet covering
-    LONGS_EQUAL(kMemfaultMetricType_NumTypes + num_memfault_sdk_metrics,
+    LONGS_EQUAL(kMemfaultMetricType_NumTypes + num_memfault_sdk_metrics + num_scale_value_metrics,
                 memfault_metrics_heartbeat_get_num_metrics());
     }
     void teardown() {

@@ -94,6 +94,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_on_boot,
                                  MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_on_boot));
@@ -115,6 +116,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_signed: -100",
     "  test_key_timer: 5000",
     "  test_key_string: \"heyo!\"",
+    "  test_unsigned_scale_value: null",
   };
   mock().expectOneCall("memfault_metrics_reliability_collect");
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info,
@@ -135,6 +137,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_debug_print_reset,
                                  MEMFAULT_ARRAY_SIZE(heartbeat_debug_print_reset));
@@ -153,6 +156,7 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, heartbeat_add_non_null,
                                  MEMFAULT_ARRAY_SIZE(heartbeat_add_non_null));

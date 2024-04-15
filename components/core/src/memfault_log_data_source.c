@@ -92,8 +92,16 @@ typedef struct {
   };
 } sMfltLogEncodingCtx;
 
-static bool prv_copy_msg_callback(sMfltLogIterator *iter, MEMFAULT_UNUSED size_t offset,
-                                  const char *buf, size_t buf_len) {
+  #if defined(MEMFAULT_UNITTEST)
+    #if defined(__clang__)
+__attribute__((no_sanitize("undefined")))
+    #else
+__attribute__((no_sanitize_undefined))
+    #endif
+  #endif
+static bool
+prv_copy_msg_callback(sMfltLogIterator *iter, MEMFAULT_UNUSED size_t offset, const char *buf,
+                      size_t buf_len) {
   sMfltLogEncodingCtx *const ctx = (sMfltLogEncodingCtx *)iter->user_ctx;
   return memfault_cbor_join(&ctx->encoder, buf, buf_len);
 }

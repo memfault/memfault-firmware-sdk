@@ -8,6 +8,8 @@
 
 #include "FreeRTOS.h"
 #include "memfault/components.h"
+#include "memfault/ports/freertos/metrics.h"
+#include "task.h"
 
 #define EXAMPLE_TASK_STACKS 300
 

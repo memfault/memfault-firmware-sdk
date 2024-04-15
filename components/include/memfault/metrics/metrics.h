@@ -107,6 +107,20 @@ typedef enum MemfaultMetricValueType {
                                                            max_value, session_key)          \
   MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
+//! Same as 'MEMFAULT_METRICS_KEY_DEFINE`, with scale value specified
+//!
+//! A scale value is used to scale down integer metric types. When a scale value is defined for a
+//! metric key, On ingestion, Memfault will apply this transformation to the metric value:
+//!   transformed_metric_value = metric_value / scale_value
+//! Use this value to scale integer values down, like converting a permyriad value into percent
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
+//! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE', with session specified
+#define MEMFAULT_METRIS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, session_key, \
+                                                                scale_value)                       \
+  MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
+
 //! Define a metric session.
 //!
 //! A metric session is analogous to a heartbeat, but you can use it to track metrics

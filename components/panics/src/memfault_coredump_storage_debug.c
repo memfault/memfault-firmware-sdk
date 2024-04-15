@@ -242,10 +242,14 @@ static bool prv_verify_coredump_clear_operation(void) {
 }
 
 static void prv_log_error_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) {
+  // s_read_buf is the largest buffer passed to this function, use this to determine max char buffer
+  // size for hex representation
 #define MAX_BUF_LEN (sizeof(s_read_buf) * 2 + 1)
   char hex_buffer[MAX_BUF_LEN];
   for (uint32_t j = 0; j < buf_len; ++j) {
-    sprintf(&hex_buffer[j * 2], "%02x", buf[j]);
+    // Convert byte into hex chars, write up to 3 chars (2 hex digits, 1 null)
+    // MAX_BUF_LEN guarantees enough space to safely store output chars in hex_buffer
+    snprintf(&hex_buffer[j * 2], 3, "%02x", buf[j]);
   }
   // make sure buffer is NUL terminated even if buf_len = 0
   hex_buffer[buf_len * 2] = '\0';

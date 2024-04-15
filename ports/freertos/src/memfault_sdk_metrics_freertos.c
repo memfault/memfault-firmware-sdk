@@ -10,6 +10,11 @@
 #include "memfault/metrics/metrics.h"
 #include "memfault/ports/freertos/metrics.h"
 
+#if !defined(MEMFAULT_METRICS_HEARTBEAT_FREERTOS_CONFIG_DEF)
+  #error \
+    "Please include memfault_metrics_heartbeat_freertos_config.def in your memfault_metrics_heartbeat_config.def file"
+#endif
+
 #ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"

@@ -1,5 +1,8 @@
 #include "memfault/ports/freertos/metrics.h"
 
+// This definition is used to track if this file has been included yet
+#define MEMFAULT_METRICS_HEARTBEAT_FREERTOS_CONFIG_DEF 1
+
 #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
     MEMFAULT_METRICS_KEY_DEFINE(idle0_task_run_time_percent, kMemfaultMetricType_Unsigned)
     MEMFAULT_METRICS_KEY_DEFINE(idle1_task_run_time_percent, kMemfaultMetricType_Unsigned)

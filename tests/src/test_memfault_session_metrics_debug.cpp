@@ -106,6 +106,7 @@ TEST(MemfaultSessionMetricsDebug, Test_HeartbeatResetState) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -134,6 +135,7 @@ TEST(MemfaultSessionMetricsDebug, Test_HeartbeatCollectionUpdateAndReset) {
     "  test_key_signed: -100",
     "  test_key_timer: 5000",
     "  test_key_string: \"heyo!\"",
+    "  test_unsigned_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -160,6 +162,7 @@ TEST(MemfaultSessionMetricsDebug, Test_HeartbeatCollectionUpdateAndReset) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print_reset,
                                  MEMFAULT_ARRAY_SIZE(expected_debug_print_reset));
@@ -178,6 +181,7 @@ TEST(MemfaultSessionMetricsDebug, Test_HeartbeatUpdateAdd) {
     "  test_key_signed: null",
     "  test_key_timer: 0",
     "  test_key_string: \"\"",
+    "  test_unsigned_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(heartbeat);
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -195,6 +199,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionResetState) {
     "  test_session_key_unsigned: null",
     "  test_session_key_string: \"\"",
     "  test_session_key_timer: 0",
+    "  test_session_signed_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -211,6 +216,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionTimerUpdateState) {
     "  test_session_key_unsigned: null",
     "  test_session_key_string: \"\"",
     "  test_session_key_timer: 5000",
+    "  test_session_signed_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
@@ -234,6 +240,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionUpdateState) {
     "  test_session_key_unsigned: 35",
     "  test_session_key_string: \"sessions!\"",
     "  test_session_key_timer: 0",
+    "  test_session_signed_scale_value: null",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
@@ -267,6 +274,7 @@ TEST(MemfaultSessionMetricsDebug, Test_AllSessionsResetState) {
     "  test_session_key_two_unsigned: null",
     "  test_session_key_two_string: \"\"",
     "  test_session_key_two_timer: 0",
+    "  test_session_signed_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
                                  MEMFAULT_ARRAY_SIZE(expected_debug_print));
@@ -286,6 +294,7 @@ TEST(MemfaultSessionMetricsDebug, Test_AllSessionsTimerUpdateState) {
     "  test_session_key_two_unsigned: null",
     "  test_session_key_two_string: \"\"",
     "  test_session_key_two_timer: 5000",
+    "  test_session_signed_scale_value: null",
   };
 
   s_boot_time_ms = 678;
