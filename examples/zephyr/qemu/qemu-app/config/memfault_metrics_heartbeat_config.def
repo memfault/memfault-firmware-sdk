@@ -1,1 +1,4 @@
 MEMFAULT_METRICS_KEY_DEFINE(MainStack_MinBytesFree, kMemfaultMetricType_Unsigned)
+// This example metric demonstrates a permille integer with a range of 0-1000 to be translated into
+// a percentage 0.0-100.0%
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(main_thread_cpu_time_permille, kMemfaultMetricType_Unsigned, 10)

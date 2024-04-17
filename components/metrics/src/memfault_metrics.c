@@ -1017,11 +1017,6 @@ int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
 }
 
 int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
-  MemfaultMetricsSessionStartCb session_start_cb = s_session_start_cbs[session_key];
-  if (session_start_cb != NULL) {
-    session_start_cb();
-  }
-
   int rv;
   memfault_lock();
   {
@@ -1033,6 +1028,11 @@ int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
     rv = prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Start);
   }
   memfault_unlock();
+
+  MemfaultMetricsSessionStartCb session_start_cb = s_session_start_cbs[session_key];
+  if (session_start_cb != NULL) {
+    session_start_cb();
+  }
 
   return rv;
 }

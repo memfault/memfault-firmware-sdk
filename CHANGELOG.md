@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2024-04-17
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+  - Scale values now fully supported. This metric metadata will scale down
+    metric values by the specified factor. Metrics with no specified scale value
+    will not be scaled
+  - Fix a :bug: that would reset metric values after running a session start
+    callback. This prevented setting metrics at the start of a session.
+- Zephyr:
+  - Add a metric using a scale value to our Zephyr QEMU example. This metric
+    measures CPU usage (in permille, 0.0-100.0%) of the main thread.
+
 ## [1.7.7] - 2024-04-15
 
 - FreeRTOS:

@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
   //! Size of memory to allocate on main stack
   //! This requires a larger allocation due to the method used to measure stack usage
   #define STACK_ALLOCATION_SIZE (CONFIG_MAIN_STACK_SIZE >> 2)
@@ -36,7 +36,7 @@ static void *heap_ptrs[4] = { NULL };
 
 //! Keep a reference to the main thread for stack info
 static struct k_thread *s_main_thread = NULL;
-#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
 
 // Blink code taken from the zephyr/samples/basic/blinky example.
 static void blink_forever(void) {
@@ -122,7 +122,7 @@ static void prv_init_test_thread_timer(void) {
 static void prv_init_test_thread_timer(void) { }
 #endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
 
-#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
 
 //! Helper function to collect metric value on main thread stack usage.
 static void prv_collect_main_thread_stack_free(void) {
@@ -140,6 +140,35 @@ static void prv_collect_main_thread_stack_free(void) {
   } else {
     LOG_ERR("Error getting thread stack usage[%d]", rc);
   }
+}
+
+static void prv_collect_main_thread_run_stats(void) {
+  static uint64_t s_prev_main_thread_cycles = 0;
+  static uint64_t s_prev_cpu_all_cycles = 0;
+
+  if (s_main_thread == NULL) {
+    return;
+  }
+
+  k_thread_runtime_stats_t rt_stats_main = { 0 };
+  k_thread_runtime_stats_t rt_stats_all = { 0 };
+
+  k_thread_runtime_stats_get(s_main_thread, &rt_stats_main);
+  k_thread_runtime_stats_all_get(&rt_stats_all);
+
+  // Calculate difference since last heartbeat
+  uint64_t current_main_thread_cycles = rt_stats_main.execution_cycles - s_prev_main_thread_cycles;
+  // Note: execution_cycles = idle + non-idle, total_cycles = non-idle
+  uint64_t current_cpu_total_cycles = rt_stats_all.execution_cycles - s_prev_cpu_all_cycles;
+
+  // Calculate permille of main thread execution vs total CPU time
+  // Multiply permille factor first to avoid truncating lower bits after integer division
+  uint32_t main_thread_cpu_time = (current_main_thread_cycles * 1000) / current_cpu_total_cycles;
+  MEMFAULT_METRIC_SET_UNSIGNED(main_thread_cpu_time_permille, main_thread_cpu_time);
+
+  // Update previous values
+  s_prev_main_thread_cycles = current_main_thread_cycles;
+  s_prev_cpu_all_cycles = current_cpu_total_cycles;
 }
 
 //! Shell function to exercise example memory metrics
@@ -185,6 +214,7 @@ SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from a
 // and print current metric values
 void memfault_metrics_heartbeat_collect_data(void) {
   prv_collect_main_thread_stack_free();
+  prv_collect_main_thread_run_stats();
   memfault_metrics_heartbeat_debug_print();
 }
 
@@ -193,7 +223,7 @@ static void prv_run_stack_metrics_example(void) {
   volatile uint8_t stack_array[STACK_ALLOCATION_SIZE];
   memset((uint8_t *)stack_array, 0, STACK_ALLOCATION_SIZE);
 }
-#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+#endif  // CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
 
 #if defined(CONFIG_MEMFAULT_FAULT_HANDLER_RETURN)
   #include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
@@ -213,7 +243,7 @@ int main(void) {
   memfault_zephyr_collect_reset_info();
 #endif
 
-#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_MEMORY_METRICS
+#if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
   s_main_thread = k_current_get();
 
   // @warning This code uses `memfault_metrics_heartbeat_debug_trigger` which is not intended

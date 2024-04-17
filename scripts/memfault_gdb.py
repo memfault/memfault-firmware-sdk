@@ -808,7 +808,7 @@ def _create_http_connection(base_uri):
     else:
         conn_class = HTTPSConnection
         default_port = 443
-    port = url.port if url.port else default_port
+    port = url.port or default_port
     return conn_class(url.hostname, port=port)
 
 

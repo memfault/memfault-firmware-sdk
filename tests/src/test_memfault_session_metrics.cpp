@@ -56,6 +56,8 @@ static void session_end_cb(void) {
 }
 
 static void session_start_cb(void) {
+  // Set a metric value to ensure that metrics are reset before session_start_cb
+  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), 1);
   mock().actualCall(__func__);
 }
 
@@ -141,10 +143,34 @@ TEST(MemfaultSessionMetrics, Test_RegisterSessionStartCb) {
   mock().expectOneCall("memfault_metrics_session_serialize");
   mock().expectOneCall("session_start_cb");
 
+  // Check that a session metric is unset before the session starts
+  uint32_t val = 0;
+  int rv =
+    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+
+  LONGS_EQUAL(-7, rv);
+  LONGS_EQUAL(0, val);
+
   memfault_metrics_session_register_start_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
                                              session_start_cb);
   MEMFAULT_METRICS_SESSION_START(test_key_session);
+
+  // Check that the metric is set after the session starts. Metric is set within the start callback
+  rv =
+    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(1, val);
+
   MEMFAULT_METRICS_SESSION_END(test_key_session);
+
+  // Check that the metric is set after the session ends. Metrics are reset at session start, not
+  // end
+  rv =
+    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(1, val);
 }
 
 TEST(MemfaultSessionMetrics, Test_RegisterSessionEndCb) {
