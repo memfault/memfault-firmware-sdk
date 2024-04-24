@@ -498,6 +498,17 @@ config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
         'memfault_platform_config_extra.h'. This can be useful for third party
         libraries that want to include additional default platform configs.
 
+config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+        bool "Initialize platform-specific connectivity metrics on system init"
+        default n
+        help
+          When enabled, memfault_metrics_boot() will call a platform-implemented
+          memfault_platform_metrics_connectivity_boot() function. If not already
+          implemented for the user's platform, the user must supply their own implementation.
+          This function is typically used to register event handlers to that will mark
+          the connectivity state changes when the device connects and disconnects.
+          Marking these state changes is required to calculate the connectivity time metrics.
+
 config MEMFAULT_FAULT_HANDLER_RETURN
        bool "Return from fault handler"
        default n
@@ -585,6 +596,24 @@ config MEMFAULT_GNU_BUILD_ID_SOURCE_CUSTOM
 endchoice # MEMFAULT_GNU_BUILD_ID_SOURCE
 
 endif # MEMFAULT_USE_GNU_BUILD_ID
+
+menu "Memfault Built-In Device Info Options"
+
+config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION
+        string "Builtin device info .software_version"
+        default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_TWEAK)" != "0"
+        default "$(APPVERSION)" if "$(APPVERSION)" != ""
+        default "0.0.0"
+
+config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE
+        string "Builtin device info .software_type"
+        default "app"
+
+config MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION
+        string "Builtin device info .hardware_version"
+        default BOARD
+
+endmenu # MEMFAULT_BUILTIN_DEVICE_INFO
 
 module = MEMFAULT
 module-str = Memfault

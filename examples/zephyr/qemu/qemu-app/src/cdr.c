@@ -33,10 +33,9 @@ static const char cdr_payload[] = "hello cdr!";
 
 // the CDR metadata structure
 static sMemfaultCdrMetadata s_cdr_metadata = {
-  .start_time =
-    {
-      .type = kMemfaultCurrentTimeType_Unknown,
-    },
+  .start_time = {
+    .type = kMemfaultCurrentTimeType_Unknown,
+  },
   .mimetypes = mimetypes,
   .num_mimetypes = MEMFAULT_ARRAY_SIZE(mimetypes),
 

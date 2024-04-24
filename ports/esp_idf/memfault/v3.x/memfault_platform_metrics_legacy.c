@@ -14,6 +14,7 @@
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
 #include "memfault/metrics/metrics.h"
+#include "memfault/metrics/platform/connectivity.h"
 #include "memfault/metrics/platform/timer.h"
 #include "sdkconfig.h"
 
@@ -85,3 +86,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   memfault_mbedtls_heartbeat_collect_data();
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
 }
+
+#if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)
+//! Stub implementation to prevent compilation errors for v3.x
+void memfault_platform_metrics_connectivity_boot(void) {
+  MEMFAULT_LOG_DEBUG("WiFi connectivity connected time is not implemented for ESP-IDF v3.x");
+}
+#endif  // CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT

@@ -20,6 +20,7 @@
 #include "memfault/core/serializer_helper.h"
 #include "memfault/metrics/battery.h"
 #include "memfault/metrics/metrics.h"
+#include "memfault/metrics/platform/connectivity.h"
 #include "memfault/metrics/platform/overrides.h"
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/metrics/reliability.h"
@@ -1271,6 +1272,10 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
   if (rv != 0) {
     return rv;
   }
+
+#if MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+  memfault_platform_metrics_connectivity_boot();
+#endif
 
   return 0;
 }

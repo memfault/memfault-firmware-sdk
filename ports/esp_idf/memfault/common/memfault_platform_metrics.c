@@ -22,6 +22,7 @@
 #include "memfault/esp_port/version.h"
 #include "memfault/metrics/connectivity.h"
 #include "memfault/metrics/metrics.h"
+#include "memfault/metrics/platform/connectivity.h"
 #include "memfault/metrics/platform/timer.h"
 #include "sdkconfig.h"
 
@@ -204,10 +205,6 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   const int64_t us_per_sec = 1000000;
   ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, period_sec * us_per_sec));
 
-#if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
-  prv_register_event_handler();
-#endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
-
   return true;
 }
 
@@ -236,3 +233,12 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   prv_record_heap_metrics();
 #endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
 }
+
+#if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)
+//! Register handlers for WiFi events
+void memfault_platform_metrics_connectivity_boot(void) {
+  #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
+  prv_register_event_handler();
+  #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
+}
+#endif  // CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT

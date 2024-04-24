@@ -1,0 +1,4 @@
+//! Define custom error reasons that can be filtered & searched
+//! on in the Memfault UI, i.e
+//!   MEMFAULT_TRACE_REASON_DEFINE(critical_error)
+//! See documentation here:  https://mflt.io/error-tracing

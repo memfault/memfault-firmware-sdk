@@ -218,6 +218,17 @@ MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
   return &s_coredump_regions[0];
 }
 
+static uint32_t prv_get_adjusted_size(const esp_partition_t *core_part) {
+  return
+#if CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE > 0
+    MEMFAULT_MIN(core_part->size, CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE)
+#else
+    core_part->size
+#endif
+    // coredump storage capacity is reduced by the write offset
+    - (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE);
+}
+
 //! Opens partition system on boot to determine where a coredump can be saved
 //!
 //! @note We override the default implementation using the GNU linkers --wrap feature
@@ -233,8 +244,10 @@ void __wrap_esp_core_dump_init(void) {
   }
 
   MEMFAULT_LOG_INFO("Coredumps will be saved to '%s' partition", core_part->label);
-  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08" PRIX32, core_part,
-                    core_part->address);
+  MEMFAULT_LOG_INFO("Using entry %p pointing to address 0x%08" PRIX32 " size %" PRIu32
+                    " writeoffset %d",
+                    core_part, core_part->address, prv_get_adjusted_size(core_part),
+                    (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE));
 
   s_esp32_coredump_partition_info = (sEspIdfCoredumpPartitionInfo){
     .magic = ESP_IDF_COREDUMP_PART_INIT_MAGIC,
@@ -260,7 +273,8 @@ esp_err_t __wrap_esp_core_dump_image_get(size_t *out_addr, size_t *out_size) {
     return ESP_ERR_INVALID_SIZE;
   }
 
-  *out_addr = core_part->address;
+  *out_addr =
+    core_part->address + CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE;
   return ESP_OK;
 }
 
@@ -283,8 +297,11 @@ void memfault_platform_coredump_storage_clear(void) {
   if (core_part->size < sizeof(invalidate)) {
     return;
   }
+  const uint32_t clear_address =
+    core_part->address +
+    (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE);
   const esp_err_t err =
-    memfault_esp_spi_flash_write(core_part->address, &invalidate, sizeof(invalidate));
+    memfault_esp_spi_flash_write(clear_address, &invalidate, sizeof(invalidate));
   if (err != ESP_OK) {
     memfault_platform_log(kMemfaultPlatformLogLevel_Error, "Failed to write data to flash (%d)!",
                           err);
@@ -308,14 +325,8 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
       CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE));
 #endif
 
-  *info = (sMfltCoredumpStorageInfo) {
-    .size =
-#if CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE > 0
-      MEMFAULT_MIN(core_part->size, CONFIG_MEMFAULT_COREDUMP_STORAGE_MAX_SIZE)
-#else
-      core_part->size
-#endif
-      ,
+  *info = (sMfltCoredumpStorageInfo){
+    .size = prv_get_adjusted_size(core_part),
     .sector_size = SPI_FLASH_SEC_SIZE,
   };
 }
@@ -364,7 +375,9 @@ bool memfault_platform_coredump_storage_write(uint32_t offset, const void *data,
     return false;
   }
 
-  const size_t address = core_part->address + offset;
+  const size_t address =
+    core_part->address + offset +
+    (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE);
   const esp_err_t err = memfault_esp_spi_flash_write(address, data, data_len);
   if (err != ESP_OK) {
     prv_panic_safe_putstr("coredump write failed");
@@ -380,7 +393,9 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t
   if ((offset + read_len) > core_part->size) {
     return false;
   }
-  const uint32_t address = core_part->address + offset;
+  const uint32_t address =
+    core_part->address + offset +
+    (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE);
   const esp_err_t err = memfault_esp_spi_flash_read(address, data, read_len);
   return (err == ESP_OK);
 }
@@ -392,9 +407,13 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   }
 
   const size_t address = core_part->address + offset;
+  // include the write offset to set the erase size, but erase starting from the
+  // base address so the full partition will be erased
+  erase_size += (CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS * SPI_FLASH_SEC_SIZE);
   const esp_err_t err = memfault_esp_spi_flash_erase_range(address, erase_size);
   if (err != ESP_OK) {
     prv_panic_safe_putstr("coredump erase failed");
   }
+
   return (err == ESP_OK);
 }

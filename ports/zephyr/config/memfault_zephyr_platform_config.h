@@ -126,6 +126,10 @@ extern "C" {
   #include "memfault_platform_config_extra.h"
 #endif
 
+#if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)
+  #define MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT 1
+#endif
+
 #ifdef __cplusplus
 }
 #endif

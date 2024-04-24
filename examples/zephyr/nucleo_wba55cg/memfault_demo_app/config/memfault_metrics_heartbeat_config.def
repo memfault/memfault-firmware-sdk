@@ -1,0 +1,6 @@
+// Define custom system metrics to track. See https://mflt.io/embedded-metrics.
+// For example:
+//
+// MEMFAULT_METRICS_KEY_DEFINE(main_task_stack_hwm, kMemfaultMetricType_Unsigned)
+// MEMFAULT_METRICS_KEY_DEFINE(ble_min_rssi, kMemfaultMetricType_Signed)
+// MEMFAULT_METRICS_KEY_DEFINE(mcu_sleep_time_ms, kMemfaultMetricType_Timer)

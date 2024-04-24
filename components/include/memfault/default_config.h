@@ -653,6 +653,16 @@ extern "C" {
   #define MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE 100
 #endif
 
+//
+// Platform-specific metrics configuration options
+//
+
+//! Enable this flag to cause metrics_boot() to call a platform-implemented
+//! memfault_platform_metrics_connectivity_boot() function
+#ifndef MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+  #define MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT 0
+#endif
+
 #ifdef __cplusplus
 }
 #endif

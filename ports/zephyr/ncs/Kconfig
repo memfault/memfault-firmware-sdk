@@ -26,6 +26,24 @@ config MEMFAULT_NRF_SHELL
         help
           CLI Utilities for interfacing with the nRF Connect SDK
 
+choice MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME
+        bool "Select the platform implementation for capturing connected time metric"
+        default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if SOC_SERIES_NRF91X
+
+config MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X
+        bool "Capture connected time metric on nRF91x platforms"
+        select MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+        depends on SOC_SERIES_NRF91X
+        depends on LTE_LINK_CONTROL
+        help
+          Enables connection uptime device vital for the nRF91X platform. 
+          Connectivity connection uptime will track the percent of
+          time the platform is actually connected to the cellular network
+          when it should be connected. More information at
+          https://mflt.io/core-metrics .
+
+endchoice
+
 if MEMFAULT_FOTA
 
 config MEMFAULT_FOTA_CLI_CMD

@@ -6,6 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2024-04-24
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - A new platform function, `memfault_platform_metrics_connectivity_boot()`,
+    can be enabled to be called from the Memfault SDK `metrics_boot()` function
+    after the metrics subsystem is initialized. This platform function is used
+    for setting any initial state information for Connectivity metrics, and has
+    default implementations for ESP-IDF (WiFi) and nRF9160 (LTE) devices.
+
+- ESP-IDF:
+
+  - Add a new Kconfig setting,
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS`, which can be used
+    to set an offset into the coredump storage area where coredumps are written.
+    The full partition will still be erased, but coredumps will be written
+    starting at the sector offset selected with this setting. The skipped sector
+    will remain at the erased value, `0xff` for all bytes.
+
+- Zephyr:
+
+  - Added a built-in weakly defined implementation of
+    `memfault_platform_get_device_info()`, which provides:
+
+    - `.device_serial` : A default device serial based on the SOC's unique ID
+      registers, via the
+      [`hwinfo` subsystem](https://docs.zephyrproject.org/3.6.0/hardware/peripherals/hwinfo.html).
+      This is the default device serial when `CONFIG_HWINFO=y`. If
+      `CONFIG_HWINFO=n`, the fallback device serial is
+      `CONFIG_SOC "-testserial"`.
+    - `.software_type` : Configurable with
+      `CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE`, defaults to `"app"`
+    - `.software_version` : Configurable with
+      `CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION`. Defaults to an
+      identifier based on the `VERSION` file in the application, using the
+      Zephyr
+      [Application Version](https://docs.zephyrproject.org/3.6.0/build/version/index.html)
+      feature, or `"0.0.0"` if unavailable.
+    - `.hardware_version` : Configurable with
+      `CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION`. Defaults to an
+      identifier based on `CONFIG_BOARD` and `CONFIG_BOARD_REVISION` (if set).
+
+  - Add a new Zephyr example app for the
+    [ST NUCLEO-WBA55CG board](https://docs.zephyrproject.org/3.6.0/boards/st/nucleo_wba55cg/doc/nucleo_wba55cg.html),
+    under [`examples/zephyr/nucleo_wba55cg`](examples/zephyr/nucleo_wba55cg).
+    This example demonstrates the Memfault SDK integration on the NUCLEO-WBA55CG
+    board.
+
+- nRF-Connect SDK:
+
+  - Add [Connected Time Vital](https://mflt.io/connectivity-metrics)
+    out-of-the-box for nRF9160 projects, tracking modem connected time. This is
+    controlled with the Kconfig
+    `CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X`, enabled by
+    default.
+
 ## [1.8.0] - 2024-04-17
 
 ### :chart_with_upwards_trend: Improvements

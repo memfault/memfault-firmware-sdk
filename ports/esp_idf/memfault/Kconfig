@@ -71,6 +71,16 @@ endif
             been shipped and the partition table cannot be modified, an
             OTA slot can be used instead.
 
+    config MEMFAULT_COREDUMP_STORAGE_WRITE_OFFSET_SECTORS
+        int "Write coredumps starting at this offset (in sectors)"
+        default 0
+        help
+            By default, Memfault will write coredumps starting at the beginning
+            of the coredump partition. If the device has a bootloader that
+            reserves space at the beginning of the partition, this option can
+            be used to write coredumps starting at a different offset. The full
+            partition will still be erased when invalidating a coredump.
+
     config MEMFAULT_COREDUMP_STORAGE_MAX_SIZE
         int "The maximum size of a coredump (0=partition max size)"
         default 0
@@ -123,6 +133,18 @@ endif
         help
             The name of the file which contains the Memfault platform config
             options. This file must be included in the project's include path.
+
+    config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+        bool "Initialize platform-specific connectivity metrics on system init"
+        default y
+        depends on MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+        help
+          When enabled, memfault_metrics_boot() will call a platform-implemented
+          memfault_platform_metrics_connectivity_boot() function. If not already
+          implemented for the user's platform, the user must supply their own implementation.
+          This function is typically used to register event handlers to that will mark
+          the connectivity state changes when the device connects and disconnects.
+          Marking these state changes is required to calculate the connectivity time metrics.
 
     config MEMFAULT_USER_CONFIG_SILENT_FAIL
         bool "Continue with build even if user configuration of Memfault SDK is missing"

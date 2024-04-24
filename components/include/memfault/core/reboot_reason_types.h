@@ -108,6 +108,18 @@ typedef enum MfltResetReason {
   // executing from a fault handler.
   kMfltRebootReason_Lockup = 0x9401,
 
+  // A reset triggered due to a security violation
+  kMfltRebootReason_SecurityViolation = 0x9402,
+
+  // A reset triggered due to a parity error (i.e. memory integrity check)
+  kMfltRebootReason_ParityError = 0x9403,
+
+  // A reset triggered due to a temperature error
+  kMfltRebootReason_Temperature = 0x9404,
+
+  // A reset due to some other hardware error
+  kMfltRebootReason_Hardware = 0x9405,
+
 //
 // User Defined Unexpected Resets
 //
