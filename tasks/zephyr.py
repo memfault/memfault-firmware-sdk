@@ -10,7 +10,7 @@ from invoke import task
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ZEPHYR_ROOT = os.path.join(SDK_FW_ROOT, "examples", "zephyr", "stm32l4_disco")
-ZEPHYR_UPSTREAM_REPO = "git@github.com:zephyrproject-rtos/zephyr.git"
+ZEPHYR_UPSTREAM_REPO = "https://github.com/zephyrproject-rtos/zephyr.git"
 
 
 def _shallow_clone_and_checkout(ctx, repo_uri, branch, dest_dir, commit):

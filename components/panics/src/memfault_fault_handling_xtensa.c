@@ -12,6 +12,7 @@
   #include "memfault/core/platform/core.h"
   #include "memfault/core/reboot_tracking.h"
   #include "memfault/panics/arch/xtensa/xtensa.h"
+  #include "memfault/panics/assert.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/panics/coredump_impl.h"
 
@@ -38,6 +39,55 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
 void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
   prv_fault_handling_assert(pc, lr, reason);
 }
+
+// For Zephyr Xtensa, provide an assert handler and other utilities.
+  #if defined(__ZEPHYR__) && defined(CONFIG_SOC_FAMILY_ESP32)
+    #include <hal/cpu_hal.h>
+    #include <zephyr/kernel.h>
+
+void memfault_platform_halt_if_debugging(void) {
+  if (cpu_ll_is_debugger_attached()) {
+    MEMFAULT_BREAKPOINT();
+  }
+}
+
+bool memfault_arch_is_inside_isr(void) {
+  // Use the Zephyr-specific implementation.
+  return k_is_in_isr();
+}
+
+static void prv_fault_handling_assert_native(void *pc, void *lr, eMemfaultRebootReason reason) {
+  prv_fault_handling_assert(pc, lr, reason);
+
+    #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
+  memfault_platform_halt_if_debugging();
+    #endif
+
+  // dereference a null pointer to trigger fault. we might want to use abort()
+  // instead here
+  *(uint32_t *)0 = 0x77;
+
+  // We just trap'd into the fault handler logic so it should never be possible to get here but if
+  // we do the best thing that can be done is rebooting the system to recover it.
+  memfault_platform_reboot();
+}
+
+MEMFAULT_NO_OPT void memfault_fault_handling_assert_extra(void *pc, void *lr,
+                                                          sMemfaultAssertInfo *extra_info) {
+  prv_fault_handling_assert_native(pc, lr, extra_info->assert_reason);
+
+  MEMFAULT_UNREACHABLE;
+}
+
+MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
+  prv_fault_handling_assert_native(pc, lr, kMfltRebootReason_Assert);
+
+  MEMFAULT_UNREACHABLE;
+}
+
+  #elif !defined(ESP_PLATFORM)
+    #error "Unsupported Xtensa platform, please contact support@memfault.com"
+  #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {

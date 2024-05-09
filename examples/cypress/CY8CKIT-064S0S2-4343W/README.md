@@ -79,7 +79,7 @@ this example:
 
 ```bash
 # clone the amazon-freertos repo at a known-working tag
- git clone  git@github.com:aws/amazon-freertos.git -b 202107.00
+ git clone  https://github.com/aws/amazon-freertos.git -b 202107.00
 ❯ cd amazon-freertos
 
 # add the memfault sdk- you can clone it directly, as below;

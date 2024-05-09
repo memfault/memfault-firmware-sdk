@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.x.x] - 2024-xx-xx
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Improve support for
+    [event timestamps](https://docs.memfault.com/docs/mcu/event-timestamps)
+    using Zephyr RTC devices, by adding support for RTC nodes identified using
+    `DT_ALIAS()` in addition to `DT_NODELABEL()`. Thanks to @corytodd for
+    providing the fix in
+    [#68](https://github.com/memfault/memfault-firmware-sdk/issues/68)!
+
+### :boom: Breaking Changes
+
+- Zephyr:
+
+  - Add a built-in implementation of `g_mflt_http_client_config` for Zephyr
+    devices using the Memfault HTTP client, which holds the
+    [Memfault Project Key](https://mflt.io/project-key) set via the Kconfig
+    symbol `CONFIG_MEMFAULT_PROJECT_KEY`. Users updating from a previous version
+    will have to set this Kconfig symbol when building, and any existing
+    implementation of `g_mflt_http_client_config` should be removed.
+
+- nRF Connect SDK:
+
+  - Enable periodic upload, `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y`, by default
+    for nRF91x builds
+  - Default to `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE`
+    when periodic upload is enabled
+
 ## [1.8.1] - 2024-04-24
 
 ### :chart_with_upwards_trend: Improvements

@@ -164,7 +164,11 @@ MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
 
   // If hwinfo_get_device_id() fails or isn't enabled, use a fallback string
   if (length <= 0) {
+  #if defined(CONFIG_SOC)
     dev_str = CONFIG_SOC "-testserial";
+  #else
+    dev_str = "testserial";
+  #endif
     length = strlen(dev_str);
   } else {
     // Render the obtained serial number in hexadecimal representation

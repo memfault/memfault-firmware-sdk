@@ -9,6 +9,17 @@
 extern "C" {
 #endif  // __cplusplus
 
+#include <stdint.h>
+
+//! Structure to hold mbedTLS metrics, for runtime access
+typedef struct MemfaultMbedtlsMetricData {
+  int32_t mem_used_bytes;
+  uint32_t mem_max_bytes;
+} sMemfaultMbedtlsMetricData;
+
+//! Fetch the current MbedTLS metric data
+void memfault_mbedtls_heartbeat_get_data(sMemfaultMbedtlsMetricData *metrics);
+
 //! Collects a heartbeat of mbedTLS metrics before resetting the values
 void memfault_mbedtls_heartbeat_collect_data(void);
 

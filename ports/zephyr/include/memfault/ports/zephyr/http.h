@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,13 @@ int memfault_zephyr_port_install_root_certs(void);
 //!
 //! @return 0 on success, else error code
 int memfault_zephyr_port_post_data(void);
+
+//! Same as memfault_zephyr_port_post_data, but returns the size of the data
+//! that was sent, on success.
+//!
+//! @return negative error code on error, else the size of the data that was
+//! sent, in bytes
+ssize_t memfault_zephyr_port_post_data_return_size(void);
 
 typedef struct MemfaultOtaInfo {
   // The size, in bytes, of the OTA payload.
@@ -101,6 +109,7 @@ int memfault_zephyr_port_release_download_url(char **download_url);
 typedef struct {
   int sock_fd;
   struct zsock_addrinfo *res;
+  size_t bytes_sent;
 } sMemfaultHttpContext;
 
 //! Open a socket to the Memfault chunks upload server

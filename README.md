@@ -80,7 +80,7 @@ If you are using `git`, the Memfault SDK is typically added to a project as a
 submodule:
 
 ```
-$ git submodule add git@github.com:memfault/memfault-firmware-sdk.git $YOUR_PROJECT/third_party/memfault/memfault-firmware-sdk
+$ git submodule add https://github.com/memfault/memfault-firmware-sdk.git $YOUR_PROJECT/third_party/memfault/memfault-firmware-sdk
 ```
 
 This makes it easy to track the history of the Memfault SDK. You should not need

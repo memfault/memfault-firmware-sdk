@@ -1,0 +1,23 @@
+#include "sdkconfig.h"
+
+// File for holding custom metrics:
+//   https://mflt.io/embedded-metrics
+MEMFAULT_METRICS_KEY_DEFINE(PosterTaskNumSchedules, kMemfaultMetricType_Unsigned)
+
+#if defined(CONFIG_APP_MEMFAULT_TRANSPORT_MQTT)
+MEMFAULT_METRICS_KEY_DEFINE(mqtt_publish_bytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(mqtt_publish_count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(mqtt_conn_downtime, kMemfaultMetricType_Timer)
+MEMFAULT_METRICS_KEY_DEFINE(mqtt_conn_uptime, kMemfaultMetricType_Timer)
+#endif
+
+// OTA session metrics
+MEMFAULT_METRICS_SESSION_KEY_DEFINE(ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_error_code, kMemfaultMetricType_Signed, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_wifi_rssi, kMemfaultMetricType_Signed, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tcp_tx_count, kMemfaultMetricType_Unsigned, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tcp_rx_count, kMemfaultMetricType_Unsigned, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tls_sent_bytes, kMemfaultMetricType_Unsigned, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tls_recv_bytes, kMemfaultMetricType_Unsigned, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_mbedtls_mem_max_bytes, kMemfaultMetricType_Unsigned,
+                                         ota)

@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
+
 // The unity test framework (http://www.throwtheswitch.org/unity) fails to generate mocks when
 // opaque pointers are used in a header.  To work around, the problem, we pull in the full internal
 // definition for "sMemfaultEventStorageImpl" when the unity framework is being used.
@@ -66,6 +68,7 @@ typedef struct MemfaultEventStorageInfo {
   size_t bytes_free;
 } sMemfaultEventStorageInfo;
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 typedef struct MemfaultEventStoragePersistCbStatus {
   //! Summarizes the utilization of the RAM buffer passed in memfault_events_storage_boot()
   sMemfaultEventStorageInfo volatile_storage;
@@ -96,6 +99,8 @@ void memfault_event_storage_request_persist_callback(
 //!
 //! @return number of events saved or <0 for unexpected errors
 int memfault_event_storage_persist(void);
+
+#endif
 
 //! Simple API call to retrieve the number of bytes used in the allocated event storage buffer.
 //! Returns zero if the storage has not been allocated.

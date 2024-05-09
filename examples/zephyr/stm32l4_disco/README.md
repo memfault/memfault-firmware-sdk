@@ -27,7 +27,7 @@ Step-by-step instructions can be found in the
 1. Clone the repo
 
    ```bash
-   $ git clone git@github.com:zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
+   $ git clone https://github.com/zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
    ```
 
 2. Create a virtual environment

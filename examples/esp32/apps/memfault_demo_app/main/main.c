@@ -28,6 +28,7 @@
 #include "linenoise/linenoise.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "ota_session_metrics.h"
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
   #include "driver/uart_vfs.h"
@@ -165,11 +166,18 @@ static bool prv_handle_ota_upload_available(void *user_ctx) {
   led_set_color(kLedColor_Blue);
 
   MEMFAULT_LOG_INFO("Starting OTA download ...");
+
+  // Begin the OTA metrics session
+  ota_session_metrics_start();
+
   return true;
 }
 
 static bool prv_handle_ota_download_complete(void *user_ctx) {
   MEMFAULT_LOG_INFO("OTA Update Complete, Rebooting System");
+
+  // Successful OTA update, end the metrics session
+  ota_session_metrics_end(0);
 
   MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
 
@@ -208,6 +216,9 @@ static void prv_memfault_ota(void) {
     MEMFAULT_LOG_INFO("Update available!");
   } else if (rv < 0) {
     MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
+
+    // End the OTA metric session, passing the non-zero error code
+    ota_session_metrics_end(rv);
 
     // record a Trace Event when this happens, and freeze the log buffer to be
     // uploaded for diagnosis

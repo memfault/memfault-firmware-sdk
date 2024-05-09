@@ -17,6 +17,7 @@
   #include "memfault/panics/arch/riscv/riscv.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/panics/coredump_impl.h"
+  #include "memfault/panics/fault_handling.h"
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   *num_regions = 0;
@@ -42,6 +43,60 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
   prv_fault_handling_assert(pc, lr, reason);
 }
 
+// For non-esp-idf riscv implementations, provide a full assert handler and
+// other utilities.
+  #if defined(__ZEPHYR__) && defined(CONFIG_SOC_FAMILY_ESP32)
+    #include <hal/cpu_hal.h>
+    #include <zephyr/kernel.h>
+
+void memfault_platform_halt_if_debugging(void) {
+  if (cpu_ll_is_debugger_attached()) {
+    MEMFAULT_BREAKPOINT();
+  }
+}
+
+bool memfault_arch_is_inside_isr(void) {
+  // Use the Zephyr-specific implementation.
+  //
+  // It's not clear if there's a RISC-V standard way to check if the CPU is in
+  // an exception mode. The mcause register comes close but it won't tell us if
+  // a trap was taken due to a non-interrupt cause:
+  // https://five-embeddev.com/riscv-isa-manual/latest/machine.html#sec:mcause
+  return k_is_in_isr();
+}
+
+static void prv_fault_handling_assert_native(void *pc, void *lr, eMemfaultRebootReason reason) {
+  prv_fault_handling_assert(pc, lr, reason);
+
+    #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
+  memfault_platform_halt_if_debugging();
+    #endif
+
+  // dereference a null pointer to trigger fault
+  *(uint32_t *)0 = 0x77;
+
+  // We just trap'd into the fault handler logic so it should never be possible to get here but if
+  // we do the best thing that can be done is rebooting the system to recover it.
+  memfault_platform_reboot();
+}
+
+MEMFAULT_NO_OPT void memfault_fault_handling_assert_extra(void *pc, void *lr,
+                                                          sMemfaultAssertInfo *extra_info) {
+  prv_fault_handling_assert_native(pc, lr, extra_info->assert_reason);
+
+  MEMFAULT_UNREACHABLE;
+}
+
+MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
+  prv_fault_handling_assert_native(pc, lr, kMfltRebootReason_Assert);
+
+  MEMFAULT_UNREACHABLE;
+}
+
+  #elif !defined(ESP_PLATFORM)
+    #error "Unsupported RISC-V platform, please contact support@memfault.com"
+  #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
+
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     // TODO confirm this works correctly- we should have the correct
@@ -56,7 +111,8 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   };
 
   sCoredumpCrashInfo info = {
-    .stack_address = (void *)regs->sp,
+    // Zephyr fault shim saves the stack pointer in s[0]
+    .stack_address = (void *)regs->s[0],
     .trace_reason = save_info.trace_reason,
     .exception_reg_state = regs,
   };
@@ -66,6 +122,11 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   if (coredump_saved) {
     memfault_reboot_tracking_mark_coredump_saved();
   }
+
+  #if !MEMFAULT_FAULT_HANDLER_RETURN
+  memfault_platform_reboot();
+  MEMFAULT_UNREACHABLE;
+  #endif
 }
 
 size_t memfault_coredump_storage_compute_size_required(void) {

@@ -27,6 +27,13 @@ include(${memfault_firmware_sdk_dir}/ports/esp_idf/memfault.cmake)
 # this happens first before defining other targets!
 # The esp-idf project() macro creates a project_name.elf target:
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+# Wrap the mbedtls netif read/write functions, for instrumentation.
+# These MUST be before the project() function below, or they are ignored
+if(IDF_VERSION_MAJOR VERSION_GREATER_EQUAL 4)
+  idf_build_set_property(LINK_OPTIONS "-Wl,--wrap=mbedtls_net_send,--wrap=mbedtls_net_recv" APPEND)
+endif()
+
 project(${PROJECT_NAME})
 
 # Enable a compilation error if any deprecated APIs are used. This helps detect

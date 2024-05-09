@@ -90,6 +90,11 @@ void __wrap_z_thread_abort(struct k_thread *thread) {
 
 MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
                                                               size_t desired_size) {
+#if defined(CONFIG_RISCV)
+  // Linker script does not define _image_ram_start/end for RISC-V
+  const uint32_t ram_start = 0;
+  const uint32_t ram_end = 0xffffffff;
+#else
   // NB: This only works for MCUs which have a contiguous RAM address range. (i.e Any MCU in the
   // nRF53, nRF52, and nRF91 family). All of these MCUs have a contiguous RAM address range so it is
   // sufficient to just look at _image_ram_start/end from the Zephyr linker script
@@ -98,6 +103,7 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
 
   const uint32_t ram_start = (uint32_t)_image_ram_start;
   const uint32_t ram_end = (uint32_t)_image_ram_end;
+#endif
 
   if ((uint32_t)start_addr >= ram_start && (uint32_t)start_addr < ram_end) {
     return MEMFAULT_MIN(desired_size, ram_end - (uint32_t)start_addr);
@@ -197,7 +203,17 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     }
 #endif
 
-    void *sp = (void *)thread->callee_saved.psp;
+    void *sp =
+#if defined(CONFIG_ARM)
+      (void *)thread->callee_saved.psp
+#elif CONFIG_RISCV
+      (void *)thread->callee_saved.sp
+#elif CONFIG_XTENSA
+      // TODO, needs to be implemented. see here for reference:
+      // https://github.com/zephyrproject-rtos/zephyr/blob/a6eef0ba3755f2530c5ce93524e5ac4f5be30194/arch/xtensa/core/xtensa-asm2.c#L109
+      0
+#endif
+      ;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
     // We know where the top of the stack is. Use that information to shrink
@@ -257,13 +273,15 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
   // with a Memfault SDK version >=0.27.3, because that NCS release used an
   // intermediate Zephyr release, so the version number checking is not
   // possible.
-#if !MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES && MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
-  #define ZEPHYR_DATA_REGION_START __data_region_start
-  #define ZEPHYR_DATA_REGION_END __data_region_end
-#else
-  // The old names are used in previous Zephyr versions (<=2.6)
-  #define ZEPHYR_DATA_REGION_START __data_ram_start
-  #define ZEPHYR_DATA_REGION_END __data_ram_end
+#if !defined(ZEPHYR_DATA_REGION_START) && !defined(ZEPHYR_DATA_REGION_END)
+  #if !MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES && MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
+    #define ZEPHYR_DATA_REGION_START __data_region_start
+    #define ZEPHYR_DATA_REGION_END __data_region_end
+  #else
+    // The old names are used in previous Zephyr versions (<=2.6)
+    #define ZEPHYR_DATA_REGION_START __data_ram_start
+    #define ZEPHYR_DATA_REGION_END __data_ram_end
+  #endif
 #endif
 
   extern uint32_t ZEPHYR_DATA_REGION_START[];
