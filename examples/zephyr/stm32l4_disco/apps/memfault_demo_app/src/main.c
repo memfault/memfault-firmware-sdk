@@ -16,10 +16,6 @@
 
 LOG_MODULE_REGISTER(mflt_app, LOG_LEVEL_DBG);
 
-sMfltHttpClientConfig g_mflt_http_client_config = {
-  .api_key = "<YOUR PROJECT KEY HERE>",
-};
-
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo){
     .device_serial = "DEMOSERIAL",

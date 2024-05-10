@@ -11,6 +11,7 @@
 
 #include <string.h>
 
+#include "esp_err.h"
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
@@ -242,3 +243,19 @@ void memfault_platform_metrics_connectivity_boot(void) {
   #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 }
 #endif  // CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+
+#if defined(CONFIG_MEMFAULT_WRAP_EVENT_LOOP_CREATE_DEFAULT)
+esp_err_t __real_esp_event_loop_create_default(void);
+
+esp_err_t __wrap_esp_event_loop_create_default(void) {
+  esp_err_t result = __real_esp_event_loop_create_default();
+  return result == ESP_ERR_INVALID_STATE ? ESP_OK : result;
+}
+
+// Ensure the substituted function signature matches the original function
+_Static_assert(__builtin_types_compatible_p(__typeof__(&esp_event_loop_create_default),
+                                            __typeof__(&__wrap_esp_event_loop_create_default)) &&
+                 __builtin_types_compatible_p(__typeof__(&esp_event_loop_create_default),
+                                              __typeof__(&__real_esp_event_loop_create_default)),
+               "Error: check esp_event_loop_create_default function signature");
+#endif  // defined(CONFIG_MEMFAULT_WRAP_EVENT_LOOP_CREATE_DEFAULT)

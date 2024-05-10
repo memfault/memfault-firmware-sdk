@@ -6,6 +6,7 @@
 import os
 import pathlib
 from shutil import which
+from typing import Any, cast
 
 from invoke import Collection, task
 
@@ -85,7 +86,7 @@ def fw_sdk_unit_test(
     else:
         try:
             # Only available on Linux, but it's better
-            cpus = len(os.sched_getaffinity(0))  # pyright: ignore[reportAttributeAccessIssue]
+            cpus = len(cast(Any, os).sched_getaffinity(0))
         except AttributeError:
             # Available on Mac
             cpus = int((os.cpu_count() or 4) / 2)

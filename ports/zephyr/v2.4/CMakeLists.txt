@@ -1,4 +1,21 @@
-zephyr_library_sources(memfault_fault_handler.c)
+if (CONFIG_RISCV)
+    zephyr_library_sources(memfault_fault_handler_riscv.c)
+elseif(CONFIG_ARM)
+    zephyr_library_sources(memfault_fault_handler.c)
+elseif(CONFIG_XTENSA)
+    zephyr_library_sources(memfault_fault_handler_xtensa.c)
+
+    # Due to variable stack frame widths, Zephyr does not give a definition for
+    # z_arch_esf_t (stack information passed to Zephyr's fault handler) for Xtensa,
+    # unlike the other architectures our Zephyr port supports. Therefore, we have
+    # to add an include path to the folder where the header defining xtensa stack
+    # frames lives.
+    zephyr_include_directories(${ZEPHYR_BASE}/arch/xtensa/include)
+else()
+    # Unsupported configuration
+    message(FATAL_ERROR "Unsupported chip architecture")
+endif()
+
 zephyr_include_directories(.)
 
 # Zephyr fatals for ARM Cortex-M's take the following path:

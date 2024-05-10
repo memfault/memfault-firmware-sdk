@@ -273,6 +273,14 @@ endif
             parameter. Enabling this config will call this function automatically in `memfault_boot()`.
             Disabling this config allows your application to use this hook instead.
 
+    config MEMFAULT_WRAP_EVENT_LOOP_CREATE_DEFAULT
+        bool "Wrap esp_event_loop_create_default() to suppress ESP_ERR_INVALID_STATE errors"
+        default y
+        help
+            `esp_event_loop_create_default()` returns `ESP_ERR_INVALID_STATE` when called multiple times.
+            This behavior can cause issues when used with `ESP_ERROR_CHECK()`. This option enables a
+            wrapped version to suppress these errors and prevent crashes.
+
 endmenu
 
 endif  # !MEMFAULT_DISABLE

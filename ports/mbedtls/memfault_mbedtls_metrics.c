@@ -31,8 +31,7 @@ MEMFAULT_STATIC_ASSERT(ALLOC_METADATA_OVERHEAD % MEMFAULT_MAX_ALIGN_SIZE == 0,
 extern void *__real_mbedtls_calloc(size_t n, size_t size);
 extern void __real_mbedtls_free(void *ptr);
 
-static int32_t s_mbedtls_mem_used = 0;
-static uint32_t s_mbedtls_mem_max = 0;
+static sMemfaultMbedtlsMetricData s_mbedtls_metrics = { 0 };
 
 // This wrapper adds allocations with a metadata structure at the beginning of the allocation.
 // The memory allocated is large enough to account for overhead of the metadata structure,
@@ -57,9 +56,9 @@ void *__wrap_mbedtls_calloc(size_t n, size_t size) {
     metadata_ptr->requested_size = requested_size;
 
     // Update metric values
-    s_mbedtls_mem_used += requested_size;
-    if (s_mbedtls_mem_used > (int32_t)s_mbedtls_mem_max) {
-      s_mbedtls_mem_max = (uint32_t)s_mbedtls_mem_used;
+    s_mbedtls_metrics.mem_used_bytes += requested_size;
+    if (s_mbedtls_metrics.mem_used_bytes > (int32_t)s_mbedtls_metrics.mem_max_bytes) {
+      s_mbedtls_metrics.mem_max_bytes = (uint32_t)s_mbedtls_metrics.mem_used_bytes;
     }
   }
 
@@ -81,17 +80,21 @@ void __wrap_mbedtls_free(void *ptr) {
   void *orig_ptr = (void *)metadata_ptr;
 
   // Update metric
-  s_mbedtls_mem_used -= metadata_ptr->requested_size;
+  s_mbedtls_metrics.mem_used_bytes -= metadata_ptr->requested_size;
   // Free original pointer
   __real_mbedtls_free(orig_ptr);
 }
 
+void memfault_mbedtls_heartbeat_get_data(sMemfaultMbedtlsMetricData *metrics) {
+  *metrics = s_mbedtls_metrics;
+}
+
 void memfault_mbedtls_heartbeat_collect_data(void) {
-  MEMFAULT_METRIC_SET_SIGNED(mbedtls_mem_used_bytes, s_mbedtls_mem_used);
-  MEMFAULT_METRIC_SET_UNSIGNED(mbedtls_mem_max_bytes, s_mbedtls_mem_max);
+  MEMFAULT_METRIC_SET_SIGNED(mbedtls_mem_used_bytes, s_mbedtls_metrics.mem_used_bytes);
+  MEMFAULT_METRIC_SET_UNSIGNED(mbedtls_mem_max_bytes, s_mbedtls_metrics.mem_max_bytes);
 }
 
 void memfault_mbedtls_test_clear_values(void) {
-  s_mbedtls_mem_used = 0;
-  s_mbedtls_mem_max = 0;
+  s_mbedtls_metrics.mem_used_bytes = 0;
+  s_mbedtls_metrics.mem_max_bytes = 0;
 }

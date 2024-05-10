@@ -28,7 +28,7 @@ running the snippets, i.e.
 2. Clone the QP/C repo
 
    ```bash
-   $ git clone git@github.com:QuantumLeaps/qpc.git --branch v6.6.0+ qpc
+   $ git clone https://github.com/QuantumLeaps/qpc.git --branch v6.6.0+ qpc
    ```
 
 3. Apply patches to integrate Memfault SDK

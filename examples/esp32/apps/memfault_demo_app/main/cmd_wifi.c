@@ -102,7 +102,7 @@ bool wifi_join(const char *ssid, const char *pass) {
     // Try to create default event loop. If it's already created, it returns
     // ESP_ERR_INVALID_STATE, equivalent to ESP_OK for our purposes.
     esp_err_t err = esp_event_loop_create_default();
-    ESP_ERROR_CHECK_WITHOUT_ABORT(err == ESP_ERR_INVALID_STATE ? ESP_OK : err);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(err);
 
     esp_netif_create_default_wifi_sta();
 

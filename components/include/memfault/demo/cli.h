@@ -39,11 +39,11 @@ int memfault_demo_cli_cmd_memmanage(int argc, char *argv[]);
 //! Command which will generate a UsageFault on Cortex-M hardware
 int memfault_demo_cli_cmd_usagefault(int argc, char *argv[]);
 
+#endif  // MEMFAULT_COMPILER_ARM_CORTEX_M
+
 //! Read a 32-bit memory address and print the value. Can be used to test
 //! specific faults due to protected regions
 int memfault_demo_cli_loadaddr(int argc, char *argv[]);
-
-#endif  // MEMFAULT_COMPILER_ARM_CORTEX_M
 
 #if MEMFAULT_COMPILER_ARM_V7_A_R
 //! Trigger a data abort on an ARMv7-A/R chip

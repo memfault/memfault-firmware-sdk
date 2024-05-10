@@ -9,6 +9,7 @@ if (CONFIG_MEMFAULT)
       COMPONENT_SRCS
       cmd_app.c
       cmd_system.c
+      ota_session_metrics.c
    )
 
    if (CONFIG_APP_MEMFAULT_TRANSPORT_HTTP)
@@ -40,7 +41,7 @@ if (CONFIG_MEMFAULT)
 
    set(COMPONENT_ADD_INCLUDEDIRS
       .
-      memfault
+      config
    )
 endif()
 

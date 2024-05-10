@@ -66,13 +66,21 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   #include <time.h>
   #include MEMFAULT_ZEPHYR_INCLUDE(drivers/rtc.h)
 
-  #if !DT_NODE_EXISTS(DT_NODELABEL(rtc))
+  // Use RTC node if it exists, otherwise use an alias
+  #if DT_NODE_EXISTS(DT_NODELABEL(rtc))
+    #define RTC DT_NODELABEL(rtc)
+  #else
+    #define RTC DT_ALIAS(rtc)
+  #endif
+
+  #if !DT_NODE_HAS_STATUS(RTC, okay)
     #error "Error, requires rtc device tree entry"
   #endif
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   struct rtc_time rtctime;
-  rtc_get_time(DEVICE_DT_GET(DT_NODELABEL(rtc)), &rtctime);
+  const struct device *rtc = DEVICE_DT_GET(RTC);
+  rtc_get_time(rtc, &rtctime);
 
   // Debug: print time fields
   LOG_DBG("Time: %u-%u-%u %u:%u:%u", rtctime.tm_year + 1900, rtctime.tm_mon + 1, rtctime.tm_mday,

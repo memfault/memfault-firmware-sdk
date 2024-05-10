@@ -1,9 +1,9 @@
 config MEMFAULT
         bool "Memfault Support"
         default n
-        depends on CPU_CORTEX_M
-        select RUNTIME_NMI
-        select EXTRA_EXCEPTION_INFO
+        depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32S3
+        select RUNTIME_NMI if CPU_CORTEX_M
+        select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
         select DEBUG_THREAD_INFO
         help
           Enable Zephyr Integration with the Memfault SDK
@@ -139,7 +139,8 @@ endmenu  # Memfault Coredump Settings
 
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
-        default y
+        # our wrapper conflicts with the esp32 heap_caps implementation
+        default y if !SOC_FAMILY_ESP32
         select SYS_HEAP_RUNTIME_STATS
         depends on HEAP_MEM_POOL_SIZE > 0
         help
@@ -270,7 +271,7 @@ config MEMFAULT_HTTP_MAX_POST_SIZE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Enables a work job to periodically push new data to Memfault"
-        default n
+        default y if SOC_SERIES_NRF91X
         help
           This implementation makes use of a k_timer_* and k_work_submit to schedule
           a background job that periodically checks to see if new Memfault data
@@ -279,6 +280,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
         prompt "Work queue implementation to use for periodic HTTP posting"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if SOC_SERIES_NRF91X
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
@@ -286,6 +288,9 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
         help
           When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
           is set appropriately for the board's HTTP stack to not cause a stack overflow.
+          Using the system workqueue reduces RAM usage compared to a dedicated workqueue.
+          Sending data from the system workqueue with LTE networks is known to cause issues and
+          a dedicated workqueue maybe be required.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
         bool "Periodically push new data to Memfault using a dedicated workqueue"
@@ -293,7 +298,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
           When using this feature, make sure CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
           is set appropriately for the board's HTTP stack to not cause a stack overflow. A dedicated
           workqueue over the system workqueue is beneficial if http requests for the network stack
-          in use can block for a long time but comes at the cost of using extra RAM.
+          in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
 
 endchoice
 
@@ -328,7 +333,39 @@ config MEMFAULT_TLS_CERTS_USE_DER
           When disabled, PEM format will be used. DER format may reduce runtime
           memory requirements (for example if using mbedTLS).
 
+config MEMFAULT_PROJECT_KEY
+        string "Memfault Project Key"
+        help
+          Token used to communicate with Memfault. Find it at
+          https://mflt.io/project-key
+
 endif # MEMFAULT_HTTP_ENABLE
+
+choice MEMFAULT_ZEPHYR_FOTA_BACKEND
+        prompt "Backend for FOTA updates"
+        default MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
+        default MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
+        help
+         Choose the backend for FOTA updates
+
+config MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
+        bool "Use MCUboot backend implementation for FOTA updates"
+        depends on MEMFAULT_HTTP_ENABLE && BOOTLOADER_MCUBOOT && !MEMFAULT_NRF_CONNECT_SDK
+        help
+          Adds support for performing OTA updates via MCUboot. If an update is available,
+          the binary will be downloaded and installed in the secondary slot(slot1_partition).
+          Then the device will be rebooted into the new firmware.
+          For information on release management with Memfault: https://mflt.io/release-mgmt.
+
+config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
+        bool "Use a dummy backend implementation for FOTA updates"
+        depends on MEMFAULT_HTTP_ENABLE
+        help
+          The dummy implementation is a no-op OTA update and is useful for testing the download
+          of an OTA playload. It will pull the OTA payload but not install it on the device.
+          For information on release management with Memfault: https://mflt.io/release-mgmt.
+
+endchoice
 
 config MEMFAULT_EVENT_STORAGE_SIZE
        int "Memfault Event Storage RAM Buffer Size"
@@ -601,7 +638,7 @@ menu "Memfault Built-In Device Info Options"
 
 config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION
         string "Builtin device info .software_version"
-        default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_TWEAK)" != "0"
+        default "$(APP_VERSION_TWEAK_STRING)" if (("$(VERSION_TWEAK)") && ("$(VERSION_TWEAK)" != "0"))
         default "$(APPVERSION)" if "$(APPVERSION)" != ""
         default "0.0.0"
 
@@ -614,6 +651,12 @@ config MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION
         default BOARD
 
 endmenu # MEMFAULT_BUILTIN_DEVICE_INFO
+
+config MEMFAULT_COMPRESS_DEBUG_INFO
+        bool "Compress debug info"
+        default y
+        help
+          Compress debug info to reduce the size of the output elf file.
 
 module = MEMFAULT
 module-str = Memfault

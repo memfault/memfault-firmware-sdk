@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/tls_credentials.h)
@@ -60,6 +61,18 @@
 
 // Timeout for the socket file descriptor to become available for I/0
 #define POLL_TIMEOUT_MS 5000
+
+// The nRF-Connect SDK has an implementation of this structure
+#if !defined(CONFIG_MEMFAULT_NCS_PROJECT_KEY)
+MEMFAULT_STATIC_ASSERT(
+  sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
+  "Memfault Project Key not configured. Please visit https://mflt.io/project-key "
+  "and add CONFIG_MEMFAULT_PROJECT_KEY=\"YOUR_KEY\" to prj.conf");
+
+sMfltHttpClientConfig g_mflt_http_client_config = {
+  .api_key = CONFIG_MEMFAULT_PROJECT_KEY,
+};
+#endif
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 static void *prv_calloc(size_t count, size_t size) {
@@ -308,7 +321,9 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
 //! 0  - no more data to send
 //! 1  - data sent, awaiting response
 //! -1 - error
-static int prv_send_next_msg(int sock) {
+static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
+  int sock = ctx->sock_fd;
+
 #if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
   uint8_t buf[CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE];
   size_t buf_len = sizeof(buf);
@@ -326,6 +341,9 @@ static int prv_send_next_msg(int sock) {
     memfault_packetizer_abort();
     return -1;
   }
+
+  // count bytes sent
+  ctx->bytes_sent += buf_len;
 
   // message sent, await response
   return 1;
@@ -641,7 +659,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   return success ? 1 : -1;
 }
 
-int memfault_zephyr_port_post_data(void) {
+ssize_t memfault_zephyr_port_post_data_return_size(void) {
   sMemfaultHttpContext ctx = { 0 };
   ctx.sock_fd = -1;
 
@@ -663,7 +681,12 @@ int memfault_zephyr_port_post_data(void) {
   }
 #endif
 
-  return rv;
+  return (rv == 0) ? (ctx.bytes_sent) : -rv;
+}
+
+int memfault_zephyr_port_post_data(void) {
+  ssize_t rv = memfault_zephyr_port_post_data_return_size();
+  return (rv >= 0) ? 0 : rv;
 }
 
 int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
@@ -748,7 +771,7 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   bool success = true;
 
   while (max_messages_to_send-- > 0) {
-    int rv = prv_send_next_msg(ctx->sock_fd);
+    int rv = prv_send_next_msg(ctx);
     if (rv == 0) {
       // no more messages to send
       break;

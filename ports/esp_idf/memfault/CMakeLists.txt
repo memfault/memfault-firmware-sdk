@@ -317,6 +317,11 @@ if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=mbedtls_calloc -Wl,--wrap=mbedtls_free")
 endif()
 
+# Wrap to suppress errors when esp_event_create_loop_default() called multiple times
+if (CONFIG_MEMFAULT_WRAP_EVENT_LOOP_CREATE_DEFAULT)
+  target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_event_loop_create_default")
+endif()
+
 # Include a linker script fragment to support compact logs unconditionally. It's
 # Include a linker script fragment to support compact logs unconditionally. It's
 # only populated if compact logs are enabled, and otherwise is ignored. We keep

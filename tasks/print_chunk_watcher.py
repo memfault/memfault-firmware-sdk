@@ -42,7 +42,7 @@ class PrintChunkWatcher(StreamWatcher):
         if "<YOUR PROJECT KEY HERE>" in cmd:
             info = (
                 "\n\nInvoke CLI wrapper detected 'print_chunk' call but a valid\n"
-                + "'Memfault-Project-Key' was not specified. Please consult README for target\n"
+                "'Memfault-Project-Key' was not specified. Please consult README for target\n"
                 "platform for more info on how to set the value."
             )
             print(info)

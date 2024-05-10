@@ -42,6 +42,7 @@ MEMFAULT_WEAK void memfault_lock(void) { }
 
 MEMFAULT_WEAK void memfault_unlock(void) { }
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 MEMFAULT_WEAK void memfault_event_storage_request_persist_callback(
   MEMFAULT_UNUSED const sMemfaultEventStoragePersistCbStatus *status) { }
 
@@ -53,6 +54,7 @@ MEMFAULT_WEAK const sMemfaultNonVolatileEventStorageImpl
   g_memfault_platform_nv_event_storage_impl = {
     .enabled = prv_nonvolatile_event_storage_enabled,
   };
+#endif
 
 typedef struct {
   bool write_in_progress;
@@ -76,6 +78,7 @@ static sMfltCircularBuffer s_event_storage;
 static sMemfaultEventStorageWriteState s_event_storage_write_state;
 static sMemfaultEventStorageReadState s_event_storage_read_state;
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 static void prv_invoke_request_persist_callback(void) {
   sMemfaultEventStoragePersistCbStatus status;
   memfault_lock();
@@ -91,6 +94,7 @@ static void prv_invoke_request_persist_callback(void) {
 
   memfault_event_storage_request_persist_callback(&status);
 }
+#endif
 
 static size_t prv_get_total_event_size(sMemfaultEventStorageReadState *state) {
   if (state->num_events == 0) {
@@ -298,9 +302,11 @@ static void prv_event_storage_storage_finish_write(bool rollback) {
 
   // reset the write state
   s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
   if (!rollback) {
     prv_invoke_request_persist_callback();
   }
+#endif
 }
 
 static size_t prv_get_size_cb(void) {
@@ -323,6 +329,7 @@ const sMemfaultEventStorageImpl *memfault_events_storage_boot(void *buf, size_t 
   return &s_event_storage_impl;
 }
 
+#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 static bool prv_save_event_to_persistent_storage(void) {
   size_t total_size;
   if (!prv_has_data_ram(&total_size)) {
@@ -375,7 +382,6 @@ int memfault_event_storage_persist(void) {
   return events_saved;
 }
 
-#if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 static void prv_nv_event_storage_mark_read_cb(void) {
   g_memfault_platform_nv_event_storage_impl.consume();
 

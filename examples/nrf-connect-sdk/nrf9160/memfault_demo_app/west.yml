@@ -6,6 +6,9 @@ manifest:
       import: true
       import:
         path-blocklist: modules/lib/memfault-firmware-sdk
+        name-blocklist:
+          # unused, save the download
+          - matter
     - name: memfault-firmware-sdk
       url: https://github.com/memfault/memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk

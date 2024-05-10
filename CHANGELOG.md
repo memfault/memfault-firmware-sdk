@@ -6,6 +6,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2024-05-10
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Correctly compile out the
+    [non-volatile event storage feature](https://docs.memfault.com/docs/mcu/metrics-api/#non-volatile-event-storage)
+    when `MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED` is set to `0`. This feature
+    was previously not fully disabled, leaving some unused code in the final
+    executable. This is a minor code size improvement (approximately 300 bytes)
+    when the system is disabled (default).
+
+- Zephyr:
+
+  - Improve support for
+    [event timestamps](https://docs.memfault.com/docs/mcu/event-timestamps)
+    using Zephyr RTC devices, by adding support for RTC nodes identified using
+    `DT_ALIAS()` in addition to `DT_NODELABEL()`. Thanks to @corytodd for
+    providing the fix in
+    [#68](https://github.com/memfault/memfault-firmware-sdk/issues/68)!
+
+  - Add a Memfault HTTP OTA client backend for Zephyr MCUBoot platforms. This is
+    enabled with the `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT` Kconfig flag.
+    The OTA process is triggered by calling the `memfault_zephyr_fota_start()`
+    function, which is also exposed in the shell via the
+    `mflt get_latest_release` command.
+
+  - Add basic support for Xtensa targets in the Memfault Zephyr port. This
+    specifically targets the ESP32-S3 SOC.
+
+  - Add a success message when the Zephyr HTTP client posts data to Memfault.
+
+- ESP-IDF:
+
+  - Wrap calls to `esp_event_loop_create_default()` to prevent crashes if called
+    multiple times. This feature is enabled by default and is disabled with
+    `CONFIG_MEMFAULT_WRAP_EVENT_LOOP_CREATE_DEFAULT=n`
+
+  - Add an example
+    [Session Metric](https://docs.memfault.com/docs/mcu/metrics-api/#session-metrics)
+    to the [ESP32 example app](examples/esp32), which tracks statistics during
+    the ESP32 OTA session (bytes sent + received, etc).
+
+- nRF Connect SDK:
+
+  - Enable periodic upload, `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y`, by default
+    for nRF91x builds
+
+  - Default to `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE`
+    when periodic upload is enabled
+
+  - Improve the stability of the
+    [nRF9160 sample app](examples/nrf-connect-sdk/nrf9160), by increasing the
+    `CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` to `2048`.
+
+### :boom: Breaking Changes
+
+- Zephyr:
+
+  - Add a built-in implementation of `g_mflt_http_client_config` for Zephyr
+    devices using the Memfault HTTP client, which holds the
+    [Memfault Project Key](https://mflt.io/project-key) set via the Kconfig
+    symbol `CONFIG_MEMFAULT_PROJECT_KEY`. Users updating from a previous version
+    will have to set this Kconfig symbol when building, and any existing
+    implementation of `g_mflt_http_client_config` should be removed.
+
 ## [1.8.1] - 2024-04-24
 
 ### :chart_with_upwards_trend: Improvements

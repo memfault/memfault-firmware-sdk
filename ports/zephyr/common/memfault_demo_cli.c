@@ -12,6 +12,7 @@
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
+#include "memfault/ports/zephyr/fota.h"
 #include "zephyr_release_specific_headers.h"
 // clang-format on
 
@@ -65,73 +66,54 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
   // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   MEMFAULT_LOG_INFO("Posting Memfault Data");
-  return memfault_zephyr_port_post_data();
+  ssize_t rv = memfault_zephyr_port_post_data_return_size();
+
+  if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Failed to post data, err=%d", rv);
+  } else {
+    MEMFAULT_LOG_INFO("Data posted successfully, %d bytes sent", rv);
+  }
+  return (rv < 0) ? rv : 0;
 #else
   shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
   return 0;
 #endif
 }
 
+static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
-typedef struct {
-  const struct shell *shell;
-  size_t total_size;
-} sMemfaultShellOtaDownloadCtx;
+  char *url = NULL;
+  int rv = memfault_zephyr_port_get_download_url(&url);
+  if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Unable to fetch OTA url, rv=%d", rv);
+    return rv;
+  } else if (rv == 0) {
+    MEMFAULT_LOG_INFO("Up to date!");
+    return 0;
+  }
 
-static bool prv_handle_update_available(const sMemfaultOtaInfo *info, void *user_ctx) {
-  sMemfaultShellOtaDownloadCtx *ctx = (sMemfaultShellOtaDownloadCtx *)user_ctx;
-  shell_print(ctx->shell, "Downloading OTA payload, size=%d bytes", (int)info->size);
-  return true;
-}
-
-static bool prv_handle_data(void *buf, size_t buf_len, void *user_ctx) {
-  // this is an example cli command so we just drop the data on the floor
-  // a real implementation could save the data in this callback!
-  return true;
-}
-
-static bool prv_handle_download_complete(void *user_ctx) {
-  sMemfaultShellOtaDownloadCtx *ctx = (sMemfaultShellOtaDownloadCtx *)user_ctx;
-  shell_print(ctx->shell, "OTA download complete!");
-  return true;
-}
+  shell_print(shell, "Download URL: '%s'", url);
+  rv = memfault_zephyr_port_release_download_url(&url);
+  return rv;
+#else
+  shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
+  return 0;
 #endif /* CONFIG_MEMFAULT_HTTP_ENABLE */
+}
 
 static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t argc,
                                                char **argv) {
-#if MEMFAULT_NRF_CONNECT_SDK
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
   // The nRF Connect SDK comes with a download client module that can be used to
   // perform an actual e2e OTA so use that instead and don't link this code in at all!
   shell_print(shell,
               "Use 'mflt_nrf fota' instead. See https://mflt.io/nrf-fota-setup for more details");
 #elif defined(CONFIG_MEMFAULT_HTTP_ENABLE)
-  uint8_t working_buf[256];
-
-  sMemfaultShellOtaDownloadCtx user_ctx = {
-    .shell = shell,
-  };
-
-  sMemfaultOtaUpdateHandler handler = {
-    .buf = working_buf,
-    .buf_len = sizeof(working_buf),
-    .user_ctx = &user_ctx,
-    .handle_update_available = prv_handle_update_available,
-    .handle_data = prv_handle_data,
-    .handle_download_complete = prv_handle_download_complete,
-  };
-
-  shell_print(shell, "Checking for OTA update");
-  int rv = memfault_zephyr_port_ota_update(&handler);
-  if (rv == 0) {
-    shell_print(shell, "Up to date!");
-  } else if (rv < 0) {
-    shell_print(shell, "OTA update failed, rv=%d, errno=%d", rv, errno);
-  }
-  return rv;
+  return memfault_zephyr_fota_start();
 #else
   shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
-  return 0;
 #endif
+  return 0;
 }
 
 static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv) {
@@ -199,6 +181,8 @@ static int prv_hang_example(const struct shell *shell, size_t argc, char **argv)
   return -1;
 }
 
+#if defined(CONFIG_ARM)
+
 static int prv_busfault_example(const struct shell *shell, size_t argc, char **argv) {
   //! Note: The Zephyr fault handler dereferences the pc which triggers a fault
   //! if the pc itself is from a bad pointer:
@@ -228,14 +212,17 @@ static int prv_memmanage_example(const struct shell *shell, size_t argc, char **
   return -1;
 }
 
+#endif  // CONFIG_ARM
+
 static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, char **argv) {
-#if !CONFIG_ASSERT
-  shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command will have no effect");
-#endif
+#if defined(CONFIG_ASSERT)
   // Fire off a last-ditch log message to show how logs are flushed prior to
   // crash, in the case of deferred logging mode
   MEMFAULT_LOG_ERROR("About to crash in %s!", __func__);
   __ASSERT(0, "test __ASSERT");
+#else
+  shell_print(shell, "CONFIG_ASSERT was disabled in the build, this command has no effect");
+#endif
   return 0;
 }
 
@@ -289,14 +276,18 @@ static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
-  //! different crash types that should result in a coredump being collected
-  SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
+//! different crash types that should result in a coredump being collected
+
+#if defined(CONFIG_ARM)
   SHELL_CMD(busfault, NULL, "trigger a busfault", prv_busfault_example),
-  SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
   SHELL_CMD(hardfault, NULL, "trigger a hardfault", prv_hardfault_example),
   SHELL_CMD(memmanage, NULL, "trigger a memory management fault", prv_memmanage_example),
   SHELL_CMD(usagefault, NULL, "trigger a usage fault", prv_usagefault_example),
+#endif  // CONFIG_ARM
+
+  SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
+  SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
   SHELL_CMD(double_free, NULL, "trigger a double free error", prv_cli_cmd_double_free),
   SHELL_CMD(badptr, NULL, "trigger fault via store to a bad address", prv_bad_ptr_deref_example),
@@ -326,7 +317,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_chunk_data_export),
   SHELL_CMD(get_core, NULL, "check if coredump is stored and present", prv_get_core_cmd),
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
-  SHELL_CMD(get_latest_release, NULL, "checks to see if new ota payload is available",
+  SHELL_CMD(get_latest_url, NULL, "gets latest release URL", prv_get_latest_url_cmd),
+  SHELL_CMD(get_latest_release, NULL, "performs an OTA update using Memfault client",
             prv_check_and_fetch_ota_payload_cmd),
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),

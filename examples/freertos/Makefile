@@ -43,7 +43,7 @@ FREERTOS_VER = V10.4.6
 
 $(FREERTOS_DIR)/.clonedone:
 	$(info FREERTOS_DIR does not exist, downloading local copy)
-	git -c advice.detachedHead=false clone --branch $(FREERTOS_VER) --depth 1 git@github.com:FreeRTOS/FreeRTOS-Kernel.git $(FREERTOS_DIR)
+	git -c advice.detachedHead=false clone --branch $(FREERTOS_VER) --depth 1 https://github.com/FreeRTOS/FreeRTOS-Kernel.git $(FREERTOS_DIR)
 	# sad check for clone completion, :(
 	touch $@
 
