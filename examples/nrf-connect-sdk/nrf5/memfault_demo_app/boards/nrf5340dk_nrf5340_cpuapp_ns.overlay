@@ -1,0 +1,19 @@
+/*
+    Reserve a special region of RAM for saving Memfault noinit data.
+*/
+/ {
+    reserved-memory {
+        sram0_shared: memory@20070000 {
+            // unfortunately these operators are unsupported for memory units
+            // reg = <0x20070000 (DT_SIZE_K(64) - 0x100)>;
+            reg = < 0x20070000 0xff00 >;
+            phandle = < 0xf >;
+        };
+
+        memfaultnoinit: memfaultnoinit@2007ff00 {
+            compatible = "zephyr,memory-region";
+            reg = <0x2007ff00 0x100>;
+            zephyr,memory-region = "MEMFAULTNOINIT";
+        };
+    };
+};

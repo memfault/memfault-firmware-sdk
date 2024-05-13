@@ -1,0 +1,1 @@
+#include "../../../boards/nrf5340dk_nrf5340_cpuapp_ns.overlay"

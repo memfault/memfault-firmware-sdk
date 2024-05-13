@@ -14,6 +14,9 @@ target_sources(app PRIVATE ${app_sources})
 
 zephyr_include_directories(config)
 
+zephyr_linker_sources_ifndef(CONFIG_MEMFAULT_DEFAULT_NOINIT_SECTION NOINIT custom-noinit-coredump.ld)
+zephyr_linker_sources_ifndef(CONFIG_MEMFAULT_DEFAULT_NOINIT_SECTION RAM_SECTIONS custom-noinit-reboot.ld)
+
 # Normalize dbug + __FILE__ paths to relative locations:
 # 1. west workspace
 # 2. toolchain install location (applies to paths in cross tool library files)
