@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2024-05-21
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix an issue with the Memfault ESP-IDF integration to support the newly
+    released ESP-IDF v5.1.4.
+
+- Zephyr:
+
+  - Add support for tracking ESP32 reboots in `.rtc_noinit` section. This
+    improves tracking of the OTA [Reboot Reason](https://mflt.io/reboot-reasons)
+    when the device reboots after an OTA update.
+
+  - Fix compilation warnings when
+    `CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS=y` is enabled. Thanks to @fouge
+    for providing this fix in
+    [#70](https://github.com/memfault/memfault-firmware-sdk/pull/70) 🎉!
+
+- General:
+
+  - Extend [`eclipse_patch.py`](scripts/eclipse_patch.py) to support adding the
+    Memfault SDK files to an STM32Cube IDE project.
+
 ## [1.9.0] - 2024-05-10
 
 ### :chart_with_upwards_trend: Improvements

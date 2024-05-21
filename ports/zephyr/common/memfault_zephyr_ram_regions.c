@@ -191,7 +191,7 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     // region, so we might be duplicating it here; it's a little wasteful, but
     // it's good to always prioritize the currently running stack, in case the
     // coredump is truncated due to lack of space.
-#if !CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
+#if !defined(CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS)
     if ((uintptr_t)_kernel.cpus[0].current == (uintptr_t)thread) {
       // when collecting partial stacks, thread context is only valid when task
       // is _not_ running so we skip collecting it. just update the watermark
@@ -217,16 +217,15 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       ;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
+  #if defined(CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS)
+    // Capture the entire stack for this thread
+    size_t stack_size_to_collect = thread->stack_info.size;
+    sp = (void *)thread->stack_info.start;
+  #else
     // We know where the top of the stack is. Use that information to shrink
     // the area we need to collect if less than CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
     // is in use
     const uint32_t stack_top = thread->stack_info.start + thread->stack_info.size;
-
-  #if CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS
-    // Capture the entire stack for this thread
-    size_t stack_size_to_collect = thread->stack_info.size;
-    sp = thread->stack_info.start;
-  #else
     size_t stack_size_to_collect =
       MEMFAULT_MIN(stack_top - (uint32_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
   #endif

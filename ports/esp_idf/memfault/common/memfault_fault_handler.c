@@ -95,9 +95,11 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! later backported to the 4.2 branch in v4.2.3. Support that change with a
 //! version check (see static assert below for verifying the signature is
 //! correct).
-//! The signature also changed in esp-idf v5.3.0.
+//! The signature changed in esp-idf v5.3.0, back ported to v5.1.4 + v5.2.2.
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  #if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
+    ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
+     (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
 void __wrap_esp_core_dump_write(panic_info_t *info) {
   #else
 void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
@@ -253,7 +255,9 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
 
 // Ensure the substituted function signature matches the original function
 _Static_assert(__builtin_types_compatible_p(
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
+  ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
+   (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
                  __typeof__(&esp_core_dump_write), __typeof__(&__wrap_esp_core_dump_write)),
 #else
                  __typeof__(&esp_core_dump_to_flash), __typeof__(&__wrap_esp_core_dump_to_flash)),

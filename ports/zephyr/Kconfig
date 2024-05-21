@@ -381,6 +381,14 @@ config MEMFAULT_REBOOT_REASON_GET_CUSTOM
         User of SDK must provide their own implementation of memfault_reboot_reason_get()
         when disabled
 
+config MEMFAULT_REBOOT_TRACKING_REGION
+       string "Memfault Reboot Tracking Region"
+       default ".rtc_noinit" if SOC_FAMILY_ESP32
+       default ".noinit.mflt_reboot_info"
+        help
+         The region in memory where the reboot tracking information will be stored.
+         This region should be marked as NOINIT in the linker script.
+
 config MEMFAULT_CLEAR_RESET_REG
        bool "Whether or not to clear bits in MCU reset reason register"
        default y

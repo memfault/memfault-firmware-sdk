@@ -97,7 +97,7 @@ void assert_post_action(const char *file, unsigned int line)
 // On boot-up, log out any information collected as to why the
 // reset took place
 
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
+MEMFAULT_PUT_IN_SECTION(CONFIG_MEMFAULT_REBOOT_TRACKING_REGION)
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];

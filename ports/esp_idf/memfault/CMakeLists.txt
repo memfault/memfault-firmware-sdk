@@ -291,10 +291,14 @@ endif()
 #   Much more flexibility in debug information collected (e.g. all RAM, just the current stack trace, select stacks and variables)
 #   Data can be posted directly from device to Memfault cloud for deduplication and analysis
 #
-# Note: in ESP-IDF v5.3.0, the core dump handler function was renamed from esp_core_dump_to_flash to esp_core_dump_write
 set(panic_handler_args "")
 if (DEFINED ENV{IDF_VERSION})
-  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "5.3.0")
+  # In ESP-IDF v5.3.0, the core dump handler function was renamed from
+  # esp_core_dump_to_flash to esp_core_dump_write. It was backported to v5.2.2.
+  if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "5.2.2")
+    list(APPEND panic_handler_args "-Wl,--wrap=esp_core_dump_write")
+  # Backported to v5.1.4
+  elseif(($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "5.1.4") AND ($ENV{IDF_VERSION} VERSION_LESS "5.2.0"))
     list(APPEND panic_handler_args "-Wl,--wrap=esp_core_dump_write")
   else()
     list(APPEND panic_handler_args "-Wl,--wrap=esp_core_dump_to_flash")

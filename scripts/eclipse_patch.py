@@ -80,6 +80,25 @@ def get_file_element(file_name, virtual_dir, common_prefix, parent_dir, path_typ
     return generate_link_element(name, path, path_type=path_type)
 
 
+def generate_st_linker_option():
+    ele = ET.fromstring(  # noqa: S314
+        """
+<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.otherflags" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.otherflags" valueType="stringList">
+\t\t\t\t\t\t\t\t\t</option>
+"""
+    )
+    ele.tail = "\n\t\t\t\t\t\t\t\t"
+    return ele
+
+
+def generate_st_build_id_flag():
+    ele = ET.fromstring(  # noqa: S314
+        """<listOptionValue builtIn="false" value="-Wl,--build-id" />"""
+    )
+    ele.tail = "\n\t\t\t\t\t\t\t\tq"
+    return ele
+
+
 def recursive_glob_backport(dir_glob):
     # Find first directory wildcard and walk the tree from there
     glob_root = dir_glob.split("/*")[0]
@@ -272,6 +291,8 @@ def patch_cproject(
             "ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths",
             # this is the element id used by NXP's MCUXpresso IDE
             "gnu.c.compiler.option.include.paths",
+            # Element used by ST's STM32Cube IDE for include path enumeration
+            "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.includepaths",
         ))
 
     memfault_sdk_include_paths = [
@@ -295,11 +316,53 @@ def patch_cproject(
             include_option.append(ele)
 
     #
+    # Add GNU build id to STM32Cube IDE based projects
+    #
+
+    def _find_st_linker_tools(tool):
+        return tool.get("id", "").startswith(
+            # Element used by ST's STM32Cube IDE for linker arguments
+            "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker",
+        )
+
+    def _find_st_linker_options(option):
+        return option.get("id", "").startswith(
+            "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.otherflags"
+        )
+
+    def _find_st_build_id_linker_flag(option):
+        return "--build-id" in option.get("value", "")
+
+    tools = root.findall(".//tool")
+    linker_tools = filter(_find_st_linker_tools, tools)
+    for linker_tool in linker_tools:
+        all_linker_options = linker_tool.findall(".//option")
+
+        linker_options = filter(_find_st_linker_options, all_linker_options)
+        if len(list(linker_options)) != 0:
+            continue
+
+        ele = generate_st_linker_option()
+        linker_tool.insert(0, ele)
+
+        # reload all linker options and now add the flag itself
+        linker_options = filter(_find_st_linker_options, linker_tool.findall(".//option"))
+        for linker_option in linker_options:
+            linker_flags = filter(
+                _find_st_build_id_linker_flag, linker_option.findall(".//listOptionValue")
+            )
+            if len(list(linker_flags)) != 0:
+                continue
+            ele = generate_st_build_id_flag()
+            linker_option.insert(0, ele)
+
+    #
     # Add GNU build id generation for all build configurations:
     #
 
     def _find_linker_flags(option):
         return option.get("id", "").startswith(
+            # Element used by Dialog's Smart Snippets Studio IDE
             "ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other"
         ) and option.get("name", "").startswith("Other linker flags")
 
