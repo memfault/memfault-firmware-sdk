@@ -203,6 +203,13 @@ endif
             Collects the core metric for connectivity_connected_time based on
             WiFi connection state.
 
+    config MEMFAULT_METRICS_CPU_TEMP
+        bool "Enable collection of a temperature metric"
+        default y
+        depends on !IDF_TARGET_ESP32
+        help
+            Collects a Memfault metric for the CPU die temperature.
+
     config MEMFAULT_ESP_HEAP_METRICS
         bool "Collect basic heap metrics"
         default y

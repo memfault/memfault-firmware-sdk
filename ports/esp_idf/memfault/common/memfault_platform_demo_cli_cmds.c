@@ -273,7 +273,8 @@ static int prv_memfault_ota(sMemfaultOtaUserCtx *ctx) {
     MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
   }
 
-  return rv;
+  // Should return 0 on success. Change update available rv to 0
+  return (rv == 1) ? 0 : rv;
 }
 
 static int prv_memfault_ota_perform(int argc, char **argv) {

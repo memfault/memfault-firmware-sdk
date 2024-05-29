@@ -442,6 +442,14 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
          The path to the virtual filesystem mount point to collect free space
          metrics for, omitting the leading '/'.
 
+config MEMFAULT_METRICS_CPU_TEMP
+        bool "Enable collection of CPU temperature metrics"
+        default y
+        depends on ADC && SENSOR && ("$(dt_alias_enabled,die-temp0)" != "")
+        help
+         Memfault CPU temperature metric component. Requires a `die-temp0`
+         device tree node.
+
 config MEMFAULT_METRICS_SYNC_SUCCESS
         bool "Enable collection of sync success metrics"
         default y

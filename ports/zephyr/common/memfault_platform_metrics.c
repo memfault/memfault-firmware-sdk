@@ -7,11 +7,19 @@
 #include "memfault/ports/zephyr/include_compatibility.h"
 
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+#include MEMFAULT_ZEPHYR_INCLUDE(device.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(drivers/sensor.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#endif
+
 #include <stdbool.h>
 
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/ports/zephyr/version.h"
+
 #if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/net_stats.h)
 // Directory traversal is needed to access the header for net_stats_reset(),
@@ -70,6 +78,32 @@ static void prv_collect_ip_statistics(void) {
   net_stats_reset(NULL);
 }
 #endif  // defined(MEMFAULT_METRICS_TCP_IP)
+
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+static void prv_collect_cpu_temp(void) {
+  struct sensor_value val;
+
+  const struct device *dev = DEVICE_DT_GET(DT_ALIAS(die_temp0));
+
+  if (!device_is_ready(dev)) {
+    return;
+  }
+
+  if (sensor_sample_fetch(dev)) {
+    return;
+  }
+
+  if (sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &val)) {
+    return;
+  }
+
+  // val1 is the integer part and val2 is fractional millionths. Scale both to match metric
+  // precision
+  const int32_t temperature = (val.val1 * 10) + (val.val2 / 100000);
+
+  MEMFAULT_METRIC_SET_SIGNED(cpu_temp, temperature);
+}
+#endif  // defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
 
 // Written as a function vs. in-line b/c we might want to extern this at some point?
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
@@ -134,6 +168,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
 #if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
   prv_collect_ip_statistics();
+#endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+  prv_collect_cpu_temp();
 #endif
 }
 

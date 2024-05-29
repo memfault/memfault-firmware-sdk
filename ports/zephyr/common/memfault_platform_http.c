@@ -378,6 +378,9 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
       return -1;
     }
 
+    // count bytes sent
+    ctx->bytes_sent += buf_len;
+
     if (status == kMemfaultPacketizerStatus_EndOfChunk) {
       break;
     }
@@ -681,7 +684,7 @@ ssize_t memfault_zephyr_port_post_data_return_size(void) {
   }
 #endif
 
-  return (rv == 0) ? (ctx.bytes_sent) : -rv;
+  return (rv == 0) ? (ctx.bytes_sent) : rv;
 }
 
 int memfault_zephyr_port_post_data(void) {
@@ -784,7 +787,7 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
       break;
     }
   }
-  return success ? 0 : 1;
+  return success ? 0 : -1;
 }
 
 int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len) {

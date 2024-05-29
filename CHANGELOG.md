@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2024-05-29
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix CLI command, `memfault_ota_check`, to return 0 to the console component
+    when an update is available.
+
+  - Add the temperature metric `cpu_temp` which is measured using an internal
+    temperature sensor that many ESP32 boards have built-in. This metric is
+    collected by default with the Kconfig `CONFIG_MEMFAULT_METRICS_CPU_TEMP=y`.
+
+  - Enable recording vprintf data into the Memfault log buffer through a vprintf
+    hook. Users can call `memfault_esp_port_vprintf_log_hook()` from their
+    vprintf handler so they can use both their vprintf handler and record logs
+    into Memfault's log buffer. To use this feature, set
+    `CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK=n`.
+
+  - Fix a case where `esp_http_client_cleanup()` was not called in certain
+    scenarios (for example, if the access point is connected, but there is no
+    outside internet access), which resulted in a memory leak. Thanks to
+    @mykmelez for providing the fix in
+    [#71](https://github.com/memfault/memfault-firmware-sdk/pull/71) 🎉!
+
+- Zephyr:
+
+  - Fix a bug in `memfault_zephyr_port_post_data_return_size()` where a positive
+    value could be returned in the event of a failure instead of a negative
+    value. This would result in `mflt post_chunks` returning a successful post
+    message even though there was a failure such as a DNS lookup failure.
+
+  - Add the temperature metric `cpu_temp` which is measured using an internal
+    temperature sensor that some Zephyr boards have. Similar to ESP-IDF, this
+    metric is collected by default with the Kconfig
+    `CONFIG_MEMFAULT_METRICS_CPU_TEMP=y`, but the board must have the device
+    tree node `die-temp0` for this option to be used.
+
+  - Add an example for collecting thread stack usage metrics when the thread
+    handles are not accessible in the desired scope. Users can leverage the
+    Zephyr routine `k_thread_foreach()` to register a callback that will be
+    called with each thread's `k_thread` handle. In the callback, users can read
+    the stack usage via the handle and set their metrics.
+
+### :boom: Breaking Changes
+
+- Zephyr:
+
+  - Change the error return value for
+    `memfault_zephyr_port_http_upload_sdk_data()` to a negative value instead
+    of 1. This change aligns with the error return value for the other Zephyr
+    HTTP client APIs, and simplifies logic in the HTTP client.
+
 ## [1.9.1] - 2024-05-21
 
 ### :chart_with_upwards_trend: Improvements

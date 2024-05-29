@@ -70,6 +70,8 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
 
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to post data, err=%d", rv);
+  } else if (rv == 0) {
+    MEMFAULT_LOG_INFO("Done: no data to send");
   } else {
     MEMFAULT_LOG_INFO("Data posted successfully, %d bytes sent", rv);
   }

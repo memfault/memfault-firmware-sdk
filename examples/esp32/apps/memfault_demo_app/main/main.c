@@ -388,12 +388,44 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
 }
 #endif
 
+#if !defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
+// Demonstrate a custom vprintf hook that prefixes all log messages with
+// "[IDF]", before invoking the Memfault log hook, and then printing to stdout.
+static int prv_vprintf_hook(const char *fmt, va_list args) {
+  char *fmt_annotated;
+  int rv = asprintf(&fmt_annotated, "[IDF] %s", fmt);
+  if ((rv < 0) || (fmt_annotated == NULL)) {
+    return -1;
+  }
+
+  #if defined(CONFIG_MEMFAULT)
+  (void)memfault_esp_port_vprintf_log_hook(fmt_annotated, args);
+  #endif
+
+  rv = vprintf(fmt_annotated, args);
+
+  free(fmt_annotated);
+
+  return rv;
+}
+
+#endif
+
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
 #if defined(CONFIG_MEMFAULT)
   #if !defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
   memfault_boot();
   #endif
+
+  #if !defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
+  esp_log_set_vprintf(prv_vprintf_hook);
+  ESP_LOGD("main", "debug log 🕵️");
+  ESP_LOGI("main", "info log 🐢");
+  ESP_LOGW("main", "warning log ⚠️");
+  ESP_LOGE("main", "error log 🔥");
+  #endif
+
   memfault_device_info_dump();
 
   g_unaligned_buffer = &s_my_buf[1];

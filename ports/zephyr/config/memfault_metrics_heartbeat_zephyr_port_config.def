@@ -38,6 +38,11 @@ MEMFAULT_METRICS_KEY_DEFINE(net_bytes_received, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(net_bytes_sent, kMemfaultMetricType_Unsigned)
 #endif  // defined(MEMFAULT_METRICS_TCP_IP)
 
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+// One decimal place of precision
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(cpu_temp, kMemfaultMetricType_Signed, 10)
+#endif
+
 #if defined(CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE)
   #include "memfault_metrics_heartbeat_extra.def"
 #endif

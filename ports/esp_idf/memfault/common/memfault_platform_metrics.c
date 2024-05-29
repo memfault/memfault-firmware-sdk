@@ -17,6 +17,7 @@
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
+#include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
@@ -38,6 +39,11 @@
 #if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   #include "memfault/ports/mbedtls/metrics.h"
 #endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
+
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+  #include "driver/temperature_sensor.h"
+  #include "soc/clk_tree_defs.h"
+#endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
@@ -209,6 +215,45 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   return true;
 }
 
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+static void prv_collect_temperature_metric(void) {
+  // See documentation here:
+  // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/temp_sensor.html
+  static temperature_sensor_handle_t temp_handle = NULL;
+  temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(-10, 80);
+  esp_err_t err;
+
+  do {
+    if (!temp_handle) {
+      err = temperature_sensor_install(&temp_sensor, &temp_handle);
+      if (err != ESP_OK) {
+        MEMFAULT_LOG_ERROR("Failed to install temperature sensor: %d", err);
+        break;
+      }
+    }
+    // Enable temperature sensor
+    err = temperature_sensor_enable(temp_handle);
+    if (err != ESP_OK) {
+      MEMFAULT_LOG_ERROR("Failed to enable temperature sensor: %d", err);
+      break;
+    }
+    // Get converted sensor data
+    float tsens_out;
+    err = temperature_sensor_get_celsius(temp_handle, &tsens_out);
+    if (err != ESP_OK) {
+      MEMFAULT_LOG_ERROR("Failed to get temperature sensor data: %d", err);
+      break;
+    } else {
+      MEMFAULT_LOG_INFO("Temperature: %.02fC", tsens_out);
+      MEMFAULT_METRIC_SET_SIGNED(cpu_temp, (int32_t)(tsens_out * 10.0f));
+    }
+  } while (0);
+
+  // Disable the temperature sensor if it is not needed and save the power
+  (void)temperature_sensor_disable(temp_handle);
+}
+#endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
+
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_LWIP_METRICS)
   memfault_lwip_heartbeat_collect_data();
@@ -233,6 +278,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
   prv_record_heap_metrics();
 #endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
+
+#if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
+  prv_collect_temperature_metric();
+#endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
 }
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)

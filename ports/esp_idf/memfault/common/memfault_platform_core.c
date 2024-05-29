@@ -123,11 +123,7 @@ void memfault_unlock(void) {
   xSemaphoreGiveRecursive(s_memfault_lock);
 }
 
-#if defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
-// The esp32 uses vprintf() for dumping to console. The libc implementation used requires a lot of
-// stack space. We therefore prevent this function from being inlined so the log_buf allocation
-// does not wind up in that path.
-__attribute__((noinline)) static int prv_copy_log_to_mflt_buffer(const char *fmt, va_list args) {
+int memfault_esp_port_vprintf_log_hook(const char *fmt, va_list args) {
   // copy result into memfault log buffer collected as part of a coredump
   char log_buf[80];
   const size_t available_space = sizeof(log_buf);
@@ -143,6 +139,14 @@ __attribute__((noinline)) static int prv_copy_log_to_mflt_buffer(const char *fmt
   }
   memfault_log_save_preformatted(kMemfaultPlatformLogLevel_Info, log_buf, bytes_written);
   return rv;
+}
+
+#if defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
+// The esp32 uses vprintf() for dumping to console. The libc implementation used requires a lot of
+// stack space. We therefore prevent this function from being inlined so the log_buf allocation
+// in `memfault_esp_port_vprintf_log_hook()` does not wind up in that path.
+__attribute__((noinline)) static int prv_copy_log_to_mflt_buffer(const char *fmt, va_list args) {
+  return memfault_esp_port_vprintf_log_hook(fmt, args);
 }
 
 static int prv_memfault_log_wrapper(const char *fmt, va_list args) {

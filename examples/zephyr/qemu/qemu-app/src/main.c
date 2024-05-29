@@ -211,11 +211,35 @@ static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc
 SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from application",
                    prv_run_example_memory_metrics);
 
+//! Callback to collect stack usage for specific threads
+static void prv_collect_thread_stack_usage_cb(const struct k_thread *thread, void *user_data) {
+  // table mapping thread names to metric IDs
+  static const struct {
+    const char *name;
+    MemfaultMetricId id;
+  } threads[] = {
+    { "shell_uart", MEMFAULT_METRICS_KEY(shell_uart_stack_free_bytes) },
+  };
+
+  // scan for a matching thread name
+  for (size_t i = 0; i < ARRAY_SIZE(threads); i++) {
+    if (strncmp(thread->name, threads[i].name, CONFIG_THREAD_MAX_NAME_LEN) == 0) {
+      // get the stack usage and record in the matching metric id
+      size_t stack_free_bytes;
+      k_thread_stack_space_get(thread, &stack_free_bytes);
+      memfault_metrics_heartbeat_set_unsigned(threads[i].id, stack_free_bytes);
+    }
+  }
+}
+
 // Override function to collect the app metric MainStack_MinBytesFree
 // and print current metric values
 void memfault_metrics_heartbeat_collect_data(void) {
   prv_collect_main_thread_stack_free();
   prv_collect_main_thread_run_stats();
+
+  k_thread_foreach(prv_collect_thread_stack_usage_cb, NULL);
+
   memfault_metrics_heartbeat_debug_print();
 }
 

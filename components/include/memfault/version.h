@@ -19,8 +19,8 @@ typedef struct {
   uint8_t patch;
 } sMfltSdkVersion;
 
-#define MEMFAULT_SDK_VERSION   { .major = 1, .minor = 9, .patch = 1 }
-#define MEMFAULT_SDK_VERSION_STR "1.9.1"
+#define MEMFAULT_SDK_VERSION   { .major = 1, .minor = 9, .patch = 2 }
+#define MEMFAULT_SDK_VERSION_STR "1.9.2"
 
 #ifdef __cplusplus
 }

@@ -19,6 +19,7 @@ manifest:
         name-allowlist:
             - cmsis
             - picolibc
+            - hal_stm32
 
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk
