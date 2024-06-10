@@ -467,6 +467,20 @@ void app_main() {
     g_mflt_http_client_config.api_key = project_key;
   }
 
+  // Load chunks + device URLs from NVS too, only for esp_idf >=4
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
+  // Need to persist for the lifetime of the program
+  static char chunks_url[128] = { 0 };
+  static char device_url[128] = { 0 };
+  size_t chunks_url_len = sizeof(chunks_url);
+  size_t device_url_len = sizeof(device_url);
+  if ((settings_get(kSettingsChunksUrl, chunks_url, &chunks_url_len) == 0) &&
+      (settings_get(kSettingsDeviceUrl, device_url, &device_url_len) == 0)) {
+    g_mflt_http_client_config.chunks_api.host = (chunks_url_len > 1) ? chunks_url : NULL;
+    g_mflt_http_client_config.device_api.host = (device_url_len > 1) ? device_url : NULL;
+  }
+  #endif
+
   #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
   #endif

@@ -342,8 +342,9 @@ target_link_libraries(
   -T${compact_log_linker_script}
 )
 
-# Link required libraries and add compiler flags to enable FreeRTOS region collection
-# in >= 4.4.3. Note: CMake does not short-circuit logic statements, nested ifs required
+# Link required libraries and add compiler flags needed for FreeRTOS region collection
+# and LwIP metrics in >= 4.4.3.
+# Note: CMake does not short-circuit logic statements, nested ifs required
 # Note: ENV{IDF_VERSION} added in esp-idf 4.4.0
 if(DEFINED ENV{IDF_VERSION})
   if ($ENV{IDF_VERSION} VERSION_GREATER_EQUAL "4.4.3")
@@ -380,6 +381,17 @@ if(DEFINED ENV{IDF_VERSION})
       target_compile_options(${freertos_lib} INTERFACE
         -include ${freertos_trace_header}
       )
+    endif()
+
+    # Add definition for LWIP_STATS_LARGE to lwip component if using CONFIG_MEMFAULT_LWIP_METRICS
+    if(CONFIG_MEMFAULT_LWIP_METRICS)
+      # Get the name of the LwIP target/library
+      idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
+
+      # Link this component to LwIP, use INTERFACE because we're only sharing headers
+      target_link_libraries(${lwip_lib} INTERFACE ${this_component})
+
+      target_compile_options(${lwip_lib} INTERFACE "-DLWIP_STATS_LARGE=1")
     endif()
   endif()
 endif()

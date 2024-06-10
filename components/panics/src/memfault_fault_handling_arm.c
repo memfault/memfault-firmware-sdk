@@ -260,6 +260,17 @@ void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   ALIGN
 }
 
+//! MemoryManagement_Handler() is the previous default name, supported for
+//! backwards compatibility
+#if !defined(MEMFAULT_DISABLE_OLD_MEMMANAGE_HANDLER)
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void) {
+  ldr r0, =0x9200 // kMfltRebootReason_MemFault
+  ldr r1, =memfault_fault_handling_shim
+  bx r1
+  ALIGN
+}
+#endif
+
 MEMFAULT_NAKED_FUNC
 void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   ldr r0, =0x9100 // kMfltRebootReason_BusFault
@@ -319,6 +330,12 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   __asm(" mov r0, #0x9200 \n"  // kMfltRebootReason_MemFault
         " b memfault_fault_handling_shim \n");
 }
+    #if !defined(MEMFAULT_DISABLE_OLD_MEMMANAGE_HANDLER)
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void) {
+  __asm(" mov r0, #0x9200 \n"  // kMfltRebootReason_MemFault
+        " b memfault_fault_handling_shim \n");
+}
+    #endif
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   __asm(" mov r0, #0x9100 \n"  // kMfltRebootReason_BusFault
@@ -397,6 +414,13 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
 }
 
+    #if !defined(MEMFAULT_DISABLE_OLD_MEMMANAGE_HANDLER)
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void);
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
+}
+    #endif
+
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);
 }
@@ -469,6 +493,13 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
 }
+
+    #if !defined(MEMFAULT_DISABLE_OLD_MEMMANAGE_HANDLER)
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void);
+MEMFAULT_NAKED_FUNC void MemoryManagement_Handler(void) {
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_MemFault);
+}
+    #endif
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_BUS_FAULT(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_BusFault);

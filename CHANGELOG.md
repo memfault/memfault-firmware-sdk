@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2024-06-10
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - The default Device Info Software Version (Kconfig
+    `CONFIG_MEMFAULT_DEVICE_INFO_SOFTWARE_VERSION`) has been updated to `0.0.0`
+    from `1.0.0-dev` for the built-in Device Info implementation. See
+    `menuconfig` or
+    [`ports/esp_idf/memfault/Kconfig`](ports/esp_idf/memfault/Kconfig) for
+    details. This should only affect users who are using the default value for
+    that Kconfig.
+
+  - Fix a bug when `CONFIG_MEMFAULT_LWIP_METRICS=y` that may cause invalid
+    metric values. LwIP stats by default are only 16-bits wide and this can
+    cause underflow when calculating heartbeat values. This fix forces
+    `LWIP_STATS_LARGE=1` to make LwIP use 32-bit counters.
+
+  - Add a feature to the [esp32 example app](examples/esp32) to enable
+    overriding the Memfault server URLs (ex: for a proxy).
+
+  - Improve docs and comments in example app
+
+- General:
+
+  - Updated the default exception handler name for Memory Management exceptions
+    from `MemoryManagement_Handler` to `MemManage_Handler` (set by
+    `MEMFAULT_EXC_HANDLER_MEMORY_MANAGEMENT` in
+    [`default_config.h`](components/include/memfault/default_config.h) when not
+    overridden by the user). This aligns with the more recent CMSIS naming
+    convention for exception handlers. A backwards-compatible implementation is
+    included to avoid breaking users relying on the previous default.
+
+  - Add [`libcurl`-based samples](examples/libcurl) for posting chunks to Memfault and
+    checking for latest OTA release.
+
 ## [1.9.2] - 2024-05-29
 
 ### :chart_with_upwards_trend: Improvements

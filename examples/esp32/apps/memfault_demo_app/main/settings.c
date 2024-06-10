@@ -72,6 +72,20 @@ static const struct {
       .i32 = 500,
     },
   },
+  [kSettingsChunksUrl] = {
+    kSettingsTypeString,
+    "chunks_url",
+    {
+      .str = MEMFAULT_HTTP_CHUNKS_API_HOST,
+    },
+  },
+  [kSettingsDeviceUrl] = {
+    kSettingsTypeString,
+    "device_url",
+    {
+      .str = MEMFAULT_HTTP_DEVICE_API_HOST,
+    },
+  },
 };
 
 static bool prv_settings_key_is_valid(enum settings_key key) {

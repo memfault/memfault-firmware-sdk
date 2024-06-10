@@ -55,12 +55,12 @@ We assume you have a working setup for the
 ### Adding Memfault to the ESP-IDF SDK
 
 1. Delete the dummy esp-idf directory (if present) and clone a copy of the
-   v5.0.2 SDK.
+   v5.2.1 SDK.
 
    ```bash
    cd examples/esp32/
    rm -rf esp-idf
-   git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git esp-idf
+   git clone -b v5.2.1 --recursive https://github.com/espressif/esp-idf.git esp-idf
    cd esp-idf
    export IDF_TOOLS_PATH=$(pwd)
    # you may need to install the sdk tools by running ./install.sh here

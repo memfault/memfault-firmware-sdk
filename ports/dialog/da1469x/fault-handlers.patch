@@ -1,17 +1,26 @@
 From 6c2fc4eb5c013dc0bbc6a0b815bbd5004f8ffb84 Mon Sep 17 00:00:00 2001
 From: Memfault Inc <hello@memfault.com>
-Date: Mon, 28 Jun 2021 12:14:01 -0700
+Date: Thu, 6 Jun 2024 15:16:03 -0400
 Subject: [PATCH] Made fault handlers weak so they can be overridden.
 
 ---
- sdk/bsp/peripherals/src/hw_hard_fault.c          | 4 ++--
+ sdk/bsp/peripherals/src/hw_hard_fault.c          | 6 +++---
  sdk/bsp/startup/DA1469x/GCC/exception_handlers.S | 2 ++
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/sdk/bsp/peripherals/src/hw_hard_fault.c b/sdk/bsp/peripherals/src/hw_hard_fault.c
-index 4498b55..9cc4309 100644
+index 4498b55..22ded94 100644
 --- a/sdk/bsp/peripherals/src/hw_hard_fault.c
 +++ b/sdk/bsp/peripherals/src/hw_hard_fault.c
+@@ -157,7 +157,7 @@ void HardFault_HandlerC(unsigned long *hardfault_args)
+ #if (dg_configCODE_LOCATION == NON_VOLATILE_IS_FLASH)
+ __attribute__((section("text_retained")))
+ #endif
+-void MemManage_Handler(void)
++__WEAK void MemManage_Handler(void)
+ {
+         volatile uint8_t mem_fault_status_reg;
+         volatile uint32_t mem_fault_addr __UNUSED;
 @@ -179,7 +179,7 @@ void MemManage_Handler(void)
  #if (dg_configCODE_LOCATION == NON_VOLATILE_IS_FLASH)
  __attribute__((section("text_retained")))

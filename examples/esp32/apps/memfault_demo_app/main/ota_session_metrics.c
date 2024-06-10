@@ -57,7 +57,10 @@ int __wrap_mbedtls_net_recv(void *ctx, unsigned char *buf, size_t len) {
   return rv;
 }
 
-// This API was added in ESP-IDF v4.3.6, add a stub for earlier versions.
+// This API was added in ESP-IDF v4.3.6, v4.4.6, v5.0.4, and v5.1.1. Add a stub for versions
+// < v4.3.6. For simplicity, projects with versions > v4.3.6 but less than the patch the API was
+// added in for the corresponding minor version are not supported with this check. There will be a
+// build error due to a missing definition for the API.
 // https://github.com/espressif/esp32-wifi-lib/blob/release/v4.4/esp32/libnet80211.a
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4, 3, 6)
 esp_err_t esp_wifi_sta_get_rssi(int *rssi) {

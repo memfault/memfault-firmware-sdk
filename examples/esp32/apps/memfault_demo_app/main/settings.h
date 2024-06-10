@@ -17,6 +17,8 @@ enum settings_key {
   kSettingsProjectKey,
   kSettingsLedBrightness,
   kSettingsLedBlinkIntervalMs,
+  kSettingsChunksUrl,
+  kSettingsDeviceUrl,
 };
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
