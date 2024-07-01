@@ -33,6 +33,7 @@ choice APP_MEMFAULT_TRANSPORT
     config APP_MEMFAULT_TRANSPORT_MQTT
         bool "MQTT"
         select MQTT_PROTOCOL_5
+        depends on !MEMFAULT_HTTP_PERIODIC_UPLOAD
 endchoice
 
 if APP_MEMFAULT_TRANSPORT_MQTT

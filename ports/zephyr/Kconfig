@@ -341,6 +341,15 @@ config MEMFAULT_PROJECT_KEY
 
 endif # MEMFAULT_HTTP_ENABLE
 
+config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
+        bool "Provide a custom implementation for FOTA download"
+        default n
+        help
+          By default, the Memfault SDK implements a stub for the FOTA download
+          callback invoked when a download completes. An end user can provide
+          their own implementation by enabling this option and implementing
+          memfault_zephyr_fota_download_callback().
+
 choice MEMFAULT_ZEPHYR_FOTA_BACKEND
         prompt "Backend for FOTA updates"
         default MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
@@ -354,7 +363,9 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
         help
           Adds support for performing OTA updates via MCUboot. If an update is available,
           the binary will be downloaded and installed in the secondary slot(slot1_partition).
-          Then the device will be rebooted into the new firmware.
+          By default, the device will be rebooted into the new firmware. Users can customize
+          the behavior after the update is downloaded by providing a custom implementation
+          of memfault_zephyr_fota_download_callback() and setting MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
           For information on release management with Memfault: https://mflt.io/release-mgmt.
 
 config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
@@ -621,9 +632,24 @@ config MEMFAULT_CDR_ENABLE
          Permits usage of the Memfault CDR feature. See
          https://mflt.io/custom-data-recordings for more information.
 
+choice MEMFAULT_BUILD_ID_TYPE
+        prompt "Build ID type"
+        default MEMFAULT_USE_GNU_BUILD_ID if !BOOTLOADER_ESP_IDF
+        default MEMFAULT_USE_MEMFAULT_BUILD_ID if BOOTLOADER_ESP_IDF
+        help
+          Choose the type of build ID to include in the image
+
+config MEMFAULT_USE_MEMFAULT_BUILD_ID
+        bool "Use a Memfault build ID in an image"
+        # Memfault build ID should be used if the ESP32 bootloader is used.
+        # esptool.py generates the flashable image, which ignores the
+        # .note.gnu.build-id section despite being marked as ALLOC.
+        help
+          Use a Memfault build ID in an image
+
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
-        default y
         bool "Use a GNU build ID in an image"
+        depends on !BOOTLOADER_ESP_IDF
 
 if MEMFAULT_USE_GNU_BUILD_ID
 
@@ -650,6 +676,8 @@ endchoice # MEMFAULT_GNU_BUILD_ID_SOURCE
 
 endif # MEMFAULT_USE_GNU_BUILD_ID
 
+endchoice # MEMFAULT_BUILD_ID_TYPE
+
 menu "Memfault Built-In Device Info Options"
 
 config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION
@@ -673,6 +701,13 @@ config MEMFAULT_COMPRESS_DEBUG_INFO
         default y
         help
           Compress debug info to reduce the size of the output elf file.
+
+config MEMFAULT_BUILD_META_IN_ELF
+        bool "Include build meta in ELF"
+        default y
+        imply BUILD_OUTPUT_META
+        help
+          Include build meta in the ELF file.
 
 module = MEMFAULT
 module-str = Memfault

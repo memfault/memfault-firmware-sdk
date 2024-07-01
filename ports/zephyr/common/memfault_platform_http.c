@@ -224,15 +224,19 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
     return rv;
   }
 
-  const size_t host_name_len = strlen(host);
-  return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
-
-// Set TLS cert parse + copy to optional, which will allow us to use either
-// PEM or DER formatted certs. This feature was added in Zephyr v3.0.0.
+  // Set TLS cert parse + copy to optional, which will allow us to use either
+  // PEM or DER formatted certs. This feature was added in Zephyr v3.0.0.
 #if defined(TLS_CERT_NOCOPY_OPTIONAL)
   const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
   rv = setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
+  if (rv) {
+    MEMFAULT_LOG_ERROR("Failed to set tls nocopy, err %d\n", errno);
+    return rv;
+  }
 #endif
+
+  const size_t host_name_len = strlen(host);
+  return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
 static int prv_configure_socket(int fd, const char *host) {

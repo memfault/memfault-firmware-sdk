@@ -4,15 +4,17 @@ MAKEFLAGS=--warn-undefined-variables
 # Default to a silent build. Run make with --trace for a verbose build.
 .SILENT:
 
-
 # Mac and Linux stat have different options required, set them up here
 ifeq ($(shell uname), Darwin)
-  STAT = "stat -f '%z'"
+    STAT = "stat -f '%z'"
 else
-  STAT = "stat -c '%s'"
+    STAT = "stat -c '%s'"
 endif
 
 BOARD ?= qemu_mps2_an385
+
+$(info Building for $(BOARD))
+
 BOARD_DIR := boards/$(BOARD)
 
 BUILD_DIR := build/$(BOARD)
@@ -53,25 +55,24 @@ endif
 include $(BOARD_DIR)/Makefile
 
 # Gather list of FreeRTOS sources
-FREERTOS_SRCS = \
-	$(FREERTOS_DIR)/tasks.c \
-	$(FREERTOS_DIR)/queue.c \
-	$(FREERTOS_DIR)/list.c \
-	$(FREERTOS_DIR)/timers.c \
-	$(FREERTOS_DIR)/portable/GCC/$(FREERTOS_PORT)/port.c \
-	$(FREERTOS_DIR)/portable/MemMang/heap_4.c \
+FREERTOS_SRCS += \
+    $(FREERTOS_DIR)/tasks.c \
+    $(FREERTOS_DIR)/queue.c \
+    $(FREERTOS_DIR)/list.c \
+    $(FREERTOS_DIR)/timers.c \
+    $(FREERTOS_DIR)/portable/MemMang/heap_4.c \
 
 # Add application sources
 SRCS += \
-	src/main.c \
-	src/compact_log.cpp \
-	src/console.c \
-	src/heap_task.c \
-	src/metrics.c \
-	src/memfault/memfault_platform_port.c \
-	$(BOARD_DIR)/startup.c \
-	$(BOARD_DIR)/memfault_platform_impl.c \
-	$(FREERTOS_SRCS) \
+    src/main.c \
+    src/compact_log.cpp \
+    src/console.c \
+    src/heap_task.c \
+    src/metrics.c \
+    src/memfault/memfault_platform_port.c \
+    $(BOARD_DIR)/startup.c \
+    $(BOARD_DIR)/memfault_platform_impl.c \
+    $(FREERTOS_SRCS) \
 
 # Use Memfault SDK worker to gather initial Memfault SDK sources and include dirs
 MEMFAULT_SDK_ROOT := ../..
@@ -85,34 +86,33 @@ CFLAGS += $(foreach each, $(MEMFAULT_COMPONENTS), -DMEMFAULT_COMPONENT_$(each)_)
 # Intentionally using a wildcard to trap any new features added- it's nice to
 # have them enabled in this example app.
 SRCS += \
-	$(MEMFAULT_COMPONENTS_SRCS) \
-	$(wildcard $(MEMFAULT_SDK_ROOT)/ports/freertos/src/*.c) \
-		$(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
+    $(MEMFAULT_COMPONENTS_SRCS) \
+    $(wildcard $(MEMFAULT_SDK_ROOT)/ports/freertos/src/*.c) \
+        $(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
 
 # Fixup build path for objects of the Memfault SDK, all build output kept within build/
 OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%=$(BUILD_DIR)/%.o))
 
 INCLUDE_PATHS += \
-  -I$(FREERTOS_DIR)/include \
-  -I. \
-  -Isrc \
-  -Isrc/memfault \
-  -I$(MEMFAULT_COMPONENTS_INC_FOLDERS) \
-  -I$(MEMFAULT_SDK_ROOT)/ports/include \
-  -I$(MEMFAULT_SDK_ROOT) \
-  -I$(FREERTOS_DIR)/portable/GCC/$(FREERTOS_PORT) \
+    -I$(FREERTOS_DIR)/include \
+    -I. \
+    -Isrc \
+    -Isrc/memfault \
+    -I$(MEMFAULT_COMPONENTS_INC_FOLDERS) \
+    -I$(MEMFAULT_SDK_ROOT)/ports/include \
+    -I$(MEMFAULT_SDK_ROOT) \
+    -I$(FREERTOS_DIR)/portable/GCC/$(FREERTOS_PORT) \
 
 # generic (non-arch-specific) CFLAGS
 CFLAGS += \
-	-nostartfiles \
-	-mthumb \
-	-mcpu=cortex-m3 \
-	-Werror \
-	-Wall \
-	-Wextra \
-	-ggdb3 \
-	-Og \
-	-MD \
+    -nostartfiles \
+    -Werror \
+    -Wall \
+    -Wextra \
+    -ggdb3 \
+    -Og \
+    -MD \
+    $(ARCH_CFLAGS) \
 
 # Enable the self test by default
 MEMFAULT_DEMO_CLI_SELF_TEST ?= 1
@@ -121,14 +121,14 @@ CFLAGS += -DMEMFAULT_DEMO_CLI_SELF_TEST=$(MEMFAULT_DEMO_CLI_SELF_TEST)
 LINKER_SCRIPT = $(BOARD_DIR)/linker.ld
 
 LDFLAGS += \
-	-Wl,-T$(LINKER_SCRIPT) \
-	-Wl,--gc-sections \
-	--specs=nano.specs \
-	--specs=rdimon.specs \
-	-Wl,-lc \
-	-Wl,-lrdimon \
-	-Wl,-Map=$(BUILD_DIR)/main.map \
-	-Wl,--build-id \
+    -Wl,-T$(LINKER_SCRIPT) \
+    -Wl,--gc-sections \
+    --specs=nano.specs \
+    --specs=rdimon.specs \
+    -Wl,-lc \
+    -Wl,-lrdimon \
+    -Wl,-Map=$(BUILD_DIR)/main.map \
+    -Wl,--build-id \
 
 .PHONY: all
 all: $(ELF)
@@ -142,11 +142,11 @@ $(SRCS): $(FREERTOS_DIR)/.clonedone
 # If CFLAGS differ from last build, rebuild all files
 RAW_CFLAGS := $(CFLAGS) $(LDFLAGS)
 CFLAGS_STALE = \
-  $(shell \
-    if ! (echo "$(RAW_CFLAGS)" | diff -q $(BUILD_DIR)/cflags - > /dev/null 2>&1); then \
-      echo CFLAGS_STALE; \
-    fi \
-   )
+    $(shell \
+        if ! (echo "$(RAW_CFLAGS)" | diff -q $(BUILD_DIR)/cflags - > /dev/null 2>&1); then \
+            echo CFLAGS_STALE; \
+        fi \
+    )
 .PHONY: CFLAGS_STALE
 $(BUILD_DIR)/cflags: $(CFLAGS_STALE) Makefile
 	mkdir -p $(dir $@)

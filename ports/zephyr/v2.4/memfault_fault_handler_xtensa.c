@@ -25,10 +25,28 @@
 // Note: There is no header exposed for this zephyr function
 extern void sys_arch_reboot(int type);
 
-// Intercept zephyr/kernel/fatal.c:z_fatal_error()
+// Intercept zephyr/kernel/fatal.c:z_fatal_error(). Note that the signature
+// changed in zephyr 3.7.
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf);
+void __real_z_fatal_error(unsigned int reason, const struct arch_esf *esf);
+#else
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void __real_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+#endif
+// Ensure the substituted function signature matches the original function
+_Static_assert(__builtin_types_compatible_p(__typeof__(&z_fatal_error),
+                                            __typeof__(&__wrap_z_fatal_error)) &&
+                 __builtin_types_compatible_p(__typeof__(&z_fatal_error),
+                                              __typeof__(&__real_z_fatal_error)),
+               "Error: check z_fatal_error function signature");
 
-void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf) {
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf)
+#else
+void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+#endif
+{
   // TODO log panic may not be working correctly in fault handler context :(
   // // flush logs prior to capturing coredump & rebooting
   // LOG_PANIC();

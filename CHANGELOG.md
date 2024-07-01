@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2024-07-01
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Updated the Memfault fault handler to support deprecated exception info
+    structure coming in Zephyr v3.7.0. This change is backward compatible with
+    older Zephyr versions.
+
+  - By default, include the `zephyr.meta` build metadata in the output ELF file
+    as an unallocated section. This provides a list of module SHAs, useful when
+    reconstructing the dependencies used to build a particular ELF file. This
+    feature is controlled with `CONFIG_MEMFAULT_BUILD_META_IN_ELF`.
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID`, which
+    will apply a [Memfault Build ID](https://mflt.io/symbol-file-build-ids)
+    instead of a GNU Build ID when enabled. It defaults to enabled when
+    `CONFIG_BOOTLOADER_ESP_IDF` is enabled- this applies to ESP32 boards that
+    are using the ESP-IDF bootloader, instead of an MCUBoot bootloader. MCUBoot
+    bootable images are compatible with the standard GNU Build IDs.
+
+  - Add a new API, `memfault_zephyr_fota_download_callback()`, to the Zephyr
+    FOTA implementation to allow users to write their own callback that is
+    invoked when the download of a OTA payload is complete. The default download
+    callback will mark the new image as pending, set a firmware update reboot
+    reason, and reboot the system. Custom callbacks may, for example, be used to
+    perform application-specific system shutdown procedures, or allow the FOTA
+    update call to return to the calling context so a testing framework could
+    mark the operation successful. Users can override the default callback with
+    their own implementation using a new Kconfig option
+    `CONFIG_MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM`.
+
+- ESP-IDF:
+
+  - Add a periodic HTTP upload task. This feature starts a task dedicated to
+    posting any available Memfault data via HTTPS. Enable with
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y`.
+
+- General:
+
+  - Add 2 new QEMU targets for the FreeRTOS QEMU example, for Cortex-M4F and
+    Cortex-M33. The targets can be found [here](examples/freertos/boards/)
+
 ## [1.9.3] - 2024-06-10
 
 ### :chart_with_upwards_trend: Improvements
@@ -40,8 +84,8 @@ and this project adheres to
     convention for exception handlers. A backwards-compatible implementation is
     included to avoid breaking users relying on the previous default.
 
-  - Add [`libcurl`-based samples](examples/libcurl) for posting chunks to Memfault and
-    checking for latest OTA release.
+  - Add [`libcurl`-based samples](examples/libcurl) for posting chunks to
+    Memfault and checking for latest OTA release.
 
 ## [1.9.2] - 2024-05-29
 

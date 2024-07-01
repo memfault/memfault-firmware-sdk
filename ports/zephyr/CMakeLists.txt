@@ -90,4 +90,39 @@ if(CONFIG_MEMFAULT)
     )
   endif()
 
+  if(CONFIG_MEMFAULT_BUILD_META_IN_ELF AND CONFIG_BUILD_OUTPUT_META)
+    # run a post build command on the output .elf file to embed metadata
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND
+      ${CMAKE_OBJCOPY} --add-section .memfault-zephyr-build-meta=${PROJECT_BINARY_DIR}/${KERNEL_META_NAME}
+      ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+    )
+  endif()
+
+  # If enabled, apply a post-build step to generate a Memfault build id                                                                                                                                                                                                                    
+  if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)                                                                                                                                                                                                                                                
+    get_filename_component(                                                                                                                                                                                                                                                                
+      memfault_fw_build_id_script                                                                                                                                                                                                                                                          
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/fw_build_id.py                                                                                                                                                                                                                             
+      ABSOLUTE                                                                                                                                                                                                                                                                             
+    )                                                                                                                                                                                                                                                                                      
+    # force our command to be at the front of the list so it runs before any                                                                                                                                                                                                               
+    # other operations on the .elf file, including binary/OTA image generation                                                                                                                                                                                                             
+    get_property(                                                                                                                                                                                                                                                                          
+      PROPERTY_EXTRA_POST_BUILD_COMMANDS                                                                                                                                                                                                                                                   
+      GLOBAL                                                                                                                                                                                                                                                                               
+      PROPERTY extra_post_build_commands                                                                                                                                                                                                                                                   
+    )                                                                                                                                                                                                                                                                                      
+    set_property(                                                                                                                                                                                                                                                                          
+      GLOBAL                                                                                                                                                                                                                                                                               
+      PROPERTY extra_post_build_commands                                                                                                                                                                                                                                                   
+               COMMAND                                                                                                                                                                                                                                                                     
+               ${PYTHON_EXECUTABLE}                                                                                                                                                                                                                                                        
+               ${memfault_fw_build_id_script}                                                                                                                                                                                                                                              
+               ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf                                                                                                                                                                                                                    
+               # now append the rest of the commands                                                                                                                                                                                                                                       
+               ${PROPERTY_EXTRA_POST_BUILD_COMMANDS}                                                                                                                                                                                                                                       
+    )                                                                                                                                                                                                                                                                                      
+  endif()
+
 endif()

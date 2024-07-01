@@ -28,6 +28,24 @@ typedef struct {
   struct flash_img_context flash_ctx;
 } sMemfaultOtaDownloadCtx;
 
+  #if !defined(CONFIG_MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM)
+bool memfault_zephyr_fota_download_callback(void) {
+  int rv = boot_request_upgrade(BOOT_UPGRADE_TEST);
+  if (rv != 0) {
+    MEMFAULT_LOG_DEBUG("Error requesting upgrade, rv=%d", rv);
+    return false;
+  }
+
+  // Reboot to apply the update
+  MEMFAULT_LOG_INFO("OTA download complete! Rebooting...");
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
+  memfault_platform_reboot();
+
+  // We should never reach this point, but if we do, return false to indicate an error
+  return false;
+}
+  #endif
+
 static bool prv_handle_update_available(const sMemfaultOtaInfo *info, void *user_ctx) {
   sMemfaultOtaDownloadCtx *ctx = (sMemfaultOtaDownloadCtx *)user_ctx;
   ctx->info = *info;
@@ -57,19 +75,10 @@ static bool prv_handle_data(void *buf, size_t buf_len, void *user_ctx) {
 }
 
 static bool prv_handle_download_complete(void *user_ctx) {
-  int rv = boot_request_upgrade(BOOT_UPGRADE_TEST);
-  if (rv != 0) {
-    MEMFAULT_LOG_DEBUG("Error requesting upgrade, rv=%d", rv);
-    return false;
-  }
-
-  // Reboot to apply the update
-  MEMFAULT_LOG_INFO("OTA download complete! Rebooting...");
-  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
-  memfault_platform_reboot();
-
-  // We should never reach here, if we do, return false to indicate an error
-  return false;
+  // This function will not return if the download was successful when using the default
+  // implementation. However, we allow a return value for custom implementations that may
+  // want to return the result to the calling context.
+  return memfault_zephyr_fota_download_callback();
 }
 
 int memfault_zephyr_fota_start(void) {

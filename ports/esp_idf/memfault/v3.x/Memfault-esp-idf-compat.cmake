@@ -14,6 +14,10 @@ if(DEFINED MEMFAULT_ESP_IDF_VER)
   endif()
 endif()
 
+if(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
+  list(APPEND MEMFAULT_ESP_IDF_VERSION_SPECIFIC_REQUIRES esp_hw_support)
+endif()
+
 function(mflt_esp32_component_get_target var component_dir)
     if(COMMAND component_get_target)
         # esp-idf v3.3 adds a prefix to the target and introduced component_get_target():

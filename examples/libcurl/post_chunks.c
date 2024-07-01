@@ -122,6 +122,12 @@ static int prv_post_chunk(const char *device_serial, const void *chunk, size_t c
 
   ret = curl_easy_perform(hnd);
 
+  if (ret == 0) {
+    long http_code = 0;
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &http_code);
+    ret = !(http_code == 202);
+  }
+
   curl_easy_cleanup(hnd);
   hnd = NULL;
   curl_slist_free_all(slist1);
@@ -144,8 +150,10 @@ int main(int argc, char *argv[]) {
 
   int rv = prv_post_chunk("TESTSERIAL", chunk, sizeof(chunk), true /* verbose */);
   if (rv != 0) {
-    printf("ERROR: Chunk post failed, rv=%d\n", rv);
+    printf("\n\nERROR: Chunk post failed, rv=%d\n", rv);
   } else {
     printf("\n\nChunk successfully sent!\n\n");
   }
+
+  return rv;
 }

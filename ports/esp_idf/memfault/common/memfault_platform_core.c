@@ -9,6 +9,7 @@
 
 #include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
+#include "memfault/esp_port/http_client.h"
 #include "memfault/esp_port/version.h"
 #include "memfault/metrics/metrics.h"
 
@@ -200,6 +201,10 @@ void memfault_boot(void) {
 #if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
   (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
   heap_caps_register_failed_alloc_callback(prv_alloc_failed_callback);
+#endif
+
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_AUTO_START)
+  memfault_esp_port_http_periodic_upload_start();
 #endif
 }
 

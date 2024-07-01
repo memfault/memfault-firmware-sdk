@@ -127,7 +127,7 @@ static void initialize_console() {
     .max_cmdline_args = 8,
     .max_cmdline_length = 256,
 #if CONFIG_LOG_COLORS
-    .hint_color = atoi(LOG_COLOR_CYAN)
+    .hint_color = atoi(LOG_COLOR_CYAN),
 #endif
   };
   ESP_ERROR_CHECK(esp_console_init(&console_config));
@@ -253,44 +253,30 @@ void memfault_esp_port_wifi_autojoin(void) {
 
   #endif  // CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 
-// Periodically post any Memfault data that has not yet been posted.
-static void prv_poster_task(void *args) {
-  const uint32_t interval_sec = 60;
-  const TickType_t delay_ms = (1000 * interval_sec) / portTICK_PERIOD_MS;
+// // Periodically post any Memfault data that has not yet been posted.
+static void prv_ota_task(void *args) {
   const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
-  // initial OTA check is immediately on boot
-  TickType_t ota_last_check_time = xTaskGetTickCount() - ota_check_interval;
 
-  app_memfault_transport_init();
-
-  MEMFAULT_LOG_INFO("Data poster task up and running every %" PRIu32 "s.", interval_sec);
+  MEMFAULT_LOG_INFO("OTA task up and running every %" PRIu32 "s.", ota_check_interval);
 
   while (true) {
     // count the number of times this task has run
     MEMFAULT_METRIC_ADD(PosterTaskNumSchedules, 1);
     // attempt to autojoin wifi, if configured
+  #if defined(CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN)
     memfault_esp_port_wifi_autojoin();
+  #endif
 
-    // if connected, post any memfault data
+    // Wait until connected to check for OTA
     if (memfault_esp_port_wifi_connected()) {
-      MEMFAULT_LOG_DEBUG("Checking for memfault data to send");
-      int err = app_memfault_transport_send_chunks();
-      // if the check-in succeeded, set green, otherwise clear.
-      // gives a quick eyeball check that the app is alive and well
-      led_set_color((err == 0) ? kLedColor_Green : kLedColor_Red);
-
-      // Check for OTA hourly
-      if ((xTaskGetTickCount() - ota_last_check_time) >= ota_check_interval) {
-        prv_memfault_ota();
-        ota_last_check_time = xTaskGetTickCount();
-      }
+      prv_memfault_ota();
     } else {
       // Set LED to red
       led_set_color(kLedColor_Red);
     }
 
     // sleep
-    vTaskDelay(delay_ms);
+    vTaskDelay(ota_check_interval);
   }
 }
 
@@ -447,10 +433,10 @@ void app_main() {
 #if defined(CONFIG_MEMFAULT)
   prv_initialize_task_watchdog();
 
-  // We need another task to post data since we block waiting for user
+  // We need another task to check for OTA since we block waiting for user
   // input in this task.
   const portBASE_TYPE res =
-    xTaskCreate(prv_poster_task, "poster", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL);
+    xTaskCreate(prv_ota_task, "ota", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL);
   assert(res == pdTRUE);
 
   // Register the app commands

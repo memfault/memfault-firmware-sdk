@@ -94,6 +94,11 @@ bool memfault_esp_port_netif_connected(void);
 //! @return 0 if request succeeded, otherwise error code
 int memfault_esp_port_ota_get_release_url(char **download_url);
 
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
+//! Start a thread to periodically post chunks to Memfault via HTTPS
+void memfault_esp_port_http_periodic_upload_start(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

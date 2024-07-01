@@ -137,6 +137,14 @@ static int prv_get_latest_release(const char *device_serial, const char *hardwar
 
   ret = curl_easy_perform(hnd);
 
+  if (ret == 0) {
+    long http_code = 0;
+    curl_easy_getinfo(hnd, CURLINFO_RESPONSE_CODE, &http_code);
+    if ((http_code != 200) && (http_code != 204)) {
+      ret = http_code;
+    }
+  }
+
   curl_easy_cleanup(hnd);
   hnd = NULL;
   curl_slist_free_all(slist1);
@@ -160,8 +168,10 @@ int main(int argc, char *argv[]) {
   int rv = prv_get_latest_release(device_serial, hardware_version, software_type, current_version,
                                   true /* verbose */);
   if (rv != 0) {
-    printf("ERROR: Get latest release failed, rv=%d\n", rv);
+    printf("\n\nERROR: Get latest release failed, rv=%d\n", rv);
   } else {
     printf("\n\nSuccess!\n\n");
   }
+
+  return rv;
 }

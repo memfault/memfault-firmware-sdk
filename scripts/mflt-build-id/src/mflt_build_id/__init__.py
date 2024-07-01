@@ -39,7 +39,8 @@ from collections import defaultdict
 from enum import Enum
 
 try:
-    from typing import IO, Any, Dict, List, Optional, Tuple
+    # Lint rule disabled because it doesn't notice the `type:` comments
+    from typing import IO, Any, Dict, List, Optional, Tuple  # noqa: F401
 except ImportError:
     if sys.version_info >= (3, 5):
         raise
@@ -47,7 +48,9 @@ except ImportError:
 try:
     from elftools.elf.constants import SH_FLAGS
     from elftools.elf.elffile import ELFFile
-    from elftools.elf.sections import NoteSection, Section, Symbol, SymbolTableSection
+
+    # Lint rule disabled because it doesn't notice the `type:` comments
+    from elftools.elf.sections import NoteSection, Section, Symbol, SymbolTableSection  # noqa: F401
 except ImportError:
     raise ImportError(  # (no raise-from in Python 2.7)
         """

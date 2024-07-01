@@ -206,7 +206,7 @@ endif
     config MEMFAULT_METRICS_CPU_TEMP
         bool "Enable collection of a temperature metric"
         default y
-        depends on !IDF_TARGET_ESP32
+        depends on !IDF_TARGET_ESP32 && !ENABLE_ARDUINO_DEPENDS
         help
             Collects a Memfault metric for the CPU die temperature.
 
@@ -287,6 +287,51 @@ endif
             `esp_event_loop_create_default()` returns `ESP_ERR_INVALID_STATE` when called multiple times.
             This behavior can cause issues when used with `ESP_ERROR_CHECK()`. This option enables a
             wrapped version to suppress these errors and prevent crashes.
+
+    # HTTPS Periodic Upload
+    menuconfig MEMFAULT_HTTP_PERIODIC_UPLOAD
+        bool "Enable a dedicated thread to periodically upload Memfault data over HTTPS"
+        default n
+        depends on ESP_HTTP_CLIENT_ENABLE_HTTPS
+
+    if MEMFAULT_HTTP_PERIODIC_UPLOAD
+
+        choice MEMFAULT_HTTP_PERIODIC_UPLOAD_TASK_TYPE
+            prompt "Select task type to create for HTTP periodic upload"
+            # SUPPORT_STATIC_ALLOCATION renamed to FREERTOS_SUPPORT_STATIC_ALLOCATION in 4.0.0
+            default MEMFAULT_HTTP_PERIODIC_UPLOAD_TASK_STATIC
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_TASK_STATIC
+            bool "Static memory"
+            depends on (FREERTOS_SUPPORT_STATIC_ALLOCATION || SUPPORT_STATIC_ALLOCATION)
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_TASK_DYNAMIC
+            bool "Dynamic memory"
+
+        endchoice
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_STACK_SIZE
+            int "Stack size for periodic upload task"
+            default 3600
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_PRIORITY
+            int "Priority of periodic upload task"
+            default 1
+            range 1 25
+            help
+                Set periority of HTTP periodic upload task. Defaults to low
+                priority but can be increased if needed up to
+                configMAX_PRIORITIES - 1
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_AUTO_START
+            bool "Start the periodic upload task when memfault_boot() is called"
+            default y
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
+            int "Periodic upload interval to send data in seconds"
+            default 3600
+
+    endif
 
 endmenu
 
