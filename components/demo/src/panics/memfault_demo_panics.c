@@ -172,8 +172,13 @@ int memfault_demo_cli_cmd_memmanage(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED ch
 }
 
 int memfault_demo_cli_cmd_busfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  void (*unaligned_func)(void) = (void (*)(void))0x50000001;
-  unaligned_func();
+  // Trigger a BusFault by attempting to load and jump to an address from the "RAM" (0x60000000 -
+  // 0x7FFFFFFF) region, described as: "Memory with write-back, write allocate cache attribute for
+  // L2/L3 cache support." in the ARMv7-M architecture reference manual. This is not guaranteed to
+  // trigger a BusFault, if the address is both loadable and executable, but on many devices it
+  // will.
+  void (*busfault_func)(void) = (void (*)(void))0x60000001;
+  busfault_func();
 
   // We should never get here -- platforms BusFault or HardFault handler should be tripped
   // with a precise error due to unaligned execution

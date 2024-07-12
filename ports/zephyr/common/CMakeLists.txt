@@ -36,7 +36,10 @@ if (CONFIG_MEMFAULT_LOGGING_ENABLE)
   #    https://github.com/zephyrproject-rtos/zephyr/pull/31535
   # It fully replaced version 1 after the 3.1 release: https://github.com/zephyrproject-rtos/zephyr/issues/46500
   # and the option to enable logging v1 via CONFIG_LOG1 was entirely removed
-  if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99" OR CONFIG_LOG2)
+  if(CONFIG_LOG_MODE_MINIMAL)
+    target_link_libraries(app INTERFACE "-Wl,--wrap=z_log_minimal_printk")
+    zephyr_library_sources(memfault_logging_minimal.c)
+  elseif(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99" OR CONFIG_LOG2)
     zephyr_library_sources(memfault_logging.c)
   else()
     zephyr_library_sources(memfault_logging_legacy.c)
@@ -71,6 +74,10 @@ endif()
 if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
   zephyr_ld_options(-Wl,--wrap=k_malloc)
   zephyr_ld_options(-Wl,--wrap=k_free)
+endif()
+
+if(CONFIG_SOC_FAMILY_ESP32)
+  zephyr_linker_sources(SECTIONS memfault-rtc-noinit-region.ld)
 endif()
 
 zephyr_include_directories(.)

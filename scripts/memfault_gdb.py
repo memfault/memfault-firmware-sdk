@@ -286,7 +286,7 @@ class XtensaCoredumpArch(CoredumpArch):
 
         # Memory map:
         # https://github.com/espressif/esp-idf/blob/v3.3.1/components/soc/esp32/include/soc/soc.h#L286-L304
-        regions = (
+        return (
             # SOC_DRAM
             (0x3FFAE000, 0x52000),
             # SOC_RTC_DATA
@@ -294,7 +294,6 @@ class XtensaCoredumpArch(CoredumpArch):
             # SOC_RTC_DRAM
             (0x3FF80000, 0x2000),
         )
-        return regions
 
     def _read_registers(self, core, gdb_thread, analytics_props):
         # NOTE: The only way I could figure out to read raw registers for CPU1 was
@@ -734,7 +733,7 @@ class MemfaultCoredumpWriter(object):
         self._write(out_f.write, total_size["size"])
 
 
-class Section(object):
+class Section(object):  # noqa: PLW1641
     def __init__(self, addr, size, name, read_only=True):
         self.addr = addr
         self.size = size

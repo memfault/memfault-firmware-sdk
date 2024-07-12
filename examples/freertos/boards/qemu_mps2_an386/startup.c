@@ -102,6 +102,10 @@ __attribute__((noinline)) static void prv_cinit(void) {
 }
 
 __attribute__((noreturn)) void Reset_Handler(void) {
+  // enable mem/bus/usage faults
+#define SCBSHCSR_ (*(uint32_t *)0xE000ED24)
+  SCBSHCSR_ |= (1UL << 16U) | (1UL << 17U) | (1UL << 18U);
+
   prv_cinit();
 
   uart_init();

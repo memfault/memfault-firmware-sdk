@@ -61,7 +61,9 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
   // register capture disable is a very small size optimization, and logs are
   // likely not used on devices with space constraints.
   LOG_PANIC();
+    #if !defined(CONFIG_LOG_MODE_MINIMAL)
   memfault_zephyr_log_backend_disable();
+    #endif
   #endif
 
   memfault_coredump_cache_fault_regs();
@@ -149,47 +151,6 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
 }
   #endif  // CONFIG_HWINFO
 
-// This can be overridden by the application to set a custom device ID
-MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
-  uint8_t dev_id[16] = { 0 };
-  static char dev_id_str[sizeof(dev_id) * 2 + 1];
-  static const char *dev_str = "UNKNOWN";
-
-  // Obtain the device id
-  #if defined(CONFIG_HWINFO)
-  ssize_t length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
-  #else
-  ssize_t length = 0;
-  #endif
-
-  // If hwinfo_get_device_id() fails or isn't enabled, use a fallback string
-  if (length <= 0) {
-  #if defined(CONFIG_SOC)
-    dev_str = CONFIG_SOC "-testserial";
-  #else
-    dev_str = "testserial";
-  #endif
-    length = strlen(dev_str);
-  } else {
-    // Render the obtained serial number in hexadecimal representation
-    for (size_t i = 0; i < length; i++) {
-      (void)snprintf(&dev_id_str[i * 2], sizeof(dev_id_str), "%02x", dev_id[i]);
-    }
-    dev_str = dev_id_str;
-  }
-
-  return dev_str;
-}
-
-MEMFAULT_WEAK void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-  *info = (sMemfaultDeviceInfo){
-    .device_serial = memfault_zephyr_get_device_id(),
-    .software_type = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE,
-    .software_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION,
-    .hardware_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION,
-  };
-}
-
 MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
   uint32_t reset_reason_reg = 0;
@@ -211,6 +172,47 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
 void memfault_zephyr_collect_reset_info(void) {
   memfault_reboot_tracking_collect_reset_info(s_memfault_event_storage);
+}
+
+// This can be overridden by the application to set a custom device ID
+MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
+  uint8_t dev_id[16] = { 0 };
+  static char dev_id_str[sizeof(dev_id) * 2 + 1];
+  static const char *dev_str = "UNKNOWN";
+
+// Obtain the device id
+#if defined(CONFIG_HWINFO)
+  ssize_t length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
+#else
+  ssize_t length = 0;
+#endif
+
+  // If hwinfo_get_device_id() fails or isn't enabled, use a fallback string
+  if (length <= 0) {
+#if defined(CONFIG_SOC)
+    dev_str = CONFIG_SOC "-testserial";
+#else
+    dev_str = "testserial";
+#endif
+    length = strlen(dev_str);
+  } else {
+    // Render the obtained serial number in hexadecimal representation
+    for (size_t i = 0; i < length; i++) {
+      (void)snprintf(&dev_id_str[i * 2], sizeof(dev_id_str), "%02x", dev_id[i]);
+    }
+    dev_str = dev_id_str;
+  }
+
+  return dev_str;
+}
+
+MEMFAULT_WEAK void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
+  *info = (sMemfaultDeviceInfo){
+    .device_serial = memfault_zephyr_get_device_id(),
+    .software_type = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE,
+    .software_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION,
+    .hardware_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION,
+  };
 }
 
 // Note: the function signature has changed here across zephyr releases

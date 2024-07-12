@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2024-07-12
+
+### :chart_with_upwards_trend: Improvements
+
+- Zephyr:
+
+  - Add support for Memfault Logging when `CONFIG_LOG_MODE_MINIMAL=y`, in
+    addition to the previously supported `LOG_MODE_DEFERRED` (Zephyr default)
+    and `LOG_MODE_IMMEDIATE`.
+    [Zephyr minimal log mode](https://docs.zephyrproject.org/3.6.0/kconfig.html#CONFIG_LOG_MODE_MINIMAL)
+    disables all backends- logs are simply sent to `printk`.
+
+  - For ESP32 chips, place the reboot reason tracking into a dedicated section,
+    `.rtc_noinit`, to ensure the reboot reason is preserved across reboots. This
+    was previously only supported on Zephyr ESP32-S3/S2 devices (all ESP32
+    devices on ESP-IDF already support this).
+
+  - Fix a bug where the default `memfault_platform_get_device_info()`, which
+    uses the hwinfo subsystem, when available, was incorrectly disabled when
+    `CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM=y`.
+
+- General:
+
+  - Improve the `memfault_demo_cli_cmd_busfault()` function (accessed via
+    `test_busfault`/`mflt test busfault` demo CLI commands) to produce BusFaults
+    on more devices. Previously, certain chips would either not produce a fault,
+    or would produce a MemManage exception instead.
+
 ## [1.9.4] - 2024-07-01
 
 ### :chart_with_upwards_trend: Improvements
