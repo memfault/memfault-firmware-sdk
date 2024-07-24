@@ -4,11 +4,11 @@
 //! See License.txt for details
 
 #include <stdio.h>
+#include <time.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
-
 // Buffer used to store formatted string for output
 #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES (MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN)
 
@@ -72,6 +72,32 @@ void memfault_platform_log_raw(const char *fmt, ...) {
   printf("%s\n", log_buf);
 
   va_end(args);
+}
+
+bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_output) {
+  // Get time from time.h
+
+  // Debug: print time fields
+  time_t time_now = time(NULL);
+
+  struct tm *tm_time = gmtime(&time_now);
+  MEMFAULT_LOG_DEBUG("Time: %u-%u-%u %u:%u:%u", tm_time->tm_year + 1900, tm_time->tm_mon + 1,
+                     tm_time->tm_mday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec);
+
+  // If pre-2023, something is wrong
+  if ((tm_time->tm_year < 123) || (tm_time->tm_year > 200)) {
+    MEMFAULT_LOG_WARN("Time doesn't make sense: year %u", tm_time->tm_year + 1900);
+    return false;
+  }
+
+  // load the timestamp and return true for a valid timestamp
+  *time_output = (sMemfaultCurrentTime){
+    .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
+    .info = {
+      .unix_timestamp_secs = (uint64_t)time_now,
+    },
+  };
+  return true;
 }
 
 void memfault_platform_reboot_tracking_boot(void) {

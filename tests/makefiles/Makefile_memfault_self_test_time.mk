@@ -4,6 +4,7 @@ SRC_FILES = \
 
 MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_build_id.c \
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_coredump_utils.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_sdk_assert.c \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_debug_log.cpp \

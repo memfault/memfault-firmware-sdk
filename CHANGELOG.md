@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2024-07-24
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Removed a warning when compiling the SDK for Cortex-A targets (ARM v7a).
+    Support for this target is no longer experimental.
+
+  - Improve coredump capture on ARMv7-A/R (Cortex-A/R), capturing additional CPU
+    registers `r8` + `r9` in the coredump.
+
+  - Fix a compilation issue with older versions of `gcc-arm-none-eabi` that do
+    not support the `PRIu64` format specifier (or are missing C99 format
+    specifiers). Thanks to @iotengtr for reporting this issue in
+    [#72](https://github.com/memfault/memfault-firmware-sdk/issues/72) !
+
+- Zephyr:
+
+  - Include the Zephyr Device Tree output in the ELF file in a debug section,
+    which can be used for reference. Memfault is exploring other use cases for
+    this data in our backend. This feature is controlled with
+    `CONFIG_MEMFAULT_DTS_IN_ELF`, enabled by default.
+
 ## [1.10.0] - 2024-07-12
 
 ### :chart_with_upwards_trend: Improvements
@@ -445,7 +469,7 @@ and this project adheres to
     will enable auto-initialization of battery metrics on system init (requires
     `memfault_platform_get_stateofcharge()` to be implemented).
 
-    See https://mflt.io/core-metrics for more information on Core Metrics.
+    See <https://mflt.io/core-metrics> for more information on Core Metrics.
 
 - ESP-IDF:
 
@@ -524,9 +548,9 @@ and this project adheres to
   - Apply a handful of changes to fix items raised by a new static analyzer
   - Fix a minor formatting issue that was causing a compilation error for CC ARM
   - Update support links to refer to the preferred site
-    https://mflt.io/contact-support instead of the Memfault support email. This
-    link will redirect to a form where questions can be sent to the Memfault
-    support team.
+    <https://mflt.io/contact-support> instead of the Memfault support email.
+    This link will redirect to a form where questions can be sent to the
+    Memfault support team.
   - Update the `README.md`s in example apps to point to the
     [Demo CLI](https://docs.memfault.com/docs/mcu/demo-cli) page on the Memfault
     docs website where comprehensive information is available on commands and
@@ -896,7 +920,7 @@ and this project adheres to
   - Improve FOTA support for nRF-Connect SDK 2.4+, by improving the technique
     used to find the correct Memfault server root cert. Memfault uses a fast CDN
     to improve OTA payload delivery, which uses a different root cert than the
-    Memfault device server. Please contact support@memfault.com immediately if
+    Memfault device server. Please contact <support@memfault.com> immediately if
     you encounter any cert-related issues.
 
 ### :boom: Breaking Changes
@@ -1623,7 +1647,7 @@ are enough 🤞.
     longer supported. Users of this Kconfig should refactor their application to
     call `memfault_boot` during initialization. Use of this Kconfig now results
     in a build error. For more information please see
-    https://docs.memfault.com/docs/mcu/esp32-guide#initializing-memfault
+    <https://docs.memfault.com/docs/mcu/esp32-guide#initializing-memfault>
 
 ### Changes between Memfault SDK 0.39.1 and SDK 0.39.0 - Feb 3, 2023
 
@@ -2381,7 +2405,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 #### :house: Internal
 
-- Updated list of sample apps in (`examples/README.md`)[examples/README.md]
+- Updated list of sample apps in [`examples/README.md`](examples/README.md)
 
 ### Changes between Memfault SDK 0.27.1 and SDK 0.27.0 - Oct 11, 2021
 
@@ -2559,10 +2583,10 @@ Added clarifications around licensing in ports and examples folders. See
 - If you were already using `MEMFAULT_SOFTWARE_WATCHDOG`, you will need to
   update your call site invocations to remove the argument being passed. i.e
 
-```diff
--      MEMFAULT_SOFTWARE_WATCHDOG(0);
-+      MEMFAULT_SOFTWARE_WATCHDOG();
-```
+  ```diff
+  -      MEMFAULT_SOFTWARE_WATCHDOG(0);
+  +      MEMFAULT_SOFTWARE_WATCHDOG();
+  ```
 
 ### Changes between Memfault SDK 0.23.0 and SDK 0.22.0 - July 8, 2021
 
@@ -2710,7 +2734,7 @@ Added clarifications around licensing in ports and examples folders. See
   displayed in the Memfault UI in the "Exceptions" tab.
 
 - Updated
-  [`buffered_coredump_storage.h` ](ports/include/memfault/ports/buffered_coredump_storage.h)
+  [`buffered_coredump_storage.h`](ports/include/memfault/ports/buffered_coredump_storage.h)
   to use `memmov` instead of `memcpy` since `dst` and `src` buffers may overlap
   when all of `.bss` is saved in a coredump capture.
 - Added a new Kconfig option to the Zephyr port,
@@ -2729,14 +2753,17 @@ Added clarifications around licensing in ports and examples folders. See
 - If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK
   will now automatically be picked up as a Zephyr Module! You will need to make
   two changes:
+
   1. Remove the `ZEPHYR_EXTRA_MODULES` addition from your projects
      CMakeLists.txt, i.e
-  ```diff
-  --- a/your_application/CMakeLists.txt
-  +++ b/your_application/CMakeLists.txt
-  @@ -3,7 +3,6 @@
-  - list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/nrf-connect-sdk)
-  ```
+
+     ```diff
+     --- a/your_application/CMakeLists.txt
+     +++ b/your_application/CMakeLists.txt
+     @@ -3,7 +3,6 @@
+     - list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports/nrf-connect-sdk)
+     ```
+
   2. Add `CONFIG_MEMFAULT_NRF_CONNECT_SDK=y` to your projects `prj.conf`
 
 ### Changes between Memfault SDK 0.18.0 and SDK 0.17.1 - May 14, 2021
@@ -2819,7 +2846,7 @@ Added clarifications around licensing in ports and examples folders. See
   unexpected behavior takes place on the device for upload to Memfault. The logs
   can then be [uploaded to Memfault](https://mflt.io/data-to-cloud) just like
   any other data and appear in the UI for a device. For more details about the
-  Memfault log subsystem see https://mflt.io/logging
+  Memfault log subsystem see <https://mflt.io/logging>
 
 #### :chart_with_upwards_trend: Improvements
 
@@ -3013,12 +3040,14 @@ path needs to be updated to `examples`:
   - nRF5 SDK
     - [app_timer based port for metric dependencies](ports/nrf5_sdk/memfault_platform_metrics.c#L1)
 - [`fw_build_id.py`](scripts/fw_build_id.py) script improvements
+
   - script is now compatible with Python2 environments.
   - Added new `--dump <chars>` option to simplify extraction of build id in
     automation, i.e:
-    ```
-     python scripts/fw_build_id.py <ELF> --dump 7
-     3a3e81f
+
+    ```bash
+    python scripts/fw_build_id.py <ELF> --dump 7
+    3a3e81f
     ```
 
 #### :house: Internal
@@ -3071,12 +3100,12 @@ path needs to be updated to `examples`:
 - If you were linking any of the nRF5 example app files in your project, the
   directory has changed:
 
-```diff
-- ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c
-+ ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/resetreas_reboot_tracking.c
-- ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_coredump.c
-+ ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/memfault_nrf5_coredump.c
-```
+  ```diff
+  - ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_reboot_tracking.c
+  + ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/resetreas_reboot_tracking.c
+  - ${MEMFAULT_FIRMWARE_SDK}/nrf5/libraries/memfault/platform_reference_impl/memfault_platform_coredump.c
+  + ${MEMFAULT_FIRMWARE_SDK}/ports/nrf5_sdk/memfault_nrf5_coredump.c
+  ```
 
 ### Changes between Memfault SDK 0.11.4 and SDK 0.11.3 - Feb 4, 2021
 
@@ -3138,11 +3167,11 @@ path needs to be updated to `examples`:
   [build system helpers](README.md#add-sources-to-build-system), this path will
   be picked up automatically.
 
-```c
-#include "memfault/components.h"
+  ```c
+  #include "memfault/components.h"
 
-// call to any Memfault API in the components folder
-```
+  // call to any Memfault API in the components folder
+  ```
 
 - Fixed a :bug: leading to Root CAs not get loaded correctly when using the nRF
   Connect SDK port and the `MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE=y`
@@ -3289,30 +3318,30 @@ path needs to be updated to `examples`:
   to capture critical error logs that you would like to be alerted on when they
   happen. For example:
 
-```c
-// @file memfault_trace_reason_user_config.def
-MEMFAULT_TRACE_REASON_DEFINE(Critical_Log)
-```
+  ```c
+  // @file memfault_trace_reason_user_config.def
+  MEMFAULT_TRACE_REASON_DEFINE(Critical_Log)
+  ```
 
-```c
-// @file your_platform_log_implementation.h
-#include "memfault/core/trace_event.h"
+  ```c
+  // @file your_platform_log_implementation.h
+  #include "memfault/core/trace_event.h"
 
-#define YOUR_PLATFORM_LOG_CRITICAL(fmt, ....) \
-    MEMFAULT_TRACE_EVENT_WITH_LOG(Critical_Log, fmt, __VA_ARGS__)
-```
+  #define YOUR_PLATFORM_LOG_CRITICAL(fmt, ....) \
+      MEMFAULT_TRACE_EVENT_WITH_LOG(Critical_Log, fmt, __VA_ARGS__)
+  ```
 
-```c
-// @file your_platform_temperature_driver.c
-void record_temperature(void) {
-   // ...
-   // erase flash to free up space
-   int rv = spi_flash_erase(...);
-   if (rv != 0) {
-      YOUR_PLATFORM_LOG_CRITICAL("Flash Erase Failure: rv=%d, spi_err=0x%x", spi_bus_get_status());
-   }
-}
-```
+  ```c
+  // @file your_platform_temperature_driver.c
+  void record_temperature(void) {
+     // ...
+     // erase flash to free up space
+     int rv = spi_flash_erase(...);
+     if (rv != 0) {
+        YOUR_PLATFORM_LOG_CRITICAL("Flash Erase Failure: rv=%d, spi_err=0x%x", spi_bus_get_status());
+     }
+  }
+  ```
 
 - The error tracing facilities are now initialized automatically for the esp-idf
 - Fixed a :bug: where an erroneous size was reported from
@@ -3544,12 +3573,12 @@ void record_temperature(void) {
   - Add: `$(MEMFAULT_SDK_ROOT)/components/demo/src/http/memfault_demo_http.c`
 - If you are using the `http` component, the following macro names changed:
 
-```diff
--#define MEMFAULT_HTTP_GET_API_PORT()
--#define MEMFAULT_HTTP_GET_API_HOST()
-+#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT()
-+#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST()
-```
+  ```diff
+  -#define MEMFAULT_HTTP_GET_API_PORT()
+  -#define MEMFAULT_HTTP_GET_API_HOST()
+  +#define MEMFAULT_HTTP_GET_CHUNKS_API_PORT()
+  +#define MEMFAULT_HTTP_GET_CHUNKS_API_HOST()
+  ```
 
 ### Changes between Memfault SDK 0.4.2 and SDK 0.4.1 - June 8, 2020
 
@@ -3573,12 +3602,12 @@ void record_temperature(void) {
 - If you are already using reboot tracking in your system, you will need to
   update the following includes in your code:
 
-```diff
--#include "memfault/panics/reboot_tracking.h"
--#include "memfault/panics/reboot_reason_types.h"
-+#include "memfault/core/reboot_tracking.h"
-+#include "memfault/panics/reboot_reason_types.h"
-```
+  ```diff
+  -#include "memfault/panics/reboot_tracking.h"
+  -#include "memfault/panics/reboot_reason_types.h"
+  +#include "memfault/core/reboot_tracking.h"
+  +#include "memfault/panics/reboot_reason_types.h"
+  ```
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system), you will need
@@ -3674,10 +3703,10 @@ void record_temperature(void) {
 - If you are already using `MEMFAULT_TRACE_EVENT()` in your project, you will
   need to update the include as follows:
 
-```diff
--#include "memfault/panics/trace_event.h"
-+#include "memfault/core/trace_event.h"
-```
+  ```diff
+  -#include "memfault/panics/trace_event.h"
+  +#include "memfault/core/trace_event.h"
+  ```
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system), you will need
@@ -3853,7 +3882,7 @@ void record_temperature(void) {
 - Add a new API ("Trace Event") for tracking errors. This allows for tracing
   issues that are unexpected but are non-fatal (don't result in a device
   reboot). A step-by-step guide detailing how to use the feature can be found
-  at: https://mflt.io/error-tracing
+  at: <https://mflt.io/error-tracing>
 - Update GDB coredump collection script to work with the ESP32 (Tensilica Xtensa
   LX6 Architecture)
 - Remove `__task` from IAR Cortex-M function handler declarations since it's not
@@ -3865,7 +3894,7 @@ void record_temperature(void) {
 
 - Update **panics** component to support compilation with IAR ARM C/C++
   Compiler. More details about integrating IAR can be found at
-  https://mflt.io/iar-tutorial. As part of the change `MEMFAULT_GET_LR()` now
+  <https://mflt.io/iar-tutorial>. As part of the change `MEMFAULT_GET_LR()` now
   takes an argument which is the location to store the LR to
   (`void *lr = MEMFAULT_GET_LR()` -> `void *lr;` `MEMFAULT_GET_LR(lr)`)
 
@@ -3876,7 +3905,7 @@ void record_temperature(void) {
   message to be read once (instead of twice). It also makes it easier to use the
   data packetizer in environments where reads from data sources need to be
   performed asynchronously. More details can be found at
-  https://mflt.io/data-to-cloud
+  <https://mflt.io/data-to-cloud>
 - Fixed a couple documentation links
 
 ### Changes between Memfault SDK 0.0.17 and SDK 0.0.16 - Jan 7, 2020
@@ -3963,17 +3992,17 @@ void record_temperature(void) {
   dynamically change the regions collected based on the crash if so desired.
   This will require an update that looks like the following to your port:
 
-```diff
--const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
-+const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
-+    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
-```
+  ```diff
+  -const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(size_t *num_regions) {
+  +const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  +    const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  ```
 
 - Added a new API, `memfault_coredump_storage_compute_size_required()` which can
   be called on boot to sanity check that platform coredump storage is large
   enough to hold a coredump. For example:
 
-```
+  ```c
   sMfltCoredumpStorageInfo storage_info = { 0 };
   memfault_platform_coredump_storage_get_info(&storage_info);
   const size_t size_needed = memfault_coredump_storage_compute_size_required();
@@ -3982,7 +4011,7 @@ void record_temperature(void) {
                        storage_info.size, size_needed);
   }
   MEMFAULT_ASSERT(size_needed <= storage_info.size);
-```
+  ```
 
 - Added a convenience RAM backed
   [reference port](https://github.com/memfault/memfault-firmware-sdk/blob/master/ports/panics/src/memfault_platform_ram_backed_coredump.c)
@@ -3994,8 +4023,8 @@ void record_temperature(void) {
 - Enhanced Reboot Tracking module within the **panics** component. Reboots that
   don't result in coredumps can now be easily tracked (i.e brown outs, system
   watchdogs, user initiated resets, resets due to firmware updates, etc). See
-  `memfault/core/reboot_tracking.h` for more details and https://mflt.io/2QlOlgH
-  for a step-by-step setup tutorial.
+  `memfault/core/reboot_tracking.h` for more details and
+  <https://mflt.io/2QlOlgH> for a step-by-step setup tutorial.
 - Added Event Storage module within the **core** component. This is a small RAM
   backed data store that queues up traces to be published to the Memfault cloud.
   To minimize the space needed and transport overhead, all events collected
@@ -4044,7 +4073,7 @@ void record_temperature(void) {
 - Updated **panics** core code to _always_ collect fault registers for ARMv6-M &
   ARMv7-M architectures. The Memfault cloud will auto-analyze these and present
   an analysis.
-- Updated https://try.memfault.com gdb script to collect Cortex-M MPU region
+- Updated <https://try.memfault.com> gdb script to collect Cortex-M MPU region
   information for auto-analysis
 - general README documentation improvements
 - improved error reporting strategy and documentation in

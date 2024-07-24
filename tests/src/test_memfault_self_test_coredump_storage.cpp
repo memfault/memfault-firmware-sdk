@@ -137,16 +137,7 @@ TEST(MemfaultSelfTestCoredumpStorage, Test_CoredumpStorage_Success) {
 }
 
 TEST_GROUP(MemfaultSelfTestCoredumpStorageCapacity) {
-  void setup() {
-    const char *output_lines[] = {
-      MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
-      "Coredump Storage Capacity Test",
-      MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
-      MEMFAULT_SELF_TEST_END_OUTPUT,
-    };
-    memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
-                                   MEMFAULT_ARRAY_SIZE(output_lines));
-  }
+  void setup() { }
   void teardown() {
     mock().checkExpectations();
     mock().clear();
@@ -154,6 +145,15 @@ TEST_GROUP(MemfaultSelfTestCoredumpStorageCapacity) {
 };
 
 TEST(MemfaultSelfTestCoredumpStorageCapacity, Test_CoredumpStorageCapacity_TooSmall) {
+  const char *output_lines[] = {
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    "Coredump Storage Capacity Test",
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT,
+    MEMFAULT_SELF_TEST_END_OUTPUT,
+  };
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
+                                 MEMFAULT_ARRAY_SIZE(output_lines));
+
   mock().expectOneCall("memfault_coredump_storage_check_size").andReturnValue(false);
 
   uint32_t result = memfault_self_test_coredump_storage_capacity_test();
@@ -161,6 +161,14 @@ TEST(MemfaultSelfTestCoredumpStorageCapacity, Test_CoredumpStorageCapacity_TooSm
 }
 
 TEST(MemfaultSelfTestCoredumpStorageCapacity, Test_CoredumpStorageCapacity_Success) {
+  const char *output_lines[] = {
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, "Coredump Storage Capacity Test",
+    "Total size required: 0 bytes",  "Storage capacity: 0 bytes",
+    MEMFAULT_SELF_TEST_BEGIN_OUTPUT, MEMFAULT_SELF_TEST_END_OUTPUT,
+  };
+  memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, output_lines,
+                                 MEMFAULT_ARRAY_SIZE(output_lines));
+
   mock().expectOneCall("memfault_coredump_storage_check_size").andReturnValue(true);
   uint32_t result = memfault_self_test_coredump_storage_capacity_test();
   UNSIGNED_LONGS_EQUAL(0, result);

@@ -709,6 +709,13 @@ config MEMFAULT_BUILD_META_IN_ELF
         help
           Include build meta in the ELF file.
 
+config MEMFAULT_DTS_IN_ELF
+        bool "Include DTS in the ELF file"
+        default y
+        help
+          When enabled, the DTS will be included as a non-loadable section in
+          the ELF file.
+
 module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"

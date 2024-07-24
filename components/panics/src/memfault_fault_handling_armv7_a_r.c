@@ -9,14 +9,6 @@
 #include "memfault/core/compiler.h"
 
 #if MEMFAULT_COMPILER_ARM_V7_A_R
-
-  //! Only ARMv7-R is officially supported, notify the user if compiling for
-  //! ARMv7-A
-  #if defined(__ARM_ARCH_7A__)
-    #pragma message \
-      "ARMv7-A is not officially supported yet by Memfault. Please contact support@memfault.com with questions!"
-  #endif
-
   #include "memfault/components.h"
   #include "memfault/panics/arch/arm/v7_a_r.h"
   #include "memfault/panics/coredump_impl.h"
@@ -42,27 +34,6 @@ extern void MEMFAULT_EXC_HANDLER_DATA_ABORT(void);
 extern void MEMFAULT_EXC_HANDLER_PREFETCH_ABORT(void);
 
 static eMemfaultRebootReason s_crash_reason = kMfltRebootReason_Unknown;
-
-//! These are the regs pushed by the exception wrapper, which are transcribed
-//! into 'struct MfltRegState' for the coredump.
-MEMFAULT_PACKED_STRUCT ExceptionPushedRegs {
-  uint32_t r0;
-  uint32_t r1;
-  uint32_t r2;
-  uint32_t r3;
-  uint32_t r4;
-  uint32_t r5;
-  uint32_t r6;
-  uint32_t r7;
-  uint32_t r8;
-  uint32_t r9;
-  uint32_t r10;
-  uint32_t r11;
-  uint32_t r12;
-  uint32_t sp;  // R13
-  uint32_t lr;  // R14
-  uint32_t cpsr;
-};
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   *num_regions = 0;
@@ -247,6 +218,17 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
   // We push callee r0-r12, lr, pc, and cpsr onto the stack, then pass the stack
   // pointer to the C memfault_fault_handler.
   //
+  // Note that r0-r7 are shared across all execution modes, and r8-r12 are
+  // shared in all modes except for FIQ.
+  //
+  // We need to ensure that we enter SYS MODE rather than USER MODE, so we
+  // perform a check and mask if the fault occurred in USER mode.
+  //
+  // In order to preserve the layout of `MfltRegState` and ensure that we don't
+  // clobber any registers, pushing to the stack to the stack is done out of
+  // order, moving the stack pointer around manually to ensure ordering is
+  // consistent.
+  //
   // Here's a worked example of the position the registers are saved on the stack:
   //
   // sp = 128 <- starting example stack pointer value
@@ -256,16 +238,10 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
   // cpsr @ 124
   // pc @ 120
   //
-  // // Now push user mode r8-r12, sp, lr, by first switching to user mode
-  // lr @ 116
-  // sp @ 112
-  // r12 @ 108
-  // r11 @ 104
-  // r10 @ 100
-  // r9 @ 96
-  // r8 @ 92
+  // // Now, create a hole for the user mode registers.
+  // sp -> 92
   //
-  // // Now switch back to exception mode, save r0-r7 to the stack
+  // // Now push r0-r7 to the stack
   // r7 @ 88
   // r6 @ 84
   // r5 @ 80
@@ -274,43 +250,39 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
   // r2 @ 68
   // r1 @ 64
   // r0 @ 60 <- this is the struct address we pass to memfault_fault_handler
-
+  //
+  // // Now enter user mode, with r2 address @ 120 (the hole we made earlier)
+  // // Now push user mode r8-r12, sp, lr, using r2 as the stack pointer
+  // lr @ 116
+  // sp @ 112
+  // r12 @ 108
+  // r11 @ 104
+  // r10 @ 100
+  // r9 @ 96
+  // r8 @ 92
+  //
+  // // Now switch back to exception mode, set up args in r0 & r1, and call the
+  // // fault handler.
     #define MEMFAULT_FAULT_HANDLING_ASM(_mode_string, _reason)                                     \
-      __asm volatile(          /* assemble in ARM mode so we can copy sp with a stm instruction */ \
-                     ".arm \n" /* save callee pc (exception handler adjusted lr) + spsr (callee    \
-                                  cpsr) of the current mode */                                     \
-                     "srsdb sp!, #" _mode_string                                                   \
-                     " \n" /* push user mode regs at point of fault, including sp + lr */          \
-                     "mov r8, r1 \n"                                                               \
-                     "mov r1, sp \n" /* Save SPSR and mask mode bits */                            \
-                     "mrs r9, spsr \n"                                                             \
-                     "and r9, #0x1f \n" /* Check each applicable mode and set current mode on a    \
-                                           match */                                                \
-                     "cmp r9, #" CPU_MODE_IRQ_STR " \n"                                            \
-                     "bne fiq_mode_%= \n"                                                          \
-                     "cps #" CPU_MODE_IRQ_STR " \n"                                                \
-                     "b store_regs_%= \n"                                                          \
-                     "fiq_mode_%=: \n"                                                             \
-                     "cmp r9, #" CPU_MODE_FIQ_STR " \n"                                            \
-                     "bne supervisor_mode_%= \n"                                                   \
-                     "cps #" CPU_MODE_FIQ_STR " \n"                                                \
-                     "b store_regs_%= \n"                                                          \
-                     "supervisor_mode_%=: \n"                                                      \
-                     "cmp r9, #" CPU_MODE_SUPERVISOR_STR " \n"                                     \
-                     "bne system_mode_%= \n"                                                       \
-                     "cps #" CPU_MODE_SUPERVISOR_STR " \n"                                         \
-                     "b store_regs_%= \n" /* Fall back to system mode if no match */               \
-                     "system_mode_%=: \n"                                                          \
-                     "cps #" CPU_MODE_SYSTEM_STR " \n"                                             \
-                     "store_regs_%=: \n"                                                           \
-                     "stmfd r1!, {r8-r12, sp, lr} \n"                                              \
-                     "cps #" _mode_string " \n" /* save active registers in exception frame */     \
-                     "mov sp, r1 \n"                                                               \
-                     "mov r1, r8 \n"                                                               \
-                     "stmfd sp!, {r0-r7} \n" /* load the pushed frame and reason into r0+r1 for    \
-                                                the handler args */                                \
-                     "mov r0, sp \n"                                                               \
-                     "ldr r1, =%c0 \n"                                                             \
+      __asm volatile(".arm \n" /* assemble in ARM mode so we can copy sp with a stm instruction */ \
+                                                                                                   \
+                     "srsdb sp!, #" _mode_string " \n" /* Push PC + CPSR of previous mode */       \
+                     "sub sp, sp, #28 \n"              /* Want r0-r7 after r8 - r14, make space */ \
+                     "stmfd sp!, {r0-r7} \n"           /* Push r0-r7, shared amongst all modes */  \
+                     "add r2, sp, #60 \n"              /* r2 for previous mode to push r8-r14 */   \
+                                                                                                   \
+                     "mrs r3, cpsr \n"       /* r3: CPSR to return to exception mode */            \
+                     "mrs r4, spsr \n"       /* Get the previous mode CPSR */                      \
+                     "tst r4, #0xf \n"       /* Set Z Flag if in USR mode */                       \
+                     "orreq r4, r4, #0xf \n" /* r4: Previous mode changed to SYS if was USR */     \
+                                                                                                   \
+                     "msr CPSR_c, r4 \n"              /* Enter the previous mode */                \
+                     "stmfd r2!, {r8-r12, sp, lr} \n" /* Push all banked registers */              \
+                                                                                                   \
+                     "msr CPSR_cxsf, r3 \n" /* Back to our exception mode */                       \
+                                                                                                   \
+                     "mov r0, sp \n"   /* arg0 = sp */                                             \
+                     "ldr r1, =%c0 \n" /* arg1 = reason */                                         \
                      "b memfault_fault_handler \n"                                                 \
                      :                                                                             \
                      : "i"((uint16_t)_reason))

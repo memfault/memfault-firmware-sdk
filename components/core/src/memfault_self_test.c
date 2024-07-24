@@ -336,9 +336,9 @@ MEMFAULT_NO_OPT static uint32_t prv_get_time_since_boot_test(void) {
 
   uint64_t end_time_ms = memfault_platform_get_time_since_boot_ms();
   if ((end_time_ms <= start_time_ms)) {
-    MEMFAULT_LOG_ERROR("Time since boot not monotonically increasing: start[%" PRIu64
-                       "] vs end[%" PRIu64 "]",
-                       start_time_ms, end_time_ms);
+    MEMFAULT_LOG_ERROR("Time since boot not monotonically increasing: start[%" PRIu32
+                       "] vs end[%" PRIu32 "]",
+                       (uint32_t)start_time_ms, (uint32_t)end_time_ms);
     return (1 << 1);
   }
 
@@ -369,12 +369,13 @@ static uint32_t prv_platform_time_get_current_test(void) {
   }
 
   if (time.info.unix_timestamp_secs < MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR) {
-    MEMFAULT_LOG_ERROR("Timestamp too far in the past: %" PRIu64, time.info.unix_timestamp_secs);
+    MEMFAULT_LOG_ERROR("Timestamp too far in the past: %" PRIu32,
+                       (uint32_t)time.info.unix_timestamp_secs);
     return (1 << 4);
   }
 
-  MEMFAULT_LOG_INFO("Verify received timestamp for accuracy. Timestamp received %" PRIu64,
-                    time.info.unix_timestamp_secs);
+  MEMFAULT_LOG_INFO("Verify received timestamp for accuracy. Timestamp received %" PRIu32,
+                    (uint32_t)time.info.unix_timestamp_secs);
   return 0;
 }
 
@@ -390,9 +391,16 @@ uint32_t memfault_self_test_time_test(void) {
 
 uint32_t memfault_self_test_coredump_storage_capacity_test(void) {
   MEMFAULT_SELF_TEST_PRINT_HEADER("Coredump Storage Capacity Test");
-  bool result = memfault_coredump_storage_check_size();
+  bool capacity_ok = memfault_coredump_storage_check_size();
+  if (capacity_ok) {
+    size_t total_size = 0;
+    size_t capacity = 0;
+    memfault_coredump_size_and_storage_capacity(&total_size, &capacity);
+    MEMFAULT_LOG_INFO("Total size required: %u bytes", (unsigned)total_size);
+    MEMFAULT_LOG_INFO("Storage capacity: %u bytes", (unsigned)capacity);
+  }
   MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
-  return result ? 0 : 1;
+  return capacity_ok ? 0 : 1;
 }
 
 uint32_t memfault_self_test_coredump_storage_test(void) {
