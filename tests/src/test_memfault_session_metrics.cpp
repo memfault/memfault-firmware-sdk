@@ -57,7 +57,7 @@ static void session_end_cb(void) {
 
 static void session_start_cb(void) {
   // Set a metric value to ensure that metrics are reset before session_start_cb
-  memfault_metrics_heartbeat_set_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), 1);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(test_unsigned, test_key_session, 1);
   mock().actualCall(__func__);
 }
 
@@ -81,7 +81,8 @@ TEST_GROUP(MemfaultSessionMetrics){
 // clang-format on
 
 TEST(MemfaultSessionMetrics, Test_SessionTimer) {
-  MemfaultMetricId key = MEMFAULT_METRICS_KEY(mflt_session_timer_test_key_session);
+  MemfaultMetricId key =
+    MEMFAULT_METRICS_KEY_WITH_SESSION(MemfaultSdkMetric_IntervalMs, test_key_session);
 
   uint64_t expected = 100;
   int rv = 0;
@@ -101,7 +102,7 @@ TEST(MemfaultSessionMetrics, Test_SessionTimer) {
 }
 
 TEST(MemfaultSessionMetrics, Test_StringKey) {
-  MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_string);
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY_WITH_SESSION(test_string, test_key_session);
 #define TEST_STRING "test_string"
 
   int rv = memfault_metrics_heartbeat_set_string(key, TEST_STRING);
@@ -145,8 +146,8 @@ TEST(MemfaultSessionMetrics, Test_RegisterSessionStartCb) {
 
   // Check that a session metric is unset before the session starts
   uint32_t val = 0;
-  int rv =
-    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+  int rv = memfault_metrics_heartbeat_read_unsigned(
+    MEMFAULT_METRICS_KEY_WITH_SESSION(test_unsigned, test_key_session), &val);
 
   LONGS_EQUAL(-7, rv);
   LONGS_EQUAL(0, val);
@@ -156,8 +157,8 @@ TEST(MemfaultSessionMetrics, Test_RegisterSessionStartCb) {
   MEMFAULT_METRICS_SESSION_START(test_key_session);
 
   // Check that the metric is set after the session starts. Metric is set within the start callback
-  rv =
-    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+  rv = memfault_metrics_heartbeat_read_unsigned(
+    MEMFAULT_METRICS_KEY_WITH_SESSION(test_unsigned, test_key_session), &val);
 
   LONGS_EQUAL(0, rv);
   LONGS_EQUAL(1, val);
@@ -166,8 +167,8 @@ TEST(MemfaultSessionMetrics, Test_RegisterSessionStartCb) {
 
   // Check that the metric is set after the session ends. Metrics are reset at session start, not
   // end
-  rv =
-    memfault_metrics_heartbeat_read_unsigned(MEMFAULT_METRICS_KEY(test_session_key_unsigned), &val);
+  rv = memfault_metrics_heartbeat_read_unsigned(
+    MEMFAULT_METRICS_KEY_WITH_SESSION(test_unsigned, test_key_session), &val);
 
   LONGS_EQUAL(0, rv);
   LONGS_EQUAL(1, val);

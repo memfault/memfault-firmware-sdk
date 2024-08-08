@@ -48,6 +48,7 @@ static int prv_freertos_vassert_cmd(int argc, char *argv[]) {
   configASSERT(0);
   return 0;
 }
+
 // print all task information
 static int prv_freertos_tasks_cmd(int argc, char *argv[]) {
   (void)argc, (void)argv;
@@ -63,12 +64,50 @@ static int prv_freertos_tasks_cmd(int argc, char *argv[]) {
 
   return 0;
 }
+
 static int prv_fake_fw_update_error_assert_cmd(int argc, char *argv[]) {
   (void)argc, (void)argv;
   printf("Triggering fake firmware update error assert!\n");
   MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_FirmwareUpdateError);
   return 0;
 }
+
+MEMFAULT_WEAK int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
+  (void)session_key;
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+  return 0;
+}
+
+MEMFAULT_WEAK int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
+  (void)session_key;
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+  return 0;
+}
+
+MEMFAULT_WEAK int memfault_metrics_heartbeat_set_string(MemfaultMetricId key, const char *value) {
+  (void)key;
+  (void)value;
+  MEMFAULT_LOG_RAW("Disabled. metrics component integration required");
+  return 0;
+}
+
+static int prv_session(int argc, char *argv[]) {
+  const char *cmd_name = "UNKNOWN";
+  if (argc > 1) {
+    cmd_name = argv[1];
+  }
+
+  printf("Executing a test metrics session named 'cli'\n");
+  MEMFAULT_METRICS_SESSION_START(cli);
+  // API v1
+  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name);
+  // API v2
+  MEMFAULT_METRIC_SESSION_SET_STRING(cli_cmd_name, cli, cmd_name);
+  MEMFAULT_METRICS_SESSION_END(cli);
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -84,6 +123,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "fwup_assert",
     .handler = prv_fake_fw_update_error_assert_cmd,
     .help = "Trigger fake firmware update error assert",
+  },
+  {
+    .command = "session",
+    .handler = prv_session,
+    .help = "Execute a test metrics session named 'cli'",
   },
 };
 #endif

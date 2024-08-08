@@ -5,6 +5,9 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 //!
+//! Copyright (c) Memfault, Inc.
+//! See License.txt for details
+//!
 //! NOTE: The internals of the metric APIs make use of "X-Macros" to enable more flexibility
 //! improving and extending the internal implementation without impacting the externally facing API
 
@@ -14,41 +17,24 @@ extern "C" {
 
 #include "memfault/config.h"
 
-#define MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name) mflt_session_timer_##key_name
+// Clear any potential issues from transitive dependencies in these files by
+// including them one time, with stubs for the macros we need to define. This
+// set up any multiple-include guards, and we can safely include the x-macro
+// definitions later.
 
-//! Generate extern const char * declarations for all IDs (used in key names):
-#define MEMFAULT_METRICS_KEY_DEFINE_(key_name) \
-  extern const char *const g_memfault_metrics_id_##key_name;
+#define MEMFAULT_METRICS_KEY_DEFINE(...)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(...)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(...)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(...)
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(...)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(...)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(...)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(...)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(...)
 
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
-
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
-
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name), _)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
-                                                           max_value, session_name)         \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
-                                                                 session_key, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) MEMFAULT_METRICS_KEY_DEFINE_(key_name)
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+
 #undef MEMFAULT_METRICS_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
@@ -56,11 +42,11 @@ extern "C" {
 #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
-#undef MEMFAULT_METRICS_KEY_DEFINE_
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 
-#define MEMFAULT_METRICS_KEY_DEFINE_(key_name) kMfltMetricsIndex_##key_name,
+#define MEMFAULT_METRICS_KEY_DEFINE_(session_name, key_name) \
+  kMfltMetricsIndex_##session_name##__##key_name,
 
 //! Generate an enum for all IDs (used for indexing into values)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
@@ -70,26 +56,29 @@ extern "C" {
   MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
 
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, _)
+  MEMFAULT_METRICS_KEY_DEFINE_(session_name, key_name)
 
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name), _)
+//! Sessions have the following built-in keys:
+//! - "<session name>__MemfaultSdkMetric_IntervalMs"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name) \
+  kMfltMetricsIndex_##session_name##__##MemfaultSdkMetric_IntervalMs,
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE_(session_name, key_name)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_name)         \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE_(session_name, key_name)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
                                                                  session_key, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE_(session_key, key_name)
 
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) MEMFAULT_METRICS_KEY_DEFINE_(key_name)
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
+  MEMFAULT_METRICS_KEY_DEFINE_(heartbeat, key_name)
 
 typedef enum MfltMetricsIndex {
 #include "memfault/metrics/heartbeat_config.def"
@@ -103,17 +92,19 @@ typedef enum MfltMetricsIndex {
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
-} eMfltMetricsIndex;
+} eMfltMetricsIndexV2;
+typedef eMfltMetricsIndexV2 eMfltMetricsIndex;
 
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) kMfltMetricsSessionKey_##key_name,
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value)
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
+
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_name)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_name)
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                  session_key, scale_value)
@@ -149,10 +140,11 @@ typedef struct {
 
 #define MEMFAULT_METRICS_SESSION_KEY(key_name) kMfltMetricsSessionKey_##key_name
 
-#define _MEMFAULT_METRICS_ID_CREATE(id) \
-  { kMfltMetricsIndex_##id }
+#define _MEMFAULT_METRICS_ID_CREATE(id, session_name) \
+  { kMfltMetricsIndex_##session_name##__##id }
 
-#define _MEMFAULT_METRICS_ID(id) ((MemfaultMetricId){ kMfltMetricsIndex_##id })
+#define _MEMFAULT_METRICS_ID(id, session_name) \
+  ((MemfaultMetricId){ kMfltMetricsIndex_##session_name##__##id })
 
 #ifdef __cplusplus
 }

@@ -258,6 +258,27 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
 }
 #endif
 
+static int prv_metrics_session(const struct shell *shell, size_t argc, char **argv) {
+  const char *cmd_name = "UNKNOWN";
+  if (argc > 1) {
+    cmd_name = argv[1];
+  }
+
+  shell_print(shell, "Executing a test metrics session named 'cli'\n");
+
+  MEMFAULT_METRICS_SESSION_START(cli);
+  // API v1
+  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name);
+  // API v2
+  MEMFAULT_METRIC_SESSION_SET_STRING(cli_cmd_name, cli, cmd_name);
+  MEMFAULT_METRICS_SESSION_END(cli);
+
+  return 0;
+}
+
+SHELL_CMD_REGISTER(metrics_session, NULL, "Trigger a one-time metrics session for testing",
+                   prv_metrics_session);
+
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();

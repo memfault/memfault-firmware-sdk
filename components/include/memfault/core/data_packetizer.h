@@ -44,8 +44,8 @@ typedef enum {
   kMemfaultPacketizerStatus_EndOfChunk,
 
   //! Indicates there is more data to be received for the chunk. This will _only_ be returned
-  //! as a value if multi packet chunking has been enabled by a call to
-  //! memfault_packetizer_enable_multi_packet_chunks()
+  //! as a value if multi packet chunking has been enabled by setting the boolean option
+  //! enable_multi_packet_chunk to true in the packetizer config (sPacketizerConfig)
   kMemfaultPacketizerStatus_MoreDataForChunk,
 } eMemfaultPacketizerStatus;
 

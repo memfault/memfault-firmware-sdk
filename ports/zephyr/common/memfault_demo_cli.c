@@ -186,6 +186,16 @@ static int prv_hang_example(const struct shell *shell, size_t argc, char **argv)
 #if defined(CONFIG_ARM)
 
 static int prv_busfault_example(const struct shell *shell, size_t argc, char **argv) {
+  #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK) && defined(CONFIG_BUILD_WITH_TFM) && \
+    !defined(CONFIG_TFM_ALLOW_NON_SECURE_FAULT_HANDLING)
+  // Starting in NCS v2.6.0, enabling CONFIG_TFM_ALLOW_NON_SECURE_FAULT_HANDLING will cause
+  // Memfault's fault handlers to be invoked for BusFaults originating from non-secure code.
+  shell_print(shell, "CONFIG_TFM_ALLOW_NON_SECURE_FAULT_HANDLING is disabled or undefined, no "
+                     "coredump will be collected");
+
+  // Allow the shell output buffer to be flushed before the crash
+  k_sleep(K_MSEC(100));
+  #endif
   //! Note: The Zephyr fault handler dereferences the pc which triggers a fault
   //! if the pc itself is from a bad pointer:
   //! https://github.com/zephyrproject-rtos/zephyr/blob/f400c94/arch/arm/core/aarch32/cortex_m/fault.c#L664
@@ -200,6 +210,15 @@ static int prv_busfault_example(const struct shell *shell, size_t argc, char **a
 }
 
 static int prv_hardfault_example(const struct shell *shell, size_t argc, char **argv) {
+  #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK) && defined(CONFIG_BUILD_WITH_TFM)
+  // Memfault's fault handlers are not invoked during the handling of HardFaults in NCS when using
+  // TF-M. CONFIG_TFM_ALLOW_NON_SECURE_FAULT_HANDLING=y will only invoke Memfault's fault handlers
+  // for BusFaults and SecureFaults originating from non-secure code, not Hardfaults.
+  shell_print(shell, "HardFaults are handled by TF-M, no coredump will be collected");
+
+  // Allow the shell output buffer to be flushed before the crash
+  k_sleep(K_MSEC(100));
+  #endif
   memfault_demo_cli_cmd_hardfault(argc, argv);
   return -1;
 }

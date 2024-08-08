@@ -109,9 +109,12 @@ CFLAGS += \
     -Werror \
     -Wall \
     -Wextra \
+    -ffunction-sections \
+    -fdata-sections \
     -ggdb3 \
     -Og \
     -MD \
+    -fdebug-prefix-map="$(shell pwd)"=. \
     $(ARCH_CFLAGS) \
 
 # Enable the self test by default
@@ -129,6 +132,7 @@ LDFLAGS += \
     -Wl,-lrdimon \
     -Wl,-Map=$(BUILD_DIR)/main.map \
     -Wl,--build-id \
+    -Wl,--print-memory-usage \
 
 .PHONY: all
 all: $(ELF)
@@ -194,6 +198,11 @@ gdb: $(ELF)
 .PHONY: run
 run: $(ELF)
 	$(RUN_COMMAND)
+
+# This target dumps the preprocessed output of the memfault_metrics.c file
+.PHONY: memfault_metrics.c
+memfault_metrics.c: # build/qemu_mps2_an385/memfault-firmware-sdk/components/metrics/src/memfault_metrics.c.o
+	$(CC) $(CFLAGS:-MD=) $(INCLUDE_PATHS) -c $(MEMFAULT_SDK_ROOT)/components/metrics/src/memfault_metrics.c -E -P -o -
 
 .PHONY: clean
 clean:

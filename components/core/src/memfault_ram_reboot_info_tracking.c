@@ -128,19 +128,19 @@ static void prv_record_reboot_reason(eMemfaultRebootReason reboot_reg_reason,
 }
 
 static bool prv_get_unexpected_reboot_occurred(void) {
-  // Check prior_stored_reason, reboot is unexpected if prior reason is set and in error range or
-  // unknown
+  // Use prior_stored_reason as source of reboot reason. Fallback to reboot_reg_reason if
+  // prior_stored_reason is not set
+  eMemfaultRebootReason reboot_reason;
   if (s_reboot_reason_data.prior_stored_reason !=
       (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
-    if (s_reboot_reason_data.prior_stored_reason == kMfltRebootReason_Unknown ||
-        s_reboot_reason_data.prior_stored_reason >= kMfltRebootReason_UnknownError) {
-      return true;
-    }
+    reboot_reason = s_reboot_reason_data.prior_stored_reason;
+  } else {
+    reboot_reason = s_reboot_reason_data.reboot_reg_reason;
   }
 
-  // Check reboot_reg_reason second, reboot is unexpected if in error range or unknown
-  return (s_reboot_reason_data.reboot_reg_reason == kMfltRebootReason_Unknown ||
-          s_reboot_reason_data.reboot_reg_reason >= kMfltRebootReason_UnknownError);
+  // Check if selected reboot_reason is unexpected if in error range or unknown
+  return (reboot_reason == kMfltRebootReason_Unknown ||
+          reboot_reason >= kMfltRebootReason_UnknownError);
 }
 
 static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,

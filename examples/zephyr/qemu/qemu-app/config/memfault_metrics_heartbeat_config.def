@@ -3,3 +3,10 @@ MEMFAULT_METRICS_KEY_DEFINE(MainStack_MinBytesFree, kMemfaultMetricType_Unsigned
 // a percentage 0.0-100.0%
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(main_thread_cpu_time_permille, kMemfaultMetricType_Unsigned, 10)
 MEMFAULT_METRICS_KEY_DEFINE(shell_uart_stack_free_bytes, kMemfaultMetricType_Unsigned)
+
+// Example "cli" session
+MEMFAULT_METRICS_SESSION_KEY_DEFINE(cli)
+MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(cli_cmd_name, 16, cli)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(cli_time, kMemfaultMetricType_Unsigned, cli)
+// Pathological key name, to test that heartbeat key extraction handles it correctly
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(__cli__cli__, kMemfaultMetricType_Unsigned, cli)

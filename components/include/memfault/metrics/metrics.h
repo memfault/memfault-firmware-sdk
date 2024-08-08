@@ -129,11 +129,20 @@ typedef enum MemfaultMetricValueType {
 //! when the modem is powered off.
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
-//! Uses a metric key. Before you can use a key, it should defined using MEMFAULT_METRICS_KEY_DEFINE
-//! in memfault_metrics_heartbeat_config.def.
+//! Use a Heartbeat metric key. Before you can use a key, it should defined using
+//! MEMFAULT_METRICS_KEY_DEFINE in memfault_metrics_heartbeat_config.def.
 //! @param key_name The name of the key, without quotes, as defined using
 //! MEMFAULT_METRICS_KEY_DEFINE.
-#define MEMFAULT_METRICS_KEY(key_name) _MEMFAULT_METRICS_ID(key_name)
+#define MEMFAULT_METRICS_KEY(key_name) _MEMFAULT_METRICS_ID(key_name, heartbeat)
+
+//! Use a Session metric key. Before you can use a key, it should defined using
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION etc in memfault_metrics_heartbeat_config.def.
+//! @param key_name The name of the key, without quotes, as defined using
+//! MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION etc
+//! @param session_key The name of the session, without quotes, as defined using
+//! MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#define MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key) \
+  _MEMFAULT_METRICS_ID(key_name, session_key)
 
 typedef struct MemfaultMetricsBootInfo {
   //! The number of times the system has rebooted unexpectedly since reporting the last heartbeat
@@ -219,6 +228,23 @@ int memfault_metrics_heartbeat_add(MemfaultMetricId key, int32_t amount);
   memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY(key_name))
 #define MEMFAULT_METRIC_ADD(key_name, amount) \
   memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY(key_name), (amount))
+
+//! Alternate API for Session metrics
+#define MEMFAULT_METRIC_SESSION_SET_SIGNED(key_name, session_key, signed_value)                   \
+  memfault_metrics_heartbeat_set_signed(MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key), \
+                                        (signed_value))
+#define MEMFAULT_METRIC_SESSION_SET_UNSIGNED(key_name, session_key, unsigned_value) \
+  memfault_metrics_heartbeat_set_unsigned(                                          \
+    MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key), (unsigned_value))
+#define MEMFAULT_METRIC_SESSION_SET_STRING(key_name, session_key, value)                          \
+  memfault_metrics_heartbeat_set_string(MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key), \
+                                        (value))
+#define MEMFAULT_METRIC_SESSION_TIMER_START(key_name, session_key) \
+  memfault_metrics_heartbeat_timer_start(MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key))
+#define MEMFAULT_METRIC_SESSION_TIMER_STOP(key_name, session_key) \
+  memfault_metrics_heartbeat_timer_stop(MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key))
+#define MEMFAULT_METRIC_SESSION_ADD(key_name, session_key, amount) \
+  memfault_metrics_heartbeat_add(MEMFAULT_METRICS_KEY_WITH_SESSION(key_name, session_key), (amount))
 
 //! For debugging purposes: prints the current heartbeat values using
 //! MEMFAULT_LOG_DEBUG(). Before printing, any active timer values are computed.

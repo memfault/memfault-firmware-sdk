@@ -91,8 +91,7 @@ static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
                                                            max_value, session_key)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key)
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
-  MEMFAULT_METRICS_SESSION_KEY_DEFINE_(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name)),
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE_(key_name) _MEMFAULT_METRICS_ID(key_name)
+  MEMFAULT_METRICS_KEY_WITH_SESSION(MemfaultSdkMetric_IntervalMs, key_name),
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                  session_key, scale_value)
@@ -107,7 +106,6 @@ static MemfaultMetricId s_memfault_metrics_session_timer_keys[] = {
 #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
-#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE_
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
   { 0 }  // dummy entry to prevent empty array
@@ -127,27 +125,31 @@ typedef struct MemfaultMetricKVPair {
   uint32_t scale_value;
 } sMemfaultMetricKVPair;
 
-#define MEMFAULT_KV_PAIR_ENTRY_(key_name, value_type, min_value, max_value, session, scale_val) \
-  {                                                                                             \
-    .key = _MEMFAULT_METRICS_ID_CREATE(key_name),                                               \
-    .type = value_type,                                                                         \
-    .min = (uint32_t)min_value,                                                                 \
-    .range = ((int64_t)max_value - (int64_t)min_value),                                         \
-    .session_key = session,                                                                     \
-    .scale_value = scale_val,                                                                   \
+#define MEMFAULT_KV_PAIR_ENTRY_(key_name, value_type, min_value, max_value, key_id, session, \
+                                scale_val)                                                   \
+  {                                                                                          \
+    .key = key_id,                                                                           \
+    .type = value_type,                                                                      \
+    .min = (uint32_t)min_value,                                                              \
+    .range = ((int64_t)max_value - (int64_t)min_value),                                      \
+    .session_key = session,                                                                  \
+    .scale_value = scale_val,                                                                \
   },
 
-#define MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, min_value, max_value, session, scale_value) \
-  MEMFAULT_KV_PAIR_ENTRY_(key_name, value_type, min_value, max_value, session, scale_value)
+#define MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, min_value, max_value, key_id, session, \
+                               scale_value)                                                 \
+  MEMFAULT_KV_PAIR_ENTRY_(key_name, value_type, min_value, max_value, key_id, session, scale_value)
 
 // Generate heartbeat keys table (ROM):
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session)              \
   MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, min_value, max_value,                        \
+                         _MEMFAULT_METRICS_ID_CREATE(key_name, session),                    \
                          MEMFAULT_METRICS_SESSION_KEY(session), 1)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value) \
   MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, min_value, max_value,                       \
+                         _MEMFAULT_METRICS_ID_CREATE(key_name, heartbeat),                 \
                          MEMFAULT_METRICS_SESSION_KEY(heartbeat), 1)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
@@ -164,18 +166,20 @@ typedef struct MemfaultMetricKVPair {
   MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, kMemfaultMetricType_String, 0, \
                                                      max_length, session_key)
 
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                                              \
-  MEMFAULT_KV_PAIR_ENTRY(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name), kMemfaultMetricType_Timer, \
-                         0, 0, MEMFAULT_METRICS_SESSION_KEY(key_name), 1)
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(MemfaultSdkMetric_IntervalMs, \
+                                           kMemfaultMetricType_Timer, session_name)
 
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)       \
-  MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, 0, 0, MEMFAULT_METRICS_SESSION_KEY(heartbeat), \
-                         scale_value)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, 0, 0,                                    \
+                         _MEMFAULT_METRICS_ID_CREATE(key_name, heartbeat),              \
+                         MEMFAULT_METRICS_SESSION_KEY(heartbeat), scale_value)
 
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,          \
-                                                                 session_key, scale_value)      \
-  MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, 0, 0, MEMFAULT_METRICS_SESSION_KEY(session_key), \
-                         scale_value)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, 0, 0,                                       \
+                         _MEMFAULT_METRICS_ID_CREATE(key_name, session_key),               \
+                         MEMFAULT_METRICS_SESSION_KEY(session_key), scale_value)
 
 static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 #include "memfault/metrics/heartbeat_config.def"
@@ -203,9 +207,9 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
   MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
 
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                        \
-  MEMFAULT_METRICS_KEY_DEFINE(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name), \
-                              kMemfaultMetricType_Timer)
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                     \
+  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##MemfaultSdkMetric_IntervalMs, \
+                              kMemfaultMetricType_Unsigned)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_key)          \
@@ -253,19 +257,17 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
   MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, kMemfaultMetricType_String)
-
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
-  MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+  MEMFAULT_METRICS_STRING_KEY_DEFINE(session_key##__##key_name, max_length)
 
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                        \
-  MEMFAULT_METRICS_KEY_DEFINE(MEMFAULT_METRICS_SESSION_TIMER_NAME(key_name), \
-                              kMemfaultMetricType_Timer)
+//! Sessions have the following built-in keys:
+//! - "<session name>__MemfaultSdkMetric_IntervalMs"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##MemfaultSdkMetric_IntervalMs, kMemfaultMetricType_Timer)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_key)          \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
   MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, 0, 0, session_key)
@@ -275,20 +277,7 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
                                                                  session_key, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-// Generate global ID constants (ROM):
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type) \
-  const char *const g_memfault_metrics_id_##key_name = MEMFAULT_EXPAND_AND_QUOTE(key_name);
-
-#include "memfault/metrics/heartbeat_config.def"
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-#undef MEMFAULT_METRICS_KEY_DEFINE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
-#undef MEMFAULT_METRICS_KEY_DEFINE_
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_keys) != 0,
                        "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined");

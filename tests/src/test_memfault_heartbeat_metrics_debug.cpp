@@ -77,7 +77,6 @@ TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   const sMemfaultEventStorageImpl *s_fake_event_storage_impl =
     memfault_events_storage_boot(&s_storage, sizeof(s_storage));
   mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
-
   sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
   int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(0, rv);

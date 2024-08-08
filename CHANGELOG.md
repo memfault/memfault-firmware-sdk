@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2024-08-07
+
+### :boom: Breaking Changes
+
+- Add support for namespacing
+  [Session Metrics](https://docs.memfault.com/docs/mcu/metrics-api#session-metrics)
+  to support duplicate key names across heartbeats and sessions (eg
+  `heartbeat.cpu_temp` and `session.cpu_temp`). This requires a change to how
+  Session Metrics keys are set:
+
+  - Before: `MEMFAULT_METRIC_SET_SIGNED(cpu_temp, 25)` (only 1 metric key
+    `cpu_temp` supported across heartbeats/sessions)
+  - After:
+    - `MEMFAULT_METRIC_SET_SIGNED(cpu_temp, 25)` for setting
+      `heartbeat.cpu_temp`
+    - `MEMFAULT_METRIC_SESSION_SET_SIGNED(cpu_temp, session, 25)` for setting
+      `session.cpu_temp`
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Fix a :bug: in reboot tracking classification when calling
+    `memfault_reboot_tracking_boot()` with a `bootup_info` parameter containing
+    an unexpected type of reboot reason (or no reboot reason) after a previously
+    recorded expected reason. This results in
+    ["Expected Reboots"](components/include/memfault/core/reboot_reason_types.h#L33)
+    recorded using `MEMFAULT_REBOOT_MARK_RESET_IMMINENT()` to be incorrectly
+    flagged as an "Unexpected Reboot" and causes an incorrect
+    `operational_crashfree_hours` metric getting reported and a lower Stability
+    score.
+
+  - Cleanup comment to old packetizer API
+
+  - Add `-fdebug-prefix-map` to FreeRTOS QEMU example
+
+- ESP-IDF:
+
+  - Improved the CLI results when running the `post_chunks` test command (used
+    to trigger an upload to Memfault) to be more informative, for example:
+
+    ```bash
+    esp32> post_chunks
+    I (12593) mflt: Data posted successfully, 262285 bytes sent
+    esp32> post_chunks
+    I (204093) mflt: No new data found
+    ```
+
+- Zephyr
+
+  - Update samples to use the newly-released Zephyr v3.7.0 🥳
+
+  - Add explanatory output to Memfault `test busfault|hardfault` shell commands
+    when Trusted Firmware-M (TF-M) is in use
+
+  - The RTC-based implementation of
+    [`memfault_platform_time_get_current()`](ports/zephyr/common/memfault_platform_system_time.c)
+    used a define named `RTC`, which conflicts with the STM32 HAL definition
+    [here](https://github.com/zephyrproject-rtos/hal_stm32/blob/f1317150eac951fdd8259337a47cbbc4c2e6d335/stm32cube/stm32h7xx/soc/stm32h7b3xxq.h#L2441-L2442).
+    Rename the define to `MFLT_RTC_NODE` to avoid the conflict.
+
+- nRF-Connect SDK:
+
+  - Fix a compilation error when building NCS v2.7.0 with the latest Memfault
+    firmware SDK (v1.10.1, the previous SDK release).
+
 ## [1.10.1] - 2024-07-24
 
 ### :chart_with_upwards_trend: Improvements

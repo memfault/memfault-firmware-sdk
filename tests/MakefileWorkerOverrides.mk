@@ -5,7 +5,8 @@
 CPPUTEST_HOME ?= /usr
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
-CURRENT_DIR := $(dir $(MKFILE_PATH))
+# Strip trailing slash off the current directory specifier
+CURRENT_DIR := $(patsubst %/,%,$(dir $(MKFILE_PATH)))
 
 # Explicitly insert the cpputest lib directory to search paths; this supports
 # the conda use case, where the libs are not set to the system linker

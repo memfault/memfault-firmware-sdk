@@ -3,6 +3,9 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
+#if defined(DEBUG_COMPACT_LOGS)
+  #include <stdio.h>
+#endif
 #include <sys/times.h>
 
 #include "FreeRTOS.h"

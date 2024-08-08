@@ -47,3 +47,6 @@ CONFIG_MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE=y
 
 # Enable compact logging
 CONFIG_MEMFAULT_COMPACT_LOG_ENABLE=y
+
+# Enable periodic upload thread for posting Memfault data
+CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y

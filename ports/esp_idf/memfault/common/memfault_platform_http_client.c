@@ -38,6 +38,9 @@ MEMFAULT_STATIC_ASSERT(
 
 sMfltHttpClientConfig g_mflt_http_client_config = { .api_key = CONFIG_MEMFAULT_PROJECT_KEY };
 
+// Track the number of bytes sent in each data post operation
+size_t g_chunk_bytes_sent;
+
   #if MEMFAULT_HTTP_DEBUG
 static esp_err_t prv_http_event_handler(esp_http_client_event_t *evt) {
   switch (evt->event_id) {
@@ -76,7 +79,9 @@ static esp_err_t prv_http_event_handler(esp_http_client_event_t *evt) {
 }
   #endif  // MEMFAULT_HTTP_DEBUG
 
-static int prv_post_chunks(esp_http_client_handle_t client, void *buffer, size_t buf_len) {
+static int prv_post_chunks(esp_http_client_handle_t client, void *buffer, size_t buf_len,
+                           size_t *chunk_bytes_sent) {
+  *chunk_bytes_sent = 0;
   // drain all the chunks we have
   while (1) {
     // NOTE: Ideally we would be able to enable multi packet chunking which would allow a chunk to
@@ -89,6 +94,8 @@ static int prv_post_chunks(esp_http_client_handle_t client, void *buffer, size_t
     if (!more_data) {
       break;
     }
+
+    *chunk_bytes_sent += read_size;
 
     esp_http_client_set_post_field(client, buffer, read_size);
     esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
@@ -282,7 +289,7 @@ int memfault_esp_port_ota_get_release_url(char **download_url_out) {
   status_code = esp_http_client_get_status_code(client);
   if (status_code != 200 && status_code != 204) {
     MEMFAULT_LOG_ERROR("OTA Query Failure. Status Code: %d", status_code);
-    MEMFAULT_LOG_INFO("Request Body: %s", download_url);
+    MEMFAULT_LOG_INFO("Response Body: %s", download_url);
     goto cleanup;
   }
 
@@ -382,7 +389,7 @@ int memfault_platform_http_client_post_data(sMfltHttpClient *_client,
   esp_http_client_set_method(client, HTTP_METHOD_POST);
   esp_http_client_set_header(client, "Accept", "application/json");
 
-  int rv = prv_post_chunks(client, buffer, buffer_size);
+  int rv = prv_post_chunks(client, buffer, buffer_size, &g_chunk_bytes_sent);
   memfault_http_client_release_chunk_buffer(buffer);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("%s failed: %d", __func__, (int)rv);
@@ -395,8 +402,12 @@ int memfault_platform_http_client_post_data(sMfltHttpClient *_client,
   if (callback) {
     callback(&response, ctx);
   }
-  MEMFAULT_LOG_DEBUG("Posting Memfault Data Complete!");
-  return 0;
+  if ((response.status == 200) || (response.status == 202)) {
+    return 0;
+  } else {
+    // Use #define MEMFAULT_HTTP_DEBUG=1 to enable response payload debug log
+    return -1;
+  }
 }
 
 int memfault_platform_http_client_wait_until_requests_completed(sMfltHttpClient *client,
@@ -462,18 +473,26 @@ int memfault_esp_port_http_client_post_data(void) {
     return MemfaultInternalReturnCode_Error;
   }
   const eMfltPostDataStatus rv = (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
-  if (rv == kMfltPostDataStatus_NoDataFound) {
-    MEMFAULT_LOG_INFO("No new data found");
-  } else {
-    MEMFAULT_LOG_INFO("Result: %d", (int)rv);
+  switch (rv) {
+    case kMfltPostDataStatus_Success:
+      MEMFAULT_LOG_INFO("Data posted successfully, %zu bytes sent", g_chunk_bytes_sent);
   #if defined(CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS)
-    if (rv == 0) {
       memfault_metrics_connectivity_record_memfault_sync_success();
-    } else {
-      memfault_metrics_connectivity_record_memfault_sync_failure();
-    }
   #endif
+      break;
+
+    case kMfltPostDataStatus_NoDataFound:
+      MEMFAULT_LOG_INFO("Done: no data to send");
+      break;
+
+    default:
+      MEMFAULT_LOG_ERROR("Failed to post data, err=%d", rv);
+  #if defined(CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS)
+      memfault_metrics_connectivity_record_memfault_sync_failure();
+  #endif
+      break;
   }
+
   const uint32_t timeout_ms = 30 * 1000;
   memfault_http_client_wait_until_requests_completed(http_client, timeout_ms);
   memfault_http_client_destroy(http_client);

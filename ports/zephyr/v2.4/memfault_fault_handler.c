@@ -19,6 +19,7 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
+#include "memfault/ports/ncs/version.h"
 #include "memfault/ports/zephyr/version.h"
 
 // Starting in v3.4, the handler set function was renamed and the declaration
@@ -35,8 +36,13 @@
 extern void MEMFAULT_ZEPHYR_NMI_HANDLER_SET(void (*pHandler)(void));
 #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
 
+// The z_fatal_error() signature changed in Zephyr 3.7.0, during release
+// candidate development. NCS uses an intermediate version in NCS v2.7.0, so use
+// a strict version check instead of also accepting 3.6.99 as equivalent to
+// 3.7.0.
+
 // This header is used on Zephyr 3.7+ to get the exception frame declaration
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 #include <zephyr/arch/exception.h>
 #endif
 // clang-format on
@@ -61,7 +67,7 @@ extern void sys_arch_reboot(int type);
 
 // Intercept zephyr/kernel/fatal.c:z_fatal_error(). Note that the signature
 // changed in zephyr 3.7.
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 void __real_z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 #else
@@ -75,7 +81,7 @@ _Static_assert(__builtin_types_compatible_p(__typeof__(&z_fatal_error),
                                               __typeof__(&__real_z_fatal_error)),
                "Error: check z_fatal_error function signature");
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 #else
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)

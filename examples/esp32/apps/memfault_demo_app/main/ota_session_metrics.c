@@ -70,7 +70,7 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi) {
 
 void ota_session_metrics_end(int ota_error_code) {
   // error code
-  MEMFAULT_METRIC_SET_SIGNED(ota_error_code, ota_error_code);
+  MEMFAULT_METRIC_SESSION_SET_SIGNED(ota_error_code, ota, ota_error_code);
 
   // read last recorded station RSSI. this is reset every heartbeat in
   // ports/esp_idf/memfault/common/memfault_platform_metrics.c, so this gives us
@@ -78,24 +78,26 @@ void ota_session_metrics_end(int ota_error_code) {
   int rssi;
   esp_err_t err = esp_wifi_sta_get_rssi(&rssi);
   if (err == ESP_OK) {
-    MEMFAULT_METRIC_SET_SIGNED(ota_wifi_rssi, rssi);
+    MEMFAULT_METRIC_SESSION_SET_SIGNED(ota_wifi_rssi, ota, rssi);
   }
 
   // lwip TCP tx + rx packet counts
   uint32_t tx_count = lwip_stats.tcp.xmit - s_ota_session_metrics_lwip_stats_prev.tx;
   uint32_t rx_count = lwip_stats.tcp.recv - s_ota_session_metrics_lwip_stats_prev.rx;
-  MEMFAULT_METRIC_SET_UNSIGNED(ota_tcp_tx_count, tx_count);
-  MEMFAULT_METRIC_SET_UNSIGNED(ota_tcp_rx_count, rx_count);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_tcp_tx_count, ota, tx_count);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_tcp_rx_count, ota, rx_count);
 
   // mbedtls net sent + received byte counts
-  MEMFAULT_METRIC_SET_UNSIGNED(ota_tls_sent_bytes, s_ota_session_metrics_mbedtls_stats.sent);
-  MEMFAULT_METRIC_SET_UNSIGNED(ota_tls_recv_bytes, s_ota_session_metrics_mbedtls_stats.recv);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_tls_sent_bytes, ota,
+                                       s_ota_session_metrics_mbedtls_stats.sent);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_tls_recv_bytes, ota,
+                                       s_ota_session_metrics_mbedtls_stats.recv);
 
 #if defined(CONFIG_MEMFAULT_MBEDTLS_METRICS)
   // mbedtls max heap usage
   sMemfaultMbedtlsMetricData mbedtls_stats;
   memfault_mbedtls_heartbeat_get_data(&mbedtls_stats);
-  MEMFAULT_METRIC_SET_UNSIGNED(ota_mbedtls_mem_max_bytes, mbedtls_stats.mem_max_bytes);
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_mbedtls_mem_max_bytes, ota, mbedtls_stats.mem_max_bytes);
 #endif
 
   (void)MEMFAULT_METRICS_SESSION_END(ota);

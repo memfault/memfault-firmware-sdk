@@ -68,18 +68,18 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
 
   // Use RTC node if it exists, otherwise use an alias
   #if DT_NODE_EXISTS(DT_NODELABEL(rtc))
-    #define RTC DT_NODELABEL(rtc)
+    #define MFLT_RTC_NODE DT_NODELABEL(rtc)
   #else
-    #define RTC DT_ALIAS(rtc)
+    #define MFLT_RTC_NODE DT_ALIAS(rtc)
   #endif
 
-  #if !DT_NODE_HAS_STATUS(RTC, okay)
+  #if !DT_NODE_HAS_STATUS(MFLT_RTC_NODE, okay)
     #error "Error, requires rtc device tree entry"
   #endif
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   struct rtc_time rtctime;
-  const struct device *rtc = DEVICE_DT_GET(RTC);
+  const struct device *rtc = DEVICE_DT_GET(MFLT_RTC_NODE);
   rtc_get_time(rtc, &rtctime);
 
   // Debug: print time fields

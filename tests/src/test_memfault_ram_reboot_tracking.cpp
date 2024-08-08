@@ -106,6 +106,7 @@ TEST(MfltStorageTestGroup, Test_CrashTracking) {
 }
 
 TEST(MfltStorageTestGroup, Test_RebootSequence) {
+  // Check that we start with no crashes
   size_t crash_count = memfault_reboot_tracking_get_crash_count();
   LONGS_EQUAL(0, crash_count);
   // 1. Watchdog Reboot - Confirm we get a Watchdog and then no more info
@@ -137,15 +138,19 @@ TEST(MfltStorageTestGroup, Test_RebootSequence) {
   LONGS_EQUAL(bootup_info.reset_reason_reg, info.reset_reason_reg0);
   memfault_reboot_tracking_clear_reset_info();
 
-  // 2 Firmware Update Reboot reboot - Reset region reg should be amended to info
+  // 3. Firmware Update Reboot reboot - Reset region reg should be amended to info
   // but reset reason should not overwrite value
   memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_FirmwareUpdate, NULL);
+  // Use bogus values to simulate devices that might not have a reset register
+  bootup_info.reset_reason = kMfltRebootReason_Unknown;
   bootup_info.reset_reason_reg = 0xdead;
 
-  // The kMfltRebootReason_Assert passed as part of bootup_info should be counted as a crash
-  // but the reset reason should be the reboot which first kicked off the sequence of events
+  // The kMfltRebootReason_Unknown passed as part of bootup_info should not be counted as a crash
+  // because the reason should be the firmware update which first kicked off the sequence of events
   // (kMfltRebootReason_FirmwareUpdate)
   memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, &bootup_info);
+  crash_count = memfault_reboot_tracking_get_crash_count();
+  LONGS_EQUAL(2, crash_count);
   info_available = memfault_reboot_tracking_read_reset_info(&info);
   CHECK(info_available);
   LONGS_EQUAL(kMfltRebootReason_FirmwareUpdate, info.reason);
@@ -154,16 +159,21 @@ TEST(MfltStorageTestGroup, Test_RebootSequence) {
 
   // 4. Unexpected Reboot (i.e POR) - Should see unknown as reset reason
   memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, NULL);
+  crash_count = memfault_reboot_tracking_get_crash_count();
+  LONGS_EQUAL(3, crash_count);
   info_available = memfault_reboot_tracking_read_reset_info(&info);
   CHECK(info_available);
   LONGS_EQUAL(kMfltRebootReason_Unknown, info.reason);
   memfault_reboot_tracking_clear_reset_info();
 
   // 5. Expected reboot due to firmware update, boot with an expected reboot reason
+  // Reason should be kMfltRebootReason_FirmwareUpdate
   bootup_info.reset_reason = kMfltRebootReason_SoftwareReset;
   memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_FirmwareUpdate, NULL);
   memfault_reboot_tracking_boot(s_mflt_reboot_tracking_region, &bootup_info);
 
+  crash_count = memfault_reboot_tracking_get_crash_count();
+  LONGS_EQUAL(3, crash_count);
   info_available = memfault_reboot_tracking_read_reset_info(&info);
   CHECK(info_available);
   LONGS_EQUAL(kMfltRebootReason_FirmwareUpdate, info.reason);
@@ -175,9 +185,11 @@ TEST(MfltStorageTestGroup, Test_RebootSequence) {
   CHECK(info_available);
   LONGS_EQUAL(kMfltRebootReason_SoftwareReset, info.reason);
 
-  // Scenarios 5 and 6 should not count as unexpected crashes
+  // Crash count total changes should be checked against the reboots producing the reboot reasons
+  // Changes to the count that do not match the reboot types can cause problems with
+  // operational_crashfree_hours
   crash_count = memfault_reboot_tracking_get_crash_count();
-  LONGS_EQUAL(4, crash_count);
+  LONGS_EQUAL(3, crash_count);
 }
 
 TEST(MfltStorageTestGroup, Test_GetRebootReason) {

@@ -80,13 +80,13 @@ TEST_GROUP(MemfaultSessionMetricsDebug) {
     MEMFAULT_METRICS_SESSION_START(test_key_session);
     mock().expectOneCall("memfault_metrics_session_serialize");
     MEMFAULT_METRICS_SESSION_END(test_key_session);
-    MEMFAULT_METRIC_TIMER_STOP(test_session_key_timer);
+    MEMFAULT_METRIC_SESSION_TIMER_STOP(test_timer, test_key_session);
 
     // Reset session metrics for second session
     MEMFAULT_METRICS_SESSION_START(test_key_session_two);
     mock().expectOneCall("memfault_metrics_session_serialize");
     MEMFAULT_METRICS_SESSION_END(test_key_session_two);
-    MEMFAULT_METRIC_TIMER_STOP(test_session_key_two_timer);
+    MEMFAULT_METRIC_SESSION_TIMER_STOP(test_timer, test_key_session_two);
 
     mock().checkExpectations();
     mock().clear();
@@ -195,11 +195,10 @@ TEST(MemfaultSessionMetricsDebug, Test_HeartbeatUpdateAdd) {
 TEST(MemfaultSessionMetricsDebug, Test_SessionResetState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
-    "  mflt_session_timer_test_key_session: 0",
-    "  test_session_key_unsigned: null",
-    "  test_session_key_string: \"\"",
-    "  test_session_key_timer: 0",
-    "  test_session_signed_scale_value: null",
+    "  test_key_session__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session__test_unsigned: null",
+    "  test_key_session__test_string: \"\"",
+    "  test_key_session__test_timer: 0",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -212,11 +211,10 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionResetState) {
 TEST(MemfaultSessionMetricsDebug, Test_SessionTimerUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
-    "  mflt_session_timer_test_key_session: 5000",
-    "  test_session_key_unsigned: null",
-    "  test_session_key_string: \"\"",
-    "  test_session_key_timer: 5000",
-    "  test_session_signed_scale_value: null",
+    "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__test_unsigned: null",
+    "  test_key_session__test_string: \"\"",
+    "  test_key_session__test_timer: 5000",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
@@ -224,7 +222,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionTimerUpdateState) {
 
   s_boot_time_ms = 678;
   MEMFAULT_METRICS_SESSION_START(test_key_session);
-  MEMFAULT_METRIC_TIMER_START(test_session_key_timer);
+  MEMFAULT_METRIC_SESSION_TIMER_START(test_timer, test_key_session);
   s_boot_time_ms = 5678;
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -236,11 +234,10 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionTimerUpdateState) {
 TEST(MemfaultSessionMetricsDebug, Test_SessionUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
-    "  mflt_session_timer_test_key_session: 5000",
-    "  test_session_key_unsigned: 35",
-    "  test_session_key_string: \"sessions!\"",
-    "  test_session_key_timer: 0",
-    "  test_session_signed_scale_value: null",
+    "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__test_unsigned: 35",
+    "  test_key_session__test_string: \"sessions!\"",
+    "  test_key_session__test_timer: 0",
   };
   s_current_session_key = MEMFAULT_METRICS_SESSION_KEY(test_key_session);
   memfault_metrics_session_register_end_cb(MEMFAULT_METRICS_SESSION_KEY(test_key_session),
@@ -248,8 +245,8 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionUpdateState) {
 
   s_boot_time_ms = 678;
   MEMFAULT_METRICS_SESSION_START(test_key_session);
-  MEMFAULT_METRIC_SET_UNSIGNED(test_session_key_unsigned, 35);
-  MEMFAULT_METRIC_SET_STRING(test_session_key_string, "sessions!");
+  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(test_unsigned, test_key_session, 35);
+  MEMFAULT_METRIC_SESSION_SET_STRING(test_string, test_key_session, "sessions!");
   s_boot_time_ms = 5678;
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
@@ -266,15 +263,15 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionUpdateState) {
 TEST(MemfaultSessionMetricsDebug, Test_AllSessionsResetState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
-    "  mflt_session_timer_test_key_session: 0",
-    "  test_session_key_unsigned: null",
-    "  test_session_key_string: \"\"",
-    "  test_session_key_timer: 0",
-    "  mflt_session_timer_test_key_session_two: 0",
-    "  test_session_key_two_unsigned: null",
-    "  test_session_key_two_string: \"\"",
-    "  test_session_key_two_timer: 0",
-    "  test_session_signed_scale_value: null",
+    "  test_key_session__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session__test_unsigned: null",
+    "  test_key_session__test_string: \"\"",
+    "  test_key_session__test_timer: 0",
+    "  test_key_session_two__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session_two__test_unsigned: null",
+    "  test_key_session_two__test_string: \"\"",
+    "  test_key_session_two__test_timer: 0",
+    "  test_key_session_two__test_signed_scale_value: null",
   };
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
                                  MEMFAULT_ARRAY_SIZE(expected_debug_print));
@@ -286,22 +283,22 @@ TEST(MemfaultSessionMetricsDebug, Test_AllSessionsResetState) {
 TEST(MemfaultSessionMetricsDebug, Test_AllSessionsTimerUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
-    "  mflt_session_timer_test_key_session: 5000",
-    "  test_session_key_unsigned: null",
-    "  test_session_key_string: \"\"",
-    "  test_session_key_timer: 5000",
-    "  mflt_session_timer_test_key_session_two: 5000",
-    "  test_session_key_two_unsigned: null",
-    "  test_session_key_two_string: \"\"",
-    "  test_session_key_two_timer: 5000",
-    "  test_session_signed_scale_value: null",
+    "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__test_unsigned: null",
+    "  test_key_session__test_string: \"\"",
+    "  test_key_session__test_timer: 5000",
+    "  test_key_session_two__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session_two__test_unsigned: null",
+    "  test_key_session_two__test_string: \"\"",
+    "  test_key_session_two__test_timer: 5000",
+    "  test_key_session_two__test_signed_scale_value: null",
   };
 
   s_boot_time_ms = 678;
   MEMFAULT_METRICS_SESSION_START(test_key_session);
-  MEMFAULT_METRIC_TIMER_START(test_session_key_timer);
+  MEMFAULT_METRIC_SESSION_TIMER_START(test_timer, test_key_session);
   MEMFAULT_METRICS_SESSION_START(test_key_session_two);
-  MEMFAULT_METRIC_TIMER_START(test_session_key_two_timer);
+  MEMFAULT_METRIC_SESSION_TIMER_START(test_timer, test_key_session_two);
   s_boot_time_ms = 5678;
 
   memfault_platform_log_set_mock(kMemfaultPlatformLogLevel_Info, expected_debug_print,
