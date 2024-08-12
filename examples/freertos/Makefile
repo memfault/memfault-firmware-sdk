@@ -15,6 +15,16 @@ BOARD ?= qemu_mps2_an385
 
 $(info Building for $(BOARD))
 
+# Set to 1 to build with templates/memfault_platform_port.c instead of
+# FreeRTOS platform functions. Used to test compilation with template files
+MEMFAULT_TEST_USE_PORT_TEMPLATE ?= 0
+
+ifeq ($(MEMFAULT_TEST_USE_PORT_TEMPLATE),1)
+  ifneq (qemu_mps2_an385,$(BOARD))
+    $(error Testing with the template port only supported on the qemu_mps2_an385 board)
+  endif
+endif
+
 BOARD_DIR := boards/$(BOARD)
 
 BUILD_DIR := build/$(BOARD)
@@ -87,8 +97,13 @@ CFLAGS += $(foreach each, $(MEMFAULT_COMPONENTS), -DMEMFAULT_COMPONENT_$(each)_)
 # have them enabled in this example app.
 SRCS += \
     $(MEMFAULT_COMPONENTS_SRCS) \
-    $(wildcard $(MEMFAULT_SDK_ROOT)/ports/freertos/src/*.c) \
         $(MEMFAULT_SDK_ROOT)/ports/panics/src/memfault_platform_ram_backed_coredump.c \
+
+ifneq ($(MEMFAULT_TEST_USE_PORT_TEMPLATE), 1)
+    SRCS += \
+        $(wildcard $(MEMFAULT_SDK_ROOT)/ports/freertos/src/*.c)
+endif
+
 
 # Fixup build path for objects of the Memfault SDK, all build output kept within build/
 OBJS := $(subst $(MEMFAULT_SDK_ROOT),memfault-firmware-sdk,$(SRCS:%=$(BUILD_DIR)/%.o))
@@ -119,7 +134,9 @@ CFLAGS += \
 
 # Enable the self test by default
 MEMFAULT_DEMO_CLI_SELF_TEST ?= 1
-CFLAGS += -DMEMFAULT_DEMO_CLI_SELF_TEST=$(MEMFAULT_DEMO_CLI_SELF_TEST)
+CFLAGS += \
+  -DMEMFAULT_DEMO_CLI_SELF_TEST=$(MEMFAULT_DEMO_CLI_SELF_TEST) \
+  -DMEMFAULT_TEST_USE_PORT_TEMPLATE=$(MEMFAULT_TEST_USE_PORT_TEMPLATE)
 
 LINKER_SCRIPT = $(BOARD_DIR)/linker.ld
 

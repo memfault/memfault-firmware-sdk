@@ -13,7 +13,8 @@ readme = "README.md"
 mflt_build_id = 'mflt_build_id:main'
 
 [tool.poetry.dependencies]
-python = "^3.6" # must match memfault-cli
+ # must match memfault-cli
+python = "^3.6"
 pyelftools = "^0.31"
 
 [tool.poetry.dev-dependencies]

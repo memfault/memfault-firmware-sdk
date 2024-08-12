@@ -27,7 +27,9 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-#include "memfault/ports/freertos_trace.h"
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
+  #include "memfault/ports/freertos_trace.h"
+#endif
 
 /*-----------------------------------------------------------
  * Application specific definitions.
@@ -41,10 +43,12 @@
  * See https://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
-#define configASSERT_DEFINED 1
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
+  #define configASSERT_DEFINED 1
 extern void vAssertCalled(const char *file, int line);
-#define configASSERT(x) \
-  if ((x) == 0) vAssertCalled(__FILE__, __LINE__)
+  #define configASSERT(x) \
+    if ((x) == 0) vAssertCalled(__FILE__, __LINE__)
+#endif
 #define configQUEUE_REGISTRY_SIZE 20
 
 #define configUSE_PREEMPTION 1
@@ -76,7 +80,12 @@ extern void vAssertCalled(const char *file, int line);
 /* Set the following definitions to 1 to include the API function, or zero
  * to exclude the API function. */
 
-#define configCHECK_FOR_STACK_OVERFLOW 1
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
+  #define configCHECK_FOR_STACK_OVERFLOW 1
+#else
+  #define configCHECK_FOR_STACK_OVERFLOW 0
+#endif
+
 #define configUSE_MALLOC_FAILED_HOOK 0
 #define configUSE_MUTEXES 1
 #define configUSE_RECURSIVE_MUTEXES 1

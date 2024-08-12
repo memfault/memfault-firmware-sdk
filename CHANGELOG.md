@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2024-08-12
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Add additional stubs to `ports/templates/memfault_platform_port.c` to help
+    when integrating on a new platform
+
+- ESP-IDF:
+
+  - Trigger a null dereference crash when the `BOOT` button is pressed on the
+    ESP32 example app. This is useful for testing the Memfault crash handling
+    functionality without using the serial console.
+
 ## [1.11.0] - 2024-08-07
 
 ### :boom: Breaking Changes

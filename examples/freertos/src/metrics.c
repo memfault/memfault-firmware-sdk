@@ -43,5 +43,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
     MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS <= (60 * 60),
     "Heartbeat must be an hour or less for runtime metrics to mitigate counter overflow");
 
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
   memfault_freertos_port_task_runtime_metrics();
+#endif
 }

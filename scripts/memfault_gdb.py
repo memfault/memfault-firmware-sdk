@@ -725,7 +725,7 @@ class MemfaultCoredumpWriter(object):
         def _counting_write(data):
             # nonlocal total_size  # Not python 2.x compatible :(
             # total_size += len(data)
-            total_size["size"] = total_size["size"] + len(data)
+            total_size["size"] += len(data)
 
         self._write(_counting_write)
 

@@ -13,6 +13,7 @@
 
 #include "app_memfault_transport.h"
 #include "argtable3/argtable3.h"
+#include "button.h"
 #include "cmd_decl.h"
 #include "driver/uart.h"
 #include "esp_console.h"
@@ -495,6 +496,8 @@ void app_main() {
     prompt = "esp32> ";
 #endif  // CONFIG_LOG_COLORS
   }
+
+  button_setup();
 
   /* Main loop */
   while (true) {

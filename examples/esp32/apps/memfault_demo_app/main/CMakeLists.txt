@@ -1,5 +1,6 @@
 list(APPEND
    COMPONENT_SRCS
+   button.c
    led.c
    main.c
 )

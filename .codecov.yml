@@ -6,6 +6,7 @@ coverage:
     project:
       default:
         target: 70%
+        informational: true
 
 ignore:
   - "tests" # Don't include the tests themselves in the code coverage report

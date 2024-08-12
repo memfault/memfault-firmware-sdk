@@ -21,6 +21,7 @@
 
 #define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS)*2)
 
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
 void memfault_platform_reboot(void) {
   volatile uint32_t *SCB_AIRCR = (uint32_t *)SCB_AIRCR_ADDR;
   *SCB_AIRCR = SCB_AIRCR_RESET_SYSTEM;
@@ -46,6 +47,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
 
   return 0;
 }
+#endif
 
 static uint32_t prv_read_psp_reg(void) {
   uint32_t reg_val;
@@ -100,13 +102,16 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
     MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&__memfault_capture_bss_start, memfault_region_size);
   region_idx++;
 
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
   region_idx += memfault_freertos_get_task_regions(
     &s_coredump_regions[region_idx], MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+#endif
 
   *num_regions = region_idx;
   return &s_coredump_regions[0];
 }
 
+#if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
 static uint32_t prv_read_reboot_reg(void) {
   volatile uint32_t *cmsdk_rstinfo = (uint32_t *)CMSDK_RSTINFO_ADDR;
   return (*cmsdk_rstinfo & CMSDK_RSTINFO_MASK);
@@ -147,3 +152,4 @@ void memfault_reboot_reason_get(sResetBootupInfo *reset_info) {
     .reset_reason = reboot_reason,
   };
 }
+#endif

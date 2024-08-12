@@ -93,6 +93,53 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
   return 0;
 }
 
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
+static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+
+void memfault_reboot_reason_get(sResetBootupInfo *info) {
+  //! !FIXME: Read reboot reason register
+  //! Fill in sResetBootupInfo with reboot reason and reboot register value
+  *info = (sResetBootupInfo){
+    .reset_reason_reg = 0x0,
+    .reset_reason = kMfltRebootReason_Unknown,
+  };
+}
+
+void memfault_platform_reboot_tracking_boot(void) {
+  sResetBootupInfo reset_info = { 0 };
+  memfault_reboot_reason_get(&reset_info);
+  memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+}
+
+//! !FIXME: Remove if using FreeRTOS port. The FreeRTOS port will provide this definition
+bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                          MemfaultPlatformTimerCallback *callback) {
+  //! !FIXME: Initiate a periodic timer/task/thread to call callback every period_sec
+  (void)period_sec;
+  (void)callback;
+  return false;
+}
+
+//! !FIXME: Remove if using FreeRTOS port. The FreeRTOS port will provide this definition
+MEMFAULT_WEAK uint64_t memfault_platform_get_time_since_boot_ms(void) {
+  //! !FIXME: Return the time since the device booted in milliseconds
+  return 0;
+}
+
+MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
+void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
+  //! !FIXME: Use this function to send logs to your application logging component, serial console,
+  //! etc
+  (void)level;
+  (void)fmt;
+}
+
+MEMFAULT_PRINTF_LIKE_FUNC(1, 2) void memfault_platform_log_raw(const char *fmt, ...) {
+  //! !FIXME: Use this function to send logs to your application logging component, serial console,
+  //! etc
+  (void)fmt;
+}
+
 //! !FIXME: This function _must_ be called by your main() routine prior
 //! to starting an RTOS or baremetal loop.
 int memfault_platform_boot(void) {
