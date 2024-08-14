@@ -249,6 +249,7 @@ size_t memfault_serializer_helper_compute_size(
 bool memfault_serializer_helper_check_storage_size(const sMemfaultEventStorageImpl *storage_impl,
                                                    size_t(compute_worst_case_size)(void),
                                                    const char *event_type) {
+  (void)event_type;
   // Check to see if the backing storage can hold at least one event
   // and return an error code in this situation so it's easier for an end user to catch it:
   const size_t storage_max_size = storage_impl->get_storage_size_cb();

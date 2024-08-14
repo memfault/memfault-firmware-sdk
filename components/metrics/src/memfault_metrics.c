@@ -1221,6 +1221,7 @@ static bool prv_metrics_debug_print(void *ctx, const sMemfaultMetricInfo *metric
   const union MemfaultMetricValue *value = &metric_info->val;
 
   const char *key_name = s_idx_to_metric_name[key->_impl];
+  (void)key_name, (void)value;
 
   switch (metric_info->type) {
     case kMemfaultMetricType_Timer:
