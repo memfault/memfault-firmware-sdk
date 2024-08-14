@@ -15,6 +15,7 @@
 #include "memfault/util/base64.h"
 
 MEMFAULT_WEAK void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
+  (void)base64_chunk;  // Prevent unused variable warning when logs are compiled out
   MEMFAULT_LOG_INFO("%s", base64_chunk);
 }
 

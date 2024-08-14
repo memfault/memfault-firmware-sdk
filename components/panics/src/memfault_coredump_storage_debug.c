@@ -242,6 +242,7 @@ static bool prv_verify_coredump_clear_operation(void) {
 }
 
 static void prv_log_error_hexdump(const char *prefix, const uint8_t *buf, size_t buf_len) {
+  (void)prefix;
   // s_read_buf is the largest buffer passed to this function, use this to determine max char buffer
   // size for hex representation
 #define MAX_BUF_LEN (sizeof(s_read_buf) * 2 + 1)
@@ -266,6 +267,7 @@ bool memfault_coredump_storage_debug_test_finish(void) {
   MEMFAULT_LOG_ERROR("Coredump Storage Verification Failed");
 
   const char *op_suffix;
+  (void)op_suffix;
   switch (s_test_result.op) {
     case kMemfaultCoredumpStorageTestOp_Prepare:
       op_suffix = "prepare";
@@ -293,6 +295,7 @@ bool memfault_coredump_storage_debug_test_finish(void) {
   }
 
   const char *reason_str = "";
+  (void)reason_str;
   switch (s_test_result.result) {
     case kMemfaultCoredumpStorageResult_Success:
       break;

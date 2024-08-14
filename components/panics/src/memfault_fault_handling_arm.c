@@ -384,25 +384,26 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        :                             \
                        : "i"((uint16_t)_x))
     #else
-      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
-        __asm volatile("mov r0, lr \n"                 \
-                       "movs r1, #4 \n"                \
-                       "tst  r0,r1 \n"                 \
-                       "mrs r12, msp \n"               \
-                       "beq msp_active_at_crash_%= \n" \
-                       "mrs r12, psp \n"               \
-                       "msp_active_at_crash_%=: \n"    \
-                       "mov r0, r8 \n"                 \
-                       "mov r1, r9 \n"                 \
-                       "mov r2, r10 \n"                \
-                       "mov r3, r11 \n"                \
-                       "push {r0-r3, lr} \n"           \
-                       "mov r3, r12 \n"                \
-                       "push {r3-r7} \n"               \
-                       "mov r0, sp \n"                 \
-                       "ldr r1, =%c0 \n"               \
-                       "b memfault_fault_handler \n"   \
-                       :                               \
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)           \
+        __asm volatile("mov r0, lr \n"                      \
+                       "movs r1, #4 \n"                     \
+                       "tst  r0,r1 \n"                      \
+                       "mrs r12, msp \n"                    \
+                       "beq msp_active_at_crash_%= \n"      \
+                       "mrs r12, psp \n"                    \
+                       "msp_active_at_crash_%=: \n"         \
+                       "mov r0, r8 \n"                      \
+                       "mov r1, r9 \n"                      \
+                       "mov r2, r10 \n"                     \
+                       "mov r3, r11 \n"                     \
+                       "push {r0-r3, lr} \n"                \
+                       "mov r3, r12 \n"                     \
+                       "push {r3-r7} \n"                    \
+                       "mov r0, sp \n"                      \
+                       "ldr r1, =%c0 \n"                    \
+                       "ldr r2, =memfault_fault_handler \n" \
+                       "bx r2 \n"                           \
+                       :                                    \
                        : "i"((uint16_t)_x))
     #endif
 

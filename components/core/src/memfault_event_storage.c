@@ -7,24 +7,27 @@
 //! A RAM-backed storage API for serialized events. This is where events (such as heartbeats and
 //! reset trace events) get stored as they wait to be chunked up and sent out over the transport.
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "memfault/config.h"
-#include "memfault/core/batched_events.h"
-#include "memfault/core/compiler.h"
-#include "memfault/core/data_packetizer_source.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/event_storage.h"
-#include "memfault/core/event_storage_implementation.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/nonvolatile_event_storage.h"
-#include "memfault/core/platform/overrides.h"
-#include "memfault/core/platform/system_time.h"
-#include "memfault/core/sdk_assert.h"
-#include "memfault/util/circular_buffer.h"
+
+#if !defined(MEMFAULT_EVENT_STORAGE_LITE)
+
+  #include <inttypes.h>
+  #include <stdbool.h>
+  #include <stdio.h>
+  #include <string.h>
+
+  #include "memfault/core/batched_events.h"
+  #include "memfault/core/compiler.h"
+  #include "memfault/core/data_packetizer_source.h"
+  #include "memfault/core/debug_log.h"
+  #include "memfault/core/event_storage.h"
+  #include "memfault/core/event_storage_implementation.h"
+  #include "memfault/core/math.h"
+  #include "memfault/core/platform/nonvolatile_event_storage.h"
+  #include "memfault/core/platform/overrides.h"
+  #include "memfault/core/platform/system_time.h"
+  #include "memfault/core/sdk_assert.h"
+  #include "memfault/util/circular_buffer.h"
 
 //
 // Routines which can optionally be implemented.
@@ -479,3 +482,5 @@ void memfault_event_storage_reset(void) {
   s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
   s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
 }
+
+#endif  // !defined(MEMFAULT_EVENT_STORAGE_LITE)

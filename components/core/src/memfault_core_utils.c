@@ -117,8 +117,9 @@ void memfault_build_info_dump(void) {
   }
 
   const bool is_gnu = (g_memfault_build_id.type == kMemfaultBuildIdType_GnuBuildIdSha1);
-
   char build_id_sha[41] = { 0 };
+  (void)build_id_sha, (void)is_gnu;  // Prevent unused variable warning when logs are compiled out
+
   for (size_t i = 0; i < sizeof(info.build_id); i++) {
     uint8_t c = info.build_id[i];
     size_t idx = i * 2;

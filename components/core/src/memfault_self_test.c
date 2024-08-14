@@ -238,12 +238,14 @@ void memfault_self_test_data_export_test(void) {
 
 static void prv_print_region_group_info(const char *group_name, const sMfltCoredumpRegion *regions,
                                         const size_t num_regions) {
+  (void)group_name;
   MEMFAULT_LOG_INFO("Coredump group: %s", group_name);
   MEMFAULT_LOG_INFO("-----------------------------");
   MEMFAULT_LOG_INFO("%10s|%10s|%6s|", "Address", "Length", "Type");
   MEMFAULT_LOG_INFO("-----------------------------");
   for (size_t i = 0; (regions != NULL) && (i < num_regions); i++) {
     sMfltCoredumpRegion region = regions[i];
+    (void)region;
     MEMFAULT_LOG_INFO("0x%08" PRIxPTR "|%10" PRIu32 "|%6u|", (uintptr_t)region.region_start,
                       region.region_size, region.type);
   }
