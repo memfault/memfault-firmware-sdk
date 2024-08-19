@@ -27,6 +27,25 @@
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
 
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+
+//! Zephyr 3.7.0 deprecated NET_SOCKETS_POSIX_NAMES, and requires POSIX_API to be enabled instead.
+//! Confirm it's set.
+#if !defined(CONFIG_POSIX_API)
+#error "CONFIG_POSIX_API must be enabled"
+#endif
+
+//! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
+#if !defined(CONFIG_MBEDTLS_SHA1)
+#error "CONFIG_MBEDTLS_SHA1 must be enabled"
+#endif
+
+//! Zephyr 3.7.0 requires MBEDTLS_PEM_CERTIFICATE_FORMAT for parsing PEM certificate formats. Confirm it's set.
+#if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM) && !defined(CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT)
+#error "CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT must be enabled when using PEM"
+#endif
+#endif
+
 #if defined(CONFIG_POSIX_API)
   #include MEMFAULT_ZEPHYR_INCLUDE(posix/netdb.h)
   #include MEMFAULT_ZEPHYR_INCLUDE(posix/poll.h)

@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect SDK:
+
+  - Add support for the following reboot reasons on nRF series SOCs. These
+    reboot reasons are tracked as `kMfltRebootReason_DeepSleep`.
+
+    - `NRF_POWER_RESETREAS_OFF_MASK`
+    - `NRF_POWER_RESETREAS_NFC_MASK`
+    - `NRF_POWER_RESETREAS_CTRLAP_MASK`
+
+- Zephyr:
+
+  - Fix the build when using Zephyr 3.7.0 and leveraging the HTTP client and/or
+    ESP32 port. The Memfault HTTP client would fail to build due to the wrong
+    `crypo.h` header getting picked up in the build. Additionally due to the
+    removal of default support for mbedTLS hash algorithms,
+    `CONFIG_MBEDTLS_SHA1` now must be enabled explicitly when using both the PEM
+    and DER formats for Memfault's CA certifications. When using PEM, Zephyr
+    also now requires `CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT=y` to parse PEM
+    certificates correctly. To represent this dependency, a new Kconfig symbol
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_PEM` has been added, and is the default
+    selection in a new choice Kconfig called `CONFIG_MEMFAULT_TLS_CERTS_FORMAT`.
+    The existing DER Kconfig is the other option. Finally, the Kconfig
+    `CONFIG_SOC_FAMILY_ESP32` is now deprecated. References of this Kconfig now
+    also check the new Kconfig `CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`.
+
 ## [1.11.1] - 2024-08-12
 
 ### :chart_with_upwards_trend: Improvements
