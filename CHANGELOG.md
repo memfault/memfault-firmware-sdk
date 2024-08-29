@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect SDK:
+
+  - Add support for the following reboot reasons on nRF series SOCs. These
+    reboot reasons are tracked as `kMfltRebootReason_DeepSleep`.
+
+    - `NRF_POWER_RESETREAS_OFF_MASK`
+    - `NRF_POWER_RESETREAS_NFC_MASK`
+    - `NRF_POWER_RESETREAS_CTRLAP_MASK`
+
+- Zephyr:
+
+  - Use `MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED` to control whether coredumps
+    trigger a halt when a debugger is attached.
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_REGION`, to
+    set the RAM region used for storing RAM-backed coredumps.
+
+  - Fix the build when using Zephyr 3.7.0 and leveraging the HTTP client and/or
+    ESP32 port. The Memfault HTTP client would fail to build due to the wrong
+    `crypto.h` header getting picked up in the build. Additionally, due to the
+    [removal of default support for mbedTLS hash algorithms in Zephyr](https://docs.zephyrproject.org/latest/releases/migration-guide-3.7.html#mbed-tls),
+    `CONFIG_MBEDTLS_SHA1` now must be enabled explicitly when using any of
+    Memfault's CA certificates. When using PEM,
+    `CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT=y` is required for PEM certificate
+    support. To simplify certificate format selection, a new choice Kconfig
+    called `CONFIG_MEMFAULT_TLS_CERTS_FORMAT` has been added. Use the configs
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_PEM` and `CONFIG_MEMFAULT_TLS_CERTS_USE_DER`
+    to choose the certificate format.`CONFIG_MEMFAULT_TLS_CERTS_USE_DER` is the
+    default choice config. Finally, the Kconfig `CONFIG_SOC_FAMILY_ESP32` is now
+    deprecated. References of this Kconfig now also check the new Kconfig
+    `CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`. See
+    [Zephyr's 3.7 Migration guide](https://docs.zephyrproject.org/latest/releases/migration-guide-3.7.html)
+    for more details.
+
 ## [1.11.1] - 2024-08-12
 
 ### :chart_with_upwards_trend: Improvements

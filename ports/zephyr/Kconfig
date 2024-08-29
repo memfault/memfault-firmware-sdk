@@ -64,6 +64,14 @@ config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
         help
           The amount of RAM to allocate for saving coredumps
 
+config MEMFAULT_RAM_BACKED_COREDUMP_REGION
+        string "Memfault Ram Backed Coredump Region"
+        default ".noinit.mflt_coredump"
+        depends on MEMFAULT_RAM_BACKED_COREDUMP
+        help
+          The region in memory where the coredump will be stored.
+          This region should be marked as NOINIT in the linker script.
+
 config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
         bool "Include data region in coredump"
         default y
@@ -140,7 +148,7 @@ endmenu  # Memfault Coredump Settings
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
         # our wrapper conflicts with the esp32 heap_caps implementation
-        default y if !SOC_FAMILY_ESP32
+        default y if (!SOC_FAMILY_ESP32 && !SOC_FAMILY_ESPRESSIF_ESP32)
         select SYS_HEAP_RUNTIME_STATS
         depends on HEAP_MEM_POOL_SIZE > 0
         help
@@ -325,13 +333,27 @@ config MEMFAULT_HTTP_USES_MBEDTLS
           TLS is offloaded to the underlying socket, this check is invalid, and
           should be explicitly set to 'n'.
 
+choice MEMFAULT_TLS_CERTS_FORMAT
+        prompt "TLS certificates format"
+        default MEMFAULT_TLS_CERTS_USE_DER
+        help
+          Choose the format of the TLS certificates used by Memfault
+
+config MEMFAULT_TLS_CERTS_USE_PEM
+        bool "Use PEM format for TLS certificates"
+        depends on MBEDTLS_PEM_CERTIFICATE_FORMAT
+        help
+          When enabled, Memfault will use PEM format for TLS certificates.
+          When disabled, DER format will be used.
+
 config MEMFAULT_TLS_CERTS_USE_DER
         bool "Use DER format for TLS certificates"
-        default n
         help
           When enabled, Memfault will use DER format for TLS certificates.
           When disabled, PEM format will be used. DER format may reduce runtime
           memory requirements (for example if using mbedTLS).
+
+endchoice # MEMFAULT_TLS_CERTS_FORMAT
 
 config MEMFAULT_PROJECT_KEY
         string "Memfault Project Key"
@@ -394,7 +416,7 @@ config MEMFAULT_REBOOT_REASON_GET_CUSTOM
 
 config MEMFAULT_REBOOT_TRACKING_REGION
        string "Memfault Reboot Tracking Region"
-       default ".rtc_noinit" if SOC_FAMILY_ESP32
+       default ".rtc_noinit" if (SOC_FAMILY_ESP32 || SOC_FAMILY_ESPRESSIF_ESP32)
        default ".noinit.mflt_reboot_info"
         help
          The region in memory where the reboot tracking information will be stored.

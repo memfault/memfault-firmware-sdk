@@ -46,10 +46,6 @@ if (CONFIG_MEMFAULT_LOGGING_ENABLE)
   endif()
 endif()
 
-if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL "3.1.99")
-   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr)
-endif()
-
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD memfault_http_periodic_upload.c)
 
 # Make sure RAM based storage regions are not initialized on boot
@@ -76,7 +72,7 @@ if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
   zephyr_ld_options(-Wl,--wrap=k_free)
 endif()
 
-if(CONFIG_SOC_FAMILY_ESP32)
+if(CONFIG_SOC_FAMILY_ESP32 OR CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
   zephyr_linker_sources(SECTIONS memfault-rtc-noinit-region.ld)
 endif()
 

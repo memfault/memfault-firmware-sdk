@@ -45,6 +45,9 @@ static eMemfaultRebootReason prv_decode_power_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_POWER_RESETREAS_LOCKUP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Lockup");
     reset_reason = kMfltRebootReason_Lockup;
+  } else if (reset_cause & NRF_POWER_RESETREAS_OFF_MASK) {
+    MEMFAULT_PRINT_RESET_INFO(" GPIO Wakeup");
+    reset_reason = kMfltRebootReason_DeepSleep;
   #if defined(POWER_RESETREAS_LPCOMP_Msk)
   } else if (reset_cause & NRF_POWER_RESETREAS_LPCOMP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" LPCOMP Wakeup");
@@ -53,10 +56,24 @@ static eMemfaultRebootReason prv_decode_power_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_POWER_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #if defined(NRF_POWER_HAS_RESETREAS_NFC)
+    #if NRF_POWER_HAS_RESETREAS_NFC
+  } else if (reset_cause & NRF_POWER_RESETREAS_NFC_MASK) {
+    MEMFAULT_PRINT_RESET_INFO(" NFC Wakeup");
+    reset_reason = kMfltRebootReason_DeepSleep;
+    #endif
+  #endif
   #if defined(NRF_POWER_RESETREAS_VBUS_MASK)
   } else if (reset_cause & NRF_POWER_RESETREAS_VBUS_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" VBUS Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #endif
+  #if defined(NRF_POWER_HAS_RESETREAS_CTRLAP)
+    #if NRF_POWER_HAS_RESETREAS_CTRLAP
+  } else if (reset_cause & NRF_POWER_RESETREAS_CTRLAP_MASK) {
+    MEMFAULT_PRINT_RESET_INFO(" CTRLAP Wakeup");
+    reset_reason = kMfltRebootReason_DeepSleep;
+    #endif
   #endif
   } else if (reset_cause == 0) {
     // absence of a value, means a power on reset took place
