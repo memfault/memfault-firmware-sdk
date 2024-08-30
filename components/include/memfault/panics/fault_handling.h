@@ -82,9 +82,9 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
 //! @param lr The return address
 //! @see MEMFAULT_ASSERT_RECORD
 //! @see MEMFAULT_ASSERT
-#if defined(__CC_ARM) || defined(__ICCARM__) || (defined(__clang__) && defined(__ti__))
-//! ARMCC, IAR, and tiarmclang will optimize away link register stores from callsites which makes it
-//! impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
+#if defined(__CC_ARM) || defined(__ICCARM__) || defined(__clang__)
+//! ARMCC, IAR, clang, and tiarmclang optimize away link register stores from callsites which makes
+//! it impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
 #else
 MEMFAULT_NORETURN
 #endif
@@ -97,9 +97,9 @@ void memfault_fault_handling_assert(void *pc, void *lr);
 //! @param extra_info Additional information used by the assert handler
 //! @see MEMFAULT_ASSERT_RECORD
 //! @see MEMFAULT_ASSERT
-#if defined(__CC_ARM) || defined(__ICCARM__) || (defined(__clang__) && defined(__ti__))
-//! ARMCC, IAR, and tiarmclang optimize away link register stores from callsites which makes it
-//! impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
+#if defined(__CC_ARM) || defined(__ICCARM__) || defined(__clang__)
+//! ARMCC, IAR, clang, and tiarmclang optimize away link register stores from callsites which makes
+//! it impossible for a reliable backtrace to be resolved so we don't use the NORETURN attribute
 #else
 MEMFAULT_NORETURN
 #endif

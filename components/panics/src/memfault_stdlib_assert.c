@@ -24,6 +24,10 @@ void __assert_func(const char *file, int line, const char *func, const char *fai
   (void)file, (void)line, (void)func, (void)failedexpr;
   #endif
   MEMFAULT_ASSERT(0);
+
+  #if defined(__clang__)
+  MEMFAULT_UNREACHABLE;
+  #endif
 }
 
 #endif  // MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED && !defined(__TI_ARM__)
