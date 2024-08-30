@@ -3,10 +3,10 @@
 //! Copyright (c) Memfault, Inc.
 //! See License.txt for details
 
-#include "hw_cpm_da1469x.h"
 #include "memfault/components.h"
 #include "memfault/ports/freertos.h"
 #include "memfault/ports/reboot_reason.h"
+#include "sdk_defs.h"
 
 #ifndef MEMFAULT_EVENT_STORAGE_RAM_SIZE
   #define MEMFAULT_EVENT_STORAGE_RAM_SIZE 1024
@@ -34,6 +34,6 @@ int memfault_platform_boot(void) {
 }
 
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {
-  hw_cpm_reboot_system();
+  SWRESET;
   MEMFAULT_UNREACHABLE;
 }

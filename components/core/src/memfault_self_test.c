@@ -87,6 +87,7 @@ static bool is_field_valid(const char *str, eDeviceInfoField field) {
   // Max + 1 needed determine if we exceeded bounds before NULL found
   size_t len = memfault_strnlen(str, MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE + 1);
   if ((len < 1) || (len > MEMFAULT_DEVICE_INFO_MAX_STRING_SIZE)) {
+    (void)s_device_info_field_names;  // Avoid unused variable warning when logging is disabled
     MEMFAULT_LOG_ERROR("Invalid length %zu for %s", len, s_device_info_field_names[field]);
     return false;
   }

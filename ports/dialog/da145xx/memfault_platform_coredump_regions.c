@@ -52,7 +52,11 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
     uint32_t start_addr;
     size_t length;
   } s_mcu_mem_regions[] = {
-#if defined(__DA14531__)
+// DA14535 projects define both __DA14535__ and __DA14531__, so check for __DA14535__ first
+#if defined(__DA14535__)
+    { .start_addr = RAM_1_BASE_ADDR, .length = RAM_2_BASE_ADDR - RAM_1_BASE_ADDR },
+    { .start_addr = RAM_2_BASE_ADDR, .length = RAM_END_ADDR - RAM_2_BASE_ADDR },
+#elif defined(__DA14531__)
     { .start_addr = RAM_1_BASE_ADDR, .length = RAM_2_BASE_ADDR - RAM_1_BASE_ADDR },
     { .start_addr = RAM_2_BASE_ADDR, .length = RAM_3_BASE_ADDR - RAM_2_BASE_ADDR },
     { .start_addr = RAM_3_BASE_ADDR, .length = RAM_END_ADDR - RAM_3_BASE_ADDR },

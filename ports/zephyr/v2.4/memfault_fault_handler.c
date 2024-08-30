@@ -123,7 +123,9 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 }
 
 MEMFAULT_WEAK MEMFAULT_NORETURN void memfault_platform_reboot(void) {
+#if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
   memfault_platform_halt_if_debugging();
+#endif
 
   sys_arch_reboot(0);
   CODE_UNREACHABLE;

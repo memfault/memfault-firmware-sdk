@@ -27,6 +27,20 @@
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
 
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+
+//! Zephyr 3.7.0 deprecated NET_SOCKETS_POSIX_NAMES, and requires POSIX_API to be enabled instead.
+//! Confirm it's set.
+#if !defined(CONFIG_POSIX_API)
+#error "CONFIG_POSIX_API must be enabled"
+#endif
+
+//! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
+#if !defined(CONFIG_MBEDTLS_SHA1)
+#error "CONFIG_MBEDTLS_SHA1 must be enabled"
+#endif
+#endif
+
 #if defined(CONFIG_POSIX_API)
   #include MEMFAULT_ZEPHYR_INCLUDE(posix/netdb.h)
   #include MEMFAULT_ZEPHYR_INCLUDE(posix/poll.h)
@@ -103,13 +117,15 @@ static void prv_free(void *ptr) {
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len g_memfault_cert_digicert_global_root_g2_len
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr g_memfault_cert_amazon_root_ca1
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len g_memfault_cert_amazon_root_ca1_len
-#else
+#elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA)
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2)
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1)
+#else
+#error "Must choose a cert format. Check CONFIG_MEMFAULT_TLS_CERTS_FORMAT for options and their dependencies."
 #endif
 // clang-format on
 
@@ -224,9 +240,11 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
     return rv;
   }
 
-  // Set TLS cert parse + copy to optional, which will allow us to use either
-  // PEM or DER formatted certs. This feature was added in Zephyr v3.0.0.
-#if defined(TLS_CERT_NOCOPY_OPTIONAL)
+  // Set TLS cert parse + copy to optional, which will allow us to use either PEM or DER formatted
+  // certs. This feature was added in Zephyr v3.0.0. Not all socket operation implementations
+  // support this socket option, so gate on CONFIG_MEMFAULT_TLS_CERTS_USE_DER to ensure dependencies
+  // are met. Parsing PEM does not require this socket option.
+#if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER) && defined(TLS_CERT_NOCOPY_OPTIONAL)
   const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
   rv = setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
   if (rv) {

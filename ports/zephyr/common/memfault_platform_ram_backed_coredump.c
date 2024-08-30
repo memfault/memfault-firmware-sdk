@@ -14,7 +14,7 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/platform/coredump.h"
 
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_coredump")
+MEMFAULT_PUT_IN_SECTION(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_REGION)
 MEMFAULT_ALIGNED(8) static uint8_t
   s_ram_backed_coredump_region[CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE];
 

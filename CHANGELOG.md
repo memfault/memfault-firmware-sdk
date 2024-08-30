@@ -6,6 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] - 2024-08-29
+
+### :chart_with_upwards_trend: Improvements
+
+- nRF-Connect SDK:
+
+  - Add support for the following reboot reasons on nRF series SOCs. These
+    reboot reasons are tracked as `kMfltRebootReason_DeepSleep`.
+
+    - `NRF_POWER_RESETREAS_OFF_MASK`
+    - `NRF_POWER_RESETREAS_NFC_MASK`
+    - `NRF_POWER_RESETREAS_CTRLAP_MASK`
+
+- Zephyr:
+
+  - Use `MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED` to control whether coredumps
+    trigger a halt when a debugger is attached.
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_REGION`, to
+    set the RAM region used for storing RAM-backed coredumps.
+
+  - Fix a :bug: when trying to communicate via HTTPS with Memfault on the
+    nRF91x. On the nRF91x, socket operations are offloaded to the nRF modem lib,
+    which does not currently support the socket option `TLS_CERT_NO_COPY`. In
+    v1.9.4, this socket option was applied when TLS was enabled
+    (`!g_mflt_http_client_config.disable_tls`) and Zephyr version was >=3.0.0
+    (when support for this socket option was added). Therefore, devices on SDK
+    versions >=1.9.4 and <1.11.2 trying to communicate with Memfault will run
+    into a no protocol support error (`ENOPROTOOPT`) in the nRF modem lib. Since
+    this option is only required to use the DER format,
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_DER` now depends on the Zephyr-implemented
+    socket operations being used (`!NET_SOCKET_OFFLOAD`).
+
+  - Fix the build when using Zephyr 3.7.0 and leveraging the HTTP client and/or
+    ESP32 port. The Memfault HTTP client would fail to build due to the wrong
+    `crypto.h` header getting picked up in the build. Additionally, due to the
+    [removal of default support for mbedTLS hash algorithms in Zephyr](https://docs.zephyrproject.org/latest/releases/migration-guide-3.7.html#mbed-tls),
+    `CONFIG_MBEDTLS_SHA1` now must be enabled explicitly when using any of
+    Memfault's CA certificates. When using PEM and leveraging Zephyr's in-tree
+    mbedTLS and config file
+    (`CONFIG_MBEDTLS_BUILTIN=y && CONFIG_MBEDTLS_CFG_FILE="config-tls-generic.h"`),
+    `CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT=y` is required for PEM certificate
+    support. To simplify certificate format selection, a new choice Kconfig
+    called `CONFIG_MEMFAULT_TLS_CERTS_FORMAT` has been added. Use the configs
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_PEM` and `CONFIG_MEMFAULT_TLS_CERTS_USE_DER`
+    to choose the certificate format.`CONFIG_MEMFAULT_TLS_CERTS_USE_DER` is the
+    default choice config. Finally, the Kconfig `CONFIG_SOC_FAMILY_ESP32` is now
+    deprecated. References of this Kconfig now also check the new Kconfig
+    `CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`. See
+    [Zephyr's 3.7 Migration guide](https://docs.zephyrproject.org/latest/releases/migration-guide-3.7.html)
+    for more details.
+
+- Dialog
+
+  - Add support to the existing DA145xx port for the DA14535 by adding the
+    correct memory region for `memfault_platform_sanitize_address_range()`.
+
+  - Fix several :bug:s in `memfault_reboot_reason_get()` and
+    `memfault_platform_reboot()` implementations in the DA146x port. In
+    `memfault_reboot_reason_get()`, the bit masks were incorrectly applied and a
+    block was missing to reset the reboot reason register if
+    `MEMFAULT_REBOOT_REASON_CLEAR` is set. In `memfault_platform_reboot()`, the
+    mechanism to reboot the system has been updated from
+    `hw_cpm_reboot_system()` to `SWRESET`.
+
 ## [1.11.1] - 2024-08-12
 
 ### :chart_with_upwards_trend: Improvements
