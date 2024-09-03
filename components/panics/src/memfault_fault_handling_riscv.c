@@ -45,8 +45,7 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
 
 // For non-esp-idf riscv implementations, provide a full assert handler and
 // other utilities.
-  #if defined(__ZEPHYR__) && \
-    (defined(CONFIG_SOC_FAMILY_ESP32) || defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32))
+  #if defined(__ZEPHYR__) && (defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32))
     #include <hal/cpu_hal.h>
     #include <zephyr/kernel.h>
 

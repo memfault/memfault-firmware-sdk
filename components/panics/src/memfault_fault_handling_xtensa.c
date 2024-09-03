@@ -42,8 +42,7 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
 
 // For Zephyr Xtensa, provide an assert handler and other utilities.
 // The Kconfig for the ESP32 family changed in v3.7.0. Support both Kconfigs
-  #if defined(__ZEPHYR__) && \
-    (defined(CONFIG_SOC_FAMILY_ESP32) || defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32))
+  #if defined(__ZEPHYR__) && (defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32))
     #include <hal/cpu_hal.h>
     #include <zephyr/kernel.h>
 

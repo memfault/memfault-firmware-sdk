@@ -72,7 +72,7 @@ if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
   zephyr_ld_options(-Wl,--wrap=k_free)
 endif()
 
-if(CONFIG_SOC_FAMILY_ESP32 OR CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+if(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
   zephyr_linker_sources(SECTIONS memfault-rtc-noinit-region.ld)
 endif()
 

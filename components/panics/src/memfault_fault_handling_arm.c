@@ -553,7 +553,13 @@ void MEMFAULT_ASSERT_TRAP(void) {
     #define MEMFAULT_ASSERT_TRAP() __asm volatile("udf #77")
   #endif
 
-static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
+  #if defined(__clang__)
+// When using clang with LTO, the compiler can optimize storing the LR + FP from this function,
+// disable optimizations to fix
+MEMFAULT_NO_OPT
+  #endif
+  static void
+  prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
   // Only set the crash reason if it's unset, in case we are in a nested assert
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {
