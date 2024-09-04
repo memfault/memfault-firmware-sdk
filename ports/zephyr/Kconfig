@@ -669,8 +669,8 @@ config MEMFAULT_CDR_ENABLE
 
 choice MEMFAULT_BUILD_ID_TYPE
         prompt "Build ID type"
-        default MEMFAULT_USE_GNU_BUILD_ID if !BOOTLOADER_ESP_IDF
-        default MEMFAULT_USE_MEMFAULT_BUILD_ID if BOOTLOADER_ESP_IDF
+        default MEMFAULT_USE_MEMFAULT_BUILD_ID if (MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
+        default MEMFAULT_USE_GNU_BUILD_ID
         help
           Choose the type of build ID to include in the image
 
@@ -684,7 +684,7 @@ config MEMFAULT_USE_MEMFAULT_BUILD_ID
 
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         bool "Use a GNU build ID in an image"
-        depends on !BOOTLOADER_ESP_IDF
+        depends on !(MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
 
 if MEMFAULT_USE_GNU_BUILD_ID
 
