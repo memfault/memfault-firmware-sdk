@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_SOC_FAMILY_ESP32) || defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+#if defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
   #define ZEPHYR_DATA_REGION_START _data_start
   #define ZEPHYR_DATA_REGION_END _data_end
 #endif

@@ -96,6 +96,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-zero-length-array \
   -Wno-unsafe-buffer-usage \
   -Wno-cast-function-type-strict \
+  -Wc23-extensions \
 
 else
 # GCC-only warnings
@@ -103,6 +104,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness \
   -fno-extended-identifiers \
   -Wbidi-chars \
+  -Wc11-c2x-compat \
 
 # Only enable -fanalyzer if GCC version is >= 12
 GCC_VERSION_GTEQ_12 := $(shell expr $$($(CC) -dumpversion | cut -f1 -d.) \>= 12)

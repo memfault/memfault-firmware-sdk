@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <random>
+
 #include "CppUTest/MemoryLeakDetectorMallocMacros.h"
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
@@ -450,4 +452,113 @@ TEST(MemfaultHeapStats, Test_NeverUsedVsUnused) {
     },
   };
   CHECK(prv_heap_stat_equality(&expected, &g_memfault_heap_stats_pool[0]));
+}
+
+static void prv_check_list_end(void) {
+  bool list_end_found = false;
+  if (g_memfault_heap_stats.stats_pool_head == MEMFAULT_HEAP_STATS_LIST_END) {
+    printf("Found end at head\n");
+    list_end_found = true;
+  } else {
+    uint16_t current_index = g_memfault_heap_stats.stats_pool_head;
+    for (size_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+      uint16_t next_index = g_memfault_heap_stats_pool[current_index].info.next_entry_index;
+      if (next_index == MEMFAULT_HEAP_STATS_LIST_END) {
+        printf("Found end at %u\n", current_index);
+        list_end_found = true;
+        break;
+      }
+      current_index = next_index;
+    }
+  }
+  CHECK(list_end_found);
+}
+
+static void prv_print_list(void) {
+  uint16_t current_index = g_memfault_heap_stats.stats_pool_head;
+  printf("List: ");
+  for (size_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    printf("%hu", current_index);
+    if (current_index == MEMFAULT_HEAP_STATS_LIST_END) {
+      break;
+    }
+    printf("[%s] ", g_memfault_heap_stats_pool[current_index].info.in_use ? "used" : "free");
+    current_index = g_memfault_heap_stats_pool[current_index].info.next_entry_index;
+  }
+  printf("\n");
+}
+
+static void prv_print_heap_stats(void) {
+  printf("Heap Stats: ");
+  for (size_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    sMfltHeapStatEntry *entry = &g_memfault_heap_stats_pool[i];
+    printf("Entry[%lu]{lr[%p], ptr[%p], size[%d], used:[%d], next:[%hu]} ", i, entry->lr,
+           entry->ptr, entry->info.size, entry->info.in_use, entry->info.next_entry_index);
+  }
+  printf("\n");
+}
+
+static void prv_check_for_end(void) {
+  bool result = false;
+  uint16_t current_index = g_memfault_heap_stats.stats_pool_head;
+  for (size_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    if (current_index == MEMFAULT_HEAP_STATS_LIST_END) {
+      result = true;
+      break;
+    }
+    current_index = g_memfault_heap_stats_pool[current_index].info.next_entry_index;
+  }
+  if (current_index == MEMFAULT_HEAP_STATS_LIST_END) {
+    result = true;
+  }
+  CHECK(result);
+}
+
+static void prv_run_list_checks(void) {
+  prv_print_list();
+  prv_print_heap_stats();
+  prv_check_list_end();
+  prv_check_for_end();
+}
+
+TEST(MemfaultHeapStats, Test_NoCycle) {
+  // Setup the random generator
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  // Create a distribution of addresses between 1 (0 would be NULL which is invalid) and the max
+  // number of entries + 1. This gives a range of MEMFAULT_HEAP_STATS_MAX_COUNT
+  std::uniform_int_distribution<unsigned long> heap_stats_entry_address_generator(
+    1, MEMFAULT_HEAP_STATS_MAX_COUNT + 1);
+  std::uniform_int_distribution<> malloc_operation_generator(0, 1);
+
+  // Test pathological case where entries are freed in reverse order (newest first)
+  for (uintptr_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    MEMFAULT_HEAP_STATS_MALLOC((void *)(i + 1), i + 2);
+  }
+  prv_run_list_checks();
+
+  // Free every entry at the head of the list until empty
+  for (uintptr_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    MEMFAULT_HEAP_STATS_FREE((void *)(MEMFAULT_HEAP_STATS_MAX_COUNT - i));
+  }
+  prv_run_list_checks();
+  CHECK(g_memfault_heap_stats.stats_pool_head == MEMFAULT_HEAP_STATS_LIST_END);
+
+  // Fill entries again, and then randomly malloc and free many times
+  for (uintptr_t i = 0; i < MEMFAULT_HEAP_STATS_MAX_COUNT * 10; i++) {
+    MEMFAULT_HEAP_STATS_MALLOC((void *)(i + 1 + MEMFAULT_HEAP_STATS_MAX_COUNT), i + 2);
+  }
+
+  prv_run_list_checks();
+
+  for (size_t i = 0; i < 10 * MEMFAULT_HEAP_STATS_MAX_COUNT; i++) {
+    unsigned long entry_addr = heap_stats_entry_address_generator(gen);
+    if (malloc_operation_generator(gen)) {
+      MEMFAULT_HEAP_STATS_MALLOC((void *)entry_addr, entry_addr + 2);
+    } else {
+      MEMFAULT_HEAP_STATS_FREE((void *)entry_addr);
+    }
+    prv_run_list_checks();
+  }
 }

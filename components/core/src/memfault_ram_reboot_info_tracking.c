@@ -26,6 +26,16 @@
 
 #define MEMFAULT_REBOOT_INFO_VERSION 2
 
+// clang-format off
+// Internal value used to initialize sMfltRebootInfo.last_reboot_reason. Care must be taken when
+// comparing this value to eMemfaultRebootReason as different platforms produce different behavior
+// comparing uint32_t to enum types. In general, cast this value to the type it is compared against.
+// Examples:
+//
+// uint32_t last_reboot_reason != MEMFAULT_REBOOT_REASON_NOT_SET (GOOD)
+// eMemfaultRebootReason reboot_reason != (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET (GOOD)
+// uint32_t last_reboot_reason != (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET (BAD)
+// clang-format on
 #define MEMFAULT_REBOOT_REASON_NOT_SET 0xffffffff
 
 typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
@@ -55,6 +65,10 @@ sMfltRebootInfo;
 
 MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) == MEMFAULT_REBOOT_TRACKING_REGION_SIZE,
                        "struct doesn't match expected size");
+
+MEMFAULT_STATIC_ASSERT(sizeof(eMemfaultRebootReason) <=
+                         sizeof(((sMfltRebootInfo){ 0 }).last_reboot_reason),
+                       "enum does not fit within sMfltRebootInfo.last_reboot_reason");
 
 static sMfltRebootInfo *s_mflt_reboot_info;
 
@@ -90,6 +104,7 @@ static bool prv_check_or_init_struct(void) {
 }
 
 static bool prv_read_reset_info(sMfltResetReasonInfo *info) {
+  // prior_stored_reason is a uint32_t, no need to cast MEMFAULT_REBOOT_REASON_NOT_SET
   if ((s_mflt_reboot_info->last_reboot_reason == MEMFAULT_REBOOT_REASON_NOT_SET) &&
       (s_mflt_reboot_info->reset_reason_reg0 == 0)) {
     return false;  // no reset crashes!
@@ -118,7 +133,8 @@ static void prv_record_reboot_reason(eMemfaultRebootReason reboot_reg_reason,
                                      uint32_t prior_stored_reason) {
   s_reboot_reason_data.reboot_reg_reason = reboot_reg_reason;
 
-  if (prior_stored_reason != (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
+  // prior_stored_reason is a uint32_t, no need to cast MEMFAULT_REBOOT_REASON_NOT_SET
+  if (prior_stored_reason != MEMFAULT_REBOOT_REASON_NOT_SET) {
     s_reboot_reason_data.prior_stored_reason = (eMemfaultRebootReason)prior_stored_reason;
   } else {
     s_reboot_reason_data.prior_stored_reason = reboot_reg_reason;
@@ -131,6 +147,9 @@ static bool prv_get_unexpected_reboot_occurred(void) {
   // Use prior_stored_reason as source of reboot reason. Fallback to reboot_reg_reason if
   // prior_stored_reason is not set
   eMemfaultRebootReason reboot_reason;
+
+  // s_reboot_reason_data.prior_stored_reason is an eMemfaultRebootReason type, cast
+  // MEMFAULT_REBOOT_REASON_NOT_SET
   if (s_reboot_reason_data.prior_stored_reason !=
       (eMemfaultRebootReason)MEMFAULT_REBOOT_REASON_NOT_SET) {
     reboot_reason = s_reboot_reason_data.prior_stored_reason;
@@ -151,6 +170,7 @@ static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
   // s_mflt_reboot_info can be cleared by any call to memfault_reboot_tracking_collect_reset_info
   prv_record_reboot_reason(reboot_reason, s_mflt_reboot_info->last_reboot_reason);
 
+  // last_reboot_reason is a uint32_t, no need to cast MEMFAULT_REBOOT_REASON_NOT_SET
   if (s_mflt_reboot_info->last_reboot_reason != MEMFAULT_REBOOT_REASON_NOT_SET) {
     // we are already tracking a reboot. We don't overwrite this because generally the first reboot
     // in a loop reveals what started the crash loop

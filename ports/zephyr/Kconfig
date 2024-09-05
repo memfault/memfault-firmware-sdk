@@ -14,6 +14,7 @@ if MEMFAULT
 config MEMFAULT_CACHE_FAULT_REGS
         bool "Memfault Cache ARM fault registers"
         default y
+        depends on CPU_CORTEX_M
         help
           Save a copy of the ARMv7's fault registers before Zephyr
           modifies them to provide a more accurate crash analysis
@@ -39,6 +40,17 @@ config MEMFAULT_USER_CONFIG_SILENT_FAIL
           memfault_platform_config.h
           memfault_metrics_heartbeat_config.def
           memfault_trace_reason_user_config.def
+
+config MEMFAULT_SOC_FAMILY_ESP32
+        bool "Enable ESP32 support"
+        # Note: the generic ESP32 family config changed from SOC_FAMILY_ESP32 to
+        # SOC_FAMILY_ESPRESSIF_ESP32 in Zephyr 3.7.0. To provide backwards
+        # compatible support without referencing unavailable Kconfig values,
+        # generate a Memfault-specific option that works on Zephyr 3.7.0 and
+        # also earlier releases.
+        default y if SOC_FAMILY_ESPRESSIF_ESP32 || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+        help
+          Enable ESP32 support in the Memfault SDK
 
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
@@ -148,7 +160,7 @@ endmenu  # Memfault Coredump Settings
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
         # our wrapper conflicts with the esp32 heap_caps implementation
-        default y if (!SOC_FAMILY_ESP32 && !SOC_FAMILY_ESPRESSIF_ESP32)
+        default y if (!MEMFAULT_SOC_FAMILY_ESP32)
         select SYS_HEAP_RUNTIME_STATS
         depends on HEAP_MEM_POOL_SIZE > 0
         help
@@ -417,7 +429,7 @@ config MEMFAULT_REBOOT_REASON_GET_CUSTOM
 
 config MEMFAULT_REBOOT_TRACKING_REGION
        string "Memfault Reboot Tracking Region"
-       default ".rtc_noinit" if (SOC_FAMILY_ESP32 || SOC_FAMILY_ESPRESSIF_ESP32)
+       default ".rtc_noinit" if (MEMFAULT_SOC_FAMILY_ESP32)
        default ".noinit.mflt_reboot_info"
         help
          The region in memory where the reboot tracking information will be stored.
@@ -657,8 +669,8 @@ config MEMFAULT_CDR_ENABLE
 
 choice MEMFAULT_BUILD_ID_TYPE
         prompt "Build ID type"
-        default MEMFAULT_USE_GNU_BUILD_ID if !BOOTLOADER_ESP_IDF
-        default MEMFAULT_USE_MEMFAULT_BUILD_ID if BOOTLOADER_ESP_IDF
+        default MEMFAULT_USE_MEMFAULT_BUILD_ID if (MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
+        default MEMFAULT_USE_GNU_BUILD_ID
         help
           Choose the type of build ID to include in the image
 
@@ -672,7 +684,7 @@ config MEMFAULT_USE_MEMFAULT_BUILD_ID
 
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
         bool "Use a GNU build ID in an image"
-        depends on !BOOTLOADER_ESP_IDF
+        depends on !(MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
 
 if MEMFAULT_USE_GNU_BUILD_ID
 

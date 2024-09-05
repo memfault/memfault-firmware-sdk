@@ -8,7 +8,7 @@ SECTION_PROLOGUE(.note.gnu.build-id,,)
  * GROUP_DATA_LINK_IN() is newer to Zephyr so it may not catch all cases;
  * #ifdef on the ESP32 family for now.
  */
-#if defined(CONFIG_SOC_FAMILY_ESP32) || defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+#if defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
 } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 #else
 } GROUP_LINK_IN(ROMABLE_REGION)

@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.3] - 2024-09-05
+
+### :chart_with_upwards_trend: Improvements
+
+- General:
+
+  - Improve assert stack unwinding for Clang builds when `-flto` is enabled.
+
+- Zephyr:
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_SOC_FAMILY_ESP32`, to resolve an
+    error when referencing the deprecated `CONFIG_SOC_FAMILY_ESP32` Kconfig
+    (removed in
+    [Zephyr 3.7.0](https://github.com/zephyrproject-rtos/zephyr/commit/8dc3f856229ce083c956aa301c31a23e65bd8cd8)
+    as part of Hardware Model V2). This new option is used in the Memfault
+    Zephyr port to check if an ESP32 SOC is being used.
+
+  - Remove references to the deprecated `BOOTLOADER_ESP_IDF` Kconfig symbol in
+    the Memfault Zephyr port (removed in Zephyr 3.7.0).
+
 ## [1.11.2] - 2024-08-29
 
 ### :chart_with_upwards_trend: Improvements

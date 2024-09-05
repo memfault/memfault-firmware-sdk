@@ -2,7 +2,8 @@ SRC_FILES = \
   $(MFLT_COMPONENTS_DIR)/core/src/memfault_heap_stats.c
 
 MOCK_AND_FAKE_SRC_FILES += \
-  $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c \
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_sdk_assert.c
 
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_heap_stats.cpp \

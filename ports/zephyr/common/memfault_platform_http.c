@@ -27,7 +27,7 @@
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 
 //! Zephyr 3.7.0 deprecated NET_SOCKETS_POSIX_NAMES, and requires POSIX_API to be enabled instead.
 //! Confirm it's set.

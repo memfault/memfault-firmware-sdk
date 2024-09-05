@@ -63,9 +63,6 @@ typedef struct MfltRebootType {
   eMemfaultRebootReason prior_stored_reason;
 } sMfltRebootReason;
 
-//! Value used to determine state of reboot tracking data
-#define MEMFAULT_REBOOT_REASON_NOT_SET 0xffffffff
-
 #define MEMFAULT_REBOOT_TRACKING_REGION_SIZE 64
 
 //! Sets the memory region used for reboot tracking.

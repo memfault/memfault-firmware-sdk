@@ -20,6 +20,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/sdk_assert.h"
 
 #define MEMFAULT_HEAP_STATS_VERSION 2
 
@@ -119,6 +120,12 @@ void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
       g_memfault_heap_stats.max_in_use_block_count = g_memfault_heap_stats.in_use_block_count;
     }
     uint16_t new_entry_index = prv_get_new_entry_index();
+
+    // Ensure a valid entry index is returned. An invalid index can indicate a concurrency
+    // misconfiguration. MEMFAULT_HEAP_STATS_MALLOC/FREE must prevent concurrent access via
+    // memfault_lock/unlock or other means
+    MEMFAULT_SDK_ASSERT(new_entry_index != MEMFAULT_HEAP_STATS_LIST_END);
+
     sMfltHeapStatEntry *new_entry = &g_memfault_heap_stats_pool[new_entry_index];
     *new_entry = (sMfltHeapStatEntry){
       .lr = lr,
@@ -165,7 +172,7 @@ void memfault_heap_stats_free(const void *ptr) {
           g_memfault_heap_stats.stats_pool_head = entry->info.next_entry_index;
         }
 
-        // If there's a valid previous entry, set it's next index to removed entry's
+        // If there's a valid previous entry, set its next index to removed entry's
         if (previous_entry_index != MEMFAULT_HEAP_STATS_LIST_END) {
           g_memfault_heap_stats_pool[previous_entry_index].info.next_entry_index =
             entry->info.next_entry_index;
