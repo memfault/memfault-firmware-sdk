@@ -54,6 +54,10 @@ CPPUTEST_WARNINGFLAGS = \
   -Wshadow \
   -Wswitch-default
 
+# Default from MakefileWorker.mk if none defined
+CPPUTEST_C_WARNINGFLAGS = \
+  -Wstrict-prototypes
+
 CPPUTEST_CFLAGS += \
   -Wbad-function-cast
 
@@ -67,7 +71,7 @@ CPPUTEST_WARNINGFLAGS += \
 CC_VERSION_OUTPUT ="$(shell $(CXX) -v 2>&1)"
 CLANG_STR = clang
 ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
-# Clang-only warning flags
+# Clang-only C/C++ warning flags
 COMPILER_SPECIFIC_WARNINGS += \
   -Wno-bad-function-cast \
   -Wno-c++11-extensions \
@@ -98,13 +102,19 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-cast-function-type-strict \
   -Wc23-extensions \
 
+# Clang-only C-only warning flags
+COMPILER_SPECIFIC_C_WARNINGS += -Wc23-extensions
+
 else
-# GCC-only warnings
+# GCC-only C/C++ warnings
 COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness \
   -fno-extended-identifiers \
   -Wbidi-chars \
   -Wc11-c2x-compat \
+
+# GCC-only C-only warnings
+COMPILER_SPECIFIC_C_WARNINGS += -Wc11-c2x-compat
 
 # Only enable -fanalyzer if GCC version is >= 12
 GCC_VERSION_GTEQ_12 := $(shell expr $$($(CC) -dumpversion | cut -f1 -d.) \>= 12)
@@ -141,8 +151,10 @@ CPPUTEST_LDFLAGS += \
 endif
 
 CPPUTEST_WARNINGFLAGS += $(COMPILER_SPECIFIC_WARNINGS)
+CPPUTEST_C_WARNINGFLAGS += $(COMPILER_SPECIFIC_C_WARNINGS)
 
 export CPPUTEST_WARNINGFLAGS
+export CPPUTEST_C_WARNINGFLAGS
 
 export CPPUTEST_LDFLAGS
 
