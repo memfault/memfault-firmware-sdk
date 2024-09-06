@@ -100,7 +100,6 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-zero-length-array \
   -Wno-unsafe-buffer-usage \
   -Wno-cast-function-type-strict \
-  -Wc23-extensions \
 
 # Clang-only C-only warning flags
 COMPILER_SPECIFIC_C_WARNINGS += -Wc23-extensions
@@ -111,7 +110,6 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wformat-signedness \
   -fno-extended-identifiers \
   -Wbidi-chars \
-  -Wc11-c2x-compat \
 
 # GCC-only C-only warnings
 COMPILER_SPECIFIC_C_WARNINGS += -Wc11-c2x-compat
