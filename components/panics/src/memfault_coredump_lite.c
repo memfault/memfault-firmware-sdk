@@ -1,8 +1,5 @@
 //! @file
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
-//!
 //! @brief
 //! Logic for saving a coredump to backing storage and reading it out
 //!
@@ -11,7 +8,7 @@
 
 #include "memfault/config.h"
 
-#if !defined(MEMFAULT_COREDUMP_LITE)
+#if defined(MEMFAULT_COREDUMP_LITE)
 
   #include <stdbool.h>
   #include <string.h>
@@ -128,36 +125,6 @@ typedef struct {
   // set to true if a call to "memfault_platform_coredump_storage_write" failed
   bool write_error;
 } sMfltCoredumpWriteCtx;
-
-// Checks to see if the block is a cached region and applies
-// required fixups to allow the coredump to properly record
-// the original cached address and its associated data. Will
-// succeed if not a cached block or is a valid cached block.
-// Callers should ignore the region if failure is returned
-// because the block is not valid.
-static bool prv_fixup_if_cached_block(sMfltCoredumpRegion *region, uint32_t *cached_address) {
-  if (region->type == kMfltCoredumpRegionType_CachedMemory) {
-    const sMfltCachedBlock *cached_blk = region->region_start;
-    if (!cached_blk->valid_cache) {
-      // Ignore this block.
-      return false;
-    }
-
-    // This is where we want Memfault to indicate the data came from.
-    *cached_address = cached_blk->cached_address;
-
-    // The cached block is just regular memory.
-    region->type = kMfltCoredumpRegionType_Memory;
-
-    // Remove our header from the size and region_start
-    // is where we cached the <cached_address>'s data.
-    region->region_size = cached_blk->blk_size;
-    region->region_start = cached_blk->blk;  // Must be last operation!
-  }
-
-  // Success, untouched or fixed up.
-  return true;
-}
 
 static bool prv_platform_coredump_write(const void *data, size_t len,
                                         sMfltCoredumpWriteCtx *write_ctx) {
@@ -412,12 +379,7 @@ static bool prv_write_regions(sMfltCoredumpWriteCtx *write_ctx, const sMfltCored
     // Just in case *regions is some how in r/o memory make a non-const copy
     // and work with that from here on.
     sMfltCoredumpRegion region_copy = regions[i];
-
     uint32_t address = (uint32_t)(uintptr_t)region_copy.region_start;
-    if (!prv_fixup_if_cached_block(&region_copy, &address)) {
-      // We must skip invalid cached blocks.
-      continue;
-    }
 
     const bool word_aligned_reads_only =
       (region_copy.type == kMfltCoredumpRegionType_MemoryWordAccessOnly);
@@ -500,11 +462,8 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   // write out any architecture specific regions
   size_t num_arch_regions = 0;
   const sMfltCoredumpRegion *arch_regions = memfault_coredump_get_arch_regions(&num_arch_regions);
-  size_t num_sdk_regions = 0;
-  const sMfltCoredumpRegion *sdk_regions = memfault_coredump_get_sdk_regions(&num_sdk_regions);
 
   const bool write_completed = prv_write_regions(&write_ctx, arch_regions, num_arch_regions) &&
-                               prv_write_regions(&write_ctx, sdk_regions, num_sdk_regions) &&
                                prv_write_regions(&write_ctx, regions, num_regions);
 
   if (!write_completed && write_ctx.write_error) {
@@ -575,4 +534,4 @@ const sMemfaultDataSourceImpl g_memfault_coredump_data_source = {
   .mark_msg_read_cb = memfault_platform_coredump_storage_clear,
 };
 
-#endif  // !defined(MEMFAULT_COREDUMP_LITE)
+#endif  // defined(MEMFAULT_COREDUMP_LITE)

@@ -112,6 +112,7 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
     .use_rle = false,
     .impl = &g_memfault_log_data_source,
   },
+#if MEMFAULT_CDR_ENABLE
   // NB: We may want to enable RLE in the future here (probably a lot of repeat patterns). The one
   // thing to keep in mind is that when the encoder is enabled, it requires a lot more short reads
   // to take place on the data source which can be a slow operation for flash based filesystems.
@@ -120,6 +121,7 @@ static const sMemfaultDataSource s_memfault_data_source[] = {
     .use_rle = false,
     .impl = &g_memfault_cdr_source,
   }
+#endif
 };
 
 typedef struct {
@@ -326,6 +328,7 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
     memfault_chunk_transport_get_next_chunk(&s_mflt_packetizer_state.curr_msg_ctx, buf, buf_len);
 
   if (*buf_len == 0) {
+    (void)original_size;
     MEMFAULT_LOG_ERROR("Buffer of %d bytes too small to packetize data", (int)original_size);
     return kMemfaultPacketizerStatus_NoMoreData;
   }

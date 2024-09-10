@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED]
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix a minor issue where `MEMFAULT_LOG_x()` macros (`MEMFAULT_LOG_ERROR()`
+    etc ) would be recorded twice in the log buffer.
+
 ## [1.11.3] - 2024-09-05
 
 ### :chart_with_upwards_trend: Improvements

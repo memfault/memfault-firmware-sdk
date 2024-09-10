@@ -59,6 +59,10 @@ extern "C" {
   #define MEMFAULT_COMPACT_LOG_ENABLE 1
 #endif
 
+// Memfault SDK logs are routed to ESP-IDF logging, which are saved by Memfault,
+// so it's redundant to save them in the Memfault SDK as well.
+#define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
