@@ -20,9 +20,10 @@ int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED cha
   MEMFAULT_LOG_WARN("Warning log!");
   MEMFAULT_LOG_ERROR("Error log!");
 
-#if MEMFAULT_SDK_LOG_SAVE_DISABLE
+  // ESP-IDF will still save logs when MEMFAULT_SDK_LOG_SAVE_DISABLE is set
+#if MEMFAULT_SDK_LOG_SAVE_DISABLE && !defined(ESP_PLATFORM)
   // MEMFAULT_LOGs are not written to the ram backed log buffer so do
-  // it explicitly
+  // it explicitly for testing purposes
   MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Debug, "Debug log!");
   MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "Info log!");
   MEMFAULT_LOG_SAVE(kMemfaultPlatformLogLevel_Warning, "Warning log!");

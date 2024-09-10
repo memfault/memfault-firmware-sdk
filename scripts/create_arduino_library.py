@@ -56,7 +56,7 @@ def download_memfault_library(working_dir: str, tag: str):
 
 def extract_memfault_library(working_dir: str, release_artifact_filepath: str):
     logging.debug("Extracting %s", release_artifact_filepath)
-    download = tarfile.open(release_artifact_filepath)
+    download = tarfile.open(release_artifact_filepath)  # noqa: SIM115
     download.extractall(working_dir)  # noqa: S202
     root_folder_name = download.getnames()[0]
     download.close()

@@ -24,10 +24,6 @@
 #if defined(CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X)
 //! Handler for LTE events
 static void prv_memfault_lte_event_handler(const struct lte_lc_evt *const evt) {
-  enum lte_lc_func_mode mode;
-  lte_lc_func_mode_get(&mode);
-  MEMFAULT_LOG_DEBUG("LTE mode: %d", mode);
-
   switch (evt->type) {
     case LTE_LC_EVT_NW_REG_STATUS:
       switch (evt->nw_reg_status) {
@@ -47,12 +43,9 @@ static void prv_memfault_lte_event_handler(const struct lte_lc_evt *const evt) {
         case LTE_LC_NW_REG_UNKNOWN:
           // intentional fallthrough
         case LTE_LC_NW_REG_UICC_FAIL:
-          // only mark as disconnected if modem is supposed to be connected
-          if (mode == LTE_LC_FUNC_MODE_NORMAL || mode == LTE_LC_FUNC_MODE_ACTIVATE_LTE) {
-            MEMFAULT_LOG_DEBUG("Connected state: connection lost");
-            memfault_metrics_connectivity_connected_state_change(
-              kMemfaultMetricsConnectivityState_ConnectionLost);
-          }
+          MEMFAULT_LOG_DEBUG("Connected state: connection lost");
+          memfault_metrics_connectivity_connected_state_change(
+            kMemfaultMetricsConnectivityState_ConnectionLost);
           break;
         default:
           break;

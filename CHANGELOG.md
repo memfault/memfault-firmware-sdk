@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2024-09-10
+
+### :chart_with_upwards_trend: Improvements
+
+- ESP-IDF:
+
+  - Fix a minor issue where `MEMFAULT_LOG_x()` macros (`MEMFAULT_LOG_ERROR()`
+    etc ) would be recorded twice in the log buffer.
+
+- General:
+
+  - Fix an error in the unit test CI build due to the addition of the
+    `-Wc11-c2x-compat` compiler warning flag. This flag is not valid for the C++
+    compiler, and has been changed to be enabled only for the C compiler.
+
+- nRF-Connect SDK:
+
+  - Fix a possible stack overflow when tracking the Memfault Connectivity
+    Connected Time Vital for the nRF9160 LTE connection, due to a change in the
+    nRF-Connect SDK v2.7.0 from prior versions.
+
 ## [1.11.3] - 2024-09-05
 
 ### :chart_with_upwards_trend: Improvements
