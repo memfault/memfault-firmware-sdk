@@ -160,6 +160,12 @@ extern void sys_arch_reboot(int type);
 
 // Intercept zephyr/kernel/fatal.c:z_fatal_error(). Note that the signature
 // changed in zephyr 3.7.
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+  #define MEMFAULT_NEW_ARCH_ESF_STRUCT MEMFAULT_NCS_VERSION_GT(2, 7)
+#else
+  #define MEMFAULT_NEW_ARCH_ESF_STRUCT MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
+#endif
+
 #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf);
 void __real_z_fatal_error(unsigned int reason, const struct arch_esf *esf);

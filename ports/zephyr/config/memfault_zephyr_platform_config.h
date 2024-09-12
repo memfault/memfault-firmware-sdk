@@ -6,8 +6,7 @@
 //! See LICENSE for details
 //!
 //! Zephyr port overrides for the default configuration settings in the memfault-firmware-sdk.
-#include <autoconf.h>  // For Kconfig settings
-#include <version.h>   // Zephyr version macros
+#include <version.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,7 +14,7 @@ extern "C" {
 
 // Note that pre-v2.0 Zephyr did not create the section allocation needed to support
 // our Gnu build ID usage.
-#if KERNEL_VERSION_MAJOR >= 2 && CONFIG_MEMFAULT_USE_GNU_BUILD_ID
+#if KERNEL_VERSION_MAJOR >= 2 && defined(CONFIG_MEMFAULT_USE_GNU_BUILD_ID)
   // Add a unique identifier to the firmware build
   //
   // It is very common, especially during development, to not change the firmware
@@ -40,13 +39,13 @@ extern "C" {
 // so no need to save from the SDK
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
 
-#if CONFIG_MEMFAULT_CACHE_FAULT_REGS
+#if defined(CONFIG_MEMFAULT_CACHE_FAULT_REGS)
   // Map Zephyr config to Memfault define so that we can
   // collect the HW fault regs before Zephyr modifies them.
   #define MEMFAULT_CACHE_FAULT_REGS 1
 #endif
 
-#if CONFIG_MEMFAULT_HEAP_STATS
+#if defined(CONFIG_MEMFAULT_HEAP_STATS)
   // Map Zephyr config to Memfault define to enable heap
   // tracing collection.
   #define MEMFAULT_COREDUMP_COLLECT_HEAP_STATS 1
@@ -56,7 +55,7 @@ extern "C" {
   #define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 1
 #endif
 
-#if CONFIG_MEMFAULT_NRF_CONNECT_SDK
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
 
   #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
   #define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
@@ -101,11 +100,11 @@ extern "C" {
   #define MEMFAULT_CDR_ENABLE 1
 #endif
 
-#if CONFIG_MEMFAULT_USER_CONFIG_ENABLE
+#if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 
   // Pick up any user configuration overrides. This should be kept at the bottom
   // of this file
-  #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL
+  #if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 
     #if __has_include("memfault_platform_config.h")
       #include "memfault_platform_config.h"
