@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief
 //! esp-idf port specific functions related to http
@@ -97,6 +97,12 @@ int memfault_esp_port_ota_get_release_url(char **download_url);
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
 //! Start a thread to periodically post chunks to Memfault via HTTPS
 void memfault_esp_port_http_periodic_upload_start(void);
+
+  #if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+//! Enable or disable periodic log upload at runtime
+void memfault_esp_port_http_periodic_upload_logs(bool enable);
+  #endif
+
 #endif
 
 #ifdef __cplusplus

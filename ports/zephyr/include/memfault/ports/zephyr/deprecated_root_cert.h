@@ -3,10 +3,8 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
 
 #include "memfault/core/compiler.h"
 #include "memfault/ports/zephyr/root_cert_storage.h"

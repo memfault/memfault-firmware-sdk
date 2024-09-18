@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! This file needs to be included from your platforms FreeRTOSConfig.h to take advantage of
 //! Memfault's hooks into the FreeRTOS tracing utilities

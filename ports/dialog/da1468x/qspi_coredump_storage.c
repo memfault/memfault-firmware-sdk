@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A coredump storage implementation that uses the NVMS log partition for storing crash
 //! information. The Dialog NVMS layer is required. See custom_config_qspi.h to enable both

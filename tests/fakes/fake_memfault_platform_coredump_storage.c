@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! Ram backed memfault storage implementation
 
 #include "fake_memfault_platform_coredump_storage.h"

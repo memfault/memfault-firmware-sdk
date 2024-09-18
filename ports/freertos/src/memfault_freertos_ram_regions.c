@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @note This file enables collecting a portion of all the FreeRTOS task state in a minimal RAM
 //! footprint. If you are able to collect all of RAM in your coredump, there is no need to use the

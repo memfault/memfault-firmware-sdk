@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief
 //! Example implementation of platform dependencies on the ESP32 for the Memfault HTTP APIs
@@ -322,6 +322,8 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   if ((rv != 0) || (download_url == NULL)) {
     return rv;
   }
+
+  printf("Download URL: %s\n", download_url);
 
   const bool perform_ota = handler->handle_update_available(handler->user_ctx);
   if (!perform_ota) {

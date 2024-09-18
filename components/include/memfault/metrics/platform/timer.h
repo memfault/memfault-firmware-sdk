@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! @brief
 //!
 //! A timer API which needs to be implemented to start collecting memfault heartbeat metrics

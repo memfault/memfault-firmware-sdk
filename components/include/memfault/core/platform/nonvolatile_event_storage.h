@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Dependencies which must be implemented to persist events collected by the Memfault SDK into
 //! non-volatile storage. This can be useful when a device:

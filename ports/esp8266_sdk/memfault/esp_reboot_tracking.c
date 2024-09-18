@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Reads the reset reason information saved in the ESP8266 RTC backup domain.
 //! I believe this info itself is copied by the bootloader from another register but

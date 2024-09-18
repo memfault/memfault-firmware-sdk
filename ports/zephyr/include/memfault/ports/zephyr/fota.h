@@ -3,10 +3,8 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
 
 #if defined(__cplusplus)
 extern "C" {

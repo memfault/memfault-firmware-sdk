@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A port of dependency functions for Memfault metrics subsystem using FreeRTOS.
 //!
@@ -170,20 +170,26 @@ static void prv_collect_wifi_metrics(void) {
 }
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
-#if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
-
-static void prv_record_heap_metrics(void) {
+#if defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
+static void prv_collect_memory_usage_metrics(void) {
   multi_heap_info_t heap_info = { 0 };
   heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
   MEMFAULT_METRIC_SET_UNSIGNED(heap_free_bytes, heap_info.total_free_bytes);
   MEMFAULT_METRIC_SET_UNSIGNED(heap_largest_free_block_bytes, heap_info.largest_free_block);
   MEMFAULT_METRIC_SET_UNSIGNED(heap_allocated_blocks_count, heap_info.allocated_blocks);
-  // lifetime minimum free bytes. see caveat here:
+  // Metrics below use lifetime minimum free bytes. see caveat here:
   // https://docs.espressif.com/projects/esp-idf/en/v5.1.1/esp32/api-reference/system/mem_alloc.html#_CPPv431heap_caps_get_minimum_free_size8uint32_t
   MEMFAULT_METRIC_SET_UNSIGNED(heap_min_free_bytes, heap_info.minimum_free_bytes);
-}
+  uint32_t total_heap_size = heap_info.total_free_bytes + heap_info.total_allocated_bytes;
 
-#endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
+  // Range is 0-10000 for 0.00-100.00%
+  // Multiply by 100 to get us 2 decimals of precision via the scale factor and then by 100 again
+  // for percentage conversion.
+  MEMFAULT_METRIC_SET_UNSIGNED(
+    memory_pct_max,
+    ((uint32_t)((total_heap_size - heap_info.minimum_free_bytes) * 10000.0f) / total_heap_size));
+}
+#endif  // CONFIG_MEMFAULT_METRICS_MEMORY_USAGE
 
 bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
                                           MemfaultPlatformTimerCallback callback) {
@@ -245,7 +251,7 @@ static void prv_collect_temperature_metric(void) {
       break;
     } else {
       MEMFAULT_LOG_INFO("Temperature: %.02fC", tsens_out);
-      MEMFAULT_METRIC_SET_SIGNED(cpu_temp, (int32_t)(tsens_out * 10.0f));
+      MEMFAULT_METRIC_SET_SIGNED(thermal_cpu_c, (int32_t)(tsens_out * 10.0f));
     }
   } while (0);
 
@@ -275,9 +281,9 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   prv_collect_wifi_metrics();
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
-#if defined(CONFIG_MEMFAULT_ESP_HEAP_METRICS)
-  prv_record_heap_metrics();
-#endif  // CONFIG_MEMFAULT_ESP_HEAP_METRICS
+#if defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
+  prv_collect_memory_usage_metrics();
+#endif  // CONFIG_MEMFAULT_METRICS_MEMORY_USAGE
 
 #if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
   prv_collect_temperature_metric();

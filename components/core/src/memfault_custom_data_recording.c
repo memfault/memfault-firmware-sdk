@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Implements sMemfaultDataSourceImpl API specified in data_packetizer_source.h to serialize a
 //! custom data recording such that it can be published to the Memfault cloud.

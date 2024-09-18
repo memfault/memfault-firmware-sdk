@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A utility that implements a small subset of the CBOR RFC:
 //!  https://tools.ietf.org/html/rfc7049

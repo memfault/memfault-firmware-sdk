@@ -3,10 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
-//!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Implement a special MEMFAULT_FREERTOS_REGISTRY_FULL_ERROR_LOG() macro used
 //! when logging from the FreeRTOS task creation function.

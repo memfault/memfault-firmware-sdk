@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Reference implementation of platform dependency functions to use sectors of internal flash
 //! on the S32K1xx family for coredump capture. The implementation makes use of the

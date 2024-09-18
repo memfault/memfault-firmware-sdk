@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Module for controlling the RGB LED. Implementation varies depending on which
 //! target board; the ESP32-WROVER has a 3-gpio LED, while the ESP32-S3-DevKitC

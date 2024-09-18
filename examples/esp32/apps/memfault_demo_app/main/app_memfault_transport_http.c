@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 
 #include "app_memfault_transport.h"
 #include "memfault/esp_port/http_client.h"

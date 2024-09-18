@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Note: These tests are reused in C++ and C tests. See the files including
 //! this one for how they're meant to be used.

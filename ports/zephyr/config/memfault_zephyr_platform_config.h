@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Zephyr port overrides for the default configuration settings in the memfault-firmware-sdk.
 #include <autoconf.h>  // For Kconfig settings

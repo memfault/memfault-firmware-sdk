@@ -3,10 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
-//!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! NOTE: The internals of the metric APIs make use of "X-Macros" to enable more flexibility
 //! improving and extending the internal implementation without impacting the externally facing API

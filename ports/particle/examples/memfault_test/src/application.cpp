@@ -1,8 +1,5 @@
 //! @file
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
-//!
 //! @brief
 //!
 //! A simple test app which can be used for testing the Particle Memfault library

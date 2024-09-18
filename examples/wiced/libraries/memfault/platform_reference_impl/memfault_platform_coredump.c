@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Reference implementation of platform dependency functions which could be used
 //! for coredump collection on the WICED platform

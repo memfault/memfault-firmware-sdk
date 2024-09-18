@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief Provides a built-in HTTP periodic upload task
 
@@ -22,6 +22,11 @@
 #endif
 
 #define PERIODIC_UPLOAD_TASK_NAME "mflt_periodic_upload"
+
+#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+// Runtime configurable
+static bool s_mflt_upload_logs;
+#endif
 
 // Periodically post any Memfault data that has not yet been posted.
 static void prv_periodic_upload_task(void *args) {
@@ -45,6 +50,14 @@ static void prv_periodic_upload_task(void *args) {
   vTaskDelay(initial_duration_ms_ticks);
 
   while (true) {
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+    memfault_log_trigger_collection();
+#else
+    if (s_mflt_upload_logs) {
+      memfault_log_trigger_collection();
+    }
+#endif
+
     int err = memfault_esp_port_http_client_post_data();
     if (err) {
       MEMFAULT_LOG_ERROR("Post data failed: %d", err);
@@ -54,6 +67,12 @@ static void prv_periodic_upload_task(void *args) {
     vTaskDelay(interval_ms_ticks);
   }
 }
+
+#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+void memfault_esp_port_http_periodic_upload_logs(bool enable) {
+  s_mflt_upload_logs = enable;
+}
+#endif
 
 void memfault_esp_port_http_periodic_upload_start(void) {
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_TASK_STATIC)

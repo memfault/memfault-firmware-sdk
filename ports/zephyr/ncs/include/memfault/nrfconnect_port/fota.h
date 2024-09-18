@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Integrates the Memfault Release Management Infrastructure with the FOTA Client in the nRF
 //! Connect SDK

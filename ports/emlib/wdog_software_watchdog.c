@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A Software Watchdog implementation backed by the
 //! EFM/EFR WDOG peripheral & the SiLabs Gecko SDK (EMLIB)

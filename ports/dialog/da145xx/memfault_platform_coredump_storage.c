@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Reference implementation of platform dependency functions to use space on the
 //! external SPI flash connected to the DA145xx for coredump capture.

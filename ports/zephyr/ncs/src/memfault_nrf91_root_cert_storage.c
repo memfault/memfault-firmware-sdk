@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! When using the nRF9160, certificates cannot be added via Zephyrs
 //! tls_credential_add() API. Instead they need to be added using the

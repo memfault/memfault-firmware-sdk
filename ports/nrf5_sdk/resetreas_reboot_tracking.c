@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A port for recovering reset reason information by reading the
 //! "Reset Reason" (RESETREAS) Register.

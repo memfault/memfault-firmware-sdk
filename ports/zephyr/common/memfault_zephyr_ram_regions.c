@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Implements convenience APIs that can be used when building the set of
 //! RAM regions to collect as part of a coredump. See header for more details/
@@ -127,7 +127,18 @@ static ssize_t prv_stack_bytes_unused(uintptr_t stack_start, size_t stack_size) 
   // address (highest stack index) and go up in addresses (down in the stack),
   // looking for the first address that contains something other than the stack
   // painting pattern, 0xAA.
+
+  #if defined(CONFIG_STACK_SENTINEL)
+  // Ideally, we would check if this stack was the one where the sentinel was
+  // clobbered. Unfortunately, the sentinel is restored in the check:
+  // https://github.com/zephyrproject-rtos/zephyr/blob/98a16b424aaf1a409db872a5f54f3d8d5fc4af21/kernel/thread.c#L340-L341
+  // So we're not going to correctly mark stack utilization in this case.
+
+  // Stack sentinel pattern takes the top 4 bytes of the stack, so skip over that
+  const uint8_t *stack_max = (const uint8_t *)stack_start + sizeof(STACK_SENTINEL);
+  #else
   const uint8_t *stack_max = (const uint8_t *)stack_start;
+  #endif
   const uint8_t *const stack_bottom = (const uint8_t *const)(stack_start + stack_size);
 
   for (; (stack_max < stack_bottom) && (*stack_max == 0xAA); stack_max++) { }

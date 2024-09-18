@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A wrapper around root certificate storage with Zephyr since different modules may use different
 //! implementations. For example, the nRF9160 has its own offloaded storage on the modem whereas a

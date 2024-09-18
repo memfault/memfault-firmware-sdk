@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! This file is required so that this path is still included when mtbsearch generates cyqbuild.mk
 //!

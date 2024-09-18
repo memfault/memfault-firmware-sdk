@@ -1,9 +1,10 @@
+#!/usr/bin/env python
+
 #
 # Copyright (c) Memfault, Inc.
-# See License.txt for details
+# See LICENSE for details
 #
 
-#!/usr/bin/env python
 
 """
 A script which transforms the memfault-firmware-sdk into a project suitable for inclusion as an arduino library
@@ -135,7 +136,7 @@ def arduinoify_memfault_sdk(sdk_root_dir: str, result_dir: str, port: str):
             w.write(contents)
 
     # Up level a few files to the root of the repo
-    shutil.move(os.path.join(sdk_root_dir, "License.txt"), os.path.join(library_dir, "LICENSE.txt"))
+    shutil.move(os.path.join(sdk_root_dir, "LICENSE"), os.path.join(library_dir, "LICENSE.txt"))
     shutil.move(os.path.join(sdk_root_dir, "VERSION"), os.path.join(library_dir, "VERSION"))
     shutil.move(
         os.path.join(sdk_root_dir, "CHANGELOG.md"), os.path.join(library_dir, "CHANGELOG.md")

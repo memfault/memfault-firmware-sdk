@@ -210,11 +210,11 @@ endif
         help
             Collects a Memfault metric for the CPU die temperature.
 
-    config MEMFAULT_ESP_HEAP_METRICS
-        bool "Collect basic heap metrics"
+    config MEMFAULT_METRICS_MEMORY_USAGE
+        bool "Enable collection of memory usage metrics"
         default y
         help
-            Collects Memfault metrics for basic heap utilization.
+            Collects Memfault metrics for memory usage stats.
 
     config MEMFAULT_METRICS_SYNC_SUCCESS
             bool "Enable collection of sync success metrics"
@@ -330,6 +330,10 @@ endif
         config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
             int "Periodic upload interval to send data in seconds"
             default 3600
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
+            bool "Upload log buffer in addition to other data"
+            default n
 
     endif
 

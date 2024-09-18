@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! The DA145xx SDK executes the "reset_indication" callback to inform the
 //! application of the reset reason. This captures the state so it can be

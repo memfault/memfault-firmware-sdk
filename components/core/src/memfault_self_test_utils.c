@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>

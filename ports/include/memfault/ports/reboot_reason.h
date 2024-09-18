@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Ports to facilitate the integration of Memfault reboot reason tracking
 //! For more details about the integration, see https://mflt.io/reboot-reasons

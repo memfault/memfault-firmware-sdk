@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Default configuration settings for the Memfault SDK
 //! This file should always be picked up through "memfault/config.h"

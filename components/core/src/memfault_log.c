@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A simple RAM backed logging storage implementation. When a device crashes and the memory region
 //! is collected using the panics component, the logs will be decoded and displayed in the Memfault

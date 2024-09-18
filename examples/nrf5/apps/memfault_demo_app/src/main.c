@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief
 //! A minimal demo app for the NRF52 using the nRF5 v15.2 SDK that allows for crashes to be

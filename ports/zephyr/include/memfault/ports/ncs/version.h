@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief A little convenience header to assist in checks which can be run at compile time for
 //! backward compatibility based on NCS version.

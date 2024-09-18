@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Simple heap allocation tracking utility. Intended to shim into a system's
 //! malloc/free implementation to track last allocations with callsite

@@ -540,6 +540,18 @@ config MEMFAULT_METRICS_TCP_IP
         help
          Collects Memfault metrics for TCP/IP statistics.
 
+config MEMFAULT_METRICS_WIFI
+        bool "Enable collection of Wi-Fi metrics"
+        default y
+        depends on NET_MGMT_EVENT && WIFI
+
+config MEMFAULT_METRICS_MEMORY_USAGE
+        bool "Enable collection of memory usage metrics"
+        default y
+        depends on SYS_HEAP_RUNTIME_STATS
+        help
+         Collects Memfault metrics for memory usage stats.
+
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM

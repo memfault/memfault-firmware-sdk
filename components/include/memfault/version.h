@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Contains Memfault SDK version information.
 
@@ -19,8 +19,9 @@ typedef struct {
   uint8_t patch;
 } sMfltSdkVersion;
 
-#define MEMFAULT_SDK_VERSION   { .major = 1, .minor = 11, .patch = 4 }
-#define MEMFAULT_SDK_VERSION_STR "1.11.4"
+#define MEMFAULT_SDK_VERSION \
+  { .major = 1, .minor = 11, .patch = 5 }
+#define MEMFAULT_SDK_VERSION_STR "1.11.5"
 
 #ifdef __cplusplus
 }

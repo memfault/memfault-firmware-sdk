@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Architecture-specific registers collected collected by Memfault SDK Extra decoding and analysis
 //! of these registers is provided from the Memfault cloud

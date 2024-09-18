@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Version of cmd_wifi.c that uses the legacy wifi API, for ESP-IDF v3.
 

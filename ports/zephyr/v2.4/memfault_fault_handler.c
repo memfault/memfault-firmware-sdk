@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //!
 
@@ -62,6 +62,99 @@ static int prv_install_nmi_handler() {
 
 SYS_INIT(prv_install_nmi_handler, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
+static eMemfaultRebootReason prv_zephyr_to_memfault_fault_reason(unsigned int reason) {
+  // See the lists here for reference:
+  // https://github.com/zephyrproject-rtos/zephyr/blob/053347375bc00a490ce08fe2b9d78a65183ce95a/include/zephyr/fatal_types.h#L24
+  // https://github.com/zephyrproject-rtos/zephyr/blob/053347375bc00a490ce08fe2b9d78a65183ce95a/include/zephyr/arch/arm/arch.h#L59
+
+  switch (reason) {
+    // Generic CPU exception, not covered by other codes
+    case K_ERR_CPU_EXCEPTION:
+    default:
+      return kMfltRebootReason_HardFault;
+
+    // Unhandled hardware interrupt
+    case K_ERR_SPURIOUS_IRQ:
+      return kMfltRebootReason_Hardware;
+
+    // Faulting context overflowed its stack buffer
+    case K_ERR_STACK_CHK_FAIL:
+      return kMfltRebootReason_StackOverflow;
+
+    // Moderate severity software error
+    case K_ERR_KERNEL_OOPS:
+    // High severity software error
+    case K_ERR_KERNEL_PANIC:
+      return kMfltRebootReason_KernelPanic;
+
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 2)
+    // ARM-specific exceptions were added in Zephyr 3.3.0:
+    // https://github.com/zephyrproject-rtos/zephyr/pull/53551
+    // nRF-Connect SDK v2.2 + v2.3 point to a fork of Zephyr on 3.2.99
+    // development version, but it doesn't have the patch with this change, so
+    // we only accept strictly > 3.2.
+
+    // Cortex-M MEMFAULT exceptions
+    case K_ERR_ARM_MEM_GENERIC:
+    case K_ERR_ARM_MEM_STACKING:
+    case K_ERR_ARM_MEM_UNSTACKING:
+    case K_ERR_ARM_MEM_DATA_ACCESS:
+    case K_ERR_ARM_MEM_INSTRUCTION_ACCESS:
+    case K_ERR_ARM_MEM_FP_LAZY_STATE_PRESERVATION:
+      return kMfltRebootReason_MemFault;
+
+    // Cortex-M BUSFAULT exceptions
+    case K_ERR_ARM_BUS_GENERIC:
+    case K_ERR_ARM_BUS_STACKING:
+    case K_ERR_ARM_BUS_UNSTACKING:
+    case K_ERR_ARM_BUS_PRECISE_DATA_BUS:
+    case K_ERR_ARM_BUS_IMPRECISE_DATA_BUS:
+    case K_ERR_ARM_BUS_INSTRUCTION_BUS:
+    case K_ERR_ARM_BUS_FP_LAZY_STATE_PRESERVATION:
+      return kMfltRebootReason_BusFault;
+
+    // Cortex-M USAGEFAULT exceptions
+    case K_ERR_ARM_USAGE_GENERIC:
+    case K_ERR_ARM_USAGE_DIV_0:
+    case K_ERR_ARM_USAGE_UNALIGNED_ACCESS:
+    case K_ERR_ARM_USAGE_NO_COPROCESSOR:
+    case K_ERR_ARM_USAGE_ILLEGAL_EXC_RETURN:
+    case K_ERR_ARM_USAGE_ILLEGAL_EPSR:
+    case K_ERR_ARM_USAGE_UNDEFINED_INSTRUCTION:
+      return kMfltRebootReason_UsageFault;
+
+    case K_ERR_ARM_USAGE_STACK_OVERFLOW:
+      return kMfltRebootReason_StackOverflow;
+
+    // Cortex-M SECURE exceptions
+    case K_ERR_ARM_SECURE_GENERIC:
+    case K_ERR_ARM_SECURE_ENTRY_POINT:
+    case K_ERR_ARM_SECURE_INTEGRITY_SIGNATURE:
+    case K_ERR_ARM_SECURE_EXCEPTION_RETURN:
+    case K_ERR_ARM_SECURE_ATTRIBUTION_UNIT:
+    case K_ERR_ARM_SECURE_TRANSITION:
+    case K_ERR_ARM_SECURE_LAZY_STATE_PRESERVATION:
+    case K_ERR_ARM_SECURE_LAZY_STATE_ERROR:
+      return kMfltRebootReason_SecurityViolation;
+
+      // Zephyr + Cortex A/R is currently unsupported, please contact support@memfault.com for
+      // assistance!
+      // // Cortex-A/R exceptions
+      // K_ERR_ARM_UNDEFINED_INSTRUCTION
+      // K_ERR_ARM_ALIGNMENT_FAULT
+      // K_ERR_ARM_BACKGROUND_FAULT
+      // K_ERR_ARM_PERMISSION_FAULT
+      // K_ERR_ARM_SYNC_EXTERNAL_ABORT
+      // K_ERR_ARM_ASYNC_EXTERNAL_ABORT
+      // K_ERR_ARM_SYNC_PARITY_ERROR
+      // K_ERR_ARM_ASYNC_PARITY_ERROR
+      // K_ERR_ARM_DEBUG_EVENT
+      // K_ERR_ARM_TRANSLATION_FAULT
+      // K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT
+#endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 2)
+  }
+}
+
 // Note: There is no header exposed for this zephyr function
 extern void sys_arch_reboot(int type);
 
@@ -112,7 +205,9 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
     .exc_return = exc_return,
   };
 
-  memfault_fault_handler(&reg, kMfltRebootReason_HardFault);
+  eMemfaultRebootReason fault_reason = prv_zephyr_to_memfault_fault_reason(reason);
+
+  memfault_fault_handler(&reg, fault_reason);
 
 #if MEMFAULT_FAULT_HANDLER_RETURN
   // instead of returning, call the Zephyr fatal error handler. This is done

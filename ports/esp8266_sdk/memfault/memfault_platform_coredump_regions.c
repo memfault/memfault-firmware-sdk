@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Implements "memfault_platform_coredump_get_regions()" which defines
 //! the RAM regions to collect as part of a coredump. The function is defined

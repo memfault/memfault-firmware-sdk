@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! ESP32 Memfault Demo Cli Port
 
 #ifdef __cplusplus

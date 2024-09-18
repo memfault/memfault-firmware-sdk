@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Reference implementation of platform dependency functions to use a sectors of internal flash
 //! on the STM32L4 family for coredump capture.

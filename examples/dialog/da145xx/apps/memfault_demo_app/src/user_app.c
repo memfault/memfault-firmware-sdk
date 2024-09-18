@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A minimal example app for exercising and trying out the Memfault SDK with the DA145xx SDK.
 

@@ -6,14 +6,108 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.4] - 2024-09-10
+## [1.11.5] - 2024-09-18
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Added
+
+- Zephyr:
+
+  - Add the following built-in WiFi metrics for Zephyr devices, enabled by
+    default on systems with WiFi:
+
+    - `wifi_connected_time_ms` : time in milliseconds the device has been
+      connected to a WiFi network
+    - `wifi_disconnect_count` : number of times the device has disconnected from
+      a WiFi network
+    - `wifi_ap_oui` : the OUI of the WiFi AP the device is connected to
+
+    The metrics can be disabled by setting `CONFIG_MEMFAULT_METRICS_WIFI=n`.
+
+  - The Memfault Zephyr fault handler now labels faults as Stack Overflow, Bus
+    Fault, MemManage Fault, and Usage Fault, among others, in addition to the
+    existing Hard Fault label. Note that this does not change the types of
+    faults collected (all these faults are already supported), but it does
+    correct the label presented in the Memfault UI.
+
+  - Add a new test command, `mflt test stack_overflow`, that will trigger a
+    stack overflow fault when `CONFIG_STACK_SENTINEL` or
+    `CONFIG_MPU_STACK_GUARD` is enabled.
+
+  - The `cpu_temp` metric has been renamed to `thermal_cpu_c` to better reflect
+    the metric's purpose. The metric is still collected by default on platforms
+    with an enabled `die-temp0` sensor, and can be disabled by setting
+    `CONFIG_MEMFAULT_METRICS_CPU_TEMP=n`.
+
+  - Add a new metric, `memory_pct_max`, which captures the max percentage of the
+    heap used. It is enabled by default. This metric and the existing
+    `Heap_BytesFree` metric are controlled with
+    `CONFIG_MEMFAULT_METRICS_MEMORY_USAGE`.
 
 - ESP-IDF:
 
-  - Fix a minor issue where `MEMFAULT_LOG_x()` macros (`MEMFAULT_LOG_ERROR()`
-    etc ) would be recorded twice in the log buffer.
+  - Add an option to upload logs by default when using
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD`, controlled with the Kconfig symbol
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS`. This can also be controlled at runtime
+    with the included API
+    `memfault_esp_port_http_periodic_upload_logs(bool enable)`
+
+  - Add a new metric, `memory_pct_max`, which captures the max percentage of the
+    heap used. It is enabled by default. This metric and the existing `heap_*`
+    metrics are now controlled with `CONFIG_MEMFAULT_METRICS_MEMORY_USAGE`.
+
+  - Print the Memfault OTA URL from `memfault_esp_port_ota_update()` when a new
+    update is available, for example:
+
+    ```bash
+    esp32> memfault_ota_check
+    I (98125) mflt: Checking for OTA Update
+    Download URL: https://ota-cdn.memfault.com/2950/9757/19036619757?token=0123456789abcdef&expires=1726192800&v=2
+    I (98775) mflt: Update available!
+
+    esp32> memfault_ota_perform
+    I (15515) mflt: Checking for OTA Update
+    Download URL: https://ota-cdn.memfault.com/2950/9757/19036619757?token=0123456789abcdef&expires=1726192800&v=2
+    I (16205) mflt: Starting OTA download ...
+    ```
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - The `cpu_temp` metric has been renamed to `thermal_cpu_c` to better reflect
+    the metric's purpose. The metric is still collected by default on platforms
+    with an enabled `die-temp0` sensor, and can be disabled by setting
+    `CONFIG_MEMFAULT_METRICS_CPU_TEMP=n`.
+
+- ESP-IDF:
+
+  - The `cpu_temp` metric has been renamed to `thermal_cpu_c` to better reflect
+    the metric's purpose. The metric is still collected by default on ESP32
+    variants that support it (all but ESP32), and can be disabled by setting
+    `CONFIG_MEMFAULT_METRICS_CPU_TEMP=n`.
+
+  - The Kconfig `CONFIG_MEMFAULT_ESP_HEAP_METRICS` has been replaced with
+    `CONFIG_MEMFAULT_METRICS_MEMORY_USAGE`.
+
+## [1.11.4] - 2024-09-10
+
+### 📈 Improvements
+
+- General:
+
+  - Add two new core metrics, `MemfaultSdkMetric_os_name` and
+    `MemfaultSdkMetric_os_version`. These are string metrics that map to the OS
+    / platform name and version string respectively, and are included in the the
+    ELF at build time, and processed out-of-band by Memfault for NCS, Zephyr,
+    and ESP-IDF. They **are not** ever transmitted over the air (no bandwidth
+    impact). For example, for Zephyr these metric string values would be
+    `zephyr` and `3.7.0` for a project on Zephyr v3.7.0. These metrics are
+    attributes by default and will not be counted towards attribute quotas.
+
+- ESP-IDF:
+
+  - Fix a minor issue where MEMFAULT_LOG_x() macros (MEMFAULT_LOG_ERROR() etc )
+    would be recorded twice in the log buffer.
 
 - General:
 
@@ -29,7 +123,7 @@ and this project adheres to
 
 ## [1.11.3] - 2024-09-05
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -49,7 +143,7 @@ and this project adheres to
 
 ## [1.11.2] - 2024-08-29
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - nRF-Connect SDK:
 
@@ -68,10 +162,10 @@ and this project adheres to
   - Add a new Kconfig option, `CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_REGION`, to
     set the RAM region used for storing RAM-backed coredumps.
 
-  - Fix a :bug: when trying to communicate via HTTPS with Memfault on the
-    nRF91x. On the nRF91x, socket operations are offloaded to the nRF modem lib,
-    which does not currently support the socket option `TLS_CERT_NO_COPY`. In
-    v1.9.4, this socket option was applied when TLS was enabled
+  - Fix a 🐛 when trying to communicate via HTTPS with Memfault on the nRF91x.
+    On the nRF91x, socket operations are offloaded to the nRF modem lib, which
+    does not currently support the socket option `TLS_CERT_NO_COPY`. In v1.9.4,
+    this socket option was applied when TLS was enabled
     (`!g_mflt_http_client_config.disable_tls`) and Zephyr version was >=3.0.0
     (when support for this socket option was added). Therefore, devices on SDK
     versions >=1.9.4 and <1.11.2 trying to communicate with Memfault will run
@@ -104,7 +198,7 @@ and this project adheres to
   - Add support to the existing DA145xx port for the DA14535 by adding the
     correct memory region for `memfault_platform_sanitize_address_range()`.
 
-  - Fix several :bug:s in `memfault_reboot_reason_get()` and
+  - Fix several 🐛s in `memfault_reboot_reason_get()` and
     `memfault_platform_reboot()` implementations in the DA146x port. In
     `memfault_reboot_reason_get()`, the bit masks were incorrectly applied and a
     block was missing to reset the reboot reason register if
@@ -114,7 +208,7 @@ and this project adheres to
 
 ## [1.11.1] - 2024-08-12
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -129,7 +223,7 @@ and this project adheres to
 
 ## [1.11.0] - 2024-08-07
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - Add support for namespacing
   [Session Metrics](https://docs.memfault.com/docs/mcu/metrics-api#session-metrics)
@@ -145,11 +239,11 @@ and this project adheres to
     - `MEMFAULT_METRIC_SESSION_SET_SIGNED(cpu_temp, session, 25)` for setting
       `session.cpu_temp`
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
-  - Fix a :bug: in reboot tracking classification when calling
+  - Fix a 🐛 in reboot tracking classification when calling
     `memfault_reboot_tracking_boot()` with a `bootup_info` parameter containing
     an unexpected type of reboot reason (or no reboot reason) after a previously
     recorded expected reason. This results in
@@ -195,7 +289,7 @@ and this project adheres to
 
 ## [1.10.1] - 2024-07-24
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -219,7 +313,7 @@ and this project adheres to
 
 ## [1.10.0] - 2024-07-12
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -247,7 +341,7 @@ and this project adheres to
 
 ## [1.9.4] - 2024-07-01
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -291,7 +385,7 @@ and this project adheres to
 
 ## [1.9.3] - 2024-06-10
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -328,7 +422,7 @@ and this project adheres to
 
 ## [1.9.2] - 2024-05-29
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -344,12 +438,6 @@ and this project adheres to
     vprintf handler so they can use both their vprintf handler and record logs
     into Memfault's log buffer. To use this feature, set
     `CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK=n`.
-
-  - Fix a case where `esp_http_client_cleanup()` was not called in certain
-    scenarios (for example, if the access point is connected, but there is no
-    outside internet access), which resulted in a memory leak. Thanks to
-    @mykmelez for providing the fix in
-    [#71](https://github.com/memfault/memfault-firmware-sdk/pull/71) 🎉!
 
 - Zephyr:
 
@@ -370,7 +458,7 @@ and this project adheres to
     called with each thread's `k_thread` handle. In the callback, users can read
     the stack usage via the handle and set their metrics.
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - Zephyr:
 
@@ -379,9 +467,19 @@ and this project adheres to
     of 1. This change aligns with the error return value for the other Zephyr
     HTTP client APIs, and simplifies logic in the HTTP client.
 
+### 🐛 Fixes
+
+- ESP-IDF:
+
+  - Fix a case where `esp_http_client_cleanup()` was not called in certain
+    scenarios (for example, if the access point is connected, but there is no
+    outside internet access), which resulted in a memory leak. Thanks to
+    @mykmelez for providing the fix in
+    [#71](https://github.com/memfault/memfault-firmware-sdk/pull/71) 🎉!
+
 ## [1.9.1] - 2024-05-21
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -406,7 +504,7 @@ and this project adheres to
 
 ## [1.9.0] - 2024-05-10
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -460,7 +558,7 @@ and this project adheres to
     [nRF9160 sample app](examples/nrf-connect-sdk/nrf9160), by increasing the
     `CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` to `2048`.
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - Zephyr:
 
@@ -473,7 +571,7 @@ and this project adheres to
 
 ## [1.8.1] - 2024-04-24
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -531,13 +629,13 @@ and this project adheres to
 
 ## [1.8.0] - 2024-04-17
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
   - Scale values now fully supported. This metric metadata will scale down
     metric values by the specified factor. Metrics with no specified scale value
     will not be scaled
-  - Fix a :bug: that would reset metric values after running a session start
+  - Fix a 🐛 that would reset metric values after running a session start
     callback. This prevented setting metrics at the start of a session.
 - Zephyr:
   - Add a metric using a scale value to our Zephyr QEMU example. This metric
@@ -581,7 +679,7 @@ and this project adheres to
 
 ## [1.7.6] - 2024-04-03
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -599,7 +697,7 @@ and this project adheres to
 
 ## [1.7.5] - 2024-03-29
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -617,7 +715,7 @@ and this project adheres to
 
 ## [1.7.4] - 2024-03-26
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - nRF-Connect SDK:
 
@@ -641,7 +739,7 @@ and this project adheres to
 
 ## [1.7.3] - 2024-03-19
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -664,7 +762,7 @@ and this project adheres to
 
 ## [1.7.2] - 2024-03-09
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -706,7 +804,7 @@ and this project adheres to
 
 ## [1.7.1] - 2024-02-28
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -758,12 +856,12 @@ and this project adheres to
 
 ## [1.7.0] - 2024-02-15
 
-### :rocket: New Features
+### 🚀 New Features
 
 - General:
 
-  - :tada:Custom Reboot Reasons!:tada: The SDK now allows creating custom reboot
-    reasons in addition to those defined in
+  - 🎉Custom Reboot Reasons!🎉 The SDK now allows creating custom reboot reasons
+    in addition to those defined in
     [`components/include/memfault/core/reboot_reason_types.h`](components/include/memfault/core/reboot_reason_types.h).
     Users can create custom reboot reasons for both expected and unexpected
     reboots. For more information see
@@ -782,7 +880,7 @@ and this project adheres to
     be sent to the project routed with `MEMFAULT_PROJECT_KEY` rather than the
     project routed with the POST header's Project Key.
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -823,7 +921,7 @@ and this project adheres to
 
 ## [1.6.2] - 2024-01-29
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -838,7 +936,7 @@ and this project adheres to
 
 ## [1.6.1] - 2024-01-29
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -882,7 +980,7 @@ and this project adheres to
 
 ## [1.6.0] - 2024-01-09
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -926,7 +1024,7 @@ and this project adheres to
     warning was introduced with the Memfault Self-Test additions in Memfault SDK
     v1.5.2.
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - General:
 
@@ -941,7 +1039,7 @@ and this project adheres to
 
 ## [1.5.2] - 2023-12-12
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -979,7 +1077,7 @@ and this project adheres to
 
 ## [1.5.1] - 2023-12-07
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - nRF-Connect SDK:
 
@@ -987,7 +1085,7 @@ and this project adheres to
     `CONFIG_MEMFAULT_FOTA=n`. This fixes the second issue reported in
     [#66](https://github.com/memfault/memfault-firmware-sdk/issues/66#issuecomment-1845301737)
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - General:
 
@@ -999,7 +1097,7 @@ and this project adheres to
 
 ## [1.5.0] - 2023-11-29
 
-### :rocket: New Features
+### 🚀 New Features
 
 - General:
 
@@ -1058,7 +1156,7 @@ and this project adheres to
     functionality. This feature is controlled with the
     `CONFIG_MEMFAULT_SYNC_MEMFAULT_METRICS` Kconfig flag.
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -1110,7 +1208,7 @@ and this project adheres to
     Memfault device server. Please contact <support@memfault.com> immediately if
     you encounter any cert-related issues.
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - The metrics convenience API added in v1.4.3 (`MEMFAULT_HEARTBEAT_SET_*` and
   others) have been renamed to `MEMFAULT_METRIC_SET_*`, to better support the
@@ -1118,7 +1216,7 @@ and this project adheres to
 
 ## [1.4.4] - 2023-11-13
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -1144,7 +1242,7 @@ and this project adheres to
 
 ## [1.4.3] - 2023-11-08
 
-### :rocket: New Features
+### 🚀 New Features
 
 - General:
 
@@ -1193,7 +1291,7 @@ and this project adheres to
     `Memfault Coredump Settings` submenu, for easier navigation when using
     graphical Kconfig frontends like menuconfig.
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -1222,7 +1320,7 @@ and this project adheres to
 
 ## [1.4.2] - 2023-11-02
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
 
@@ -1234,7 +1332,7 @@ and this project adheres to
 
 ## [1.4.1] - 2023-10-31
 
-### :rocket: New Features
+### 🚀 New Features
 
 - ESP-IDF:
 
@@ -1246,7 +1344,7 @@ and this project adheres to
     - `heap_allocated_blocks_count`
     - `heap_min_free_bytes`
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -1277,11 +1375,11 @@ and this project adheres to
     improve the Trace quality for systems that are using the C stdlib
     `assert(x)` functions.
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 ## [1.4.0] - 2023-10-23
 
-### :rocket: New Features
+### 🚀 New Features
 
 - ESP-IDF:
 
@@ -1290,7 +1388,7 @@ and this project adheres to
     [ESP32 Integration Guide](https://mflt.io/esp-tutorial) section on
     configuration files for details.
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -1318,7 +1416,7 @@ and this project adheres to
 
 ## [1.3.5] - 2023-10-14
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -1339,7 +1437,7 @@ and this project adheres to
 
 ## [1.3.4] - 2023-10-12
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
 
@@ -1365,7 +1463,7 @@ and this project adheres to
 
 ## 1.3.3 - Oct 10, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -1408,7 +1506,7 @@ and this project adheres to
     `__no_alloc` attribute to the compact log symbols, to have the IAR linker
     set the `NO_LOAD` attribute correctly on the compact log output section.
 
-### :boom: Breaking Changes
+### 💥 Breaking Changes
 
 - ESP-IDF:
 
@@ -1421,7 +1519,7 @@ and this project adheres to
 
 ## 1.3.2 - Sept 26, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
 
@@ -1446,7 +1544,7 @@ and this project adheres to
 
 ## 1.3.1 - Sept 21, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Zephyr:
   - Add a new Kconfig, `CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE`, to
@@ -1455,7 +1553,7 @@ and this project adheres to
 
 ## 1.3.0 - Sept 20, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
   - Remove an unused root certificate and adjust the order of certs to minimize
@@ -1470,19 +1568,19 @@ and this project adheres to
 
 ## 1.2.5 - Sept 18, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Add MQTT transport to esp32 example app
 
 ## 1.2.4 - Sept 12, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - Fix a unit test failure introduced in 1.2.3. No on-target code was impacted.
 
 ## 1.2.3 - Sept 12, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - General:
   - Include the current MCU SDK version in the http client user agent header
@@ -1495,7 +1593,7 @@ and this project adheres to
 
 ## 1.2.2 - Sept 5, 2023
 
-### :chart_with_upwards_trend: Improvements
+### 📈 Improvements
 
 - ESP-IDF:
   - Correct the heartbeat metrics key definition include configuration to
@@ -1504,7 +1602,7 @@ and this project adheres to
 
 ### Changes between Memfault SDK 1.2.0 and 1.2.1 - Sept 1, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF:
   - Add a `heartbeat` cli command to the ESP-IDF port that does the same thing
@@ -1521,7 +1619,7 @@ and this project adheres to
 
 ### Changes between Memfault SDK 1.1.3 and 1.2.0 - Aug 30, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF:
   - Eliminate several build warnings for our example app
@@ -1539,16 +1637,16 @@ and this project adheres to
     for usage
   - Fix a build warning in emblib port flash storage (MSC) module
 - Zephyr:
-  - Fix a :bug: when building with LOG_MODE_DEFERRED that prevent log messages
-    from flushing during a coredump
-  - Fix a :bug: and warnings involving older Zephyr header paths. Resolves
+  - Fix a 🐛 when building with LOG_MODE_DEFERRED that prevent log messages from
+    flushing during a coredump
+  - Fix a 🐛 and warnings involving older Zephyr header paths. Resolves
     [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and
     [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks
     @JordanYates and @YHusain1 for reporting these issues.
 
 ### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Set Memfault SDK version in a string metric on device boot, for easier
   tracking of SDK versions in the Memfault UI
@@ -1574,7 +1672,7 @@ and this project adheres to
 
 ### Changes between Memfault SDK 1.1.1 and 1.1.2 - July 11, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Improve compatibility in
   [reboot reason tracking](ports/emlib/rmu_reboot_tracking.c) and
@@ -1590,14 +1688,14 @@ and this project adheres to
 
 ### Changes between Memfault SDK 1.1.0 and 1.1.1 - June 30, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Reduce the amount of error logs emitted by the MbedTLS port HTTP client while
   polling for session established. This regressed in SDK version 1.1.0.
 
 ### Changes between Memfault SDK 1.0.1 and 1.1.0 - June 29, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - New built-in metrics 🎉 !
 
@@ -1638,7 +1736,7 @@ and this project adheres to
 
 ### Changes between Memfault SDK 1.0.1 and 1.0.0 - June 9, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1667,7 +1765,7 @@ are enough 🤞.
 
 🎉🎉🎉
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1681,7 +1779,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.43.3 and 0.43.2 - May 22, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1706,7 +1804,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.43.2 and 0.43.1 - May 3, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Fix a bug 🐛 where metrics accumulated with `memfault_metrics_heartbeat_add()`
   would no longer be included in the serialized heartbeat data. This regression
@@ -1714,7 +1812,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.43.1 and 0.43.0 - April 26, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1725,11 +1823,11 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.43.0 and 0.42.1 - April 18, 2023
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Add coredump support for Cortex-R chips (ARMv7-R)
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Add a QEMU-based FreeRTOS example project, find it under
   [examples/freertos](examples/freertos)
@@ -1744,7 +1842,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.42.1 and 0.42.0 - April 4, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1761,7 +1859,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.42.0 and 0.41.2 - Mar 22, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
 
@@ -1776,7 +1874,7 @@ are enough 🤞.
   - Add arguments to override device serial ID, software type, software version,
     and hardware revision
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - Metrics:
   - Integer type metrics (signed/unsigned) will reset to NULL when not set
@@ -1789,7 +1887,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.41.2 and SDK 0.41.1 - Mar 10, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr / nRF-Connect SDK:
   - Improve compatibility with Zephyr pre-3.0 deferred logging, when using the
@@ -1800,7 +1898,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.41.1 and SDK 0.41.0 - Mar 1, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr / nRF-Connect SDK:
 
@@ -1818,7 +1916,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.41.0 and SDK 0.40.0 - Feb 22, 2023
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - ESP-IDF:
   - Added coredump support for the ESP32-C3 (RISC-V) chip. Thank you to @jlubawy
@@ -1827,7 +1925,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.40.0 and SDK 0.39.1 - Feb 15, 2023
 
-#### :bomb: Breaking Changes
+#### 💥 Breaking Changes
 
 - ESP-IDF:
   - The Kconfig `CONFIG_MEMFAULT_AUTOMATIC_INIT` has been deprecated and is no
@@ -1838,13 +1936,13 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.39.1 and SDK 0.39.0 - Feb 3, 2023
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - **Experimental**
   - CMSIS-Pack support
   - Out Of Memory reboot reason added
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF:
   - The default implementation of `memfault_platform_coredump_get_regions` is
@@ -1855,7 +1953,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.39.0 and SDK 0.38.0 - Feb 3, 2023
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - Breaking changes to the
   [`memfault_freertos_get_task_regions()`](ports/freertos/src/memfault_freertos_ram_regions.c)
@@ -1870,13 +1968,13 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.38.0 and SDK 0.37.2 - Feb 1, 2023
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Enable coredumps on the ESP32-S2 and ESP32-S3 chips.
 
 ### Changes between Memfault SDK 0.37.2 and SDK 0.37.1 - Jan 31, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
   - Support building with `CONFIG_POSIX_API=y` in the Zephyr port HTTP client
@@ -1895,7 +1993,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.37.1 and SDK 0.37.0 - Jan 17, 2023
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - FreeRTOS
   - Add support for collecting truncated TCBs. This is particularly useful with
@@ -1904,14 +2002,14 @@ are enough 🤞.
 - ESP-IDF
   - Add support for esp32s2/s3 platforms to the esp32 example application
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fixup some documentation typos/errors
 - Add support for Python 3.10
 
 ### Changes between Memfault SDK 0.37.0 and SDK 0.36.1 - Dec 16, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Built-in Metrics
 
@@ -1921,7 +2019,7 @@ are enough 🤞.
     reboot tracking determines a reboot is unexpected, this metric is set to 1.
     Otherwise this metric is 0.
 
-- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+- [ModusToolbox™️ Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
 
   - Add log capture during coredump to port
 
@@ -1929,7 +2027,7 @@ are enough 🤞.
   - Add `mflt test loadaddr` command. This command is used to test specific
     faults due to protected regions
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - Built-in Metrics
   - The built-in metric, `MemfaultSdkMetric_UnexpectedRebootDidOccur`,
@@ -1942,7 +2040,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.36.1 and SDK 0.36.0 - Dec 9, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF:
   - Fix a bug 🐛 in the [ESP32 example app](examples/esp32), where wifi join
@@ -1950,7 +2048,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.36.0 and SDK 0.35.0 - Dec 6, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF:
 
@@ -1969,12 +2067,12 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.35.0 and SDK 0.34.2 - Nov 22, 2022
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - **Experimental** Custom Data Recording API
   - Allows sending custom data collected over the course of a recording period
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr:
   - Modify heap stats to only collect info during allocations/deallocations from
@@ -1984,21 +2082,21 @@ are enough 🤞.
 - nRF5 SDK:
   - NRF5 coredump regions -Wunused-macros, fixes warning for unused macros
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Experiment: pytest as fw test frontend
 - README: Add additional details on port integration
 
 ### Changes between Memfault SDK 0.34.2 and SDK 0.34.1 - Nov 8, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+- [ModusToolbox™️ Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
   - Updates SDK for compatibility with MTB 3.0
 
 ### Changes between Memfault SDK 0.34.1 and SDK 0.34.0 - Nov 7, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - nRF-Connect:
   - Updates for Zephyr upmerge 2022.11.03 (see #35 + #36)
@@ -2016,7 +2114,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.34.0 and SDK 0.33.5 - Nov 1, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Misc ESP32 [port](ports/esp_idf) &
   [example app](examples/esp32/apps/memfault_demo_app) improvements
@@ -2035,7 +2133,7 @@ are enough 🤞.
 - Fix an enum-mismatch warning in `memfault_metrics.c` when using the ARMCC v5
   compiler.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are using the ESP32 HTTP Client, the Memfault Project Key is now
   configured directly via the
@@ -2047,7 +2145,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.4 and SDK 0.33.5 - Oct 19, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - nRF-Connect: Update the nRF9160 example application,
   `examples/nrf-connect-sdk/nrf9160`, to build and run correctly with
@@ -2060,7 +2158,7 @@ are enough 🤞.
     fixes compiling for the -S3 platform_
   - Add support for ESP-IDF v4.2.3
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Support building the unit tests with GCC 12
 - Miscellaneous fixes to unit test infrastructure to better support building in
@@ -2068,7 +2166,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.3 and SDK 0.33.4 - Sept 15, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr port updates:
   - Handle thread abort in the task stack capture hook. Previous to this change,
@@ -2077,7 +2175,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.2 and SDK 0.33.3 - Sept 14, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr port updates:
   - Add a call to `LOG_PANIC()` before running the Memfault fault handler, to
@@ -2085,7 +2183,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.1 and SDK 0.33.2 - Sept 7, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr port updates:
   - fix a few minor nuisance build warnings on niche Zephyr configurations
@@ -2097,9 +2195,9 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.0 and SDK 0.33.1 - Aug 26, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- Fix a :bug: in the heap stats component (#32), thanks @christophgreen for
+- Fix a 🐛 in the heap stats component (#32), thanks @christophgreen for
   reporting it!
 - Zephyr port updates:
   - add support for the newly namespaced Zephyr include path in upcoming Zephyr
@@ -2116,7 +2214,7 @@ are enough 🤞.
     using LOG2 to capture the full log line instead of each logged character as
     a separate line.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Zephyr port folder for `v2.x` migrated to `common`, now that Zephyr v1.14
   support has been removed (done in v0.32.0 of the Memfault SDK)
@@ -2127,7 +2225,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.33.0 and SDK 0.32.2 - Aug 18, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Extend [memfault demo shell](components/demo/src/memfault_demo_shell.c) to
   support terminals that only emit CR for line endings
@@ -2143,7 +2241,7 @@ are enough 🤞.
     logging is enabled. This can be disabled by setting
     `CONFIG_MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK=n`.
 - nRF Connect SDK Updates:
-  - Fixed a :bug: which could result in download errors when using
+  - Fixed a 🐛 which could result in download errors when using
     [Memfault nRF Connect SDK FOTA client](ports/nrf-connect-sdk/zephyr/include/memfault/nrfconnect_port/fota.h)
     and enabled client in example application by default.
   - Added new example application for trying Memfault with nRF53 & nRF52 based
@@ -2153,14 +2251,14 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.32.2 and SDK 0.32.1 - Aug 16, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr port: added a fix for upcoming Zephyr 3.2 compatibility, thanks
   @nordicjm for the fix!
 
 ### Changes between Memfault SDK 0.32.1 and SDK 0.32.0 - Aug 8, 2022
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added default config header for PSoC 6 port
   [ports/cypress/psoc6/psoc6_default_config.h](ports/cypress/psoc6/psoc6_default_config.h)
@@ -2168,13 +2266,13 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.32.0 and SDK 0.31.5 - Aug 8, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+- [ModusToolbox™️ Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
   port updates
   - Added heartbeat metrics for heap and Wi-Fi performance tracking when using
     the default port for
-    [CAT1A (PSoC:tm: 6)](https://github.com/Infineon/mtb-pdl-cat1). See
+    [CAT1A (PSoC™️ 6)](https://github.com/Infineon/mtb-pdl-cat1). See
     [ports/cypress/psoc6/memfault_platform_core.c](ports/cypress/psoc6/memfault_platform_core.c)
     for more details
   - Fixed reboot reason reported when PSoC 6 is fully reset to report "Power On
@@ -2190,7 +2288,7 @@ are enough 🤞.
     the Memfault root certificates (eg nRF53 or nRF52 devices), via a new
     Kconfig option `MEMFAULT_ROOT_CERT_STORAGE`, to avoid a nuisance build error
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - Users will no longer see internal Memfault log output by default, but will
   have to enable it explicitly to see the output:
@@ -2220,7 +2318,7 @@ are enough 🤞.
   A project using this release of Zephyr must target a memfault-firmware-sdk
   release less than 0.32.0.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - More logically grouped Kconfig settings in Zephyr example app's
   [prj.conf](examples/zephyr/apps/memfault_demo_app/prj.conf)
@@ -2254,7 +2352,7 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.31.5 and SDK 0.31.4 - July 22, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr port: enable proper backtraces for Zephyr `__ASSERT()` macro on
   aarch32/cortex_m. Prior to this fix, crashes from `__ASSERT()` triggering
@@ -2271,14 +2369,14 @@ are enough 🤞.
     collected backtrace, but it would show a nuisance `__ASSERT()` in the
     console output, if `CONFIG_ASSERT=y`.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fix a compilation issue in the Dialog example app from the removal of
   `memfault_demo_cli_cmd_print_chunk()` in Memfault SDK release v0.31.4.
 
 ### Changes between Memfault SDK 0.31.4 and SDK 0.31.3 - July 19, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP32 port: add new Kconfig option, `CONFIG_MEMFAULT_AUTOMATIC_INIT`, that can
   be explicitly set to `n` to skip automatically initializing the Memfault SDK
@@ -2300,7 +2398,7 @@ are enough 🤞.
     not use HTTP for transferring data), it may be necessary to explicitly set
     `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS=n`.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Zephyr port: remove an unused header file,
   `ports/zephyr/common/memfault_zephyr_http.h`
@@ -2312,16 +2410,16 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.31.3 and SDK 0.31.2 - July 8, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Support Zephyr v3.1+ by conditionally compiling out Logger v1 code, thanks to
   @tejlmand for the patch!
 
 ### Changes between Memfault SDK 0.31.2 and SDK 0.31.1 - June 24, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- Fixed a :bug: in the
+- Fixed a 🐛 in the
   [Zephyr port HTTP implementation](ports/zephyr/common/memfault_platform_http.c),
   where a socket file descriptor was leaked. This caused every HTTP operation
   after the first to fail on Zephyr platforms. Thanks to @rerickson1 for the
@@ -2331,14 +2429,14 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.31.1 and SDK 0.31.0 - June 16, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Enable the Zephyr fault handler (including console fault prints) after
   Memfault handler runs. Can be disabled by implementing
   `memfault_platform_reboot()`. See details in
   [ports/zephyr/include/memfault/ports/zephyr/coredump.h](ports/zephyr/include/memfault/ports/zephyr/coredump.h)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fixed compiler error in
   [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app)
@@ -2346,12 +2444,12 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.31.0 and SDK 0.30.5 - June 6, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added reference port for
-  [CAT1A (PSoC:tm: 6)](https://github.com/Infineon/mtb-pdl-cat1) based MCUs
-  using the
-  [ModusToolbox:tm: Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
+  [CAT1A (PSoC™️ 6)](https://github.com/Infineon/mtb-pdl-cat1) based MCUs using
+  the
+  [ModusToolbox™️ Software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
   stack. For more details see [ports/cypress/psoc6](ports/cypress/psoc6)
   directory.
 - Added a convenience utility function for posting chunks using the Memfault
@@ -2359,7 +2457,7 @@ are enough 🤞.
   [`memfault_http_client_post_chunk`](components/include/memfault/http/http_client.h#L101)
   for more details!
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fixed compiler error in
   [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app)
@@ -2367,33 +2465,33 @@ are enough 🤞.
 
 ### Changes between Memfault SDK 0.30.5 and SDK 0.30.4 - May 24, 2022
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - ESP-IDF: add Memfault Compact Log example integration to the
   [`examples/esp32`](examples/esp32) project
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP-IDF: Fix backtraces when using ESP-IDF v4.4+
 - nRF-Connect SDK: enable the Kconfig flag `MEMFAULT_NRF_CONNECT_SDK` by default
   when targeting the nrf52 + nrf53 series SOCs (previously only enabled by
   default for nrf91 series)
 
-#### :house: Internal
+#### 🏠 Internal
 
 Added clarifications around licensing in ports and examples folders. See
 [README](README.md) for more details.
 
 ### Changes between Memfault SDK 0.30.4 and SDK 0.30.3 - May 4, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - minor updates to [`scripts/eclipse_patch.py`](scripts/eclipse_patch.py) to
   support NXP's MCUXpresso IDE
 
 ### Changes between Memfault SDK 0.30.3 and SDK 0.30.2 - April 25, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Particle's Device OS port improvements:
   - A user initiated reboot will now be recorded as a User Shutdown instead of a
@@ -2408,7 +2506,7 @@ Added clarifications around licensing in ports and examples folders. See
     [`ports/zephyr/include/memfault/ports/zephyr/http.h`](ports/zephyr/include/memfault/ports/zephyr/http.h)
     for more details
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Misc README documentation improvements
 
@@ -2419,7 +2517,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.30.1 and SDK 0.30.0 - April 6, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Fix stack selection when in ISR context in some Zephyr versions
 - Fix a build error when building Zephyr with `CONFIG_NORDIC_SECURITY_BACKEND`
@@ -2427,20 +2525,20 @@ Added clarifications around licensing in ports and examples folders. See
   manually control this configuration if necessary (default should be set
   correctly in most cases)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fix CI unit test build error from older version of gcc
 
 ### Changes between Memfault SDK 0.30.0 and SDK 0.29.1 - Mar 31, 2022
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added a Task Watchdog optional module. This can be used to monitor and trigger
   a fault in the case of a task or thread that becomes stuck. See information in
   [components/include/memfault/core/task_watchdog.h](components/include/memfault/core/task_watchdog.h)
   for how to configure and use the module
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Fix compilation when building for a Zephyr target that does not have the
   `CONFIG_ARM_MPU` flag enabled
@@ -2448,7 +2546,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.29.1 and SDK 0.29.0 - Mar 16, 2022
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated Memfault Diagnostic GATT Service (MDS) based on feedback. This service
   can be used to transparently forward data collected by the SDK to a Bluetooth
@@ -2457,14 +2555,14 @@ Added clarifications around licensing in ports and examples folders. See
 - Updated Mbed OS invoke commands to be more resilient against python package
   conflicts
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If your project is based on Zephyr < 2.6, you now need to explicitly set
   `CONFIG_OPENOCD_SUPPORT=y` in your `prj.conf`
 
 ### Changes between Memfault SDK 0.29.0 and SDK 0.28.2 - Feb 28, 2022
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added a port to Particle's Device OS. More details can be found in
   [`ports/particle/README.md`](ports/particle/README.md).
@@ -2475,14 +2573,14 @@ Added clarifications around licensing in ports and examples folders. See
   - `kMfltRebootReason_FirmwareUpdateError` for explicitly tracking resets due
     to firmware update failures or rollbacks
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a convenience utility function for base64 encoding data in place. See
   [`memfault_base64_encode_inplace`](components/include/memfault/util/base64.h#L35)
   for more details!
 - Fixed compiler error in ESP-IDF port when compiling for ESP32-S2 targets
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added configuration option,
   [`MEMFAULT_COREDUMP_INCLUDE_BUILD_ID`](components/include/memfault/default_config.h#L1),
@@ -2498,7 +2596,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.28.2 and SDK 0.28.1 - Feb 1, 2022
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated
   [nRF91 sample test app](examples/nrf-connect-sdk/nrf9160/memfault_demo_app) to
@@ -2508,7 +2606,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.28.1 and SDK 0.28.0 - Jan 20, 2022
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Add an optional override flag to control the name used for Zephyr data
   regions- see
@@ -2522,7 +2620,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.28.0 and SDK 0.27.3 - Jan 4, 2022
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Add support for setting string metrics, see
   `memfault_metrics_heartbeat_set_string()` in
@@ -2534,7 +2632,7 @@ Added clarifications around licensing in ports and examples folders. See
   [`components/include/memfault/metrics/metrics.h`](components/include/memfault/metrics/metrics.h)
   for details
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Update the STM32 QP/C example ([`examples/qp`](examples/qp)) to compile and
   run correctly now
@@ -2549,13 +2647,13 @@ Added clarifications around licensing in ports and examples folders. See
   [issue #21](https://github.com/memfault/memfault-firmware-sdk/issues/21)
   (thank you @C47D !)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Update Python tests to use a mocked-out gdb instance
 
 ### Changes between Memfault SDK 0.27.3 and SDK 0.27.2 - Nov 22, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Fix a build error for the Nordic Connect SDK v1.7.99 development version
 - Correct an error in header file include order in the Mynewt port
@@ -2567,13 +2665,13 @@ Added clarifications around licensing in ports and examples folders. See
   [Memfault's recommended versioning strategy](https://docs.memfault.com/docs/platform/software-version-hardware-version/#software-version)
 - Add a reboot reason port for the STM32F7xx family.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Re-run python `black` and `isort` formatters on python code
 
 ### Changes between Memfault SDK 0.27.2 and SDK 0.27.1 - Nov 5, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - The Mynewt integration now supports the Memfault demo shell via
   `mflt_shell_init()`, see the [Mynewt port README.md](ports/mynewt/README.md)
@@ -2590,19 +2688,19 @@ Added clarifications around licensing in ports and examples folders. See
   which caused the OTA example to always return "OTA Update Available" when the
   current version is already the latest.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated list of sample apps in [`examples/README.md`](examples/README.md)
 
 ### Changes between Memfault SDK 0.27.1 and SDK 0.27.0 - Oct 11, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Extended mynewt RTOS port to capture coredumps via a
   [`os_coredump_cb`](ports/mynewt/src/memfault_platform_port.c) implementation
   when `MEMFAULT_COREDUMP_CB=1`
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fixed a few compiler warnings emitted when compiling with clang
 - Improved documentation for
@@ -2610,7 +2708,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.27.0 and SDK 0.26.1 - Oct 5, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added support for using [compact logs](https://mflt.io/compact-logs) with the
   Memfault [log subsystem](https://mflt.io/logging).
@@ -2622,7 +2720,7 @@ Added clarifications around licensing in ports and examples folders. See
   [Zephyr 2.7](https://docs.zephyrproject.org/latest/releases/release-notes-2.7.html)
   release.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Fixed a missing symbol linker error for `memfault_fault_handler` that could
   arise when compiling with `-flto`.
@@ -2633,7 +2731,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.26.1 and SDK 0.26.0 - Sept 20, 2021
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated
   [`modem_key_mgmt_exists`](ports/zephyr/ncs/src/memfault_nrf91_root_cert_storage.c)
@@ -2641,7 +2739,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.26.0 and SDK 0.25.0 - Sept 15, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added preview of the Memfault Diagnostic GATT Service (MDS). This service can
   be used to transparently forward data collected by the SDK to a Bluetooth Low
@@ -2669,14 +2767,14 @@ Added clarifications around licensing in ports and examples folders. See
   @albertskog in
   [issue #18](https://github.com/memfault/memfault-firmware-sdk/issues/18)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Apply some suggestions emitted by `flake8-pytest-style` linter to
   [scripts/tests/test_memfault_gdb.py](scripts/tests/test_memfault_gdb.py).
 
 ### Changes between Memfault SDK 0.25.0 and SDK 0.24.2 - August 30, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a workaround to
   [`event_storage.h`](components/include/memfault/core/event_storage.h) to
@@ -2695,7 +2793,7 @@ Added clarifications around licensing in ports and examples folders. See
   compile failure instead when any of these files do not exist, a user can set
   [`CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL=n`](ports/zephyr/Kconfig)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - The current version of the Memfault Firmware SDK can now be accessed
   programmatically from the
@@ -2707,7 +2805,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.24.2 and SDK 0.24.1 - August 17, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a new utility API, `memfault_packetizer_set_active_sources`, to the
   [data_packetizer](components/include/memfault/core/data_packetizer.h) module,
@@ -2719,7 +2817,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.24.1 and SDK 0.24.0 - August 9, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Applied suggestions from @elliot-wdtl for the Zephyr ports
   ([#15](https://github.com/memfault/memfault-firmware-sdk/pull/15)):
@@ -2731,12 +2829,12 @@ Added clarifications around licensing in ports and examples folders. See
   `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM` &
   `CONFIG_MEMFAULT_NRF_CONNECT_SDK` when using nRF91 targets.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added `export` command to the demo cli to better mirror
   [our suggested integration test commands](https://mflt.io/mcu-test-commands)
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are were using a custom nRF91 based board config (i.e neither
   `BOARD_NRF9160DK_NRF9160NS` or `BOARD_THINGY91_NRF9160NS`), the following
@@ -2748,7 +2846,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.24.0 and SDK 0.23.0 - July 27, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added "compact log" support to trace events. When enabled, the format string
   will be removed at compile time from calls to `MEMFAULT_TRACE_EVENT_WITH_LOG`
@@ -2765,7 +2863,7 @@ Added clarifications around licensing in ports and examples folders. See
   to guard against potentially printing an uninitialized string.
 - Removed unnecessary extra argument from `MEMFAULT_SOFTWARE_WATCHDOG`
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were already using `MEMFAULT_SOFTWARE_WATCHDOG`, you will need to
   update your call site invocations to remove the argument being passed. i.e
@@ -2777,7 +2875,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.23.0 and SDK 0.22.0 - July 8, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Support for Dialog DA1469x chip family (Huge thanks to @iandmorris for the
   help here!)
@@ -2796,12 +2894,11 @@ Added clarifications around licensing in ports and examples folders. See
   [`MEMFAULT_SOFTWARE_WATCHDOG`](components/include/memfault/panics/assert.h#L65).
   This will result in the issue in the Memfault UI being classified for as a
   "Software Watchdog" instead of an "Assert" for easier classification.
-- Fixed a :bug: in
-  [Zephyr port](ports/zephyr/common/memfault_platform_metrics.c) where cpu
-  runtime metrics were never getting reset after a heartbeat was collected
-  leading to always increasing runtime values getting reported.
+- Fixed a 🐛 in [Zephyr port](ports/zephyr/common/memfault_platform_metrics.c)
+  where cpu runtime metrics were never getting reset after a heartbeat was
+  collected leading to always increasing runtime values getting reported.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Improved support for running [tests](tests/) against different versions of
   clang and gcc and enabled more address sanitizers such as
@@ -2810,7 +2907,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.22.0 and SDK 0.21.1 - June 17, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Reduced code space utilized by metric subsystem by transitioning from a string
   representation of metric names to an enum representation.
@@ -2822,7 +2919,7 @@ Added clarifications around licensing in ports and examples folders. See
 - Updated PEM representation of all root certificates to include newlines after
   64-character intervals to improve portability with various TLS stacks.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated [`fw_build_id.py`](scripts/fw_build_id.py) script. The same script can
   now also be installed via [`pypi`](https://pypi.org/project/mflt-build-id/):
@@ -2831,7 +2928,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.21.1 and SDK 0.21.0 - June 9, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr / nRF Connect SDK port:
   - Made periodic upload a named choice,
@@ -2841,7 +2938,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.21.0 and SDK 0.20.2 - June 8, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr / nRF Connect SDK port:
   - `CONFIG_MEMFAULT_NRF_CONNECT_SDK` is now only enabled by default when
@@ -2860,7 +2957,7 @@ Added clarifications around licensing in ports and examples folders. See
       time which would stall other system work queue jobs from getting
       processed.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - The Zephyr & nRF Connect SDK ports will now only enable the `MEMFAULT_SHELL`
   by default when the Zephyr shell is enabled. `CONFIG_SHELL=y` must now be
@@ -2868,7 +2965,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.20.2 and SDK 0.20.1 - June 4, 2021
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated `sMemfaultBuildIdStorage` structure to track the build id length used
   for event serialization and updated [`fw_build_id.py`](scripts/fw_build_id.py)
@@ -2876,7 +2973,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.20.1 and SDK 0.20.0 - May 28, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Zephyr / nRF Connect SDK port:
   - Replaced `MEMFAULT_DEFAULT_REBOOT_REASON_IMPL` Kconfig option with
@@ -2888,7 +2985,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.20.0 and SDK 0.19.0 - May 27, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Updated
   [memfault_fault_handling_arm.c](components/panics/src/memfault_fault_handling_arm.c)
@@ -2914,7 +3011,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.19.0 and SDK 0.18.0 - May 19, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added support for collecting additional register information when a Hardfault
   takes place when using the Zephyr port. This information will be decoded and
@@ -2930,12 +3027,12 @@ Added clarifications around licensing in ports and examples folders. See
   definitions. This can be utilized by a third party consumer of Zephyr to more
   easily extend the default heartbeat metrics collected when using memfault.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated [`memfault_gdb.py`](scripts/memfault_gdb.py) helper script to use
   latest Memfault API for uploading symbol files.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are using [nRF Connect SDK / Zephyr port](ports/zephyr/ncs/), the SDK
   will now automatically be picked up as a Zephyr Module! You will need to make
@@ -2955,7 +3052,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.18.0 and SDK 0.17.1 - May 14, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Support for Dialog DA145xx chip family (Huge thanks to @iandmorris for the
   help here!)
@@ -2978,15 +3075,15 @@ Added clarifications around licensing in ports and examples folders. See
 - Hardened
   [memfault_http_parse_response()](components/http/src/memfault_http_utils.c)
   utility to parse HTTP responses with headers that exceed a length of 128 bytes
-- Fixed a :bug: in`memfault_log_save_preformatted()` leading to invalid logs
-  being reported when attempting to save log lines > 128 bytes. (thanks @alvarop
-  for the report!)
+- Fixed a 🐛 in`memfault_log_save_preformatted()` leading to invalid logs being
+  reported when attempting to save log lines > 128 bytes. (thanks @alvarop for
+  the report!)
 - Added a convenience API,
   [`memfault_create_unique_version_string()`](components/include/memfault/core/platform/device_info.h),
   which can be used for easily appending a build id on the software version
   reported.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updates to demo cli:
   - `MEMFAULT_DEMO_SHELL_RX_BUFFER_SIZE` can be used to shrink the maximum
@@ -2998,14 +3095,14 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.17.1 and SDK 0.17.0 - April 30, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP32 Example App Updates:
   - Added `export` command to demonstrate how data can be dumped via the console
   - Added
     [Memfault Build ID](examples/esp32/apps/memfault_demo_app/CMakeLists.txt) to
     example app as a reference
-- Fixed a :bug: in
+- Fixed a 🐛 in
   [`memfault_platform_sanitize_address_range()`](ports/templates/memfault_platform_port.c)
   template example.
 - Refactored nRF5 example app to mirror integration steps listed in the
@@ -3019,7 +3116,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.17.0 and SDK 0.16.1 - April 26, 2021
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added support for collecting ARMv7-M MPU regions as part of coredump
   collection. To enable, set
@@ -3035,7 +3132,7 @@ Added clarifications around licensing in ports and examples folders. See
   any other data and appear in the UI for a device. For more details about the
   Memfault log subsystem see <https://mflt.io/logging>
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Fixed compilation error when compiling the panics component against Cortex-M0+
   with ARM Compiler 5
@@ -3043,7 +3140,7 @@ Added clarifications around licensing in ports and examples folders. See
   [default heartbeat metrics to the Zephyr port](ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def)
   around timer task stack usage and execution time.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Refreshed esp32 example app README and updated instructions for the v3.3.5
   esp-idf
@@ -3052,10 +3149,10 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.16.1 and SDK 0.16.0 - April 12, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- Fixed a :bug: in Zephyr port leading to a compilation error with nRF Connect
-  SDK when `CONFIG_DOWNLOAD_CLIENT=y` & `CONFIG_MEMFAULT_NRF_SHELL=y`
+- Fixed a 🐛 in Zephyr port leading to a compilation error with nRF Connect SDK
+  when `CONFIG_DOWNLOAD_CLIENT=y` & `CONFIG_MEMFAULT_NRF_SHELL=y`
 - Dialog DA1468x
   [QSPI coredump storage port](ports/dialog/da1468x/qspi_coredump_storage.c#L1)
   updates:
@@ -3066,7 +3163,7 @@ Added clarifications around licensing in ports and examples folders. See
 - Updated [zephyr example application](examples/zephyr/README.md) and docs to be
   compatible with v2.5 release.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added `memfault_log_save` stub to unit tests to facilitate easier testing of
   logging dependencies
@@ -3078,7 +3175,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.16.0 and SDK 0.15.0 - April 8, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added new convenience APIs, `memfault_event_storage_bytes_used()` &
   `memfault_event_storage_bytes_free()`, to
@@ -3095,12 +3192,12 @@ Added clarifications around licensing in ports and examples folders. See
     - [QSPI coredump storage port](ports/dialog/da1468x/qspi_coredump_storage.c#L1)
     - [Added `memfault_platform_reboot_tracking_boot()` implementation](ports/dialog/da1468x/reset_stat_reboot_tracking.c)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Removed "Heartbeat triggered!" print when
   `memfault_metrics_heartbeat_debug_trigger()` is called
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were using
   [`ports/dialog/da1468x/reset_stat_reboot_tracking.c`](ports/dialog/da1468x/reset_stat_reboot_tracking.c),
@@ -3110,7 +3207,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.15.0 and SDK 0.14.0 - March 24, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a new convenience API,
   [`memfault_device_info_dump()`](components/include/memfault/core/device_info.h#L1)
@@ -3121,9 +3218,9 @@ Added clarifications around licensing in ports and examples folders. See
   This functrions is intended for use in your
   `memfault_platform_coredump_get_regions()` implementation when capturing
   regions that are not defined at compile time.
-- Fixed a :bug: with `memfault_coredump_storage_debug_test_*` which would
-  generate a false positive test failure when the coredump storage area was not
-  divisible by 16.
+- Fixed a 🐛 with `memfault_coredump_storage_debug_test_*` which would generate
+  a false positive test failure when the coredump storage area was not divisible
+  by 16.
 - C++ header guards are now included in all headers in the ports/ directory for
   easier integration in mixed C/C++ environments
 - Port Updates:
@@ -3141,12 +3238,12 @@ Added clarifications around licensing in ports and examples folders. See
 - Added additional comments to [`ports/templates`](ports/templates) directory to
   facilitate porting.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - [Demo CLI Shell commands](components/demo/src/memfault_demo_shell_commands.c#L50)
   are now defined as weak symbols so they can be overridden with a custom set.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were using the
   [`ports/emlib/msc_coredump_storage.c`](ports/emlib/msc_coredump_storage.c)
@@ -3163,7 +3260,7 @@ Added clarifications around licensing in ports and examples folders. See
 
 ### Changes between Memfault SDK 0.14.0 and SDK 0.13.1 - March 18, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Renamed `platforms` folder to [`examples`](examples/) to better capture that
   the folder contains "example" integrations of the Memfault SDK into hello
@@ -3181,14 +3278,14 @@ Added clarifications around licensing in ports and examples folders. See
 - Added support for capturing coredumps with GDB from GNU GCC 4.9 to
   [`memfault_gdb.py`](scripts/memfault_gdb.py)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added support for automatically capturing logs with Zephyr when logging in
   synchronous mode `CONFIG_LOG_IMMEDIATE=y`
 - Unified nomenclature for references to the "Project Key" used to push data to
   Memfault
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 If you were linking any files from the `platforms` folder into your project, the
 path needs to be updated to `examples`:
@@ -3200,13 +3297,13 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.13.1 and SDK 0.13.0 - March 10, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Reference platform API implementations for DA1468x:
   - [rich reboot reason info derived from RESET_STAT_REG register](ports/dialog/da1468x/reset_stat_reboot_tracking.c#L1)
-- Fixed a :bug: that led to a unit test failure in `test_coredump_storage_debug`
-  in some environments where `const` arrays were getting dynamically built on
-  the stack at runtime.
+- Fixed a 🐛 that led to a unit test failure in `test_coredump_storage_debug` in
+  some environments where `const` arrays were getting dynamically built on the
+  stack at runtime.
 - Worked around a limitation in GNU GCC 4.9's extended ASM to fix a compiler bug
   that would arise when compiling `memfault_fault_handling_arm.c` for Cortex-M0
   targets.
@@ -3215,7 +3312,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.13.0 and SDK 0.12.0 - March 4, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Improved documentation in [README](README.md) and [components](components/)
   directories.
@@ -3237,12 +3334,12 @@ path needs to be updated to `examples`:
     3a3e81f
     ```
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Started work to enable automatic capture of logs in a coredump for the Zephyr
   & nRF Connect SDK.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were linking `memfault_nrf5_coredump.c` in your project:
   - the file has been split into `nrf5_coredump_regions.c` (which defines the
@@ -3259,7 +3356,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.12.0 and SDK 0.11.4 - Feb 14, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - The SDK now includes a central configuration header at
   [`components/include/memfault/config.h`](components/include/memfault/config.h#L1).
@@ -3273,7 +3370,7 @@ path needs to be updated to `examples`:
   simplifies adding components to build systems as only a single path is now
   needed!
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - You must create the file `memfault_platform_config.h` and add it to your
   include path. This file can be used in place of compiler defines to tune the
@@ -3299,7 +3396,7 @@ path needs to be updated to `examples`:
 - ESP8266 Updates
   - Added new Kconfig option which can be set via `make menuconfig` and be used
     to disable the Memfault integration, `CONFIG_MEMFAULT=n`.
-  - Fixed a :bug: leading to a compilation error when
+  - Fixed a 🐛 leading to a compilation error when
     both`CONFIG_USING_ESP_CONSOLE=n` and `CONFIG_MEMFAULT_CLI_ENABLED=n`
 - Added default implementations for `MEMFAULT_GET_LR()`, `MEMFAULT_GET_PC()`,
   and `MEMFAULT_BREAKPOINT()` to
@@ -3308,7 +3405,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.11.3 and SDK 0.11.2 - Jan 31, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Reference platform API implementations for the following MCUs/SDKs:
   - nRF Connect SDK
@@ -3326,13 +3423,12 @@ path needs to be updated to `examples`:
     - Added support for periodically uploading Memfault data in the background.
       This is off by default and can be enabled with the
       `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y` option
-- Fixed a :bug: that could lead to an invalid coredump being sent to Memfault
-  when `memfault_packetizer_abort()` was called after a coredump was partially
-  sent.
+- Fixed a 🐛 that could lead to an invalid coredump being sent to Memfault when
+  `memfault_packetizer_abort()` was called after a coredump was partially sent.
 
 ### Changes between Memfault SDK 0.11.2 and SDK 0.11.1 - Jan 21, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added support for nRF Connect SDK v1.2.x and updated the
   [integration guide](https://mflt.io/nrf-connect-sdk-integration-guide)
@@ -3340,14 +3436,14 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.11.0 and SDK 0.10.1 - Jan 19, 2021
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added full support for the ESP8266 (Tensilica Xtensa LX106) MCU architecture!
   A step-by-step integration guide can be found
   [here](https://mflt.io/esp8266-tutorial) and the port to the ESP8266 RTOS SDK
   can be found [here](ports/esp8266_sdk/).
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a convenience header for picking up includes for all Memfault
   components. If you are using the
@@ -3360,7 +3456,7 @@ path needs to be updated to `examples`:
   // call to any Memfault API in the components folder
   ```
 
-- Fixed a :bug: leading to Root CAs not get loaded correctly when using the nRF
+- Fixed a 🐛 leading to Root CAs not get loaded correctly when using the nRF
   Connect SDK port and the `MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE=y`
   Kconfig option.
 - Applied suggestions from @rerickson1 for the Zephyr and nRF Connect SDK ports:
@@ -3370,14 +3466,14 @@ path needs to be updated to `examples`:
   - [`CONFIG_MEMFAULT=y`](https://github.com/memfault/memfault-firmware-sdk/pull/7)
     must now be specified to enable the Memfault integration.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Refactored the [nRF Connect SDK port](ports/nrf-connect-sdk) to build directly
   on top of the [zephyr port](ports/zephyr) reducing code duplication and
   facilitate the rollout of additional features to both SDKs at the same time
   moving forward.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are using a Memfault
   [build system helper](README.md#add-sources-to-build-system) _and_ not using
@@ -3390,7 +3486,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.10.1 and SDK 0.10.0 - Jan 10, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Reference platform API implementations for the following MCUs/SDKs:
   - STM32F4 family / STM32CubeF4:
@@ -3409,7 +3505,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.10.0 and SDK 0.9.2 - Jan 5, 2021
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Updated
   [`memfault_freertos_ram_regions.c`](ports/freertos/src/memfault_freertos_ram_regions.c)
@@ -3430,7 +3526,7 @@ path needs to be updated to `examples`:
     - [software watchdog implementation using warning interrupt in WDOG peripheral](ports/emlib/wdog_software_watchdog.c)
     - [reboot reason info derived from RMU RSTCAUSE register](ports/emlib/rmu_reboot_tracking.c)
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added several more
   [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
@@ -3447,14 +3543,14 @@ path needs to be updated to `examples`:
   implementation is working as corrected. For more details about how to use, see
   [memfault_coredump_storage_debug.c](components/panics/src/memfault_coredump_storage_debug.c#L1).
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Added infrastructure to coredump collection in `panics` component to support
   ESP8266 (Tensilica Xtensa LX106) MCU architecture.
 
 ### Changes between Memfault SDK 0.9.3 and SDK 0.9.2 - Dec 14, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - nRF Connect Updates:
 
@@ -3473,7 +3569,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.9.2 and SDK 0.9.1 - Dec 10, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added Memfault OTA support to esp-idf port. Updates can now be performed by
   calling `memfault_esp_port_ota_update()`. More details can be found in
@@ -3497,7 +3593,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.9.1 and SDK 0.9.0 - Nov 24, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - A log can now be captured alongside a trace event by using a new API:
   [`MEMFAULT_TRACE_EVENT_WITH_LOG(reason, ...)`](components/include/memfault/core/trace_event.h#L77).
@@ -3531,14 +3627,14 @@ path needs to be updated to `examples`:
   ```
 
 - The error tracing facilities are now initialized automatically for the esp-idf
-- Fixed a :bug: where an erroneous size was reported from
+- Fixed a 🐛 where an erroneous size was reported from
   `memfault_coredump_storage_check_size()` if
   `MEMFAULT_COREDUMP_COLLECT_LOG_REGIONS=1`and `memfault_log_boot()` had not yet
   been called
 
 ### Changes between Memfault SDK 0.9.0 and SDK 0.8.2 - Nov 16, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - ESP32 port improvements:
   - The Memfault `metrics` component is now included by default in the ESP32
@@ -3556,7 +3652,7 @@ path needs to be updated to `examples`:
   [`components/include/memfault/core/debug_log.h`](components/include/memfault/core/debug_log.h)
   for more details.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were using the ESP32 port:
   - Call to `memfault_metrics_boot()` can now be removed
@@ -3566,7 +3662,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.8.2 and SDK 0.8.1 - Nov 13, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Coredumps will now be truncated (instead of failing to save completely) when
   the memory regions requested take up more space than the platform storage
@@ -3580,7 +3676,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.8.1 and SDK 0.8.0 - Nov 3, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added several more
   [reboot reason options](components/include/memfault/core/reboot_reason_types.h#L16):
@@ -3593,18 +3689,18 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.8.0 and SDK 0.7.2 - Oct 26, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a new convenience API,
   [`memfault_coredump_storage_check_size()`](components/include/memfault/panics/coredump.h),
   to check that coredump storage is appropriately sized.
-- Fixed a :bug: with heartbeat timers that would lead to an incorrect duration
+- Fixed a 🐛 with heartbeat timers that would lead to an incorrect duration
   being reported if the timer was started and stopped within the same
   millisecond.
 - Fixed an issue when using TI's compiler that could lead to the incorrect
   register state being captured during a fault.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you were **not** using the
   [error tracing functionality](https://mflt.io/error-tracing), you will need to
@@ -3614,7 +3710,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.7.3 and SDK 0.7.2 - Oct 5, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Add support for sending multiple events in a single chunk. This can be useful
   for optimizing throughput or packing more data into a single transmission
@@ -3631,7 +3727,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.7.2 and SDK 0.7.1 - Sept 1, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - A status or error code (i.e bluetooth disconnect reason, errno value, etc) can
   now be logged alongside a trace event by using a new API:
@@ -3639,7 +3735,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.7.1 and SDK 0.7.0 - Sept 1, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added support for TI's ARM-CGT Compiler
 - Removed dependency on NMI Exception Handler for `MEMFAULT_ASSERT`s. Instead of
@@ -3654,7 +3750,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.7.0 and SDK 0.6.1 - Aug 6, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added utility to facilitate collection of the memory regions used by the
   [logging module](components/include/memfault/core/log.h) as part of a
@@ -3667,7 +3763,7 @@ path needs to be updated to `examples`:
   information is used by the Memfault cloud to better normalize the data when it
   is presented in the UI.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system) and are using
@@ -3677,7 +3773,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.6.1 and SDK 0.6.0 - July 27, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a port for projects using the [nRF Connect SDK](ports/nrf-connect-sdk)
   along with a
@@ -3688,7 +3784,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.6.0 and SDK 0.5.1 - July 21, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added
   [memfault/core/data_export.h](components/include/memfault/core/data_export.h#L5)
@@ -3697,15 +3793,15 @@ path needs to be updated to `examples`:
   the header linked above or the
   [integration guide](https://mflt.io/chunk-data-export) for more details.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
-- Fixed a :bug: that would cause the demo shell to get stuck if backspace
+- Fixed a 🐛 that would cause the demo shell to get stuck if backspace
   characters were entered while no other characters had been entered.
 - Updated the [GDB chunk test utility](https://mflt.io/send-chunks-via-gdb) to
   automatically detect when the data export API is integrated and post-chunks to
   the cloud directly from GDB when the function is invoked.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system) and want to make
@@ -3716,7 +3812,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.5.1 and SDK 0.5.0 - June 24, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Updated code to support compilations with `-Wunused-parameter`, GNU GCC's
   `-Wformat-signedness`, and Clang's `-Wno-missing-prototypes` &
@@ -3724,14 +3820,14 @@ path needs to be updated to `examples`:
 - Updated unit test setup to compile with newly supported warnings treated as
   errors
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Misc utility additions including support for encoding floats and int64_t's in
   the cbor utility
 
 ### Changes between Memfault SDK 0.5.0 and SDK 0.4.2 - June 11, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Add additional utilities to the http component to facilitate easier
   [release management](https://mflt.io/release-mgmt) integration in environments
@@ -3740,14 +3836,14 @@ path needs to be updated to `examples`:
   (tested on the STM32L4) to demonstrate querying the Memfault cloud for new
   firmware updates.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Refactored `demo` component to make it easier to integrate an individual CLI
   commands into a project since some of the commands can be helpful for
   validating integrations. More details can be found in the README at
   [components/demo/README.md](components/demo/README.md).
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are using the "demo" component _and_ are _not_ making use our CMake or
   Make [build system helpers](README.md#add-sources-to-build-system), you will
@@ -3769,7 +3865,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.4.2 and SDK 0.4.1 - June 8, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Moved `reboot_tracking.h` to `core` component since it has no dependencies on
   anything from the `panics` component. This allows the reboot tracking to be
@@ -3784,7 +3880,7 @@ path needs to be updated to `examples`:
   architectures.
 - Misc README improvements.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are already using reboot tracking in your system, you will need to
   update the following includes in your code:
@@ -3807,7 +3903,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.4.1 and SDK 0.4.0 - May 20, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added native SDK support for tracking and generating a unique firmware build
   id with any compiler! Quick integration steps can be found in
@@ -3825,14 +3921,14 @@ path needs to be updated to `examples`:
     use cases. For example you could append a portion of it to a debug version
     to make it unique.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - The CMake [build system helper](README.md#add-sources-to-build-system) is now
   compatible with any 3.x version of CMake (previously required 3.6 or newer).
 - The unique firmware build id is stored automatically as part of coredump
   collection.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system), you will need
@@ -3845,7 +3941,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.4.0 and SDK 0.3.4 - May 6, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added support for (optionally) storing events collected by the SDK to
   non-volatile storage mediums. This can be useful for devices which experience
@@ -3853,7 +3949,7 @@ path needs to be updated to `examples`:
   must implement the
   [nonvolatile_event_storage platform API](components/include/memfault/core/platform/nonvolatile_event_storage.h#L7).
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added an assert used internally by the SDK which makes it easier to debug API
   misuse during bringup. The assert is enabled by default but can easily be
@@ -3864,13 +3960,13 @@ path needs to be updated to `examples`:
   for Cortex-M targets. The function is defined as _weak_ so a user can still
   define the function to override the default behavior.
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated
   [`memfault install_chunk_handler`](https://mflt.io/posting-chunks-with-gdb) to
   work with older versions of the GNU Arm Toolchain.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are _not_ using our CMake or Make
   [build system helpers](README.md#add-sources-to-build-system), you will need
@@ -3879,13 +3975,13 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.3.4 and SDK 0.3.3 - April 22, 2020
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Moved `trace_event.h` to `core` component since it has no dependencies on
   anything from the `panics` component. This allows the trace event feature to
   be more easily integrated in a standalone fashion.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - If you are already using `MEMFAULT_TRACE_EVENT()` in your project, you will
   need to update the include as follows:
@@ -3902,7 +3998,7 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.3.3 and SDK 0.3.2 - April 21, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added a new [GDB command](https://mflt.io/posting-chunks-with-gdb) which can
   be used to post packetized Memfault data directly from GDB to the Memfault
@@ -3911,14 +4007,14 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.3.2 and SDK 0.3.1 - April 16, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - The `captured_date` for an event can now be set by implementing
   [`memfault_platform_time_get_current()`](components/include/memfault/core/platform/system_time.h#L33).
   If the API is not implemented, the `captured_date` will continue to be set
   based on the time the event was received by the memfault cloud.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a reference implementation of
   [reboot reason tracking](https://mflt.io/2QlOlgH) to the
@@ -3933,13 +4029,13 @@ path needs to be updated to `examples`:
   reboot has been provided. In this scenario, the reset reason will be
   [`kMfltRebootReason_Unknown`](components/include/memfault/core/reboot_reason_types.h#L16)
 
-#### :house: Internal
+#### 🏠 Internal
 
 - Updated a few Kconfig options in the Zephyr demo app to improve the ability to
   compute stack high water marks (`CONFIG_INIT_STACKS=y`) and determine if
   stacks has overflowed (`CONFIG_MPU_STACK_GUARD=y`).
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - `device_serial` is no longer encoded by default as part of events. Instead,
   the `device_serial` in an event is populated from the the unique device
@@ -3952,14 +4048,14 @@ path needs to be updated to `examples`:
 
 ### Changes between Memfault SDK 0.3.1 and SDK 0.3.0 - April 9, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Added [`memfault_log_read()`](components/include/memfault/core/log.h#L95-L121)
   API to make it possible to use the module to cache logs in RAM and then flush
   them out to slower mediums, such as a UART console or Flash, from a background
   task.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - A pointer to the stack frame upon exception entry is now included in
   `sCoredumpCrashInfo` when
@@ -3969,14 +4065,14 @@ path needs to be updated to `examples`:
 - Added Root Certificates needed for release downloads to
   [`MEMFAULT_ROOT_CERTS_PEM`](components/http/include/memfault/http/root_certs.h#L146).
 
-#### :house: Internal
+#### 🏠 Internal
 
 - All sources that generate events now use the same utility function,
   `memfault_serializer_helper_encode_metadata()` to encode common event data.
 
 ### Changes between Memfault SDK 0.3.0 and SDK 0.2.5 - April 3, 2020
 
-#### :rocket: New Features
+#### 🚀 New Features
 
 - Introduced a lightweight logging module. When used, the logs leading up to a
   crash will now be decoded and displayed from the Memfault Issue Details Web
@@ -3987,7 +4083,7 @@ path needs to be updated to `examples`:
   now uses this information to automatically compute and display the overall
   uptime of your fleet.
 
-#### :chart_with_upwards_trend: Improvements
+#### 📈 Improvements
 
 - Added a [new document](https://mflt.io/fw-event-serialization) walking through
   the design of Memfault event serialization.
@@ -3997,7 +4093,7 @@ path needs to be updated to `examples`:
 - Added `const` to a few circular_buffer.h API signatures.
 - Misc code comment improvements.
 
-#### :boom: Breaking Changes
+#### 💥 Breaking Changes
 
 - The function signature for `memfault_metrics_boot()` changed as part of this
   update. If you are already using the `metrics` component, you will need to

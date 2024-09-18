@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! API for the Bluetooth Low Energy Memfault Diagnostic GATT Service (MDS)
 //!

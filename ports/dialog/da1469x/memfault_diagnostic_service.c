@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A port of the Memfault Diagnostic GATT Service (MDS) to the DA1469x SDK.
 //! See mds.h header for more details

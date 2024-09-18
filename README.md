@@ -166,6 +166,6 @@ the top for build & test coverage status of the `master` branch.
 ## License
 
 Unless specifically indicated otherwise in a file, all memfault-firmware-sdk
-files are all licensed under the [Memfault License](/License.txt). (A few files
-in the [examples](/examples) and [ports](/ports) directory are licensed
-differently based on vendor requirements.)
+files are all licensed under the [Memfault License](/LICENSE). (A few files in
+the [examples](/examples) and [ports](/ports) directory are licensed differently
+based on vendor requirements.)

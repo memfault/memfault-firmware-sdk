@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A Software Watchdog implementation backed by the
 //! STM32H7xx LPTIM peripheral & the STM32CubeH7 HAL API.

@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A fake implementation of coredump storage which makes use of the
 //! implementation in memfault/ports/buffered_coredump_storage.h

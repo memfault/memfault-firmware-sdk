@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 
 //! All the Root Certs are provided below in the PEM & DER formats. Depending on the TLS stack

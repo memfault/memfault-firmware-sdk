@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Entry point to Memfault Radio. In this file you will find:
 //!  1. Implementation for memfault_platform_get_device_info()

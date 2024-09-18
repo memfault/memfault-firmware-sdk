@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief
 //! Internal file that should never be included by a consumer of the SDK. See
@@ -34,6 +34,11 @@ typedef enum {
 } eMemfaultBuildIdType;
 
 typedef struct {
+  const char *name;
+  const char *version;
+} sMfltOsVersion;
+
+typedef struct {
   uint8_t type;  // eMemfaultBuildIdType
   uint8_t len;
   // the length, in bytes, of the build id used when reporting data
@@ -41,6 +46,7 @@ typedef struct {
   uint8_t rsvd;
   const void *storage;
   const sMfltSdkVersion sdk_version;
+  const sMfltOsVersion os_version;
 } sMemfaultBuildIdStorage;
 
 MEMFAULT_STATIC_ASSERT(((offsetof(sMemfaultBuildIdStorage, type) == 0) &&

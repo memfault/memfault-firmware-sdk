@@ -1,6 +1,6 @@
 #
 # Copyright (c) Memfault, Inc.
-# See License.txt for details
+# See LICENSE for details
 #
 
 """
@@ -37,10 +37,10 @@ PDSC_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
   <changelogs>
     <changelog id="all" default="true" name="CHANGELOG.md"/>
   </changelogs>
-  <license>License.txt</license>
+  <license>LICENSE</license>
   <licenseSets>
     <licenseSet id="all" default="true" gating="true">
-      <license name="License.txt" title="Amended BSD-3 Clause License for the SDK files"/>
+      <license name="LICENSE" title="Amended BSD-3 Clause License for the SDK files"/>
       <license name="ports/templates/apache-2.0.txt" title="Apache 2.0 for template files" spdx="Apache-2.0"/>
     </licenseSet>
   </licenseSets>
@@ -325,7 +325,7 @@ def build_cmsis_pack(
 
         aux_files = [
             "CHANGELOG.md",
-            "License.txt",
+            "LICENSE",
             "README.md",
         ]
         for aux_file in aux_files:

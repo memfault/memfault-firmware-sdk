@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! An abstraction to facilitate implementing a debuggable watchdog subsystem using the ideas
 //! discussed in https://mflt.io/root-cause-watchdogs

@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Some IOT topologies have an MTU sizes that are less than the size of a Memfault Event or
 //! Coredump. In these situations, the Memfault SDK will chunk up the data to be shipped out over

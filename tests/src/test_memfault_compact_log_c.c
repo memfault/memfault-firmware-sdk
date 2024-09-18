@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Note: These tests are in a C (instead of CPP) file because they
 //! test the use of the _Generic() macro which is not available in CPP.

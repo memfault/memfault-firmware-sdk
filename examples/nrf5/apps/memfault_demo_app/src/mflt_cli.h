@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! Experimental CLI for diagnostics using nrf SDK
 
 void mflt_cli_init(void);

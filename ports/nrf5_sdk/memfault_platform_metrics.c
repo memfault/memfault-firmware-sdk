@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! A port of the memfault timer dependency functions which utilizes the nRF5 SDK app_timer module
 //!
 //! Options:

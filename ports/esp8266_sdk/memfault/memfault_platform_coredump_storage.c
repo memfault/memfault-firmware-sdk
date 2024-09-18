@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A coredump storage implementation that uses the active OTA staging area in the partition
 //! area for storing crash information. If a ota_* slot is not in the partitions*.csv file, no

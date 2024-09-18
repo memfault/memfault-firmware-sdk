@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 
 #include "memfault/components.h"
 #include "memfault/panics/arch/arm/cortex_m.h"

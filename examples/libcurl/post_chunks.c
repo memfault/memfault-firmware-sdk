@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Example code that uses libcurl to post memfault the memfault test data from:
 //!   https://mflt.io/chunks-api-integration

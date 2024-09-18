@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! A Software Watchdog implementation backed by the
 //! S32K Low Power Interrupt Timer (LPIT) peripheral & the S32K SDK.

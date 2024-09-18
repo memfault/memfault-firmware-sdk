@@ -1,10 +1,8 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
 
 #include "memfault/ports/ncs/version.h"
 

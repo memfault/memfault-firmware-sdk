@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! @brief
 //! Adds a basic set of commands for interacting with Memfault SDK
@@ -247,6 +247,40 @@ static int prv_zephyr_assert_example(const struct shell *shell, size_t argc, cha
   return 0;
 }
 
+static int prv_zephyr_stack_overflow_example(const struct shell *shell, size_t argc, char **argv) {
+  // get the current running thread, get its max stack address, then write
+  // decrementing addresses 1 word at a time, yielding in between, to trigger an
+  // MPU crash or canary check fail
+
+#if !defined(CONFIG_STACK_SENTINEL) && !defined(CONFIG_MPU_STACK_GUARD)
+  shell_print(shell,
+              "CONFIG_STACK_SENTINEL or CONFIG_MPU_STACK_GUARD must be enabled to test stack "
+              "overflow detection");
+#else
+
+  // get the current thread
+  struct k_thread *thread = k_current_get();
+
+  // get the stack start address (this is the lowest address)
+  const uint32_t *stack_start = (const uint32_t *)thread->stack_info.start;
+
+  // get the current address- it should be ~ the address of the above variable,
+  // offset it by 4 words to hopefully prevent clobbering our current variables.
+  // we'll write from this address, so the stack watermark will be updated.
+  volatile uint32_t *stack_current = ((volatile uint32_t *)&stack_start) - 4;
+
+  // starting at the stack start address, write decrementing values. this should crash!
+  for (; stack_current > (stack_start - 64); stack_current--) {
+    *stack_current = 0xDEADBEEF;
+    k_yield();
+  }
+
+  MEMFAULT_LOG_ERROR("Stack overflow test failed, stack overflow was not triggered!");
+#endif
+
+  return -1;
+}
+
 static int prv_zephyr_load_32bit_address(const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_loadaddr(argc, argv);
 }
@@ -308,6 +342,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
   SHELL_CMD(hang, NULL, "trigger a hang", prv_hang_example),
   SHELL_CMD(zassert, NULL, "trigger a zephyr assert", prv_zephyr_assert_example),
+  SHELL_CMD(stack_overflow, NULL, "trigger a stack overflow", prv_zephyr_stack_overflow_example),
   SHELL_CMD(assert, NULL, "trigger memfault assert", prv_memfault_assert_example),
   SHELL_CMD(loadaddr, NULL, "test a 32 bit load from an address", prv_zephyr_load_32bit_address),
   SHELL_CMD(double_free, NULL, "trigger a double free error", prv_cli_cmd_double_free),

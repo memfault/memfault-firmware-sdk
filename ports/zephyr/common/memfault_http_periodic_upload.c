@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 
 // clang-format off
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)

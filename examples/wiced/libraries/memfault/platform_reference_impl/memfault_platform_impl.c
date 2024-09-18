@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! Reference implementation of the memfault platform header for the WICED platform
 
 #include "memfault/core/compiler.h"

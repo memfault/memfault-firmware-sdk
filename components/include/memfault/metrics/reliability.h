@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! @brief APIs for tracking reliability metrics
 
 #ifdef __cplusplus

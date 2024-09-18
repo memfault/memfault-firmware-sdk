@@ -3,7 +3,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //
 // ESP-IDF specific Memfault configs. This file has the following purposes:
 // 1. provide a way to set Memfault configs (default_config.h overrides) from

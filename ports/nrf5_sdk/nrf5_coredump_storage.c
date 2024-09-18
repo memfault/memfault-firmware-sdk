@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Implements platform dependency functions required for saving coredumps to
 //! internal flash when using the NRF5 SDK.

@@ -1,7 +1,5 @@
 //! @file
 //!
-//! Copyright (c) Memfault, Inc.
-//! See License.txt for details
 
 #include <stdarg.h>
 #include <stdio.h>

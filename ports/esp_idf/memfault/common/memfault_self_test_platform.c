@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 #include <stdbool.h>
 
 // Espressif's esp-idf project uses a different include directory by default.

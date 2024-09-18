@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Example configuration of Zephyr hardware watchdog with Memfault software watchdog
 //! port such that a coredump is captured ahead of the hardware watchdog firing

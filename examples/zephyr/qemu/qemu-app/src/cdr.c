@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //!
 //! Sample CDR implementation. See https://mflt.io/custom-data-recordings for
 //! more information

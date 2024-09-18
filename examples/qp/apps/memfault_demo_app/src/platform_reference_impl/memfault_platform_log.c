@@ -1,7 +1,7 @@
 //! @file
 //!
 //! Copyright (c) Memfault, Inc.
-//! See License.txt for details
+//! See LICENSE for details
 //! @brief
 //! An example implementation of the logging Memfault API
 #include <stdarg.h>
