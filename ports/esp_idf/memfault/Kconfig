@@ -288,6 +288,12 @@ endif
             This behavior can cause issues when used with `ESP_ERROR_CHECK()`. This option enables a
             wrapped version to suppress these errors and prevent crashes.
 
+    config MEMFAULT_USE_MEMFAULT_BUILD_ID
+        bool "Automatically insert Memfault Build ID"
+        default y
+        help
+            Automatically insert the Memfault Build ID during the build process.
+
     # HTTPS Periodic Upload
     menuconfig MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Enable a dedicated thread to periodically upload Memfault data over HTTPS"

@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - The SDK now supports being installed as an
+    [ESP Component](https://components.espressif.com/) from the Espressif
+    registry, by adding the following lines to an esp-idf project's
+    `idf_component.yml` manifest:
+
+    ```yaml
+    dependencies:
+      memfault/memfault-firmware-sdk:
+        version: "1.12.0"
+    ```
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - The [Memfault Build ID](https://mflt.io/symbol-file-build-ids) will be
+    applied by default, controlled by the Kconfig setting
+    `CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID`. This is _only_ valid for ESP-IDF
+    versions >= **4.2.5** , and will cause a build error on older versions,
+    requiring it to be set to `n`. Updating to this version of the SDK will
+    require removing the similar logic in the project's `CMakeLists.txt` file (a
+    build error will occur if both are present).
+
+  - The Memfault Core Vital for
+    [Periodic Connectivity](https://docs.memfault.com/docs/platform/memfault-core-metrics#periodic-connectivity)
+    will now count failures to sync Memfault data if the HTTP connection cannot
+    be established, but WiFi connectivity is available. This can occur when the
+    WAN connection is down but the access point is still up, or if there is an
+    external DNS failure. Previously this was not counted as a failure.
+
 ## [1.11.5] - 2024-09-18
 
 ### 📈 Added

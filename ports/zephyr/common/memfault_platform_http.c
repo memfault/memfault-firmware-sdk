@@ -36,7 +36,7 @@
 #endif
 
 //! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
-#if !defined(CONFIG_MBEDTLS_SHA1)
+#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"
 #endif
 #endif

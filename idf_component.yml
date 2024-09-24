@@ -1,0 +1,5 @@
+description: Memfault SDK for embedded systems. Observability, logging, crash reporting, and OTA all in one service
+url: https://github.com/memfault/memfault-firmware-sdk
+repository: https://github.com/memfault/memfault-firmware-sdk
+documentation: https://docs.memfault.com/
+issues: https://github.com/memfault/memfault-firmware-sdk/issues

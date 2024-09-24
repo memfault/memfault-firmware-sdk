@@ -472,6 +472,11 @@ int memfault_esp_port_http_client_post_data(void) {
   sMfltHttpClient *http_client = memfault_http_client_create();
   if (!http_client) {
     MEMFAULT_LOG_ERROR("Failed to create HTTP client");
+  #if defined(CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS)
+    // count as a sync failure- if we're here, we have a valid netif connection
+    // but were unable to establish the TLS connection
+    memfault_metrics_connectivity_record_memfault_sync_failure();
+  #endif
     return MemfaultInternalReturnCode_Error;
   }
   const eMfltPostDataStatus rv = (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
