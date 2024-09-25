@@ -15,13 +15,26 @@ if(DEFINED IDF_VERSION_MAJOR)
   endif()
 endif()
 
-# Look for the Memfault SDK in a subdirectory first, when this app is used
-# standalone (not from within the Memfault SDK)
-get_filename_component(memfault_firmware_sdk_dir third-party/memfault-firmware-sdk ABSOLUTE)
-if(NOT EXISTS ${memfault_firmware_sdk_dir})
 get_filename_component(memfault_firmware_sdk_dir ../../../../ ABSOLUTE)
+# If we found the Memfault SDK, include it in the build
+if(EXISTS ${memfault_firmware_sdk_dir}/ports/esp_idf/memfault.cmake)
+  include(${memfault_firmware_sdk_dir}/ports/esp_idf/memfault.cmake)
+else()
+  # Otherwise, append this to the main/idf_component.yml file:
+  #   memfault/memfault-firmware-sdk: "*"
+  # Ideally we'd push an environment variable and use a conditional dependency
+  # https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html#conditional-dependencies
+  # But that requires idf-component-manager v2+, which is not available on all
+  # esp-idf versions
+
+  # if the string "memfault/memfault-firmware-sdk" isn't in the file, append it:
+  file(READ ${CMAKE_CURRENT_SOURCE_DIR}/main/idf_component.yml idf_component_yml)
+  if(NOT idf_component_yml MATCHES "memfault/memfault-firmware-sdk")
+    file(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/main/idf_component.yml
+      "  memfault/memfault-firmware-sdk: \"*\"\n"
+    )
+  endif()
 endif()
-include(${memfault_firmware_sdk_dir}/ports/esp_idf/memfault.cmake)
 
 # NOTE: This include also applies global compiler options, make sure
 # this happens first before defining other targets!
@@ -65,19 +78,32 @@ if (INVALID_PARTITION_TABLE)
 endif()
 
 if (CONFIG_MEMFAULT)
-  # Add the Memfault Build ID so each build can have a unique version.
-  set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME}.elf)
-  add_custom_command(TARGET ${IDF_PROJECT_EXECUTABLE}
-    POST_BUILD
-    # Compute and insert the build id
-    COMMAND python ${memfault_firmware_sdk_dir}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
-    # Save a copy of the ELF that includes the 'log_fmt' section
-    BYPRODUCTS ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
-    # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
-    COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
-    COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
-    COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
-    # Remove the 'log_fmt' compact log section, which confuses elf2image
-    COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
-  )
+  # Set MEMFAULT_IDF_VERSION, used for version-specific logic later.
+  if (IDF_VERSION_MAJOR)
+    set(MEMFAULT_IDF_VERSION "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
+  else()
+    # pre-4.0 doesn't have version information available to cmake, so set it to
+    # the lowest compatible version
+    set(MEMFAULT_IDF_VERSION "3.3.5")
+  endif()
+
+  # As of Memfault SDK v1.12.0, adding the Memfault Build ID is done in the
+  # memfault component for ESP-IDF >=4.2.5.
+  if(MEMFAULT_IDF_VERSION VERSION_LESS "4.2.5")
+    # Add the Memfault Build ID so each build can have a unique version.
+    set(IDF_PROJECT_EXECUTABLE ${PROJECT_NAME}.elf)
+    add_custom_command(TARGET ${IDF_PROJECT_EXECUTABLE}
+      POST_BUILD
+      # Compute and insert the build id
+      COMMAND python ${memfault_firmware_sdk_dir}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
+      # Save a copy of the ELF that includes the 'log_fmt' section
+      BYPRODUCTS ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+      # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
+      COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
+      COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+      COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
+      # Remove the 'log_fmt' compact log section, which confuses elf2image
+      COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
+    )
+  endif()
 endif()  # NOT CONFIG_MEMFAULT_DISABLE

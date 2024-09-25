@@ -81,6 +81,12 @@ void memfault_heap_stats_free(const void *ptr);
 
 #define MEMFAULT_HEAP_STATS_FREE(ptr_) memfault_heap_stats_free(ptr_)
 
+//! These functions can be used to manually increment and decrement the
+//! in_use_block_count. This is useful if the application has custom memory
+//! tracing that provides more detailed information than just malloc/free.
+void memfault_heap_stats_decrement_in_use_block_count(void);
+void memfault_heap_stats_increment_in_use_block_count(void);
+
 #ifdef __cplusplus
 }
 #endif

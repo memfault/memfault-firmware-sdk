@@ -5,6 +5,7 @@
 
 #include <inttypes.h>
 #include <stdarg.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 
 #include "memfault/components.h"
@@ -217,4 +218,76 @@ MEMFAULT_NORETURN void memfault_platform_reboot(void) {
 static void __attribute__((constructor)) prv_memfault_boot(void) {
   memfault_boot();
 }
+#endif
+
+#if CONFIG_MEMFAULT_HEAP_STATS
+extern void *__real_malloc(size_t size);
+extern void *__real_calloc(size_t nmemb, size_t size);
+extern void __real_free(void *ptr);
+
+static atomic_bool s_memfault_heap_stats_locked = ATOMIC_VAR_INIT(false);
+
+static bool prv_heap_lock_acquire(void) {
+  // Only call into heap stats from non-ISR context
+  if (memfault_arch_is_inside_isr()) {
+    return false;
+  }
+  bool false_var = false;
+  return atomic_compare_exchange_strong(&s_memfault_heap_stats_locked, &false_var, true);
+}
+
+static void prv_heap_lock_release(void) {
+  atomic_store(&s_memfault_heap_stats_locked, false);
+}
+
+void *__wrap_malloc(size_t size) {
+  void *ptr = __real_malloc(size);
+
+  // Heap stats requires holding a lock
+  if (prv_heap_lock_acquire()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, size);
+    prv_heap_lock_release();
+  }
+
+  return ptr;
+}
+
+void *__wrap_calloc(size_t nmemb, size_t size) {
+  void *ptr = __real_calloc(nmemb, size);
+
+  // Heap stats requires holding a lock
+  if (prv_heap_lock_acquire()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, nmemb * size);
+    prv_heap_lock_release();
+  }
+
+  return ptr;
+}
+
+void __wrap_free(void *ptr) {
+  // Heap stats requires holding a lock
+  if (prv_heap_lock_acquire()) {
+    MEMFAULT_HEAP_STATS_FREE(ptr);
+    prv_heap_lock_release();
+  }
+  __real_free(ptr);
+}
+
+//! Use the ESP-IDF heap tracing hooks to do the in-use tallying
+  #include "esp_heap_caps.h"
+void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
+  (void)ptr, (void)size, (void)caps;
+  if (prv_heap_lock_acquire()) {
+    memfault_heap_stats_increment_in_use_block_count();
+    prv_heap_lock_release();
+  }
+}
+void esp_heap_trace_free_hook(void *ptr) {
+  (void)ptr;
+  if (prv_heap_lock_acquire()) {
+    memfault_heap_stats_decrement_in_use_block_count();
+    prv_heap_lock_release();
+  }
+}
+
 #endif

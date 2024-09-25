@@ -45,7 +45,7 @@
 #endif
 
 // Conditionally enable the logging tag variable only when it's used
-#if defined(CONFIG_STORE_HISTORY) || defined(CONFIG_HEAP_USE_HOOKS)
+#if defined(CONFIG_STORE_HISTORY) || defined(CONFIG_MEMFAULT_APP_HEAP_TRACING)
 static const char *TAG = "main";
 #endif
 
@@ -359,18 +359,18 @@ static void prv_initialize_task_watchdog(void) {
 
 #endif  // defined(CONFIG_MEMFAULT)
 
-#if defined(CONFIG_HEAP_USE_HOOKS)
+#if defined(CONFIG_MEMFAULT_APP_HEAP_TRACING)
 // This callback is triggered when a heap allocation is made. It prints large
 // allocations for debugging heap usage from the serial log.
 void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
   // In our app, there's a periodic 1696 byte alloc. Filter out anything that
   // size or smaller from this log, otherwise it's quite spammy
   if (size > 1696) {
-    ESP_LOGI("main", "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
+    ESP_LOGI(TAG, "Large alloc: %p, size: %d, caps: %lu", ptr, size, caps);
 
     multi_heap_info_t heap_info = { 0 };
     heap_caps_get_info(&heap_info, MALLOC_CAP_DEFAULT);
-    ESP_LOGI("main", "Total free bytes: %d", heap_info.total_free_bytes);
+    ESP_LOGI(TAG, "Total free bytes: %d", heap_info.total_free_bytes);
   }
 }
 #endif

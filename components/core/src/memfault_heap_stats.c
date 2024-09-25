@@ -27,6 +27,12 @@
 MEMFAULT_STATIC_ASSERT(MEMFAULT_HEAP_STATS_MAX_COUNT < MEMFAULT_HEAP_STATS_LIST_END,
                        "Number of entries in heap stats exceeds limits");
 
+// By default, tally in use blocks and max in use blocks in the instrumentation
+// functions. Disable this to perform manual tallying.
+#if !defined(MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC)
+  #define MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC 1
+#endif
+
 sMfltHeapStats g_memfault_heap_stats = {
   .version = MEMFAULT_HEAP_STATS_VERSION,
   .stats_pool_head = MEMFAULT_HEAP_STATS_LIST_END,
@@ -111,14 +117,23 @@ static uint16_t prv_get_new_entry_index(void) {
   return prv_get_previous_entry(MEMFAULT_HEAP_STATS_LIST_END);
 }
 
+void memfault_heap_stats_increment_in_use_block_count(void) {
+  g_memfault_heap_stats.in_use_block_count++;
+  if (g_memfault_heap_stats.in_use_block_count > g_memfault_heap_stats.max_in_use_block_count) {
+    g_memfault_heap_stats.max_in_use_block_count = g_memfault_heap_stats.in_use_block_count;
+  }
+}
+void memfault_heap_stats_decrement_in_use_block_count(void) {
+  g_memfault_heap_stats.in_use_block_count--;
+}
+
 void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
   prv_heap_stats_lock();
 
   if (ptr) {
-    g_memfault_heap_stats.in_use_block_count++;
-    if (g_memfault_heap_stats.in_use_block_count > g_memfault_heap_stats.max_in_use_block_count) {
-      g_memfault_heap_stats.max_in_use_block_count = g_memfault_heap_stats.in_use_block_count;
-    }
+#if MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC
+    memfault_heap_stats_increment_in_use_block_count();
+#endif
     uint16_t new_entry_index = prv_get_new_entry_index();
 
     // Ensure a valid entry index is returned. An invalid index can indicate a concurrency
@@ -156,7 +171,9 @@ void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
 void memfault_heap_stats_free(const void *ptr) {
   prv_heap_stats_lock();
   if (ptr) {
-    g_memfault_heap_stats.in_use_block_count--;
+#if MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC
+    memfault_heap_stats_decrement_in_use_block_count();
+#endif
 
     // if the pointer exists in the tracked stats, mark it as freed
     for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(g_memfault_heap_stats_pool); i++) {

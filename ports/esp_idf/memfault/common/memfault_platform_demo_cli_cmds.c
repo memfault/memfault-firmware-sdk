@@ -30,9 +30,9 @@
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"
 
-#define TIMER_DIVIDER (16)  //  Hardware timer clock divider
+#define TIMER_DIVIDER (16ULL)  //  Hardware timer clock divider
 #define TIMER_SCALE_TICKS_PER_MS(_baseFrequency) \
-  (((_baseFrequency) / TIMER_DIVIDER) / 1000)  // convert counter value to milliseconds
+  (((_baseFrequency) / TIMER_DIVIDER) / 1000ULL)  // convert counter value to milliseconds
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -141,8 +141,12 @@ static void prv_timer_init(void) {
 static void prv_timer_start(uint32_t timer_interval_ms) {
   uint32_t clock_hz = esp_clk_apb_freq();
   timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+
+  // cast timer interval to uint64_t which will promote the other operand and avoid overflow during
+  // multiplication
   timer_set_alarm_value(TIMER_GROUP_0, TIMER_0,
-                        timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
+                        (uint64_t)timer_interval_ms * TIMER_SCALE_TICKS_PER_MS(clock_hz));
+
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }

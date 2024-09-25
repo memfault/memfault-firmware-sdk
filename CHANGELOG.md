@@ -6,6 +6,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2024-09-25
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - The SDK now supports being installed as an
+    [ESP Component](https://components.espressif.com/) from the Espressif
+    registry, by adding the following lines to an esp-idf project's
+    `idf_component.yml` manifest:
+
+    ```yaml
+    dependencies:
+      memfault/memfault-firmware-sdk:
+        version: "1.12.0"
+    ```
+
+  - [Heap Allocation Tracking](https://docs.memfault.com/docs/mcu/heap-stats) is
+    now enabled by default for ESP-IDF projects, controlled with the Kconfig
+    symbol `CONFIG_MEMFAULT_HEAP_STATS`. The Memfault Trace UI will show
+    information about the most recent heap allocations for `malloc()` calls.
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - The [Memfault Build ID](https://mflt.io/symbol-file-build-ids) will be
+    applied by default, controlled by the Kconfig setting
+    `CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID`. This is _only_ valid for ESP-IDF
+    versions >= **4.2.5** , and will cause a build error on older versions,
+    requiring it to be set to `n`. Updating to this version of the SDK will
+    **require** removing the similar logic in the project's `CMakeLists.txt`
+    file (a build error will occur if both are present).
+
+  - The Memfault Core Vital for
+    [Periodic Connectivity](https://docs.memfault.com/docs/platform/memfault-core-metrics#periodic-connectivity)
+    will now count failures to sync Memfault data if the HTTP connection cannot
+    be established, but WiFi connectivity is available. This can occur when the
+    WAN connection is down but the access point is still up, or if there is an
+    external DNS failure. Previously this was not counted as a failure.
+
+- Zephyr
+
+  - The Memfault HTTP client, enabled with Kconfig
+    `CONFIG_MEMFAULT_HTTP_ENABLE`, requires `POSIX_API` to be enabled on newer
+    versions of Zephyr. Previously, not explicitly enabling `POSIX_API` would
+    result in a build error. Update it to be enabled by default in the Zephyr
+    SDK, via Kconfig `imply POSIX_API`.
+
+  - Zephyr 3.7.0+ requires enabling `CONFIG_MBEDTLS_SHA1` when using Zephyr's
+    mbedtls implementation. Memfault added a build-time check for this setting
+    in Memfault SDK 1.11.2, but that check would also trip when not using
+    Zephyr's mbedtls implementation. Update the build check to be more precise.
+
+- nRF-Connect SDK:
+
+  - Minor changes to provide compatibility with NCS versions > 2.7.0, which
+    target a Zephyr fork that is compatible with 3.7.0 but provides a
+    "development" version number, 3.6.99.
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Corrected a theoretical integer overflow issue in the demo CLI `crash`
+    command, detected by static analysis tools. The impacted function was and is
+    exclusively called with an argument of `10`, so this issue was not
+    exploitable in practice.
+
 ## [1.11.5] - 2024-09-18
 
 ### 📈 Added

@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from invoke import Collection, task
 
-from . import esp32, mbed, nrf, nrfconnect, wiced, zephyr
+from . import esp32, mbed, nrf, wiced, zephyr
 from .macos_ftdi import is_macos
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -166,5 +166,4 @@ def build_all_demos(ctx):
 ci = Collection("~ci")
 ci.add_task(build_all_demos, name="build-all-demos")
 ci.add_task(zephyr.zephyr_project_ci_setup)
-ci.add_task(nrfconnect.nrfconnect_project_ci_setup)
 ns.add_collection(ci)

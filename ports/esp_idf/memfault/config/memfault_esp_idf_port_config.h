@@ -59,6 +59,15 @@ extern "C" {
   #define MEMFAULT_COMPACT_LOG_ENABLE 1
 #endif
 
+#if defined(CONFIG_MEMFAULT_HEAP_STATS)
+  #define MEMFAULT_COREDUMP_COLLECT_HEAP_STATS 1
+  #define MEMFAULT_HEAP_STATS_MAX_COUNT CONFIG_MEMFAULT_HEAP_STATS_MAX_COUNT
+  // Synchronization is done outside of the heap stats module
+  #define MEMFAULT_COREDUMP_HEAP_STATS_LOCK_ENABLE 0
+  // In-use block tallying is done manually
+  #define MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC 0
+#endif
+
 // Memfault SDK logs are routed to ESP-IDF logging, which are saved by Memfault,
 // so it's redundant to save them in the Memfault SDK as well.
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1

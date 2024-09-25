@@ -24,6 +24,11 @@ config MEMFAULT_APP_WIFI_AUTOJOIN
     help
         Automatically join if credentials are configured.
 
+config MEMFAULT_APP_HEAP_TRACING
+    bool "Print allocation tracing information at runtime"
+    default n
+    depends on HEAP_USE_HOOKS
+
 choice APP_MEMFAULT_TRANSPORT
     prompt "Protocol to send chunks over"
     default APP_MEMFAULT_TRANSPORT_HTTP
