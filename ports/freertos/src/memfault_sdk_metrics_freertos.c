@@ -39,15 +39,28 @@
     #define MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API 0
   #endif
 
+  // Defines the precision used to calculate changes in cpu_usage_pct
+  // Changes in this value require changing the scale_value used with cpu_usage_pct metrics
+  // according to this equation: 100 = PRECISION_CONSTANT / scale_value
+  // See ports/freertos/config/memfault_metrics_heartbeat_freertos_config.def
+  #define PRECISION_CONSTANT (10000ULL)
+  // A fudge factor used to improve rounding behavior at low/high end
+  #define FUDGE_FACTOR (PRECISION_CONSTANT / 2ULL)
+
 static configRUN_TIME_COUNTER_TYPE prv_calculate_delta_runtime(
   configRUN_TIME_COUNTER_TYPE prev_runtime_ticks, configRUN_TIME_COUNTER_TYPE curr_runtime_ticks) {
   return curr_runtime_ticks - prev_runtime_ticks;
 }
 
-static int32_t prv_calc_runtime_percentage(configRUN_TIME_COUNTER_TYPE prev_task_runtime,
-                                           configRUN_TIME_COUNTER_TYPE curr_task_runtime,
-                                           configRUN_TIME_COUNTER_TYPE curr_total_runtime,
-                                           configRUN_TIME_COUNTER_TYPE prev_total_runtime) {
+// NB: We calculate a percentage that may need to be scaled according to PRECISION constant:
+// - 1 percent: 1000 ticks/s * 60 s/min * 60 min/hr * (1/100)hrs -> 36,000 ticks
+// - 1 permyriad: 1000 ticks/s * 60 s/min * 60 min/hr * (1/10000)hrs -> 360 ticks
+// The PRECISION_CONSTANT allows handling higher tick rates at higher values (i.e. percent vs
+// permyriad)
+static int32_t prv_calc_runtime_percent(configRUN_TIME_COUNTER_TYPE prev_task_runtime,
+                                        configRUN_TIME_COUNTER_TYPE curr_task_runtime,
+                                        configRUN_TIME_COUNTER_TYPE curr_total_runtime,
+                                        configRUN_TIME_COUNTER_TYPE prev_total_runtime) {
   uint64_t delta_runtime = prv_calculate_delta_runtime(prev_task_runtime, curr_task_runtime);
   uint64_t delta_total_runtime =
     prv_calculate_delta_runtime(prev_total_runtime, curr_total_runtime);
@@ -58,16 +71,23 @@ static int32_t prv_calc_runtime_percentage(configRUN_TIME_COUNTER_TYPE prev_task
   }
 
   // Make sure to not overflow when computing the percentage below
-  if (delta_runtime >= UINT64_MAX - (UINT64_MAX / 100)) {
-    // Scale both parts of the fraction by 100 to avoid overflow.
-    // Include a fudge factor of 50 to prevent rounding errors.
-    delta_runtime = ((UINT64_MAX - 50) < delta_runtime) ? (UINT64_MAX) : (delta_runtime + 50);
-    delta_runtime /= 100;
-    delta_total_runtime /= 100;
+  if (delta_runtime >= UINT64_MAX - (UINT64_MAX / PRECISION_CONSTANT)) {
+    // Scale both parts of the fraction by 10000 to avoid overflow.
+    // Include a fudge factor of 5000 to prevent rounding errors.
+    delta_runtime =
+      ((UINT64_MAX - FUDGE_FACTOR) < delta_runtime) ? (UINT64_MAX) : (delta_runtime + FUDGE_FACTOR);
+    delta_runtime /= PRECISION_CONSTANT;
+    delta_total_runtime /= PRECISION_CONSTANT;
+  }
+
+  // Clamp delta_runtime to be less than delta_total_runtime
+  // This can happen due to differences in when the total runtime vs a task's runtime are updated
+  if (delta_runtime > delta_total_runtime) {
+    delta_runtime = delta_total_runtime;
   }
 
   // Now compute percentage
-  const int32_t percentage = (int32_t)((delta_runtime * 100ULL) / delta_total_runtime);
+  const int32_t percentage = (int32_t)((delta_runtime * PRECISION_CONSTANT) / delta_total_runtime);
   return percentage;
 }
 
@@ -125,17 +145,19 @@ static void prv_record_timer_stack_free_bytes(void) {
 
 void memfault_freertos_port_task_runtime_metrics(void) {
 #if MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
-  static configRUN_TIME_COUNTER_TYPE s_prev_idle0_runtime = 0;
-  #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
+  static configRUN_TIME_COUNTER_TYPE s_prev_idle_runtime = 0;
+
+  // Only collect separate cpu1 runtime if multi-core split
+  #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
   static configRUN_TIME_COUNTER_TYPE s_prev_idle1_runtime = 0;
   #endif
+
   static configRUN_TIME_COUNTER_TYPE s_prev_total_runtime = 0;
 
+  configRUN_TIME_COUNTER_TYPE idle_runtime =
   #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-  configRUN_TIME_COUNTER_TYPE idle0_runtime = prv_get_idle_counter_for_core(0);
-  configRUN_TIME_COUNTER_TYPE idle1_runtime = prv_get_idle_counter_for_core(1);
+    prv_get_idle_counter_for_core(0);
   #else
-  configRUN_TIME_COUNTER_TYPE idle0_runtime =
     #if MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API
     ulTaskGetIdleRunTimeCounter
     #else
@@ -143,31 +165,35 @@ void memfault_freertos_port_task_runtime_metrics(void) {
     #endif
     ();
   #endif
-  configRUN_TIME_COUNTER_TYPE total_runtime = prv_get_total_runtime();
 
-  int32_t idle0_runtime_percentage = prv_calc_runtime_percentage(
-    s_prev_idle0_runtime, idle0_runtime, total_runtime, s_prev_total_runtime);
-  #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-  int32_t idle1_runtime_percentage = prv_calc_runtime_percentage(
-    s_prev_idle1_runtime, idle1_runtime, total_runtime, s_prev_total_runtime);
+  #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+  configRUN_TIME_COUNTER_TYPE idle1_runtime = prv_get_idle_counter_for_core(1);
   #endif
 
-  s_prev_idle0_runtime = idle0_runtime;
-  #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
+  configRUN_TIME_COUNTER_TYPE total_runtime = prv_get_total_runtime();
+
+  int32_t idle_runtime_percent = prv_calc_runtime_percent(s_prev_idle_runtime, idle_runtime,
+                                                          total_runtime, s_prev_total_runtime);
+  #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+  int32_t idle1_runtime_percent = prv_calc_runtime_percent(s_prev_idle1_runtime, idle1_runtime,
+                                                           total_runtime, s_prev_total_runtime);
+  #endif
+
+  s_prev_idle_runtime = idle_runtime;
+  #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
   s_prev_idle1_runtime = idle1_runtime;
   #endif
   s_prev_total_runtime = total_runtime;
 
-  if (idle0_runtime_percentage >= 0) {
-  #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-    MEMFAULT_METRIC_SET_UNSIGNED(idle0_task_run_time_percent, (uint32_t)idle0_runtime_percentage);
-  #else
-    MEMFAULT_METRIC_SET_UNSIGNED(idle_task_run_time_percent, (uint32_t)idle0_runtime_percentage);
-  #endif
+  if (idle_runtime_percent >= 0) {
+    MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct,
+                                 (uint32_t)(PRECISION_CONSTANT - (uint32_t)idle_runtime_percent));
   }
-  #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-  if (idle1_runtime_percentage >= 0) {
-    MEMFAULT_METRIC_SET_UNSIGNED(idle1_task_run_time_percent, (uint32_t)idle1_runtime_percentage);
+
+  #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+  if (idle1_runtime_percent >= 0) {
+    MEMFAULT_METRIC_SET_UNSIGNED(cpu1_usage_pct,
+                                 (uint32_t)(PRECISION_CONSTANT - (uint32_t)idle1_runtime_percent));
   }
   #endif
 #endif  // MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS

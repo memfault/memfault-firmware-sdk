@@ -72,6 +72,14 @@ extern "C" {
 // so it's redundant to save them in the Memfault SDK as well.
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1
 
+// Kconfiglib will set this symbol to y even if SOC_CPU_CORES_NUM is not defined in older esp-idf
+// versions. Instead, use the FreeRTOS-SMP configNUM_CORES to determine support
+#if defined(CONFIG_MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT)
+  #if defined(configNUM_CORES) && configNUM_CORES > 1
+    #define MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT 1
+  #endif
+#endif
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL

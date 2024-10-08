@@ -58,6 +58,17 @@
     (MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE || MEMFAULT_FREERTOS_RUN_TIME_STATS_SINGLE_CORE)
 #endif
 
+// Disable multi-core split metrics if not defined
+#if !defined(MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT)
+  #define MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT 0
+#endif
+
+// Provide build-time error if single core + runtime stats split
+#if MEMFAULT_FREERTOS_RUN_TIME_STATS_SINGLE_CORE && MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+  #error \
+    "Multi-core split stats not supported for single-core devices, disable MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT"
+#endif
+
 #if !defined(MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES)
   #define MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES 1
 #endif

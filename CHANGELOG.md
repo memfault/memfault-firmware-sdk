@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2024-10-07
+
+### 📈 Added
+
+- FreeRTOS:
+
+  - The SDK now has a config to control whether to split CPU usage per core when
+    building for a multi-core device. Enable this setting by adding
+    `#define MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT 1` to
+    `memfault_platform_config.h`. This setting is disabled by default.
+
+- ESP-IDF:
+  - Added a Kconfig, `CONFIG_MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT`,
+    to control `MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT`. This Kconfig
+    is enabled by default for multi-core devices.
+
+### 🛠️ Changed
+
+- FreeRTOS:
+
+  - Changed previous idle task run time percent metrics to measure CPU usage
+    (i.e. the complement of the idle task run time)
+  - Renamed the following metrics:
+    - Single-Core + Multi-Core Default:
+      - `idle_task_run_time_percent` -> `cpu_usage_pct`
+    - Multi-Core Split:
+      - `idle0_task_run_time_percent` -> `cpu_usage_pct`
+      - `idle1_task_run_time_percent` -> `cpu1_usage_pct`
+
+- ESP-IDF:
+
+  - Unknown or unclassified reboot reason codes returned by `get_reset_reason()`
+    are now correctly recorded as `kMfltRebootReason_Unknown` instead of
+    `kMfltRebootReason_UnknownError` (`UnknownError` is reserved for an
+    "unexpected" reboot path, where `Unknown` is used when the reboot reason
+    cannot be determined).
+
+### 🚩 Deprecated
+
+Support for the following vendor platform versions is deprecated in this
+release, and will be removed in the following release:
+
+- ESP-IDF < `v4.4` (Jan 26, 2022)
+- Zephyr < `v2.7.0` (Oct 16, 2021)
+- nRF-Connect SDK < `v1.9.2` (Jul 14, 2022)
+
+Please [contact us](support@memfault.com) if you need support for earlier
+versions!
+
 ## [1.12.0] - 2024-09-25
 
 ### 📈 Added
@@ -78,6 +127,17 @@ and this project adheres to
 ## [1.11.5] - 2024-09-18
 
 ### 📈 Added
+
+- General:
+
+  - Add two new core metrics, `MemfaultSdkMetric_os_name` and
+    `MemfaultSdkMetric_os_version`. These are string metrics that map to the OS
+    / platform name and version string respectively, and are included in the the
+    ELF at build time, and processed out-of-band by Memfault for NCS, Zephyr,
+    and ESP-IDF. They **are not** ever transmitted over the air (no bandwidth
+    impact). For example, for Zephyr these metric string values would be
+    `zephyr` and `3.7.0` for a project on Zephyr v3.7.0. These metrics are
+    attributes by default and will not be counted towards attribute quotas.
 
 - Zephyr:
 
@@ -161,17 +221,6 @@ and this project adheres to
 ## [1.11.4] - 2024-09-10
 
 ### 📈 Improvements
-
-- General:
-
-  - Add two new core metrics, `MemfaultSdkMetric_os_name` and
-    `MemfaultSdkMetric_os_version`. These are string metrics that map to the OS
-    / platform name and version string respectively, and are included in the the
-    ELF at build time, and processed out-of-band by Memfault for NCS, Zephyr,
-    and ESP-IDF. They **are not** ever transmitted over the air (no bandwidth
-    impact). For example, for Zephyr these metric string values would be
-    `zephyr` and `3.7.0` for a project on Zephyr v3.7.0. These metrics are
-    attributes by default and will not be counted towards attribute quotas.
 
 - ESP-IDF:
 

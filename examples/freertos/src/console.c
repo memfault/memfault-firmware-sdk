@@ -4,6 +4,7 @@
 //! See LICENSE for details
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "FreeRTOS.h"
@@ -108,6 +109,23 @@ static int prv_session(int argc, char *argv[]) {
   return 0;
 }
 
+static int prv_spin_cpu(int argc, char *argv[]) {
+  uint32_t cycle_count = UINT32_MAX;
+  if (argc > 1) {
+    char *end = NULL;
+    cycle_count = strtoul(argv[1], &end, 10);
+    if (end == argv[1]) {
+      MEMFAULT_LOG_RAW("Invalid cycle count");
+      cycle_count = UINT32_MAX;
+    }
+  }
+
+  MEMFAULT_LOG_RAW("Spinning CPU for %lu cycles", cycle_count);
+  for (uint32_t i = 0; i < cycle_count; i++) { }
+  MEMFAULT_LOG_RAW("Spinning completed, check cpu_usage_pct");
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -128,6 +146,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "session",
     .handler = prv_session,
     .help = "Execute a test metrics session named 'cli'",
+  },
+  {
+    .command = "spin_cpu",
+    .handler = prv_spin_cpu,
+    .help = "Spin CPU to increase cpu_usage_pct metric",
   },
 };
 #endif

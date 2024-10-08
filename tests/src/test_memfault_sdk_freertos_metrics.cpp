@@ -9,11 +9,13 @@ static MemfaultMetricIdsComparator s_metric_id_comparator;
 static uint32_t s_idle_task_run_time = 0;
 static uint32_t s_total_run_time = 0;
 
-static MemfaultMetricId idle_runtime_id = MEMFAULT_METRICS_KEY(idle_task_run_time_percent);
+static MemfaultMetricId idle_runtime_id = MEMFAULT_METRICS_KEY(cpu_usage_pct);
 static MemfaultMetricId timer_task_stack_free_bytes_id =
   MEMFAULT_METRICS_KEY(timer_task_stack_free_bytes);
 
-static void prv_set_expected_idle_time(uint32_t expected_value) {
+// Note: the expected value is the usage value before being scaled
+// by the backend into a percent
+static void prv_set_expected_usage_pct(uint32_t expected_value) {
   mock().expectOneCall("xTaskGetIdleRunTimeCounter");
   mock().expectOneCall("portGET_RUN_TIME_COUNTER_VALUE");
   mock()
@@ -71,7 +73,7 @@ TEST(FreeRTOSMetrics, MetricNoRollover) {
   uint32_t total_runtime = 100;
   uint32_t idle_runtime = 50;
   prv_set_runtimes(idle_runtime, total_runtime);
-  prv_set_expected_idle_time(50);
+  prv_set_expected_usage_pct(5000);
   memfault_freertos_port_task_runtime_metrics();
 
   total_runtime += 100;
@@ -79,7 +81,7 @@ TEST(FreeRTOSMetrics, MetricNoRollover) {
 
   // Run again to ensure delta is calculated correctly
   prv_set_runtimes(idle_runtime, total_runtime);
-  prv_set_expected_idle_time(50);
+  prv_set_expected_usage_pct(5000);
   memfault_freertos_port_task_runtime_metrics();
 };
 
@@ -88,13 +90,13 @@ TEST(FreeRTOSMetrics, MetricRollover) {
   uint32_t idle_runtime = UINT32_MAX / 2;
 
   prv_set_runtimes(idle_runtime, total_runtime);
-  prv_set_expected_idle_time(50);
+  prv_set_expected_usage_pct(5000);
   memfault_freertos_port_task_runtime_metrics();
 
   total_runtime += 100;
   idle_runtime += 25;
 
   prv_set_runtimes(idle_runtime, total_runtime);
-  prv_set_expected_idle_time(25);
+  prv_set_expected_usage_pct(7500);
   memfault_freertos_port_task_runtime_metrics();
 };

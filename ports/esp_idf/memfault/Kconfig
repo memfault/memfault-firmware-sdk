@@ -175,10 +175,19 @@ endif
         default y
         select FREERTOS_GENERATE_RUN_TIME_STATS
         help
-            Collects the idle thread runtime metric as a percentage of total runtime.
+            Collects the CPU usage as a percentage of total runtime.
             This metric is only available when using esp_timer for runtime stats to
             avoid issues with counter overflow. Note for FreeRTOS versions < 10.2.0
             this will be a no-op.
+
+    config MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+        bool "Enables per-core cpu_usage_pct metrics for multi-core targets"
+        default y
+        depends on MEMFAULT_FREERTOS_TASK_RUNTIME_STATS
+        depends on SOC_CPU_CORES_NUM > 1
+        help
+            When enabled, collects a separate measure of each CPU core usage as
+            cpu_usage_pct for cpu0 and cpu1_usage_pct for cpu1
 
     config MEMFAULT_MBEDTLS_METRICS
         bool "Collect metrics from mbedTLS"

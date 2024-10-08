@@ -26,7 +26,7 @@ static const char *s_log_prefix = "MFLT";
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo){
     .device_serial = "freertos-example",
-    .hardware_version = "qemu-mps2-an385",
+    .hardware_version = BOARD,
     .software_type = "qemu-app",
     .software_version = "1.0.0",
   };

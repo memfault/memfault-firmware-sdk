@@ -3,11 +3,13 @@
 // This definition is used to track if this file has been included yet
 #define MEMFAULT_METRICS_HEARTBEAT_FREERTOS_CONFIG_DEF 1
 
-#if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
-    MEMFAULT_METRICS_KEY_DEFINE(idle0_task_run_time_percent, kMemfaultMetricType_Unsigned)
-    MEMFAULT_METRICS_KEY_DEFINE(idle1_task_run_time_percent, kMemfaultMetricType_Unsigned)
-#elif MEMFAULT_FREERTOS_RUN_TIME_STATS_SINGLE_CORE
-    MEMFAULT_METRICS_KEY_DEFINE(idle_task_run_time_percent, kMemfaultMetricType_Unsigned)
+#define CPU_USAGE_PCT_SCALE_VALUE (100)
+
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(cpu_usage_pct, kMemfaultMetricType_Unsigned,
+                                             CPU_USAGE_PCT_SCALE_VALUE)
+#if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(cpu1_usage_pct, kMemfaultMetricType_Unsigned,
+                                             CPU_USAGE_PCT_SCALE_VALUE)
 #endif
 
 #if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES

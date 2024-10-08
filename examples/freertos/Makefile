@@ -130,6 +130,7 @@ CFLAGS += \
     -Og \
     -MD \
     -fdebug-prefix-map="$(shell pwd)"=. \
+    -DBOARD=\"$(BOARD)\" \
     $(ARCH_CFLAGS) \
 
 # Enable the self test by default

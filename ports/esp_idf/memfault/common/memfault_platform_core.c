@@ -100,8 +100,11 @@ static void prv_record_reboot_reason(void) {
       reboot_reason = kMfltRebootReason_BrownOutReset;
       break;
     case ESP_RST_PANIC:
-    default:
       reboot_reason = kMfltRebootReason_UnknownError;
+      break;
+    case ESP_RST_UNKNOWN:
+    default:
+      reboot_reason = kMfltRebootReason_Unknown;
       break;
   }
   #endif
