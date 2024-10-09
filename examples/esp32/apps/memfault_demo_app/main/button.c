@@ -11,15 +11,21 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "freertos/FreeRTOS.h"
 
 static const char *TAG = "button";
+static portMUX_TYPE s_button_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static void IRAM_ATTR prv_gpio_isr_handler(void *arg) {
-  uint32_t gpio_num = (uint32_t)arg;
+  // Make volatile to prevent compiler optimization in while loop
+  volatile uint32_t gpio_num = (uint32_t)arg;
 
-  // dereference a null point to trigger a crash
-  volatile uint32_t *ptr = NULL;
-  *ptr = gpio_num;
+  // Grab a spinlock to ensure this ISR does not get interrupted
+  portENTER_CRITICAL_ISR(&s_button_spinlock);
+  // Hang the interrupt to trigger a fault from the interrupt watchdog
+  while (true) {
+    gpio_num++;
+  }
 }
 
 // The flex glitch filter is only available on 5.1. Skip it for earlier SDKs.

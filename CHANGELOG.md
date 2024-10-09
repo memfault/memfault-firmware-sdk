@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2024-10-09
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - The Memfault port will now disable the `IWDT` (Interrupt Watchdog Timer)
+    before starting coredump saving, to prevent interrupting the coredump
+    process. The ESP-IDF fault handler enables the `WDT_RWDT` hardware watchdog
+    when a fault occurs, so there is still protection if the fault handling
+    hangs.
+
 ## [1.13.0] - 2024-10-07
 
 ### 📈 Added
@@ -18,6 +30,7 @@ and this project adheres to
     `memfault_platform_config.h`. This setting is disabled by default.
 
 - ESP-IDF:
+
   - Added a Kconfig, `CONFIG_MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT`,
     to control `MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT`. This Kconfig
     is enabled by default for multi-core devices.
@@ -46,14 +59,14 @@ and this project adheres to
 ### 🚩 Deprecated
 
 Support for the following vendor platform versions is deprecated in this
-release, and will be removed in the following release:
+release, and will be removed in a future release:
 
 - ESP-IDF < `v4.4` (Jan 26, 2022)
 - Zephyr < `v2.7.0` (Oct 16, 2021)
 - nRF-Connect SDK < `v1.9.2` (Jul 14, 2022)
 
-Please [contact us](support@memfault.com) if you need support for earlier
-versions!
+Please [contact us](https://mflt.io/contact-support) if you need support for
+earlier versions!
 
 ## [1.12.0] - 2024-09-25
 

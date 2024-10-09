@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "esp_intr_alloc.h"
 #include "esp_partition.h"
 #include "memfault/esp_port/version.h"
 
@@ -364,6 +365,23 @@ static void prv_panic_safe_putstr(const char *str) {
 bool memfault_platform_coredump_save_begin(void) {
   // Update task watchdog bookkeeping, if it's enabled
   memfault_task_watchdog_bookkeep();
+
+  // Disable the interrupt watchdog (IWDT) if it's enabled, to avoid contention
+  // with the IWDT interrupt when the fault handler is executing. This is safe
+  // to do when we're in the panic handler, because ESP-IDF's
+  // esp_panic_handler() has already enabled the WDT_RWDT to hard-reset the chip
+  // if the panic handler hangs.
+#if defined(CONFIG_ESP_INT_WDT)
+  // Define ETS_INT_WDT_INUM for compatibility with < 5.1
+  #if !defined(ETS_INT_WDT_INUM)
+    #define ETS_INT_WDT_INUM (ETS_T1_WDT_INUM)
+  #endif
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+  esp_intr_disable_source(ETS_INT_WDT_INUM);
+  #else
+  ESP_INTR_DISABLE(ETS_INT_WDT_INUM);
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+#endif    // defined(CONFIG_ESP_INT_WDT)
 
   prv_panic_safe_putstr("Saving Memfault Coredump!\r\n");
   return (memfault_esp_spi_flash_coredump_begin() == 0);
