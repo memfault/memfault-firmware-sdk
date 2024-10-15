@@ -31,6 +31,15 @@ and this project adheres to
   <!-- spellchecker:on -->
   `MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE()`
 
+### 🐛 Fixed
+
+- General:
+
+  - Correct an issue where `eMemfaultRebootReason` is expressed as a 4-byte type
+    instead of 2-bytes when compiling with Clang with high optimization, when
+    targeting ARM. This results in Coredumps tagged as `Unknown` instead of the
+    correct reason code.
+
 ## [1.14.0] - 2024-10-09
 
 ### 📈 Added
