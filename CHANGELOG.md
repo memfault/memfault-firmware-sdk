@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2024-10-13
+
+### 📈 Added
+
+- General:
+
+  - **EXPERIMENTAL**: Metrics Sessions now include a built-in metric for the
+    [Stable Sessions Device Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics#stable-sessions)
+    (`session.operational_crashes`) which tracks crashes that occurred when a
+    session is active.
+
+### 🛠️ Changed
+
+- General:
+
+  - Minor changes to support compiling with GCC ARM v4.9.3.
+
+### 🐛 Fixed
+
+- Corrected a spelling error, renamed
+  <!-- spellchecker:off -->
+  `MEMFAULT_METRIS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE()` to
+  <!-- spellchecker:on -->
+  `MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE()`
+
 ## [1.14.0] - 2024-10-09
 
 ### 📈 Added

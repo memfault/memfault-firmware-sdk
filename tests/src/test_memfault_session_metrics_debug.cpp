@@ -196,6 +196,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionResetState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
     "  test_key_session__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session__operational_crashes: null",
     "  test_key_session__test_unsigned: null",
     "  test_key_session__test_string: \"\"",
     "  test_key_session__test_timer: 0",
@@ -212,6 +213,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionTimerUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
     "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__operational_crashes: null",
     "  test_key_session__test_unsigned: null",
     "  test_key_session__test_string: \"\"",
     "  test_key_session__test_timer: 5000",
@@ -235,6 +237,7 @@ TEST(MemfaultSessionMetricsDebug, Test_SessionUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
     "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__operational_crashes: null",
     "  test_key_session__test_unsigned: 35",
     "  test_key_session__test_string: \"sessions!\"",
     "  test_key_session__test_timer: 0",
@@ -264,10 +267,12 @@ TEST(MemfaultSessionMetricsDebug, Test_AllSessionsResetState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
     "  test_key_session__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session__operational_crashes: null",
     "  test_key_session__test_unsigned: null",
     "  test_key_session__test_string: \"\"",
     "  test_key_session__test_timer: 0",
     "  test_key_session_two__MemfaultSdkMetric_IntervalMs: 0",
+    "  test_key_session_two__operational_crashes: null",
     "  test_key_session_two__test_unsigned: null",
     "  test_key_session_two__test_string: \"\"",
     "  test_key_session_two__test_timer: 0",
@@ -284,10 +289,12 @@ TEST(MemfaultSessionMetricsDebug, Test_AllSessionsTimerUpdateState) {
   const char *expected_debug_print[] = {
     "Metrics keys/values:",
     "  test_key_session__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session__operational_crashes: null",
     "  test_key_session__test_unsigned: null",
     "  test_key_session__test_string: \"\"",
     "  test_key_session__test_timer: 5000",
     "  test_key_session_two__MemfaultSdkMetric_IntervalMs: 5000",
+    "  test_key_session_two__operational_crashes: null",
     "  test_key_session_two__test_unsigned: null",
     "  test_key_session_two__test_string: \"\"",
     "  test_key_session_two__test_timer: 5000",

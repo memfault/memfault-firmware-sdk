@@ -184,6 +184,23 @@ int memfault_reboot_tracking_get_unexpected_reboot_occurred(bool *unexpected_reb
 //! @returns true if reboot tracking component booted or false if not
 bool memfault_reboot_tracking_booted(void);
 
+//! Set or clear the "active" property for a Metrics Session. This is used when
+//! a session starts and stops, for tracking which sessions were active when a
+//! reboot occurred.
+//!
+//! @param activate True if the session is active, false if it is not
+//! @param index The index of the session
+void memfault_reboot_tracking_metrics_session(bool activate, uint32_t index);
+
+//! Clear the reboot tracking data for "active" Metrics Sessions. This is used
+//! on reboot to reset the persisted active state of all sessions.
+void memfault_reboot_tracking_clear_metrics_sessions(void);
+
+//! Check if a Metrics Session was active when a reboot occurred
+//!
+//! @param index The index of the session
+bool memfault_reboot_tracking_metrics_session_was_active(uint32_t index);
+
 #if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
   //! Defines a customer specific reboot reason.
   //!

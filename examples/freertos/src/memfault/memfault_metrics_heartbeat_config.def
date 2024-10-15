@@ -4,8 +4,8 @@ MEMFAULT_METRICS_KEY_DEFINE(Example_HeapMinFreeBytes, kMemfaultMetricType_Unsign
 
 // Example "cli" session
 MEMFAULT_METRICS_SESSION_KEY_DEFINE(cli)
-MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(cli_cmd_name, 16, cli)
-MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(cli_time, kMemfaultMetricType_Unsigned, cli)
+MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(cmd_name, 16, cli)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(time, kMemfaultMetricType_Unsigned, cli)
 // Pathological key name, to test that heartbeat key extraction handles it correctly
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(__cli__cli__, kMemfaultMetricType_Unsigned, cli)
 

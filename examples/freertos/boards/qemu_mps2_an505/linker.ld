@@ -136,8 +136,10 @@ SECTIONS
 
     log_fmt 0xF0000000 (INFO):
     {
-       KEEP(*(*.log_fmt_hdr))
-       KEEP(*(log_fmt))
+        /* Old ld (GCC ARM 4.9.3 for example) doesn't emit this symbol by default */
+        __start_log_fmt = ABSOLUTE(.);
+        KEEP(*(*.log_fmt_hdr))
+        KEEP(*(log_fmt))
     }
 
   /* Check if data + heap + stack exceeds RAM limit */

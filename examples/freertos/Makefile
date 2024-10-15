@@ -152,6 +152,23 @@ LDFLAGS += \
     -Wl,--build-id \
     -Wl,--print-memory-usage \
 
+# Check if the compiler is = 4.9.3, if so, disable some incopatible flags. The
+# warnings they emit are due to incomplete support for C99 braced initializers
+# in this old version of GCC.
+GCC_VERSION := $(shell $(CC) -dumpversion)
+ifeq ($(GCC_VERSION),4.9.3)
+    $(info Detected GCC 4.9.3, disabling some flags)
+    CFLAGS += \
+        -Wno-error=missing-braces \
+        -Wno-error=missing-field-initializers \
+
+    # remove -Wl,--print-memory-usage from LDFLAGS
+    COMMA=,
+    LDFLAGS := $(filter-out -Wl$(COMMA)--print-memory-usage,$(LDFLAGS))
+endif
+
+
+
 .PHONY: all
 all: $(ELF)
 
@@ -178,12 +195,12 @@ $(BUILD_DIR)/cflags: $(CFLAGS_STALE) Makefile
 $(BUILD_DIR)/memfault-firmware-sdk/%.c.o: $(MEMFAULT_SDK_ROOT)/%.c $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
-	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
+	$(CC) -std=gnu11 $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
 $(BUILD_DIR)/%.c.o: %.c $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
-	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
+	$(CC) -std=gnu11 $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@
 
 $(BUILD_DIR)/%.cpp.o: %.cpp $(BUILD_DIR)/cflags
 	mkdir -p $(dir $@)

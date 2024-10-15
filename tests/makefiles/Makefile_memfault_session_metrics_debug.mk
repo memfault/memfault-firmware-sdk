@@ -9,6 +9,7 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_time.c \
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_reboot_tracking.c \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_debug_log.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_reboot_tracking.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_metrics_reliability.cpp \

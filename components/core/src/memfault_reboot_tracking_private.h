@@ -37,8 +37,10 @@ typedef MEMFAULT_PACKED_STRUCT MfltRebootInfo {
   //! (where no coredump was saved or no user initiated reset took place). Examples
   //! of this include brown out resets (BORs) & hardware watchdog resets.
   uint32_t reset_reason_reg0;
+  //! Bitfield tracking sessions that were active prior to reboot
+  uint32_t active_sessions;
   // Reserved for future additions
-  uint32_t rsvd2[10];
+  uint32_t rsvd2[9];
 }
 sMfltRebootInfo;
 

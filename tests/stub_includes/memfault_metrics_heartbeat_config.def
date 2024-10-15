@@ -9,6 +9,7 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(test_key_timer, kMemfaultMetricType_Timer
 MEMFAULT_METRICS_STRING_KEY_DEFINE(test_key_string, 16)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(test_unsigned_scale_value, kMemfaultMetricType_Unsigned, 10)
 
+#if MEMFAULT_METRICS_SESSIONS_ENABLED
 MEMFAULT_METRICS_SESSION_KEY_DEFINE(test_key_session)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(test_unsigned, kMemfaultMetricType_Unsigned, test_key_session)
 MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(test_string, 16, test_key_session)
@@ -19,6 +20,7 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(test_unsigned, kMemfaultMetricType_Unsi
 MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(test_string, 16, test_key_session_two)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(test_timer, kMemfaultMetricType_Timer, test_key_session_two)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(test_signed_scale_value, kMemfaultMetricType_Signed, test_key_session_two, 10)
+#endif
 
 // clang-format on
 

@@ -91,7 +91,7 @@ static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
                                                            max_value, session_key)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key)
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
-  MEMFAULT_METRICS_KEY_WITH_SESSION(MemfaultSdkMetric_IntervalMs, key_name),
+  _MEMFAULT_METRICS_ID_CREATE(MemfaultSdkMetric_IntervalMs, key_name),
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                  session_key, scale_value)
@@ -110,6 +110,44 @@ static MemfaultMetricId s_memfault_metrics_session_timer_keys[] = {
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
   { 0 }  // dummy entry to prevent empty array
 };
+
+#if MEMFAULT_METRICS_SESSIONS_ENABLED
+  // Generate session key to operational_crashes metric key mapping
+  #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+  #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+  #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key)
+  #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value)
+  #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                             max_value, session_key)
+  #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key)
+  #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name) \
+    _MEMFAULT_METRICS_ID_CREATE(operational_crashes, session_name),
+  #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
+  #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
+                                                                   session_key, scale_value)
+
+static MemfaultMetricId s_memfault_metrics_operational_crashes_keys[] = {
+  #include "memfault/metrics/heartbeat_config.def"
+  #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  #undef MEMFAULT_METRICS_KEY_DEFINE
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+  #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+  #undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+  #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+  #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE_
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+  #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
+  { 0 }  // dummy entry to prevent empty array
+};
+
+// Active sessions are tracked in a single 32-bit word in the reboot tracking
+// data. This limits the maximum sessions to 32.
+MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_metrics_operational_crashes_keys) <= 32,
+                       "Too many sessions defined. Max allowed defined sessions is 32.");
+
+#endif
 
 typedef struct MemfaultMetricKVPair {
   MemfaultMetricId key;
@@ -166,9 +204,11 @@ typedef struct MemfaultMetricKVPair {
   MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, kMemfaultMetricType_String, 0, \
                                                      max_length, session_key)
 
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                \
-  MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(MemfaultSdkMetric_IntervalMs, \
-                                           kMemfaultMetricType_Timer, session_name)
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                                     \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(MemfaultSdkMetric_IntervalMs,                      \
+                                           kMemfaultMetricType_Timer, session_name)           \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(operational_crashes, kMemfaultMetricType_Unsigned, \
+                                           session_name)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
   MEMFAULT_KV_PAIR_ENTRY(key_name, value_type, 0, 0,                                    \
@@ -209,7 +249,8 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 
 #define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                     \
   MEMFAULT_METRICS_KEY_DEFINE(session_name##__##MemfaultSdkMetric_IntervalMs, \
-                              kMemfaultMetricType_Unsigned)
+                              kMemfaultMetricType_Timer)                      \
+  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_key)          \
@@ -262,8 +303,11 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 
 //! Sessions have the following built-in keys:
 //! - "<session name>__MemfaultSdkMetric_IntervalMs"
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##MemfaultSdkMetric_IntervalMs, kMemfaultMetricType_Timer)
+//! - "<session name>__operational_crashes"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                     \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##MemfaultSdkMetric_IntervalMs, \
+                              kMemfaultMetricType_Timer)                  \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
                                                            max_value, session_key)          \
@@ -1006,16 +1050,21 @@ int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
   return rv;
 }
 
-int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
-  int rv;
+static int prv_metrics_session_start(eMfltMetricsSessionIndex session_key, bool start_timer) {
+  int rv = 0;
   memfault_lock();
   {
     // Reset all metrics for the session. Any changes that happened before the
     // session was started don't matter and can be discarded.
     prv_reset_metrics(false, session_key);
 
-    MemfaultMetricId key = s_memfault_metrics_session_timer_keys[session_key];
-    rv = prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Start);
+    if (start_timer) {
+      MemfaultMetricId key = s_memfault_metrics_session_timer_keys[session_key];
+      rv = prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Start);
+    }
+
+    // Mark the session as active for tracking operational_crashes
+    memfault_reboot_tracking_metrics_session(true, session_key);
   }
   memfault_unlock();
 
@@ -1027,17 +1076,23 @@ int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
   return rv;
 }
 
-int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
+int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
+  return prv_metrics_session_start(session_key, true);
+}
+
+static int prv_metrics_session_end(eMfltMetricsSessionIndex session_key, bool stop_timer) {
   MemfaultMetricsSessionEndCb session_end_cb = s_session_end_cbs[session_key];
   if (session_end_cb != NULL) {
     session_end_cb();
   }
 
-  int rv;
+  int rv = 0;
   memfault_lock();
   {
-    MemfaultMetricId key = s_memfault_metrics_session_timer_keys[session_key];
-    rv = prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Stop);
+    if (stop_timer) {
+      MemfaultMetricId key = s_memfault_metrics_session_timer_keys[session_key];
+      rv = prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Stop);
+    }
 
     if (rv == 0) {
       bool serialize_result =
@@ -1046,10 +1101,16 @@ int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
         rv = MEMFAULT_METRICS_STORAGE_TOO_SMALL;
       }
     }
+    // Mark the session as inactive for tracking operational_crashes
+    memfault_reboot_tracking_metrics_session(false, session_key);
   }
   memfault_unlock();
 
   return rv;
+}
+
+int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
+  return prv_metrics_session_end(session_key, true);
 }
 
 void memfault_metrics_session_register_start_cb(eMfltMetricsSessionIndex session_key,
@@ -1231,6 +1292,55 @@ void memfault_metrics_heartbeat_debug_trigger(void) {
   prv_heartbeat_timer();
 }
 
+#if MEMFAULT_METRICS_SESSIONS_ENABLED
+//! Called on boot, this function checks if the reboot was unexpected. If so,
+//! any session that was active at time of reboot is triggered to record an
+//! `operational_crash=1` metric, and serialized to storage.
+static void prv_session_check_for_unexpected_reboot(void) {
+  int rv = -1;
+  bool unexpected_reboot;
+
+  for (eMfltMetricsSessionIndex session_key = (eMfltMetricsSessionIndex)0;
+       session_key < (MEMFAULT_ARRAY_SIZE(s_memfault_metrics_operational_crashes_keys));
+       session_key++) {
+    // This table always ends with a blank entry, so we can stop one iteration
+    // early (or if no sessions were defined). Some compilers warn on empty
+    // arrays.
+    if (session_key == MEMFAULT_ARRAY_SIZE(s_memfault_metrics_operational_crashes_keys) - 1) {
+      break;
+    }
+
+    // Only run the check for unexpected reboot once, if it hasn't been already
+    // run in this function. Ideally this check would be outside the for loop,
+    // but since we can't conditionally compile this whole block based on if
+    // any sessions are defined, we have to do it this way.
+    if (rv != 0) {
+      rv = memfault_reboot_tracking_get_unexpected_reboot_occurred(&unexpected_reboot);
+      if ((rv != 0) || !unexpected_reboot) {
+        break;
+      }
+    }
+
+    // If the session was active at time of reboot, serialize a session with the
+    // duration_ms=0 and operational_crashes=1.
+    if (memfault_reboot_tracking_metrics_session_was_active(session_key)) {
+      // Do not start the session timer, to keep the session duration = 0ms
+      prv_metrics_session_start(session_key, false);
+
+      memfault_metrics_heartbeat_add(s_memfault_metrics_operational_crashes_keys[session_key], 1);
+      // Note: the below function clears the reboot tracking bit for this session,
+      // since the session is now inactive. A second crash after this won't be
+      // recorded as an operational_crash for the session (until the session is
+      // activated).
+      prv_metrics_session_end(session_key, false);
+    }
+  }
+
+  // Unconditionally clear the reboot tracking data for "active sessions".
+  memfault_reboot_tracking_clear_metrics_sessions();
+}
+#endif
+
 int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
                           const sMemfaultMetricBootInfo *info) {
   if (storage_impl == NULL || info == NULL) {
@@ -1261,6 +1371,10 @@ int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
   if (rv != 0) {
     return rv;
   }
+
+#if MEMFAULT_METRICS_SESSIONS_ENABLED
+  prv_session_check_for_unexpected_reboot();
+#endif
 
 #if MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
   memfault_platform_metrics_connectivity_boot();

@@ -93,17 +93,17 @@ MEMFAULT_WEAK int memfault_metrics_heartbeat_set_string(MemfaultMetricId key, co
 }
 
 static int prv_session(int argc, char *argv[]) {
-  const char *cmd_name = "UNKNOWN";
+  const char *cmd_name_string = "UNKNOWN";
   if (argc > 1) {
-    cmd_name = argv[1];
+    cmd_name_string = argv[1];
   }
 
   printf("Executing a test metrics session named 'cli'\n");
   MEMFAULT_METRICS_SESSION_START(cli);
   // API v1
-  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name);
+  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name_string);
   // API v2
-  MEMFAULT_METRIC_SESSION_SET_STRING(cli_cmd_name, cli, cmd_name);
+  MEMFAULT_METRIC_SESSION_SET_STRING(cmd_name, cli, cmd_name_string);
   MEMFAULT_METRICS_SESSION_END(cli);
 
   return 0;
@@ -123,6 +123,18 @@ static int prv_spin_cpu(int argc, char *argv[]) {
   MEMFAULT_LOG_RAW("Spinning CPU for %lu cycles", cycle_count);
   for (uint32_t i = 0; i < cycle_count; i++) { }
   MEMFAULT_LOG_RAW("Spinning completed, check cpu_usage_pct");
+
+  return 0;
+}
+
+static int prv_session_crash(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  MEMFAULT_METRICS_SESSION_START(cli);
+  printf("Triggering session start + crash!\n");
+
+  MEMFAULT_ASSERT(0);
+
   return 0;
 }
 
@@ -151,6 +163,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "spin_cpu",
     .handler = prv_spin_cpu,
     .help = "Spin CPU to increase cpu_usage_pct metric",
+  },
+  {
+    .command = "session_crash",
+    .handler = prv_session_crash,
+    .help = "Trigger a crash during a session",
   },
 };
 #endif

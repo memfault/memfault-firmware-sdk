@@ -342,6 +342,12 @@ extern "C" {
   #define MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE 1
 #endif
 
+//! Disable Metrics Sessions at compile time. This saves a small amount of
+//! memory but prevents the use of Metrics Sessions.
+#ifndef MEMFAULT_METRICS_SESSIONS_ENABLED
+  #define MEMFAULT_METRICS_SESSIONS_ENABLED 1
+#endif
+
 //
 // Panics Component Configs
 //

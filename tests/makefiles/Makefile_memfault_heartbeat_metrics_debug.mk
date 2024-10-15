@@ -9,6 +9,7 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_locking.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_time.c \
+  $(MFLT_TEST_FAKE_DIR)/fake_memfault_reboot_tracking.c \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_debug_log.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_reboot_tracking.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_metrics_reliability.cpp \
@@ -17,5 +18,9 @@ MOCK_AND_FAKE_SRC_FILES += \
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_heartbeat_metrics_debug.cpp \
   $(MOCK_AND_FAKE_SRC_FILES)
+
+# Set -DMEMFAULT_METRICS_SESSIONS_ENABLED=0 to disable session metrics, to
+# reduce the number of mocks required
+CPPUTEST_CPPFLAGS += -DMEMFAULT_METRICS_SESSIONS_ENABLED=0
 
 include $(CPPUTEST_MAKFILE_INFRA)

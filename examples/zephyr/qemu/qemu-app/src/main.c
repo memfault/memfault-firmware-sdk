@@ -259,18 +259,18 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
 #endif
 
 static int prv_metrics_session(const struct shell *shell, size_t argc, char **argv) {
-  const char *cmd_name = "UNKNOWN";
+  const char *cmd_name_string = "UNKNOWN";
   if (argc > 1) {
-    cmd_name = argv[1];
+    cmd_name_string = argv[1];
   }
 
   shell_print(shell, "Executing a test metrics session named 'cli'\n");
 
   MEMFAULT_METRICS_SESSION_START(cli);
   // API v1
-  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name);
+  // MEMFAULT_METRIC_SET_STRING(cli_cmd_name, cmd_name_string);
   // API v2
-  MEMFAULT_METRIC_SESSION_SET_STRING(cli_cmd_name, cli, cmd_name);
+  MEMFAULT_METRIC_SESSION_SET_STRING(cmd_name, cli, cmd_name_string);
   MEMFAULT_METRICS_SESSION_END(cli);
 
   return 0;
@@ -278,6 +278,22 @@ static int prv_metrics_session(const struct shell *shell, size_t argc, char **ar
 
 SHELL_CMD_REGISTER(metrics_session, NULL, "Trigger a one-time metrics session for testing",
                    prv_metrics_session);
+
+static int prv_session_crash(const struct shell *shell, size_t argc, char **argv) {
+  ARG_UNUSED(shell);
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  LOG_ERR("Triggering crash");
+
+  MEMFAULT_METRICS_SESSION_START(cli);
+
+  MEMFAULT_ASSERT(0);
+
+  return 0;
+}
+
+SHELL_CMD_REGISTER(session_crash, NULL, "session crash", prv_session_crash);
 
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);

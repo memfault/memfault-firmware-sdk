@@ -273,3 +273,31 @@ bool memfault_reboot_tracking_booted(void) {
   return ((s_mflt_reboot_info != NULL) &&
           (s_mflt_reboot_info->magic == MEMFAULT_REBOOT_INFO_MAGIC));
 }
+
+void memfault_reboot_tracking_metrics_session(bool active, uint32_t index) {
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  if (active) {
+    s_mflt_reboot_info->active_sessions |= (1 << index);
+  } else {
+    s_mflt_reboot_info->active_sessions &= ~(1 << index);
+  }
+}
+
+void memfault_reboot_tracking_clear_metrics_sessions(void) {
+  if (!prv_check_or_init_struct()) {
+    return;
+  }
+
+  s_mflt_reboot_info->active_sessions = 0;
+}
+
+bool memfault_reboot_tracking_metrics_session_was_active(uint32_t index) {
+  if (!prv_check_or_init_struct()) {
+    return false;
+  }
+
+  return (s_mflt_reboot_info->active_sessions & (1 << index)) != 0;
+}

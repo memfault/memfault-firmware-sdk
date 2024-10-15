@@ -57,8 +57,10 @@ extern "C" {
 
 //! Sessions have the following built-in keys:
 //! - "<session name>__MemfaultSdkMetric_IntervalMs"
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name) \
-  kMfltMetricsIndex_##session_name##__##MemfaultSdkMetric_IntervalMs,
+//! - "<session name>__operational_crashes"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)             \
+  kMfltMetricsIndex_##session_name##__##MemfaultSdkMetric_IntervalMs, \
+    kMfltMetricsIndex_##session_name##__##operational_crashes,
 
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_name) \
   MEMFAULT_METRICS_KEY_DEFINE_(session_name, key_name)

@@ -117,8 +117,8 @@ typedef enum MemfaultMetricValueType {
   MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Same as 'MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE', with session specified
-#define MEMFAULT_METRIS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, session_key, \
-                                                                scale_value)                       \
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
   MEMFAULT_METRICS_KEY_DEFINE_TRAP_()
 
 //! Define a metric session.
