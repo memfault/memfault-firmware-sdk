@@ -7,16 +7,12 @@
 //! Reference implementation of Memfault device info API platform dependencies for the ESP32
 
 #include <stdio.h>
-
-#include "memfault/components.h"
-#include "memfault/esp_port/version.h"
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-  #include "esp_mac.h"
-#endif
-
 #include <string.h>
 
+#include "esp_idf_version.h"
+#include "esp_mac.h"
 #include "esp_system.h"
+#include "memfault/components.h"
 #include "memfault/esp_port/device_info.h"
 
 static char s_device_serial[32];

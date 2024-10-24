@@ -35,13 +35,16 @@ if(NOT DEFINED MEMFAULT_ESP_HTTP_CLIENT_ENABLE)
   endif()
 endif()
 
-# Set MEMFAULT_IDF_VERSION, used for version-specific logic later.
-if (IDF_VERSION_MAJOR)
-  set(MEMFAULT_IDF_VERSION "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
-else()
-  # pre-4.0 doesn't have version information available to cmake, so set it to
-  # the lowest compatible version
-  set(MEMFAULT_IDF_VERSION "3.3.5")
+# Set variables used for version-specific checks later
+set (MEMFAULT_IDF_VERSION_MINIMUM "4.4.0")
+set(MEMFAULT_IDF_VERSION "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}")
+set(MEMFAULT_IDF_VERSION_ERROR_MSG "Memfault SDK requires ESP-IDF version ${MEMFAULT_IDF_VERSION_MINIMUM} or later. \
+    Please contact mflt.io/contact-support for assistance.")
+
+# Check that we are working with a supported version. If IDF_VERSION_MAJOR etc
+# are unset (IDF versions before 4.0), this will catch that too.
+if (MEMFAULT_IDF_VERSION VERSION_LESS MEMFAULT_IDF_VERSION_MINIMUM)
+  message(FATAL_ERROR "${MEMFAULT_IDF_VERSION_ERROR_MSG}")
 endif()
 
 # Select RISCV or XTENSA architecture, depending on target chip
@@ -65,9 +68,6 @@ list(APPEND MEMFAULT_COMPONENTS core util panics demo http metrics)
 memfault_library(${MEMFAULT_SDK_ROOT} MEMFAULT_COMPONENTS
   MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ${ESP_ARCH})
 
-# v4.0 and greater expose the IDF_VERSION in cmake. If we can't find
-# it, we assume the end user is on v3.x
-
 include($ENV{IDF_PATH}/tools/cmake/version.cmake OPTIONAL)
 
 # Select version-specific porting files
@@ -75,10 +75,8 @@ if(MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL 5)
   set(MEMFAULT_ESP_IDF_PORT v5.x)
 elseif(MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL 4)
   set(MEMFAULT_ESP_IDF_PORT v4.x)
-elseif(MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL 3)
-  set(MEMFAULT_ESP_IDF_PORT v3.x)
 else()
-  message(FATAL_ERROR "IDF_VERSION=${MEMFAULT_IDF_VERSION} is not currently supported")
+  message(FATAL_ERROR "${MEMFAULT_IDF_VERSION_ERROR_MSG}")
 endif()
 
 # esp-idf version specific porting files
@@ -99,23 +97,12 @@ list(APPEND MEMFAULT_COMPONENTS_SRCS
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_device_info.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client_buffer.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c
+  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_metrics.c
 )
 
 if (CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
   list(APPEND MEMFAULT_COMPONENTS_SRCS
     ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_periodic_upload.c
-  )
-endif()
-
-# Add a legacy metrics file for now. To be removed in the near future when v3.x
-# support is dropped.
-if(IDF_VERSION_MAJOR VERSION_EQUAL 3)
-  list(APPEND MEMFAULT_COMPONENTS_SRCS
-    ${MEMFAULT_ESP_IDF_PORT}/memfault_platform_metrics_legacy.c
-  )
-else()
-  list(APPEND MEMFAULT_COMPONENTS_SRCS
-    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_metrics.c
   )
 endif()
 
@@ -244,18 +231,12 @@ component_compile_options(
 
 if (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "5.0.0")
   # Empty for now, reserving for the future
-elseif (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "4.4.0")
-  # ESP-IDF v4.4 forces the FreeRTOS config
+else()
+  # ESP-IDF < 5.0.0 forces the FreeRTOS config
   # INCLUDE_xTimerGetTimerDaemonTaskHandle=0, which is used to record timer task
   # stack in the SDK. Just disable the usage unconditionally.
   list(APPEND MEMFAULT_EXTRA_COMPILE_OPTIONS
     "-DMEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES=0"
-  )
-else()
-  # ESP-IDF < 4.4 don't force this setting, so set it ourselves to the correct
-  # value.
-  list(APPEND MEMFAULT_EXTRA_COMPILE_OPTIONS
-    "-DINCLUDE_xTimerGetTimerDaemonTaskHandle=1"
   )
 endif()
 
@@ -266,39 +247,21 @@ endif()
 # keys are used in the application.
 #
 # Set the ESP-IDF specific Memfault platform config header as well.
-if (MEMFAULT_IDF_VERSION VERSION_LESS 4)
-  # On pre-v4 of ESP-IDF, insert the compiler flag to the global CMAKE_C_FLAGS
-  set(
-    memfault_c_flags
-    "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\\\"memfault_esp_metrics_heartbeat_config.def\\\""
-    "-DMEMFAULT_PLATFORM_CONFIG_FILE=\\\"memfault_esp_idf_port_config.h\\\""
-    "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\\\"memfault_trace_reason_esp_idf_port_config.def\\\""
-    ${MEMFAULT_EXTRA_COMPILE_OPTIONS}
-  )
-  # convert from list to string before setting
-  list(JOIN memfault_c_flags " " memfault_c_flags)
-  set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${memfault_c_flags}"
-  CACHE STRING
-  "Global C Flags"
-  FORCE
-  )
-else()
-  # set these as compile_options, not compile_definitions; pre-v5 of ESP-IDF
-  # required the -D prefix, post-v5 auto strips it, but for safety, set them as
-  # plain options not "definitions"
-  list(APPEND compile_options
-    "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
-    "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
-    "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
-    ${MEMFAULT_EXTRA_COMPILE_OPTIONS}
-  )
-  idf_build_set_property(
-    COMPILE_OPTIONS
-    "${compile_options}"
-    APPEND
-  )
-endif()
+#
+# Set these as compile_options, not compile_definitions; pre-v5 of ESP-IDF
+# required the -D prefix, post-v5 auto strips it, but for safety, set them as
+# plain options not "definitions"
+list(APPEND compile_options
+  "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
+  "-DMEMFAULT_PLATFORM_CONFIG_FILE=\"memfault_esp_idf_port_config.h\""
+  "-DMEMFAULT_TRACE_REASON_USER_DEFS_FILE=\"memfault_trace_reason_esp_idf_port_config.def\""
+  ${MEMFAULT_EXTRA_COMPILE_OPTIONS}
+)
+idf_build_set_property(
+  COMPILE_OPTIONS
+  "${compile_options}"
+  APPEND
+)
 
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 # and run the Memfault Fault Handler instead.
@@ -368,34 +331,30 @@ target_link_libraries(
 # compatible with more recent ESP-IDF SDK versions, which have the 'app' target
 # where the custom command is inserted.
 if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
-  if(MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "4.2.5")
-    # We cannot use the 'EXECUTABLE'/'EXECUTABLE_NAME' build properties, because they are set
-    # after component processing in the build process. Reconstruct it following the
-    # same pattern, which works for typical idf.py builds.
+  # We cannot use the 'EXECUTABLE'/'EXECUTABLE_NAME' build properties, because they are set
+  # after component processing in the build process. Reconstruct it following the
+  # same pattern, which works for typical idf.py builds.
 
-    idf_build_get_property(build_dir BUILD_DIR)
-    set(IDF_PROJECT_EXECUTABLE "${build_dir}/${CMAKE_PROJECT_NAME}.elf")
+  idf_build_get_property(build_dir BUILD_DIR)
+  set(IDF_PROJECT_EXECUTABLE "${build_dir}/${CMAKE_PROJECT_NAME}.elf")
 
-    add_custom_command(OUTPUT "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
-      # Compute and insert the build id
-      COMMAND python ${MEMFAULT_SDK_ROOT}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
-      # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
-      COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
-      # Save a copy of the ELF that includes the 'log_fmt' section
-      COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
-      COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
-      # Remove the 'log_fmt' compact log section, which confuses elf2image
-      COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
-      DEPENDS "${IDF_PROJECT_EXECUTABLE}"
-    )
+  add_custom_command(OUTPUT "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
+    # Compute and insert the build id
+    COMMAND python ${MEMFAULT_SDK_ROOT}/scripts/fw_build_id.py ${IDF_PROJECT_EXECUTABLE}
+    # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
+    COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
+    # Save a copy of the ELF that includes the 'log_fmt' section
+    COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
+    COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
+    # Remove the 'log_fmt' compact log section, which confuses elf2image
+    COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
+    DEPENDS "${IDF_PROJECT_EXECUTABLE}"
+  )
 
-    # Dependency chain:
-    # app -> gen_project_binary -> memfault_build_id -> ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt -> ${IDF_PROJECT_EXECUTABLE}
-    add_custom_target(memfault_build_id DEPENDS "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt")
-    add_dependencies(gen_project_binary memfault_build_id)
-  else()
-    message(WARNING "CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID requires ESP-IDF v4.2.5 or newer")
-  endif()
+  # Dependency chain:
+  # app -> gen_project_binary -> memfault_build_id -> ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt -> ${IDF_PROJECT_EXECUTABLE}
+  add_custom_target(memfault_build_id DEPENDS "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt")
+  add_dependencies(gen_project_binary memfault_build_id)
 endif()
 
 # Link required libraries and add compiler flags needed for FreeRTOS region collection

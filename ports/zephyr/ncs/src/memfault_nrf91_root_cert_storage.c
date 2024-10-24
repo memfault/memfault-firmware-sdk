@@ -9,36 +9,16 @@
 
 #include <string.h>
 
-#include "memfault/ports/zephyr/root_cert_storage.h"
-
-//! Between nrf-connect-sdk v1.2.1 and v1.4 the locations of some headers changed.
-//! We use __has_include() to support both paths so the port works with either SDK
-//! version.
-#if __has_include("zephyr/types.h")
-  #include "zephyr/types.h"
-#endif
-
-#if __has_include("modem/modem_key_mgmt.h")
-  #include "modem/modem_key_mgmt.h"
-#else
-  #include <modem_key_mgmt.h>
-#endif
-
 #include "memfault/core/debug_log.h"
-#include "memfault/ports/ncs/version.h"
+#include "memfault/ports/zephyr/root_cert_storage.h"
+#include "modem/modem_key_mgmt.h"
+#include "zephyr/types.h"
 
 int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert,
                                    size_t cert_length) {
   bool exists;
 
-// Note: modem_key_mgmt_exists() signature changed between nRF Connect SDK 1.7 & 1.8
-//   https://github.com/nrfconnect/sdk-nrf/pull/5631
-#if MEMFAULT_NCS_VERSION_GT(1, 7)
   int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists);
-#else
-  uint8_t unused;
-  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists, &unused);
-#endif
 
   if (err != 0) {
     MEMFAULT_LOG_ERROR("Failed to check if cert %d exists in storage, rv=%d", cert_id, err);
@@ -66,14 +46,7 @@ int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert,
 
 int memfault_root_cert_storage_remove(eMemfaultRootCert cert_id) {
   bool exists;
-// Note: modem_key_mgmt_exists() signature changed between nRF Connect SDK 1.7 & 1.8
-//   https://github.com/nrfconnect/sdk-nrf/pull/5631
-#if MEMFAULT_NCS_VERSION_GT(1, 7)
   int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists);
-#else
-  uint8_t unused;
-  int err = modem_key_mgmt_exists(cert_id, MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN, &exists, &unused);
-#endif
 
   if (err != 0) {
     MEMFAULT_LOG_ERROR("Failed to check if cert %d exists in storage, rv=%d", cert_id, err);

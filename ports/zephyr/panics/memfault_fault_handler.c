@@ -19,7 +19,6 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
-#include "memfault/ports/ncs/version.h"
 #include "memfault/ports/zephyr/version.h"
 
 // Starting in v3.4, the handler set function was renamed and the declaration
@@ -137,8 +136,8 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_fault_reason(unsigned int re
     case K_ERR_ARM_SECURE_LAZY_STATE_ERROR:
       return kMfltRebootReason_SecurityViolation;
 
-      // Zephyr + Cortex A/R is currently unsupported, please contact support@memfault.com for
-      // assistance!
+      // Zephyr + Cortex A/R is currently unsupported. Please visit https://mflt.io/contact-support
+      // for assistance!
       // // Cortex-A/R exceptions
       // K_ERR_ARM_UNDEFINED_INSTRUCTION
       // K_ERR_ARM_ALIGNMENT_FAULT
@@ -161,6 +160,7 @@ extern void sys_arch_reboot(int type);
 // Intercept zephyr/kernel/fatal.c:z_fatal_error(). Note that the signature
 // changed in zephyr 3.7.
 #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+  #include "memfault/ports/ncs/version.h"
   #define MEMFAULT_NEW_ARCH_ESF_STRUCT MEMFAULT_NCS_VERSION_GT(2, 7)
 #else
   #define MEMFAULT_NEW_ARCH_ESF_STRUCT MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)

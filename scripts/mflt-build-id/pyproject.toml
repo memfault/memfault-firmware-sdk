@@ -4,7 +4,7 @@ version = "1.0.2"
 dependencies = [
   "pyelftools >=0.31,<0.32",
 ]
-requires-python = ">=3.6,<4.0"
+requires-python = ">=3.8,<4.0"
 
 [tool.uv]
 dev-dependencies = [

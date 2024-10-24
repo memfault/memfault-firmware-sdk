@@ -26,6 +26,7 @@
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
+#include "memfault/ports/zephyr/version.h"
 
 #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 

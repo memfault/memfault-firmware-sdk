@@ -42,6 +42,8 @@ TEST_GROUP(MemfaultMetricsReliability){
 };
 // clang-format on
 
+// Note: this is kept in one big test case, because the internal state of the
+// function under test is not touched.
 TEST(MemfaultMetricsReliability, Test_OperationalHours) {
   // 1 ms less than 1 hr
   prv_fake_time_incr(60 * 60 * 1000 - 1);
@@ -85,6 +87,79 @@ TEST(MemfaultMetricsReliability, Test_OperationalHours) {
   memfault_metrics_reliability_collect();
 
   // 1 ms more (2hr 1ms total)
+  prv_fake_time_incr(1);
+  // no mocks should be called
+  memfault_metrics_reliability_collect();
+
+  // Now test rollover scenarios
+  // advance to UINT32_MAX - 1; this represents a little over 49 days long
+  // heartbeat, so we won't track uptime
+  const uint32_t elapsed_hours = (UINT32_MAX - 1 - s_fake_time_ms) / 1000 / 3600;
+  prv_fake_time_incr(UINT32_MAX - 1 - s_fake_time_ms);
+  // plenty of crashfree hours!
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_hours_key)
+    .withParameter("amount", elapsed_hours)
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_crashfree_hours_key)
+    .withParameter("amount", elapsed_hours)
+    .andReturnValue(0);
+  memfault_metrics_reliability_collect();
+
+  // advance 1 ms (UINT32_MAX total)
+  prv_fake_time_incr(1);
+  // no mocks should be called
+  memfault_metrics_reliability_collect();
+
+  // 1 ms more (UINT32_MAX + 1 total)
+  prv_fake_time_incr(1);
+  // no mocks should be called
+  memfault_metrics_reliability_collect();
+
+  // advance exactly 1 hour
+  prv_fake_time_incr(60 * 60 * 1000);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_hours_key)
+    .withParameter("amount", 1)
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_crashfree_hours_key)
+    .withParameter("amount", 1)
+    .andReturnValue(0);
+
+  memfault_metrics_reliability_collect();
+
+  // advance to UINT64_MAX - 1. the amount of accumulated hours wraps at
+  // UINT32_MAX due to the implementation only using uint32_t for tracking
+  // heartbeat_ms duration- this should be ok, 49 days is a long heartbeat.
+  const uint32_t elapsed_hours_2 = (uint32_t)((UINT32_MAX - 1 - s_fake_time_ms)) / 1000 / 3600;
+
+  prv_fake_time_incr(UINT64_MAX - 1 - s_fake_time_ms);
+
+  // plenty of crashfree hours!
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_hours_key)
+    .withParameter("amount", elapsed_hours_2)
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_crashfree_hours_key)
+    .withParameter("amount", elapsed_hours_2)
+    .andReturnValue(0);
+  memfault_metrics_reliability_collect();
+
+  // advance 1 ms (UINT64_MAX total)
+  prv_fake_time_incr(1);
+  // no mocks should be called
+  memfault_metrics_reliability_collect();
+
+  // 1 ms more (UINT64_MAX + 1 total)
   prv_fake_time_incr(1);
   // no mocks should be called
   memfault_metrics_reliability_collect();

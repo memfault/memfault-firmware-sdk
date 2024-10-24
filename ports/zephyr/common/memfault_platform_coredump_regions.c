@@ -18,10 +18,8 @@
 #if defined(CONFIG_ARM)
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 4)
   #include <cmsis_core.h>
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
-  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/cortex_m/cmsis.h)
 #else
-  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/cortex_m/cmsis.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/cortex_m/cmsis.h)
 #endif
 #endif
 

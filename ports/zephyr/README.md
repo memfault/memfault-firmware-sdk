@@ -9,54 +9,30 @@ The instructions below assume you have an environment already setup for building
 and flashing a Zephyr application. If you do not, see the official
 [getting started guide](https://docs.zephyrproject.org/2.0.0/getting_started/index.html#build-hello-world).
 
-## Directories
+## Directory Structure
 
-The subdirectories within the folder are titled to align with the Zephyr release
-the porting files were tested against. If no breaking API changes have been made
-within Zephyr and a different release, the port may work there as well
+The Memfault Zephyr port is set up as a Zephyr module. The directory structure
+is as follows:
 
-- [v2.0](https://github.com/zephyrproject-rtos/zephyr/tree/v2.0-branch)
+```bash
+├── CMakeLists.txt  # CMake file for the Memfault Zephyr module
+├── common/         # Shared files for Zephyr integration
+├── config/         # Configuration files for Memfault SDK
+├── include/        # Header files for Zephyr integration
+├── Kconfig         # Kconfig file for Memfault Zephyr module
+├── ncs/            # Files specific to the Zephyr-based Nordic nRF-Connect SDK
+├── panics/         # Files for handling panics in Zephyr
+└── README.md       # This file
+```
 
 ## Integrating SDK
 
-1. Depending on Zephyr version, apply .patch in release directory to Zephyr
-   Kernel. Be sure to use the patch matching the Zephyr version in use.
+Follow the guide here for how to integrate the Memfault SDK into a Zephyr
+project:
 
-```
-$ cd $ZEPHYR_ROOT_DIR/
-$ git apply $MEMFAULT_SDK_ROOT/ports/zephyr/[v2.0]/zephyr-integration.patch
-```
-
-Note that `v2.2_v2.3/coredump-support.patch` should be applied for Zephyr 2.2
-and 2.3 only.
-
-2. Clone (or symlink) memfault-firmware-sdk in Zephyr Project
-
-```
-$ cd $ZEPHYR_ROOT_DIR/ext/lib/memfault
-$ git clone https://github.com/memfault/memfault-firmware-sdk.git
-```
-
-3. Implement device-specific dependencies.
-
-```
-void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
-  *info = (sMemfaultDeviceInfo) {
-    .device_serial = "DEMOSERIAL",
-    .software_type = "zephyr-main",
-    .software_version = "1.15.0",
-    .hardware_version = "disco_l475_iot1",
-  };
-}
-```
-
-```
-sMfltHttpClientConfig g_mflt_http_client_config = {
-  .api_key = "<YOUR PROJECT KEY HERE>",
-};
-```
+<https://docs.memfault.com/docs/mcu/zephyr-guide>
 
 ## Demo
 
-An example integration and instructions can be found for the STM32L4 in
-`$MEMFAULT_SDK_ROOT/examples/zephyr/README.md`
+An example integration and instructions can be found for a QEMU-emulated board
+in `$MEMFAULT_SDK_ROOT/examples/zephyr/qemu/README.md`

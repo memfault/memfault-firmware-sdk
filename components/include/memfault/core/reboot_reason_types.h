@@ -24,7 +24,9 @@ extern "C" {
 #undef MEMFAULT_EXPECTED_REBOOT_REASON_DEFINE
 #undef MEMFAULT_UNEXPECTED_REBOOT_REASON_DEFINE
 
-typedef enum MfltResetReason {
+//! This enum must be packed to prevent compiler optimizations in instructions which load an
+//! eMemfaultRebootReason.
+typedef enum MEMFAULT_PACKED MfltResetReason {
   // A reboot reason was not determined either by hardware or a previously marked reboot reason
   // This reason is classified as a crash when calculating the operational_crashfree_hours metric
   kMfltRebootReason_Unknown = 0x0000,
@@ -134,6 +136,8 @@ typedef enum MfltResetReason {
 #endif
 
 } eMemfaultRebootReason;
+
+MEMFAULT_STATIC_ASSERT(sizeof(eMemfaultRebootReason) == 2, "Reboot reason enum must be 2 bytes");
 
 #if MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE == 1
   // Ensure that the custom reboot reasons are within the expected range

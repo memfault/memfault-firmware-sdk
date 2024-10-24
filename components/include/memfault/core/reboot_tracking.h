@@ -230,6 +230,40 @@ bool memfault_reboot_tracking_metrics_session_was_active(uint32_t index);
 //! @param name The name of the custom reboot reason
 #define MEMFAULT_REBOOT_REASON_KEY(name) kMfltRebootReason_##name
 
+//! The below pair of functions, memfault_reboot_tracking_load and
+//! memfault_reboot_tracking_save, are used when the reboot tracking RAM storage
+//! cannot be safely persisted across reboots. In this case, the user can
+//! provide their own implementation to load and save the reboot tracking data
+//! to a backing store (e.g. battery-backed ram, non-memory-mapped backup
+//! registers, etc).
+//!
+//! memfault_reboot_tracking_load() is called from
+//! memfault_reboot_tracking_boot(), and is used to retrieve the initial value
+//! of the reboot tracking data from the backing store.
+//!
+//! memfault_reboot_tracking_save() is called from
+//! memfault_reboot_tracking_mark_reset_imminent(), and is used to persist the
+//! reboot tracking data to the backing store.
+
+typedef MEMFAULT_PACKED_STRUCT MemfaultRebootTrackingStorage {
+  uint8_t data[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+}
+sMemfaultRebootTrackingStorage;
+
+//! Optional callback issued to load reboot tracking from the backing store,
+//! called during Memfault reboot tracking initialization.
+//!
+//! @param dst The destination buffer to load into
+extern void memfault_reboot_tracking_load(sMemfaultRebootTrackingStorage *dst);
+
+//! Optional callback issued when reboot tracking data should be saved to the
+//! backing store, for persistence across reboots. This function MUST be safe
+//! to call from exception context! It is called from the Memfault fault handler
+//! before the coredump is saved.
+//!
+//! @param src The source buffer to save
+extern void memfault_reboot_tracking_save(const sMemfaultRebootTrackingStorage *src);
+
 #ifdef __cplusplus
 }
 #endif

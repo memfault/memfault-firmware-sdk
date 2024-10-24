@@ -16,10 +16,10 @@
 #endif
 
 #ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
+  #include "esp_idf_version.h"
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
   #include "freertos/timers.h"
-  #include "memfault/esp_port/version.h"
 #else
   #include "FreeRTOS.h"
   #include "task.h"

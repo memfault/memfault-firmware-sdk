@@ -113,7 +113,7 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
   };
 }
 
-bool memfault_platform_coredump_save_begin(void) {
+bool memfault_port_coredump_save_begin(void) {
   const esp_partition_t *core_part = prv_validate_and_get_core_partition();
   if (core_part == NULL) {
     return false;

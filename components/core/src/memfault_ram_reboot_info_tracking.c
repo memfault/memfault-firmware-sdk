@@ -160,12 +160,22 @@ static void prv_record_reboot_event(eMemfaultRebootReason reboot_reason,
   s_mflt_reboot_info->lr = reg->lr;
 }
 
+MEMFAULT_WEAK void memfault_reboot_tracking_load(sMemfaultRebootTrackingStorage *dst) {
+  (void)dst;
+}
+
+MEMFAULT_WEAK void memfault_reboot_tracking_save(const sMemfaultRebootTrackingStorage *src) {
+  (void)src;
+}
+
 void memfault_reboot_tracking_boot(void *start_addr, const sResetBootupInfo *bootup_info) {
   s_mflt_reboot_info = start_addr;
 
   if (start_addr == NULL) {
     return;
   }
+
+  memfault_reboot_tracking_load((sMemfaultRebootTrackingStorage *)s_mflt_reboot_info);
 
   if (!prv_check_or_init_struct()) {
     return;
@@ -191,6 +201,8 @@ void memfault_reboot_tracking_mark_reset_imminent(eMemfaultRebootReason reboot_r
   }
 
   prv_record_reboot_event(reboot_reason, reg);
+
+  memfault_reboot_tracking_save((const sMemfaultRebootTrackingStorage *)s_mflt_reboot_info);
 }
 
 bool memfault_reboot_tracking_read_reset_info(sMfltResetReasonInfo *info) {

@@ -1,12 +1,9 @@
 if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
 
-  if (${KERNEL_VERSION_MAJOR} EQUAL 2)
-    if (${KERNEL_VERSION_MINOR} LESS_EQUAL 3)
-      if (CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE EQUAL 0)
-        message(FATAL_ERROR "CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE=256 must be added to your prj.conf"
-          " when using an nRF Connect SDK version older than v1.4")
-      endif()
-    endif()
+  if(${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS "1.9.2")
+    message(FATAL_ERROR
+      "Memfault SDK requires nRF Connect SDK version 1.9.2 or newer. Please contact mflt.io/contact-support for assistance."
+    )
   endif()
 
   add_subdirectory(src)

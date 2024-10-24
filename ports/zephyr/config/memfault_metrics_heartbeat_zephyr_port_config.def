@@ -4,7 +4,7 @@
 
 #if defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
 
-  #if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
+  #if defined(CONFIG_THREAD_STACK_INFO)
 MEMFAULT_METRICS_KEY_DEFINE(TimerTaskFreeStack, kMemfaultMetricType_Unsigned)
   #endif
 

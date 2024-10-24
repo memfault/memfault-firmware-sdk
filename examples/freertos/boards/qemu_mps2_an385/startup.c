@@ -85,7 +85,7 @@ extern uint32_t __bss_start__;
 // End address for the .bss section
 extern uint32_t __bss_end__;
 // End address for stack
-extern uint32_t __stack;
+extern void __stack(void);
 
 // Prevent inlining to avoid persisting any stack allocations
 __attribute__((noinline)) static void prv_cinit(void) {
@@ -129,7 +129,7 @@ extern void UsageFault_Handler(void);
 
 // A minimal vector table for a Cortex M.
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
-  (void *)(&__stack),  // initial stack pointer
+  __stack,  // initial stack pointer
   Reset_Handler,
   NMI_Handler,
   HardFault_Handler,

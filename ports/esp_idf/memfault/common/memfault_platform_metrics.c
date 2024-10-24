@@ -14,6 +14,7 @@
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_heap_caps.h"
+#include "esp_idf_version.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -21,7 +22,6 @@
 #include "memfault/core/math.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
-#include "memfault/esp_port/version.h"
 #include "memfault/metrics/connectivity.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/connectivity.h"
@@ -47,17 +47,13 @@
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 int32_t s_min_rssi;
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-    // This is a practical maximum RSSI value. In reality, the RSSI value is
-    // will likely be much lower. A value in the mid -60s is considered very good
-    // for example. An RSSI of -20 would be a device essentially on top of the AP.
-    #define MAXIMUM_RSSI -10
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-#endif    // CONFIG_MEMFAULT_ESP_WIFI_METRICS
+  // This is a practical maximum RSSI value. In reality, the RSSI value is
+  // will likely be much lower. A value in the mid -60s is considered very good
+  // for example. An RSSI of -20 would be a device essentially on top of the AP.
+  #define MAXIMUM_RSSI -10
+#endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
 MEMFAULT_WEAK void memfault_esp_metric_timer_dispatch(MemfaultPlatformTimerCallback handler) {
   if (handler == NULL) {
@@ -78,9 +74,7 @@ static void prv_metric_timer_handler(void *arg) {
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
                                  void *event_data) {
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   wifi_event_bss_rssi_low_t *rssi_data;
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
   switch (event_id) {
     case WIFI_EVENT_STA_START:
@@ -91,12 +85,10 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
       break;
 
     case WIFI_EVENT_STA_CONNECTED:
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
       // The RSSI threshold needs to be set when WIFI is already initialized.
       // This event is the most reliable way to know that we're already in that
       // state.
       ESP_ERROR_CHECK(esp_wifi_set_rssi_threshold(MAXIMUM_RSSI));
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
       MEMFAULT_METRIC_TIMER_START(wifi_connected_time_ms);
 
   #if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
@@ -115,14 +107,12 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
   #endif
       break;
 
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
     case WIFI_EVENT_STA_BSS_RSSI_LOW:
       rssi_data = (wifi_event_bss_rssi_low_t *)event_data;
 
       s_min_rssi = MEMFAULT_MIN(rssi_data->rssi, s_min_rssi);
       esp_wifi_set_rssi_threshold(s_min_rssi);
       break;
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
     default:
       break;
@@ -153,7 +143,6 @@ static void prv_collect_oui(void) {
 }
 
 static void prv_collect_wifi_metrics(void) {
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   if (s_min_rssi <= MAXIMUM_RSSI) {
     MEMFAULT_METRIC_SET_SIGNED(wifi_sta_min_rssi, s_min_rssi);
     // Error checking is ignored here, as it's possible that WIFI is not
@@ -163,7 +152,6 @@ static void prv_collect_wifi_metrics(void) {
     (void)esp_wifi_set_rssi_threshold(MAXIMUM_RSSI);
     s_min_rssi = 0;
   }
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 
   // Collect AP OUI
   prv_collect_oui();

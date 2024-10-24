@@ -48,10 +48,7 @@ static void prv_log_put_sync_string(const struct log_backend *const backend,
                                     const char *fmt, va_list ap);
 static void prv_log_panic(struct log_backend const *const backend);
 
-// The function signature for struct log_backend_api init changed between Zephyr 2.5 and Zephyr 2.6
-// and we don't use any of the parameters so we leave the parameter list empty to mitigate
-// -Wincompatible-pointer-types between versions
-static void prv_log_init();
+static void prv_log_init(const struct log_backend *const backend);
 
 static void prv_log_dropped(const struct log_backend *const backend, uint32_t cnt);
 const struct log_backend_api log_backend_mflt_api = {

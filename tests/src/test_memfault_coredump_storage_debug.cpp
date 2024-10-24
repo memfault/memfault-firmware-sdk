@@ -9,8 +9,13 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/platform/coredump.h"
 
-static bool s_inject_prepare_failure = false;
+// Stub
 bool memfault_platform_coredump_save_begin(void) {
+  return true;
+}
+
+static bool s_inject_prepare_failure = false;
+bool memfault_port_coredump_save_begin(void) {
   if (s_inject_prepare_failure) {
     return false;
   }

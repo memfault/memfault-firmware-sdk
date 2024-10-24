@@ -95,7 +95,7 @@ bool memfault_coredump_storage_debug_test_begin(void) {
   // On some ports there maybe some extra setup that needs to occur
   // before we can safely use the backing store without interrupts
   // enabled. Call this setup function now.
-  if (!memfault_platform_coredump_save_begin()) {
+  if (!memfault_port_coredump_save_begin() || !memfault_platform_coredump_save_begin()) {
     prv_record_failure(kMemfaultCoredumpStorageTestOp_Prepare,
                        kMemfaultCoredumpStorageResult_PlatformApiFail, 0, info.size);
     return false;

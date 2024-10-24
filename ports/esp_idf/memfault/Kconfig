@@ -333,6 +333,13 @@ endif
         help
             Automatically insert the Memfault Build ID during the build process.
 
+    config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
+        bool "Pretty print reboot reason on boot"
+        default n
+        help
+            Print out the reboot reason, eg "Watchdog", on boot. Adds a few
+            hundred bytes of code space.
+
     # HTTPS Periodic Upload
     menuconfig MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Enable a dedicated thread to periodically upload Memfault data over HTTPS"

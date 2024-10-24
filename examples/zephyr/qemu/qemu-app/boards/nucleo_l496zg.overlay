@@ -1,0 +1,9 @@
+/ {
+	aliases {
+		backup-register = &bbram;
+	};
+};
+
+&bbram {
+	status = "okay";
+};

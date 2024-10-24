@@ -14,12 +14,9 @@ endif()
 # which is not something that can be achieved with Zephyr today
 find_package(Ncs HINTS $ENV{ZEPHYR_BASE}/../nrf)
 
-if (NOT NCS_VERSION_MAJOR)
-  # Note: If we cannot resolve the NCS version, assume we are using 1.2.x which is the oldest
-  # version Memfault has been tested against
-  set(NCS_VERSION_MAJOR 1)
-  set(NCS_VERSION_MINOR 2)
-  set(NCS_VERSION_PATCH 0)
+# Confirm NCS_VERSION_MAJOR is defined
+if (NOT DEFINED NCS_VERSION_MAJOR)
+  message(FATAL_ERROR "NCS Version not found, please contact Memfault support!")
 endif()
 
 # Below we conditionally set Kconfig variables based on nRF Connect SDK version
@@ -30,76 +27,30 @@ endif()
 # so we set the ones we need here using that:
 #   https://docs.zephyrproject.org/latest/build/kconfig/setting.html#the-initial-configuration
 
-if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.3)
-else() # nRF Connect SDK Version >= 1.3.0
-  # We cannot set for NCS <= 1.2 because on older versions of zephyr the argument was not
-  # directly user-configurable (no prompt in Kconfig)
-  set(CONFIG_SHELL_LOG_BACKEND n CACHE INTERNAL "")
-endif()
+# Enable Memfault FOTA Support
+set(CONFIG_MEMFAULT_FOTA y CACHE INTERNAL "")
+set(CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE 400 CACHE INTERNAL "")
+set(CONFIG_DOWNLOAD_CLIENT_STACK_SIZE 1600 CACHE INTERNAL "")
 
-if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.5)
-  # Legacy name for CONFIG_DEBUG_THREAD_INFO needed for nRF Connect version <= 1.5
-  # due to the version of Zephyr included (pre v2.5)
-  set(CONFIG_OPENOCD_SUPPORT y CACHE INTERNAL "")
-else() # nRF Connect SDK Version >= 1.5.0
-  # Enable Memfault FOTA Support
-  #
-  # We enable conditionally because prior to NCS < 1.5 a small patch (https://mflt.io/nrf-fota) was
-  # needed in order for things to work
-  set(CONFIG_MEMFAULT_FOTA y CACHE INTERNAL "")
-  set(CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE 400 CACHE INTERNAL "")
-  set(CONFIG_DOWNLOAD_CLIENT_STACK_SIZE 1600 CACHE INTERNAL "")
-
-  # Note: Can optionally be changed to =y to implement
-  # a custom event handler for FOTA events
-  # CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=n
-endif()
+# Note: Can optionally be changed to =y to implement
+# a custom event handler for FOTA events
+# CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=n
 
 
-if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.6.0)
-  # Required for logging to work from crash but deprecated in Zephyr included in NCS 1.6
-  set(CONFIG_LOG_IMMEDIATE y CACHE INTERNAL "")
+set(CONFIG_MEMFAULT_NCS_PROVISION_CERTIFICATES n CACHE INTERNAL "")
+set(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME y CACHE INTERNAL "")
+set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
 
-  # NCS 1.6 was the first one which introduced setting the project key via
-  # Kconfig. Look for this argument and remap to a regular compiler definition
-  # that gets picked up in memfault_demo_app/src/main.c
-  if (CONFIG_MEMFAULT_NCS_PROJECT_KEY)
-    add_compile_definitions(MEMFAULT_NCS_PROJECT_KEY=${CONFIG_MEMFAULT_NCS_PROJECT_KEY})
-    unset(CONFIG_MEMFAULT_NCS_PROJECT_KEY CACHE)
-  endif()
-else() # nRF Connect SDK Version >= 1.6.0
-  set(CONFIG_MEMFAULT_NCS_PROVISION_CERTIFICATES n CACHE INTERNAL "")
-  set(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME y CACHE INTERNAL "")
-  set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
-endif()
+# in v1.8+, use the modem_info library to get the IMEI for device_serial
+set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
 
-if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 1.7.99)
-  # These were removed in NCS 1.8.0, but are needed prior to that. Enable them
-  # if NCS version <1.7.99 (.99 patch version is used for the next revision's
-  # development series)
-  set(CONFIG_BSD_LIBRARY y CACHE INTERNAL "")
-  set(CONFIG_BSD_LIBRARY_SYS_INIT n CACHE INTERNAL "")
-  # ^ Note: CONFIG_BSD_ were renamed to _NRF_MODEM_ in
-  # nRF Connect SDK v1.5. We use the legacy names here
-  # so the app can continue to compile on older targets
-  #
-  # CONFIG_NRF_MODEM_LIB
-  # CONFIG_NRF_MODEM_LIB_SYS_INIT
-
-  # For nRF Connect SDK v1.5 default value changed here
-  set(CONFIG_AT_CMD_SYS_INIT n CACHE INTERNAL "")
-else() # nRF Connect SDK Version >= 1.8.0
-  # in v1.8+, use the modem_info library to get the IMEI for device_serial
-  set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
-
-  # pre-2.3.0, SPM (Secure Partition Manager) can be used instead of the default
-  # TFM, and results in nicer backtraces in certain cases, so select it here.
-  if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.2.99)
-    # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
-    set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
-    # Explicitly set SPM=y because as of nRF Connect >= 2.1.0 it is marked as deprecated and no longer enabled by default
-    set(CONFIG_SPM y CACHE INTERNAL "")
-  endif()
+# pre-2.3.0, SPM (Secure Partition Manager) can be used instead of the default
+# TFM, and results in nicer backtraces in certain cases, so select it here.
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.2.99)
+  # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
+  set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
+  # Explicitly set SPM=y because as of nRF Connect >= 2.1.0 it is marked as deprecated and no longer enabled by default
+  set(CONFIG_SPM y CACHE INTERNAL "")
 endif()
 
 if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL 2.4.0)
@@ -118,13 +69,6 @@ if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL
 else()
   # Only needed in NCS <2.4.0
   set(CONFIG_LTE_AUTO_INIT_AND_CONNECT n CACHE INTERNAL "")
-endif()
-
-# Required for app to compile against nRF Connect SDK <= v1.2
-# Must be included after updating Kconfig settings in CMake Cache above
-if(DEFINED ENV{MEMFAULT_INCLUDE_ZEPHYR_BOILERPLATE})
-  include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-  include($ENV{ZEPHYR_BASE}/../nrf/cmake/boilerplate.cmake)
 endif()
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})

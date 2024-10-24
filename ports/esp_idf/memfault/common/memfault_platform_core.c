@@ -8,10 +8,10 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 
+#include "esp_idf_version.h"
 #include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"
-#include "memfault/esp_port/version.h"
 #include "memfault/metrics/metrics.h"
 
 #ifndef ESP_PLATFORM
@@ -75,12 +75,7 @@ void memfault_platform_halt_if_debugging(void) {
 
 static void prv_record_reboot_reason(void) {
   eMemfaultRebootReason reboot_reason = kMfltRebootReason_Unknown;
-  int esp_reset_cause = 0;
-
-  // esp_reset_reason is not implemented for 3.x builds
-#if defined(ESP_IDF_VERSION)
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
-  esp_reset_cause = (int)esp_reset_reason();
+  int esp_reset_cause = (int)esp_reset_reason();
   switch (esp_reset_cause) {
     case ESP_RST_POWERON:
       reboot_reason = kMfltRebootReason_PowerOnReset;
@@ -107,8 +102,31 @@ static void prv_record_reboot_reason(void) {
       reboot_reason = kMfltRebootReason_Unknown;
       break;
   }
-  #endif
-#endif
+
+#if defined(CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP)
+  // pretty-print the reset reason
+  struct esp_rst_reason_to_string {
+    esp_reset_reason_t reason;
+    const char *str;
+  } esp_rst_reasons[] = {
+    { ESP_RST_POWERON, "Power On" },
+    { ESP_RST_SW, "Software" },
+    { ESP_RST_INT_WDT, "Interrupt Watchdog" },
+    { ESP_RST_TASK_WDT, "Task Watchdog" },
+    { ESP_RST_WDT, "Watchdog" },
+    { ESP_RST_DEEPSLEEP, "Deep Sleep" },
+    { ESP_RST_BROWNOUT, "Brownout" },
+    { ESP_RST_PANIC, "Panic" },
+    { ESP_RST_UNKNOWN, "Unknown" },
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(esp_rst_reasons); i++) {
+    if (esp_rst_reasons[i].reason == esp_reset_cause) {
+      MEMFAULT_LOG_INFO("Reboot reason: %s", esp_rst_reasons[i].str);
+      break;
+    }
+  }
+#endif  // MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 
   const sResetBootupInfo reset_info = {
     .reset_reason_reg = esp_reset_cause,
@@ -162,8 +180,7 @@ static int prv_memfault_log_wrapper(const char *fmt, va_list args) {
 }
 #endif  // defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
 
-#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
-  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
+#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE)
 // Crash if an allocation fails. If the application is running correctly,
 // without memory leaks, there should be zero allocation failures. If any occur,
 // it's an error and we would like a nice crash report at the point of failure.
@@ -202,8 +219,7 @@ void memfault_boot(void) {
   memfault_register_cli();
 #endif
 
-#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE) && \
-  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0))
+#if defined(CONFIG_MEMFAULT_ASSERT_ON_ALLOC_FAILURE)
   heap_caps_register_failed_alloc_callback(prv_alloc_failed_callback);
 #endif
 

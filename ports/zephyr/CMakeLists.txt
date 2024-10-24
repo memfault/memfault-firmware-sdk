@@ -1,11 +1,11 @@
 if(CONFIG_MEMFAULT)
-  set(MEMFAULT_SDK_ROOT ../..)
-
-  if(NOT DEFINED MEMFAULT_ZEPHYR_PORT_TARGET)
-    # Pick up latest supported target by default.
-    # Currently works for Zephyr >= 2.4
-    set(MEMFAULT_ZEPHYR_PORT_TARGET v2.4)
+  if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_LESS "2.7.0")
+    message(FATAL_ERROR
+      "Memfault SDK requires Zephyr v2.7.0 or later. Please contact mflt.io/contact-support for assistance."
+    )
   endif()
+
+  set(MEMFAULT_SDK_ROOT ../..)
 
   # Collect Memfault SDK dependencies
   list(APPEND MEMFAULT_COMPONENTS core util panics demo)
@@ -60,9 +60,9 @@ if(CONFIG_MEMFAULT)
   # Remove this line when removing support for < Zephyr v3.2
   zephyr_library_compile_options(-imacros ${CMAKE_CURRENT_LIST_DIR}/include/memfault/ports/zephyr/include_compatibility.h)
 
-  # Pick up Zephyr specific port files
-  add_subdirectory(${MEMFAULT_ZEPHYR_PORT_TARGET})
+  # Add subdirectories
   add_subdirectory(common)
+  add_subdirectory(panics)
   add_subdirectory_ifdef(CONFIG_MEMFAULT_NRF_CONNECT_SDK ncs)
 
   # Link Memfault Library

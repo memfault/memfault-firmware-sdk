@@ -199,8 +199,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
   struct k_thread *me = k_current_get();
 
-    #if defined(CONFIG_THREAD_STACK_INFO) && MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
-  // k_thread_stack_space_get() introduced in v2.2.0
+    #if defined(CONFIG_THREAD_STACK_INFO)
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);
   MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);

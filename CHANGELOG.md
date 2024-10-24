@@ -6,6 +6,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2024-10-24
+
+### 🔥 Removed
+
+- Removed support for Zephyr < 2.7.0
+- Removed support for nRF-Connect SDK < 1.9.2
+- Removed support for ESP-IDF < 4.4.0
+
+Please [contact us](https://mflt.io/contact-support) if you need support for
+earlier versions!
+
+### 🐛 Fixed
+
+- General:
+
+  - Correct an issue where `eMemfaultRebootReason` is expressed as a 4-byte type
+    instead of 2-bytes when compiling with Clang with high optimization, when
+    targeting ARM. This results in Coredumps tagged as `Unknown` instead of the
+    correct reason code.
+
+### 📈 Added
+
+- General:
+
+  - Add a pair of optional user-provided functions,
+    `memfault_reboot_tracking_load()` / `memfault_reboot_tracking_save()`, to
+    allow users to provide their own implementations for saving and loading
+    reboot tracking data. This is useful when the default implementation is not
+    suitable for the platform or when the user wants to store the data in a
+    different location.
+
+  - The
+    [Stable Sessions Device Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics#stable-sessions)
+    added in SDK version `1.15.0` is fully available and no longer considered
+    experimental.
+
+  - Add an optional `memfault_port_coredump_save_begin()` callback, for use by
+    Memfault ports. This allows `memfault_platform_coredump_save_begin()` to be
+    implemented by the platform instead, for custom pre-coredump operations.
+    Thanks to @finger563 for reporting this issue in
+    [#77](https://github.com/memfault/memfault-firmware-sdk/issues/77)!
+
+  - Improved API docs for events and data packetizer components by noting
+    restrictions for use in ISR contexts
+
+- Zephyr:
+
+  - Update the Qemu app to support the `nucleo_l496zg` board, with support for
+    the Zephyr `bbram` subsystem, and implement the new
+    `memfault_reboot_tracking_load()` / `memfault_reboot_tracking_save()`
+    functions to demonstrate the functionality.
+
+- ESP-IDF:
+
+  - New Kconfig setting, `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP`, to print the
+    ESP-IDF reboot reason code on system boot, for debugging purposes. This
+    feature is disabled by default.
+
+### 🛠️ Changed
+
+- General:
+
+  - Update support links to refer to the preferred site
+    <https://mflt.io/contact-support> instead of the Memfault support email.
+    This link will redirect to a form where questions can be sent to the
+    Memfault support team.
+
+- nRF-Connect SDK:
+
+  - Changed the Kconfig symbol `MEMFAULT_REBOOT_REASON_GET_CUSTOM` to be `imply`
+    instead of `select` when the nRF-Connect SDK is enabled. This permits users
+    to disable the `nrfx`-based reboot reason tracking if needed.
+
 ## [1.15.0] - 2024-10-13
 
 ### 📈 Added
@@ -1361,8 +1434,9 @@ earlier versions!
   - Improve FOTA support for nRF-Connect SDK 2.4+, by improving the technique
     used to find the correct Memfault server root cert. Memfault uses a fast CDN
     to improve OTA payload delivery, which uses a different root cert than the
-    Memfault device server. Please contact <support@memfault.com> immediately if
-    you encounter any cert-related issues.
+    Memfault device server. Please
+    [contact support](https://mflt.io/contact-support) immediately if you
+    encounter any cert-related issues.
 
 ### 💥 Breaking Changes
 

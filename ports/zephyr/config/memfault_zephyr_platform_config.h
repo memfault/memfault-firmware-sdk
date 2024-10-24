@@ -6,15 +6,12 @@
 //! See LICENSE for details
 //!
 //! Zephyr port overrides for the default configuration settings in the memfault-firmware-sdk.
-#include <version.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Note that pre-v2.0 Zephyr did not create the section allocation needed to support
-// our Gnu build ID usage.
-#if KERNEL_VERSION_MAJOR >= 2 && defined(CONFIG_MEMFAULT_USE_GNU_BUILD_ID)
+#if defined(CONFIG_MEMFAULT_USE_GNU_BUILD_ID)
   // Add a unique identifier to the firmware build
   //
   // It is very common, especially during development, to not change the firmware

@@ -295,6 +295,31 @@ static int prv_session_crash(const struct shell *shell, size_t argc, char **argv
 
 SHELL_CMD_REGISTER(session_crash, NULL, "session crash", prv_session_crash);
 
+#if defined(CONFIG_BBRAM)
+  #include <zephyr/drivers/bbram.h>
+
+void memfault_reboot_tracking_load(sMemfaultRebootTrackingStorage *dst) {
+  // restore reboot tracking from bbram_read
+
+  // clear the destination buffer- if the bbram restore doesn't work, we won't
+  // have reboot tracking data.
+  memset(dst, 0, sizeof(*dst));
+
+  const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(bbram));
+  for (size_t i = 0; i < sizeof(*dst) / 4; i++) {
+    bbram_read(dev, 4 * i, 4, &dst->data[4 * i]);
+  }
+}
+
+void memfault_reboot_tracking_save(const sMemfaultRebootTrackingStorage *src) {
+  // now back up reboot tracking to RTC backup regs
+  const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(bbram));
+  for (size_t i = 0; i < sizeof(*src) / 4; i++) {
+    bbram_write(dev, 4 * i, 4, &src->data[4 * i]);
+  }
+}
+#endif  // defined(CONFIG_BBRAM)
+
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();

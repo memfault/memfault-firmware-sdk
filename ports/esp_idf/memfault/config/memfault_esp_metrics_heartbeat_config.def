@@ -25,9 +25,7 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_pct_max, kMemfaultMetricType
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_ap_oui, sizeof("00:00:00") - 1)
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS

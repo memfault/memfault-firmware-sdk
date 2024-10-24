@@ -31,17 +31,16 @@ static int test_task_watchdog(int argc, char **argv) {
 }
 #endif
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-  #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
-    !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
-    #define OVERFLOW_TASK_STACK_SIZE 4096
+#if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
+  !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
+  #define OVERFLOW_TASK_STACK_SIZE 4096
 
 static StaticTask_t s_overflow_task_tcb;
 static StackType_t s_overflow_task_stack[OVERFLOW_TASK_STACK_SIZE];
 static TaskHandle_t s_overflow_task_handle = NULL;
 
 static void prv_trigger_stack_overflow(void) {
-    #if defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL)
+  #if defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL)
   // General idea is to allocate a bunch of memory on the stack but not too much
   // to hose FreeRTOS Then yield and the FreeRTOS stack overflow check (on task
   // switch) should kick in due to stack pointer limits
@@ -60,11 +59,11 @@ static void prv_trigger_stack_overflow(void) {
     stack_array[i] = i;
     taskYIELD();
   }
-    #else
+  #else
   // The canary checks only look at the last bytes (lowest addresses) of the
   // stack Execute a write over the last 32 bytes to trigger the watchpoint
   memset(s_overflow_task_stack, 0, 32);
-    #endif  // defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTR)
+  #endif  // defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTR)
 }
 
 /**
@@ -107,9 +106,8 @@ static void prv_init_stack_overflow_test(void) {
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&test_stack_overflow_cmd));
 }
-  #endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) ||
-          // !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
-#endif    // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+#endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) ||
+        // !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
 
 #if defined(CONFIG_HEAP_TASK_TRACKING)
 // Print out per-task heap allocations. This is lifted from the example here:
@@ -173,12 +171,9 @@ void register_app(void) {
   ESP_ERROR_CHECK(esp_console_cmd_register(&heap_task_stats_cmd));
 #endif
 
-// Only support the stack overflow test on esp-idf >= 4.3.0
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-  #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
-    !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
+#if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
+  !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
   prv_init_stack_overflow_test();
-  #endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) ||
-          // !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
-#endif    // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+#endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) ||
+        // !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)
 }

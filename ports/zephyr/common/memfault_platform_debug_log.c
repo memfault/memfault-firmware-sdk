@@ -15,7 +15,7 @@
 
 #include "memfault/config.h"
 #include "memfault/ports/zephyr/version.h"
-#include "zephyr_release_specific_headers.h"
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 // clang-format on
 
 LOG_MODULE_REGISTER(mflt, CONFIG_MEMFAULT_LOG_LEVEL);
@@ -88,13 +88,9 @@ void memfault_platform_log_raw(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
 
-#define ZEPHYR_VERSION_GTE(major, minor) \
-  ((KERNEL_VERSION_MAJOR > (major)) ||   \
-   ((KERNEL_VERSION_MAJOR == (major)) && (KERNEL_VERSION_MINOR >= (minor))))
-
   char log_buf[MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES];
   vsnprintf(log_buf, sizeof(log_buf), fmt, args);
-#if ZEPHYR_VERSION_GTE(3, 0)
+#if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
   LOG_PRINTK("%s\n", log_buf);
 #else
   printk("%s\n", log_buf);

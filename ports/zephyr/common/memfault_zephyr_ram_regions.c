@@ -14,7 +14,6 @@
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/coredump.h"
-#include "memfault/ports/zephyr/version.h"
 
 // Use this config flag to manually select the old data region names
 #if !defined(MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES)
@@ -26,7 +25,7 @@ static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 #if CONFIG_THREAD_STACK_INFO
   #if CONFIG_STACK_GROWS_UP
     #error \
-      "Only full-descending stacks are supported by this implementation. Please contact support@memfault.com."
+      "Only full-descending stacks are supported by this implementation. Please visit https://mflt.io/contact-support"
   #endif
 
   #if defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
@@ -277,21 +276,17 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
   }
 
   // These linker variables are defined in linker.ld in Zephyr RTOS. Note that
-  // the data region name changed in v2.7 of the kernel, so check the kernel
-  // version and set the name appropriately.
+  // the data region name changed in v2.7 of the kernel.
   //
-  // Also check for a user override; this is necessary if NCS v1.7.1 is used
-  // with a Memfault SDK version >=0.27.3, because that NCS release used an
-  // intermediate Zephyr release, so the version number checking is not
-  // possible.
+  // Also check for a user override, in case of non-standard configurations.
 #if !defined(ZEPHYR_DATA_REGION_START) && !defined(ZEPHYR_DATA_REGION_END)
-  #if !MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES && MEMFAULT_ZEPHYR_VERSION_GT(2, 6)
-    #define ZEPHYR_DATA_REGION_START __data_region_start
-    #define ZEPHYR_DATA_REGION_END __data_region_end
-  #else
+  #if MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES
     // The old names are used in previous Zephyr versions (<=2.6)
     #define ZEPHYR_DATA_REGION_START __data_ram_start
     #define ZEPHYR_DATA_REGION_END __data_ram_end
+  #else
+    #define ZEPHYR_DATA_REGION_START __data_region_start
+    #define ZEPHYR_DATA_REGION_END __data_region_end
   #endif
 #endif
 

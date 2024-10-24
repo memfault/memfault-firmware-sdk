@@ -96,7 +96,7 @@ MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
 }
 
   #elif !defined(ESP_PLATFORM)
-    #error "Unsupported Xtensa platform, please contact support@memfault.com"
+    #error "Unsupported Xtensa platform. Please visit https://mflt.io/contact-support"
   #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {

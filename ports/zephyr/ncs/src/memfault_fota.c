@@ -159,18 +159,8 @@ int memfault_fota_start(void) {
   // Note: The nordic FOTA API only supports passing one root CA today. So we cycle through the
   // list of required Root CAs in use by Memfault to find the appropriate one
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_memfault_fota_certs); i++) {
-  #if MEMFAULT_NCS_VERSION_GT(1, 7)
-    // In NCS 1.8 signature was changed "to accept an integer parameter specifying the PDN ID,
-    // which replaces the parameter used to specify the APN"
-    //
-    // https://github.com/nrfconnect/sdk-nrf/blob/v1.8.0/include/net/fota_download.h#L88-L106
     rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
                              0 /* pdn_id */, 0);
-  #else  // NCS <= 1.7
-    // https://github.com/nrfconnect/sdk-nrf/blob/v1.4.1/include/net/fota_download.h#L88-L106
-    rv = fota_download_start(s_download_url, s_download_url, s_memfault_fota_certs[i],
-                             NULL /* apn */, 0);
-  #endif
     if (rv == 0) {
       // success -- we are ready to start the FOTA download!
       break;

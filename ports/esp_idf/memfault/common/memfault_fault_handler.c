@@ -7,12 +7,13 @@
 
 #include <stdlib.h>
 
-#include "memfault/esp_port/version.h"
-// keep the version.h include above, to support ESP-IDF < v4
+#include "esp_idf_version.h"
+// keep the esp_idf_version.h include above for version-specific support
 
 #include "esp_attr.h"
 #include "esp_core_dump.h"
 #include "esp_err.h"
+#include "esp_private/panic_internal.h"
 #ifdef __XTENSA__
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
     #include "xtensa_api.h"
@@ -31,13 +32,10 @@
   #error "The port assumes the esp-idf is in use!"
 #endif
 
-// Header refactor and watchpoint definitions added in 4.3.0
 // Only include if watchpoint stack overflow detection enabled
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) && \
-  defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+#if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
   #include "soc/soc_caps.h"
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) &&
-        // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+#endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
 
 // Note: The esp-idf implements abort which will invoke the esp-idf coredump handler as well as a
 // chip reboot so we just piggyback off of that
@@ -67,14 +65,10 @@ __wrap_panic_abort(const char *details) {
   __real_panic_abort(details);
 }
 
-// This header is only available for ESP-IDF >= 4.2
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 0)
-  #include "esp_private/panic_internal.h"
 // Ensure the substituted function signature matches the original function
 _Static_assert(__builtin_types_compatible_p(__typeof__(&panic_abort),
                                             __typeof__(&__wrap_panic_abort)),
                "Error: esp panic_abort wrapper is not compatible with esp-idf implementation");
-#endif
 
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info) {
   memfault_arch_fault_handling_assert(pc, lr, extra_info->assert_reason);
@@ -91,35 +85,25 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
 //! The default implementation is replaced by leveraging GCCs --wrap feature
 //!    https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/panic.c#L620
 //!
-//! @note The signature for the wrapped function changed in esp-idf v4.3+, then
-//! later backported to the 4.2 branch in v4.2.3. Support that change with a
-//! version check (see static assert below for verifying the signature is
-//! correct).
-//! The signature changed in esp-idf v5.3.0, back ported to v5.1.4 + v5.2.2.
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
-  #if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
-    ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
-     (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
+//! @note The signature changed in esp-idf v5.3.0, back ported to v5.1.4 + v5.2.2.
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
+  ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
+   (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
 void __wrap_esp_core_dump_write(panic_info_t *info) {
-  #else
+#else   // ESP_IDF_VERSION
 void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
-  #endif
-  #ifdef __XTENSA__
+#endif  // ESP_IDF_VERSION
+#ifdef __XTENSA__
   XtExcFrame *fp = (void *)info->frame;
-  #elif __riscv
+#elif __riscv
   RvExcFrame *fp = (void *)info->frame;
-  #endif
-#else
-void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
-#endif
+#endif  // __XTENSA__
 
   eMemfaultRebootReason reason;
 
-/*
- * To better classify the exception, we need panic_info_t provided by
- * esp-idf v4.2.3+. For older versions just assume kMfltRebootReason_HardFault
- */
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
+  /*
+   * To better classify the exception, we need panic_info_t
+   */
   switch (info->exception) {
     case PANIC_EXCEPTION_DEBUG:
       reason = kMfltRebootReason_DebuggerHalted;
@@ -129,9 +113,6 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
       reason = kMfltRebootReason_HardFault;
       break;
   }
-#else
-  reason = kMfltRebootReason_HardFault;
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 2, 3)
 
 #ifdef __XTENSA__
   // Clear "EXCM" bit so we don't have to correct PS.OWB to get a good unwind This will also be
@@ -173,8 +154,7 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
   };
 
   // If enabled, check if exception was triggered by stackoverflow type
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) && \
-    defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+  #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
     /*
      * See Xtensa ISA Debug Cause Register section:
      * https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf#_OPENTOPIC_TOC_PROCESSING_d61e48262
@@ -200,8 +180,7 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
       reason = kMfltRebootReason_StackOverflow;
     }
   }
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0) &&
-          // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+  #endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
 #elif __riscv
   sMfltRegState regs = {
     .mepc = fp->mepc,
@@ -248,7 +227,7 @@ void __wrap_esp_core_dump_to_flash(XtExcFrame *fp) {
     .mtval = fp->mtval,
     .mhartid = fp->mhartid,
   };
-#endif
+#endif  // __XTENSA__
 
   memfault_fault_handler(&regs, reason);
 }

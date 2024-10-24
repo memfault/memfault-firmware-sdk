@@ -1,3 +1,2 @@
 extend = "../../ruff.toml"
-target-version = "py37" # ruff does not support 3.6
-lint.extend-ignore = ["UP"]
+target-version = "py38"

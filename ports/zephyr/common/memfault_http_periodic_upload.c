@@ -7,6 +7,8 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 
+#include "memfault/ports/zephyr/version.h"
+
 // for zephyr 3.5.0+, use random.h instead of rand32.h
 #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 4)
 #include MEMFAULT_ZEPHYR_INCLUDE(random/random.h)

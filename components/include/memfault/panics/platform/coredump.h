@@ -161,6 +161,14 @@ extern bool memfault_coredump_read(uint32_t offset, void *buf, size_t buf_len);
 //! @return true if to continue saving the coredump, false to abort
 extern bool memfault_platform_coredump_save_begin(void);
 
+//! Called prior to invoking any platform_storage_[read/write/erase] calls upon
+//! crash
+//!
+//! @note this is similar to memfault_platform_coredump_save_begin(), but is
+//!       meant to be implemented by the Memfault port, not the user platform
+//! @return true if to continue saving the coredump, false to abort
+extern bool memfault_port_coredump_save_begin(void);
+
 #ifdef __cplusplus
 }
 #endif

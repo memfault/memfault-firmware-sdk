@@ -36,11 +36,11 @@
 #endif
 
 #if defined(CONFIG_MEMFAULT)
+  #include "esp_idf_version.h"
   #include "memfault/components.h"
   #include "memfault/esp_port/cli.h"
   #include "memfault/esp_port/core.h"
   #include "memfault/esp_port/http_client.h"
-  #include "memfault/esp_port/version.h"
   #include "settings.h"
 #endif
 
@@ -85,42 +85,32 @@ static void initialize_nvs() {
   ESP_ERROR_CHECK(err);
 }
 
-// Name change at version 4.x
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
-  #define CONFIG_CONSOLE_UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
-#endif
-
 static void initialize_console() {
   /* Disable buffering on stdin and stdout */
   setvbuf(stdin, NULL, _IONBF, 0);
   setvbuf(stdout, NULL, _IONBF, 0);
 
-  // These APIs vary depending on ESP-IDF version.
+// These APIs vary depending on ESP-IDF version.
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
   /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
   uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
   /* Move the caret to the beginning of the next line on '\n' */
   uart_vfs_dev_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
-#elif ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+#else   // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
   /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
   esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
   /* Move the caret to the beginning of the next line on '\n' */
   esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
-#else
-  /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-  esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
-  /* Move the caret to the beginning of the next line on '\n' */
-  esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
-#endif
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
 
   /* Install UART driver for interrupt-driven reads and writes */
-  ESP_ERROR_CHECK(uart_driver_install(CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
+  ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
 
-  /* Tell VFS to use UART driver */
+/* Tell VFS to use UART driver */
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
-  uart_vfs_dev_use_driver(CONFIG_CONSOLE_UART_NUM);
+  uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 #else
-  esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+  esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
   /* Initialize the console */
@@ -254,7 +244,7 @@ void memfault_esp_port_wifi_autojoin(void) {
 
   #endif  // CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 
-// // Periodically post any Memfault data that has not yet been posted.
+// Periodically post any Memfault data that has not yet been posted.
 static void prv_ota_task(void *args) {
   const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
 
@@ -263,7 +253,7 @@ static void prv_ota_task(void *args) {
   while (true) {
     // count the number of times this task has run
     MEMFAULT_METRIC_ADD(PosterTaskNumSchedules, 1);
-    // attempt to autojoin wifi, if configured
+  // attempt to autojoin wifi, if configured
   #if defined(CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN)
     memfault_esp_port_wifi_autojoin();
   #endif
@@ -454,9 +444,7 @@ void app_main() {
     g_mflt_http_client_config.api_key = project_key;
   }
 
-  // Load chunks + device URLs from NVS too, only for esp_idf >=4
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
-  // Need to persist for the lifetime of the program
+  // Load chunks + device URLs from NVS too. Need to persist for the lifetime of the program
   static char chunks_url[128] = { 0 };
   static char device_url[128] = { 0 };
   size_t chunks_url_len = sizeof(chunks_url);
@@ -466,7 +454,6 @@ void app_main() {
     g_mflt_http_client_config.chunks_api.host = (chunks_url_len > 1) ? chunks_url : NULL;
     g_mflt_http_client_config.device_api.host = (device_url_len > 1) ? device_url : NULL;
   }
-  #endif
 
   #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");

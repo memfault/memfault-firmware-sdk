@@ -9,9 +9,9 @@
 // TODO: Migrate to "driver/gptimer.h" to fix warning
 #include "esp_console.h"
 #include "esp_err.h"
+#include "esp_idf_version.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "memfault/esp_port/version.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #include "driver/gptimer.h"
   #include "esp_private/esp_clk.h"
@@ -19,11 +19,7 @@
 #else
   #include "driver/periph_ctrl.h"
   #include "driver/timer.h"
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
-    #include "esp32/clk.h"
-  #else
-    #include "esp_clk.h"
-  #endif
+  #include "esp32/clk.h"
 #endif
 
 #include "memfault/components.h"

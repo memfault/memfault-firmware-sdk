@@ -8,18 +8,13 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+#include "esp_idf_version.h"
+#include "esp_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/esp_port/http_client.h"
-#include "memfault/esp_port/version.h"
-
-#if !defined(ESP_IDF_VERSION) || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4, 4, 0))
-  #include "esp_system.h"
-#else
-  #include "esp_random.h"
-#endif
 
 #define PERIODIC_UPLOAD_TASK_NAME "mflt_periodic_upload"
 

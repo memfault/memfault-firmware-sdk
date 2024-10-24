@@ -14,11 +14,11 @@
 
   #include "esp_http_client.h"
   #include "esp_https_ota.h"
+  #include "esp_idf_version.h"
   #include "esp_wifi.h"
   #include "memfault/components.h"
   #include "memfault/esp_port/core.h"
   #include "memfault/esp_port/http_client.h"
-  #include "memfault/esp_port/version.h"
 
   #ifndef MEMFAULT_HTTP_DEBUG
     #define MEMFAULT_HTTP_DEBUG (0)
@@ -425,16 +425,14 @@ bool memfault_esp_port_wifi_connected(void) {
 }
 
 bool memfault_esp_port_netif_connected(void) {
-  // The netif component was added in ESP-IDF v4.1
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
   // iterate over all netifs and check if any of them are connected
   esp_netif_t *netif = NULL;
   while ((netif =
-    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
             esp_netif_next_unsafe
-    #else
+  #else
             esp_netif_next
-    #endif
+  #endif
           (netif)) != NULL) {
     if (!esp_netif_is_netif_up(netif)) {
       continue;
@@ -448,11 +446,6 @@ bool memfault_esp_port_netif_connected(void) {
 
   // didn't find a netif with a non-zero IP address, return not connected
   return false;
-  #else   // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
-  // Previous versions, just check if wifi is connected. This won't work for
-  // non-wifi devices.
-  return memfault_esp_port_wifi_connected();
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
 }
 
 // Similar to memfault_platform_http_client_post_data() but just posts

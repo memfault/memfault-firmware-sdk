@@ -26,12 +26,12 @@ from mflt_build_id import (  # noqa: E402 # isort:skip
 @pytest.fixture()
 def copy_file(tmp_path):
     """Copies a file into the tests tmp path"""
-    idx = [0]
+    idx = 0
 
     def _copy_file(src):
-        # NB: Python 2.7 does not support `nonlocal`
-        tmp_name = str(tmp_path / "file_{}.bin".format(idx[0]))
-        idx[0] += 1
+        nonlocal idx
+        tmp_name = str(tmp_path / f"file_{idx}.bin")
+        idx += 1
         shutil.copy2(src, tmp_name)
         return tmp_name
 

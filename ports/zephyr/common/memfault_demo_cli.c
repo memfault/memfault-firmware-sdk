@@ -13,7 +13,8 @@
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/fota.h"
-#include "zephyr_release_specific_headers.h"
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 // clang-format on
 
 static int prv_clear_core_cmd(const struct shell *shell, size_t argc, char **argv) {

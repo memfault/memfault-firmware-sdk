@@ -14,9 +14,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "esp_idf_version.h"
 #include "esp_intr_alloc.h"
 #include "esp_partition.h"
-#include "memfault/esp_port/version.h"
 
 // The include order below, especially 'soc/uart_reg.h' and 'soc/soc.h', is
 // significant to support the various ESP-IDF versions, where the definitions
@@ -362,7 +362,7 @@ static void prv_panic_safe_putstr(const char *str) {
   }
 }
 
-bool memfault_platform_coredump_save_begin(void) {
+bool memfault_port_coredump_save_begin(void) {
   // Update task watchdog bookkeeping, if it's enabled
   memfault_task_watchdog_bookkeep();
 
@@ -376,12 +376,8 @@ bool memfault_platform_coredump_save_begin(void) {
   #if !defined(ETS_INT_WDT_INUM)
     #define ETS_INT_WDT_INUM (ETS_T1_WDT_INUM)
   #endif
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
   esp_intr_disable_source(ETS_INT_WDT_INUM);
-  #else
-  ESP_INTR_DISABLE(ETS_INT_WDT_INUM);
-  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-#endif    // defined(CONFIG_ESP_INT_WDT)
+#endif  // defined(CONFIG_ESP_INT_WDT)
 
   prv_panic_safe_putstr("Saving Memfault Coredump!\r\n");
   return (memfault_esp_spi_flash_coredump_begin() == 0);

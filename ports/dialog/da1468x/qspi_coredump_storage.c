@@ -145,10 +145,10 @@ bool memfault_platform_saving_coredump(void) {
   return s_memfault_using_qspi;
 }
 
-// We need to override the weak nop version of memfault_platform_coredump_save_begin()
+// We need to override the weak nop version of memfault_port_coredump_save_begin()
 // to check if it's safe to use the flash with interrupts disabled. We just need to call
 // our checker function added to ad_flash.c in the Dialog SDK.
-bool memfault_platform_coredump_save_begin(void) {
+bool memfault_port_coredump_save_begin(void) {
   bool memfault_ad_flash_is_locked(void);  // Defined in ad_flash.c, not in a header file
   bool memfault_ad_nvms_direct_is_locked(
     void);  // Defined in ad_nvms_direct.c, not in a header file

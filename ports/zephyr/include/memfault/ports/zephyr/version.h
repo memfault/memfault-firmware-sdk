@@ -40,6 +40,12 @@ extern "C" {
   ((KERNEL_VERSION_MAJOR > (major)) ||                  \
    ((KERNEL_VERSION_MAJOR == (major)) && (KERNEL_VERSION_MINOR > (minor))))
 
+//! Returns true if current Zephyr Kernel Version is greater than or equal to the one specified.
+//! Does not support "development" versions.
+#define MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(major, minor) \
+  ((KERNEL_VERSION_MAJOR > (major)) ||                   \
+   ((KERNEL_VERSION_MAJOR == (major)) && (KERNEL_VERSION_MINOR >= (minor))))
+
 #ifdef __cplusplus
 }
 #endif

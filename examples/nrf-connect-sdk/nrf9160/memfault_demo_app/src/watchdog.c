@@ -14,7 +14,6 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(device.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/watchdog.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
-#include <version.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/version.h"
@@ -38,29 +37,23 @@ struct k_thread my_thread_data;
 // properties. The new preferred approach is accessing resources via the DEVICE_DT_GET macro
 static const struct device *s_wdt = DEVICE_DT_GET(DT_NODELABEL(wdt));
 
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 1)
-static const struct device *s_wdt = NULL;
-#else  // Zephyr Kernel <= 2.1
-static struct device *s_wdt = NULL;
-#endif
-
-#if KERNEL_VERSION_MAJOR == 2 && KERNEL_VERSION_MINOR < 3
-  #define WDT_DEV_NAME DT_WDT_0_NAME
 #else
-  //! Watchdog device tree name changed in NCS v2.0.0 :
-  //! https://github.com/nrfconnect/sdk-zephyr/blob/12ee4d5f4b99acef542ce3977cb9078fcbb36d82/dts/arm/nordic/nrf9160_common.dtsi#L368
-  //! Pick the one that's available in the current SDK version.
-  #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
-    #define WDT_NODE_NAME nordic_nrf_wdt
-  #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
-    #define WDT_NODE_NAME nordic_nrf_watchdog
-  #else
-    #error "No compatible watchdog instance for this configuration!"
-  #endif
-
-  #define WDT_NODE DT_INST(0, WDT_NODE_NAME)
-  #define WDT_DEV_NAME DT_LABEL(WDT_NODE)
+static const struct device *s_wdt = NULL;
 #endif
+
+//! Watchdog device tree name changed in NCS v2.0.0 :
+//! https://github.com/nrfconnect/sdk-zephyr/blob/12ee4d5f4b99acef542ce3977cb9078fcbb36d82/dts/arm/nordic/nrf9160_common.dtsi#L368
+//! Pick the one that's available in the current SDK version.
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
+  #define WDT_NODE_NAME nordic_nrf_wdt
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
+  #define WDT_NODE_NAME nordic_nrf_watchdog
+#else
+  #error "No compatible watchdog instance for this configuration!"
+#endif
+
+#define WDT_NODE DT_INST(0, WDT_NODE_NAME)
+#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
 
 static int s_wdt_channel_id = -1;
 

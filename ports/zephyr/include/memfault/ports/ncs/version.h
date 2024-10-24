@@ -13,25 +13,7 @@ extern "C" {
 #endif
 
 //! NCS Version was introduced in nRF Connect SDK >= 1.4
-#if __has_include("ncs_version.h")
-
-  #include "ncs_version.h"
-
-//! modem/bsdlib.h was introduced in nRF Connect SDK 1.3
-#elif __has_include("modem/bsdlib.h")
-
-  #define NCS_VERSION_MAJOR 1
-  #define NCS_VERSION_MINOR 3
-  #define NCS_PATCHLEVEL 0
-
-#else
-
-  //! The lowest version the memfault-firmware-sdk has been ported to
-  #define NCS_VERSION_MAJOR 1
-  #define NCS_VERSION_MINOR 2
-  #define NCS_PATCHLEVEL 0
-
-#endif
+#include "ncs_version.h"
 
 //! Returns true if current nRF Connect Version is greater than the one specified
 //!

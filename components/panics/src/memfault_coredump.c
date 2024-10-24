@@ -440,7 +440,7 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   }
 
   if (!compute_size_only) {
-    if (!memfault_platform_coredump_save_begin()) {
+    if (!memfault_port_coredump_save_begin() || !memfault_platform_coredump_save_begin()) {
       return false;
     }
 
@@ -526,6 +526,10 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
 }
 
 MEMFAULT_WEAK bool memfault_platform_coredump_save_begin(void) {
+  return true;
+}
+
+MEMFAULT_WEAK bool memfault_port_coredump_save_begin(void) {
   return true;
 }
 

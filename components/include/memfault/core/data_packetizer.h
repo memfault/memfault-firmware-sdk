@@ -20,11 +20,12 @@
 extern "C" {
 #endif
 
-//! Fills buffer with a chunk when there is data available
+//! Fill buffer with a chunk when there is data available
 //!
 //! NOTE: This is the simplest way to interact with the packetizer. The API call returns a single
 //! "chunk" to be forwarded out over the transport topology to the Memfault cloud. For more
 //! advanced control over chunking, the lower level APIs exposed below in this module can be used.
+//! @note This function must not be called from an ISR context.
 //!
 //! @param[out] buf The buffer to copy data to be sent into
 //! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated
@@ -54,10 +55,13 @@ typedef enum {
 //! transport path.
 #define MEMFAULT_PACKETIZER_MIN_BUF_LEN 9
 
-//! @return true if there is data available to send, false otherwise
+//! Check if there is data available to send
 //!
-//! This can be used to check if there is any data to send prior to opening a connection over the
-//! underlying transport to the internet
+//! @note This can be used prior to opening a connection over the underlying transport to the
+//! internet
+//! @note This function must not be called from an ISR context.
+//!
+//! @return true if there is data available to send, false otherwise
 bool memfault_packetizer_data_available(void);
 
 typedef struct {
@@ -87,6 +91,10 @@ typedef struct {
   uint32_t single_chunk_message_length;
 } sPacketizerMetadata;
 
+//! Initialize the packetizer and get metadata about the message to be sent
+//!
+//! @note This function must not be called from an ISR context.
+//!
 //! @return true if there is data available to send, false otherwise.
 bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata *metadata_out);
 
@@ -106,6 +114,7 @@ bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata
 //! this API up to the cloud _reliably_ and _in-order_.
 //! @note The api is not threadsafe. The expectation is that a user will drain data from a single
 //! thread or otherwise wrap the call with a mutex
+//! @note This function must not be called from an ISR context.
 //!
 //! @param[out] buf The buffer to copy data to be sent into
 //! @param[in,out] buf_len The size of the buffer to copy data into. On return, populated

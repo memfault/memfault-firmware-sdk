@@ -102,15 +102,24 @@ int memfault_event_storage_persist(void);
 
 #endif
 
-//! Simple API call to retrieve the number of bytes used in the allocated event storage buffer.
-//! Returns zero if the storage has not been allocated.
+//! Retrieve the number of bytes used in the allocated event storage buffer.
+//!
+//! @note This function must not be called from an ISR context.
+//!
+//! @return zero if the storage has not been allocated.
 size_t memfault_event_storage_bytes_used(void);
 
-//! Simple API call to retrieve the number of bytes free (unused) in the allocated event storage
-//! buffer. Returns zero if the storage has not been allocated.
+//! Retrieve the number of bytes free (unused) in the allocated event storage
+//! buffer.
+//!
+//! @note This function must not be called from an ISR context.
+//!
+//! @return zero if the storage has not been allocated.
 size_t memfault_event_storage_bytes_free(void);
 
 //! Check if event storage component has booted
+//!
+//! @note This function must not be called from an ISR context.
 //!
 //! @returns true if event storage booted or false if not
 bool memfault_event_storage_booted(void);
