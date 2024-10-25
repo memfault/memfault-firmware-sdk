@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "memfault/components.h"
+
 typedef struct UART_t {
   volatile uint32_t DATA;
   volatile uint32_t STATE;
@@ -129,20 +131,29 @@ extern void UsageFault_Handler(void);
 
 // A minimal vector table for a Cortex M.
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
-  __stack,  // initial stack pointer
-  Reset_Handler,
-  NMI_Handler,
-  HardFault_Handler,
-  MemoryManagement_Handler,
-  BusFault_Handler,
-  UsageFault_Handler,
-  0,
-  0,
-  0,
-  0,
-  vPortSVCHandler,     /* SVC_Handler              -5 */
-  0,                   /* DebugMon_Handler         -4 */
-  0,                   /* reserved */
-  xPortPendSVHandler,  /* PendSV handler    -2 */
-  xPortSysTickHandler, /* SysTick_Handler   -1 */
+  __stack,                        // initial stack pointer
+  Reset_Handler,                  // 1
+  NMI_Handler,                    // 2
+  HardFault_Handler,              // 3
+  MemoryManagement_Handler,       // 4
+  BusFault_Handler,               // 5
+  UsageFault_Handler,             // 6
+  0,                              // 7, reserved
+  0,                              // 8, reserved
+  0,                              // 9, reserved
+  0,                              // 10, reserved
+  vPortSVCHandler,                // 11 SVC_Handler              -5
+  0,                              // 12 DebugMon_Handler         -4
+  0,                              // 13 reserved */
+  xPortPendSVHandler,             // 14 PendSV handler    -2
+  xPortSysTickHandler,            // 15 SysTick_Handler   -1
+  0,                              // 16 UART 0
+  0,                              // 17 UART 0
+  0,                              // 18 UART 1
+  0,                              // 19 UART 1
+  0,                              // 20 UART 2
+  0,                              // 21 UART 2
+  0,                              // 22 GPIO 0
+  0,                              // 23 GPIO 1
+  MEMFAULT_EXC_HANDLER_WATCHDOG,  // 24 Timer 0
 };

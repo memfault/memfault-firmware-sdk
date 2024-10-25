@@ -138,6 +138,34 @@ static int prv_session_crash(int argc, char *argv[]) {
   return 0;
 }
 
+// Note: this callback is invoked from exception context
+void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
+                                     eMemfaultRebootReason reason) {
+  if (reason == kMfltRebootReason_SoftwareWatchdog) {
+    printf("Entered Watchdog interrupt...\n");
+  }
+}
+
+static int prv_watchdog_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  printf("🐶 Triggering a simulated watchdog!\n");
+
+  // enable external interrupt 8
+  const uint32_t interrupt_num = 8;
+  *(uint32_t *)0xE000E100 |= 1 << (interrupt_num);
+
+  // set the bit in the NVIC register to trigger external
+  // interrupt 8
+  *(uint32_t *)0xE000E200 = 1 << (interrupt_num);
+
+  printf("✅ Returned from watchdog!\n");
+
+  // while (1) { };
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -169,6 +197,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .handler = prv_session_crash,
     .help = "Trigger a crash during a session",
   },
+  {
+    .command = "watchdog",
+    .handler = prv_watchdog_cmd,
+    .help = "Trigger a simulated watchdog interrupt",
+  }
 };
 #endif
 

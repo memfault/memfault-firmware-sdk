@@ -106,7 +106,6 @@ static uint32_t prv_read_msp_reg(void) {
 MEMFAULT_WEAK void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
                                                    MEMFAULT_UNUSED eMemfaultRebootReason reason) { }
   #endif /* MEMFAULT_PLATFORM_FAULT_HANDLER_CUSTOM */
-
 MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   memfault_platform_fault_handler(regs, reason);
 
@@ -173,6 +172,13 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
   if (coredump_saved) {
     memfault_reboot_tracking_mark_coredump_saved();
   }
+
+  #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  if (reason == kMfltRebootReason_SoftwareWatchdog) {
+    // In this configuration, just return from the fault handler
+    return;
+  }
+  #endif
 
   #if !MEMFAULT_FAULT_HANDLER_RETURN
   memfault_platform_reboot();
@@ -300,6 +306,9 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   ldr r0, =0x8006 // kMfltRebootReason_SoftwareWatchdog
   ldr r1, =memfault_fault_handling_shim
   bx r1
+#if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  bx lr
+#endif
   ALIGN
 }
 
@@ -355,6 +364,10 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   __asm(" mov r0, #0x8006 \n"  // kMfltRebootReason_SoftwareWatchdog
         " b memfault_fault_handling_shim \n");
+
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  __asm("bx lr");
+    #endif
 }
 
   #elif defined(__GNUC__) || defined(__clang__)
@@ -382,7 +395,7 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        "ldr r1, =%c0 \n"             \
                        "b memfault_fault_handler \n" \
                        :                             \
-                       : "i"((uint16_t)_x))
+                       : "i"((uint32_t)_x))
     #else
       #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
         __asm volatile("mov r0, lr \n"                 \
@@ -403,7 +416,7 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        "ldr r1, =%c0 \n"               \
                        "b memfault_fault_handler \n"   \
                        :                               \
-                       : "i"((uint16_t)_x))
+                       : "i"((uint32_t)_x))
     #endif
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {
@@ -435,6 +448,10 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
+
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  __asm volatile("bx lr");
+    #endif
 }
 
   #elif defined(__ICCARM__)
@@ -515,6 +532,10 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
+
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  __asm volatile("bx lr");
+    #endif
 }
 
   #else

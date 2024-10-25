@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED2] - xxxx-xx-xx
+
+### 📈 Added
+
+- General:
+
+  - A new option `MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN` has been added to
+    permit returning from the fault handler after handling a watchdog reset,
+    instead of rebooting. This option is disabled by default.
+
 ## [1.16.0] - 2024-10-24
 
 ### 🔥 Removed
