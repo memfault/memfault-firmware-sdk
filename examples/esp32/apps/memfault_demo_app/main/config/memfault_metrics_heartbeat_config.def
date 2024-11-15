@@ -2,7 +2,7 @@
 
 // File for holding custom metrics:
 //   https://mflt.io/embedded-metrics
-MEMFAULT_METRICS_KEY_DEFINE(PosterTaskNumSchedules, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(ota_check_count, kMemfaultMetricType_Unsigned)
 
 #if defined(CONFIG_APP_MEMFAULT_TRANSPORT_MQTT)
 MEMFAULT_METRICS_KEY_DEFINE(mqtt_publish_bytes, kMemfaultMetricType_Unsigned)

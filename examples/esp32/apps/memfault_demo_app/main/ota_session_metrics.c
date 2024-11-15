@@ -61,9 +61,11 @@ void ota_session_metrics_end(int ota_error_code) {
   // error code
   MEMFAULT_METRIC_SESSION_SET_SIGNED(ota_error_code, ota, ota_error_code);
 
-  // read last recorded station RSSI. this is reset every heartbeat in
+  // Read last recorded station RSSI. this is reset every heartbeat in
   // ports/esp_idf/memfault/common/memfault_platform_metrics.c, so this gives us
-  // a reasonably recent RSSI reading.
+  // a reasonably recent RSSI reading. Note: esp_wifi_sta_get_rssi() was added
+  // in v5.2 and back-ported to 4.4.8/5.0.7/5.1.5, so there's no version check
+  // here.
   int rssi;
   esp_err_t err = esp_wifi_sta_get_rssi(&rssi);
   if (err == ESP_OK) {

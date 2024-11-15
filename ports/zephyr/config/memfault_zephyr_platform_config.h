@@ -97,6 +97,11 @@ extern "C" {
   #define MEMFAULT_CDR_ENABLE 1
 #endif
 
+// Defaults to 1, so only disable if Kconfig setting is unset
+#if !defined(CONFIG_MEMFAULT_METRICS_LOGS_ENABLE)
+  #define MEMFAULT_METRICS_LOGS_ENABLE 0
+#endif
+
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 
   // Pick up any user configuration overrides. This should be kept at the bottom

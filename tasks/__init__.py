@@ -21,7 +21,7 @@ SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
 @task(
     help={
         "coverage": "Generate coverage report",
-        "rule": "Override default make rule to run",
+        "rule": "Override default make rule to run, eg run 'clean' instead. Sets no_pytest=True",
         "test_filter": "Test filter expression, eg '*metrics*'",
         "test_dir": "Test directory (typically tests/)",
         "extra_make_options": "Extra make options",
@@ -41,10 +41,9 @@ def fw_sdk_unit_test(
 ):
     """Runs unit tests"""
 
-    if rule == "clean":
-        builddir = os.path.abspath(os.path.join(test_dir, "build"))
-        ctx.run(f"rm -rf {builddir}")
-        return
+    if rule:
+        # if a rule is specified, use Make-based test runner
+        no_pytest = True
 
     # Check if it's necessary to set the CPPUTEST_HOME variable; Macos (brew)
     # and conda environment requires this

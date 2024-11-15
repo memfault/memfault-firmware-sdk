@@ -21,7 +21,6 @@ static uint8_t s_log_buf_storage[512];
 
 // Use Memfault logging level to filter messages
 static eMemfaultPlatformLogLevel s_min_log_level = MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL;
-static const char *s_log_prefix = "MFLT";
 
 void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo){
@@ -32,21 +31,6 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
   };
 }
 
-static const char *prv_level_to_str(eMemfaultPlatformLogLevel level) {
-  switch (level) {
-    case kMemfaultPlatformLogLevel_Debug:
-      return "DEBG";
-    case kMemfaultPlatformLogLevel_Info:
-      return "INFO";
-    case kMemfaultPlatformLogLevel_Warning:
-      return "WARN";
-    case kMemfaultPlatformLogLevel_Error:
-      return "ERRO";
-    default:
-      return "????";
-  }
-}
-
 void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
   char log_buf[MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES];
 
@@ -54,10 +38,27 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   va_start(args, fmt);
 
   if (level >= s_min_log_level) {
-    const char *level_name = prv_level_to_str(level);
-
     vsnprintf(log_buf, sizeof(log_buf), fmt, args);
-    printf("%s:[%s] %s\n", s_log_prefix, level_name, log_buf);
+    // If needed, additional data could be emitted in the log line (timestamp,
+    // etc). Here we'll insert ANSI color codes depending on log level.
+    switch (level) {
+      case kMemfaultPlatformLogLevel_Debug:
+        printf("\033[0;32m");
+        break;
+      case kMemfaultPlatformLogLevel_Info:
+        printf("\033[0;37m");
+        break;
+      case kMemfaultPlatformLogLevel_Warning:
+        printf("\033[0;33m");
+        break;
+      case kMemfaultPlatformLogLevel_Error:
+        printf("\033[0;31m");
+        break;
+      default:
+        break;
+    }
+    printf("%s", log_buf);
+    printf("\033[0m\n");
   }
 
   va_end(args);
@@ -111,6 +112,8 @@ void memfault_metrics_heartbeat_collect_data(void) {
 }
 
 int memfault_platform_boot(void) {
+  puts(MEMFAULT_BANNER_COLORIZED);
+
   memfault_freertos_port_boot();
 
   memfault_platform_reboot_tracking_boot();

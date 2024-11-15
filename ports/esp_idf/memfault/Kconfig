@@ -28,6 +28,14 @@ menu "Memfault"
         help
             Logs stored in this buffer will be captured as part of a Memfault Coredump
 
+    config MEMFAULT_METRICS_LOGS_ENABLE
+        bool "Enable collection of metrics for log message counts"
+        default y
+        help
+          When enabled, Memfault will collect metrics for log messages.
+          This can be useful for tracking the number of logs generated
+          by the system.
+
     config MEMFAULT_CLI_ENABLED
         bool "Enables the Memfault CLI"
         default y
@@ -364,7 +372,7 @@ endif
 
         config MEMFAULT_HTTP_PERIODIC_UPLOAD_STACK_SIZE
             int "Stack size for periodic upload task"
-            default 3600
+            default 4096
 
         config MEMFAULT_HTTP_PERIODIC_UPLOAD_PRIORITY
             int "Priority of periodic upload task"
@@ -387,7 +395,47 @@ endif
             bool "Upload log buffer in addition to other data"
             default n
 
-    endif
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA
+            bool "Execute OTA during periodic HTTP check-in"
+            default n
+            help
+                When enabled, the device will check for an OTA update during
+                the periodic HTTP check-in. If an update is available, it will
+                be downloaded and installed. For more details and options, see
+                "memfault/esp_port/http_client.h" in the Memfault SDK.
+
+        config MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS
+            bool "Use custom OTA callbacks"
+            default n
+            depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA
+            help
+                When enabled, the user can provide custom callbacks to be
+                executed during the OTA process by defining
+                g_memfault_ota_update_handler.
+
+    endif  # MEMFAULT_HTTP_PERIODIC_UPLOAD
+
+    config MEMFAULT_USE_NTP
+        bool "Use NTP to set the system time"
+        default y
+        help
+            When enabled, the Memfault SDK will use NTP to set the system time.
+            This is used for timestamping events on device. Disable this config to
+            use a custom time syncing method.
+
+    config MEMFAULT_NTP_SERVER
+        string "NTP server to use"
+        default "pool.ntp.org"
+        depends on MEMFAULT_USE_NTP
+        help
+            The NTP server to use for setting the system time.
+
+    config MEMFAULT_SYSTEM_TIME
+        bool "Use system time for event timestamps"
+        default y
+        help
+            When enabled, the Memfault SDK will timestamp events with the
+            on-device system time, `time()`.
 
 endmenu
 

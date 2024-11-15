@@ -20,3 +20,5 @@
 
 // Enable adding custom demo shell commands
 #define MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS 1
+
+#define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 1

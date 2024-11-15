@@ -311,16 +311,19 @@ cleanup:
 }
 
 int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
+  char *download_url = NULL;
+  int rv;
+
   if ((handler == NULL) || (handler->handle_update_available == NULL) ||
       (handler->handle_download_complete == NULL)) {
-    return MemfaultInternalReturnCode_InvalidInput;
+    rv = MemfaultInternalReturnCode_InvalidInput;
+    goto cleanup;
   }
 
-  char *download_url = NULL;
-  int rv = memfault_esp_port_ota_get_release_url(&download_url);
+  rv = memfault_esp_port_ota_get_release_url(&download_url);
 
   if ((rv != 0) || (download_url == NULL)) {
-    return rv;
+    goto cleanup;
   }
 
   printf("Download URL: %s\n", download_url);
@@ -365,6 +368,10 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 
 cleanup:
   free(download_url);
+
+  if (handler->handle_ota_done) {
+    handler->handle_ota_done(rv, handler->user_ctx);
+  }
   return rv;
 }
 

@@ -308,28 +308,28 @@ void memfault_register_cli(void) {
     .command = "assert",
     .help =
       "Trigger an assert; optional arg of 1=assert(), 2=MEMFAULT_ASSERT(), 3=ESP_ERROR_CHECK(-1)",
-    .hint = "assert type",
+    .hint = "<assert_type>",
     .func = prv_esp32_assert_example,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "crash",
     .help = "Trigger a crash",
-    .hint = "crash type",
+    .hint = "<crash_type>",
     .func = memfault_demo_cli_cmd_crash,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "esp_crash",
     .help = "Trigger a timer isr crash",
-    .hint = NULL,
+    .hint = "<crash_type>",
     .func = prv_esp32_crash_example,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "leak",
     .help = "Allocate the specified number of bytes without freeing",
-    .hint = NULL,
+    .hint = "<num_bytes>",
     .func = prv_esp32_leak_cmd,
   }));
 
@@ -345,6 +345,12 @@ void memfault_register_cli(void) {
     .help = "Trigger capture of current log buffer contents",
     .hint = NULL,
     .func = memfault_demo_cli_cmd_trigger_logs,
+  }));
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "test_trace",
+    .help = "Capture an example trace event with an optional custom log message",
+    .hint = "<log>",
+    .func = memfault_demo_cli_cmd_trace_event_capture,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){

@@ -84,6 +84,11 @@ extern "C" {
   #endif
 #endif
 
+// Defaults to 1, so only disable if Kconfig setting is unset
+#if !defined(CONFIG_MEMFAULT_METRICS_LOGS_ENABLE)
+  #define MEMFAULT_METRICS_LOGS_ENABLE 0
+#endif
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL

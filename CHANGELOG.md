@@ -6,6 +6,97 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2024-11-14
+
+### 📈 Added
+
+- General:
+
+  - Add parsing of an optional log message argument for the `test_trace` command
+    in the [core demo cli](components/demo). This argument will be inserted as a
+    custom log message with the trace event, which can be useful for testing the
+    insertion of custom log messages into trace events at runtime.
+
+  - Add the following built-in metrics, enabled by default (and quota-exempt):
+
+    - `MemfaultSDKMetric_log_recorded_lines` : the total number of log lines
+      written into the Memfault log buffer during the heartbeat interval
+    - `MemfaultSDKMetric_log_dropped_lines` : the total number of log lines
+      dropped (overwritten or not recorded) due to buffer exhaustion during the
+      heartbeat interval
+
+    For example, if the buffer is sufficiently large to store 10 logs, and 15
+    logs are written:
+
+    - `MemfaultSDKMetric_log_recorded_lines` will be 15
+    - `MemfaultSDKMetric_log_dropped_lines` will be 5
+
+    If 5 more logs are written:
+
+    - `MemfaultSDKMetric_log_recorded_lines` will be 20
+    - `MemfaultSDKMetric_log_dropped_lines` will be 10
+
+  - Cosmetic updates to the `examples/freertos/` app log format, including
+    applying ANSI color codes based on log level.
+
+    ```bash
+    # Before:
+    mflt> test_log
+    Raw log!
+    2024-11-14T17:01:12Z|4284 I Info log!
+    2024-11-14T17:01:12Z|4284 W Warning log!
+    2024-11-14T17:01:12Z|4284 E Error log!
+
+    # After:
+    mflt> test_log
+    Raw log!
+    MFLT:[INFO] Info log!
+    MFLT:[WARN] Warning log!
+    MFLT:[ERRO] Error log!
+    ```
+
+- ESP-IDF:
+
+  - Enable NTP time synchronization by default, controlled with the Kconfig
+    option `CONFIG_MEMFAULT_NTP_SYNC`. After NTP synchronization, events
+    (heartbeats and trace events) will be timestamped with the current device
+    time.
+
+  - Add a `test_trace` command to the ESP-IDF demo cli to capture an example
+    trace event. This behaves the same as the `test_trace` command in the
+    [core demo cli](components/demo).
+  - Mark coredumps with the `Software Watchdog` crash reason if the IWDT
+    triggered the fault, instead of marking them as `Hard Fault`.
+
+  - Add OTA update check-ins to the HTTP client's periodic upload, controlled
+    with the Kconfig option `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA`. When
+    enabled, the system will be restarted after downloading the update. To
+    customize this behavior, enable
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS`, and implement the
+    global callback struct `g_memfault_ota_update_handler`. This feature is
+    disabled by default.
+
+### 🐛 Fixed
+
+- General:
+
+  - Add missing type promotion rules for variants of `char` pointers when
+    encoding compact logs. Previously, these types that should promote to a
+    string in the compact logging encoding fell into the default case of `int`,
+    causing compact logging decode to fail when processed by the Memfault
+    backend.
+
+- ESP-IDF:
+
+  - Fix an issue when using compact logs with
+    `CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID=y` (default). The command would
+    always run (was always out-of-date) when any `idf.py [build|flash]` command
+    is run, even if the original .elf file did not change. This caused the
+    `log_fmt` section (used for decoding compact logs) to be removed from the
+    `/memfault-esp32-demo-app.elf.memfault_log_fmt` file, which causes Memfault
+    Compact Logs to fail to decode. The command is fixed to only run when the
+    .elf file changes.
+
 ## [1.16.0] - 2024-10-24
 
 ### 🔥 Removed
@@ -58,11 +149,17 @@ earlier versions!
     `memfault_reboot_tracking_load()` / `memfault_reboot_tracking_save()`
     functions to demonstrate the functionality.
 
+  - Added a Kconfig flag, `CONFIG_MEMFAULT_METRICS_LOGS_ENABLE`, to control the
+    new log lines metrics.
+
 - ESP-IDF:
 
   - New Kconfig setting, `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP`, to print the
     ESP-IDF reboot reason code on system boot, for debugging purposes. This
     feature is disabled by default.
+
+  - Added a Kconfig flag, `CONFIG_MEMFAULT_METRICS_LOGS_ENABLE`, to control the
+    new log lines metrics.
 
 ### 🛠️ Changed
 

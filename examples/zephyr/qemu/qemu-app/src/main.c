@@ -7,6 +7,7 @@
 
 // clang-format off
 #include "memfault/ports/zephyr/include_compatibility.h"
+#include <stdlib.h>
 
 #include MEMFAULT_ZEPHYR_INCLUDE(device.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(devicetree.h)
@@ -319,6 +320,25 @@ void memfault_reboot_tracking_save(const sMemfaultRebootTrackingStorage *src) {
   }
 }
 #endif  // defined(CONFIG_BBRAM)
+
+static int prv_log_overflow(const struct shell *shell, size_t argc, char **argv) {
+  // get log line count from command line
+  int log_line_count = 0;
+  if (argc > 1) {
+    log_line_count = strtoul(argv[1], NULL, 0);
+  }
+
+  for (int i = 0; i < log_line_count; i++) {
+    LOG_INF("Log line %d", i);
+  }
+
+  shell_print(shell, "Dropped/recorded log lines: %d/%d", memfault_log_get_dropped_count(),
+              memfault_log_get_recorded_count());
+
+  return 0;
+}
+
+SHELL_CMD_REGISTER(log_overflow, NULL, "generate a number of log lines", prv_log_overflow);
 
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);

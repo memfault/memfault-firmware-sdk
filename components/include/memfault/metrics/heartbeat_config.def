@@ -37,3 +37,8 @@ MEMFAULT_METRICS_KEY_DEFINE(battery_discharge_duration_ms, kMemfaultMetricType_U
 // require a 0-100% range, some will require 0-1000 (0-100.0%), etc. Use scale factor for non 0-100% representations
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_soc_pct, kMemfaultMetricType_Unsigned, MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE)
 #endif
+
+#if MEMFAULT_METRICS_LOGS_ENABLE
+MEMFAULT_METRICS_KEY_DEFINE(MemfaultSDKMetric_log_dropped_lines, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(MemfaultSDKMetric_log_recorded_lines, kMemfaultMetricType_Unsigned)
+#endif

@@ -39,11 +39,38 @@
 
   #ifdef __cplusplus
 
-  // C++ implementation of the type promotion logic
-  //
-  // Note: the C++ implementation requires the use of C++11 features and the GNU
-  // "##" variadic arg extension. Memfault Compact Logs in C++ require the
-  // compiler flag '--std=gnu++-11' or newer.
+  //! C++ type promotion logic
+  //!
+  //! This code defines the MemfaultLogArgPromotionType template structure, responsible for
+  //! determining the promotion type of different argument types passed to Memfault's logging
+  //! functions. This is important because certain types may need to be promoted to larger or
+  //! different types, ensuring consistent handling in logging The code uses C++11 features,
+  //! including SFINAE (Substitution Failure Is Not An Error) with std::enable_if, and the GNU ## va
+  //! args extension. It assumes the --std=gnu++11 compiler flag or newer.
+  //!
+  //! Structure definition:
+  //! 1. Default promotion to int64:
+  //!    - By default, if no other promotion rule applies, MemfaultLogArgPromotionType promotes the
+  //!    type to
+  //!      MEMFAULT_LOG_ARG_PROMOTED_TO_INT64, indicating that any unhandled type defaults to a
+  //!      64-bit integer.
+  //!
+  //! 2. Conditional promotion to int32:
+  //!    - If the size of the type T is less than or equal to 4 bytes (e.g., smaller integer types),
+  //!      MemfaultLogArgPromotionType promotes the type to MEMFAULT_LOG_ARG_PROMOTED_TO_INT32,
+  //!      allowing consistent handling for smaller integers.
+  //!
+  //! 3. Specialized promotions:
+  //!    - Specific types receive unique promotion constants:
+  //!      - Floating-point types (float, double, long double): Promoted to
+  //!      MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE.
+  //!      - String types (char* variants): Promoted to MEMFAULT_LOG_ARG_PROMOTED_TO_STR.
+  //!
+  //! Macro definition:
+  //! - _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg): This macro determines the promotion type of an
+  //! argument.
+  //!   The (arg) + 0 operation is used to enforce integer promotion for non-integer types, helping
+  //!   the compiler resolve the appropriate type for MemfaultLogArgPromotionType.
 
     #include <type_traits>
 
@@ -78,22 +105,43 @@ template <>
 struct MemfaultLogArgPromotionType<const char *>
     : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> { };
 
-    // When expressing the final type via the template parameter expansion, operate
-    // on (arg) + 0 to force integer promotion
+template <>
+struct MemfaultLogArgPromotionType<signed char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> { };
+
+template <>
+struct MemfaultLogArgPromotionType<const signed char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> { };
+
+template <>
+struct MemfaultLogArgPromotionType<unsigned char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> { };
+
+template <>
+struct MemfaultLogArgPromotionType<const unsigned char *>
+    : std::integral_constant<int, MEMFAULT_LOG_ARG_PROMOTED_TO_STR> { };
+
     #define _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg) \
       MemfaultLogArgPromotionType<decltype((arg) + 0)>::value
 
   #else  // C Code implementation
 
-  //! Preprocessor macro to encode promotion type info about each va_arg in a uint32_t
+  //! C type promotion logic
   //!
   //! Utilizes the rules around "default argument promotion" (specifically for va_args) defined in
   //! the C specification (http://www.iso-9899.info/wiki/The_Standard) to encode information about
   //! the width of arguments. (For more details see "6.5.2.2 Function calls" in the C11 Spec).
   //!
-  //! In short,
-  //!  - floats are always promoted to doubles
-  //!  - any other type < sizeof(int) is promoted to the width of an int
+  //! Promotion Rules:
+  //!  - Floating-point types (float, double, long double): Promoted to
+  //!  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE.
+  //!  - String types (char* variants): Promoted to MEMFAULT_LOG_ARG_PROMOTED_TO_STR.
+  //!  - Default case:
+  //!   - If the size of the argument is less than or equal to the size of an int, the type is
+  //!   promoted to
+  //!     MEMFAULT_LOG_ARG_PROMOTED_TO_INT32.
+  //!   - Otherwise, it defaults to MEMFAULT_LOG_ARG_PROMOTED_TO_INT64, for larger integer types.
+  //!   - Notably, bool and _BitInt(N) are safely promoted to int by falling into this case.
   //!
   //! NOTE 1: We use a special type for "strings" (i.e char *) so we know to encode the value
   //! pointed to (the actual NUL terminated string) in this situation rather than the pointer
@@ -118,15 +166,19 @@ struct MemfaultLogArgPromotionType<const char *>
 
   // clang-format off
 
-#define _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg)                           \
-  _Generic((arg) + 0,                                                   \
-           float:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,                 \
-           double:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,                \
-           long double:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,           \
-           char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,                    \
-           const char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,              \
-           default: sizeof((arg) + 0) <= sizeof(int) ?                  \
-              MEMFAULT_LOG_ARG_PROMOTED_TO_INT32 : MEMFAULT_LOG_ARG_PROMOTED_TO_INT64)
+    #define _MEMFAULT_LOG_ARG_PROMOTION_TYPE(arg)                          \
+      _Generic((arg) + 0,                                                  \
+              float:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,                 \
+              double:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,                \
+              long double:  MEMFAULT_LOG_ARG_PROMOTED_TO_DOUBLE,           \
+              char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,                    \
+              const char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,              \
+              signed char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,             \
+              const signed char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,       \
+              unsigned char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,           \
+              const unsigned char*:  MEMFAULT_LOG_ARG_PROMOTED_TO_STR,     \
+              default: sizeof((arg) + 0) <= sizeof(int) ?                  \
+                  MEMFAULT_LOG_ARG_PROMOTED_TO_INT32 : MEMFAULT_LOG_ARG_PROMOTED_TO_INT64)
 
   // clang-format on
 

@@ -352,31 +352,31 @@ MEMFAULT_NO_OPT static uint32_t prv_get_time_since_boot_test(void) {
   #define MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR (1706486400)
 
 static uint32_t prv_platform_time_get_current_test(void) {
-  sMemfaultCurrentTime time = {
+  sMemfaultCurrentTime mflt_time = {
     .type = kMemfaultCurrentTimeType_Unknown,
     .info = {
       .unix_timestamp_secs = 0,
     },
   };
-  bool result = memfault_platform_time_get_current(&time);
+  bool result = memfault_platform_time_get_current(&mflt_time);
   if (!result) {
     MEMFAULT_LOG_ERROR("Current timestamp could not be recovered");
     return (1 << 2);
   }
 
-  if (time.type != kMemfaultCurrentTimeType_UnixEpochTimeSec) {
-    MEMFAULT_LOG_ERROR("Invalid time type returned: %u", time.type);
+  if (mflt_time.type != kMemfaultCurrentTimeType_UnixEpochTimeSec) {
+    MEMFAULT_LOG_ERROR("Invalid time type returned: %u", mflt_time.type);
     return (1 << 3);
   }
 
-  if (time.info.unix_timestamp_secs < MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR) {
+  if (mflt_time.info.unix_timestamp_secs < MEMFAULT_SELF_TEST_TIMESTAMP_ANCHOR) {
     MEMFAULT_LOG_ERROR("Timestamp too far in the past: %" PRIu32,
-                       (uint32_t)time.info.unix_timestamp_secs);
+                       (uint32_t)mflt_time.info.unix_timestamp_secs);
     return (1 << 4);
   }
 
   MEMFAULT_LOG_INFO("Verify received timestamp for accuracy. Timestamp received %" PRIu32,
-                    (uint32_t)time.info.unix_timestamp_secs);
+                    (uint32_t)mflt_time.info.unix_timestamp_secs);
   return 0;
 }
 

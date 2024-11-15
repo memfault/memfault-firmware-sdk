@@ -48,6 +48,12 @@ typedef struct {
   //! This is typically where any final shutdown handler logic would be performed
   //! and esp_restart() would be called
   bool (*handle_download_complete)(void *user_ctx);
+
+  //! Called when the OTA process has completed (if the handle_download_complete
+  //! callback returns, i.e. doesn't reboot the system).
+  //!
+  //! @param status 0 if the OTA process completed successfully, else error code
+  void (*handle_ota_done)(int status, void *user_ctx);
 } sMemfaultOtaUpdateHandler;
 
 //! Handler which can be used to run OTA update using Memfault's Release Mgmt Infra
@@ -101,6 +107,12 @@ void memfault_esp_port_http_periodic_upload_start(void);
   #if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
 //! Enable or disable periodic log upload at runtime
 void memfault_esp_port_http_periodic_upload_logs(bool enable);
+  #endif
+
+  #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS)
+//! Set the OTA update handler callbacks for the periodic upload task
+extern sMemfaultOtaUpdateHandler g_memfault_ota_update_handler;
+
   #endif
 
 #endif

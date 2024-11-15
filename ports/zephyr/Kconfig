@@ -244,6 +244,14 @@ config MEMFAULT_LOGGING_RAM_SIZE
           defined in memfault_logging.c. Adjust this value to ensure enough
           room for a reasonalbe number of log entries.
 
+config MEMFAULT_METRICS_LOGS_ENABLE
+        bool "Enable collection of metrics for log message counts"
+        default y
+        help
+          When enabled, Memfault will collect metrics for log messages.
+          This can be useful for tracking the number of logs generated
+          by the system.
+
 endif # MEMFAULT_LOGGING_ENABLE
 
 config MEMFAULT_ROOT_CERT_STORAGE

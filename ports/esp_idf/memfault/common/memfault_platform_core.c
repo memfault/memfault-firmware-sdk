@@ -31,6 +31,25 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 
+#if defined(CONFIG_MEMFAULT_USE_NTP)
+// If ESP-IDF version < 5.1, print a warning and disable NTP. The API was added
+// in this commit:
+// https://github.com/espressif/esp-idf/commit/2f1d30d155411a90883e3166ad7c4a7ac5042a0f
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    #define MEMFAULT_USE_NTP 1
+  #else
+    #warning \
+      "CONFIG_MEMFAULT_USE_NTP is enabled but ESP-IDF version < v5.1. Set CONFIG_MEMFAULT_USE_NTP=n to suppress this warning."
+    #define MEMFAULT_USE_NTP 0
+  #endif
+#else
+  #define MEMFAULT_USE_NTP 0
+#endif  // defined(CONFIG_MEMFAULT_USE_NTP)
+
+#if MEMFAULT_USE_NTP
+  #include "esp_netif_sntp.h"
+#endif
+
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_RAM_SIZE];
 static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
 
@@ -225,6 +244,14 @@ void memfault_boot(void) {
 
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_AUTO_START)
   memfault_esp_port_http_periodic_upload_start();
+#endif
+
+#if MEMFAULT_USE_NTP
+  esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(CONFIG_MEMFAULT_NTP_SERVER);
+  const esp_err_t err = esp_netif_sntp_init(&config);
+  if (err != ESP_OK) {
+    MEMFAULT_LOG_ERROR("Failed to initialize SNTP, err %d", err);
+  }
 #endif
 }
 

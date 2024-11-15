@@ -138,7 +138,7 @@ void memfault_register_cli(void) {
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "crash",
     .help = "Trigger a crash to test coredump collection",
-    .hint = NULL,
+    .hint = "<crash_type>",
     .func = prv_crash_example,
   }));
 

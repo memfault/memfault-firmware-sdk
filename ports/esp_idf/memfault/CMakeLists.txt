@@ -106,6 +106,12 @@ if (CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
   )
 endif()
 
+if (CONFIG_MEMFAULT_SYSTEM_TIME)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_system_time.c
+  )
+endif()
+
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
   include
   include/${MEMFAULT_ESP_IDF_PORT}
@@ -335,8 +341,8 @@ if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
   # after component processing in the build process. Reconstruct it following the
   # same pattern, which works for typical idf.py builds.
 
-  idf_build_get_property(build_dir BUILD_DIR)
-  set(IDF_PROJECT_EXECUTABLE "${build_dir}/${CMAKE_PROJECT_NAME}.elf")
+  set(IDF_PROJECT_EXECUTABLE "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.elf")
+  idf_build_get_property(python PYTHON)
 
   add_custom_command(OUTPUT "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
     # Compute and insert the build id
@@ -348,6 +354,10 @@ if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
     COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
     # Remove the 'log_fmt' compact log section, which confuses elf2image
     COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
+    # Update the timestamp of the .memfault_log_fmt file to be newer than its
+    # just-edited dependency, ${IDF_PROJECT_EXECUTABLE}, so that the custom
+    # target doesn't run every time
+    COMMAND ${CMAKE_COMMAND} -E touch "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
     DEPENDS "${IDF_PROJECT_EXECUTABLE}"
   )
 

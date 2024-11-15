@@ -72,7 +72,7 @@ wheels = [
 
 [[package]]
 name = "mflt-build-id"
-version = "1.0.2"
+version = "1.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "pyelftools" },
@@ -83,7 +83,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-timeout" },
-    { name = "wasmer" },
 ]
 
 [package.metadata]
@@ -94,7 +93,6 @@ dev = [
     { name = "pytest", specifier = ">=6" },
     { name = "pytest-cov", specifier = ">=2,<3" },
     { name = "pytest-timeout", specifier = ">=2.0,<3.0" },
-    { name = "wasmer", specifier = "==0.3.0" },
 ]
 
 [[package]]
@@ -197,12 +195,4 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588 },
-]
-
-[[package]]
-name = "wasmer"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/91/03f6a73ebce72f0bc208314403d74bf6b11082f689e9693a3dfafd75b105/wasmer-0.3.0-py3-none-any.whl", hash = "sha256:1d2c337425721fd9ac6c6b17698ef8a9795b236a38b0e3c85872a5845ffb0d90", size = 1338 },
 ]

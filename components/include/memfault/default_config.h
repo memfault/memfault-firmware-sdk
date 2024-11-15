@@ -342,6 +342,11 @@ extern "C" {
   #define MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE 1
 #endif
 
+//! Enable tracking the number of log lines dropped in this interval
+#ifndef MEMFAULT_METRICS_LOGS_ENABLE
+  #define MEMFAULT_METRICS_LOGS_ENABLE 1
+#endif
+
 //! Disable Metrics Sessions at compile time. This saves a small amount of
 //! memory but prevents the use of Metrics Sessions.
 #ifndef MEMFAULT_METRICS_SESSIONS_ENABLED

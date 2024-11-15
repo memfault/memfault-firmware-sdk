@@ -527,11 +527,33 @@ MEMFAULT_WEAK void memfault_metrics_heartbeat_collect_data(void) { }
 
 MEMFAULT_WEAK void memfault_metrics_heartbeat_collect_sdk_data(void) { }
 
+#if MEMFAULT_METRICS_LOGS_ENABLE
+static void prv_memfault_collect_log_metrics(void) {
+  static uint32_t last_log_dropped_count = 0;
+  static uint32_t last_log_recorded_count = 0;
+  const uint32_t log_dropped_count = memfault_log_get_dropped_count();
+  const uint32_t log_recorded_count = memfault_log_get_recorded_count();
+
+  // Note: this will wrap when the counts overflow, but as long as there aren't
+  // > UINT32_MAX dropped/recorded lines in a single heartbeat, the arithmetic
+  // will be valid.
+  const uint32_t delta_log_dropped_count = log_dropped_count - last_log_dropped_count;
+  last_log_dropped_count = log_dropped_count;
+  MEMFAULT_METRIC_ADD(MemfaultSDKMetric_log_dropped_lines, (int32_t)delta_log_dropped_count);
+  const uint32_t delta_log_recorded_count = log_recorded_count - last_log_recorded_count;
+  last_log_recorded_count = log_recorded_count;
+  MEMFAULT_METRIC_ADD(MemfaultSDKMetric_log_recorded_lines, (int32_t)delta_log_recorded_count);
+}
+#endif
+
 // This function calls built in metrics collection functions.
 static void prv_collect_builtin_data(void) {
   memfault_metrics_reliability_collect();
 #if MEMFAULT_METRICS_BATTERY_ENABLE
   memfault_metrics_battery_collect_data();
+#endif
+#if MEMFAULT_METRICS_LOGS_ENABLE
+  prv_memfault_collect_log_metrics();
 #endif
 }
 

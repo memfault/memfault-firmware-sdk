@@ -45,3 +45,9 @@ options:
   --crc CRC
   --sha1 SHA1
 ```
+
+## Changes
+
+### [1.1.0] - 2024-11-07
+
+- Remove support for Python 3.6 + 3.7

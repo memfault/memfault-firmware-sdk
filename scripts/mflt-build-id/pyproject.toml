@@ -1,6 +1,6 @@
 [project]
 name = "mflt-build-id"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
   "pyelftools >=0.31,<0.32",
 ]
@@ -11,5 +11,4 @@ dev-dependencies = [
   "pytest >=6",
   "pytest-cov >=2,<3",
   "pytest-timeout >=2.0,<3.0",
-  "wasmer ==0.3.0",
 ]

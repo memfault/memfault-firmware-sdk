@@ -14,6 +14,7 @@
 #include "freertos/task.h"
 #include "memfault/config.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/http_client.h"
 
 #define PERIODIC_UPLOAD_TASK_NAME "mflt_periodic_upload"
@@ -22,6 +23,38 @@
 // Runtime configurable
 static bool s_mflt_upload_logs;
 #endif
+
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA)
+  // Set default callbacks. Ideally we'd use a weak symbol here instead of a
+  // Kconfig, but that's complicated due to ESP-IDF linking components as static
+  // libraries.
+  #if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS)
+static bool prv_handle_ota_upload_available(void *user_ctx) {
+  MEMFAULT_LOG_INFO("Starting OTA download ...");
+
+  return true;
+}
+
+static bool prv_handle_ota_download_complete(void *user_ctx) {
+  MEMFAULT_LOG_INFO("OTA Update Complete, Rebooting System");
+
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
+
+  esp_restart();
+  return true;
+}
+sMemfaultOtaUpdateHandler g_memfault_ota_update_handler = {
+  .user_ctx = NULL,
+  .handle_update_available = prv_handle_ota_upload_available,
+  .handle_download_complete = prv_handle_ota_download_complete,
+  .handle_ota_done = NULL,
+};
+  #endif  // !CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS
+
+static void prv_do_periodic_ota(void) {
+  memfault_esp_port_ota_update(&g_memfault_ota_update_handler);
+}
+#endif  // CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA
 
 // Periodically post any Memfault data that has not yet been posted.
 static void prv_periodic_upload_task(void *args) {
@@ -36,26 +69,32 @@ static void prv_periodic_upload_task(void *args) {
   const uint32_t duration_secs_minimum = interval_secs >= 60 ? 60 : 5;
   const uint32_t duration_secs = duration_secs_minimum + (esp_random() % interval_secs);
 
-  const TickType_t initial_duration_ms_ticks = (1000 * duration_secs) / portTICK_PERIOD_MS;
+  const TickType_t initial_delay_ms_ticks = (1000 * duration_secs) / portTICK_PERIOD_MS;
   const TickType_t interval_ms_ticks = (1000 * interval_secs) / portTICK_PERIOD_MS;
 
-  MEMFAULT_LOG_INFO("periodic_upload task up, initial duration=%" PRIu32 "s period=%" PRIu32 "s",
-                    initial_duration_ms_ticks, interval_ms_ticks);
+  MEMFAULT_LOG_INFO("periodic_upload task up, initial delay=%" PRIu32 "s period=%" PRIu32 "s",
+                    initial_delay_ms_ticks, interval_ms_ticks);
 
-  vTaskDelay(initial_duration_ms_ticks);
+  vTaskDelay(initial_delay_ms_ticks);
 
   while (true) {
+    if (memfault_esp_port_netif_connected()) {
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
-    memfault_log_trigger_collection();
-#else
-    if (s_mflt_upload_logs) {
       memfault_log_trigger_collection();
-    }
+#else
+      if (s_mflt_upload_logs) {
+        memfault_log_trigger_collection();
+      }
 #endif
 
-    int err = memfault_esp_port_http_client_post_data();
-    if (err) {
-      MEMFAULT_LOG_ERROR("Post data failed: %d", err);
+      int err = memfault_esp_port_http_client_post_data();
+      if (err) {
+        MEMFAULT_LOG_ERROR("Post data failed: %d", err);
+      }
+
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA)
+      prv_do_periodic_ota();
+#endif
     }
 
     // sleep

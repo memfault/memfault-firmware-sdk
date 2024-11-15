@@ -14,6 +14,7 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_reboot_tracking.cpp \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_metrics_reliability.cpp \
   $(MFLT_TEST_STUB_DIR)/stub_memfault_log_save.c \
+  $(MFLT_TEST_STUB_DIR)/stub_memfault_log.c \
 
 TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_session_metrics_debug.cpp \

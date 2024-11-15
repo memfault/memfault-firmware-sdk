@@ -108,6 +108,9 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
     case PANIC_EXCEPTION_DEBUG:
       reason = kMfltRebootReason_DebuggerHalted;
       break;
+    case PANIC_EXCEPTION_IWDT:
+      reason = kMfltRebootReason_SoftwareWatchdog;
+      break;
     default:
       // Default to HardFault until other reasons are handled
       reason = kMfltRebootReason_HardFault;

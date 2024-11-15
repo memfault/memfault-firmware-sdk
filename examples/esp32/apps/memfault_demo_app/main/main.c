@@ -150,7 +150,7 @@ static void initialize_console() {
 MEMFAULT_ALIGNED(4) static IRAM_ATTR uint8_t s_my_buf[10];
 void *g_unaligned_buffer;
 
-  #if CONFIG_MEMFAULT_APP_OTA
+  #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS)
 
 static bool prv_handle_ota_upload_available(void *user_ctx) {
   // set blue when performing update
@@ -173,55 +173,54 @@ static bool prv_handle_ota_download_complete(void *user_ctx) {
   MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_FirmwareUpdate);
 
   esp_restart();
-  return true;
+
+  MEMFAULT_LOG_ERROR("OTA reboot failed");
+
+  return false;
 }
 
-static void prv_memfault_ota(void) {
-  if (!memfault_esp_port_wifi_connected()) {
-    return;
-  }
-
-  sMemfaultOtaUpdateHandler handler = {
-    .user_ctx = NULL,
-    .handle_update_available = prv_handle_ota_upload_available,
-    .handle_download_complete = prv_handle_ota_download_complete,
-  };
-
-  MEMFAULT_LOG_INFO("Checking for OTA Update");
-
-  int rv = memfault_esp_port_ota_update(&handler);
+static void prv_handle_ota_done(int status, void *user_ctx) {
+  // count the number of times the check has run
+  MEMFAULT_METRIC_ADD(ota_check_count, 1);
 
     #if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
   // Record the OTA check result using the built-in sync success metric
-  if (rv == 0 || rv == 1) {
+  if (status == 0 || status == 1) {
     memfault_metrics_connectivity_record_sync_success();
   } else {
     memfault_metrics_connectivity_record_sync_failure();
   }
     #endif
 
-  if (rv == 0) {
-    MEMFAULT_LOG_INFO("Up to date!");
+  if (status == 0) {
+    MEMFAULT_LOG_INFO("OTA up to date!");
     led_set_color(kLedColor_Green);
-  } else if (rv == 1) {
-    MEMFAULT_LOG_INFO("Update available!");
-  } else if (rv < 0) {
-    MEMFAULT_LOG_ERROR("OTA update failed, rv=%d", rv);
-
-    // End the OTA metric session, passing the non-zero error code
-    ota_session_metrics_end(rv);
+  } else if (status == 1) {
+    MEMFAULT_LOG_INFO("OTA update available, not installed");
+  } else if (status < 0) {
+    MEMFAULT_LOG_ERROR("OTA update failed, status=%d", status);
 
     // record a Trace Event when this happens, and freeze the log buffer to be
     // uploaded for diagnosis
-    MEMFAULT_TRACE_EVENT_WITH_LOG(ota_install_failure, "error code=%d", rv);
+    MEMFAULT_TRACE_EVENT_WITH_LOG(ota_install_failure, "error code=%d", status);
     memfault_log_trigger_collection();
+
+    // End the OTA metric session, passing the non-zero error code. This will
+    // also trigger a chunk post to upload data to Memfault, so it should be
+    // last in the error path here.
+    ota_session_metrics_end(status);
 
     led_set_color(kLedColor_Red);
   }
 }
-  #else
-static void prv_memfault_ota(void) { }
-  #endif  // CONFIG_MEMFAULT_APP_OTA
+
+sMemfaultOtaUpdateHandler g_memfault_ota_update_handler = {
+  .user_ctx = NULL,
+  .handle_update_available = prv_handle_ota_upload_available,
+  .handle_download_complete = prv_handle_ota_download_complete,
+  .handle_ota_done = prv_handle_ota_done,
+};
+  #endif  // CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS
 
   #if CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 void memfault_esp_port_wifi_autojoin(void) {
@@ -244,30 +243,25 @@ void memfault_esp_port_wifi_autojoin(void) {
 
   #endif  // CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN
 
-// Periodically post any Memfault data that has not yet been posted.
+// Periodically attempt to join wifi, if configured
 static void prv_ota_task(void *args) {
-  const TickType_t ota_check_interval = pdMS_TO_TICKS(60 * 60 * 1000);
+  const TickType_t wifi_join_interval = pdMS_TO_TICKS(5 * 60 * 1000);
 
-  MEMFAULT_LOG_INFO("OTA task up and running every %" PRIu32 "s.", ota_check_interval);
+  MEMFAULT_LOG_INFO("WiFi autojoin task up and running every %" PRIu32 "s.", wifi_join_interval);
 
   while (true) {
-    // count the number of times this task has run
-    MEMFAULT_METRIC_ADD(PosterTaskNumSchedules, 1);
   // attempt to autojoin wifi, if configured
   #if defined(CONFIG_MEMFAULT_APP_WIFI_AUTOJOIN)
     memfault_esp_port_wifi_autojoin();
   #endif
 
-    // Wait until connected to check for OTA
-    if (memfault_esp_port_wifi_connected()) {
-      prv_memfault_ota();
-    } else {
+    if (!memfault_esp_port_wifi_connected()) {
       // Set LED to red
       led_set_color(kLedColor_Red);
     }
 
     // sleep
-    vTaskDelay(ota_check_interval);
+    vTaskDelay(wifi_join_interval);
   }
 }
 

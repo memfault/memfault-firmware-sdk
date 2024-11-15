@@ -31,11 +31,9 @@ def run_arm_toolchain_check(ctx):
 
     arm_toolchain = shutil.which("arm-none-eabi-gcc")
     if arm_toolchain is None:
-        msg = (
-            "Couldn't find arm toolchain. Currently using {} which can be" " found here {}".format(
-                "8-2018-q4-major",
-                "https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads",
-            )
+        msg = "Couldn't find arm toolchain. Currently using {} which can be found here {}".format(
+            "8-2018-q4-major",
+            "https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads",
         )
 
         raise FileNotFoundError(msg)

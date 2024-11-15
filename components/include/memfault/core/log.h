@@ -230,6 +230,13 @@ void memfault_log_trigger_collection(void);
 //! @returns true if log component has booted or false if not
 bool memfault_log_booted(void);
 
+//! Return the count of lines that were not recorded into the logging buffer due
+//! to lack of space. Monotonically incrementing from boot.
+uint32_t memfault_log_get_dropped_count(void);
+
+//! Return the count of lines that have been written to the logging buffer.
+uint32_t memfault_log_get_recorded_count(void);
+
 #ifdef __cplusplus
 }
 #endif
