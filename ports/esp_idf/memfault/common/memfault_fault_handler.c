@@ -3,9 +3,10 @@
 //! Copyright (c) Memfault, Inc.
 //! See LICENSE for details
 //!
-//! Hooks
+//! Fault handler hook into ESP-IDF's fault handling system.
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_idf_version.h"
 // keep the esp_idf_version.h include above for version-specific support
@@ -75,75 +76,20 @@ void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInf
   abort();
 }
 
-//! Invoked when a panic is detected in the esp-idf when coredumps are enabled
-//!
-//! @note This requires the following sdkconfig options:
-//!   CONFIG_ESP32_ENABLE_COREDUMP=y
-//!   CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y
-//!
-//! @note This is a drop in replacement for the pre-existing flash coredump handler.
-//! The default implementation is replaced by leveraging GCCs --wrap feature
-//!    https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/panic.c#L620
-//!
-//! @note The signature changed in esp-idf v5.3.0, back ported to v5.1.4 + v5.2.2.
-#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
-  ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
-   (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
-void __wrap_esp_core_dump_write(panic_info_t *info) {
-#else   // ESP_IDF_VERSION
-void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
-#endif  // ESP_IDF_VERSION
+//! Convert the esp-idf arch-specific frame info into the Memfault format
+static sMfltRegState prv_esp_frame_info_to_memfault(const void *frame) {
 #ifdef __XTENSA__
-  XtExcFrame *fp = (void *)info->frame;
-#elif __riscv
-  RvExcFrame *fp = (void *)info->frame;
-#endif  // __XTENSA__
+  const XtExcFrame *fp = frame;
 
-  eMemfaultRebootReason reason;
-
-  /*
-   * To better classify the exception, we need panic_info_t
-   */
-  switch (info->exception) {
-    case PANIC_EXCEPTION_DEBUG:
-      reason = kMfltRebootReason_DebuggerHalted;
-      break;
-    case PANIC_EXCEPTION_IWDT:
-      reason = kMfltRebootReason_SoftwareWatchdog;
-      break;
-    default:
-      // Default to HardFault until other reasons are handled
-      reason = kMfltRebootReason_HardFault;
-      break;
-  }
-
-#ifdef __XTENSA__
   // Clear "EXCM" bit so we don't have to correct PS.OWB to get a good unwind This will also be
   // more reflective of the state of the register prior to the "panicHandler" being invoked
   const uint32_t corrected_ps = fp->ps & ~(PS_EXCM_MASK);
 
-  sMfltRegState regs = {
+  sMfltRegState reg = {
     .collection_type = (uint32_t)kMemfaultEsp32RegCollectionType_ActiveWindow,
     .pc = fp->pc,
     .ps = corrected_ps,
-    .a = {
-      fp->a0,
-      fp->a1,
-      fp->a2,
-      fp->a3,
-      fp->a4,
-      fp->a5,
-      fp->a6,
-      fp->a7,
-      fp->a8,
-      fp->a9,
-      fp->a10,
-      fp->a11,
-      fp->a12,
-      fp->a13,
-      fp->a14,
-      fp->a15,
-    },
+
     .sar = fp->sar,
   // the below registers are not available on the esp32s2; leave them zeroed
   // in the coredump
@@ -156,36 +102,20 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
     .excvaddr = fp->excvaddr,
   };
 
-  // If enabled, check if exception was triggered by stackoverflow type
-  #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
-    /*
-     * See Xtensa ISA Debug Cause Register section:
-     * https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf#_OPENTOPIC_TOC_PROCESSING_d61e48262
-     */
-    // Mask to select bits indicating a data breakpoint/watchpoint
-    #define DBREAK_EXCEPTION_MASK (1 << 2)
+  // Bulk copy the general registers. This saves a substantial amount of code
+  // size compared to copying each register individually (~500 bytes).
+  MEMFAULT_STATIC_ASSERT(
+    sizeof(reg.a) == offsetof(XtExcFrame, a15) + sizeof(fp->a15) - offsetof(XtExcFrame, a0),
+    "register size mismatch");
+  memcpy(&reg.a, &fp->a0, sizeof(reg.a));
 
-    #define _WATCHPOINT_VAL_SHIFT (8)
-    #define _WATCHPOINT_VAL_MASK (0xF << _WATCHPOINT_VAL_SHIFT)
-    // Extracts DBNUM bits to determine watchpoint that triggered exception
-    #define WATCHPOINT_VAL_GET(reg) ((reg & _WATCHPOINT_VAL_MASK) >> _WATCHPOINT_VAL_SHIFT)
-    // Watchpoint to detect stack overflow
-    #define END_OF_STACK_WATCHPOINT_VAL (SOC_CPU_WATCHPOINTS_NUM - 1)
+  return reg;
 
-  if (info->exception == PANIC_EXCEPTION_DEBUG) {
-    // Read debugcause register into debug_cause local var
-    int debug_cause;
-    asm("rsr.debugcause %0" : "=r"(debug_cause));
-
-    // Check that DBREAK bit is set and that stack overflow watchpoint was the source
-    if ((debug_cause & DBREAK_EXCEPTION_MASK) &&
-        (WATCHPOINT_VAL_GET(debug_cause) == END_OF_STACK_WATCHPOINT_VAL)) {
-      reason = kMfltRebootReason_StackOverflow;
-    }
-  }
-  #endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
 #elif __riscv
-  sMfltRegState regs = {
+
+  const RvExcFrame *fp = frame;
+
+  return (sMfltRegState){
     .mepc = fp->mepc,
     .ra = fp->ra,
     .sp = fp->sp,
@@ -231,8 +161,105 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
     .mhartid = fp->mhartid,
   };
 #endif  // __XTENSA__
+}
 
-  memfault_fault_handler(&regs, reason);
+//! Invoked when a panic is detected in the esp-idf when coredumps are enabled
+//!
+//! @note This requires the following sdkconfig options:
+//!   CONFIG_ESP32_ENABLE_COREDUMP=y
+//!   CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH=y
+//!
+//! @note This is a drop in replacement for the pre-existing flash coredump handler.
+//! The default implementation is replaced by leveraging GCCs --wrap feature
+//!    https://github.com/espressif/esp-idf/blob/v4.0/components/esp32/panic.c#L620
+//!
+//! @note The signature changed in esp-idf v5.3.0, back ported to v5.1.4 + v5.2.2.
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 2)) || \
+  ((ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4)) &&  \
+   (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)))
+void __wrap_esp_core_dump_write(panic_info_t *info) {
+#else   // ESP_IDF_VERSION
+void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
+#endif  // ESP_IDF_VERSION
+  eMemfaultRebootReason reason;
+
+  /*
+   * To better classify the exception, we need panic_info_t
+   */
+  switch (info->exception) {
+    case PANIC_EXCEPTION_DEBUG:
+      reason = kMfltRebootReason_DebuggerHalted;
+      break;
+    case PANIC_EXCEPTION_IWDT:
+      reason = kMfltRebootReason_SoftwareWatchdog;
+      break;
+    default:
+      // Default to HardFault until other reasons are handled
+      reason = kMfltRebootReason_HardFault;
+      break;
+  }
+
+  sMfltRegState regs[MEMFAULT_COREDUMP_CPU_COUNT] = { 0 };
+
+#ifdef __XTENSA__
+  // We can get core_id from info->core or esp_cpu_get_core_id().
+  int core_id = info->core;
+
+  regs[core_id] = prv_esp_frame_info_to_memfault(info->frame);
+
+  #if MEMFAULT_COREDUMP_CPU_COUNT == 2
+    #if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3)
+      #error "Dual core support unavailable for this platform, please contact Memfault support"
+    #endif
+  // If available, the other core's registers are in the ESP-IDF global g_exc_frames. We only
+  // support dual-core SOCs currently.
+  int other_core_id = core_id ^ 1;
+  if (g_exc_frames[other_core_id] != NULL) {
+    regs[other_core_id] = prv_esp_frame_info_to_memfault(g_exc_frames[other_core_id]);
+  } else {
+    // If the other core's frame is not available, we can't collect a coredump
+    // for it. Mark it with the correct format for loading into Memfault, but
+    // leave all other data blank.
+    regs[other_core_id] = (sMfltRegState){
+      .collection_type = (uint32_t)kMemfaultEsp32RegCollectionType_ActiveWindow,
+    };
+  }
+
+  #endif  // MEMFAULT_COREDUMP_CPU_COUNT == 2
+
+  // If enabled, check if exception was triggered by stackoverflow type
+  #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+    /*
+     * See Xtensa ISA Debug Cause Register section:
+     * https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf#_OPENTOPIC_TOC_PROCESSING_d61e48262
+     */
+    // Mask to select bits indicating a data breakpoint/watchpoint
+    #define DBREAK_EXCEPTION_MASK (1 << 2)
+
+    #define _WATCHPOINT_VAL_SHIFT (8)
+    #define _WATCHPOINT_VAL_MASK (0xF << _WATCHPOINT_VAL_SHIFT)
+    // Extracts DBNUM bits to determine watchpoint that triggered exception
+    #define WATCHPOINT_VAL_GET(reg) ((reg & _WATCHPOINT_VAL_MASK) >> _WATCHPOINT_VAL_SHIFT)
+    // Watchpoint to detect stack overflow
+    #define END_OF_STACK_WATCHPOINT_VAL (SOC_CPU_WATCHPOINTS_NUM - 1)
+
+  if (info->exception == PANIC_EXCEPTION_DEBUG) {
+    // Read debugcause register into debug_cause local var
+    int debug_cause;
+    asm("rsr.debugcause %0" : "=r"(debug_cause));
+
+    // Check that DBREAK bit is set and that stack overflow watchpoint was the source
+    if ((debug_cause & DBREAK_EXCEPTION_MASK) &&
+        (WATCHPOINT_VAL_GET(debug_cause) == END_OF_STACK_WATCHPOINT_VAL)) {
+      reason = kMfltRebootReason_StackOverflow;
+    }
+  }
+  #endif  // defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK)
+#elif __riscv
+  regs[0] = prv_esp_frame_info_to_memfault(info->frame);
+#endif  // __XTENSA__
+
+  memfault_fault_handler(regs, reason);
 }
 
 // Ensure the substituted function signature matches the original function

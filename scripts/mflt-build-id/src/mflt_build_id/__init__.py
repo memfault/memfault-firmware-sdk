@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import struct
 import zlib
 from collections import defaultdict
@@ -482,6 +483,13 @@ def main() -> None:
     parser.add_argument("--dump", nargs="?", const=7, type=int)
     parser.add_argument("--crc", action="store")
     parser.add_argument("--sha1", action="store")
+    # get version from importlib.metadata
+    try:
+        version = importlib.metadata.version("mflt-build-id")
+    except importlib.metadata.PackageNotFoundError:
+        # script is being used without installation, provide a fall back version
+        version = "0.0.0"
+    parser.add_argument("--version", action="version", version=f"%(prog)s {version}")
 
     args = parser.parse_args()
 

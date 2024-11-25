@@ -22,7 +22,7 @@ the following commands to test the application:
 ❯ west build qemu-app
 ❯ west build --target run
 
-*** Booting Zephyr OS build zephyr-v3.2.0  ***
+*** Booting Zephyr OS build zephyr-v4.0.0  ***
 [00:00:00.000,000] <inf> mflt: GNU Build ID: 4ffb5879ed5923582035133086015bbf65504364
 [00:00:00.000,000] <inf> main: 👋 Memfault Demo App! Board qemu_cortex_m3
 

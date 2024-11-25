@@ -477,10 +477,24 @@ static bool prv_write_coredump_sections(const sMemfaultCoredumpSaveInfo *save_in
   const void *regs = save_info->regs;
   const size_t regs_size = save_info->regs_size;
   if (regs != NULL) {
+#if MEMFAULT_COREDUMP_CPU_COUNT == 1
     if (!prv_write_non_memory_block(kMfltCoredumpBlockType_CurrentRegisters, regs, regs_size,
                                     &write_ctx)) {
       return false;
     }
+#else
+    // If we have multiple CPUs, we need to save the registers for each CPU.
+    // save_info->regs is an array of CPU0, CPU1, etc. registers.
+    for (size_t i = 0; i < MEMFAULT_COREDUMP_CPU_COUNT; i++) {
+      const size_t cpu_regs_size = regs_size / MEMFAULT_COREDUMP_CPU_COUNT;
+      const uint32_t *cpu_regs = (const uint32_t *)((const uintptr_t)regs + (i * cpu_regs_size));
+
+      if (!prv_write_non_memory_block(kMfltCoredumpBlockType_CurrentRegisters, cpu_regs,
+                                      cpu_regs_size, &write_ctx)) {
+        return false;
+      }
+    }
+#endif
   }
 
   if (!prv_write_device_info_blocks(&write_ctx)) {

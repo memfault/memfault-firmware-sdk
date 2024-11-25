@@ -48,6 +48,12 @@ options:
 
 ## Changes
 
+### [1.1.1] - 2024-11-14
+
+- Fix `mflt_build_id` script to be installed correctly again (regression in
+  1.1.0)
+- Add an alternate name `mflt-build-id` for the `mflt_build_id` script
+
 ### [1.1.0] - 2024-11-07
 
 - Remove support for Python 3.6 + 3.7

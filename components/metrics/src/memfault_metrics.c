@@ -555,6 +555,9 @@ static void prv_collect_builtin_data(void) {
 #if MEMFAULT_METRICS_LOGS_ENABLE
   prv_memfault_collect_log_metrics();
 #endif
+#if MEMFAULT_METRICS_UPTIME_ENABLE
+  MEMFAULT_METRIC_SET_UNSIGNED(uptime_s, memfault_platform_get_time_since_boot_ms() / 1000);
+#endif
 }
 
 // Returns NULL if not a timer type or out of bounds index.

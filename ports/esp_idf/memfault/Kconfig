@@ -103,6 +103,17 @@ endif
             'memfault_platform_coredump_storage_get_info()' function to return
             the threshold value set here as the size of the partition..
 
+    config MEMFAULT_COREDUMP_CPU_COUNT
+        int "Number of CPU cores to include in coredumps"
+        default SOC_CPU_CORES_NUM
+        # Symbolic values in the range are not supported by
+        # confgen.py/esp-idf-kconfig until later versions (esp-idf 5+). Hard
+        # code to a max of 2.
+        range 1 2
+        help
+            The number of CPU cores to include in coredumps. By default, all
+            cores are included.
+
     config MEMFAULT_AUTOMATIC_INIT
         bool "[DEPRECATED] Automatically initialize the SDK when the system is booted"
         default n

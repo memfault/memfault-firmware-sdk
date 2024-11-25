@@ -99,15 +99,34 @@ MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
     #error "Unsupported Xtensa platform. Please visit https://mflt.io/contact-support"
   #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
 
+  #if MEMFAULT_COREDUMP_CPU_COUNT > 1
+    #if defined(__ZEPHYR__)
+      #error "Dual-core support not yet implemented for Zephyr Xtensa"
+    #else
+      #include "esp_cpu.h"
+
+    #endif
+
+static int prv_get_current_cpu_id(void) {
+  return esp_cpu_get_core_id();
+}
+  #endif  // MEMFAULT_COREDUMP_CPU_COUNT == 1
+
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
+  #if MEMFAULT_COREDUMP_CPU_COUNT == 1
+  const sMfltRegState *current_cpu_regs = regs;
+  #else
+  const int cpu_id = prv_get_current_cpu_id();
+  const sMfltRegState *current_cpu_regs = &regs[cpu_id];
+  #endif
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     // skip LR saving here.
-    prv_fault_handling_assert((void *)regs->pc, (void *)0, reason);
+    prv_fault_handling_assert((void *)current_cpu_regs->pc, (void *)0, reason);
   }
 
   sMemfaultCoredumpSaveInfo save_info = {
     .regs = regs,
-    .regs_size = sizeof(*regs),
+    .regs_size = sizeof(*regs) * MEMFAULT_COREDUMP_CPU_COUNT,
     .trace_reason = s_crash_reason,
   };
 
@@ -122,7 +141,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   // For the windowed ABI, a1 always holds the current "sp":
   //   https://github.com/espressif/esp-idf/blob/v4.0/components/freertos/readme_xtensa.txt#L421-L428
   const uint32_t windowed_abi_spill_size = 64;
-  const uint32_t sp_prior_to_exception = regs->a[1] - windowed_abi_spill_size;
+  const uint32_t sp_prior_to_exception = current_cpu_regs->a[1] - windowed_abi_spill_size;
 
   sCoredumpCrashInfo info = {
     .stack_address = (void *)sp_prior_to_exception,
@@ -139,7 +158,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
 
 size_t memfault_coredump_storage_compute_size_required(void) {
   // actual values don't matter since we are just computing the size
-  sMfltRegState core_regs = { 0 };
+  sMfltRegState core_regs[MEMFAULT_COREDUMP_CPU_COUNT] = { 0 };
   sMemfaultCoredumpSaveInfo save_info = {
     .regs = &core_regs,
     .regs_size = sizeof(core_regs),

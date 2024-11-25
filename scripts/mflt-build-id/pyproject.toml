@@ -6,6 +6,10 @@ dependencies = [
 ]
 requires-python = ">=3.8,<4.0"
 
+[project.scripts]
+mflt_build_id = 'mflt_build_id:main'
+mflt-build-id = 'mflt_build_id:main'
+
 [tool.uv]
 dev-dependencies = [
   "pytest >=6",

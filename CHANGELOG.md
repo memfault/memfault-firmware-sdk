@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2024-11-25
+
+### 📈 Added
+
+- General:
+
+  - Add a new built-in metric, `uptime_s`, which reports the total uptime of the
+    device in seconds. This metrics is enabled by default, and can be disabled
+    with `#define MEMFAULT_METRICS_UPTIME_ENABLE 0` in
+    `memfault_platform_config.h`.
+
+- Zephyr:
+
+  - Update the [QEMU sample app](examples/zephyr/qemu) to use newly-released
+    Zephyr v4.0.0 🥳.
+
+- ESP-IDF:
+
+  - Added support for dual-core coredumps on ESP32 and ESP32-S3. This feature is
+    enabled by default and can be disabled with the Kconfig option
+    `CONFIG_MEMFAULT_COREDUMP_CPU_COUNT=1`. Note: not all fault conditions will
+    cause both CPU cores to be captured in the coredump. The SDK will always
+    capture the core that triggered the fault, and if the non-faulting core is
+    available for capture, it will be included as well.
+
 ## [1.17.0] - 2024-11-14
 
 ### 📈 Added
@@ -43,16 +68,16 @@ and this project adheres to
     # Before:
     mflt> test_log
     Raw log!
-    2024-11-14T17:01:12Z|4284 I Info log!
-    2024-11-14T17:01:12Z|4284 W Warning log!
-    2024-11-14T17:01:12Z|4284 E Error log!
+    MFLT:[INFO] Info log!
+    MFLT:[WARN] Warning log!
+    MFLT:[ERRO] Error log!
 
     # After:
     mflt> test_log
     Raw log!
-    MFLT:[INFO] Info log!
-    MFLT:[WARN] Warning log!
-    MFLT:[ERRO] Error log!
+    2024-11-14T17:01:12Z|4284 I Info log!
+    2024-11-14T17:01:12Z|4284 W Warning log!
+    2024-11-14T17:01:12Z|4284 E Error log!
     ```
 
 - ESP-IDF:

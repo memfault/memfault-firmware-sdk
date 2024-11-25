@@ -84,6 +84,13 @@ extern "C" {
   #define MEMFAULT_COREDUMP_INCLUDE_BUILD_ID 1
 #endif
 
+//! Some architectures will support multiple cores. This is used by the
+//! architecture-specific coredump handling code to determine how many
+//! register sets to save.
+#ifndef MEMFAULT_COREDUMP_CPU_COUNT
+  #define MEMFAULT_COREDUMP_CPU_COUNT 1
+#endif
+
 //! Controls the truncation of the Build Id that is encoded in events
 //!
 //! The full Build Id hash is 20 bytes, but is truncated by default to save space. The
@@ -345,6 +352,11 @@ extern "C" {
 //! Enable tracking the number of log lines dropped in this interval
 #ifndef MEMFAULT_METRICS_LOGS_ENABLE
   #define MEMFAULT_METRICS_LOGS_ENABLE 1
+#endif
+
+//! Enable built in uptime metric tracking
+#ifndef MEMFAULT_METRICS_UPTIME_ENABLE
+  #define MEMFAULT_METRICS_UPTIME_ENABLE 1
 #endif
 
 //! Disable Metrics Sessions at compile time. This saves a small amount of

@@ -42,3 +42,7 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_soc_pct, kMemfaultMetricTyp
 MEMFAULT_METRICS_KEY_DEFINE(MemfaultSDKMetric_log_dropped_lines, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(MemfaultSDKMetric_log_recorded_lines, kMemfaultMetricType_Unsigned)
 #endif
+
+#if MEMFAULT_METRICS_UPTIME_ENABLE
+MEMFAULT_METRICS_KEY_DEFINE(uptime_s, kMemfaultMetricType_Unsigned)
+#endif
