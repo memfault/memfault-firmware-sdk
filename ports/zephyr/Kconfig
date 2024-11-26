@@ -219,6 +219,8 @@ config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
 config MEMFAULT_COMPACT_LOG
         bool "Enable compact logging"
         default n
+        select REQUIRES_STD_C11
+        select GNU_C_EXTENSIONS
         help
           When enabled, the Memfault SDK will use a compact representation
           for log messages written using the 'MEMFAULT_LOG_x' macros. Find more

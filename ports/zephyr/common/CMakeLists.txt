@@ -64,7 +64,10 @@ if (CONFIG_MEMFAULT_COMPACT_LOG)
   zephyr_linker_sources(SECTIONS memfault-compact-log.ld)
   # Compact logs requires a minimum C standard of gnu11, due to use of GNU
   # extensions and C11 features.
-  set_property(GLOBAL PROPERTY CSTD gnu11)
+  # Use global property CSTD if not already set by Zephyr config.
+  if (NOT (CONFIG_REQUIRES_STD_C11 AND CONFIG_GNU_C_EXTENSIONS))
+    set_property(GLOBAL PROPERTY CSTD gnu11)
+  endif()
 endif()
 
 if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
