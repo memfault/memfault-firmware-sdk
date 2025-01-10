@@ -4,22 +4,25 @@ This is a small example application showing a Memfault integration running on an
 nrf52840 development board, using the nRF Connect SDK. Any nRF board should also
 work. The example has been tested on:
 
-- nRF52840-DK
-- nRF5340-DK
+- nRF52840-DK (`nrf52840dk/nrf52840`)
+- nRF5340-DK (`nrf5340dk/nrf5340/cpuapp`)
+- nRF54L15-DK (`nrf54l15dk/nrf54l15/cpuapp`)
 
 ## Usage
 
 Make sure you have the Zephyr / nRF-Connect tools installed first:
 
-<https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.0.2/nrf/gs_installing.html>
+<https://docs.nordicsemi.com/bundle/ncs-2.9.0/page/nrf/installation/install_ncs.html>
 
-To build and flash this example to an nRF52840-DK (PCA10056), run the following
+This application is tested on nRF Connect SDK v2.9.0.
+
+To build and flash this example to an nRF5340-DK (PCA10095), run the following
 commands:
 
 ```bash
 ❯ west init --local memfault_demo_app
 ❯ west update
-❯ west build --board nrf52840dk_nrf52840 memfault_demo_app
+❯ west build --board nrf5340dk/nrf5340/cpuapp memfault_demo_app
 ❯ west flash
 ```
 

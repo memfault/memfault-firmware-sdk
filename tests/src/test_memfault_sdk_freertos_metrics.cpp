@@ -4,6 +4,7 @@
 #include "CppUTestExt/MockSupport.h"
 #include "comparators/comparator_memfault_metric_ids.hpp"
 #include "memfault/ports/freertos/metrics.h"
+#include "memfault/ports/freertos/thread_metrics.h"
 
 static MemfaultMetricIdsComparator s_metric_id_comparator;
 static uint32_t s_idle_task_run_time = 0;
@@ -49,6 +50,10 @@ uint32_t xTaskGetIdleRunTimeCounter(void) {
 uint32_t portGET_RUN_TIME_COUNTER_VALUE(void) {
   mock().actualCall(__func__);
   return s_total_run_time;
+}
+
+void memfault_freertos_port_thread_metrics(void) {
+  // stub
 }
 }
 

@@ -15,3 +15,10 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(cpu1_usage_pct, kMemfaultMetricType
 #if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES
 MEMFAULT_METRICS_KEY_DEFINE(timer_task_stack_free_bytes, kMemfaultMetricType_Unsigned)
 #endif
+
+#if MEMFAULT_METRICS_THREADS_DEFAULTS
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle_pct_max, kMemfaultMetricType_Unsigned,
+                                             MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_tmr_svc_pct_max, kMemfaultMetricType_Unsigned,
+                                             MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+#endif

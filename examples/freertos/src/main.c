@@ -14,6 +14,7 @@
 #include "heap_task.h"
 #include "memfault/components.h"
 #include "metrics.h"
+#include "mpu.h"
 #include "task.h"
 
 // Next two functions from:
@@ -83,8 +84,45 @@ void compact_log_c_example(void) {
 #endif  // MEMFAULT_COMPACT_LOG_ENABLE
 }
 
+// Add a custom _sbrk() implementation.
+// The default implementation in newlib has a check to make sure the heap does not grow past the
+// current stack pointer (indicating it's overlapping the active stack). This check doesn't work
+// correctly in our FreeRTOS setup, where the thread stacks are allocated in .data, which is always
+// at a lower address than the heap. This implementation removes that check.
+// https://github.com/bminor/newlib/blob/1a0908203606527b6ac0ed438669b5bcd247a5f9/newlib/libc/sys/arm/syscalls.c#L524
+//
+// This is our memory layout:
+//  [.data/.bss]
+//  [heap]
+//   | (grows up)
+//   ↓
+//   ↑
+//   | (grows down)
+//  [stack] <- end of RAM
+void *_sbrk(ptrdiff_t incr) {
+  static char *heap_end;
+  char *prev_heap_end;
+
+  if (heap_end == NULL) {
+    extern uint32_t _heap_bottom;
+    heap_end = (char *)&_heap_bottom;
+  }
+
+  prev_heap_end = heap_end;
+  extern uint32_t _heap_top;
+  if (heap_end + incr > (char *)&_heap_top) {
+    return (void *)-1;
+  }
+
+  heap_end += incr;
+
+  return (void *)prev_heap_end;
+}
+
 int main(void) {
   memfault_platform_boot();
+
+  mpu_init();
 
   heap_task_init();
 

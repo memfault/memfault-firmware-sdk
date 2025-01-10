@@ -138,6 +138,22 @@ static int prv_session_crash(int argc, char *argv[]) {
   return 0;
 }
 
+static int prv_leak_memory(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  // Allocate memory and leak it
+  if (argc > 1) {
+    unsigned long size = strtoul(argv[1], NULL, 0);
+    void *leaked_memory = malloc(size);
+    if (leaked_memory == NULL) {
+      MEMFAULT_LOG_RAW("Failed to allocate memory");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -169,6 +185,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .handler = prv_session_crash,
     .help = "Trigger a crash during a session",
   },
+  {
+    .command = "leak",
+    .handler = prv_leak_memory,
+    .help = "Allocate memory and leak it. Usage: leak <num_bytes>",
+  }
 };
 #endif
 

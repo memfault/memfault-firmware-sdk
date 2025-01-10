@@ -9,6 +9,7 @@
 
 #include "memfault/metrics/metrics.h"
 #include "memfault/ports/freertos/metrics.h"
+#include "memfault/ports/freertos/thread_metrics.h"
 
 #if !defined(MEMFAULT_METRICS_HEARTBEAT_FREERTOS_CONFIG_DEF)
   #error \
@@ -200,5 +201,9 @@ void memfault_freertos_port_task_runtime_metrics(void) {
 
 #if MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES
   prv_record_timer_stack_free_bytes();
+#endif
+
+#if MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS
+  memfault_freertos_port_thread_metrics();
 #endif
 }

@@ -26,6 +26,7 @@ config MEMFAULT_APP_CAPTURE_ALL_RAM
 #
 # Keep 'source "Kconfig.zephyr"' at the end of this file so this default takes
 # precedence.
+if MEMFAULT_NCS_INTERNAL_FLASH_BACKED_COREDUMP
 config PM_PARTITION_SIZE_MEMFAULT_STORAGE
     hex "Size of the Memfault storage partition"
     # The default size is set to one page above the total RAM size on the
@@ -33,7 +34,7 @@ config PM_PARTITION_SIZE_MEMFAULT_STORAGE
     # registers. This size needs to be flash page-aligned ("minimum eraseable
     # unit").
     default 0x41000 if MEMFAULT_APP_CAPTURE_ALL_RAM
-
+endif
 endmenu
 
 source "Kconfig.zephyr"

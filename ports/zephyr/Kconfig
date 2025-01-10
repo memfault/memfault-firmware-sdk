@@ -130,6 +130,7 @@ config MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
         depends on THREAD_STACK_INFO && !STACK_GROWS_UP && INIT_STACKS
         help
           Adds thread stack usage computed during fault handling into a coredump.
+
 config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
        int "Maximum amount of bytes to collect for task"
        default 256
@@ -154,6 +155,25 @@ config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
        default 32
        help
         The maximum amount of tasks Memfault will store state for in a coredump.
+
+config MEMFAULT_COREDUMP_COLLECT_MPU_STATE
+        bool "Include MPU state in coredump"
+        default y
+        depends on CPU_CORTEX_M
+        depends on ARM_MPU
+        help
+          When enabled, the MPU state will be captured as part
+          of the coredump. This adds
+          8 + 8 * MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT bytes to the coredump.
+
+config MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT
+        int "Maximum amount of MPU regions to collect in a coredump"
+        default 8
+        range 1 16
+        depends on MEMFAULT_COREDUMP_COLLECT_MPU_STATE
+        help
+          The maximum amount of MPU regions Memfault will store state for in a
+          coredump.
 
 endmenu  # Memfault Coredump Settings
 
@@ -465,6 +485,12 @@ config MEMFAULT_METRICS_EXTRA_DEFS_FILE
         'memfault_metrics_heartbeat_extra.def'. This can be useful for third party
         libraries that want to include additional default metrics.
 
+config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
+       int "The interval in seconds between heartbeats"
+       default 3600
+       help
+        The interval in seconds between heartbeat metrics tallying.
+
 config MEMFAULT_METRICS_TIMER_CUSTOM
        bool "Provide a custom implementation of Memfault Metric Deps"
        default n
@@ -500,7 +526,7 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
 config MEMFAULT_METRICS_CPU_TEMP
         bool "Enable collection of CPU temperature metrics"
         default y
-        depends on ADC && SENSOR && ("$(dt_alias_enabled,die-temp0)" != "")
+        depends on SENSOR && "$(dt_alias_enabled,die-temp0)"
         help
          Memfault CPU temperature metric component. Requires a `die-temp0`
          device tree node.
@@ -560,6 +586,34 @@ config MEMFAULT_METRICS_MEMORY_USAGE
         depends on SYS_HEAP_RUNTIME_STATS
         help
          Collects Memfault metrics for memory usage stats.
+
+config MEMFAULT_METRICS_THREADS
+        bool "Enable collection of per-thread metrics"
+        default y
+        depends on THREAD_STACK_INFO
+        help
+         Collects Memfault metrics for thread stats. See
+         memfault/ports/zephyr/thread_metrics.h on how to register threads for
+         metrics.
+
+config MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
+        int "Scale factor for memory metrics"
+        default 100
+        depends on MEMFAULT_METRICS_THREADS
+        help
+         The scale factor to use for memory metrics. The value recorded is
+         multiplied by this factor before being stored in the metric. For
+         example, if stack usage is 50.00%, and the scale factor is 100, the
+         value stored in the metric will be 5000, and is scaled back to 50.00%
+         when Memfault's cloud processes the data.
+
+config MEMFAULT_METRICS_THREADS_DEFAULTS
+        bool "Enable collection of default thread metrics"
+        default y
+        depends on MEMFAULT_METRICS_THREADS
+        help
+         Enables default set of threads to track metrics on (idle, sysworkq). If
+         providing a custom set of threads to track, disable this option.
 
 endif # MEMFAULT_METRICS
 

@@ -75,7 +75,7 @@ TEST(MemfaultTaskWatchdog, Test_Expire) {
   s_fake_time_ms = MEMFAULT_TASK_WATCHDOG_TIMEOUT_INTERVAL_MS + 1;
 
   sMemfaultAssertInfo extra_info = {
-    .assert_reason = kMfltRebootReason_SoftwareWatchdog,
+    .assert_reason = kMfltRebootReason_TaskWatchdog,
   };
   mock()
     .expectOneCall("memfault_fault_handling_assert_extra")
@@ -133,7 +133,7 @@ TEST(MemfaultTaskWatchdog, Test_ExpireWrapAround) {
     s_fake_time_ms += 1;
 
     sMemfaultAssertInfo extra_info = {
-      .assert_reason = kMfltRebootReason_SoftwareWatchdog,
+      .assert_reason = kMfltRebootReason_TaskWatchdog,
     };
     mock()
       .expectOneCall("memfault_fault_handling_assert_extra")

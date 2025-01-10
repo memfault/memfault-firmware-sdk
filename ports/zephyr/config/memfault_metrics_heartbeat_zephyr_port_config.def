@@ -9,6 +9,13 @@ MEMFAULT_METRICS_KEY_DEFINE(TimerTaskFreeStack, kMemfaultMetricType_Unsigned)
   #endif
 
   #if defined(CONFIG_THREAD_RUNTIME_STATS)
+
+  // stats.total_cycles added in Zephyr 3.0
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
+// Two decimal places of precision
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(cpu_usage_pct, kMemfaultMetricType_Unsigned, 100)
+  #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
+
 MEMFAULT_METRICS_KEY_DEFINE(TimerTaskCpuUsage, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(AllTasksCpuUsage, kMemfaultMetricType_Unsigned)
   #endif
@@ -32,7 +39,7 @@ MEMFAULT_METRICS_KEY_DEFINE(net_tcp_sent, kMemfaultMetricType_Unsigned)
 
 MEMFAULT_METRICS_KEY_DEFINE(net_bytes_received, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(net_bytes_sent, kMemfaultMetricType_Unsigned)
-#endif  // defined(MEMFAULT_METRICS_TCP_IP)
+#endif  // defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
 
 #if defined(CONFIG_MEMFAULT_METRICS_WIFI)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
@@ -55,6 +62,14 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_pct_max, kMemfaultMetricType
 
 MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)
 #endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle_pct_max, kMemfaultMetricType_Unsigned,
+                                             CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_sysworkq_pct_max, kMemfaultMetricType_Unsigned,
+                                             CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+#endif  // defined(CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS)
 
 #if defined(CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE)
   #include "memfault_metrics_heartbeat_extra.def"

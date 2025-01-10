@@ -1,6 +1,6 @@
 # Memfault Demo App
 
-A modified version of the the samples/nrf9160/https_client in the nRF Connect
+A modified version of the the `samples/nrf9160/https_client` in the nRF Connect
 SDK which includes a Memfault Integration!
 
 ## Setup
@@ -18,7 +18,7 @@ targeting the nRF91 PDK would look like:
 $ west init -l memfault_demo_app
 $ west update
 # Replace ${YOUR_PROJECT_KEY} with the Project Key from https://mflt.io/project-key
-$ west build -b nrf9160dk_nrf9160_ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
+$ west build -b nrf9160dk/nrf9160/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
 ...
 [181/181] Linking C executable zephyr/zephyr.elf
 ```
@@ -29,7 +29,7 @@ Note that the board argument (`-b`) for the nRF9160DK has changed across release
 
 Commands to test the integration are exposed under the `mflt` submenu in the CLI
 
-```
+```bash
 uart:~$ mflt help
 mflt - Memfault Test Commands
 Subcommands:

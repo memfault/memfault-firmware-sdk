@@ -63,7 +63,6 @@ extern void vAssertCalled(const char *file, int line);
 #define configMINIMAL_STACK_SIZE ((unsigned short)1000)
 #define configMINIMAL_SECURE_STACK_SIZE (1024)
 #define configTOTAL_HEAP_SIZE ((size_t)(2048))
-#define configMAX_TASK_NAME_LEN (10)
 #define configUSE_TRACE_FACILITY 1
 #define configUSE_16_BIT_TICKS 0
 #define configIDLE_SHOULD_YIELD 1

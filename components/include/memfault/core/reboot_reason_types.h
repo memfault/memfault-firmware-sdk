@@ -101,6 +101,9 @@ typedef enum MEMFAULT_PACKED MfltResetReason {
   // A reset due to stack overflow
   kMfltRebootReason_StackOverflow = 0x800B,
 
+  // Task Watchdog reset type
+  kMfltRebootReason_TaskWatchdog = 0x800C,
+
   // Resets from Arm Faults
   kMfltRebootReason_BusFault = 0x9100,
   kMfltRebootReason_MemFault = 0x9200,

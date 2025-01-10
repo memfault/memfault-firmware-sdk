@@ -71,7 +71,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     .software_type = "zephyr-app",
     .software_version =
       CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_SOFTWARE_VERSION "+" ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1,
-    .hardware_version = CONFIG_BOARD,
+    .hardware_version = CONFIG_BOARD_TARGET,
   };
 }
 
@@ -163,10 +163,11 @@ static void prv_collect_main_thread_run_stats(void) {
   // Note: execution_cycles = idle + non-idle, total_cycles = non-idle
   uint64_t current_cpu_total_cycles = rt_stats_all.execution_cycles - s_prev_cpu_all_cycles;
 
-  // Calculate permille of main thread execution vs total CPU time
-  // Multiply permille factor first to avoid truncating lower bits after integer division
+  // Calculate percent of main thread execution vs total CPU time. The metric is
+  // defined as scaled *10- the value is recorded as percent * 10 (1000), and
+  // will be scaled down on ingestion to a float.
   uint32_t main_thread_cpu_time = (current_main_thread_cycles * 1000) / current_cpu_total_cycles;
-  MEMFAULT_METRIC_SET_UNSIGNED(main_thread_cpu_time_permille, main_thread_cpu_time);
+  MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_main_pct, main_thread_cpu_time);
 
   // Update previous values
   s_prev_main_thread_cycles = current_main_thread_cycles;
@@ -341,7 +342,7 @@ static int prv_log_overflow(const struct shell *shell, size_t argc, char **argv)
 SHELL_CMD_REGISTER(log_overflow, NULL, "generate a number of log lines", prv_log_overflow);
 
 int main(void) {
-  LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
+  LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD_TARGET);
   memfault_device_info_dump();
 
   memfault_cdr_register_source(&g_custom_data_recording_source);

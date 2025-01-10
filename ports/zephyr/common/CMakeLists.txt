@@ -7,9 +7,10 @@ zephyr_library_sources(memfault_platform_system_time.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_fota.c)
-zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_METRICS_THREADS memfault_platform_thread_metrics.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP memfault_platform_ram_backed_coredump.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE memfault_tls_root_cert_storage.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL_SELF_TEST memfault_self_test_platform.c)
 
 if (NOT CONFIG_MEMFAULT_METRICS_TIMER_CUSTOM)
@@ -63,8 +64,12 @@ if (CONFIG_MEMFAULT_COMPACT_LOG)
   # Enable support for compact logs by adding the required linker section
   zephyr_linker_sources(SECTIONS memfault-compact-log.ld)
   # Compact logs requires a minimum C standard of gnu11, due to use of GNU
-  # extensions and C11 features.
-  set_property(GLOBAL PROPERTY CSTD gnu11)
+  # extensions and C11 features. Zephyr 3.7.0+ adds a Kconfig-native setting to
+  # enable this. If unset, fallback to deprecated global CSTD property (for
+  # pre-3.7.0).
+  if (NOT (CONFIG_REQUIRES_STD_C11 AND CONFIG_GNU_C_EXTENSIONS))
+    set_property(GLOBAL PROPERTY CSTD gnu11)
+  endif()
 endif()
 
 if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)

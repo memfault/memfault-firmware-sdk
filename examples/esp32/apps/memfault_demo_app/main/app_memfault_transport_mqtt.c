@@ -127,8 +127,8 @@ void prv_build_topic_string(void) {
 
 void app_memfault_transport_init(void) {
 #if MEMFAULT_FREERTOS_PORT_USE_STATIC_ALLOCATION != 0
-  static StaticSemaphore_t s_mqtt_connected;
-  s_mqtt_connected = xSemaphoreCreateBinaryStatic(&s_mqtt_connected);
+  static StaticSemaphore_t s_mqtt_connected_buf;
+  s_mqtt_connected = xSemaphoreCreateBinaryStatic(&s_mqtt_connected_buf);
 #else
   s_mqtt_connected = xSemaphoreCreateBinary();
 #endif

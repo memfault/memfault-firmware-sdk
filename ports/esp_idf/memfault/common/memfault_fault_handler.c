@@ -15,6 +15,7 @@
 #include "esp_core_dump.h"
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
+#include "esp_private/system_internal.h"
 #ifdef __XTENSA__
   #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
     #include "xtensa_api.h"
@@ -183,9 +184,7 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
 #endif  // ESP_IDF_VERSION
   eMemfaultRebootReason reason;
 
-  /*
-   * To better classify the exception, we need panic_info_t
-   */
+  // Convert ESP-IDF panic reason to Memfault reboot reason
   switch (info->exception) {
     case PANIC_EXCEPTION_DEBUG:
       reason = kMfltRebootReason_DebuggerHalted;
@@ -193,9 +192,22 @@ void __wrap_esp_core_dump_to_flash(panic_info_t *info) {
     case PANIC_EXCEPTION_IWDT:
       reason = kMfltRebootReason_SoftwareWatchdog;
       break;
+    case PANIC_EXCEPTION_TWDT:
+      reason = kMfltRebootReason_TaskWatchdog;
+      break;
     default:
-      // Default to HardFault until other reasons are handled
-      reason = kMfltRebootReason_HardFault;
+      // esp_reset_reason_get_hint() is safe to call from panic context. In the
+      // case of Task Watchdog abort, the exception info is not set, so fall
+      // back on the reset reason to classify the reboot.
+      switch (esp_reset_reason_get_hint()) {
+        case ESP_RST_TASK_WDT:
+          reason = kMfltRebootReason_TaskWatchdog;
+          break;
+        default:
+          // Default to HardFault for other types
+          reason = kMfltRebootReason_HardFault;
+          break;
+      }
       break;
   }
 

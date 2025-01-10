@@ -1,7 +1,19 @@
 // Add application custom metrics
-MEMFAULT_METRICS_KEY_DEFINE(Example_HeapFreeBytes, kMemfaultMetricType_Unsigned)
-MEMFAULT_METRICS_KEY_DEFINE(Example_HeapMinFreeBytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(FreeRTOS_HeapFreeBytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(FreeRTOS_HeapMinFreeBytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(FreeRTOS_Heap_pct_max, kMemfaultMetricType_Unsigned,
+                                             100)
 
+// libc heap, more commonly used in our application
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_pct_max, kMemfaultMetricType_Unsigned, 100)
+
+// Thread stack usage metrics
+// clang-format off
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_console_input_pct_max, kMemfaultMetricType_Unsigned, 100)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_metrics_pct_max, kMemfaultMetricType_Unsigned, 100)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_heap_task_pct_max, kMemfaultMetricType_Unsigned, 100)
+
+// clang-format on
 // Example "cli" session
 MEMFAULT_METRICS_SESSION_KEY_DEFINE(cli)
 MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(cmd_name, 16, cli)

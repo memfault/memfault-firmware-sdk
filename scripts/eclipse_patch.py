@@ -124,7 +124,9 @@ def files_to_link(dir_glob, virtual_dir, common_prefix, parent_dir):
         # Python < 3.5 do not support "recursive=True" arg for glob.glob
         files = recursive_glob_backport(dir_glob)
     files = recursive_glob_backport(dir_glob)
-    for file_name in files:
+
+    # Sort the files so that the order is deterministic
+    for file_name in sorted(files):
         # Note:
         #  - xtensa targets (i.e ESP) use CMake/Make so no need to add to eclipse based projects
         #  - skip adding "memfault_demo_http" from demo component
@@ -149,7 +151,7 @@ def patch_project(
         raise RuntimeError("Could not location project file at {}".format(project_file))
 
     if not os.path.isdir(memfault_sdk_dir) or not os.path.isfile(
-        "{}/VERSION".format(memfault_sdk_dir)
+        "{}/CHANGELOG.md".format(memfault_sdk_dir)
     ):
         raise RuntimeError("Could not locate memfault-firmware-sdk at {}".format(memfault_sdk_dir))
 
@@ -412,11 +414,14 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
         required=True,
         help="The directory with the Eclipse .project to update",
     )
+    # get the current directory of this script, and go up one level to get the
+    # default memfault-sdk-dir
+    default_memfault_sdk_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     parser.add_argument(
         "-m",
         "--memfault-sdk-dir",
-        required=True,
-        help="The directory memfault-firmware-sdk was copied to",
+        default=default_memfault_sdk_dir,
+        help="The directory memfault-firmware-sdk was copied to. Default is the parent directory of this script",
     )
     parser.add_argument(
         "--target-port", help="The port to pick up for a project, i.e dialog/da145xx"

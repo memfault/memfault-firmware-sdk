@@ -493,7 +493,12 @@ class ArmCortexMCoredumpArch(CoredumpArch):
 
         def _is_ram(base_addr):
             # See Table B3-1 ARMv7-M address map in "ARMv7-M Architecture Reference Manual"
-            return (base_addr & 0xF0000000) in (0x20000000, 0x30000000, 0x60000000, 0x80000000)
+            return (base_addr & 0xF0000000) in (
+                0x20000000,
+                0x30000000,
+                0x60000000,
+                0x80000000,
+            )
 
         capture_size = 1024 * 1024  # Capture up to 1MB per section
         for section in capturable_elf_sections:
@@ -626,7 +631,12 @@ def lookup_registers_from_list(arch, info_reg_all_list, analytics_props):
 
     for lookup_reg_name, result_reg_name in alt_reg_names:
         _try_read_register(
-            arch, frame, lookup_reg_name, register_list, analytics_props, result_reg_name
+            arch,
+            frame,
+            lookup_reg_name,
+            register_list,
+            analytics_props,
+            result_reg_name,
         )
 
     # if we can't patch the registers, we'll just fallback to the active state
@@ -698,11 +708,13 @@ class MemfaultCoredumpWriter(object):
 
         _write_block(MemfaultCoredumpBlockType.DEVICE_SERIAL, self.device_serial.encode("utf8"))
         _write_block(
-            MemfaultCoredumpBlockType.SOFTWARE_VERSION, self.software_version.encode("utf8")
+            MemfaultCoredumpBlockType.SOFTWARE_VERSION,
+            self.software_version.encode("utf8"),
         )
         _write_block(MemfaultCoredumpBlockType.SOFTWARE_TYPE, self.software_type.encode("utf8"))
         _write_block(
-            MemfaultCoredumpBlockType.HARDWARE_REVISION, self.hardware_revision.encode("utf8")
+            MemfaultCoredumpBlockType.HARDWARE_REVISION,
+            self.hardware_revision.encode("utf8"),
         )
         _write_block(MemfaultCoredumpBlockType.MACHINE_TYPE, pack("<I", self.arch.MACHINE_TYPE))
         _write_block(MemfaultCoredumpBlockType.TRACE_REASON, pack("<I", self.trace_reason))
@@ -860,15 +872,25 @@ def _http_api(config, method, path, headers=None, body=None, should_raise=False)
 
 
 def http_post_coredump(coredump_file, project_key, ingress_uri):
-    headers = {"Content-Type": "application/octet-stream", "Memfault-Project-Key": project_key}
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Memfault-Project-Key": project_key,
+    }
     status, reason, _ = _http(
-        "POST", ingress_uri, "/api/v0/upload/coredump", headers=headers, body=coredump_file
+        "POST",
+        ingress_uri,
+        "/api/v0/upload/coredump",
+        headers=headers,
+        body=coredump_file,
     )
     return status, reason
 
 
 def http_post_chunk(chunk_data_file, project_key, chunks_uri, device_serial):
-    headers = {"Content-Type": "application/octet-stream", "Memfault-Project-Key": project_key}
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Memfault-Project-Key": project_key,
+    }
     status, reason, _ = _http(
         "POST",
         chunks_uri,
@@ -1031,7 +1053,10 @@ def populate_config_args_and_parse_args(parser, unicode_args, config):
         default=MEMFAULT_CONFIG.organization,
     )
     parser.add_argument(
-        "--project", "-p", help="Default project (slug) to use", default=MEMFAULT_CONFIG.project
+        "--project",
+        "-p",
+        help="Default project (slug) to use",
+        default=MEMFAULT_CONFIG.project,
     )
     parser.add_argument(
         "--ingress-uri",
@@ -1305,7 +1330,11 @@ class MemfaultPostChunk(MemfaultGdbCommand):
     def parse_args(self, unicode_args):
         parser = MemfaultGdbArgumentParser(description=MemfaultPostChunk.__doc__)
         parser.add_argument(
-            "--project-key", "-pk", help="Memfault Project Key", required=True, default=None
+            "--project-key",
+            "-pk",
+            help="Memfault Project Key",
+            required=True,
+            default=None,
         )
         parser.add_argument(
             "--chunk-handler-func",
@@ -1534,7 +1563,8 @@ Proceed? [y/n]
         parser.add_argument(
             "--software-version",
             type=_character_check(
-                self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_COMMA_REGEX, "software version"
+                self.ALPHANUM_SLUG_DOTS_COLON_SPACES_PARENS_SLASH_COMMA_REGEX,
+                "software version",
             ),
             help=(
                 "Overrides the software version that will be reported in the core dump."
@@ -1568,7 +1598,7 @@ Proceed? [y/n]
     def build_coredump_writer(self, parsed_args, analytics_props):
         # inferior.architecture() is a relatively new API, so let's use "show arch" instead:
         show_arch_output = gdb.execute("show arch", to_string=True).lower()
-        current_arch_matches = re.search("currently ([^)]+)", show_arch_output)
+        current_arch_matches = re.search(r"currently ([^)]+)", show_arch_output)
         if current_arch_matches:
             # Using groups() here instead of fn_match[1] for python2.x compatibility
             current_arch = current_arch_matches.groups()[0]
@@ -1718,7 +1748,10 @@ class MemfaultLogin(MemfaultGdbCommand):
             "password", help="The user API key or password of the user to authenticate"
         )
         parser.add_argument(
-            "--organization", "-o", help="Default organization (slug) to use", default=None
+            "--organization",
+            "-o",
+            help="Default organization (slug) to use",
+            default=None,
         )
         parser.add_argument("--project", "-p", help="Default project (slug) to use", default=None)
         parser.add_argument(

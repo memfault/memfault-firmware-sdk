@@ -132,6 +132,7 @@ if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
     message(FATAL_ERROR "CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER is not set. Please set it to 'y' to use FreeRTOS task runtime stats")
   endif()
   list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_sdk_metrics_freertos.c)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS ${MEMFAULT_SDK_ROOT}/ports/freertos/src/memfault_sdk_metrics_thread.c)
   list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_SDK_ROOT}/ports/freertos/config)
 endif()
 

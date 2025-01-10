@@ -318,7 +318,7 @@ def test_crc_build_id_in_bss():
         b = BuildIdInspectorAndPatcher(elf_fixture_file)
         with pytest.raises(
             Exception,
-            match="CRC symbol 'g_example_crc32_bss_build_id' in invalid Section 'SectionType.BSS'",
+            match=r"CRC symbol 'g_example_crc32_bss_build_id' in invalid Section 'SectionType.BSS'",
         ):
             b.check_or_update_crc_build_id("g_example_crc32_bss_build_id")
 

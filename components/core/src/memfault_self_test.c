@@ -144,7 +144,7 @@ static uint32_t prv_validate_build_id(void) {
 
 static void prv_device_info_test_describe(uint32_t results) {
   if (results == 0) {
-    MEMFAULT_LOG_INFO("All fields valid");
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("All fields valid");
     return;
   }
 
@@ -167,7 +167,7 @@ uint32_t memfault_self_test_device_info_test(void) {
   results |= prv_validate_device_info();
 
   prv_device_info_test_describe(results);
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return results;
 }
 
@@ -204,12 +204,12 @@ static const struct {
 uint32_t memfault_self_test_component_boot_test(void) {
   uint32_t result = 0;
   MEMFAULT_SELF_TEST_PRINT_HEADER("Component Boot Test");
-  MEMFAULT_LOG_INFO("%-16s|%8s|", "Component", "Booted?");
-  MEMFAULT_LOG_INFO("-----------------------------");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("%-16s|%8s|", "Component", "Booted?");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_boot_components); i++) {
     bool booted = s_boot_components[i].booted();
     if (booted) {
-      MEMFAULT_LOG_INFO("%-16s|%8s|", s_boot_components[i].component_name, "yes");
+      MEMFAULT_SELF_TEST_OUTPUT_LOG("%-16s|%8s|", s_boot_components[i].component_name, "yes");
     } else {
       MEMFAULT_LOG_ERROR("%-16s|%8s|", s_boot_components[i].component_name, "no");
       result |= (1 << i);
@@ -217,9 +217,9 @@ uint32_t memfault_self_test_component_boot_test(void) {
   }
 
   if (result == 0) {
-    MEMFAULT_LOG_INFO("All components booted");
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("All components booted");
   }
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return result;
 }
 
@@ -231,24 +231,25 @@ void memfault_self_test_data_export_test(void) {
   test_line[MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN - 2] = '1';
 
   MEMFAULT_SELF_TEST_PRINT_HEADER("Data Export Line Test");
-  MEMFAULT_LOG_INFO("Printing %u characters, confirm line ends with '1' and is not split",
-                    (unsigned)(MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN - 1));
-  MEMFAULT_LOG_INFO("%s", test_line);
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(
+    "Printing %u characters, confirm line ends with '1' and is not split",
+    (unsigned)(MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN - 1));
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("%s", test_line);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
 }
 
 static void prv_print_region_group_info(const char *group_name, const sMfltCoredumpRegion *regions,
                                         const size_t num_regions) {
-  MEMFAULT_LOG_INFO("Coredump group: %s", group_name);
-  MEMFAULT_LOG_INFO("-----------------------------");
-  MEMFAULT_LOG_INFO("%10s|%10s|%6s|", "Address", "Length", "Type");
-  MEMFAULT_LOG_INFO("-----------------------------");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("Coredump group: %s", group_name);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("%10s|%10s|%6s|", "Address", "Length", "Type");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
   for (size_t i = 0; (regions != NULL) && (i < num_regions); i++) {
     sMfltCoredumpRegion region = regions[i];
-    MEMFAULT_LOG_INFO("0x%08" PRIxPTR "|%10" PRIu32 "|%6u|", (uintptr_t)region.region_start,
-                      region.region_size, region.type);
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("0x%08" PRIxPTR "|%10" PRIu32 "|%6u|",
+                                  (uintptr_t)region.region_start, region.region_size, region.type);
   }
-  MEMFAULT_LOG_INFO("-----------------------------");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
 }
 
 uint32_t memfault_self_test_coredump_regions_test(void) {
@@ -287,16 +288,17 @@ uint32_t memfault_self_test_coredump_regions_test(void) {
   prv_print_region_group_info("Platform Regions", platform_regions, num_platform_regions);
   prv_print_region_group_info("Arch Regions", arch_regions, num_arch_regions);
   prv_print_region_group_info("SDK Regions", sdk_regions, num_sdk_regions);
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return result;
 }
 
 MEMFAULT_NORETURN void memfault_self_test_reboot_reason_test(void) {
   // Set a known reason and allow the device to reboot
   MEMFAULT_SELF_TEST_PRINT_HEADER("Reboot Reason Test");
-  MEMFAULT_LOG_INFO("This test will now reboot the device to test reboot reason tracking");
-  MEMFAULT_LOG_INFO("After the device reboots, please run with reboot_verify argument");
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(
+    "This test will now reboot the device to test reboot reason tracking");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("After the device reboots, please run with reboot_verify argument");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_SelfTest);
   memfault_platform_reboot();
 }
@@ -312,14 +314,14 @@ uint32_t memfault_self_test_reboot_reason_test_verify(void) {
   bool success = (result == 0) && (reboot_reason.prior_stored_reason == kMfltRebootReason_SelfTest);
   MEMFAULT_SELF_TEST_PRINT_HEADER("Reboot Reason Test");
   if (success) {
-    MEMFAULT_LOG_INFO("Reboot reason test successful");
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("Reboot reason test successful");
   } else {
     MEMFAULT_LOG_ERROR("Reboot reason test failed:");
     MEMFAULT_LOG_ERROR("get_reboot_reason result: %d, "
                        "prior_stored_reason: 0x%08" PRIx32,
                        result, (uint32_t)reboot_reason.prior_stored_reason);
   }
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return success ? 0 : 1;
 }
 
@@ -343,7 +345,7 @@ MEMFAULT_NO_OPT static uint32_t prv_get_time_since_boot_test(void) {
     return (1 << 1);
   }
 
-  MEMFAULT_LOG_INFO("Time since boot test succeeded");
+  MEMFAULT_SELF_TEST_OUTPUT_LOG("Time since boot test succeeded");
   return 0;
 }
 
@@ -375,8 +377,9 @@ static uint32_t prv_platform_time_get_current_test(void) {
     return (1 << 4);
   }
 
-  MEMFAULT_LOG_INFO("Verify received timestamp for accuracy. Timestamp received %" PRIu32,
-                    (uint32_t)mflt_time.info.unix_timestamp_secs);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(
+    "Verify received timestamp for accuracy. Timestamp received %" PRIu32,
+    (uint32_t)mflt_time.info.unix_timestamp_secs);
   return 0;
 }
 
@@ -386,7 +389,7 @@ uint32_t memfault_self_test_time_test(void) {
   uint32_t result = prv_get_time_since_boot_test();
   result |= prv_platform_time_get_current_test();
 
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return result;
 }
 
@@ -397,10 +400,10 @@ uint32_t memfault_self_test_coredump_storage_capacity_test(void) {
     size_t total_size = 0;
     size_t capacity = 0;
     memfault_coredump_size_and_storage_capacity(&total_size, &capacity);
-    MEMFAULT_LOG_INFO("Total size required: %u bytes", (unsigned)total_size);
-    MEMFAULT_LOG_INFO("Storage capacity: %u bytes", (unsigned)capacity);
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("Total size required: %u bytes", (unsigned)total_size);
+    MEMFAULT_SELF_TEST_OUTPUT_LOG("Storage capacity: %u bytes", (unsigned)capacity);
   }
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return capacity_ok ? 0 : 1;
 }
 
@@ -409,7 +412,7 @@ uint32_t memfault_self_test_coredump_storage_test(void) {
 
   if (memfault_coredump_has_valid_coredump(NULL)) {
     MEMFAULT_LOG_ERROR("Aborting test, valid coredump present");
-    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+    MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
     return (1 << 0);
   }
 
@@ -418,7 +421,7 @@ uint32_t memfault_self_test_coredump_storage_test(void) {
   bool irqs_disabled = memfault_self_test_platform_disable_irqs();
   if (!irqs_disabled) {
     MEMFAULT_LOG_ERROR("Aborting test, could not disable interrupts");
-    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+    MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
     return (1 << 1);
   }
 
@@ -429,7 +432,7 @@ uint32_t memfault_self_test_coredump_storage_test(void) {
 
   bool result = memfault_coredump_storage_debug_test_finish();
 
-  MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_END_OUTPUT);
+  MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_END_OUTPUT);
   return result ? 0 : (1 << 2);
 }
 

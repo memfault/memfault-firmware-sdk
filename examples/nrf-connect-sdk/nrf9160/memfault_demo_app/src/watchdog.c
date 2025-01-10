@@ -27,7 +27,7 @@
 
 #define WATCHDOG_TASK_STACK_SIZE 512
 K_THREAD_STACK_DEFINE(s_wdt_task_stack_area, WATCHDOG_TASK_STACK_SIZE);
-struct k_thread my_thread_data;
+struct k_thread wdt_thread;
 
 #if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
 // Between Zephyr 3.1 and 3.2, "label" properties in DTS started to get phased out:
@@ -120,7 +120,7 @@ void memfault_demo_app_watchdog_boot(void) {
   // We make it the lowest priority so a hot loop in any task above will
   // cause the watchdog to not be fed
   memfault_software_watchdog_enable();
-  k_thread_create(&my_thread_data, s_wdt_task_stack_area,
-                  K_THREAD_STACK_SIZEOF(s_wdt_task_stack_area), prv_wdt_task, NULL, NULL, NULL,
-                  K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+  k_thread_create(&wdt_thread, s_wdt_task_stack_area, K_THREAD_STACK_SIZEOF(s_wdt_task_stack_area),
+                  prv_wdt_task, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+  k_thread_name_set(&wdt_thread, "🐶 wdt");
 }

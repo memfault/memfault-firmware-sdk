@@ -94,9 +94,16 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_DOG0_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Watchdog 0");
     reset_reason = kMfltRebootReason_HardwareWatchdog;
+  #if NRF_RESET_HAS_CTRLAP_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_CTRLAP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debugger");
-    reset_reason = kMfltRebootReason_SoftwareReset;
+    reset_reason = kMfltRebootReason_DebuggerHalted;
+  #endif
+  #if NRF_RESET_HAS_CTRLAPPIN_RESET
+  } else if (reset_cause & NRF_RESET_RESETREAS_CTRLAPPIN_MASK) {
+    MEMFAULT_PRINT_RESET_INFO(" Debugger");
+    reset_reason = kMfltRebootReason_DebuggerHalted;
+  #endif
   } else if (reset_cause & NRF_RESET_RESETREAS_SREQ_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Software");
     reset_reason = kMfltRebootReason_SoftwareReset;
@@ -106,9 +113,11 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_OFF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" GPIO Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #if NRF_RESET_HAS_LPCOMP_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LPCOMP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" LPCOMP Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #endif
   } else if (reset_cause & NRF_RESET_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
@@ -116,22 +125,32 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_LSREQ_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Software (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
+  #endif
+  #if NRF_RESET_HAS_LLOCKUP_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LLOCKUP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Lockup (Network)");
     reset_reason = kMfltRebootReason_Lockup;
+  #endif
+  #if NRF_RESET_HAS_LDOG_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LDOG_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Watchdog (Network)");
     reset_reason = kMfltRebootReason_HardwareWatchdog;
+  #endif
+  #if NRF_RESET_HAS_MFORCEOFF_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_MFORCEOFF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Force off (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
+  #endif
+  #if NRF_RESET_HAS_NETWORK
   } else if (reset_cause & NRF_RESET_RESETREAS_LCTRLAP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debugger (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
   #endif
+  #if NRF_RESET_HAS_VBUS_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_VBUS_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" VBUS Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #endif
   } else if (reset_cause & NRF_RESET_RESETREAS_DOG1_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Watchdog 1");
     reset_reason = kMfltRebootReason_HardwareWatchdog;

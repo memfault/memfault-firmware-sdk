@@ -1,11 +1,11 @@
 MEMORY
 {
-    FLASH (xr) : ORIGIN = 0x00000000, LENGTH = 4M /* to 0x00003FFF = 0x007FFFFF*/
-    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 4M /* to 0x21FFFFFF = 0xFFFFFF */
+    FLASH (xr) : ORIGIN = 0x00000000, LENGTH = 4M
+    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 1M
 }
 ENTRY(Reset_Handler)
 
-_Min_Heap_Size = 0x300000 ;        /* Required amount of heap. */
+_Min_Heap_Size = 0x3000 ;        /* Required amount of heap. */
 _Min_Stack_Size = 0x4000 ;       /* Required amount of stack. */
 M_VECTOR_RAM_SIZE = (16 + 48) * 4;
 _estack = ORIGIN(RAM) + LENGTH(RAM);

@@ -59,7 +59,7 @@ void memfault_task_watchdog_check_all(void) {
 
   // if any channel reached expiration, trigger a panic
   if (expired_channels_count > 0) {
-    MEMFAULT_SOFTWARE_WATCHDOG();
+    MEMFAULT_TASK_WATCHDOG();
   } else {
     memfault_task_watchdog_platform_refresh_callback();
   }

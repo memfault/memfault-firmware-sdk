@@ -382,6 +382,36 @@ static int prv_vprintf_hook(const char *fmt, va_list args) {
 
 #endif
 
+#if defined(CONFIG_MEMFAULT)
+// This banner is printed when the app boots up. Declare it here so it isn't
+// allocated on the main thread stack.
+static const char s_mflt_banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
+
+static char s_mflt_project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = { 0 };
+static char s_mflt_chunks_url[128] = { 0 };
+static char s_mflt_device_url[128] = { 0 };
+
+static void prv_load_memfault_settings_from_nvs(void) {
+  // Attempt to load project key from nvs
+  int err = wifi_get_project_key(s_mflt_project_key, sizeof(s_mflt_project_key));
+  if (err == 0) {
+    s_mflt_project_key[sizeof(s_mflt_project_key) - 1] = '\0';
+    g_mflt_http_client_config.api_key = s_mflt_project_key;
+  }
+
+  // Load chunks + device URLs from NVS too. Need to persist for the lifetime of the program
+  size_t s_mflt_chunks_url_len = sizeof(s_mflt_chunks_url);
+  size_t s_mflt_device_url_len = sizeof(s_mflt_device_url);
+  if ((settings_get(kSettingsChunksUrl, s_mflt_chunks_url, &s_mflt_chunks_url_len) == 0) &&
+      (settings_get(kSettingsDeviceUrl, s_mflt_device_url, &s_mflt_device_url_len) == 0)) {
+    g_mflt_http_client_config.chunks_api.host =
+      (s_mflt_chunks_url_len > 1) ? s_mflt_chunks_url : NULL;
+    g_mflt_http_client_config.device_api.host =
+      (s_mflt_device_url_len > 1) ? s_mflt_device_url : NULL;
+  }
+}
+#endif  // defined(CONFIG_MEMFAULT)
+
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
 #if defined(CONFIG_MEMFAULT)
@@ -430,31 +460,13 @@ void app_main() {
   register_app();
   settings_register_shell_commands();
 
-  // Attempt to load project key from nvs
-  static char project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = { 0 };
-  int err = wifi_get_project_key(project_key, sizeof(project_key));
-  if (err == 0) {
-    project_key[sizeof(project_key) - 1] = '\0';
-    g_mflt_http_client_config.api_key = project_key;
-  }
-
-  // Load chunks + device URLs from NVS too. Need to persist for the lifetime of the program
-  static char chunks_url[128] = { 0 };
-  static char device_url[128] = { 0 };
-  size_t chunks_url_len = sizeof(chunks_url);
-  size_t device_url_len = sizeof(device_url);
-  if ((settings_get(kSettingsChunksUrl, chunks_url, &chunks_url_len) == 0) &&
-      (settings_get(kSettingsDeviceUrl, device_url, &device_url_len) == 0)) {
-    g_mflt_http_client_config.chunks_api.host = (chunks_url_len > 1) ? chunks_url : NULL;
-    g_mflt_http_client_config.device_api.host = (device_url_len > 1) ? device_url : NULL;
-  }
+  prv_load_memfault_settings_from_nvs();
 
   #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
   #endif
 
-  const char banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
-  puts(banner);
+  puts(s_mflt_banner);
 #endif  // defined(CONFIG_MEMFAULT)
 
   /* Prompt to be printed before each line.

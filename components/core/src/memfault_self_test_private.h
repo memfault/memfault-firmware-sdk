@@ -8,22 +8,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
 #include "memfault/core/compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+//! The below macros are exposed for verification in unit tests only, and are
+//! not intended for use outside of the self test module.
+
 //! Macro for beginning of test string
 #define MEMFAULT_SELF_TEST_END_OUTPUT "=============================\n"
 //! Macro for end of test string
 #define MEMFAULT_SELF_TEST_BEGIN_OUTPUT "============================="
 
-#define MEMFAULT_SELF_TEST_PRINT_HEADER(test_name)      \
-  do {                                                  \
-    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_BEGIN_OUTPUT); \
-    MEMFAULT_LOG_INFO(test_name);                       \
-    MEMFAULT_LOG_INFO(MEMFAULT_SELF_TEST_BEGIN_OUTPUT); \
+// Default to INFO level for the self test output
+#if !defined(MEMFAULT_SELF_TEST_OUTPUT_LOG)
+  #define MEMFAULT_SELF_TEST_OUTPUT_LOG MEMFAULT_LOG_INFO
+#endif
+
+#define MEMFAULT_SELF_TEST_PRINT_HEADER(test_name)                  \
+  do {                                                              \
+    MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_BEGIN_OUTPUT); \
+    MEMFAULT_SELF_TEST_OUTPUT_LOG(test_name);                       \
+    MEMFAULT_SELF_TEST_OUTPUT_LOG(MEMFAULT_SELF_TEST_BEGIN_OUTPUT); \
   } while (0)
 
 // Checks if char fits regex: [-a-zA-z0-0_]

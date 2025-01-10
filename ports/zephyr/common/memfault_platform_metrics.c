@@ -20,9 +20,11 @@
 
 #include <stdbool.h>
 
+#include "memfault/core/debug_log.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/ports/zephyr/version.h"
+#include "memfault/ports/zephyr/thread_metrics.h"
 
 #if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/net_stats.h)
@@ -43,16 +45,11 @@ extern struct sys_heap _system_heap;
 #endif  // defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 
 #if CONFIG_THREAD_RUNTIME_STATS
-static void prv_execution_cycles_delta_update(MemfaultMetricId key, uint64_t curr_cycles,
-                                              uint64_t *prev_cycles) {
-  uint64_t heartbeat_cycles;
-  if (*prev_cycles > curr_cycles) {
-    heartbeat_cycles = UINT64_MAX - *prev_cycles + curr_cycles;
-  } else {
-    heartbeat_cycles = curr_cycles - *prev_cycles;
-  }
-  memfault_metrics_heartbeat_set_unsigned(key, heartbeat_cycles);
+static uint64_t prv_cycle_delta_update(uint64_t curr_cycles, uint64_t *prev_cycles) {
+  // computes delta correctly if prev > curr due to overflow
+  uint64_t delta = curr_cycles - *prev_cycles;
   *prev_cycles = curr_cycles;
+  return delta;
 }
 #endif
 
@@ -182,8 +179,8 @@ static void prv_collect_memory_usage_metrics(void) {
   // stats.max_allocated_bytes was added in Zephyr 3.1
   //
   // Range is 0-10000 for 0.00-100.00%
-  // Multiply by 100 to get us 2 decimals of precision via the scale factor and then by 100 again
-  // for percentage conversion.
+  // Multiply by 100 for 2 decimals of precision via the scale factor, then by 100 again
+  // for percentage conversion
   MEMFAULT_METRIC_SET_UNSIGNED(memory_pct_max, (uint32_t)(stats.max_allocated_bytes * 10000.f) /
                                                  (stats.free_bytes + stats.allocated_bytes));
   #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
@@ -203,23 +200,43 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);
   MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);
-    #endif
+    #endif  // CONFIG_THREAD_STACK_INFO
 
     #if defined(CONFIG_THREAD_RUNTIME_STATS)
-  static uint64_t s_prev_thread_execution_cycles = 0;
-  static uint64_t s_prev_all_execution_cycles = 0;
+  static uint64_t s_prev_timer_task_cycles = 0;
+  static uint64_t s_prev_all_tasks_cycles = 0;
+  static uint64_t s_prev_non_idle_tasks_cycles = 0;
 
-  k_thread_runtime_stats_t rt_stats_thread;
-  k_thread_runtime_stats_get(me, &rt_stats_thread);
-  prv_execution_cycles_delta_update(MEMFAULT_METRICS_KEY(TimerTaskCpuUsage),
-                                    rt_stats_thread.execution_cycles,
-                                    &s_prev_thread_execution_cycles);
+  k_thread_runtime_stats_t timer_task_stats;
+  k_thread_runtime_stats_get(me, &timer_task_stats);
 
-  k_thread_runtime_stats_t rt_stats_all;
-  k_thread_runtime_stats_all_get(&rt_stats_all);
-  prv_execution_cycles_delta_update(MEMFAULT_METRICS_KEY(AllTasksCpuUsage),
-                                    rt_stats_all.execution_cycles, &s_prev_all_execution_cycles);
-    #endif
+  uint64_t task_cycles_delta =
+    prv_cycle_delta_update(timer_task_stats.execution_cycles, &s_prev_timer_task_cycles);
+  MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskCpuUsage, (uint32_t)task_cycles_delta);
+  MEMFAULT_LOG_DEBUG("Timer task cycles: %u", (uint32_t)task_cycles_delta);
+
+  k_thread_runtime_stats_t all_tasks_stats;
+  k_thread_runtime_stats_all_get(&all_tasks_stats);
+
+  uint64_t all_tasks_cycles_delta =
+    prv_cycle_delta_update(all_tasks_stats.execution_cycles, &s_prev_all_tasks_cycles);
+  MEMFAULT_METRIC_SET_UNSIGNED(AllTasksCpuUsage, (uint32_t)all_tasks_cycles_delta);
+  MEMFAULT_LOG_DEBUG("All tasks cycles: %u", (uint32_t)all_tasks_cycles_delta);
+
+      // stats.total_cycles added in Zephyr 3.0
+      #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
+  uint64_t non_idle_tasks_cycles_delta =
+    prv_cycle_delta_update(all_tasks_stats.total_cycles, &s_prev_non_idle_tasks_cycles);
+  MEMFAULT_LOG_DEBUG("Non-idle tasks cycles: %u", (uint32_t)non_idle_tasks_cycles_delta);
+
+  // Range is 0-10000 for 0.00-100.00%
+  // Multiply by 100 for 2 decimals of precision via the scale factor, then by 100 again
+  // for percentage conversion
+  uint32_t usage_pct = (uint32_t)(non_idle_tasks_cycles_delta * 10000 / all_tasks_cycles_delta);
+  MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct, usage_pct);
+  MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%\n", usage_pct / 100, usage_pct % 100);
+      #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 0)
+    #endif    // CONFIG_THREAD_RUNTIME_STATS
 
   #endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */
 
@@ -247,6 +264,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
 #if defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
   prv_collect_memory_usage_metrics();
+#endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_THREADS)
+  memfault_zephyr_thread_metrics_record();
 #endif
 }
 

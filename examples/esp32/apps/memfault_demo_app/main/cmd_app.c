@@ -13,6 +13,7 @@
 #include "esp_console.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -150,6 +151,37 @@ static int prv_heap_task_stats(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char **
 }
 #endif  // CONFIG_HEAP_TASK_TRACKING
 
+static void prv_stuck_task(void *pvParameters) {
+  // Register a task watchdog for the current task
+  esp_err_t res = esp_task_wdt_add(NULL);
+  MEMFAULT_ASSERT(res == ESP_OK);
+
+  ESP_LOGI(__func__, "Stuck task started!");
+
+  while (1) {
+    vTaskDelay(portMAX_DELAY);
+  }
+
+  // This code never runs- the task is stuck!
+  esp_task_wdt_reset();
+}
+
+static int prv_esp_task_watchdog(int argc, char **argv) {
+  // optional argument to specify the CPU to register the idle hook for
+  BaseType_t cpuid = 0;
+  if (argc > 1) {
+    cpuid = atoi(argv[1]);
+  }
+
+  // Create and start a task that will stall
+  ESP_LOGI(__func__, "Starting stuck task on core %d", cpuid);
+  const portBASE_TYPE res = xTaskCreatePinnedToCore(
+    prv_stuck_task, "stuck task", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL, cpuid);
+  MEMFAULT_ASSERT(res == pdTRUE);
+
+  return 0;
+}
+
 void register_app(void) {
 #if MEMFAULT_TASK_WATCHDOG_ENABLE
   const esp_console_cmd_t test_watchdog_cmd = {
@@ -170,6 +202,14 @@ void register_app(void) {
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&heap_task_stats_cmd));
 #endif
+
+  const esp_console_cmd_t esp_task_watchdog_cmd = {
+    .command = "esp_task_watchdog",
+    .help = "Register an idle hook that stalls the system",
+    .hint = "<cpu_id>",
+    .func = &prv_esp_task_watchdog,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&esp_task_watchdog_cmd));
 
 #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
   !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)

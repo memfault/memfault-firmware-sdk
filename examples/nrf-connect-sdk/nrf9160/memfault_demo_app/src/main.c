@@ -18,6 +18,8 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 #include <string.h>
 
+#include "memfault/ports/zephyr/thread_metrics.h"
+#include "memfault/metrics/metrics.h"
 #include "memfault/core/build_info.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
@@ -29,8 +31,29 @@
 
 #include <modem/modem_info.h>
 #include <modem/lte_lc.h>
-#include <nrf_modem_at.h>
 
+MEMFAULT_METRICS_DEFINE_THREAD_METRICS(
+{
+  .thread_name = "idle",
+  .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_idle_pct_max),
+},
+{
+  .thread_name = "sysworkq",
+  .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_sysworkq_pct_max),
+},
+{
+  .thread_name = "mflt_http",
+  .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_mflt_http_pct_max),
+},
+{
+  .thread_name = "🐶 wdt",
+  .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_wdt_pct_max),
+},
+{
+  .thread_name = "shell_uart",
+  .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_shell_uart_pct_max),
+}
+);
 
 #if !MEMFAULT_NCS_VERSION_GT(2, 3)
 /* nRF Connect SDK >= 1.9.2 || <= 2.3 */

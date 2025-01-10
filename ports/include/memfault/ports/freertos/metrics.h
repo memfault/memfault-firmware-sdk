@@ -73,6 +73,26 @@
   #define MEMFAULT_FREERTOS_COLLECT_TIMER_STACK_FREE_BYTES 1
 #endif
 
+#if !defined(MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS)
+  #define MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS 1
+#endif
+
+#if !defined(MEMFAULT_METRICS_THREADS_DEFAULTS)
+  #define MEMFAULT_METRICS_THREADS_DEFAULTS 1
+#endif
+
+#if !defined(MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+  #define MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR 100
+#endif
+
+// The default thread metrics are defined as weak so they can be overridden by
+// the user. Some build systems may not support strong symbols overriding weak
+// ones in the Memfault library, so we provide a way to disable the default
+// thread metrics definition entirely.
+#if !defined(MEMFAULT_METRICS_THREADS_DEFAULTS_INDEX)
+  #define MEMFAULT_METRICS_THREADS_DEFAULTS_INDEX 1
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus

@@ -97,8 +97,9 @@ Two simple tasks are used to illustrate creating metrics to measure your applica
 The first task, Heap Task, allocates and deallocates memory periodically. A second tasks, Metrics Task,
 sets metrics based on the state of the system heap. The two metrics produced are:
 
-- Example_HeapFreeBytes: Measures current total bytes free in the heap
-- Example_MinHeapBytesFree: Measures the lowest total bytes free in the heap since boot
+- `FreeRTOS_HeapFreeBytes`: Measures current total bytes free in the FreeRTOS heap
+- `FreeRTOS_HeapMinFreeBytes`: Measures the lowest total bytes free in the FreeRTOS heap since boot
+- `FreeRTOS_Heap_pct_max`: Measures the max percentage of the FreeRTOS heap used since boot
 
 These metrics are collected every 60 seconds in this example. This can be changed by modifying
 `MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS` in `memfault_platform_config.h`.

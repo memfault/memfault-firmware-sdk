@@ -79,6 +79,7 @@ SRCS += \
     src/console.c \
     src/heap_task.c \
     src/metrics.c \
+    src/mpu.c \
     src/memfault/memfault_platform_port.c \
     $(BOARD_DIR)/startup.c \
     $(BOARD_DIR)/memfault_platform_impl.c \

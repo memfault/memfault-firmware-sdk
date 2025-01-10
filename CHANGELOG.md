@@ -6,6 +6,209 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2025-01-10
+
+### 📈 Added
+
+- General:
+
+  - Add an option to set the
+    [Self Test component](https://docs.memfault.com/docs/mcu/self-test) output
+    log level, `MEMFAULT_SELF_TEST_OUTPUT_LOG`, to control the verbosity of the
+    Self Test output. Set it by selecting the Memfault Log macro to use, for
+    example `#define MEMFAULT_SELF_TEST_OUTPUT_LOG MEMFAULT_LOG_DEBUG`. The
+    default level is the same as before, `MEMFAULT_LOG_INFO`.
+
+  - Add an
+    [implementation of `memfault_reboot_reason_get()`](ports/stm32cube/u5/rcc_reboot_tracking.c)
+    for the STM32U5xx series of MCUs, using the `RCC-CSR` register to determine
+    the reset reason. Add the file to your project to make use of it!
+
+  - Add an
+    [implementation for flash-backed coredump storage](ports/stm32cube/u5/flash_coredump_storage.c)
+    for the STM32U5xx series of MCUs, using the internal flash memory to store
+    coredumps. Add the file to your project to make use of it!
+
+  - Enable the MPU (Memory Protection Unit) in the
+    [FreeRTOS QEMU example](examples/freertos/), to demonstrate Memfault's
+    [MPU region analysis feature](https://docs.memfault.com/docs/platform/trace-details#mpu-analysis).
+    This feature is enabled in a Memfault project by setting
+    `#define MEMFAULT_COLLECT_MPU_STATE 1` in `memfault_platform_config.h`. The
+    MPU registers are captured as part of a coredump, and Memfault will analyze
+    the configuration and include the result in the Trace viewer.
+
+  - Add a new reboot reason code, `kMfltRebootReason_TaskWatchdog`, for marking
+    crashes due to a Task Watchdog. Memfault has a
+    [built-in Task Watchdog system](https://github.com/memfault/memfault-firmware-sdk/blob/master/components/include/memfault/core/task_watchdog.h),
+    and
+    [Zephyr](https://docs.zephyrproject.org/latest/services/task_wdt/index.html)
+    and
+    [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/wdts.html#task-watchdog-timer-twdt)
+    both implement Task Watchdog systems.
+
+- FreeRTOS:
+
+  - Add support for tracking per-thread stack usage in the
+    [Memfault FreeRTOS port](ports/freertos/src/memfault_sdk_metrics_thread.c).
+    This feature is enabled by default and can be disabled by setting
+    `#define MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS 0` in
+    `memfault_platform_config.h`. The default threads monitored are `IDLE` and
+    `Tmr Svc`.
+
+    Threads are registered for tracking by defining
+    `MEMFAULT_METRICS_DEFINE_THREAD_METRICS()` in the application. For example:
+
+    ```c
+    //! Set the list of threads to monitor for stack usage. The metric keys must
+    //! be defined in memfault_metrics_heartbeat_config.def, ex:
+    //!
+    //! MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(
+    //!   memory_main_pct_max, kMemfaultMetricType_Unsigned,
+    //!   CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
+    //! )
+    #include "memfault/ports/zephyr/thread_metrics.h"
+    MEMFAULT_METRICS_DEFINE_THREAD_METRICS (
+      // monitor the main thread stack usage
+      {
+        .thread_name = "main",
+        .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_main_pct_max),
+      },
+      // monitor the shell_uart thread stack usage
+      {
+        .thread_name = "shell_uart",
+        .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_shell_uart_pct_max),
+      });
+    ```
+
+  - Add example usage of per-thread stack usage support to the
+    [FreeRTOS QEMU example](examples/freertos/) for the idle, timer service,
+    console input, metrics, and heap tasks.
+
+  - Add tracking of libc heap usage via the `memory_pct_max` metric to the
+    [FreeRTOS QEMU example](examples/freertos/)
+
+- Zephyr:
+
+  - Add support for tracking per-thread stack usage in the
+    [Memfault Zephyr port](ports/zephyr/common/memfault_platform_metrics.c).
+    This feature is enabled by default and can be disabled by setting
+    `CONFIG_MEMFAULT_METRICS_THREADS=n`. The default threads monitored are
+    `main` and `sysworkq`.
+
+    Threads are registered for tracking by defining
+    `MEMFAULT_METRICS_DEFINE_THREAD_METRICS()` in the application. For example:
+
+    ```c
+    //! Set the list of threads to monitor for stack usage. The metric keys must
+    //! be defined in memfault_metrics_heartbeat_config.def, ex:
+    //!
+    //! MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(
+    //!   memory_main_pct_max, kMemfaultMetricType_Unsigned,
+    //!   CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
+    //! )
+    #include "memfault/ports/zephyr/thread_metrics.h"
+    MEMFAULT_METRICS_DEFINE_THREAD_METRICS (
+      {
+        .thread_name = "main",
+        .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_main_pct_max),
+      },
+      {
+        .thread_name = "shell_uart",
+        .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_shell_uart_pct_max),
+      });
+    ```
+
+  - Update to support removal of the global `CSTD` compiler property (deprecated
+    in Zephyr v3.7.0, and just removed in Zephyr `main`), when
+    `CONFIG_MEMFAULT_COMPACT_LOG` is enabled. Thanks to
+    [@fouge](https://github.com/fouge) for providing this fix in
+    [#78](https://github.com/memfault/memfault-firmware-sdk/pull/78) !
+
+  - Add a new built-in metric, `cpu_usage_pct`, which reports the percentage of
+    the CPU used. This metric is enabled by default as part of the default set
+    of metrics, controlled with `CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE`.
+
+  - For ARM targets implementing and enabling the MPU, automatically capture the
+    and
+    [analyze the MPU configuration](https://docs.memfault.com/docs/platform/trace-details#mpu-analysis)
+    as part of a coredump. This can be controlled with the
+    `CONFIG_MEMFAULT_COREDUMP_COLLECT_MPU_STATE` Kconfig option.
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS`,
+    which should be used instead of
+    `#define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS xxx` in
+    `memfault_platform_config.h`. A build error will occur if the value is set
+    in `memfault_platform_config.h` to enforce migrating the setting. Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this feature
+    request in
+    [#80](https://github.com/memfault/memfault-firmware-sdk/issues/80)
+
+- ESP-IDF:
+
+  - Add support for correctly marking crashes triggered due to a Task Watchdog.
+    A test command, `esp_task_watchdog <cpuid>`, has been added to the
+    [esp32 sample app](examples/esp32) to trigger a Task Watchdog fault on the
+    specified core. Be sure to enable the Kconfig option
+    `CONFIG_ESP_TASK_WDT_PANIC=y` to have the system panic when a Task Watchdog
+    fault occurs. Memfault will capture and tag the fault appropriately, as for
+    other fault types.
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS`,
+    which should be used instead of
+    `#define MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS xxx` in
+    `memfault_platform_config.h`. A build error will occur if the value is set
+    in `memfault_platform_config.h` to enforce migrating the setting.
+
+- nRF-Connect SDK:
+
+  - Add an implementation for reboot reason tracking on the nRF54Lx series of
+    MCUs, using the `RESETREAS` register to determine the reset reason. This
+    will be automatically enabled when building for an nRF54Lx series device
+    (`CONFIG_SOC_SERIES_NRF54LX=y`).
+
+  - Add example usage of per-thread stack usage support to the
+    [nRF9160 example](examples/nrf-connect-sdk/nrf9160) for the idle, sysworkq,
+    mflt http, WDT, and shell uart tasks.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix the `MEMFAULT_METRICS_CPU_TEMP` Kconfig dependencies, to correctly check
+    for presence of the DT `die-temp0` alias, and remove the dependency on
+    `ADC`, which doesn't apply to all boards implementing a temp sensor. Thanks
+    to [@JordanYates](https://github.com/JordanYates) for reporting this issue
+    in [#79](https://github.com/memfault/memfault-firmware-sdk/issues/79) !
+
+### 🛠️ Changed
+
+- General:
+
+  - The [`eclipse_patch.py`](scripts/eclipse_patch.py) utility
+    `--memfault-sdk-dir` argument is now optional, and defaults to the parent
+    directory of the script folder.
+
+- FreeRTOS:
+
+  - Renamed the [FreeRTOS QEMU sample app](examples/freertos) heap metrics from
+    `Example_HeapFreeBytes` and `Example_HeapMinFreeBytes` to
+    `FreeRTOS_HeapFreeBytes` and `FreeRTOS_HeapMinFreeBytes`.
+
+- nRF-Connect SDK:
+
+  - Update the [nRF91 sample app](examples/nrf-connect-sdk/nrf91) to only enable
+    the UART log backend. Previously both the SHELL and UART log backends were
+    enabled, resulting in duplicate log lines emitted to the console.
+
+  - Update the [nRF91 sample app](examples/nrf-connect-sdk/nrf91) and the
+    [nRF5x sample app](examples/nrf-connect-sdk/nrf5) to use the latest version
+    of the nRF-Connect SDK, v2.9.0.
+
+- Zephyr:
+
+  - Renamed the [QEMU sample app](examples/zephyr/qemu/) metric
+    `main_thread_cpu_time_permille` -> `cpu_usage_main_pct`.
+
 ## [1.18.0] - 2024-11-25
 
 ### 📈 Added
@@ -13,7 +216,7 @@ and this project adheres to
 - General:
 
   - Add a new built-in metric, `uptime_s`, which reports the total uptime of the
-    device in seconds. This metrics is enabled by default, and can be disabled
+    device in seconds. This metric is enabled by default, and can be disabled
     with `#define MEMFAULT_METRICS_UPTIME_ENABLE 0` in
     `memfault_platform_config.h`.
 
@@ -30,6 +233,14 @@ and this project adheres to
     cause both CPU cores to be captured in the coredump. The SDK will always
     capture the core that triggered the fault, and if the non-faulting core is
     available for capture, it will be included as well.
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Updated the [ESP32 example](examples/esp32) to no longer read some
+    non-volatile values into stack-allocated buffers. This reduces overall stack
+    usage for the `main` thread by about 350 bytes.
 
 ## [1.17.0] - 2024-11-14
 

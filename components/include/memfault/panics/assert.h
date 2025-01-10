@@ -74,6 +74,9 @@ extern "C" {
 #define MEMFAULT_SOFTWARE_WATCHDOG() \
   MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_SoftwareWatchdog)
 
+//! Assert subclass to be used when a task watchdog trips.
+#define MEMFAULT_TASK_WATCHDOG() MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_TaskWatchdog)
+
 #ifdef __cplusplus
 }
 #endif
