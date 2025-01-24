@@ -26,7 +26,7 @@ extern "C" {
 
 //! This enum must be packed to prevent compiler optimizations in instructions which load an
 //! eMemfaultRebootReason.
-typedef enum MEMFAULT_PACKED MfltResetReason {
+typedef MEMFAULT_PACKED_ENUM MfltResetReason {
   // A reboot reason was not determined either by hardware or a previously marked reboot reason
   // This reason is classified as a crash when calculating the operational_crashfree_hours metric
   kMfltRebootReason_Unknown = 0x0000,

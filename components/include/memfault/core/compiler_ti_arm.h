@@ -18,6 +18,7 @@ extern "C" {
 #include <inttypes.h>
 
 #define MEMFAULT_PACKED __attribute__((packed))
+#define MEMFAULT_PACKED_ENUM enum MEMFAULT_PACKED
 #define MEMFAULT_PACKED_STRUCT struct MEMFAULT_PACKED
 #define MEMFAULT_NORETURN __attribute__((noreturn))
 #define MEMFAULT_NAKED_FUNC __attribute__((naked))

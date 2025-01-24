@@ -18,6 +18,7 @@ extern "C" {
 #include "intrinsics.h"
 
 #define MEMFAULT_PACKED __packed
+#define MEMFAULT_PACKED_ENUM MEMFAULT_PACKED enum
 #define MEMFAULT_PACKED_STRUCT MEMFAULT_PACKED struct
 #define MEMFAULT_NORETURN __noreturn
 #define MEMFAULT_NAKED_FUNC
