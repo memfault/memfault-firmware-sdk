@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 #define MEMFAULT_PACKED __attribute__((packed))
+#define MEMFAULT_PACKED_ENUM enum MEMFAULT_PACKED
 #define MEMFAULT_PACKED_STRUCT struct MEMFAULT_PACKED
 //! MEMFAULT_NORETURN is only intended to be overridden in unit tests, if needed
 #if !defined(MEMFAULT_NORETURN)

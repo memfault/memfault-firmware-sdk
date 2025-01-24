@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 #define MEMFAULT_PACKED __packed
+#define MEMFAULT_PACKED_ENUM enum MEMFAULT_PACKED
 #define MEMFAULT_PACKED_STRUCT MEMFAULT_PACKED struct
 #define MEMFAULT_NORETURN __declspec(noreturn)
 #define MEMFAULT_NAKED_FUNC __asm
