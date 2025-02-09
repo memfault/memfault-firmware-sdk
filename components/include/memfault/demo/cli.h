@@ -23,6 +23,8 @@ extern "C" {
 //! - 0: crash by MEMFAULT_ASSERT(0)
 //! - 1: crash by jumping to 0xbadcafe
 //! - 2: crash by unaligned memory store
+//! - 3: crash by MEMFAULT_ASSERT() deep in the callstack
+//! - 4: crash by MEMFAULT_SOFTWARE_WATCHDOG()
 int memfault_demo_cli_cmd_crash(int argc, char *argv[]);
 
 #if MEMFAULT_COMPILER_ARM_CORTEX_M

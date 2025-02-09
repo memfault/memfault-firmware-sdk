@@ -66,7 +66,7 @@
 #include "memfault/util/base64.h"
 #include "memfault/util/cbor.h"
 #include "memfault/util/circular_buffer.h"
-#include "memfault/util/crc16_ccitt.h"
+#include "memfault/util/crc16.h"
 #include "memfault/util/rle.h"
 #include "memfault/util/varint.h"
 #include "memfault/version.h"

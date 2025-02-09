@@ -17,6 +17,8 @@ uint32_t xTaskGetIdleRunTimeCounter(void);
 #define tskKERNEL_VERSION_MINOR 4
 #define tskKERNEL_VERSION_BUILD 3
 
+typedef uint32_t TaskHandle_t;
+
 #ifdef __cplusplus
 }
 #endif

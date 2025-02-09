@@ -63,49 +63,49 @@ MEMFAULT_WEAK const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_inde
     #endif  // (__STDC_VERSION__ < 201100L) || (__GNUC__ >= 5)
   #endif    // MEMFAULT_METRICS_THREADS_DEFAULTS_INDEX
 
-static uint32_t prv_get_stack_usage_pct_for_thread(const TaskHandle_t task_handle) {
-  TaskStatus_t task_status;
-
-  vTaskGetInfo(task_handle, &task_status, pdTRUE, eRunning);
-
-  const uint32_t stack_high_watermark = task_status.usStackHighWaterMark;
-
   #if MEMFAULT_FREERTOS_VERSION_GTE(10, 0, 0)
-  // Unfortunately we must break the opaque pointer to the TCB and access the
-  // pxEndOfStack field directly. The simplest approach is to access the task
-  // name address in the TCB, then offset to the location of the pxEndOfStack
-  // field, which has a reliable location in the versions of FreeRTOS we
-  // support.
-  // https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.0.0/FreeRTOS/Source/tasks.c#L281-L285
-  // https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.4.6/tasks.c#L267-L271
-  // https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/6f63da20b3c9e1408e7c8007d3427b75878cbd64/tasks.c#L267-L271
-  // https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.6.2/tasks.c#L271-L275
-  char *task_name = (char *)task_status.pcTaskName;
-  struct MfltFreeRTOSTCB {
-    char pcTaskName[configMAX_TASK_NAME_LEN];
-      // Two cases require additional adjustment:
-      // 1. vanilla FreeRTOS SMP versions (i.e V11.1.0+ or SMP branch) that enable
-      //    configUSE_TASK_PREEMPTION_DISABLE:
-      //    https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V11.1.0/tasks.c#L380
-      // 2. ESP-IDF fork, with configNUMBER_OF_CORES > 1:
-      //    https://github.com/espressif/esp-idf/blob/v5.3/components/freertos/FreeRTOS-Kernel/tasks.c#L408
+// Unfortunately we must break the opaque pointer to the TCB and access the
+// pxEndOfStack field directly. The simplest approach is to access the task
+// name address in the TCB, then offset to the location of the pxEndOfStack
+// field, which has a reliable location in the versions of FreeRTOS we
+// support.
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.0.0/FreeRTOS/Source/tasks.c#L281-L285
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.4.6/tasks.c#L267-L271
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/6f63da20b3c9e1408e7c8007d3427b75878cbd64/tasks.c#L267-L271
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V10.6.2/tasks.c#L271-L275
+struct MfltFreeRTOSTCB {
+  char pcTaskName[configMAX_TASK_NAME_LEN];
+    // Two cases require additional adjustment:
+    // 1. vanilla FreeRTOS SMP versions (i.e V11.1.0+ or SMP branch) that enable
+    //    configUSE_TASK_PREEMPTION_DISABLE:
+    //    https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V11.1.0/tasks.c#L380
+    // 2. ESP-IDF fork, with configNUMBER_OF_CORES > 1:
+    //    https://github.com/espressif/esp-idf/blob/v5.3/components/freertos/FreeRTOS-Kernel/tasks.c#L408
     #if (configUSE_TASK_PREEMPTION_DISABLE == 1) || (configNUMBER_OF_CORES > 1)
-    BaseType_t xPreemptionDisable_or_xCoreID;
+  BaseType_t xPreemptionDisable_or_xCoreID;
     #elif defined(MEMFAULT_USE_ESP32_FREERTOS_INCLUDE)
       // ESP-IDF TCB_t unconditionally included the xCoreID until v5.3.0:
       // https://github.com/espressif/esp-idf/commit/439c7c4261837b4563f278b095c77accb266a8c1
       #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
-    BaseType_t xCoreID;
+  BaseType_t xCoreID;
       #endif
     #endif
-    uint32_t pxEndOfStack;
-  };
-  struct MfltFreeRTOSTCB *tcb = (struct MfltFreeRTOSTCB *)(task_name);
-  const uint32_t stack_end = tcb->pxEndOfStack;
+  uint32_t pxEndOfStack;
+};
   #else
     #error \
       "Unsupported FreeRTOS version, please contact https://mflt.io/contact-support for assistance"
   #endif
+
+static uint32_t prv_get_stack_usage_pct_for_thread(const TaskHandle_t task_handle) {
+  TaskStatus_t task_status;
+
+  vTaskGetInfo(task_handle, &task_status, pdTRUE, eRunning);
+  char *task_name = (char *)task_status.pcTaskName;
+  const uint32_t stack_high_watermark = task_status.usStackHighWaterMark;
+
+  struct MfltFreeRTOSTCB *tcb = (struct MfltFreeRTOSTCB *)(task_name);
+  const uint32_t stack_end = tcb->pxEndOfStack;
 
   const uint32_t stack_size = stack_end - (uint32_t)task_status.pxStackBase + sizeof(StackType_t);
   const uint32_t stack_pct =
@@ -125,7 +125,13 @@ void memfault_freertos_port_thread_metrics(void) {
   const sMfltFreeRTOSTaskMetricsIndex *thread_metrics = g_memfault_thread_metrics_index;
   while (thread_metrics->thread_name) {
     DEBUG_PRINTF("Thread: %s\n", thread_metrics->thread_name);
-    const TaskHandle_t task_handle = xTaskGetHandle(thread_metrics->thread_name);
+    TaskHandle_t task_handle = NULL;
+    if (thread_metrics->get_task_handle) {
+      task_handle = thread_metrics->get_task_handle();
+    }
+    if (task_handle == NULL) {
+      task_handle = xTaskGetHandle(thread_metrics->thread_name);
+    }
     if (task_handle != NULL) {
       memfault_metrics_heartbeat_set_unsigned(thread_metrics->stack_usage_metric_key,
                                               prv_get_stack_usage_pct_for_thread(task_handle));

@@ -36,7 +36,7 @@
 #include "memfault/core/task_watchdog.h"
 #include "memfault/esp_port/spi_flash.h"
 #include "memfault/esp_port/uart.h"
-#include "memfault/util/crc16_ccitt.h"
+#include "memfault/util/crc16.h"
 
 // Needed for >= v4.4.3 default coredump collection
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
@@ -89,9 +89,8 @@ static const uintptr_t esp32_dram_start_addr = SOC_DRAM_LOW;
 static const uintptr_t esp32_dram_end_addr = SOC_DRAM_HIGH;
 
 static uint32_t prv_get_partition_info_crc(void) {
-  return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
-                                      &s_esp32_coredump_partition_info,
-                                      offsetof(sEspIdfCoredumpPartitionInfo, crc));
+  return memfault_crc16_compute(MEMFAULT_CRC16_INITIAL_VALUE, &s_esp32_coredump_partition_info,
+                                offsetof(sEspIdfCoredumpPartitionInfo, crc));
 }
 
 static const esp_partition_t *prv_get_core_partition(void) {

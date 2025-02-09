@@ -24,7 +24,7 @@
 #include "memfault/core/sdk_assert.h"
 #include "memfault/util/base64.h"
 #include "memfault/util/circular_buffer.h"
-#include "memfault/util/crc16_ccitt.h"
+#include "memfault/util/crc16.h"
 #include "memfault_log_private.h"
 
 #if MEMFAULT_LOG_DATA_SOURCE_ENABLED
@@ -63,9 +63,8 @@ static sMfltRamLogger s_memfault_ram_logger = {
 };
 
 static uint16_t prv_compute_log_region_crc16(void) {
-  return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
-                                      &s_memfault_ram_logger.region_info,
-                                      offsetof(sMfltLogStorageRegionInfo, crc16));
+  return memfault_crc16_compute(MEMFAULT_CRC16_INITIAL_VALUE, &s_memfault_ram_logger.region_info,
+                                offsetof(sMfltLogStorageRegionInfo, crc16));
 }
 
 uint32_t memfault_log_get_dropped_count(void) {

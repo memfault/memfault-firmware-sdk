@@ -99,7 +99,7 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
 static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
-void memfault_reboot_reason_get(sResetBootupInfo *info) {
+MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   //! !FIXME: Read reboot reason register
   //! Fill in sResetBootupInfo with reboot reason and reboot register value
   *info = (sResetBootupInfo){
@@ -115,8 +115,8 @@ void memfault_platform_reboot_tracking_boot(void) {
 }
 
 //! !FIXME: Remove if using FreeRTOS port. The FreeRTOS port will provide this definition
-bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
-                                          MemfaultPlatformTimerCallback *callback) {
+MEMFAULT_WEAK bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
+                                                        MemfaultPlatformTimerCallback *callback) {
   //! !FIXME: Initiate a periodic timer/task/thread to call callback every period_sec
   (void)period_sec;
   (void)callback;

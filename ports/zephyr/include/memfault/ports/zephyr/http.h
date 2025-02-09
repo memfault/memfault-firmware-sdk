@@ -39,7 +39,7 @@ int memfault_zephyr_port_post_data(void);
 //! that was sent, on success.
 //!
 //! @return negative error code on error, else the size of the data that was
-//! sent, in bytes
+//! sent, in bytes. 0 indicates no data was ready to send (and no data was sent)
 ssize_t memfault_zephyr_port_post_data_return_size(void);
 
 typedef struct MemfaultOtaInfo {

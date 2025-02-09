@@ -126,6 +126,7 @@ static void prv_init_test_thread_timer(void) { }
 
 #if CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_METRICS
 
+  #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 //! Helper function to collect metric value on main thread stack usage.
 static void prv_collect_main_thread_stack_free(void) {
   if (s_main_thread == NULL) {
@@ -143,6 +144,7 @@ static void prv_collect_main_thread_stack_free(void) {
     LOG_ERR("Error getting thread stack usage[%d]", rc);
   }
 }
+  #endif  // defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 
 static void prv_collect_main_thread_run_stats(void) {
   static uint64_t s_prev_main_thread_cycles = 0;
@@ -213,6 +215,7 @@ static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc
 SHELL_CMD_REGISTER(memory_metrics, NULL, "Collects runtime memory metrics from application",
                    prv_run_example_memory_metrics);
 
+  #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 //! Callback to collect stack usage for specific threads
 static void prv_collect_thread_stack_usage_cb(const struct k_thread *thread, void *user_data) {
   // table mapping thread names to metric IDs
@@ -233,14 +236,17 @@ static void prv_collect_thread_stack_usage_cb(const struct k_thread *thread, voi
     }
   }
 }
+  #endif  // defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 
 // Override function to collect the app metric MainStack_MinBytesFree
 // and print current metric values
 void memfault_metrics_heartbeat_collect_data(void) {
-  prv_collect_main_thread_stack_free();
   prv_collect_main_thread_run_stats();
 
+  #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+  prv_collect_main_thread_stack_free();
   k_thread_foreach(prv_collect_thread_stack_usage_cb, NULL);
+  #endif
 
   memfault_metrics_heartbeat_debug_print();
 }
@@ -340,6 +346,16 @@ static int prv_log_overflow(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_CMD_REGISTER(log_overflow, NULL, "generate a number of log lines", prv_log_overflow);
+
+#if !defined(CONFIG_MEMFAULT_CRC16_BUILTIN)
+  #include MEMFAULT_ZEPHYR_INCLUDE(sys/crc.h)
+
+uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
+                                size_t data_len_bytes) {
+  return crc16_itu_t(crc_initial_value, data, data_len_bytes);
+}
+
+#endif
 
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD_TARGET);

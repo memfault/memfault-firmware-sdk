@@ -217,14 +217,14 @@ $(foreach target, $(TARGETS), $(call define_target, $(target)))
 # Flash the program
 flash: default
 	@echo Flashing: $(OUTPUT_DIRECTORY)/$(APP_TARGET).hex
-	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/$(APP_TARGET).hex --sectorerase
-	nrfjprog -f nrf52 --reset
+	nrfutil device program --options chip_erase_mode=ERASE_RANGES_TOUCHED_BY_FIRMWARE --firmware $(OUTPUT_DIRECTORY)/$(APP_TARGET).hex
+	nrfutil device reset --reset-kind RESET_PIN
 
 # Flash softdevice
 flash_softdevice:
 	@echo Flashing: s140_nrf52_6.1.0_softdevice.hex
-	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex --sectorerase
-	nrfjprog -f nrf52 --reset
+	nrfutil device program --options chip_erase_mode=ERASE_RANGES_TOUCHED_BY_FIRMWARE --firmware $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex
+	nrfutil device reset --reset-kind RESET_PIN
 
 erase:
-	nrfjprog -f nrf52 --eraseall
+	nrfutil device erase --all

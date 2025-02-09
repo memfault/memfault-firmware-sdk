@@ -1,3 +1,4 @@
+name: memfault-firmware-sdk
 build:
   cmake: ports/zephyr
   # Enable external module integration files. This enables customizing the

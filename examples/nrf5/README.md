@@ -89,7 +89,7 @@ $ invoke nrf.eraseflash
 or
 
 ```bash
-nrfjprog --eraseall
+nrfutil device erase --all
 ```
 
 Once an erase has been performed you can flash the compiled demo app:

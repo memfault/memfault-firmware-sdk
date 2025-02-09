@@ -382,7 +382,7 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        "ldr r1, =%c0 \n"             \
                        "b memfault_fault_handler \n" \
                        :                             \
-                       : "i"((uint16_t)_x))
+                       : "i"((uint32_t)_x))
     #else
       #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
         __asm volatile("mov r0, lr \n"                 \
@@ -403,7 +403,7 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        "ldr r1, =%c0 \n"               \
                        "b memfault_fault_handler \n"   \
                        :                               \
-                       : "i"((uint16_t)_x))
+                       : "i"((uint32_t)_x))
     #endif
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_HARD_FAULT(void) {

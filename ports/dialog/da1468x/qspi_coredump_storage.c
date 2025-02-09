@@ -39,7 +39,7 @@
   #include "memfault/panics/assert.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/ports/watchdog.h"
-  #include "memfault/util/crc16_ccitt.h"
+  #include "memfault/util/crc16.h"
   #include "partition_def.h"
 
   // Ensure Dialog NVMS setup as needed by this implementation.
@@ -84,9 +84,8 @@ static sQspiCoredumpPartitionInfo s_qspi_coredump_partition_info;
 static bool s_memfault_using_qspi;
 
 static uint32_t prv_get_partition_info_crc(void) {
-  return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
-                                      &s_qspi_coredump_partition_info,
-                                      offsetof(sQspiCoredumpPartitionInfo, crc));
+  return memfault_crc16_compute(MEMFAULT_CRC16_INITIAL_VALUE, &s_qspi_coredump_partition_info,
+                                offsetof(sQspiCoredumpPartitionInfo, crc));
 }
 
 static const nvms_partition_t *prv_get_core_partition(void) {

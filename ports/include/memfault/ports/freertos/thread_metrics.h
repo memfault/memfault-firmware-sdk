@@ -7,8 +7,22 @@
 //!
 //! @brief
 
+#include "memfault/config.h"
 #include "memfault/metrics/metrics.h"
 #include "memfault/ports/freertos/metrics.h"
+
+#if defined(ESP_PLATFORM)
+  #include "sdkconfig.h"
+  #if !defined(CONFIG_IDF_TARGET_ESP8266)
+    #define MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
+  #endif
+#endif
+
+#ifdef MEMFAULT_USE_ESP32_FREERTOS_INCLUDE
+  #include "freertos/task.h"
+#else
+  #include "task.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +33,12 @@ typedef struct MfltFreeRTOSTaskMetricsIndex {
   // FreeRTOS task names are limited to configMAX_TASK_NAME_LEN bytes in length,
   // be sure to test the string matches exactly for each registered task.
   const char *thread_name;
+
+  // The task can optionally be tagged with the task handle, by providing a
+  // callback. This helps in cases where there are tasks with ambiguous names.
+  // If the callback is unpopulated or returns NULL, thread_name is used to
+  // identify the task.
+  TaskHandle_t (*get_task_handle)(void);
 
   // The Memfault Heartbeat Metric key for stack usage. Should be defined as
   // follows:

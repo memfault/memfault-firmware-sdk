@@ -226,7 +226,8 @@ def patch_project(
         linked_resources.append(ele)
 
     if target_port is not None:
-        port_folder_name = "_".join(os.path.split(target_port))
+        head, tail = os.path.split(target_port)
+        port_folder_name = "_".join((head, tail)) if head != "" else tail
         port_folder_name = "memfault_{}".format(port_folder_name)
 
         linked_resources.append(

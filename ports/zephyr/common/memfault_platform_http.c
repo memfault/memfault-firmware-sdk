@@ -75,7 +75,7 @@
 #endif /* CONFIG_MEMFAULT_HTTP_USES_MBEDTLS */
 
 // Timeout for the socket file descriptor to become available for I/0
-#define POLL_TIMEOUT_MS 5000
+#define POLL_TIMEOUT_MS CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
 
 // The nRF-Connect SDK has an implementation of this structure
 #if !defined(CONFIG_MEMFAULT_NCS_PROJECT_KEY)
@@ -686,6 +686,10 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 }
 
 ssize_t memfault_zephyr_port_post_data_return_size(void) {
+  if (!memfault_packetizer_data_available()) {
+    return 0;
+  }
+
   sMemfaultHttpContext ctx = { 0 };
   ctx.sock_fd = -1;
 

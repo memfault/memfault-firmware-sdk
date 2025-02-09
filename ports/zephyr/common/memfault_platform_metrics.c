@@ -44,7 +44,7 @@ static MemfaultPlatformTimerCallback *s_metrics_timer_callback;
 extern struct sys_heap _system_heap;
 #endif  // defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 
-#if CONFIG_THREAD_RUNTIME_STATS
+#if defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
 static uint64_t prv_cycle_delta_update(uint64_t curr_cycles, uint64_t *prev_cycles) {
   // computes delta correctly if prev > curr due to overflow
   uint64_t delta = curr_cycles - *prev_cycles;
@@ -141,7 +141,15 @@ static void prv_init_wifi_metrics(void) {
 static void prv_collect_cpu_temp(void) {
   struct sensor_value val;
 
-  const struct device *dev = DEVICE_DT_GET(DT_ALIAS(die_temp0));
+  #if DT_NODE_HAS_STATUS(DT_ALIAS(die_temp0), okay)
+    #define CPU_TEMP_NODE_ID DT_ALIAS(die_temp0)
+  #elif DT_NODE_HAS_STATUS(DT_NODELABEL(temp), okay)
+    #define CPU_TEMP_NODE_ID DT_NODELABEL(temp)
+  #else
+    #error "No CPU temperature sensor found"
+  #endif
+
+  const struct device *dev = DEVICE_DT_GET(CPU_TEMP_NODE_ID);
 
   if (!device_is_ready(dev)) {
     return;
@@ -158,6 +166,8 @@ static void prv_collect_cpu_temp(void) {
   // val1 is the integer part and val2 is fractional millionths. Scale both to match metric
   // precision
   const int32_t temperature = (val.val1 * 10) + (val.val2 / 100000);
+
+  MEMFAULT_LOG_INFO("CPU Temp: %d.%06d", val.val1, val.val2);
 
   MEMFAULT_METRIC_SET_SIGNED(thermal_cpu_c, temperature);
 }
@@ -191,18 +201,13 @@ static void prv_collect_memory_usage_metrics(void) {
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
 // where the metrics key names come from.
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
-#if CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE
-
-  #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+#if defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
   struct k_thread *me = k_current_get();
 
-    #if defined(CONFIG_THREAD_STACK_INFO)
   size_t free_stack_size;
   k_thread_stack_space_get(me, &free_stack_size);
   MEMFAULT_METRIC_SET_UNSIGNED(TimerTaskFreeStack, free_stack_size);
-    #endif  // CONFIG_THREAD_STACK_INFO
 
-    #if defined(CONFIG_THREAD_RUNTIME_STATS)
   static uint64_t s_prev_timer_task_cycles = 0;
   static uint64_t s_prev_all_tasks_cycles = 0;
   static uint64_t s_prev_non_idle_tasks_cycles = 0;
@@ -223,8 +228,8 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   MEMFAULT_METRIC_SET_UNSIGNED(AllTasksCpuUsage, (uint32_t)all_tasks_cycles_delta);
   MEMFAULT_LOG_DEBUG("All tasks cycles: %u", (uint32_t)all_tasks_cycles_delta);
 
-      // stats.total_cycles added in Zephyr 3.0
-      #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
+  // stats.total_cycles added in Zephyr 3.0
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
   uint64_t non_idle_tasks_cycles_delta =
     prv_cycle_delta_update(all_tasks_stats.total_cycles, &s_prev_non_idle_tasks_cycles);
   MEMFAULT_LOG_DEBUG("Non-idle tasks cycles: %u", (uint32_t)non_idle_tasks_cycles_delta);
@@ -235,10 +240,7 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
   uint32_t usage_pct = (uint32_t)(non_idle_tasks_cycles_delta * 10000 / all_tasks_cycles_delta);
   MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct, usage_pct);
   MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%\n", usage_pct / 100, usage_pct % 100);
-      #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 0)
-    #endif    // CONFIG_THREAD_RUNTIME_STATS
-
-  #endif /* defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) */
+  #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 0)
 
   #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
   {

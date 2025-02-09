@@ -108,7 +108,7 @@ def nrf_gdbserver(
 def nrf_eraseflash(ctx):
     """Erase all flash contents of the nrf device putting the board back in a clean state.
     It's a good idea to run this before flashing a new application on the dev board"""
-    cmd = "nrfjprog --eraseall"
+    cmd = "nrfutil device erase --all"
     ctx.run(cmd)
 
 

@@ -9,9 +9,11 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(time, kMemfaultMetricType_Unsigned, cli
 // Pathological key name, to test that heartbeat key extraction handles it correctly
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(__cli__cli__, kMemfaultMetricType_Unsigned, cli)
 
+#if defined(CONFIG_MEMFAULT_METRICS_THREADS)
 // Thread metrics
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_main_pct_max, kMemfaultMetricType_Unsigned,
                                              CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_shell_uart_pct_max,
                                              kMemfaultMetricType_Unsigned,
                                              CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+#endif

@@ -85,7 +85,7 @@ def fw_sdk_unit_test(
     else:
         try:
             # Only available on Linux, but it's better
-            cpus = len(cast(Any, os).sched_getaffinity(0))
+            cpus = len(cast("Any", os).sched_getaffinity(0))
         except AttributeError:
             # Available on Mac
             cpus = int((os.cpu_count() or 4) / 2)

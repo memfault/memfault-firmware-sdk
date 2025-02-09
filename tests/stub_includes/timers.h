@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-typedef uint32_t TaskHandle_t;
 typedef uint32_t UBaseType_t;
 typedef uint32_t StackType_t;
 

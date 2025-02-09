@@ -21,4 +21,8 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(time, kMemfaultMetricType_Unsigned, cli
 // Pathological key name, to test that heartbeat key extraction handles it correctly
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(__cli__cli__, kMemfaultMetricType_Unsigned, cli)
 
+// Example "daily_heartbeat" session
+MEMFAULT_METRICS_SESSION_KEY_DEFINE(daily_heartbeat)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(uptime_s, kMemfaultMetricType_Unsigned, daily_heartbeat)
+
 #include "ports/freertos/config/memfault_metrics_heartbeat_freertos_config.def"

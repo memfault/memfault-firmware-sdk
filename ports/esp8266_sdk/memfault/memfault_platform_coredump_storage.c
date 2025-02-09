@@ -21,7 +21,7 @@
   #include "memfault/esp8266_port/core.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/panics/platform/coredump.h"
-  #include "memfault/util/crc16_ccitt.h"
+  #include "memfault/util/crc16.h"
   #include "rom/ets_sys.h"
 
   #define MEMFAULT_COREDUMP_PART_INIT_MAGIC 0x45524f43
@@ -35,9 +35,8 @@ typedef struct {
 static sEspIdfCoredumpPartitionInfo s_coredump_partition_info;
 
 static uint32_t prv_get_partition_info_crc(void) {
-  return memfault_crc16_ccitt_compute(MEMFAULT_CRC16_CCITT_INITIAL_VALUE,
-                                      &s_coredump_partition_info,
-                                      offsetof(sEspIdfCoredumpPartitionInfo, crc));
+  return memfault_crc16_compute(MEMFAULT_CRC16_INITIAL_VALUE, &s_coredump_partition_info,
+                                offsetof(sEspIdfCoredumpPartitionInfo, crc));
 }
 
 void memfault_esp_port_coredump_storage_boot(void) {

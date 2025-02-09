@@ -10,8 +10,8 @@ requires-python = ">=3.8,<4.0"
 mflt_build_id = 'mflt_build_id:main'
 mflt-build-id = 'mflt_build_id:main'
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "pytest >=6",
   "pytest-cov >=2,<3",
   "pytest-timeout >=2.0,<3.0",

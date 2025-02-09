@@ -6,6 +6,152 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2025-02-06
+
+### 📈 Added
+
+- General:
+
+  - Make `memfault_reboot_reason_get()` and
+    `memfault_platform_metrics_timer_boot()` weakly defined in the
+    [platform templates](ports/templates) to make removing them optional when
+    first integrating
+
+  - Added a configuration option, `MEMFAULT_CRC16_BUILTIN`, that permits
+    disabling the built-in [crc16](components/util/src/memfault_crc16_ccitt.c)
+    implementation. The user should provide a compatible implementation of
+    `memfault_crc16_compute()`. For example, if the Zephyr CRC library is used,
+    a compatible implementation would be:
+
+    ```c
+    #include <zephyr/sys/crc.h>
+
+    uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
+                                    size_t data_len_bytes) {
+      return crc16_itu_t(crc_initial_value, data, data_len_bytes);
+    }
+    ```
+
+    A Zephyr Kconfig setting, `CONFIG_MEMFAULT_CRC16_BUILTIN`, is also provided
+    to control this option.
+
+    Thanks to [@JordanYates](https://github.com/JordanYates) for submitting this
+    feature request in
+    [#84](https://github.com/memfault/memfault-firmware-sdk/issues/84) !
+
+  - Added an example `daily_heartbeat` session to the
+    [FreeRTOS QEMU example](examples/freertos/src/metrics.c), which demonstrates
+    how to send a daily heartbeat session to Memfault. Daily Heartbeats are a
+    special category of Session Metrics, and can be used to track device
+    properties over a longer interval than heartbeat metrics.
+
+  - Added an optional field to the built-in
+    [FreeRTOS task stack usage metrics](ports/include/memfault/ports/freertos/thread_metrics.h),
+    `.get_task_handle`, which allows the user to provide a custom function to
+    get the task handle for a given thread name, instead of using the thread
+    name to identify the thread. This is useful in systems where there are
+    threads with ambiguous names. The
+    [ESP32 example app](examples/esp32/apps/memfault_demo_app/main/metrics.c) is
+    updated to use this feature for ESP-IDF <5.3, where on dual-core SOCs, the
+    per-core idle threads are both named `IDLE`.
+
+- nRF Connect SDK:
+
+  - Added a new Kconfig symbol `CONFIG_MEMFAULT_FOTA_HTTP_FRAG_SIZE` to enable
+    controlling the HTTP fragment size when using NCS >=2.9.9. Previously,
+    `CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE_1024=y` was required, but this option
+    was deprecated in NCS 2.9.9.
+
+  - Add built-in support for the `thermal_cpu_c` (CPU temperature) metric for
+    nRF5x chips (nRF52 and nRF54 app core supported). Use the Kconfig setting
+    `MEMFAULT_METRICS_CPU_TEMP` to disable the metric.
+
+- Zephyr
+
+  - Add a new Kconfig setting, `CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS`, which
+    controls the timeout for the Memfault HTTP client, used both for chunk
+    upload and OTA operations. The default timeout is 5 seconds. Connections
+    with poor latency may require a longer timeout to avoid premature
+    disconnection. Thanks to [@chirambaht](https://github.com/chirambaht) for
+    submitting this in
+    [#86](https://github.com/memfault/memfault-firmware-sdk/issues/86)!
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Use the configuration `MEMFAULT_LOG_MAX_LINE_SAVE_LEN` to set the max length
+    of a log line when `CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK=y`, which is the
+    default setting in ESP-IDF. Previously, the log line was arbitrarily
+    truncated in the Memfault vprintf hook before being saved to the Memfault
+    log buffer.
+
+- General:
+
+  - Remove the `MEMFAULT_PACKED` attribute for the `eMemfaultRebootReason`
+    declaration; this compiler extension is not supported on IAR EWARM's
+    compiler. Change the assembly shim to properly zero-extend the enum constant
+    to avoid ABI issues when invoking the C fault handling code.
+
+### 🛠️ Changed
+
+- General:
+
+  - Remove an extra underscore in the folder name when using the
+    [`eclipse_patch.py`](scripts/eclipse_patch.py) utility with a port name that
+    is one folder deep (e.g. `freertos`)
+
+  - Rename the `memfault_crc16_ccitt_compute()` function to
+    `memfault_crc16_compute()`. The CRC-16 algorithm used is canonically named
+    `CRC-16/XMODEM`, **not** `CRC-16/CCITT` (aka `CRC-16/KERMIT`). The file
+    implementing that function is left as `memfault_crc16_ccitt.c` for backwards
+    compatibility. Thanks to [@JordanYates](https://github.com/JordanYates) for
+    reporting this issue in
+    [#83](https://github.com/memfault/memfault-firmware-sdk/issues/83)!
+
+- Zephyr:
+
+  - Add a missing Kconfig dependency to `MEMFAULT_METRICS_THREADS`,
+    `INIT_STACKS`. Also add missing dependencies to the Kconfig option
+    `MEMFAULT_METRICS_DEFAULT_SET_ENABLE`:
+
+    - `INIT_STACKS`
+    - `THREAD_RUNTIME_STATS`
+    - `THREAD_STACK_INFO`
+
+    Thanks to [@JordanYates](https://github.com/JordanYates) for reporting this
+    problem in
+    [#86](https://github.com/memfault/memfault-firmware-sdk/issues/86) !
+
+  - Update the
+    [memfault_zephyr_port_post_data()/memfault_zephyr_port_post_data_return_size()](ports/zephyr/common/memfault_platform_http.c)
+    functions to only open the TLS socket if there is data ready to send, which
+    is otherwise wasteful, as the socket will be closed without sending any
+    Memfault data.
+
+  - Add an explicit module name, `memfault-firmware-sdk`, to the module
+    manifest. This avoids issues when the SDK is registered in a Zephyr manifest
+    under a directory name other than `memfault-firmware-sdk`. Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this issue in
+    [#81](https://github.com/memfault/memfault-firmware-sdk/issues/81)!
+
+  - Exclude unused stack space when capturing thread stacks, via the
+    `thread.stack_info.delta` property. This reduces the amount of coredump
+    storage used to capture thread stacks, especially when
+    `CONFIG_STACK_POINTER_RANDOM` or `CONFIG_THREAD_LOCAL_STORAGE` is enabled.
+    Thanks to [@JordanYates](https://github.com/JordanYates) for reporting this
+    issue in [#81](https://github.com/memfault/memfault-firmware-sdk/issues/85)!
+
+- nRF Connect SDK:
+
+  - Remove use of child and parent image functionality in the nRF9160 sample
+    app, and replace with sysbuild support. Child image support was deprecated
+    in NCS 2.7.0 in favor of sysbuild.
+
+  - Use the downloader library instead of the download client library when using
+    NCS >= 2.9.9. The download_client was recently deprecated in favor of the
+    downloader. Download client support is now in `memfault_fota_legacy.c`.
+
 ## [1.19.0] - 2025-01-10
 
 ### 📈 Added
@@ -2034,7 +2180,8 @@ earlier versions!
     call the normal `z_fatal_error` handler at the end of Memfault fault
     processing instead of rebooting the system. This is useful when user code
     needs to run within `k_sys_fatal_error_handler()` just prior to system
-    shutdown. Thanks to @JordanYates for the patch! Fixes
+    shutdown. Thanks to [@JordanYates](https://github.com/JordanYates) for the
+    patch! Fixes
     [#59](https://github.com/memfault/memfault-firmware-sdk/issues/59).
 
   - Add a timeout to the initial `send()` socket operation in
@@ -2205,7 +2352,8 @@ earlier versions!
   - Fix a 🐛 and warnings involving older Zephyr header paths. Resolves
     [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and
     [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks
-    @JordanYates and @YHusain1 for reporting these issues.
+    [@JordanYates](https://github.com/JordanYates) and @YHusain1 for reporting
+    these issues.
 
 ### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
 
@@ -2219,7 +2367,7 @@ earlier versions!
   override the default. For Zephyr, the Kconfig option
   `CONFIG_MEMFAULT_GNU_BUILD_ID_SOURCE_BUILTIN` can be used to override the
   builtin section specifier + linker fragment for the GNU build ID. Thanks to
-  @JordanYates for posting this change in
+  [@JordanYates](https://github.com/JordanYates) for posting this change in
   [#60](https://github.com/memfault/memfault-firmware-sdk/pull/60) 🎉
 - Improvements to the ARMv7-R exception handling when the supervisor processor
   mode is active
@@ -2245,7 +2393,7 @@ earlier versions!
 - Zephyr:
   - Fix a build error when `CONFIG_MEMFAULT_LOGGING=n`, see
     [#56](https://github.com/memfault/memfault-firmware-sdk/issues/56). Thanks
-    to @JordanYates for reporting this issue!
+    to [@JordanYates](https://github.com/JordanYates) for reporting this issue!
   - Fix a potential bug in the Memfault Log Backend when
     `CONFIG_LOG_MODE_IMMEDIATE=y` when flushing of fault logs during a crash
 

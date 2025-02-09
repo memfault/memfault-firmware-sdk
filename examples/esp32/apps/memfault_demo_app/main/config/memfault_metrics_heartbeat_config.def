@@ -29,10 +29,12 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_mbedtls_mem_max_bytes, kMemfaultMet
 #if !MEMFAULT_METRICS_THREADS_DEFAULTS
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_main_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
-MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle1_pct_max, kMemfaultMetricType_Unsigned,
-                                             MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle0_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+  #if !defined(CONFIG_FREERTOS_UNICORE)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle1_pct_max, kMemfaultMetricType_Unsigned,
+                                             MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+  #endif
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_example_task_pct_max,
                                              kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
@@ -43,10 +45,12 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_mflt_periodic_u_pct_max,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_tmr_svc_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+  #if !defined(CONFIG_FREERTOS_UNICORE)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_ipc0_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_ipc1_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
+  #endif
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_ota_pct_max, kMemfaultMetricType_Unsigned,
                                              MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_sys_evt_pct_max, kMemfaultMetricType_Unsigned,

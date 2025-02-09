@@ -24,7 +24,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/util/chunk_transport.h"
-#include "memfault/util/crc16_ccitt.h"
+#include "memfault/util/crc16.h"
 #include "memfault/util/varint.h"
 
 typedef struct {
@@ -134,7 +134,7 @@ bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *
     uint8_t *msg_bufp = &chunk_msg[chunk_msg_start_offset];
     ctx->read_msg(ctx->read_offset, msg_bufp, bytes_to_read);
     ctx->crc16_incremental =
-      memfault_crc16_ccitt_compute(ctx->crc16_incremental, msg_bufp, bytes_to_read);
+      memfault_crc16_compute(ctx->crc16_incremental, msg_bufp, bytes_to_read);
     chunk_msg_start_offset += bytes_to_read;
   }
 
@@ -153,14 +153,17 @@ bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *
   if (buf_space_rem != 0) {
     // The encoded chunk consumes less space than the buffer provided. This can
     // happen when we reach the end of the underlying message being encoded
+    // before exhausting the provided buffer.
     //
-    // The Memfault backend allows for the last chunk in a message to exceed the
-    // size of the underlying message being sent. This can be useful for topologies
-    // that require sending chunks of a fixed size.
+    // Note: ONLY for cases where the message spans multiple chunks, the final
+    // chunk can be submitted to Memfault including the spare buffer space bytes
+    // (i.e. using a fixed payload size to Memfault), and the Memfault backend
+    // will discard the spare bytes. This is ONLY supported for multi-chunk
+    // messages; single-chunk messages must be submitted with the exact payload
+    // size as returned in *out_buf_len.
     //
-    // Scrub the remaining part of the buffer for this situation with a know pattern
-    // for debug purposes so it's easier to visually see the end of the chunk and to
-    // prevent unintentional data from being sent.
+    // Scrub the remaining part of the buffer for this situation with a known
+    // pattern for debug purposes.
     memset(&chunk_msg[bytes_written], 0xBA, buf_space_rem);
   }
 

@@ -19,60 +19,28 @@ if (NOT DEFINED NCS_VERSION_MAJOR)
   message(FATAL_ERROR "NCS Version not found, please contact Memfault support!")
 endif()
 
-# Below we conditionally set Kconfig variables based on nRF Connect SDK version
+# Below we conditionally set Kconfig variables via overlays based on nRF Connect SDK version
 # (since setting non-existent variables result in a build time error which
 # would break compiling older builds)
-#
-# Zephyrs Kconfig extension pulls variables via the "CMake variable cache"
-# so we set the ones we need here using that:
-#   https://docs.zephyrproject.org/latest/build/kconfig/setting.html#the-initial-configuration
 
-# Enable Memfault FOTA Support
-set(CONFIG_MEMFAULT_FOTA y CACHE INTERNAL "")
-set(CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE 400 CACHE INTERNAL "")
-set(CONFIG_DOWNLOAD_CLIENT_STACK_SIZE 1600 CACHE INTERNAL "")
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_GREATER_EQUAL 2.9.99)
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-main.conf")
+endif()
 
-# Note: Can optionally be changed to =y to implement
-# a custom event handler for FOTA events
-# CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=n
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.9.99)
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v2.9.99.conf")
+endif()
 
-
-set(CONFIG_MEMFAULT_NCS_PROVISION_CERTIFICATES n CACHE INTERNAL "")
-set(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME y CACHE INTERNAL "")
-
-# Pre-2.8.0, the AT_SHELL library requires newlib libc
 if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.8.0)
-set(CONFIG_NEWLIB_LIBC y CACHE INTERNAL "")
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v2.8.0.conf")
 endif()
 
-# in v1.8+, use the modem_info library to get the IMEI for device_serial
-set(CONFIG_MODEM_INFO y CACHE INTERNAL "")
-
-# pre-2.3.0, SPM (Secure Partition Manager) can be used instead of the default
-# TFM, and results in nicer backtraces in certain cases, so select it here.
 if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.2.99)
-  # Use SPM instead of TFM for Secure Firmware as TFM does not (yet) support forwarding of fault handlers
-  set(CONFIG_BUILD_WITH_TFM n CACHE INTERNAL "")
-  # Explicitly set SPM=y because as of nRF Connect >= 2.1.0 it is marked as deprecated and no longer enabled by default
-  set(CONFIG_SPM y CACHE INTERNAL "")
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v2.2.99.conf")
 endif()
 
-if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} GREATER_EQUAL 2.4.0)
-  # In Zephyr v3.4 release, FLASH_MAP and STREAM_FLASH must be specified manually
-  #  https://github.com/zephyrproject-rtos/zephyr/commit/c3bfe7a6baf7e47d8ad70e38ffdea313f3ec62ce
-  #
-  # These are required for NCS >= 2.4
-  set(CONFIG_FLASH_MAP y CACHE INTERNAL "")
-  set(CONFIG_STREAM_FLASH y CACHE INTERNAL "")
-
-  set(CONFIG_AT_SHELL y CACHE INTERNAL "")
-  # Make it possible to send AT commands ending with a "?"
-  #  https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.4.2/nrf/libraries/modem/at_shell.html
-  set(CONFIG_SHELL_WILDCARD n CACHE INTERNAL "")
-
-else()
-  # Only needed in NCS <2.4.0
-  set(CONFIG_LTE_AUTO_INIT_AND_CONNECT n CACHE INTERNAL "")
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 2.4.0)
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v2.4.0.conf")
 endif()
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})

@@ -167,7 +167,7 @@ void memfault_unlock(void) {
 
 int memfault_esp_port_vprintf_log_hook(const char *fmt, va_list args) {
   // copy result into memfault log buffer collected as part of a coredump
-  char log_buf[80];
+  char log_buf[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1];
   const size_t available_space = sizeof(log_buf);
   const int rv = vsnprintf(log_buf, available_space, fmt, args);
 

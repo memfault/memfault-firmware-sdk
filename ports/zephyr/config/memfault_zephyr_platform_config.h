@@ -110,6 +110,12 @@ extern "C" {
   #define MEMFAULT_MPU_REGIONS_TO_COLLECT CONFIG_MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT
 #endif
 
+#if defined(CONFIG_MEMFAULT_CRC16_BUILTIN)
+  #define MEMFAULT_CRC16_BUILTIN 1
+#else
+  #define MEMFAULT_CRC16_BUILTIN 0
+#endif
+
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 
   // Pick up any user configuration overrides. This should be kept at the bottom

@@ -505,6 +505,13 @@ extern "C" {
 // Util Configuration Options
 //
 
+// Set this to 0 to disable the built-in CRC16 implementation. The platform will
+// need to provide a compatible implementation of memfault_crc16_compute(), as
+// defined in memfault/util/crc16.h.
+#ifndef MEMFAULT_CRC16_BUILTIN
+  #define MEMFAULT_CRC16_BUILTIN 1
+#endif
+
 // Enables the use of a (512 bytes) lookup table for CRC16 computation to improve performance
 //
 // For extremely constrained environments where a small amount of data is being sent anyway the

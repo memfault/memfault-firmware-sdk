@@ -2,6 +2,14 @@
 //!
 //! Copyright (c) Memfault, Inc.
 //! See LICENSE for details
+//!
+//! Note that the CRC implementation is CRC-16/XMODEM, not CRC-16/CCITT
+//! (canonically named "CRC-16/KERMIT").
+//!
+//! It implements the following polynomial:
+//!   x^16 + x^12 + x^5 + 1 (0x1021)
+//! More details:
+//!   http://reveng.sourceforge.net/crc-catalogue/16.htm#crc.cat.crc-16-xmodem
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -9,11 +17,15 @@
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
-#include "memfault/util/crc16_ccitt.h"
+#include "memfault/util/crc16.h"
 
-#if MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
+//! Users can provide their own implementation of memfault_crc16_compute by
+//! setting MEMFAULT_CRC16_BUILTIN to 0 in their platform configuration file.
+#if MEMFAULT_CRC16_BUILTIN
 
-static const uint16_t s_crc16_ccit_table[] = {
+  #if MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
+
+static const uint16_t s_crc16_table[] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b,
   0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
   0x9339, 0x8318, 0xb37b, 0xa35a, 0xd3bd, 0xc39c, 0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
@@ -37,27 +49,27 @@ static const uint16_t s_crc16_ccit_table[] = {
   0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
   0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
 };
-MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_crc16_ccit_table) == 256,
+MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_crc16_table) == 256,
                        "Unexpected CRC lookup table size");
 
-uint16_t memfault_crc16_ccitt_compute(uint16_t crc_initial_value, const void *data,
-                                      size_t data_len_bytes) {
+uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
+                                size_t data_len_bytes) {
   uint16_t crc = crc_initial_value;
 
   const uint8_t *curr_ptr = data;
   for (size_t i = 0; i < data_len_bytes; i++) {
     uint16_t table_idx = ((crc >> 8) ^ *curr_ptr++) & 0xff;
 
-    crc = ((uint16_t)(crc << 8)) ^ s_crc16_ccit_table[table_idx];
+    crc = ((uint16_t)(crc << 8)) ^ s_crc16_table[table_idx];
   }
 
   return crc;
 }
 
-#else
+  #else  // MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
 
-uint16_t memfault_crc16_ccitt_compute(uint16_t crc_initial_value, const void *data,
-                                      size_t data_len_bytes) {
+uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
+                                size_t data_len_bytes) {
   const uint32_t polynomial = 0x1021;
   uint32_t crc = crc_initial_value;
   const uint8_t *curr_ptr = data;
@@ -73,4 +85,5 @@ uint16_t memfault_crc16_ccitt_compute(uint16_t crc_initial_value, const void *da
   return (uint16_t)crc;
 }
 
-#endif /* MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE */
+  #endif  // MEMFAULT_CRC16_LOOKUP_TABLE_ENABLE
+#endif    // MEMFAULT_CRC16_BUILTIN
