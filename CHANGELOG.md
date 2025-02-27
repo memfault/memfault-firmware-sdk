@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - Add new built-in Wi-Fi metrics:
+
+    - `wifi_primary_channel` - the primary channel ID of the associated Wi-Fi
+      access point
+    - `wifi_auth_mode` - the authentication mode of the associated Wi-Fi access
+      point, for example `WPA2_PSK`
+    - `wifi_standard_version` - the Wi-Fi version of the associated Wi-Fi access
+      point, for example `802.11n`
+
+    These metrics are enabled by default and can be disabled (along with other
+    built-in Wi-Fi metrics) with the Kconfig option
+    `CONFIG_MEMFAULT_ESP_WIFI_METRICS`
+
+- General:
+
+  - Add `MEMFAULT_CRASH_WITH_REASON(reason)` macro for ARM Cortex-M only. This
+    can be used to trigger a crash with a specific reason code, as an
+    alternative to `MEMFAULT_ASSERT_WITH_REASON()`;
+    `MEMFAULT_CRASH_WITH_REASON()` does not pass through the assert handler, and
+    will result in more precise backtraces in most cases. See
+    [`components/include/memfault/panics/fault_handling.h`](components/include/memfault/panics/fault_handling.h)
+    for details.
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Support cases where the `IDF_VER` build variable is set to
+    `"HEAD-HASH-NOTFOUND"` (i.e. using an ESP-IDF SDK that is not a git repo),
+    when setting the built-in metric `MemfaultSdkMetric_os_version`. In this
+    case, the value is taken from the `ESP_IDF_VERSION_x` macros, which are less
+    precise.
+
+### 🚩 Deprecated
+
+### 🔥 Removed
+
+### 🐛 Fixed
+
+### 🔒 Security
+
 ## [1.20.0] - 2025-02-06
 
 ### 📈 Added
@@ -141,6 +188,19 @@ and this project adheres to
     `CONFIG_STACK_POINTER_RANDOM` or `CONFIG_THREAD_LOCAL_STORAGE` is enabled.
     Thanks to [@JordanYates](https://github.com/JordanYates) for reporting this
     issue in [#81](https://github.com/memfault/memfault-firmware-sdk/issues/85)!
+
+  - Fix a configuration issue when building for any of the following parts, but
+    NOT using nRF-Connect SDK (i.e. using Zephyr instead):
+
+    - SOC_SERIES_NRF52X
+    - SOC_SERIES_NRF53X
+    - SOC_SERIES_NRF54LX
+    - SOC_SERIES_NRF91X
+
+    The Memfault SDK now correctly enables nRF-Connect-SDK-specific
+    functionality ONLY when that SDK is included as a Zephyr module. Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this issue in
+    [#81](https://github.com/memfault/memfault-firmware-sdk/issues/89)!
 
 - nRF Connect SDK:
 

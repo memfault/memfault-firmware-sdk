@@ -154,6 +154,16 @@ static int prv_leak_memory(int argc, char *argv[]) {
   return 0;
 }
 
+static int prv_wdg(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  MEMFAULT_LOG_ERROR("Simulating watchdog crash");
+
+  MEMFAULT_CRASH_WITH_REASON(kMfltRebootReason_TaskWatchdog);
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -189,6 +199,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "leak",
     .handler = prv_leak_memory,
     .help = "Allocate memory and leak it. Usage: leak <num_bytes>",
+  },
+  {
+    .command = "wdg",
+    .handler = prv_wdg,
+    .help = "Simulated watchdog crash",
   }
 };
 #endif

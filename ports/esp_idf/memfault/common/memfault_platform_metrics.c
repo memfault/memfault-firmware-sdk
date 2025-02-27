@@ -48,7 +48,6 @@
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
 int32_t s_min_rssi;
-
   // This is a practical maximum RSSI value. In reality, the RSSI value is
   // will likely be much lower. A value in the mid -60s is considered very good
   // for example. An RSSI of -20 would be a device essentially on top of the AP.
@@ -126,20 +125,77 @@ static void prv_register_event_handler(void) {
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &metric_event_handler, NULL));
 }
 
-static void prv_collect_oui(void) {
-  wifi_ap_record_t ap_info;
-  static uint8_t s_memfault_ap_bssid[sizeof(ap_info.bssid)];
-  esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
-  if (err == ESP_OK) {
-    // only set the metric if the AP MAC changed
-    if (memcmp(s_memfault_ap_bssid, ap_info.bssid, sizeof(s_memfault_ap_bssid)) != 0) {
-      char oui[9];
-      snprintf(oui, sizeof(oui), "%02x:%02x:%02x", ap_info.bssid[0], ap_info.bssid[1],
-               ap_info.bssid[2]);
-      MEMFAULT_METRIC_SET_STRING(wifi_ap_oui, oui);
-      memcpy(s_memfault_ap_bssid, ap_info.bssid, sizeof(s_memfault_ap_bssid));
-    }
+static void prv_collect_oui(wifi_ap_record_t *ap_info) {
+  static uint8_t s_memfault_ap_bssid[sizeof(ap_info->bssid)];
+  // only set the metric if the AP MAC changed
+  if (memcmp(s_memfault_ap_bssid, ap_info->bssid, sizeof(s_memfault_ap_bssid)) != 0) {
+    char oui[9];
+    snprintf(oui, sizeof(oui), "%02x:%02x:%02x", ap_info->bssid[0], ap_info->bssid[1],
+             ap_info->bssid[2]);
+    MEMFAULT_METRIC_SET_STRING(wifi_ap_oui, oui);
+    memcpy(s_memfault_ap_bssid, ap_info->bssid, sizeof(s_memfault_ap_bssid));
   }
+}
+
+// Maximum allowable string length is limited by the metric using this,
+static const char *auth_mode_strings[] = {
+  // clang-format off
+  [WIFI_AUTH_OPEN] = "OPEN",
+  [WIFI_AUTH_WEP] = "WEP",
+  [WIFI_AUTH_WPA_PSK] = "WPA-PSK",
+  [WIFI_AUTH_WPA2_PSK] = "WPA2-PSK",
+  [WIFI_AUTH_WPA_WPA2_PSK] = "WPA-WPA2-PSK",
+  [WIFI_AUTH_WPA2_ENTERPRISE] = "WPA2-ENTERPRISE",
+  [WIFI_AUTH_WPA3_PSK] = "WPA3-PSK",
+  [WIFI_AUTH_WPA2_WPA3_PSK] = "WPA2-WPA3-PSK",
+  [WIFI_AUTH_WAPI_PSK] = "WAPI-PSK",
+  [WIFI_AUTH_WPA3_ENT_192] = "WPA3-ENT-192",
+  // other auth modes are not supported, and will show "UNKNOWN"
+  // clang-format on
+};
+
+static const char *prv_esp_idf_authomode_to_str(wifi_auth_mode_t auth_mode) {
+  if (auth_mode >= MEMFAULT_ARRAY_SIZE(auth_mode_strings)) {
+    return "UNKNOWN";
+  }
+
+  const char *authmode = auth_mode_strings[auth_mode];
+
+  // The auth mode enum is not contiguous, due to different entries supported on
+  // different ESP-IDF versions, so we need to check for NULL. We care most
+  // about the most popular auth modes, so we don't need to be exhaustive.
+  if (authmode == NULL) {
+    return "UNKNOWN";
+  }
+
+  return authmode;
+}
+
+static void prv_collect_wifi_version(wifi_ap_record_t *ap_info) {
+  // Map the phy_ bits to a Wi-Fi Version integer
+  const char *wifi_version = "unknown";
+
+  if (ap_info->phy_11n) {
+    wifi_version = "802.11n";
+  // phy_11ac and phy_11a were added in ESP-IDF 5.3
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  } else if (ap_info->phy_11ac) {
+    wifi_version = "802.11ac";
+  } else if (ap_info->phy_11a) {
+    wifi_version = "802.11a";
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
+  // phy_11ax was added in ESP-IDF 5.1
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  } else if (ap_info->phy_11ax) {
+    wifi_version = "802.11ax";
+  #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  } else if (ap_info->phy_11g) {
+    wifi_version = "802.11g";
+  } else if (ap_info->phy_11b) {
+    wifi_version = "802.11b";
+  }
+
+  MEMFAULT_METRIC_SET_STRING(wifi_standard_version, wifi_version);
 }
 
 static void prv_collect_wifi_metrics(void) {
@@ -153,8 +209,22 @@ static void prv_collect_wifi_metrics(void) {
     s_min_rssi = 0;
   }
 
-  // Collect AP OUI
-  prv_collect_oui();
+  wifi_ap_record_t ap_info;
+  esp_err_t err = esp_wifi_sta_get_ap_info(&ap_info);
+  if (err != ESP_OK) {
+    // Other metrics require this data, exit early if we can't get it
+    return;
+  }
+
+  // Primary channel
+  MEMFAULT_METRIC_SET_UNSIGNED(wifi_primary_channel, ap_info.primary);
+
+  const char *auth_mode_str = prv_esp_idf_authomode_to_str(ap_info.authmode);
+  MEMFAULT_METRIC_SET_STRING(wifi_auth_mode, auth_mode_str);
+
+  prv_collect_wifi_version(&ap_info);
+
+  prv_collect_oui(&ap_info);
 }
 #endif  // CONFIG_MEMFAULT_ESP_WIFI_METRICS
 
@@ -238,7 +308,6 @@ static void prv_collect_temperature_metric(void) {
       MEMFAULT_LOG_ERROR("Failed to get temperature sensor data: %d", err);
       break;
     } else {
-      MEMFAULT_LOG_INFO("Temperature: %.02fC", tsens_out);
       MEMFAULT_METRIC_SET_SIGNED(thermal_cpu_c, (int32_t)(tsens_out * 10.0f));
     }
   } while (0);

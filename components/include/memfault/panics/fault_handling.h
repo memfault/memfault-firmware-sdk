@@ -26,7 +26,7 @@ typedef struct MemfaultAssertInfo {
 
 #if MEMFAULT_COMPILER_ARM_CORTEX_M
 
-//! Function prototypes for fault handlers
+//! Function prototypes for fault handlers specific to ARM Cortex-M devices
 
 //! Non-Maskable Interrupt handler for ARM processors. The handler will capture fault
 //! information and PC/LR addresses, trigger a coredump to be captured and finally reboot.
@@ -69,6 +69,52 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_USAGE_FAULT(void);
 //! For more ideas about configuring watchdogs in general check out:
 //!   https://mflt.io/root-cause-watchdogs
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void);
+
+//! Only implemented for ARM Cortex-M devices. This function is used to override
+//! the crash reason set in the fault handler (typically either assert, or based
+//! on the exception type).
+void memfault_fault_handling_override_crash_reason(eMemfaultRebootReason reason);
+
+//! Provide the assert trap macro for platform use.
+
+  // The ARM architecture has a reserved instruction that is "Permanently Undefined" and always
+  // generates an Undefined Instruction exception causing an ARM fault handler to be invoked.
+  //
+  // We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the
+  // immediate value for easy disambiguation from any other udf invocations in a system.
+  //
+  // Disable formatting; clang-format puts the ALIGN directive on the previous line
+  // clang-format off
+  #if defined(__CC_ARM)
+__asm __forceinline void MEMFAULT_ASSERT_TRAP(void) {
+  PRESERVE8
+  UND #77
+  ALIGN
+}
+  // clang-format on
+
+  #elif defined(__TI_ARM__)
+  // The TI Compiler doesn't support the udf asm instruction
+  // so we encode the instruction & a nop as a word literal
+
+    #pragma diag_push
+    #pragma diag_suppress 1119
+
+void MEMFAULT_ASSERT_TRAP(void) {
+  __asm(" .word 3204505165");  // 0xbf00de4d
+}
+
+    #pragma diag_pop
+  #else
+    #define MEMFAULT_ASSERT_TRAP() __asm volatile("udf #77")
+  #endif
+
+  #define MEMFAULT_CRASH_WITH_REASON(reason)                 \
+    do {                                                     \
+      memfault_fault_handling_override_crash_reason(reason); \
+      MEMFAULT_ASSERT_TRAP();                                \
+    } while (0)
+
 #endif
 
 //! Runs the Memfault assert handler.
@@ -106,10 +152,6 @@ void memfault_fault_handling_assert(void *pc, void *lr);
 MEMFAULT_NORETURN
 #endif
 void memfault_fault_handling_assert_extra(void *pc, void *lr, sMemfaultAssertInfo *extra_info);
-
-//! Handler called in all system-specific fault_handlers, to perform generic
-//! bookkeeping or other operations shared by all fault handlers.
-void memfault_fault_handling_common(void);
 
 #ifdef __cplusplus
 }

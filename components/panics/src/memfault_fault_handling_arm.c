@@ -521,38 +521,6 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
     #error "New compiler to add support for!"
   #endif
 
-  // The ARM architecture has a reserved instruction that is "Permanently Undefined" and always
-  // generates an Undefined Instruction exception causing an ARM fault handler to be invoked.
-  //
-  // We use this instruction to "trap" into the fault handler logic. We use 'M' (77) as the
-  // immediate value for easy disambiguation from any other udf invocations in a system.
-  //
-  // Disable formatting; clang-format puts the ALIGN directive on the previous line
-  // clang-format off
-  #if defined(__CC_ARM)
-__asm __forceinline void MEMFAULT_ASSERT_TRAP(void) {
-  PRESERVE8
-  UND #77
-  ALIGN
-}
-  // clang-format on
-
-  #elif defined(__TI_ARM__)
-  // The TI Compiler doesn't support the udf asm instruction
-  // so we encode the instruction & a nop as a word literal
-
-    #pragma diag_push
-    #pragma diag_suppress 1119
-
-void MEMFAULT_ASSERT_TRAP(void) {
-  __asm(" .word 3204505165");  // 0xbf00de4d
-}
-
-    #pragma diag_pop
-  #else
-    #define MEMFAULT_ASSERT_TRAP() __asm volatile("udf #77")
-  #endif
-
   #if defined(__clang__)
 // When using clang with LTO, the compiler can optimize storing the LR + FP from this function,
 // disable optimizations to fix
@@ -616,5 +584,9 @@ MEMFAULT_NO_OPT void memfault_fault_handling_assert_extra(void *pc, void *lr,
   #if defined(__CC_ARM)
     #pragma pop
   #endif
+
+void memfault_fault_handling_override_crash_reason(eMemfaultRebootReason reason) {
+  s_crash_reason = reason;
+}
 
 #endif /* MEMFAULT_COMPILER_ARM_CORTEX_M */

@@ -30,19 +30,28 @@
       #include <version.h>
       #define MEMFAULT_OS_VERSION_NAME "zephyr"
       #define MEMFAULT_OS_VERSION_STRING KERNEL_VERSION_STRING
-    #endif /* __has_include("ncs_version.h") */
+    #endif  // __has_include("ncs_version.h")
 
   #elif defined(ESP_PLATFORM)
-    // ESP-IDF, use the command-line defined IDF_VER string
+    // ESP-IDF, prefer the command-line provided IDF_VER if set. In rare cases,
+    // IDF_VER will be set to "HEAD-HASH-NOTFOUND", in which case we fall back
+    // to the version provided by esp_idf_version.h.
     #define MEMFAULT_OS_VERSION_NAME "esp-idf"
-    #define MEMFAULT_OS_VERSION_STRING IDF_VER
+    #define STRINGIFY(x) #x
+    #define XSTRINGIFY(s) STRINGIFY(s)
+    #include "esp_idf_version.h"
+    #define MEMFAULT_OS_VERSION_STRING                          \
+      ((__builtin_strcmp(IDF_VER, "HEAD-HASH-NOTFOUND") != 0) ? \
+         (IDF_VER) :                                            \
+         ("" XSTRINGIFY(ESP_IDF_VERSION_MAJOR) "." XSTRINGIFY(  \
+           ESP_IDF_VERSION_MINOR) "." XSTRINGIFY(ESP_IDF_VERSION_PATCH) ""))
+
   #else
     // No OS version information available
     #define MEMFAULT_OS_VERSION_NAME ""
     #define MEMFAULT_OS_VERSION_STRING ""
-  #endif /* defined(__ZEPHYR__) */
-#endif   /* defined(MEMFAULT_OS_VERSION_NAME) ^ defined(MEMFAULT_OS_VERSION_STRING) \
-          */
+  #endif  // defined(__ZEPHYR__)
+#endif    // defined(MEMFAULT_OS_VERSION_NAME) ^ defined(MEMFAULT_OS_VERSION_STRING)
 
 #if MEMFAULT_USE_GNU_BUILD_ID
 
