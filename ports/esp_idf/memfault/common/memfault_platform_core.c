@@ -103,7 +103,11 @@ static void prv_record_reboot_reason(void) {
       reboot_reason = kMfltRebootReason_SoftwareReset;
       break;
     case ESP_RST_INT_WDT:
+      reboot_reason = kMfltRebootReason_SoftwareWatchdog;
+      break;
     case ESP_RST_TASK_WDT:
+      reboot_reason = kMfltRebootReason_TaskWatchdog;
+      break;
     case ESP_RST_WDT:
       reboot_reason = kMfltRebootReason_HardwareWatchdog;
       break;

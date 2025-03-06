@@ -155,7 +155,7 @@ static bool prv_encode(sMemfaultCborEncoder *encoder, void *iter) {
   }
   // To save space, all logs are encoded into a single array (as opposed to using a map or
   // array per log):
-  const size_t elements_per_log = 2;  // level, msg
+  const size_t elements_per_log = 2;  // hdr, msg
   if (!memfault_cbor_encode_array_begin(encoder, elements_per_log * ctx->num_logs)) {
     return false;
   }

@@ -37,7 +37,7 @@ typedef struct MfltFreeRTOSTaskMetricsIndex {
   // The task can optionally be tagged with the task handle, by providing a
   // callback. This helps in cases where there are tasks with ambiguous names.
   // If the callback is unpopulated or returns NULL, thread_name is used to
-  // identify the task.
+  // identify the task. If thread_name is NULL, no data is recorded.
   TaskHandle_t (*get_task_handle)(void);
 
   // The Memfault Heartbeat Metric key for stack usage. Should be defined as
@@ -67,7 +67,7 @@ typedef struct MfltFreeRTOSTaskMetricsIndex {
 //! );
 extern const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_index[];
 #define MEMFAULT_METRICS_DEFINE_THREAD_METRICS(...) \
-  const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_index[] = { __VA_ARGS__, { 0 } };
+  const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_index[] = { __VA_ARGS__, { 0 } }
 
 //! Perform tallying of thread metrics for registered threads. Called internally
 //! by memfault_freertos_port_task_runtime_metrics().

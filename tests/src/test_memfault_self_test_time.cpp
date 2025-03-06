@@ -17,10 +17,6 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
   return mock().actualCall(__func__).returnUnsignedLongIntValue();
 }
 
-bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
-  return mock().actualCall(__func__).withOutputParameter("time", time).returnBoolValue();
-}
-
 void memfault_self_test_platform_delay(MEMFAULT_UNUSED uint32_t delay_ms) {
   return;
 }

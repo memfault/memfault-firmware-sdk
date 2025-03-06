@@ -154,6 +154,20 @@ static int prv_leak_memory(int argc, char *argv[]) {
   return 0;
 }
 
+static int prv_assert_with_reason(int argc, char *argv[]) {
+  eMemfaultRebootReason reason = kMfltRebootReason_Assert;
+  if (argc >= 2) {
+    // integer argument that should be used for trace reason
+    reason = (eMemfaultRebootReason)strtoul(argv[1], NULL, 0);
+  }
+
+  MEMFAULT_LOG_ERROR("Triggering assert with reason code %d", reason);
+
+  MEMFAULT_ASSERT_WITH_REASON(0, reason);
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -189,6 +203,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "leak",
     .handler = prv_leak_memory,
     .help = "Allocate memory and leak it. Usage: leak <num_bytes>",
+  },
+  {
+    .command = "assert_with_reason",
+    .handler = prv_assert_with_reason,
+    .help = "Execute an assert with a custom reason code",
   }
 };
 #endif

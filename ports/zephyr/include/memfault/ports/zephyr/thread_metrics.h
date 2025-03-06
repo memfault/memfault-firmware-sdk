@@ -42,11 +42,11 @@ typedef struct MfltZephyrThreadMetricsIndex {
 //!   {
 //!     .thread_name = "sysworkq",
 //!     .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_sysworkq_pct_max),
-//!   }
+//!   },
 //! );
 extern const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[];
 #define MEMFAULT_METRICS_DEFINE_THREAD_METRICS(...) \
-  const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[] = { __VA_ARGS__, { 0 } };
+  const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[] = { __VA_ARGS__, { 0 } }
 
 #ifdef __cplusplus
 }

@@ -144,6 +144,10 @@ typedef struct {
   eMemfaultLogRecordType type;
   // the length of the msg (not including NUL character)
   uint32_t msg_len;
+#if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  // if non-zero, the timestamp of the log
+  uint32_t timestamp;
+#endif
   // the message to print which will always be NUL terminated when a preformatted log is returned
   // (so it is always safe to call printf without copying the log into another buffer yourself)
   char msg[MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1 /* '\0' */];

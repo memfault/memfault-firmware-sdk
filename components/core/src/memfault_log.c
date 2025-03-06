@@ -21,6 +21,7 @@
 #include "memfault/core/math.h"
 #include "memfault/core/platform/debug_log.h"
 #include "memfault/core/platform/overrides.h"
+#include "memfault/core/platform/system_time.h"
 #include "memfault/core/sdk_assert.h"
 #include "memfault/util/base64.h"
 #include "memfault/util/circular_buffer.h"
@@ -97,7 +98,8 @@ bool memfault_log_get_regions(sMemfaultLogRegions *regions) {
   return true;
 }
 
-static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRecordType type) {
+static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRecordType type,
+                                bool timestamped) {
   MEMFAULT_STATIC_ASSERT(kMemfaultPlatformLogLevel_NumLevels <= 8,
                          "Number of log levels exceed max number that log module can track");
   MEMFAULT_STATIC_ASSERT(kMemfaultLogRecordType_NumTypes <= 2,
@@ -105,7 +107,8 @@ static uint8_t prv_build_header(eMemfaultPlatformLogLevel level, eMemfaultLogRec
 
   const uint8_t level_field = (level << MEMFAULT_LOG_HDR_LEVEL_POS) & MEMFAULT_LOG_HDR_LEVEL_MASK;
   const uint8_t type_field = (type << MEMFAULT_LOG_HDR_TYPE_POS) & MEMFAULT_LOG_HDR_TYPE_MASK;
-  return level_field | type_field;
+  const uint8_t timestamped_field = timestamped ? MEMFAULT_LOG_HDR_TIMESTAMPED_MASK : 0;
+  return level_field | type_field | timestamped_field;
 }
 
 void memfault_log_set_min_save_level(eMemfaultPlatformLogLevel min_log_level) {
@@ -225,10 +228,21 @@ static bool prv_read_log_iter_callback(sMfltLogIterator *iter) {
     return false;
   }
 
-  ctx->log->msg[iter->entry.len] = '\0';
   ctx->log->level = memfault_log_get_level_from_hdr(iter->entry.hdr);
   ctx->log->type = memfault_log_get_type_from_hdr(iter->entry.hdr);
   ctx->log->msg_len = iter->entry.len;
+#if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  const size_t timestamp_len = sizeof(ctx->log->timestamp);
+  if (memfault_log_hdr_is_timestamped(iter->entry.hdr) && (iter->entry.len >= timestamp_len)) {
+    memcpy(&ctx->log->timestamp, ctx->log->msg, timestamp_len);
+    // shift the message over to remove the timestamp
+    memmove(ctx->log->msg, &ctx->log->msg[timestamp_len], ctx->log->msg_len - timestamp_len);
+    ctx->log->msg_len -= timestamp_len;
+  } else {
+    ctx->log->timestamp = 0;
+  }
+#endif
+  ctx->log->msg[ctx->log->msg_len] = '\0';
   ctx->has_log = true;
   return false;
 }
@@ -402,8 +416,25 @@ static void prv_log_save(eMemfaultPlatformLogLevel level, const void *log, size_
   }
 
   bool log_written = false;
-  const size_t truncated_log_len = MEMFAULT_MIN(log_len, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
-  const size_t bytes_needed = sizeof(sMfltRamLogEntry) + truncated_log_len;
+#if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  sMemfaultCurrentTime timestamp;
+  const bool timestamped = memfault_platform_time_get_current(&timestamp);
+  uint32_t timestamp_val;  // forward declaration for sizeof()
+  const size_t timestamped_len = timestamped ? sizeof(timestamp_val) : 0;
+#else
+  const bool timestamped = false;
+  const size_t timestamped_len = 0;
+#endif
+
+  // maximum msg length is truncated by timestamp, when enabled and valid.
+  const size_t max_log_msg_len = MEMFAULT_LOG_MAX_LINE_SAVE_LEN - timestamped_len;
+
+  const size_t truncated_log_len = MEMFAULT_MIN(log_len, max_log_msg_len);
+  // total log length for the log entry .len field includes the timestamp.
+  const uint8_t total_log_len = (uint8_t)(truncated_log_len + timestamped_len);
+  // circular buffer space needed includes the metadata (hdr + len) and msg
+  const size_t bytes_needed = sizeof(sMfltRamLogEntry) + total_log_len;
+
   if (should_lock) {
     memfault_lock();
   }
@@ -413,10 +444,16 @@ static void prv_log_save(eMemfaultPlatformLogLevel level, const void *log, size_
     if (space_free) {
       s_memfault_ram_logger.recorded_msg_count++;
       sMfltRamLogEntry entry = {
-        .len = (uint8_t)truncated_log_len,
-        .hdr = prv_build_header(level, log_type),
+        .hdr = prv_build_header(level, log_type, timestamped),
+        .len = total_log_len,
       };
       memfault_circular_buffer_write(circ_bufp, &entry, sizeof(entry));
+#if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+      if (timestamped) {
+        timestamp_val = timestamp.info.unix_timestamp_secs;
+        memfault_circular_buffer_write(circ_bufp, &timestamp_val, sizeof(timestamp_val));
+      }
+#endif
       memfault_circular_buffer_write(circ_bufp, log, truncated_log_len);
       log_written = true;
     } else {

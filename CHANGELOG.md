@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2025-03-06
+
+### 📈 Added
+
+- General:
+
+  - Logs captured by Memfault now include a timestamp by default, when the
+    platform implements `memfault_platform_time_get_current()`. This feature can
+    be disabled by setting `#define MEMFAULT_LOG_TIMESTAMPS_ENABLE 0` in
+    `memfault_platform_config.h`.
+
+- ESP-IDF:
+
+  - Add new built-in Wi-Fi metrics:
+
+    - `wifi_primary_channel` - the primary channel ID of the associated Wi-Fi
+      access point
+    - `wifi_auth_mode` - the authentication mode of the associated Wi-Fi access
+      point, for example `WPA2_PSK`
+    - `wifi_standard_version` - the Wi-Fi version of the associated Wi-Fi access
+      point, for example `802.11n`
+
+    These metrics are enabled by default and can be disabled (along with other
+    built-in Wi-Fi metrics) with the Kconfig option
+    `CONFIG_MEMFAULT_ESP_WIFI_METRICS`
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Support cases where the `IDF_VER` build variable is set to
+    `"HEAD-HASH-NOTFOUND"` (i.e. using an ESP-IDF SDK that is not a git repo),
+    when setting the built-in metric `MemfaultSdkMetric_os_version`. In this
+    case, the value is taken from the `ESP_IDF_VERSION_x` macros, which are less
+    precise.
+
+  - Use more specific Memfault reset reason codes for these watchdog reset
+    types, previously all categorized as `HardwareWatchdog`
+
+    - `ESP_RST_INT_WDT` -> `SoftwareWatchdog`
+    - `ESP_RST_TASK_WDT` -> `TaskWatchdog`
+    - `ESP_RST_WDT` (RTC watchdog, the real hardware watchdog), stays as
+      `HardwareWatchdog`
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Correctly set the Memfault Firmware SDK version inside the
+    [espressif component](https://components.espressif.com/components/memfault/memfault-firmware-sdk)
+    version of the SDK. Prior to this fix, the SDK version reports as
+    `"MemfaultSdkMetric_sdk_version": "0.0.0"`. No change to the SDK, only a
+    tooling/release change.
+
 ## [1.20.0] - 2025-02-06
 
 ### 📈 Added
@@ -141,6 +195,19 @@ and this project adheres to
     `CONFIG_STACK_POINTER_RANDOM` or `CONFIG_THREAD_LOCAL_STORAGE` is enabled.
     Thanks to [@JordanYates](https://github.com/JordanYates) for reporting this
     issue in [#81](https://github.com/memfault/memfault-firmware-sdk/issues/85)!
+
+  - Fix a configuration issue when building for any of the following parts, but
+    NOT using nRF-Connect SDK (i.e. using Zephyr instead):
+
+    - SOC_SERIES_NRF52X
+    - SOC_SERIES_NRF53X
+    - SOC_SERIES_NRF54LX
+    - SOC_SERIES_NRF91X
+
+    The Memfault SDK now correctly enables nRF-Connect-SDK-specific
+    functionality ONLY when that SDK is included as a Zephyr module. Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this issue in
+    [#81](https://github.com/memfault/memfault-firmware-sdk/issues/89)!
 
 - nRF Connect SDK:
 

@@ -165,6 +165,12 @@ extern "C" {
   #define MEMFAULT_COMPACT_LOG_ENABLE 0
 #endif
 
+//! Enable log line timestamps, when memfault_platform_time_get_current() is
+//! available.
+#ifndef MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  #define MEMFAULT_LOG_TIMESTAMPS_ENABLE 1
+#endif
+
 //! Controls whether or not multiple events will be batched into a single
 //! message when reading information via the event storage data source.
 //!

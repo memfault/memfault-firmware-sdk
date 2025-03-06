@@ -8,6 +8,7 @@ MOCK_AND_FAKE_SRC_FILES += \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_platform_get_device_info.c \
   $(MFLT_TEST_FAKE_DIR)/fake_memfault_sdk_assert.c \
   $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_debug_log.cpp \
+  $(MFLT_TEST_MOCK_DIR)/mock_memfault_platform_system_time.cpp \
   $(MFLT_TEST_STUB_DIR)/stub_memfault_log_save.c \
   $(MFLT_TEST_STUB_DIR)/stub_component_booted.c \
   $(MFLT_TEST_STUB_DIR)/stub_memfault_coredump_regions.c \
