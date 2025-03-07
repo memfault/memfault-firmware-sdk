@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.1] - 2025-03-07
+
+### 🐛 Fixed
+
+- General:
+
+  - Disable `MEMFAULT_LOG_TIMESTAMPS_ENABLE` by default. The new timestamped log
+    feature was enabled by default in the previous release, but only logs
+    embedded in coredumps are fully supported. Logs captured with
+    `memfault_log_trigger_collection()` do not yet support timestamps, so the
+    feature should not be used in production until that support is added.
+
 ## [1.21.0] - 2025-03-06
 
 ### 📈 Added
