@@ -36,6 +36,7 @@ typedef enum {
   // Deprecated: kMemfaultEventType_LogError = 3, use trace_with_log feature instead
   kMemfaultEventType_Logs = 4,
   kMemfaultEventType_Cdr = 5,
+  kMemfaultEventType_LogsTimestamped = 6,
 } eMemfaultEventType;
 
 //! EventInfo dictionary keys for events with type kMemfaultEventType_Heartbeat.

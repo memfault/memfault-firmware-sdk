@@ -20,7 +20,14 @@
 void __aeabi_assert(const char *failedExpr, const char *file, int line) {
   (void)failedExpr, (void)file, (void)line;
   #elif (defined(__GNUC__))
+    // Disable -Wreserved-identifier for clang
+    #pragma GCC diagnostic push
+    #if defined(__clang__)
+      #pragma GCC diagnostic ignored "-Wreserved-identifier"
+    #endif
+extern void __assert_func(const char *file, int line, const char *func, const char *failedexpr);
 void __assert_func(const char *file, int line, const char *func, const char *failedexpr) {
+    #pragma GCC diagnostic pop
   (void)file, (void)line, (void)func, (void)failedexpr;
   #endif
   MEMFAULT_ASSERT(0);

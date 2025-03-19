@@ -21,7 +21,8 @@ extern "C" {
 #include "memfault_log_data_source_private.h"
 }
 
-static uint8_t s_ram_log_store[64];
+// The RAM log buffer is exactly sized to fit 4 logs and metadata
+static uint8_t s_ram_log_store[MEMFAULT_LOG_TIMESTAMPS_ENABLE ? 90 : 58];
 
 static sMemfaultCurrentTime s_current_time;
 
@@ -36,7 +37,7 @@ TEST_GROUP(MemfaultLogDataSource) {
     s_current_time = (sMemfaultCurrentTime){
       .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
       .info = {
-        .unix_timestamp_secs = 0,
+        .unix_timestamp_secs = MEMFAULT_LOG_TIMESTAMPS_ENABLE ? 0x12345678 : 0,
       },
     };
     fake_memfault_platform_time_set(&s_current_time);
@@ -60,13 +61,51 @@ static size_t prv_add_logs(void) {
   return 4;
 }
 
+#if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+static const size_t expected_encoded_size = 83;
+static const uint8_t expected_encoded_buffer[expected_encoded_size] = {
+  0xA7,                               // map of 7 key-value pairs
+  0x02, 0x06,                         // key 2 (event type), kMemfaultEventType_LogsTimestamped
+  0x03, 0x01,                         // key 3 (cbor schema version), 1
+  0x0A, 0x64, 'm',  'a',  'i',  'n',  // key 10 (sw type), "main"
+  0x09, 0x65, '1',  '.',  '2',  '.',  '3',       // key 9 (sw version), "1.2.3"
+  0x06, 0x66, 'e',  'v',  't',  '_',  '2', '4',  // key 6 (hw version), "evt_24"
+  0x01, 0x1A, 0x12, 0x34, 0x56, 0x78,            // key 1 (captured date), 0x12345678
+  0x04, 0x8C,                                    // key 4, 8-element array
+  0x1A, 0x12, 0x34, 0x56, 0x78,                  // timestamp 0x12345678
+  0x00,                                          // level 0 (debug)
+  0x65, 'd',  'e',  'b',  'u',  'g',             // "debug"
+  0x1A, 0x12, 0x34, 0x56, 0x78,                  // timestamp 0x12345678
+  0x01,                                          // level 1 (info)
+  0x64, 'i',  'n',  'f',  'o',                   // "info"
+  0x1A, 0x12, 0x34, 0x56, 0x78,                  // timestamp 0x12345678
+  0x02,                                          // level 2 (warning)
+  0x67, 'w',  'a',  'r',  'n',  'i',  'n', 'g',  // "warning"
+  0x1A, 0x12, 0x34, 0x56, 0x78,                  // timestamp 0x12345678
+  0x03,                                          // level 3 (error)
+  0x65, 'e',  'r',  'r',  'o',  'r',             // "error"
+};
+#else
 static const size_t expected_encoded_size = 59;
 static const uint8_t expected_encoded_buffer[expected_encoded_size] = {
-  0xA7, 0x02, 0x04, 0x03, 0x01, 0x0A, 0x64, 'm',  'a',  'i', 'n', 0x09, 0x65, '1',  '.',
-  '2',  '.',  '3',  0x06, 0x66, 'e',  'v',  't',  '_',  '2', '4', 0x01, 0x00, 0x04, 0x88,
-  0x00, 0x65, 'd',  'e',  'b',  'u',  'g',  0x01, 0x64, 'i', 'n', 'f',  'o',  0x02, 0x67,
-  'w',  'a',  'r',  'n',  'i',  'n',  'g',  0x03, 0x65, 'e', 'r', 'r',  'o',  'r',
+  0xA7,                                      // map of 7 key-value pairs
+  0x02, 0x04,                                // key 2 (event type), kMemfaultEventType_Logs
+  0x03, 0x01,                                // key 3 (cbor schema version), 1
+  0x0A, 0x64, 'm', 'a', 'i', 'n',            // key 10 (sw type), "main"
+  0x09, 0x65, '1', '.', '2', '.', '3',       // key 9 (sw version), "1.2.3"
+  0x06, 0x66, 'e', 'v', 't', '_', '2', '4',  // key 6 (hw version), "evt_24"
+  0x01, 0x00,                                // key 1 (captured date), 0
+  0x04, 0x88,                                // key 4, 8-element array
+  0x00,                                      // level 0 (debug)
+  0x65, 'd',  'e', 'b', 'u', 'g',            // "debug"
+  0x01,                                      // level 1 (info)
+  0x64, 'i',  'n', 'f', 'o',                 // "info"
+  0x02,                                      // level 2 (warning)
+  0x67, 'w',  'a', 'r', 'n', 'i', 'n', 'g',  // "warning"
+  0x03,                                      // level 3 (error)
+  0x65, 'e',  'r', 'r', 'o', 'r',            // "error"
 };
+#endif
 
 TEST(MemfaultLogDataSource, Test_TriggerOnce) {
   prv_add_logs();

@@ -179,6 +179,11 @@ int memfault_esp_port_vprintf_log_hook(const char *fmt, va_list args) {
     return -1;
   }
 
+  if ((rv == 0) && (log_buf[0] == '\n')) {
+    // ignore empty lines
+    return 0;
+  }
+
   size_t bytes_written = (size_t)rv;
   if (bytes_written >= available_space) {
     bytes_written = available_space - 1;

@@ -169,7 +169,7 @@ extern "C" {
 //! available. Currently timestamps are only decoded from logs embedded in
 //! coredumps.
 #ifndef MEMFAULT_LOG_TIMESTAMPS_ENABLE
-  #define MEMFAULT_LOG_TIMESTAMPS_ENABLE 0
+  #define MEMFAULT_LOG_TIMESTAMPS_ENABLE 1
 #endif
 
 //! Controls whether or not multiple events will be batched into a single

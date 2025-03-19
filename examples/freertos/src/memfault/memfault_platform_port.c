@@ -12,6 +12,10 @@
 #include "memfault/ports/freertos_coredump.h"
 #include "memfault/ports/reboot_reason.h"
 
+#if !defined(MEMFAULT_EXAMPLE_USE_REAL_TIME)
+  #define MEMFAULT_EXAMPLE_USE_REAL_TIME 1
+#endif
+
 // Buffer used to store formatted string for output
 #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES \
   (sizeof("2024-11-27T14:19:29Z|123456780 I ") + MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN)
@@ -82,6 +86,7 @@ void memfault_platform_log_raw(const char *fmt, ...) {
 }
 
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_output) {
+#if MEMFAULT_EXAMPLE_USE_REAL_TIME
   // Get time from time.h
 
   // Debug: print time fields
@@ -105,6 +110,10 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_output) {
     },
   };
   return true;
+#else
+  (void)time_output;
+  return false;
+#endif
 }
 
 void memfault_platform_reboot_tracking_boot(void) {

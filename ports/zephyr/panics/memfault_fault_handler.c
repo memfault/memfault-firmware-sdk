@@ -7,6 +7,7 @@
 
 // clang-format off
 #include MEMFAULT_ZEPHYR_INCLUDE(arch/cpu.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(cache.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(fatal.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
@@ -226,6 +227,10 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 MEMFAULT_WEAK MEMFAULT_NORETURN void memfault_platform_reboot(void) {
 #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
   memfault_platform_halt_if_debugging();
+#endif
+
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
+  (void)sys_cache_data_flush_all();
 #endif
 
   sys_arch_reboot(0);

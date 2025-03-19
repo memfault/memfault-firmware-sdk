@@ -35,7 +35,11 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
   }
   taskEXIT_CRITICAL();
 
-  return (s_elapsed_ticks * 1000) / configTICK_RATE_HZ;
+  // Convert ticks to milliseconds using multiply-and-shift, to avoid performing
+  // a 64-bit divide. If configTICK_RATE_HZ==1000, compilers with optimization
+  // level -Og or greater will optimize this out, and return the tick count
+  // directly.
+  return (s_elapsed_ticks * ((1000ull << 16) / configTICK_RATE_HZ)) >> 16;
 }
 
 static SemaphoreHandle_t s_memfault_lock;

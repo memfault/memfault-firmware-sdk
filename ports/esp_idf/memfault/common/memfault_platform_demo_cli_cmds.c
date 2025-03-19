@@ -221,6 +221,22 @@ static int prv_esp32_memfault_heartbeat_dump(int argc, char **argv) {
   return 0;
 }
 
+static int prv_memfault_demo_cli_cmd_time(int argc, char **argv) {
+  sMemfaultCurrentTime time;
+  if (!memfault_platform_time_get_current(&time)) {
+    MEMFAULT_LOG_INFO("No time available");
+    return 0;
+  }
+
+  if (time.type == kMemfaultCurrentTimeType_UnixEpochTimeSec) {
+    MEMFAULT_LOG_INFO("Current time: %llu", time.info.unix_timestamp_secs);
+  } else {
+    MEMFAULT_LOG_INFO("Unknown time type: %d", time.type);
+  }
+
+  return 0;
+}
+
 static bool prv_netif_connected_check(const char *op) {
   if (memfault_esp_port_netif_connected()) {
     return true;
@@ -400,6 +416,14 @@ void memfault_register_cli(void) {
     .help = "Dump current Memfault metrics heartbeat state",
     .hint = NULL,
     .func = prv_esp32_memfault_heartbeat_dump,
+  }));
+
+  // command to dump the current time
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "time",
+    .help = "Dump the current time",
+    .hint = NULL,
+    .func = prv_memfault_demo_cli_cmd_time,
   }));
 
 #if MEMFAULT_ESP_HTTP_CLIENT_ENABLE

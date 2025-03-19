@@ -33,6 +33,7 @@ int memfault_demo_cli_cmd_test_log(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED cha
 }
 
 int memfault_demo_cli_cmd_trigger_logs(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
+  MEMFAULT_LOG_RAW("Triggering log collection");
   memfault_log_trigger_collection();
   return 0;
 }

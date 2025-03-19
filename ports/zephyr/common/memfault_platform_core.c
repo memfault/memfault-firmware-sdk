@@ -94,7 +94,18 @@ static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 #if !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
   #if defined(CONFIG_HWINFO)
 static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset_reason_reg) {
-  eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
+  // Some hwinfo device implementations will use a value of 0 (unset) to
+  // implicitly specify a power on reset, for example the nRF52840:
+  // https://docs.nordicsemi.com/bundle/ps_nrf52840/page/power.html#register.RESETREAS
+  //
+  // Only use this fallback when the hwinfo implementation does not explicitly
+  // support a power on reset cause.
+  uint32_t supported_reset_reasons;
+  if ((reset_reason_reg == 0) &&
+      (hwinfo_get_supported_reset_cause(&supported_reset_reasons) == 0) &&
+      !(supported_reset_reasons & RESET_POR)) {
+    return kMfltRebootReason_PowerOnReset;
+  }
 
   // Map the Zephyr HWINFO reset reason to a Memfault reset reason. The order is
   // important- the first bit match will be used.
@@ -106,6 +117,7 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
   // A further optimization (that saves a few more bytes) is to omit the
   // bitmask, since they're consecutive in the current zephyr implementation.
   // That forces us to keep the reset reason priority in the zephyr bit order.
+  eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
   const struct hwinfo_bit_to_memfault_reset_reason {
     uint16_t hwinfo_bit;
     uint16_t memfault_reason;
@@ -146,9 +158,48 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
   if (rv == 0) {
     reset_reason = prv_zephyr_to_memfault_reboot_reason(reset_reason_reg);
+
+    #if defined(CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP)
+    // Print out the reset reason to the console.
+    const char *reset_reason_str = "Unknown";
+
+    static const struct {
+      eMemfaultRebootReason reason;
+      const char *str;
+    } s_reset_reasons[] = {
+      { kMfltRebootReason_PinReset, "Pin Reset" },
+      { kMfltRebootReason_SoftwareReset, "Software Reset" },
+      { kMfltRebootReason_BrownOutReset, "Brownout Reset" },
+      { kMfltRebootReason_PowerOnReset, "Power On Reset" },
+      { kMfltRebootReason_HardwareWatchdog, "Hardware Watchdog" },
+      { kMfltRebootReason_DebuggerHalted, "Debugger Halted" },
+      { kMfltRebootReason_SecurityViolation, "Security Violation" },
+      { kMfltRebootReason_LowPower, "Low Power" },
+      { kMfltRebootReason_Lockup, "Lockup" },
+      { kMfltRebootReason_ParityError, "Parity Error" },
+      { kMfltRebootReason_ClockFailure, "Clock Failure" },
+      { kMfltRebootReason_Hardware, "Hardware" },
+      { kMfltRebootReason_UserReset, "User Reset" },
+      { kMfltRebootReason_Temperature, "Temperature" },
+      { kMfltRebootReason_Unknown, "Unknown" },
+    };
+
+    for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_reset_reasons); i++) {
+      if (s_reset_reasons[i].reason == reset_reason) {
+        reset_reason_str = s_reset_reasons[i].str;
+        break;
+      }
+    }
+
+    printk("Reset Cause: %s / 0x%04x\n", reset_reason_str, reset_reason_reg);
+    #endif  // CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
   }
 
-  #endif
+    #if defined(CONFIG_MEMFAULT_CLEAR_RESET_REG)
+  (void)hwinfo_clear_reset_cause();
+    #endif
+
+  #endif  // CONFIG_HWINFO
 
   *info = (sResetBootupInfo){
     .reset_reason = reset_reason,

@@ -142,7 +142,8 @@ def files_to_link(dir_glob, common_prefix, sdk_version):
 def get_latest_pdsc():
     """Retrieve the contents of the latest pdsc file"""
     # Optionally override the release to fetch
-    if release := os.getenv("CMSIS_SDK_BASE_RELEASE"):
+    release = os.getenv("CMSIS_SDK_BASE_RELEASE")
+    if release:
         url = f"https://github.com/{GITHUB_REPO}/releases/download/{release}/Memfault.FirmwareSDK.pdsc"
     else:
         url = f"https://github.com/{GITHUB_REPO}/releases/latest/download/Memfault.FirmwareSDK.pdsc"
@@ -162,7 +163,7 @@ def get_latest_pdsc():
 def lxml_reindent_tree(root):
     """Using lxml, re-indent the tree to produce consistent output"""
     parser = lxml.etree.XMLParser(remove_blank_text=True)
-    tree = lxml.etree.fromstring(ET.tostring(root, encoding="utf-8"), parser=parser)  # noqa: S320
+    tree = lxml.etree.fromstring(ET.tostring(root, encoding="utf-8"), parser=parser)
     lxml.etree.indent(tree, space="    ")
     return lxml.etree.ElementTree(tree)
 
@@ -216,7 +217,8 @@ def build_cmsis_pack(
     logging.debug("===Determined Path Information===")
     logging.debug("Memfault Firmware SDK Path: %s", memfault_sdk_dir)
 
-    if sdk_version := os.getenv("SDK_VERSION"):
+    sdk_version = os.getenv("SDK_VERSION")
+    if sdk_version:
         logging.debug("Using SDK_VERSION env var: %s", sdk_version)
     else:
         # read the version from the memfault-firmware-sdk
@@ -298,7 +300,8 @@ def build_cmsis_pack(
     root_releases_node = root.find("./releases")
     assert root_releases_node is not None
     root_releases_node.append(release_node)
-    if pdsc_text := get_latest_pdsc():
+    pdsc_text = get_latest_pdsc()
+    if pdsc_text:
         logging.debug("Loading releases from previous pdsc file")
         pdsc = ET.fromstring(pdsc_text)  # noqa: S314
         # get the package/releases node

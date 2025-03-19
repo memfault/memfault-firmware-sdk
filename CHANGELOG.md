@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2025-03-19
+
+### 📈 Added
+
+- General
+
+  - Enable building the SDK on `aarch64`. Note that this only adds support for
+    building the SDK on that target, full end-to-end support is not yet
+    available.
+
+- Zephyr:
+
+  - For SOC's with a data cache, flush the cache prior to performing a system
+    reboot, to ensure data integrity of the RAM-backed reboot tracking data.
+    This is added to the `memfault_platform_reboot()` default implementation,
+    which can be overridden by the user if needed.
+
+    SOC's without a cache will have no effect from this change.
+
+### 🛠️ Changed
+
+- General:
+
+  - `MEMFAULT_LOG_TIMESTAMPS_ENABLE` is now enabled by default. When enabled,
+    and `memfault_platform_time_get_current()` returns a valid timestamp, logs
+    will include a second-precision timestamp. This applies to both:
+
+    - logs captured as part of a coredump
+    - logs sent to Memfault after invoking `memfault_log_trigger_collection()`
+
+  - Remove some 64-bit integer divides used when computing the built-in
+    `uptime_s` metric, and in the FreeRTOS
+    `memfault_platform_get_time_since_boot_ms()` implementation.
+
+- ESP-IDF:
+
+  - Log lines that are only a single `'\n'` character are no longer recorded in
+    the Memfault Log Buffer.
+
+### 🚩 Deprecated
+
+### 🔥 Removed
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - The `hwinfo`-based Reset Reason implementation did not clear the reset
+    reason register after reading the data. Updated to properly call
+    `hwinfo_clear_reset_cause()` after reading the reset reason.
+
+### 🔒 Security
+
 ## [1.21.1] - 2025-03-07
 
 ### 🐛 Fixed

@@ -24,6 +24,10 @@
   #define DEBUG_PRINTF(fmt, ...)
 #endif
 
+#if !defined(MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE)
+  #define MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE 1
+#endif
+
 static StackType_t metrics_task_stack[EXAMPLE_TASK_STACKS];
 static StaticTask_t metrics_task_tcb;
 
@@ -97,27 +101,39 @@ static void prv_collect_libc_heap_usage_metrics(void) {
   MEMFAULT_METRIC_SET_UNSIGNED(memory_pct_max, heap_pct);
 }
 
+#if MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE
 static void prv_daily_heartbeat(void) {
-  // This function is called once a day to stop + start a "daily_heartbeat"
-  // session.
+  // Generate a daily_heartbeat session report once a day, based on
+  // MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS. This demonstrates a simple way to
+  // track metrics over a 24 hour interval.
+  MEMFAULT_STATIC_ASSERT((24 * 60 * 60) % MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS == 0,
+                         "Heartbeat interval must be an even divisor of a day");
+  // For testing, set MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS to a low value (1 second), and
+  // uncomment the below line
+  // #define DAILY_HEARTBEAT_INTERVAL_COUNT (24)
+  #define DAILY_HEARTBEAT_INTERVAL_COUNT ((24 * 60 * 60) / MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
+  static uint64_t s_last_daily_heartbeat_interval = 0;
 
-  // The first time this is called on boot will be a no-op, since the session
-  // has not been started yet
-  uint32_t uptime_s = memfault_platform_get_time_since_boot_ms() / 1000;
+  if (++s_last_daily_heartbeat_interval % DAILY_HEARTBEAT_INTERVAL_COUNT == 0) {
+    // The first time this is called on boot will be a no-op, since the session
+    // has not been started yet
+    uint32_t uptime_s = memfault_platform_get_time_since_boot_ms() / 1000;
 
-  if (uptime_s > MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS) {
-    MEMFAULT_LOG_INFO("📆 Triggering daily heartbeat");
+    if (uptime_s > MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS) {
+      MEMFAULT_LOG_INFO("📆 Triggering daily heartbeat");
+    }
+
+    // Record a sample metric into the daily session
+    MEMFAULT_METRIC_SESSION_SET_UNSIGNED(uptime_s, daily_heartbeat, uptime_s);
+
+    // End the session
+    MEMFAULT_METRICS_SESSION_END(daily_heartbeat);
+
+    // Start a new session for the next daily interval
+    MEMFAULT_METRICS_SESSION_START(daily_heartbeat);
   }
-
-  // Record a sample metric into the daily session
-  MEMFAULT_METRIC_SESSION_SET_UNSIGNED(uptime_s, daily_heartbeat, uptime_s);
-
-  // End the session
-  MEMFAULT_METRICS_SESSION_END(daily_heartbeat);
-
-  // Start a new session for the next daily interval
-  MEMFAULT_METRICS_SESSION_START(daily_heartbeat);
 }
+#endif  // MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE
 
 void memfault_metrics_heartbeat_collect_data(void) {
   MEMFAULT_LOG_INFO("💓 Heartbeat callback triggered");
@@ -131,19 +147,9 @@ void memfault_metrics_heartbeat_collect_data(void) {
 #endif
   prv_collect_libc_heap_usage_metrics();
 
-  // Call prv_daily_heartbeat() once a day, based on MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
-  // This is a simple way to track daily metrics
-  MEMFAULT_STATIC_ASSERT((24 * 60 * 60) % MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS == 0,
-                         "Heartbeat interval must be an even divisor of a day");
-  // For testing, set MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS to a low value (1 second), and
-  // uncomment the below line
-// #define DAILY_HEARTBEAT_INTERVAL_COUNT (24)
-#define DAILY_HEARTBEAT_INTERVAL_COUNT ((24 * 60 * 60) / MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
-  static uint64_t s_last_daily_heartbeat_interval = 0;
-
-  if (++s_last_daily_heartbeat_interval % DAILY_HEARTBEAT_INTERVAL_COUNT == 0) {
-    prv_daily_heartbeat();
-  }
+#if MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE
+  prv_daily_heartbeat();
+#endif
 
   // For demonstration purposes, print the current values. This is not
   // recommended for production.

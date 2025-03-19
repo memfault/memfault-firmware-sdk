@@ -556,7 +556,26 @@ static void prv_collect_builtin_data(void) {
   prv_memfault_collect_log_metrics();
 #endif
 #if MEMFAULT_METRICS_UPTIME_ENABLE
-  MEMFAULT_METRIC_SET_UNSIGNED(uptime_s, memfault_platform_get_time_since_boot_ms() / 1000);
+  // uptime_s is a 32-bit value measuring seconds since boot. Convert the uptime
+  // in milliseconds to seconds using the following approach, to avoid 64-bit
+  // division:
+  //
+  // precomputed_scale_factor = (1 << 32) / 1000 = 0x418937
+  // uptime_seconds = (uptime_ms * 0x418937) >> 32
+  //
+  // The maximum millisecond value that can be converted to seconds without
+  // overflowing using this algorithm is:
+  //
+  // (0xFFFF_FFFF_FFFF_FFFF / ((1 << 32) / 1000)) = 4294967592000 milliseconds
+  //
+  // 4294967592000 / 1000 / 60 / 60 / 24 / 365 ≈ 136 years
+  //
+  // 4294967592000 / 1000 = 4294967592 seconds, 0x1_0000_0128 in hex, which
+  // exceeds the possible value for a 32-bit integer, so we don't lose any range
+  // with this algorithm.
+  const uint32_t uptime_seconds =
+    (uint32_t)((memfault_platform_get_time_since_boot_ms() * 0x418937ull) >> 32);
+  MEMFAULT_METRIC_SET_UNSIGNED(uptime_s, uptime_seconds);
 #endif
 }
 

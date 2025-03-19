@@ -100,31 +100,48 @@ __attribute__((no_sanitize_undefined))
     #endif
   #endif
 static bool
-prv_copy_msg_callback(sMfltLogIterator *iter, MEMFAULT_UNUSED size_t offset, const char *buf,
-                      size_t buf_len) {
+prv_serialize_msg_callback(sMfltLogIterator *iter, MEMFAULT_UNUSED size_t offset, const char *buf,
+                           size_t buf_len) {
   sMfltLogEncodingCtx *const ctx = (sMfltLogEncodingCtx *)iter->user_ctx;
-  return memfault_cbor_join(&ctx->encoder, buf, buf_len);
-}
 
-static bool prv_encode_current_log(sMemfaultCborEncoder *encoder, sMfltLogIterator *iter) {
-  if (!memfault_cbor_encode_unsigned_integer(encoder,
+  #if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  // Encode the timestamp value, if it's present, otherwise insert a 0
+  uint32_t timestamp;
+  if (memfault_log_hdr_is_timestamped(iter->entry.hdr)) {
+    if (buf_len < sizeof(timestamp)) {
+      return false;
+    }
+    memcpy(&timestamp, buf, sizeof(timestamp));
+    buf += sizeof(timestamp);
+    buf_len -= sizeof(timestamp);
+  } else {
+    timestamp = 0;
+  }
+
+  if (!memfault_cbor_encode_unsigned_integer(&ctx->encoder, timestamp)) {
+    return false;
+  }
+  #endif
+
+  // Encode the log level
+  if (!memfault_cbor_encode_unsigned_integer(&ctx->encoder,
                                              memfault_log_get_level_from_hdr(iter->entry.hdr))) {
     return false;
   }
 
   eMemfaultLogRecordType type = memfault_log_get_type_from_hdr(iter->entry.hdr);
-  bool success;
 
   // Note: We encode "preformatted" logs (i.e logs that have run through printf) as cbor text
   // string and "compact" logs as a cbor byte array so we can differentiate between the two while
   // decoding
   if (type == kMemfaultLogRecordType_Preformatted) {
-    success = memfault_cbor_encode_string_begin(encoder, iter->entry.len);
+    // The message is not null-terminated, so we can't use
+    // memfault_cbor_encode_string() directly.
+    bool success = memfault_cbor_encode_string_begin(&ctx->encoder, buf_len);
+    return success && memfault_cbor_join(&ctx->encoder, buf, buf_len);
   } else {  // kMemfaultLogRecordType_Compact
-    success = memfault_cbor_encode_byte_string_begin(encoder, iter->entry.len);
+    return memfault_cbor_encode_byte_string(&ctx->encoder, buf, buf_len);
   }
-
-  return (success && memfault_log_iter_copy_msg(iter, prv_copy_msg_callback));
 }
 
 static bool prv_log_iterate_encode_callback(sMfltLogIterator *iter) {
@@ -133,7 +150,7 @@ static bool prv_log_iterate_encode_callback(sMfltLogIterator *iter) {
     return false;
   }
   if (!prv_log_is_sent(iter->entry.hdr)) {
-    ctx->has_encoding_error |= !prv_encode_current_log(&ctx->encoder, iter);
+    ctx->has_encoding_error |= !memfault_log_iter_copy_msg(iter, prv_serialize_msg_callback);
     // It's possible more logs have been added to the buffer
     // after the memfault_log_data_source_has_been_triggered() call. They cannot be included,
     // because the total message size has already been communicated to the packetizer.
@@ -146,16 +163,24 @@ static bool prv_log_iterate_encode_callback(sMfltLogIterator *iter) {
 
 static bool prv_encode(sMemfaultCborEncoder *encoder, void *iter) {
   sMfltLogEncodingCtx *ctx = (sMfltLogEncodingCtx *)((sMfltLogIterator *)iter)->user_ctx;
-  if (!memfault_serializer_helper_encode_metadata_with_time(encoder, kMemfaultEventType_Logs,
+  #if MEMFAULT_LOG_TIMESTAMPS_ENABLE
+  eMemfaultEventType event_type = kMemfaultEventType_LogsTimestamped;
+  // To save space, all logs are encoded into a single array (as opposed to using a map or
+  // array per log):
+  const size_t elements_per_log = 3;  // timestamp, lvl, msg
+  #else
+  eMemfaultEventType event_type = kMemfaultEventType_Logs;
+  const size_t elements_per_log = 2;  // lvl, msg
+  #endif
+
+  if (!memfault_serializer_helper_encode_metadata_with_time(encoder, event_type,
                                                             &ctx->trigger_time)) {
     return false;
   }
   if (!memfault_cbor_encode_unsigned_integer(encoder, kMemfaultEventKey_EventInfo)) {
     return false;
   }
-  // To save space, all logs are encoded into a single array (as opposed to using a map or
-  // array per log):
-  const size_t elements_per_log = 2;  // hdr, msg
+
   if (!memfault_cbor_encode_array_begin(encoder, elements_per_log * ctx->num_logs)) {
     return false;
   }

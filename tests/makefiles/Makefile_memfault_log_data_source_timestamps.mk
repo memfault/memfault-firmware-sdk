@@ -19,7 +19,6 @@ TEST_SRC_FILES = \
   $(MFLT_TEST_SRC_DIR)/test_memfault_log_data_source.cpp \
   $(MOCK_AND_FAKE_SRC_FILES)
 
-# Makefile_memfault_log_data_source_timestamps.mk tests with timestamps enabled
-CPPUTEST_CPPFLAGS += -DMEMFAULT_LOG_TIMESTAMPS_ENABLE=0
+CPPUTEST_CPPFLAGS += -DMEMFAULT_LOG_TIMESTAMPS_ENABLE=1
 
 include $(CPPUTEST_MAKFILE_INFRA)
