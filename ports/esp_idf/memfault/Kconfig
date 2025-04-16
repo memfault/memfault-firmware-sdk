@@ -28,6 +28,15 @@ menu "Memfault"
         help
             Logs stored in this buffer will be captured as part of a Memfault Coredump
 
+    config MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM
+        bool "Use custom data chunk handlers"
+        default n
+        help
+            Enable custom implementations of
+            `memfault_esp_port_data_available()` and `memfault_esp_port_get_chunk()`.
+            The option can be used if other MCUs forward data through the ESP32 and
+            these functions need to handle additional sources.
+
     config MEMFAULT_METRICS_LOGS_ENABLE
         bool "Enable collection of metrics for log message counts"
         default y
@@ -251,33 +260,39 @@ endif
             Collects Memfault metrics for memory usage stats.
 
     config MEMFAULT_METRICS_SYNC_SUCCESS
-            bool "Enable collection of sync success metrics"
-            default y
-            help
-             Memfault user-defined sync success metric component. More information
-             at https://mflt.io/core-metrics .
+        bool "Enable collection of sync success metrics"
+        default y
+        help
+         Memfault user-defined sync success metric component. More information
+         at https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
-            bool "Enable collection of memfault sync success metrics"
-            default y
-            help
-             Collects Memfault metrics for the number of successful and failed
-             syncs to the Memfault cloud. More information at
+        bool "Enable collection of memfault sync success metrics"
+        default y
+        help
+         Collects Memfault metrics for the number of successful and failed
+         syncs to the Memfault cloud. More information at
              https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
-            bool "Enable collection of memfault connectivity time metrics"
-            default y
-            help
-             Memfault connectivity time metric component. More information at
-             https://mflt.io/core-metrics .
+        bool "Enable collection of memfault connectivity time metrics"
+        default y
+        help
+         Memfault connectivity time metric component. More information at
+         https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_BATTERY_ENABLE
-           bool "Enable collection of battery metrics"
-           default n
-           help
-             Memfault battery metric component. More information at
-             https://mflt.io/core-metrics .
+        bool "Enable collection of battery metrics"
+        default n
+        help
+          Memfault battery metric component. More information at
+          https://mflt.io/core-metrics .
+
+    config MEMFAULT_METRICS_CHIP_ENABLE
+        bool "Enable collection of chip ID metrics"
+        default y
+        help
+          Collect metrics about chip ID and revision.
 
     config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
         bool "Assert on allocation failure"
@@ -358,6 +373,13 @@ endif
         help
             Automatically insert the Memfault Build ID during the build process.
 
+    config MEMFAULT_GGDB3
+        bool "Enable -ggdb3 support"
+        default y
+        help
+            Enable support for `.debug_macro` output in the ELF, for enhanced
+            debugging.
+
     config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
         bool "Pretty print reboot reason on boot"
         default n
@@ -407,6 +429,9 @@ endif
         config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
             int "Periodic upload interval to send data in seconds"
             default 3600
+            help
+                The first check will run between [60, 60+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS].
+                Subsequent checks will run at MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
 
         config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
             bool "Upload log buffer in addition to other data"

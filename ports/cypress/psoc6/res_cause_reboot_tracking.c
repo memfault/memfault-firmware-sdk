@@ -11,8 +11,8 @@
 #include "memfault/ports/reboot_reason.h"
 
 //! Note: The default PSOC62 linker scripts have a KEEP(*(.noinit)) that we can use
-MEMFAULT_PUT_IN_SECTION(".mflt_reboot_tracking.noinit")
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+MEMFAULT_PUT_IN_SECTION(".mflt_reboot_tracking.noinit") static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 #if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
   #define MEMFAULT_PRINT_RESET_INFO(...) MEMFAULT_LOG_INFO(__VA_ARGS__)

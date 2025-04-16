@@ -9,6 +9,7 @@
 //! by using the following CFLAG:
 //!   -DMEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=15
 
+#include <inttypes.h>
 #include <string.h>
 
 #include "esp_err.h"
@@ -44,6 +45,11 @@
   #include "driver/temperature_sensor.h"
   #include "soc/clk_tree_defs.h"
 #endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
+
+#if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
+  #include "esp_flash.h"
+  #include "hal/efuse_hal.h"
+#endif
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
@@ -317,6 +323,40 @@ static void prv_collect_temperature_metric(void) {
 }
 #endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
 
+#if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
+static void prv_collect_chip_metrics(void) {
+  static bool did_collect = false;
+
+  if (did_collect) {
+    return;
+  }
+
+  uint32_t flash_chip_id;
+  esp_err_t err = esp_flash_read_id(NULL, &flash_chip_id);
+  if (err == ESP_OK) {
+    // flash_chip_id is 24 bits. convert to hex.
+    char flash_chip_id_str[7];
+    snprintf(flash_chip_id_str, sizeof(flash_chip_id_str), "%06" PRIx32, flash_chip_id);
+    // Set the chip id metric
+    MEMFAULT_METRIC_SET_STRING(spi_flash_chip_id, flash_chip_id_str);
+  }
+
+  uint32_t efuse_chip_id = efuse_hal_chip_revision();
+  // Chip version in format: Major * 100 + Minor
+  // e.g. Major = 3, Minor = 0 -> 300
+  // Convert to string with leading CONFIG_IDF_TARGET, eg "esp32s3-3.3"
+  char chip_id_str[sizeof(CONFIG_IDF_TARGET) + sizeof("-00.00")];
+  const uint8_t major = efuse_chip_id / 100;
+  const uint8_t minor = efuse_chip_id % 100;
+  snprintf(chip_id_str, sizeof(chip_id_str), CONFIG_IDF_TARGET "-%u.%u", major, minor);
+
+  MEMFAULT_METRIC_SET_STRING(esp_chip_revision, chip_id_str);
+
+  // We only need to collect this one time on boot
+  did_collect = true;
+}
+#endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_LWIP_METRICS)
   memfault_lwip_heartbeat_collect_data();
@@ -345,6 +385,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
   prv_collect_temperature_metric();
 #endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
+
+#if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
+  prv_collect_chip_metrics();
+#endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
 }
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)

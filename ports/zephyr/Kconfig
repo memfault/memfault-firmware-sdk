@@ -218,7 +218,7 @@ if MEMFAULT_SHELL_SELF_TEST
             (hardware, software, etc) to allow the test to complete. This test may be run with
             `mflt test self coredump_storage`.
 
-endif
+endif # MEMFAULT_SHELL_SELF_TEST
 
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
         bool "Fallback to printk for platform logging"
@@ -349,7 +349,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
           workqueue over the system workqueue is beneficial if http requests for the network stack
           in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
 
-endchoice
+endchoice # MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
         int "Stack size for dedicated http upload queue, in bytes"
@@ -361,7 +361,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
         default 3600
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         help
-          The first check will run between [1, 1+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS]
+          The first check will run between [60, 60+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS]
           Subsequent checks will run at MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
 
 config MEMFAULT_HTTP_USES_MBEDTLS
@@ -448,7 +448,7 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
           of an OTA playload. It will pull the OTA payload but not install it on the device.
           For information on release management with Memfault: https://mflt.io/release-mgmt.
 
-endchoice
+endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
 config MEMFAULT_EVENT_STORAGE_SIZE
        int "Memfault Event Storage RAM Buffer Size"
@@ -733,7 +733,7 @@ config MEMFAULT_SYSTEM_TIME_SOURCE_RTC
          Provides a built-in implementation of
          memfault_platform_time_get_current() using the Zephyr RTC subsystem.
 
-endchoice
+endchoice # MEMFAULT_SYSTEM_TIME_SOURCE
 
 config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
         bool "Install a callback on boot for date_time events"

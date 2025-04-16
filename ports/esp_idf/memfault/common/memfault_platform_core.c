@@ -59,6 +59,8 @@ static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
 // tracking data, we place it in the RTC noinit section '.rtc_noinit'
 static RTC_NOINIT_ATTR uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
+#if !defined(CONFIG_MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM)
+
 MEMFAULT_WEAK bool memfault_esp_port_data_available(void) {
   return memfault_packetizer_data_available();
 }
@@ -66,6 +68,8 @@ MEMFAULT_WEAK bool memfault_esp_port_data_available(void) {
 MEMFAULT_WEAK bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len) {
   return memfault_packetizer_get_chunk(buf, buf_len);
 }
+
+#endif  // !defined(CONFIG_MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM)
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();

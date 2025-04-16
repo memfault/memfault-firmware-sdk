@@ -49,11 +49,9 @@ void bsp_init(void) {
 }
 
 int bsp_send_char_over_uart(char c) {
-  while ((USART2->SR & USART_FLAG_TXE) == 0)
-    ;
+  while ((USART2->SR & USART_FLAG_TXE) == 0);
   USART2->DR = c;
-  while ((USART2->SR & USART_FLAG_TXE) == 0)
-    ;
+  while ((USART2->SR & USART_FLAG_TXE) == 0);
   return 1;
 }
 

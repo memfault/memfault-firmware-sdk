@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 uint32_t portGET_RUN_TIME_COUNTER_VALUE(void);
-uint32_t xTaskGetIdleRunTimeCounter(void);
+uint32_t ulTaskGetIdleRunTimeCounter(void);
 
 #define tskKERNEL_VERSION_MAJOR 10
 #define tskKERNEL_VERSION_MINOR 4

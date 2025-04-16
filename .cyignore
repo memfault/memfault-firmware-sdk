@@ -18,6 +18,7 @@ ports/nxp
 ports/particle
 ports/qp
 ports/s32sdk
+ports/silabs
 ports/stm32cube
 ports/templates
 ports/zephyr

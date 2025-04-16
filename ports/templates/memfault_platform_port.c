@@ -96,8 +96,8 @@ size_t memfault_platform_sanitize_address_range(void *start_addr, size_t desired
   return 0;
 }
 
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info") static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   //! !FIXME: Read reboot reason register
@@ -129,8 +129,8 @@ MEMFAULT_WEAK uint64_t memfault_platform_get_time_since_boot_ms(void) {
   return 0;
 }
 
-MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
-void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...) {
+MEMFAULT_PRINTF_LIKE_FUNC(2, 3) void memfault_platform_log(eMemfaultPlatformLogLevel level,
+                                                           const char *fmt, ...) {
   //! !FIXME: Use this function to send logs to your application logging component, serial console,
   //! etc
   (void)level;

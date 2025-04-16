@@ -18,11 +18,10 @@
 #include "esp_intr_alloc.h"
 #include "esp_partition.h"
 
-// The include order below, especially 'soc/uart_reg.h' and 'soc/soc.h', is
-// significant to support the various ESP-IDF versions, where the definitions
-// moved around. It's possible it could be tidied up but this configuration
-// does work across the supported ESP-IDF versions.
-#include "soc/uart_reg.h"
+// The include order below, especially 'soc/soc.h', is significant to support
+// the various ESP-IDF versions, where the definitions moved around. It's
+// possible it could be tidied up but this configuration does work across the
+// supported ESP-IDF versions.
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #include "spi_flash_mmap.h"
 #else
@@ -332,19 +331,10 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 }
 
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+  #include "esp_private/panic_internal.h"
 
-// barebones printf logic that is safe to run after the esp32 has hit an exception A couple checks
-// based on esp-idf version to remain compatible with v3.x and v4.x
-
-static void prv_panic_safe_putchar(char c) {
-  // wait for previous byte write to complete
-  int i = 0;
-  bool ready = false;
-  while (i++ < 1000 && !ready) {
-    const uint32_t status = READ_PERI_REG(UART_STATUS_REG(MEMFAULT_ESP32_CONSOLE_UART_NUM));
-    ready = ((status >> UART_TXFIFO_CNT_S) & UART_TXFIFO_CNT) >= 126;
-  }
-  WRITE_PERI_REG(UART_FIFO_REG(MEMFAULT_ESP32_CONSOLE_UART_NUM), c);
+static void prv_panic_safe_putchar(const char c) {
+  panic_print_char(c);
 }
 
 #else /* !CONFIG_ESP32_PANIC_SILENT_REBOOT */

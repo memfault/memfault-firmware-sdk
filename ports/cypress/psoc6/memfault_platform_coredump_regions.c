@@ -18,7 +18,7 @@
 #include "memfault/panics/arch/arm/cortex_m.h"
 #include "memfault/ports/freertos_coredump.h"
 
-#define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS)*2)
+#define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS) * 2)
 
 static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_COREDUMP_MAX_TASK_REGIONS +
                                               2   /* active stack(s) */

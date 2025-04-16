@@ -124,8 +124,7 @@ void periph_init(void) {
 #else
   // Power up peripherals' power domain
   SetBits16(PMU_CTRL_REG, PERIPH_SLEEP, 0);
-  while (!(GetWord16(SYS_STAT_REG) & PER_IS_UP))
-    ;
+  while (!(GetWord16(SYS_STAT_REG) & PER_IS_UP));
   SetBits16(CLK_16M_REG, XTAL16_BIAS_SH_ENABLE, 1);
 #endif
 

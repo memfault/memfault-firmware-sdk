@@ -30,8 +30,8 @@
 
 // Use Dialog's way of locating variables to a no-init section. This allocation is very
 // Dialog specific so we can put it here within the chip implementation.
-__RETAINED_UNINIT MEMFAULT_ALIGNED(8) static uint8_t
-  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+__RETAINED_UNINIT
+MEMFAULT_ALIGNED(8) static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 // Called by the user application to get our reboot allocation registered with the core.
 void memfault_platform_reboot_tracking_boot(void) {

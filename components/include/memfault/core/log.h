@@ -211,14 +211,14 @@ extern void memfault_log_handle_saved_callback(void);
 //! Formats the provided string and saves it to backing storage
 //!
 //! @note: Should only be called via MEMFAULT_LOG_SAVE macro
-MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
-void memfault_log_save(eMemfaultPlatformLogLevel level, const char *fmt, ...);
+MEMFAULT_PRINTF_LIKE_FUNC(2, 3) void memfault_log_save(eMemfaultPlatformLogLevel level,
+                                                       const char *fmt, ...);
 
 //! Formats the provided string from a variable argument list
 //!
 //! @note Prefer saving logs via MEMFAULT_LOG_SAVE() when possible
-MEMFAULT_PRINTF_LIKE_FUNC(2, 0)
-void memfault_vlog_save(eMemfaultPlatformLogLevel level, const char *fmt, va_list args);
+MEMFAULT_PRINTF_LIKE_FUNC(2, 0) void memfault_vlog_save(eMemfaultPlatformLogLevel level,
+                                                        const char *fmt, va_list args);
 
 //! Freezes the contents of the log buffer in preparation of uploading the logs to Memfault.
 //!

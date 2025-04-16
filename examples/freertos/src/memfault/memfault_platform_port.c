@@ -20,11 +20,11 @@
 #define MEMFAULT_DEBUG_LOG_BUFFER_SIZE_BYTES \
   (sizeof("2024-11-27T14:19:29Z|123456780 I ") + MEMFAULT_DATA_EXPORT_BASE64_CHUNK_MAX_LEN)
 
-#define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS)*2)
+#define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS) * 2)
 
 // Reboot tracking storage, must be placed in no-init RAM to keep state after reboot
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info") static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 // Memfault logging storage
 static uint8_t s_log_buf_storage[512];

@@ -37,8 +37,9 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     s_init = true;
   }
 
-  *info = (struct MemfaultDeviceInfo) {
-    .device_serial = s_device_serial, .hardware_version = APP_DIS_HARD_REV_STR,
+  *info = (struct MemfaultDeviceInfo){
+    .device_serial = s_device_serial,
+    .hardware_version = APP_DIS_HARD_REV_STR,
     .software_version = s_fw_version,
 #if defined(__DA14531__)
     .software_type = "da14531-demo-app",

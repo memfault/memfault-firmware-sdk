@@ -76,7 +76,7 @@ static void prv_run_metrics_task(MEMFAULT_UNUSED void *pvParameters) {
 void metrics_task_init(void) {
   xTaskCreateStatic(
     prv_run_metrics_task,                    /* Function that implements the task. */
-    "📊 Metrics",                             /* Text name for the task. */
+    "📊 Metrics",                            /* Text name for the task. */
     MEMFAULT_ARRAY_SIZE(metrics_task_stack), /* Number of indexes in the xStack array. */
     NULL,                                    /* Parameter passed into the task. */
     tskIDLE_PRIORITY,                        /* Priority at which the task is created. */

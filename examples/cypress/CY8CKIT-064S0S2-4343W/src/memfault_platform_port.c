@@ -166,8 +166,8 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
   printf("[%s] MFLT: %s\n", lvl_str, log_buf);
 }
 
-MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info")
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info") static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 void memfault_platform_reboot_tracking_boot(void) {
   sResetBootupInfo reset_info = { 0 };

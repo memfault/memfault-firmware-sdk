@@ -15,7 +15,7 @@ firmware and hardware versions (with fallbacks to hard-coded values, i.e.
 `"xyz-main"` as software type `"1.0.0"` as software version and `"xyz-proto"` as
 hardware version).
 
-[To learn more about the concepts software type, software version, hardware version, etc. take a look at this documentation](https://mflt.io/36NGGgi).
+[To learn more about the concepts of software type, software version, hardware version, etc. take a look at this documentation](https://mflt.io/36NGGgi).
 
 Please change `memfault_platform_device_info.c` in ways that makes sense for
 your project.
@@ -41,12 +41,15 @@ your project.
 
 ### Storage allocations
 
-- `memfault_events_storage_boot()` to reserve storage for events.
+- `memfault_events_storage_boot()` to reserve storage for events (reboots, trace
+  events, heartbeats)
+
 - `memfault_reboot_tracking_boot()` points to a memory region that is not
   touched by any firmware except for reboot tracking API functions. Reboot info
   can be pushed to the event storage for packetization to be sent to Memfault.
 
-# `memfault_trace_event_boot()`: not an allocation but connects a trace event context into the event storage allocation.
+- _`memfault_trace_event_boot()`_ not an allocation but connects a trace event
+  context into the event storage allocation.
 
 - `memfault_log_boot()` to reserve storage for the logging module. The logging
   storage gets sent to Memfault as part of the core dump data if enabled.

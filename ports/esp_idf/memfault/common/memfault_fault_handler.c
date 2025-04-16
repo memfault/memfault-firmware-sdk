@@ -54,10 +54,10 @@ void memfault_fault_handling_assert(void *pc, void *lr) {
 // because there's logic inside memfault_reboot_tracking_mark_reset_imminent()
 // to ignore the second call, and this gets us the highest-frame PC and LR in
 // the assert info when MEFMAULT_ASSERT() is called.
-void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined))
-__real_panic_abort(const char *details);
-void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined))
-__wrap_panic_abort(const char *details) {
+void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) __real_panic_abort(
+  const char *details);
+void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) __wrap_panic_abort(
+  const char *details) {
   void *pc;
   MEMFAULT_GET_PC(pc);
   void *lr;

@@ -48,6 +48,14 @@
 extern void vAssertCalled(const char *file, int line);
   #define configASSERT(x) \
     if ((x) == 0) vAssertCalled(__FILE__, __LINE__)
+#else
+  // Disable this check, to avoid an unused variable warning due to FreeRTOS
+  // configASSERT() being compiled out by default.
+  // https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/0adc196d4bd52a2d91102b525b0aafc1e14a2386/portable/GCC/ARM_CM3/port.c#L282-L302
+  #define configCHECK_HANDLER_INSTALLATION 0
+
+  // There's an unused variable warning here too, disable these stats.
+  #define configGENERATE_RUN_TIME_STATS 0
 #endif
 #define configQUEUE_REGISTRY_SIZE 20
 
@@ -63,7 +71,6 @@ extern void vAssertCalled(const char *file, int line);
 #define configMINIMAL_STACK_SIZE ((unsigned short)1000)
 #define configMINIMAL_SECURE_STACK_SIZE (1024)
 #define configTOTAL_HEAP_SIZE ((size_t)(2048))
-#define configUSE_TRACE_FACILITY 1
 #define configUSE_16_BIT_TICKS 0
 #define configIDLE_SHOULD_YIELD 1
 
@@ -92,7 +99,9 @@ extern void vAssertCalled(const char *file, int line);
 #define configTIMER_TASK_STACK_DEPTH (configMINIMAL_STACK_SIZE * 2)
 #define configRECORD_STACK_HIGH_ADDRESS 1
 
-#define configGENERATE_RUN_TIME_STATS 1
+#if !defined(configGENERATE_RUN_TIME_STATS)
+  #define configGENERATE_RUN_TIME_STATS 1
+#endif
 #define configUSE_TRACE_FACILITY 1
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  // unused
 #define portGET_RUN_TIME_COUNTER_VALUE() ulGetRunTimeCounterValue()
@@ -125,8 +134,10 @@ unsigned long ulGetRunTimeCounterValue(
 
 /* !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
  * See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY 191 /* equivalent to 0xa0, or priority 5. */
-#define configMAC_INTERRUPT_PRIORITY 5
+// On a device implementing 8 priority bits (like our emulated QEMU hardware),
+// all of the bits are considered for priority, and the LSB MUST NOT be set, or
+// the kernel crashes on startup. Set it to 4.
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY 4
 
 /* Prototype for the function used to print out. */
 extern void vLoggingPrintf(const char *pcFormatString, ...);

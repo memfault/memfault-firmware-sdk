@@ -172,7 +172,7 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
     .handler = prv_freertos_vassert_cmd,
-    .help = "Example command",
+    .help = "FreeRTOS vAssertCalled assert",
   },
   {
     .command = "freertos_tasks",

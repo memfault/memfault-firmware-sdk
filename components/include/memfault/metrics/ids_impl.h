@@ -139,8 +139,7 @@ typedef struct {
 
 #define MEMFAULT_METRICS_SESSION_KEY(key_name) kMfltMetricsSessionKey_##key_name
 
-#define _MEMFAULT_METRICS_ID_CREATE(id, session_name) \
-  { kMfltMetricsIndex_##session_name##__##id }
+#define _MEMFAULT_METRICS_ID_CREATE(id, session_name) { kMfltMetricsIndex_##session_name##__##id }
 
 #define _MEMFAULT_METRICS_ID(id, session_name) \
   ((MemfaultMetricId){ kMfltMetricsIndex_##session_name##__##id })

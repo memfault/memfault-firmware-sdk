@@ -41,6 +41,8 @@
 MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) == MEMFAULT_REBOOT_TRACKING_REGION_SIZE,
                        "struct doesn't match expected size");
 
+MEMFAULT_STATIC_ASSERT(sizeof(sMfltRebootInfo) % 4 == 0, "struct size must be multiple of 4");
+
 MEMFAULT_STATIC_ASSERT(sizeof(eMemfaultRebootReason) <=
                          sizeof(((sMfltRebootInfo){ 0 }).last_reboot_reason),
                        "enum does not fit within sMfltRebootInfo.last_reboot_reason");

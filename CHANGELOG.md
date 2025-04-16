@@ -6,6 +6,89 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2024-04-16
+
+### 📈 Added
+
+- General:
+
+  - Improved support for run time tracking on FreeRTOS kernel version v11 and
+    later, by adding compile-time checks for possible configuration issues.
+
+  - Add reboot reason decoding for the NXP RW61x chip series, using the
+    `PMU.SYS_RST_STATUS` register to determine the reset reason. Add the file at
+    [`ports/nxp/rw61x/pmu_reboot_tracking.c`](ports/nxp/rw61x/pmu_reboot_tracking.c)
+    to your project to make use of it!
+
+  - Add reboot reason decoding for the SiLabs SiWx91x chip series. This
+    implementation supports `Power On Reset`, `Pin Reset`, and `Software Reset`
+    causes only. Please [reach out](mflt.io/support) if you are interested in
+    other reset reasons. Add the file at
+    [`sdk/embedded/ports/silabs/wiseconnect/siwx91x/siwx91x_reboot_tracking.c`](ports/silabs/wiseconnect/siwx91x/siwx91x_reboot_tracking.c)
+    to your project to make use of it.
+
+  - Add an
+    [implementation of `memfault_reboot_reason_get()`](ports/stm32cube/h5/rcc_reboot_tracking.c)
+    for the STM32H5xx series of MCUs, using the `RCC-RSR` register to determine
+    the reset reason. Add the file to your project to make use of it!
+
+- ESP-IDF:
+
+  - Add 2 new out-of-box metrics:
+
+    - `spi_flash_chip_id` : the 24-bit RDID value of the SPI flash chip, for
+      example `"c84017"` = GigaDevice GD25Q64 8MiB
+    - `esp_chip_revision` : the ESP32 chip and revision, for example
+      `esp32c6-0.0` or `esp32s3-0.2`
+
+  - For ESP-IDF v5.5 and later, enable `-ggdb3` by default for enhanced
+    debugging. This is controlled with the Kconfig `CONFIG_MEMFAULT_GGDB3`.
+
+  - Set the User-Agent to `MemfaultSDK/<version>` when sending HTTP requests to
+    Memfault.
+
+### 🛠️ Changed
+
+- General:
+
+  - Updated the internally used `clang-format` version to 20.1.0, latest at time
+    of writing. This resulted in a few minor format changes in the SDK.
+
+- Zephyr:
+
+  - Update the [Zephyr QEMU example](examples/zephyr/qemu) to use the latest
+    Zephyr version, v4.1.0.
+
+- nRF-Connect SDK:
+
+  - Update the [nRF-Connect SDK examples](examples/nrf-connect-sdk) to use the
+    latest nRF-Connect SDK version, v2.9.1.
+
+  - Update the [nRF91 example](examples/nrf-connect-sdk/nrf9160) to enable the
+    `DATETIME` subsystem, to tag SDK event and log data with timestamps once the
+    network connection is activated.
+
+- ESP-IDF:
+
+  - Update the `prv_panic_safe_putstr()` implementation to perform better on
+    modern ESP-IDF versions (>=4.4.0). This function is used to output local
+    prints during panic handling.
+
+  - Add a Kconfig `CONFIG_MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM` to allow
+    overriding `memfault_esp_port_data_available()` and
+    `memfault_esp_port_get_chunk()`. If other MCUs are forwarding data to an
+    ESP32 for transport, enable this option and provide definitions to handle
+    additional sources. By default, these functions only check the local device
+    for available chunks.
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Correctly print the initial delay and period in seconds for the periodic
+    upload task. Previously, this info log print was using the value in
+    milliseconds.
+
 ## [1.22.0] - 2025-03-19
 
 ### 📈 Added
@@ -45,19 +128,11 @@ and this project adheres to
   - Log lines that are only a single `'\n'` character are no longer recorded in
     the Memfault Log Buffer.
 
-### 🚩 Deprecated
-
-### 🔥 Removed
-
-### 🐛 Fixed
-
 - Zephyr:
 
   - The `hwinfo`-based Reset Reason implementation did not clear the reset
     reason register after reading the data. Updated to properly call
     `hwinfo_clear_reset_cause()` after reading the reset reason.
-
-### 🔒 Security
 
 ## [1.21.1] - 2025-03-07
 
@@ -344,7 +419,7 @@ and this project adheres to
     //!   memory_main_pct_max, kMemfaultMetricType_Unsigned,
     //!   CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
     //! )
-    #include "memfault/ports/zephyr/thread_metrics.h"
+    #include "memfault/ports/freertos/thread_metrics.h"
     MEMFAULT_METRICS_DEFINE_THREAD_METRICS (
       // monitor the main thread stack usage
       {

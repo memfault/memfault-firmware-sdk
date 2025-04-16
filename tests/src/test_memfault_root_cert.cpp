@@ -77,7 +77,12 @@ static bool check_for_newlines(char *pemstring) {
 
 TEST(MemfaultRootCert, Test_certs) {
 #define FILL_CERT_ENTRY(certname, refdata) \
-  { .name = "" #certname "", .ref_data = refdata, .len = certname##_len, .data = certname, }
+  {                                        \
+    .name = "" #certname "",               \
+    .ref_data = refdata,                   \
+    .len = certname##_len,                 \
+    .data = certname,                      \
+  }
 
   struct cert_refs {
     const char *name;

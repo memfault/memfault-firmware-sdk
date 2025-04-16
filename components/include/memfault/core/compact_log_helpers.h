@@ -251,11 +251,10 @@ extern "C" {
 
   //! The metadata we track in the ELF for each compact log in the code.
   //! This is used to recover the original information
-  #define MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ...)                  \
-    MEMFAULT_LOG_FMT_ELF_SECTION                                           \
-    MEMFAULT_NO_ALLOC                                                      \
-    static const char _memfault_log_fmt_ptr[] = MEMFAULT_EXPAND_AND_QUOTE( \
-      MEMFAULT_ARG_COUNT_UP_TO_32(__VA_ARGS__)) ";" __FILE__               \
+  #define MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY(format, ...)                                    \
+    MEMFAULT_LOG_FMT_ELF_SECTION                                                             \
+    MEMFAULT_NO_ALLOC static const char _memfault_log_fmt_ptr[] = MEMFAULT_EXPAND_AND_QUOTE( \
+      MEMFAULT_ARG_COUNT_UP_TO_32(__VA_ARGS__)) ";" __FILE__                                 \
                                                 ";" MEMFAULT_EXPAND_AND_QUOTE(__LINE__) ";" format
 
   #define MEMFAULT_LOG_FMT_ELF_SECTION_ENTRY_PTR ((uint32_t)(uintptr_t)&_memfault_log_fmt_ptr[0])

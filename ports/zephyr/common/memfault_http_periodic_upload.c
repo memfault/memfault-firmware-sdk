@@ -59,7 +59,7 @@ static int prv_background_upload_init() {
   const uint32_t duration_secs = duration_secs_minimum + (sys_rand32_get() % interval_secs);
 
   k_timer_start(&s_upload_timer, K_SECONDS(duration_secs), K_SECONDS(interval_secs));
-  MEMFAULT_LOG_INFO("Periodic background upload scheduled - duration=%ds period=%ds",
+  MEMFAULT_LOG_INFO("Periodic background upload scheduled - initial delay=%ds period=%ds",
                     (int)duration_secs, (int)interval_secs);
 
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE

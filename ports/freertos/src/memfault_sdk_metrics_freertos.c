@@ -28,16 +28,37 @@
 #endif
 
 #if MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
+  // Sanity check that the required configs are set
+  #if !configGENERATE_RUN_TIME_STATS || !configUSE_TRACE_FACILITY
+    #error "configGENERATE_RUN_TIME_STATS and configUSE_TRACE_FACILITY must be enabled"
+  #endif
+  // On FreeRTOS v11 and later, there's an additional config option required
+  #if (tskKERNEL_VERSION_MAJOR >= 11) && !INCLUDE_xTaskGetIdleTaskHandle
+    #error "INCLUDE_xTaskGetIdleTaskHandle must be enabled"
+  #endif
+
   // Older versions of FreeRTOS do not have this type, default to uint32_t
   #ifndef configRUN_TIME_COUNTER_TYPE
     #define configRUN_TIME_COUNTER_TYPE uint32_t
   #endif
 
-  // Default to the original API names. FreeRTOS defaults to
-  // configENABLE_BACKWARD_COMPATIBILITY=1, so newer versions are more likely to
-  // support the original API.
-  #if !defined(MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API)
-    #define MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API 0
+  // xTaskGetIdleRunTimeCounter was renamed to ulTaskGetIdleRunTimeCounter in
+  // FreeRTOS v10.3.0. Support an explicit override in case we can't determine
+  // which version is being used.
+  #if defined(MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API)
+    #if MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API == 1
+      #define MEMFAULT_FREERTOS_TASK_GET_IDLE_RUN_TIME_COUNTER ulTaskGetIdleRunTimeCounter
+    #else
+      #define MEMFAULT_FREERTOS_TASK_GET_IDLE_RUN_TIME_COUNTER xTaskGetIdleRunTimeCounter
+    #endif
+  #else
+    // If kernel version is >= 10.3.0, use ulTaskGetIdleRunTimeCounter
+    #if (tskKERNEL_VERSION_MAJOR > 10) || \
+      ((tskKERNEL_VERSION_MAJOR == 10) && (tskKERNEL_VERSION_MINOR >= 3))
+      #define MEMFAULT_FREERTOS_TASK_GET_IDLE_RUN_TIME_COUNTER ulTaskGetIdleRunTimeCounter
+    #else
+      #define MEMFAULT_FREERTOS_TASK_GET_IDLE_RUN_TIME_COUNTER xTaskGetIdleRunTimeCounter
+    #endif
   #endif
 
   // Defines the precision used to calculate changes in cpu_usage_pct
@@ -101,7 +122,7 @@ static configRUN_TIME_COUNTER_TYPE prv_get_total_runtime(void) {
   #endif
   return total_runtime;
 }
-#endif
+#endif  // MEMFAULT_FREERTOS_COLLECT_RUN_TIME_STATS
 
 #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
 static configRUN_TIME_COUNTER_TYPE prv_get_idle_counter_for_core(uint32_t core) {
@@ -159,12 +180,7 @@ void memfault_freertos_port_task_runtime_metrics(void) {
   #if MEMFAULT_FREERTOS_RUN_TIME_STATS_MULTI_CORE
     prv_get_idle_counter_for_core(0);
   #else
-    #if MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API
-    ulTaskGetIdleRunTimeCounter
-    #else
-    xTaskGetIdleRunTimeCounter
-    #endif
-    ();
+    MEMFAULT_FREERTOS_TASK_GET_IDLE_RUN_TIME_COUNTER();
   #endif
 
   #if MEMFAULT_FREERTOS_RUNTIME_STATS_MULTI_CORE_SPLIT

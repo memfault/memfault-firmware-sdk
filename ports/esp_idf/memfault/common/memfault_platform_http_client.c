@@ -19,6 +19,7 @@
   #include "memfault/components.h"
   #include "memfault/esp_port/core.h"
   #include "memfault/esp_port/http_client.h"
+  #include "memfault/version.h"
 
   #ifndef MEMFAULT_HTTP_DEBUG
     #define MEMFAULT_HTTP_DEBUG (0)
@@ -30,6 +31,8 @@
   #ifndef MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN
     #define MEMFAULT_DEVICE_INFO_URL_ENCODED_MAX_LEN (48)
   #endif
+
+  #define MEMFAULT_HTTP_USER_AGENT "MemfaultSDK/" MEMFAULT_SDK_VERSION_STR
 
 MEMFAULT_STATIC_ASSERT(
   sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
@@ -120,6 +123,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     .url = s_mflt_base_url_buffer,
     .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
     .cert_pem = g_mflt_http_client_config.disable_tls ? NULL : MEMFAULT_ROOT_CERTS_PEM,
+    .user_agent = MEMFAULT_HTTP_USER_AGENT,
   };
   esp_http_client_handle_t client = esp_http_client_init(&config);
   if (!client) {
@@ -343,6 +347,7 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
         .url = download_url,
         .timeout_ms = CONFIG_MEMFAULT_HTTP_CLIENT_TIMEOUT_MS,
         .cert_pem = MEMFAULT_ROOT_CERTS_PEM,
+        .user_agent = MEMFAULT_HTTP_USER_AGENT,
       },
     .http_client_init_cb = NULL,
     .bulk_flash_erase = false,

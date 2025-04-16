@@ -57,7 +57,7 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 
   // Now let the Zephyr fault handler complete as normal.
   void __real_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
-                          _callee_saved_t * callee_regs);
+                          _callee_saved_t *callee_regs);
   __real_z_arm_fault(msp, psp, exc_return, callee_regs);
 }
 #endif
@@ -86,8 +86,8 @@ void assert_post_action(const char *file, unsigned int line)
 // On boot-up, log out any information collected as to why the
 // reset took place
 
-MEMFAULT_PUT_IN_SECTION(CONFIG_MEMFAULT_REBOOT_TRACKING_REGION)
-static uint8_t s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
+MEMFAULT_PUT_IN_SECTION(CONFIG_MEMFAULT_REBOOT_TRACKING_REGION) static uint8_t
+  s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 

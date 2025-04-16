@@ -558,8 +558,8 @@ void MEMFAULT_ASSERT_TRAP(void) {
 // disable optimizations to fix
 MEMFAULT_NO_OPT
   #endif
-  static void
-  prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
+static void
+prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
   // Only set the crash reason if it's unset, in case we are in a nested assert
   if (s_crash_reason == kMfltRebootReason_Unknown) {
     sMfltRebootTrackingRegInfo info = {

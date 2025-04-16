@@ -33,8 +33,8 @@ typedef enum {
 //! @note it's expected that the implementation will terminate the log with a newline
 //! @note Even if there is no UART or RTT Console, it's worth considering adding a logging
 //! implementation that writes to RAM or flash which allows for post-mortem analysis
-MEMFAULT_PRINTF_LIKE_FUNC(2, 3)
-void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...);
+MEMFAULT_PRINTF_LIKE_FUNC(2, 3) void memfault_platform_log(eMemfaultPlatformLogLevel level,
+                                                           const char *fmt, ...);
 
 //! Routine for printing a log line as-is, only appending a newline, but without suffixing or
 //! appending timestamps, log level info, etc. This is used for debug console-commands where

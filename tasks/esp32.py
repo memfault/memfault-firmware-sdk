@@ -4,13 +4,10 @@
 #
 
 import os
-import platform
 import shutil
 import sys
-from glob import glob
 
 from invoke import Collection, task
-from pyftdi.usbtools import UsbTools
 
 from .gdb import gdb_build_cmd
 
@@ -43,39 +40,6 @@ def _run_idf_script(ctx, *args, **kwargs):
             env={"IDF_PATH": ESP32_IDF_ROOT},
             **kwargs,
         )
-
-
-def _esp32_guess_console_port():
-    def _esp32_find_console_port():
-        host_os = platform.system()
-        if host_os == "Darwin":
-            usb_paths = glob("/dev/cu.usbserial-*1")
-            if usb_paths:
-                return usb_paths[0]
-
-            # Try pyftdi only on MacOS as it fails on Linux.
-            # Actually, Espressif's esptool.py seems not to
-            # like this at all.
-            print("Trying FTDI first")
-            devs = UsbTools.find_all(ESP32_FTDI_VID_PID)
-            if devs:
-                return "ftdi://ftdi:2232/2"
-        elif host_os == "Linux":
-            # Try ttyUSB1, no need to glob.
-            serial_device = "/dev/ttyUSB1"
-            print("Trying {serdev}".format(serdev=serial_device))
-            if os.path.exists(serial_device):
-                return serial_device
-
-        print(
-            "Cannot find ESP32 console /dev/... nor ftdi:// path, please specify it manually using"
-            " --port"
-        )
-        sys.exit(1)
-
-    port = _esp32_find_console_port()
-    print("No --port specified, using console port {port}".format(port=port))
-    return port
 
 
 @task
@@ -125,21 +89,15 @@ def esp32s3_app_build(ctx):
 
 
 @task
-def esp32_app_flash(ctx, port=None):
+def esp32_app_flash(ctx):
     """Flash the ESP32 test app"""
-    if port is None:
-        port = _esp32_guess_console_port()
-    _run_idf_script(ctx, "-p {port}".format(port=port), "flash")
+    _run_idf_script(ctx, "flash")
 
 
 @task
-def esp32_console(ctx, port=None):
+def esp32_console(ctx):
     """Flash the ESP32 test app"""
-    if port is None:
-        port = _esp32_guess_console_port()
-    # For now, just use miniterm, idf_monitor.py doesn't play nice with pyftdi for some reason :(
-    # _run_idf_script(ctx, '-p {port}'.format(port=port), 'monitor', pty=True)
-    ctx.run("miniterm.py --eol CR --raw {port} 115200".format(port=port), pty=True)
+    _run_idf_script(ctx, "monitor")
 
 
 @task

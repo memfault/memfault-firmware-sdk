@@ -270,6 +270,20 @@ idf_build_set_property(
   APPEND
 )
 
+# Compiling with -ggdb3 is only supported on ESP-IDF v5.5 and later, due to
+# requiring this fix:
+# https://github.com/espressif/esp-idf/commit/6d945bf0f6a6fc474bc2fee3ce09539172286b6d
+if (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "5.5.0")
+  if (CONFIG_MEMFAULT_GGDB3)
+    # Enable -ggdb3 in compile_options.
+    idf_build_set_property(
+      COMPILE_OPTIONS
+      "-ggdb3"
+      APPEND
+    )
+  endif()
+endif()
+
 # We will intercept the panic handlers enabled by CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 # and run the Memfault Fault Handler instead.
 #

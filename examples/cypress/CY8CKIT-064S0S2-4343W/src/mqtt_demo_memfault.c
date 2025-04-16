@@ -572,8 +572,7 @@ int RunCoreMqttMemfaultDemo(bool awsIotMqttMode, const char *pIdentifier, void *
   if (isDemoSuccessful) {
     xDemoStatus = pdPASS;
     LogInfo(("Demo run successful."));
-    for (;;)
-      ;
+    for (;;);
   } else {
     xDemoStatus = pdFAIL;
   }

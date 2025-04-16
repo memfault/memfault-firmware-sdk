@@ -72,8 +72,9 @@ static void prv_periodic_upload_task(void *args) {
   const TickType_t initial_delay_ms_ticks = (1000 * duration_secs) / portTICK_PERIOD_MS;
   const TickType_t interval_ms_ticks = (1000 * interval_secs) / portTICK_PERIOD_MS;
 
-  MEMFAULT_LOG_INFO("periodic_upload task up, initial delay=%" PRIu32 "s period=%" PRIu32 "s",
-                    initial_delay_ms_ticks, interval_ms_ticks);
+  MEMFAULT_LOG_INFO("Periodic background upload scheduled, initial delay=%" PRIu32
+                    "s period=%" PRIu32 "s",
+                    duration_secs, interval_secs);
 
   vTaskDelay(initial_delay_ms_ticks);
 

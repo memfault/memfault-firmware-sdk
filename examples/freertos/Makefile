@@ -51,7 +51,7 @@ READELF ?= $(shell $(CC) -print-prog-name=readelf)
 # Check if FreeRTOS location set, add rule to download if not
 ifeq ($(FREERTOS_DIR),)
 FREERTOS_DIR = FreeRTOS-Kernel
-FREERTOS_VER = V10.4.6
+FREERTOS_VER = V11.2.0
 
 $(FREERTOS_DIR)/.clonedone:
 	$(info FREERTOS_DIR does not exist, downloading local copy)

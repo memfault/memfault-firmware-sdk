@@ -38,6 +38,14 @@ MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_ap_oui, sizeof("00:00:00") - 1)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(thermal_cpu_c, kMemfaultMetricType_Signed, 10)
 #endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
 
+#if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
+// SPI Flash chip ID is captured as 24 bits in hex
+MEMFAULT_METRICS_STRING_KEY_DEFINE(spi_flash_chip_id, sizeof("012345") - 1)
+// ESP32 Chip Revision is captured as "esp32s3-1.2" etc.
+MEMFAULT_METRICS_STRING_KEY_DEFINE(esp_chip_revision,
+                                   sizeof(CONFIG_IDF_TARGET) + sizeof("-00.00") - 1)
+#endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 
   #if __has_include("memfault_metrics_heartbeat_config.def")

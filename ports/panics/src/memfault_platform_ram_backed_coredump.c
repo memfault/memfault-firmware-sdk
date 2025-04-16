@@ -50,8 +50,8 @@
 
 MEMFAULT_STATIC_ASSERT(sizeof(uint32_t) == 4, "port expects sizeof(uint32_t) == 4");
 
-MEMFAULT_PUT_IN_SECTION(MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME)
-static uint32_t s_ram_backed_coredump_region[MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE / 4];
+MEMFAULT_PUT_IN_SECTION(MEMFAULT_PLATFORM_COREDUMP_NOINIT_SECTION_NAME) static uint32_t
+  s_ram_backed_coredump_region[MEMFAULT_PLATFORM_COREDUMP_STORAGE_RAM_SIZE / 4];
 
     #define MEMFAULT_PLATFORM_COREDUMP_RAM_START_ADDR ((uint8_t *)&s_ram_backed_coredump_region[0])
 

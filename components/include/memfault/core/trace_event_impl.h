@@ -22,9 +22,8 @@ int memfault_trace_event_capture(eMfltTraceReasonUser reason, void *pc_addr, voi
 int memfault_trace_event_with_status_capture(eMfltTraceReasonUser reason, void *pc_addr,
                                              void *lr_addr, int32_t status);
 
-MEMFAULT_PRINTF_LIKE_FUNC(4, 5)
-int memfault_trace_event_with_log_capture(eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr,
-                                          const char *fmt, ...);
+MEMFAULT_PRINTF_LIKE_FUNC(4, 5) int memfault_trace_event_with_log_capture(
+  eMfltTraceReasonUser reason, void *pc_addr, void *lr_addr, const char *fmt, ...);
 
 int memfault_trace_event_with_compact_log_capture(eMfltTraceReasonUser reason, void *lr_addr,
                                                   uint32_t log_id, uint32_t fmt, ...);

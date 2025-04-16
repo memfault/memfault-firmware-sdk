@@ -2,7 +2,7 @@
 name = "mflt-build-id"
 version = "1.1.0"
 dependencies = [
-  "pyelftools >=0.31,<0.32",
+  "pyelftools >=0.31",
 ]
 requires-python = ">=3.8,<4.0"
 

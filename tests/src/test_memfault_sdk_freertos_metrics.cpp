@@ -17,7 +17,7 @@ static MemfaultMetricId timer_task_stack_free_bytes_id =
 // Note: the expected value is the usage value before being scaled
 // by the backend into a percent
 static void prv_set_expected_usage_pct(uint32_t expected_value) {
-  mock().expectOneCall("xTaskGetIdleRunTimeCounter");
+  mock().expectOneCall("ulTaskGetIdleRunTimeCounter");
   mock().expectOneCall("portGET_RUN_TIME_COUNTER_VALUE");
   mock()
     .expectOneCall("memfault_metrics_heartbeat_set_unsigned")
@@ -42,7 +42,7 @@ static void prv_clear_runtimes(void) {
 }
 
 extern "C" {
-uint32_t xTaskGetIdleRunTimeCounter(void) {
+uint32_t ulTaskGetIdleRunTimeCounter(void) {
   mock().actualCall(__func__);
   return s_idle_task_run_time;
 }
