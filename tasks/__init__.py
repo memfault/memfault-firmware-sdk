@@ -27,6 +27,7 @@ SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
         "extra_make_options": "Extra make options",
         "verbose": "Verbose output",
         "no_pytest": "Don't run pytest, instead run the Make-based test runner",
+        "jobs": "Number of jobs to run in parallel; use 'auto' to detect the number of CPUs",
     }
 )
 def fw_sdk_unit_test(
@@ -38,6 +39,7 @@ def fw_sdk_unit_test(
     extra_make_options="",
     verbose=False,
     no_pytest=False,
+    jobs: str = "4",
 ):
     """Runs unit tests"""
 
@@ -107,9 +109,11 @@ def fw_sdk_unit_test(
         # use a Make-based test runner, so support both.
         if os.path.exists(os.path.join(test_dir, "test.py")) and not no_pytest:
             # run the tests with pytest
-            test_cmd = "pytest --numprocesses=auto {verbose} test.py".format(
-                verbose="-v" if verbose else ""
-            )
+            test_cmd = "pytest"
+            test_cmd += f" --numprocesses={jobs}"
+            if verbose:
+                test_cmd += " -v"
+            test_cmd += " test.py"
         else:
             # run normal make-based tests
             test_cmd = "make {} {}".format(" ".join(make_options), rule)

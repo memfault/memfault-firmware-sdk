@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.1] - 2024-04-17
+
+### 🐛 Fixed
+
+- Modify the test command used in our public CircleCI job, to work around an
+  issue with
+  [CircleCI's v2 container runtime](https://discuss.circleci.com/t/docker-executor-infrastructure-upgrade/52282),
+  which uses `cgroupv2` instead of `cgroupv1`.
+
 ## [1.23.0] - 2024-04-16
 
 ### 📈 Added
