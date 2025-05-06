@@ -179,16 +179,28 @@ TEST(MemfaultLogDataSource, Test_ReadMsg) {
 
 TEST(MemfaultLogDataSource, Test_MarkMsgRead) {
   const size_t num_batch_logs_1 = prv_add_logs();
+  const size_t size_batch_logs_1 = MEMFAULT_LOG_TIMESTAMPS_ENABLE ? 41 : 25;
   LONGS_EQUAL(num_batch_logs_1, memfault_log_data_source_count_unsent_logs());
+
+  sMfltLogUnsentCount unsent_count = memfault_log_get_unsent_count();
+  LONGS_EQUAL(num_batch_logs_1, unsent_count.num_logs);
+  LONGS_EQUAL(size_batch_logs_1, unsent_count.bytes);
 
   memfault_log_trigger_collection();
 
   // These logs will not get included, because they happened after the
   // memfault_log_trigger_collection() call:
   const size_t num_batch_logs_2 = prv_add_logs();
+  const size_t size_batch_logs_2 = MEMFAULT_LOG_TIMESTAMPS_ENABLE ? 41 : 25;
   LONGS_EQUAL(num_batch_logs_1 + num_batch_logs_2, memfault_log_data_source_count_unsent_logs());
+  unsent_count = memfault_log_get_unsent_count();
+  LONGS_EQUAL(num_batch_logs_1 + num_batch_logs_2, unsent_count.num_logs);
+  LONGS_EQUAL(size_batch_logs_1 + size_batch_logs_2, unsent_count.bytes);
 
   g_memfault_log_data_source.mark_msg_read_cb();
 
   LONGS_EQUAL(num_batch_logs_2, memfault_log_data_source_count_unsent_logs());
+  unsent_count = memfault_log_get_unsent_count();
+  LONGS_EQUAL(num_batch_logs_2, unsent_count.num_logs);
+  LONGS_EQUAL(size_batch_logs_2, unsent_count.bytes);
 }

@@ -6,7 +6,96 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.23.1] - 2024-04-17
+## [1.24.0] - 2025-05-06
+
+### 📈 Added
+
+- General:
+
+  - Add a new API, `memfault_log_get_unsent_count()`, which returns the log
+    count and size in bytes of unsent logs in the log buffer. This can be used
+    inside `memfault_log_handle_saved_callback()` for example to drain the
+    packetized logs when a certain watermark is reached.
+
+- ESP-IDF:
+
+  - Add a Kconfig option, `CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM`, which when
+    set `=n`, enables using a custom implementation of
+    `memfault_platform_get_time_since_boot_ms()`.
+
+  - Add 2 new metrics for tracking raw network bytes rx / tx. These metrics
+    track network IO traffic on the default netif:
+
+    - `network_rx_bytes`
+    - `network_tx_bytes`
+
+    These metrics are enabled by default, and can be disabled with
+    `CONFIG_MEMFAULT_METRICS_NETWORK_IO=n`
+
+### 🛠️ Changed
+
+- FreeRTOS (including ESP-IDF):
+
+  - Rename the thread stack usage measurement variable included in coredumps
+    when `MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE` is enabled from
+    `high_watermark` to `stack_unused`. This change is to make the
+    implementation more readable. The Memfault backend is updated to process
+    both the old and new formats.
+
+  - FreeRTOS-detected stack overflows (via `vApplicationStackOverflowHook`) will
+    now be correctly tagged as `Stack Overflow` for the trace reason in
+    Memfault, instead of `Assert`.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a null dereference when calling
+    `memfault_coredump_storage_compute_size_required()` (eg the shell command
+    `mflt coredump_size`).
+
+- General:
+
+  - For the emlib WDOG port implementation,
+    [`ports/emlib/wdog_software_watchdog.c`](ports/emlib/wdog_software_watchdog.c),
+    enable the WDOG when in EM1 mode for series2 chips.
+
+  - Added support for `MEMFAULT_REBOOT_REASON_CLEAR` in the
+    [`ports/nrf5_sdk/resetreas_reboot_tracking.c`](ports/nrf5_sdk/resetreas_reboot_tracking.c)
+    implementation, by default enabled (like other ports). This permits opting
+    out of the auto-clearing of the `NRF_POWER->RESETREAS` register, in case the
+    user needs it after the function runs.
+
+- FreeRTOS (including ESP-IDF):
+
+  - Fix incorrect computation of per-thread stack usage metrics
+    (`MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS`). Before this fix, the returned
+    values had 2 errors:
+
+    1. the value is the _unused_ stack space, not the used stack space
+    2. on platforms where `sizeof(StackType_t)` is not 1 byte, the numerator
+       when computing percentage is incorrectly scaled down by
+       `sizeof(StackType_t)`, resulting in significant under-reporting of the
+       stack usage percentage.
+
+    Users can apply device and software version filtering on dashboards to
+    filter out reports from devices that are running an old version of the SDK.
+
+- ESP-IDF:
+
+  - Fix a potential issue that would cause the wrong implementation of
+    `memfault_platform_time_get_current()` to be included in the final link,
+    when `CONFIG_MEMFAULT_SYSTEM_TIME=y` is enabled (default).
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP` now defaults to `y` instead of
+    `n`, to print out the reboot reason on boot. Disable it with
+    `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP=n`.
+
+## [1.23.1] - 2025-04-17
 
 ### 🐛 Fixed
 
@@ -15,7 +104,7 @@ and this project adheres to
   [CircleCI's v2 container runtime](https://discuss.circleci.com/t/docker-executor-infrastructure-upgrade/52282),
   which uses `cgroupv2` instead of `cgroupv1`.
 
-## [1.23.0] - 2024-04-16
+## [1.23.0] - 2025-04-16
 
 ### 📈 Added
 

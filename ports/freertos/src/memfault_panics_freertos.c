@@ -24,5 +24,5 @@ void vAssertCalled(MEMFAULT_UNUSED const char *file, MEMFAULT_UNUSED int line) {
 //!  configCHECK_FOR_STACK_OVERFLOW != 0
 void vApplicationStackOverflowHook(MEMFAULT_UNUSED TaskHandle_t xTask,
                                    MEMFAULT_UNUSED char *pcTaskName) {
-  MEMFAULT_ASSERT(0);
+  MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_StackOverflow);
 }

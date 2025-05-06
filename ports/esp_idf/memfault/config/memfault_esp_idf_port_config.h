@@ -72,6 +72,10 @@ extern "C" {
   #define MEMFAULT_ENABLE_REBOOT_DIAG_DUMP 1
 #endif
 
+#if defined(CONFIG_MEMFAULT_SYSTEM_TIME)
+  #define MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME 0
+#endif
+
 // Memfault SDK logs are routed to ESP-IDF logging, which are saved by Memfault,
 // so it's redundant to save them in the Memfault SDK as well.
 #define MEMFAULT_SDK_LOG_SAVE_DISABLE 1

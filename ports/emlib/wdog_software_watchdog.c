@@ -62,6 +62,9 @@ static void prv_build_configuration(WDOG_Init_TypeDef *cfg, uint32_t persel) {
     .enable = true,
     // freeze watchdog when a debugger halts the system
     .debugRun = false,
+#if defined(_WDOG_CFG_EM1RUN_MASK)
+    .em1Run = true,
+#endif
     .em2Run = true,
     .em3Run = true,
     .em4Block = false,

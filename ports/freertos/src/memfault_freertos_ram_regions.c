@@ -132,9 +132,10 @@
 #endif
 
 #if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
+  #define MEMFAULT_THREAD_STACK_0_BYTES_UNUSED 0xffffffff
 static struct MfltTaskWatermarks {
-  uint32_t high_watermark;
-} s_memfault_task_watermarks[MEMFAULT_PLATFORM_MAX_TRACKED_TASKS];
+  uint32_t bytes_unused;
+} s_memfault_task_watermarks_v2[MEMFAULT_PLATFORM_MAX_TRACKED_TASKS];
 #endif
 
 // If the MEMFAULT_PLATFORM_FREERTOS_TCB_SIZE value is set to 0, apply a default
@@ -216,7 +217,7 @@ void memfault_freertos_trace_task_delete(void *tcb) {
 }
 
 #if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
-static uint32_t prv_stack_bytes_high_watermark(void *tcb_address) {
+static uint32_t prv_stack_bytes_unused(void *tcb_address) {
   // Note: ideally we would sanitize the pxTCB->pxStack value here (which is
   // used when computing high watermark) to prevent a memory error. We could
   // potentially scan in decrementing addresses from pxTopOfStack (full
@@ -230,11 +231,22 @@ static uint32_t prv_stack_bytes_high_watermark(void *tcb_address) {
   // stack for the first non 0xa5 byte. It's safe to call it from the fault
   // handler context (no locks, no memory allocation, etc)
 
-  // The value returned here is the high watermark, *NOT* the "bytes unused".
-  // Memfault's backend will convert it using the TCB_t stack size. We cannot
-  // access the TCB_t definition from this compilation unit as it is
-  // intentionally opaque in FreeRTOS, unfortunately.
-  return uxTaskGetStackHighWaterMark((TaskHandle_t)tcb_address);
+  // The value returned here is the "unused space", despite the API name.
+  // uxTaskGetStackHighWaterMark() returns a value in units of
+  // sizeof(StackType_t), so convert it to bytes.
+  uint32_t bytes_unused =
+    uxTaskGetStackHighWaterMark((TaskHandle_t)tcb_address) * sizeof(StackType_t);
+
+  if (bytes_unused == 0) {
+    // In the case of a fully exhausted stack, return -1. This is converted back
+    // to 0 in the backend. We can't use 0 here, because that's also the
+    // initialization value of the s_memfault_task_watermarks_v2 data structure,
+    // and if this routine isn't called before coredump saving for some reason,
+    // we don't want to incorrectly show the stacks as fully used ("0 bytes
+    // unused").
+    bytes_unused = MEMFAULT_THREAD_STACK_0_BYTES_UNUSED;
+  }
+  return bytes_unused;
 }
 #endif
 
@@ -283,7 +295,7 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
     }
 
 #if MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
-    s_memfault_task_watermarks[i].high_watermark = prv_stack_bytes_high_watermark(tcb_address);
+    s_memfault_task_watermarks_v2[i].bytes_unused = prv_stack_bytes_unused(tcb_address);
 #endif
 
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(top_of_stack, stack_size);
@@ -300,8 +312,8 @@ size_t memfault_freertos_get_task_regions(sMfltCoredumpRegion *regions, size_t n
       MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_task_tcbs[0], sizeof(s_task_tcbs));
     region_idx++;
 
-    regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_memfault_task_watermarks[0],
-                                                               sizeof(s_memfault_task_watermarks));
+    regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+      &s_memfault_task_watermarks_v2[0], sizeof(s_memfault_task_watermarks_v2));
     region_idx++;
   }
 #endif

@@ -71,10 +71,12 @@ MEMFAULT_WEAK bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len) {
 
 #endif  // !defined(CONFIG_MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM)
 
+#if !defined(CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM)
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();
   return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
 }
+#endif
 
 bool memfault_arch_is_inside_isr(void) {
   return xPortInIsrContext();

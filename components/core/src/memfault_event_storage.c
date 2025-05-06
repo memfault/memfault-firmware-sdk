@@ -34,9 +34,11 @@
 //  memfault/core/platform/event.h
 //
 
+#if MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME
 MEMFAULT_WEAK bool memfault_platform_time_get_current(MEMFAULT_UNUSED sMemfaultCurrentTime *time) {
   return false;
 }
+#endif
 
 MEMFAULT_WEAK void memfault_lock(void) { }
 

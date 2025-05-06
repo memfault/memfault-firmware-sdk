@@ -76,9 +76,44 @@ static void prv_metric_timer_handler(void *arg) {
   memfault_esp_metric_timer_dispatch(metric_timer_handler);
 }
 
+//! The netif traffic reporting feature is only available in ESP-IDF v5.4 and later:
+//! https://github.com/espressif/esp-idf/commit/ad9787bb4d88378c71b84c44a65a1be7930fa504
+#if defined(CONFIG_MEMFAULT_METRICS_NETWORK_IO) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0))
+static void prv_network_io_metric_event_handler(void *arg, esp_event_base_t event_base,
+                                                int32_t event_id, void *event_data) {
+  ip_event_tx_rx_t *event = (ip_event_tx_rx_t *)event_data;
+
+  if (event->dir == ESP_NETIF_TX) {
+    MEMFAULT_METRIC_ADD(network_tx_bytes, event->len);
+  } else if (event->dir == ESP_NETIF_RX) {
+    MEMFAULT_METRIC_ADD(network_rx_bytes, event->len);
+  }
+}
+
+static void prv_enable_network_io_tap(void) {
+  static bool netif_tap_enabled = false;
+  if (!netif_tap_enabled) {
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (netif == NULL) {
+      MEMFAULT_LOG_ERROR("Failed to get wifi netif handle, network io stats not available");
+    } else {
+      // Register the event handler for the RX/TX events
+      esp_err_t err = esp_netif_tx_rx_event_enable(netif);
+      if (err != ESP_OK) {
+        MEMFAULT_LOG_ERROR("Failed to enable TX/RX events, err %d", err);
+      } else {
+        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_TX_RX,
+                                                   &prv_network_io_metric_event_handler, NULL));
+        netif_tap_enabled = true;
+      }
+    }
+  }
+}
+#endif  // CONFIG_MEMFAULT_METRICS_NETWORK_IO
+
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
-static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
-                                 void *event_data) {
+static void prv_wifi_metric_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
+                                          void *event_data) {
   wifi_event_bss_rssi_low_t *rssi_data;
 
   switch (event_id) {
@@ -86,6 +121,10 @@ static void metric_event_handler(void *arg, esp_event_base_t event_base, int32_t
   #if defined(CONFIG_MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS)
       memfault_metrics_connectivity_connected_state_change(
         kMemfaultMetricsConnectivityState_Started);
+  #endif
+  #if defined(CONFIG_MEMFAULT_METRICS_NETWORK_IO) && \
+    (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0))
+      prv_enable_network_io_tap();
   #endif
       break;
 
@@ -128,7 +167,7 @@ static void prv_register_event_handler(void) {
   ESP_ERROR_CHECK_WITHOUT_ABORT(esp_event_loop_create_default());
 
   ESP_ERROR_CHECK(
-    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &metric_event_handler, NULL));
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &prv_wifi_metric_event_handler, NULL));
 }
 
 static void prv_collect_oui(wifi_ap_record_t *ap_info) {

@@ -2,6 +2,8 @@
 
 // Required to pull in Kconfig-generated definitions
 #include "sdkconfig.h"
+// Required for ESP-IDF version macros
+#include "esp_idf_version.h"
 
 #if defined(CONFIG_MEMFAULT_LWIP_METRICS)
   #include "memfault_lwip_metrics_heartbeat_config.def"
@@ -45,6 +47,11 @@ MEMFAULT_METRICS_STRING_KEY_DEFINE(spi_flash_chip_id, sizeof("012345") - 1)
 MEMFAULT_METRICS_STRING_KEY_DEFINE(esp_chip_revision,
                                    sizeof(CONFIG_IDF_TARGET) + sizeof("-00.00") - 1)
 #endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
+#if defined(CONFIG_MEMFAULT_METRICS_NETWORK_IO) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0))
+MEMFAULT_METRICS_KEY_DEFINE(network_rx_bytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(network_tx_bytes, kMemfaultMetricType_Unsigned)
+#endif  // CONFIG_MEMFAULT_METRICS_NETWORK_IO
 
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 

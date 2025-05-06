@@ -37,7 +37,15 @@ def _run_idf_script(ctx, *args, **kwargs):
             "{python} {idf} {args}".format(
                 python=python, idf=ESP32_IDF_SCRIPT, args=" ".join(args)
             ),
-            env={"IDF_PATH": ESP32_IDF_ROOT},
+            env={
+                "IDF_PATH": ESP32_IDF_ROOT,
+                # newer versions of ESP-IDF require this too (it's much easier
+                # when we can just do '. export.sh' instead!). provide a
+                # reasonable default guess if unset.
+                "ESP_ROM_ELF_DIR": os.getenv(
+                    "ESP_ROM_ELF_DIR", "~/.espressif/tools/esp-rom-elfs/20241011/"
+                ),
+            },
             **kwargs,
         )
 
@@ -51,7 +59,7 @@ def run_xtensa_toolchain_check(ctx):
     xtensa_toolchain = shutil.which("xtensa-esp32-elf-gcc")
     if xtensa_toolchain is None:
         msg = (
-            "Couldn't find arm toolchain. Currently using the toolchain which can be"
+            "Couldn't find esp32 toolchain. Currently using the toolchain which can be"
             " found here {}".format(
                 "https://docs.espressif.com/projects/esp-idf/en/v3.1/get-started/index.html#setup-toolchain"
             )

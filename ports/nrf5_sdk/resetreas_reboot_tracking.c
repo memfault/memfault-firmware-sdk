@@ -45,6 +45,7 @@ static uint32_t prv_reset_reason_get(void) {
   return NRF_POWER->RESETREAS;
 }
 
+#if MEMFAULT_REBOOT_REASON_CLEAR
 static void prv_reset_reason_clear(uint32_t reset_reas_clear_mask) {
   if (nrf_sdh_is_enabled()) {
     sd_power_reset_reason_clr(reset_reas_clear_mask);
@@ -52,6 +53,7 @@ static void prv_reset_reason_clear(uint32_t reset_reas_clear_mask) {
     NRF_POWER->RESETREAS |= reset_reas_clear_mask;
   }
 }
+#endif
 
 // Called by the user application.
 void memfault_platform_reboot_tracking_boot(void) {
@@ -79,7 +81,9 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   // RESETREAS is part of the always on power domain so it's sticky until a full reset occurs
   // Therefore, we clear the bits which were set so that don't get logged in future reboots as well
   const uint32_t reset_reason_reg = prv_reset_reason_get();
+#if MEMFAULT_REBOOT_REASON_CLEAR
   prv_reset_reason_clear(reset_reason_reg);
+#endif
 
   MEMFAULT_PRINT_RESET_INFO("Reset Reason, RESETREAS=0x%" PRIx32, reset_reason_reg);
   MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");

@@ -162,6 +162,14 @@ endif
             The name of the file which contains the Memfault platform config
             options. This file must be included in the project's include path.
 
+    config MEMFAULT_TIME_SINCE_BOOT_CUSTOM
+        bool "Use custom time since boot implementation"
+        help
+            The Memfault SDK ESP-IDF port contains an implementation of
+            memfault_platform_get_time_since_boot_ms() using
+            esp_timer_get_time(). Enabling this option will require a
+            user implementation of the function instead.
+
     config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
         int "The interval in seconds between heartbeats"
         default 3600
@@ -294,6 +302,14 @@ endif
         help
           Collect metrics about chip ID and revision.
 
+    config MEMFAULT_METRICS_NETWORK_IO
+        bool "Enable collection of network I/O metrics"
+        default y
+        depends on ESP_NETIF_REPORT_DATA_TRAFFIC
+        depends on MEMFAULT_ESP_WIFI_METRICS
+        help
+          Collects network I/O metrics for the device
+
     config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
         bool "Assert on allocation failure"
         default n
@@ -382,7 +398,7 @@ endif
 
     config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
         bool "Pretty print reboot reason on boot"
-        default n
+        default y
         help
             Print out the reboot reason, eg "Watchdog", on boot. Adds a few
             hundred bytes of code space.

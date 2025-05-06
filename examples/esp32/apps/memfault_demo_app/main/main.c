@@ -410,6 +410,13 @@ static void prv_load_memfault_settings_from_nvs(void) {
       (s_mflt_device_url_len > 1) ? s_mflt_device_url : NULL;
   }
 }
+
+  #if defined(CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM)
+uint64_t memfault_platform_get_time_since_boot_ms(void) {
+  const int64_t time_since_boot_us = esp_timer_get_time();
+  return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
+}
+  #endif
 #endif  // defined(CONFIG_MEMFAULT)
 
 // This task started by cpu_start.c::start_cpu0_default().

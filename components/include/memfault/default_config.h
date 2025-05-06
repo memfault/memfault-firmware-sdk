@@ -206,6 +206,14 @@ extern "C" {
 
 #endif /* MEMFAULT_EVENT_STORAGE_READ_BATCHING_ENABLED */
 
+//! Include a stub, weakly defined implementation of
+//! memfault_platform_time_get_current(). Most build systems will be able to
+//! override the symbol with a custom implementation at link time, but some will
+//! need to exclude the weak definition entirely.
+#ifndef MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME
+  #define MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME 1
+#endif
+
 //! The max size of a chunk. Should be a size suitable to write to transport
 //! data is being dumped over.
 #ifndef MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN

@@ -87,7 +87,7 @@ extern void vAssertCalled(const char *file, int line);
  * to exclude the API function. */
 
 #if MEMFAULT_TEST_USE_PORT_TEMPLATE != 1
-  #define configCHECK_FOR_STACK_OVERFLOW 1
+  #define configCHECK_FOR_STACK_OVERFLOW 2
 #else
   #define configCHECK_FOR_STACK_OVERFLOW 0
 #endif

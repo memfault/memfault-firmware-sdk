@@ -39,6 +39,13 @@ def fw_sdk_unit_test(
     extra_make_options="",
     verbose=False,
     no_pytest=False,
+    # set the default job limit to 4. there appear to be issues in circleci's
+    # cgroupv2 runtime, which makes 'auto' cpu detection in pytest use an
+    # invalid core count, which causes the test runner to fail. the default is
+    # set to 4 to provide some parallelism by default- it's not important the
+    # actual value, except:
+    # 1. to provide some advantage on multi-core cpus
+    # 2. to provide a fixed limit by default to prevent issues in circleci
     jobs: str = "4",
 ):
     """Runs unit tests"""
@@ -156,8 +163,6 @@ if (SDK_FW_TASKS_DIR / "modus.py").exists():
     pre=[
         esp32.esp32_app_clean,
         esp32.esp32_app_build,
-        esp32.esp32_app_clean,
-        esp32.esp32s2_app_build,
         esp32.esp32_app_clean,
         esp32.esp32s3_app_build,
     ]

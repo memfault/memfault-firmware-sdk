@@ -53,9 +53,6 @@ CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD=y
 # Upload logs. Not recommended for production.
 CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS=y
 
-# Pretty-print reboot reason
-CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP=y
-
 # Support older ESP32-C3 variants
 CONFIG_ESP32C3_REV_MIN_2=y
 

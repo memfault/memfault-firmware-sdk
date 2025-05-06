@@ -98,24 +98,29 @@ struct MfltFreeRTOSTCB {
   #endif
 
 static uint32_t prv_get_stack_usage_pct_for_thread(const TaskHandle_t task_handle) {
+  // Read task info to get the stack unused bytes and base address
   TaskStatus_t task_status;
-
   vTaskGetInfo(task_handle, &task_status, pdTRUE, eRunning);
-  char *task_name = (char *)task_status.pcTaskName;
-  const uint32_t stack_high_watermark = task_status.usStackHighWaterMark;
+  const uint32_t stack_unused_bytes = task_status.usStackHighWaterMark * sizeof(StackType_t);
+  const uint32_t stack_base = (uint32_t)task_status.pxStackBase;
 
+  // Access the TCB structure from the task name address to get the stack_end
+  char *task_name = (char *)task_status.pcTaskName;
   struct MfltFreeRTOSTCB *tcb = (struct MfltFreeRTOSTCB *)(task_name);
   const uint32_t stack_end = tcb->pxEndOfStack;
 
-  const uint32_t stack_size = stack_end - (uint32_t)task_status.pxStackBase + sizeof(StackType_t);
+  // Calculate stack size and usage percentage
+  const uint32_t stack_size = stack_end - stack_base + sizeof(StackType_t);
+  const uint32_t stack_used_bytes = stack_size - stack_unused_bytes;
   const uint32_t stack_pct =
-    (100 * MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR * stack_high_watermark) / stack_size;
+    (100 * MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR * stack_used_bytes) / stack_size;
 
   DEBUG_PRINTF("Task: %s\n", task_status.pcTaskName);
   DEBUG_PRINTF("  Stack End: 0x%08lx\n", stack_end);
-  DEBUG_PRINTF("  Stack Base: 0x%08lx\n", (uint32_t)task_status.pxStackBase);
+  DEBUG_PRINTF("  Stack Base: 0x%08lx\n", stack_base);
   DEBUG_PRINTF("  Stack Size: %lu\n", stack_size);
-  DEBUG_PRINTF("  Stack High Watermark: %lu\n", stack_high_watermark);
+  DEBUG_PRINTF("  Stack Used Bytes: %lu\n", stack_used_bytes);
+  DEBUG_PRINTF("  Stack Unused Bytes: %lu\n", stack_unused_bytes);
   DEBUG_PRINTF("  Stack Usage: %lu.%02lu%%\n", stack_pct / 100, stack_pct % 100);
 
   return stack_pct;

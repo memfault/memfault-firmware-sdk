@@ -168,6 +168,38 @@ static int prv_assert_with_reason(int argc, char *argv[]) {
   return 0;
 }
 
+static int prv_get_log_count(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  sMfltLogUnsentCount log_count = memfault_log_get_unsent_count();
+  printf("Number of logs: %u\nSize: %u bytes\n", (unsigned int)log_count.num_logs,
+         (unsigned int)log_count.bytes);
+
+  return 0;
+}
+
+static int prv_stack_overflow(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
+  MEMFAULT_LOG_INFO("Triggering stack overflow test on task %p / %s", (void *)task_handle,
+                    pcTaskGetName(task_handle));
+  // get the current address- it should be ~ the address of the above variable,
+  // offset it by 4 words to hopefully prevent clobbering our current variables.
+  // we'll write from this address, so the stack watermark will be updated.
+  volatile uint32_t *stack_start = ((volatile uint32_t *)&task_handle) - 4;
+  volatile uint32_t *stack_current = stack_start;
+
+  // starting at the stack start address, write decrementing values. this should crash!
+  for (; stack_current > (stack_start - CONSOLE_INPUT_STACK_SIZE); stack_current--) {
+    *stack_current = 0xDEADBEEF;
+    // sleep a bit
+    vTaskDelay((10) / portTICK_PERIOD_MS);
+  }
+
+  MEMFAULT_LOG_ERROR("Stack overflow test failed, stack overflow was not triggered!");
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -208,6 +240,16 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "assert_with_reason",
     .handler = prv_assert_with_reason,
     .help = "Execute an assert with a custom reason code",
+  },
+  {
+    .command = "log_count",
+    .handler = prv_get_log_count,
+    .help = "Get the number and size of unsent logs",
+  },
+  {
+    .command = "stack_overflow",
+    .handler = prv_stack_overflow,
+    .help = "Trigger a stack overflow",
   }
 };
 #endif

@@ -85,6 +85,12 @@ void memfault_platform_log_raw(const char *fmt, ...) {
   va_end(args);
 }
 
+//! Route the 'export' command to output via printf, so we don't drop messages
+//! from logging in a big burst.
+void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
+  printf("%s\n", base64_chunk);
+}
+
 bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_output) {
 #if MEMFAULT_EXAMPLE_USE_REAL_TIME
   // Get time from time.h

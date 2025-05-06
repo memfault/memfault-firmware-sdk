@@ -241,6 +241,14 @@ uint32_t memfault_log_get_dropped_count(void);
 //! Return the count of lines that have been written to the logging buffer.
 uint32_t memfault_log_get_recorded_count(void);
 
+typedef struct {
+  size_t num_logs;
+  size_t bytes;
+} sMfltLogUnsentCount;
+
+//! Return the number of unsent logs and their total size
+sMfltLogUnsentCount memfault_log_get_unsent_count(void);
+
 #ifdef __cplusplus
 }
 #endif

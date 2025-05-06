@@ -37,12 +37,15 @@ static bool prv_log_is_sent(uint8_t hdr) {
 
 typedef struct {
   size_t num_logs;
+  size_t bytes;
 } sMfltLogCountingCtx;
 
 static bool prv_log_iterate_counting_callback(sMfltLogIterator *iter) {
   sMfltLogCountingCtx *const ctx = (sMfltLogCountingCtx *)(iter->user_ctx);
   if (!prv_log_is_sent(iter->entry.hdr)) {
     ++ctx->num_logs;
+    // tally the size of the log message
+    ctx->bytes += iter->entry.len + sizeof(iter->entry.hdr);
   }
   return true;
 }
@@ -301,6 +304,17 @@ size_t memfault_log_data_source_count_unsent_logs(void) {
   sMfltLogIterator iter = { .user_ctx = &ctx };
   memfault_log_iterate(prv_log_iterate_counting_callback, &iter);
   return ctx.num_logs;
+}
+
+sMfltLogUnsentCount memfault_log_get_unsent_count(void) {
+  sMfltLogCountingCtx ctx = { 0 };
+  sMfltLogIterator iter = { .user_ctx = &ctx };
+  memfault_log_iterate(prv_log_iterate_counting_callback, &iter);
+
+  return (sMfltLogUnsentCount){
+    .num_logs = ctx.num_logs,
+    .bytes = ctx.bytes,
+  };
 }
 
 #endif /* MEMFAULT_LOG_DATA_SOURCE_ENABLED */

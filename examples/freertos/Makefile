@@ -49,15 +49,24 @@ SIZE ?= $(shell $(CC) -print-prog-name=size)
 READELF ?= $(shell $(CC) -print-prog-name=readelf)
 
 # Check if FreeRTOS location set, add rule to download if not
+FREERTOS_DIR ?=
 ifeq ($(FREERTOS_DIR),)
 FREERTOS_DIR = FreeRTOS-Kernel
 FREERTOS_VER = V11.2.0
+FREERTOS_SHA = 0adc196d4bd52a2d91102b525b0aafc1e14a2386
 
-$(FREERTOS_DIR)/.clonedone:
-	$(info FREERTOS_DIR does not exist, downloading local copy)
+# Verify the FreeRTOS directory is present and matches expected SHA
+FREERTOS_STALE = \
+    $(shell \
+        if ! (echo "$(FREERTOS_SHA)" | diff -q $(FREERTOS_DIR)/.git/HEAD - > /dev/null 2>&1); then \
+            echo FREERTOS_STALE; \
+        fi \
+    )
+.PHONY: FREERTOS_STALE
+$(FREERTOS_DIR)/.git/HEAD: $(FREERTOS_STALE)
+	$(info FREERTOS_DIR needs updating, deleting stale copy (if present) and fetching from git)
+	rm -rf $(FREERTOS_DIR)
 	git -c advice.detachedHead=false clone --branch $(FREERTOS_VER) --depth 1 https://github.com/FreeRTOS/FreeRTOS-Kernel.git $(FREERTOS_DIR)
-	# sad check for clone completion, :(
-	touch $@
 
 .DEFAULT_GOAL :=
 endif
@@ -174,7 +183,7 @@ endif
 all: $(ELF)
 
 # Require clone to complete as prereq for sources
-$(SRCS): $(FREERTOS_DIR)/.clonedone
+$(SRCS): $(FREERTOS_DIR)/.git/HEAD
 
 # Store computed cflags in a file; it's a prerequisite for all objects. Use a
 # shell hack to check if the current cflags are different from the stored file,

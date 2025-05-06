@@ -51,11 +51,17 @@ size_t memfault_coredump_storage_compute_size_required(void) {
     .trace_reason = kMfltRebootReason_UnknownError,
   };
 
+  const sMfltRegState exception_regs = {
+    // spoof the EXC_RETURN value as "PSP active", to avoid checking PSP
+    // register when computing size. it's unused in bare metal applications.
+    .exc_return = 1 << 2,
+  };
+
   sCoredumpCrashInfo info = {
     // we'll just pass the current stack pointer, value shouldn't matter
     .stack_address = (void *)&core_regs,
     .trace_reason = save_info.trace_reason,
-    .exception_reg_state = NULL,
+    .exception_reg_state = &exception_regs,
   };
   save_info.regions = memfault_platform_coredump_get_regions(&info, &save_info.num_regions);
 

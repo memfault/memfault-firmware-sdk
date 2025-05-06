@@ -48,7 +48,7 @@ options:
 
 ## Changes
 
-### [1.1.1] - 2024-11-14
+### [1.1.1] - 2025-04-18
 
 - Fix `mflt_build_id` script to be installed correctly again (regression in
   1.1.0)
