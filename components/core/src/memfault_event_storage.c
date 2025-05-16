@@ -76,9 +76,26 @@ typedef MEMFAULT_PACKED_STRUCT {
 }
 sMemfaultEventStorageHeader;
 
-static sMfltCircularBuffer s_event_storage;
-static sMemfaultEventStorageWriteState s_event_storage_write_state;
-static sMemfaultEventStorageReadState s_event_storage_read_state;
+typedef struct {
+  sMfltCircularBuffer buffer;
+  sMemfaultEventStorageWriteState write_state;
+  sMemfaultEventStorageReadState read_state;
+} sMfltEventStorageContext;
+static sMfltEventStorageContext s_event_storage;
+
+MEMFAULT_STATIC_ASSERT(sizeof(s_event_storage) == MEMFAULT_EVENT_STORAGE_STATE_SIZE_BYTES,
+                       "Update MEMFAULT_EVENT_STORAGE_STATE_SIZE_BYTES to match.");
+
+#if MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+sMfltEventStorageSaveState memfault_event_storage_get_state(void) {
+  return (sMfltEventStorageSaveState){
+    .context = (void *)&s_event_storage,
+    .context_len = sizeof(s_event_storage),
+    .storage = s_event_storage.buffer.storage,
+    .storage_len = s_event_storage.buffer.total_space,
+  };
+}
+#endif
 
 #if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
 static void prv_invoke_request_persist_callback(void) {
@@ -87,8 +104,8 @@ static void prv_invoke_request_persist_callback(void) {
   {
     status = (sMemfaultEventStoragePersistCbStatus){
       .volatile_storage = {
-        .bytes_used = memfault_circular_buffer_get_read_size(&s_event_storage),
-        .bytes_free = memfault_circular_buffer_get_write_size(&s_event_storage),
+        .bytes_used = memfault_circular_buffer_get_read_size(&s_event_storage.buffer),
+        .bytes_free = memfault_circular_buffer_get_write_size(&s_event_storage.buffer),
       },
     };
   }
@@ -115,7 +132,7 @@ static void prv_compute_read_state(sMemfaultEventStorageReadState *state) {
   while (1) {
     sMemfaultEventStorageHeader hdr = { 0 };
     const bool success = memfault_circular_buffer_read(
-      &s_event_storage, state->active_event_read_size, &hdr, sizeof(hdr));
+      &s_event_storage.buffer, state->active_event_read_size, &hdr, sizeof(hdr));
     if (!success || hdr.total_size == MEMFAULT_EVENT_STORAGE_WRITE_IN_PROGRESS) {
       break;
     }
@@ -146,7 +163,7 @@ static bool prv_has_data_ram(size_t *total_size) {
   // Check to see if a read is already in progress and return that size if true
   size_t curr_read_size;
   memfault_lock();
-  { curr_read_size = prv_get_total_event_size(&s_event_storage_read_state); }
+  { curr_read_size = prv_get_total_event_size(&s_event_storage.read_state); }
   memfault_unlock();
 
   if (curr_read_size != 0) {
@@ -159,16 +176,16 @@ static bool prv_has_data_ram(size_t *total_size) {
   memfault_lock();
   {
     prv_compute_read_state(&read_state);
-    s_event_storage_read_state = read_state;
+    s_event_storage.read_state = read_state;
   }
   memfault_unlock();
 
-  *total_size = prv_get_total_event_size(&s_event_storage_read_state);
+  *total_size = prv_get_total_event_size(&s_event_storage.read_state);
   return ((*total_size) != 0);
 }
 
 static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_len) {
-  const size_t total_event_size = prv_get_total_event_size(&s_event_storage_read_state);
+  const size_t total_event_size = prv_get_total_event_size(&s_event_storage.read_state);
   if ((offset + buf_len) > total_event_size) {
     return false;
   }
@@ -176,16 +193,16 @@ static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_le
   // header_length != 0 when we encode multiple events in a single read so
   // first check to see if we need to copy any of that
   uint8_t *bufp = (uint8_t *)buf;
-  if (offset < s_event_storage_read_state.event_header.length) {
+  if (offset < s_event_storage.read_state.event_header.length) {
     const size_t bytes_to_copy =
-      MEMFAULT_MIN(buf_len, s_event_storage_read_state.event_header.length - offset);
-    memcpy(bufp, &s_event_storage_read_state.event_header.data[offset], bytes_to_copy);
+      MEMFAULT_MIN(buf_len, s_event_storage.read_state.event_header.length - offset);
+    memcpy(bufp, &s_event_storage.read_state.event_header.data[offset], bytes_to_copy);
     buf_len -= bytes_to_copy;
 
     offset = 0;
     bufp += bytes_to_copy;
   } else {
-    offset -= s_event_storage_read_state.event_header.length;
+    offset -= s_event_storage.read_state.event_header.length;
   }
 
   uint32_t curr_offset = 0;
@@ -194,7 +211,7 @@ static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_le
   while (buf_len > 0) {
     sMemfaultEventStorageHeader hdr = { 0 };
     const bool success =
-      memfault_circular_buffer_read(&s_event_storage, read_offset, &hdr, sizeof(hdr));
+      memfault_circular_buffer_read(&s_event_storage.buffer, read_offset, &hdr, sizeof(hdr));
     if (!success) {
       // not possible to get here unless there is corruption
       return false;
@@ -214,8 +231,8 @@ static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_le
     const size_t evt_start_offset = offset - curr_offset;
 
     const size_t bytes_to_read = MEMFAULT_MIN(event_size - evt_start_offset, buf_len);
-    if (!memfault_circular_buffer_read(&s_event_storage, read_offset + evt_start_offset, bufp,
-                                       bytes_to_read)) {
+    if (!memfault_circular_buffer_read(&s_event_storage.buffer, read_offset + evt_start_offset,
+                                       bufp, bytes_to_read)) {
       // not possible to get here unless there is corruption
       return false;
     }
@@ -231,23 +248,23 @@ static bool prv_event_storage_read_ram(uint32_t offset, void *buf, size_t buf_le
 }
 
 static void prv_event_storage_mark_event_read_ram(void) {
-  if (s_event_storage_read_state.active_event_read_size == 0) {
+  if (s_event_storage.read_state.active_event_read_size == 0) {
     // no active event to clear
     return;
   }
 
   memfault_lock();
   {
-    memfault_circular_buffer_consume(&s_event_storage,
-                                     s_event_storage_read_state.active_event_read_size);
-    s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
+    memfault_circular_buffer_consume(&s_event_storage.buffer,
+                                     s_event_storage.read_state.active_event_read_size);
+    s_event_storage.read_state = (sMemfaultEventStorageReadState){ 0 };
   }
   memfault_unlock();
 }
 
 // "begin" to write event data & return the space available
 static size_t prv_event_storage_storage_begin_write(void) {
-  if (s_event_storage_write_state.write_in_progress) {
+  if (s_event_storage.write_state.write_in_progress) {
     return 0;
   }
 
@@ -256,54 +273,54 @@ static size_t prv_event_storage_storage_begin_write(void) {
   };
   bool success;
   memfault_lock();
-  { success = memfault_circular_buffer_write(&s_event_storage, &hdr, sizeof(hdr)); }
+  { success = memfault_circular_buffer_write(&s_event_storage.buffer, &hdr, sizeof(hdr)); }
   memfault_unlock();
   if (!success) {
     return 0;
   }
 
-  s_event_storage_write_state = (sMemfaultEventStorageWriteState){
+  s_event_storage.write_state = (sMemfaultEventStorageWriteState){
     .write_in_progress = true,
     .bytes_written = sizeof(hdr),
   };
 
-  return memfault_circular_buffer_get_write_size(&s_event_storage);
+  return memfault_circular_buffer_get_write_size(&s_event_storage.buffer);
 }
 
 static bool prv_event_storage_storage_append_data(const void *bytes, size_t num_bytes) {
   bool success;
 
   memfault_lock();
-  { success = memfault_circular_buffer_write(&s_event_storage, bytes, num_bytes); }
+  { success = memfault_circular_buffer_write(&s_event_storage.buffer, bytes, num_bytes); }
   memfault_unlock();
   if (success) {
-    s_event_storage_write_state.bytes_written += num_bytes;
+    s_event_storage.write_state.bytes_written += num_bytes;
   }
   return success;
 }
 
 static void prv_event_storage_storage_finish_write(bool rollback) {
-  if (!s_event_storage_write_state.write_in_progress) {
+  if (!s_event_storage.write_state.write_in_progress) {
     return;
   }
 
   memfault_lock();
   {
     if (rollback) {
-      memfault_circular_buffer_consume_from_end(&s_event_storage,
-                                                s_event_storage_write_state.bytes_written);
+      memfault_circular_buffer_consume_from_end(&s_event_storage.buffer,
+                                                s_event_storage.write_state.bytes_written);
     } else {
       const sMemfaultEventStorageHeader hdr = {
-        .total_size = (uint16_t)s_event_storage_write_state.bytes_written,
+        .total_size = (uint16_t)s_event_storage.write_state.bytes_written,
       };
       memfault_circular_buffer_write_at_offset(
-        &s_event_storage, s_event_storage_write_state.bytes_written, &hdr, sizeof(hdr));
+        &s_event_storage.buffer, s_event_storage.write_state.bytes_written, &hdr, sizeof(hdr));
     }
   }
   memfault_unlock();
 
   // reset the write state
-  s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
+  s_event_storage.write_state = (sMemfaultEventStorageWriteState){ 0 };
 #if MEMFAULT_EVENT_STORAGE_NV_SUPPORT_ENABLED
   if (!rollback) {
     prv_invoke_request_persist_callback();
@@ -312,15 +329,38 @@ static void prv_event_storage_storage_finish_write(bool rollback) {
 }
 
 static size_t prv_get_size_cb(void) {
-  return memfault_circular_buffer_get_read_size(&s_event_storage) +
-         memfault_circular_buffer_get_write_size(&s_event_storage);
+  return memfault_circular_buffer_get_read_size(&s_event_storage.buffer) +
+         memfault_circular_buffer_get_write_size(&s_event_storage.buffer);
 }
 
 const sMemfaultEventStorageImpl *memfault_events_storage_boot(void *buf, size_t buf_len) {
-  memfault_circular_buffer_init(&s_event_storage, buf, buf_len);
+#if MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+  sMfltEventStorageSaveState state = { 0 };
+  bool retval = memfault_event_storage_restore_state(&state);
+  if (retval && (sizeof(s_event_storage) == state.context_len) && (buf_len == state.storage_len)) {
+    // restore the state
+    s_event_storage = *(sMfltEventStorageContext *)state.context;
+    // restore the storage buffer
+    s_event_storage.buffer.storage = buf;
+    memmove(s_event_storage.buffer.storage, state.storage, state.storage_len);
+    s_event_storage.buffer.total_space = state.storage_len;
+  }
+  // if the user didn't restore the state or there was a size mismatch, we
+  // need to initialize it
+  else {
+    if (retval) {
+      MEMFAULT_LOG_ERROR("Event storage restore size mismatch: %d != %d or %d != %d",
+                         (int)sizeof(s_event_storage), (int)state.context_len, (int)buf_len,
+                         (int)state.storage_len);
+    }
+#else
+  {
+#endif  // MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+    memfault_circular_buffer_init(&s_event_storage.buffer, buf, buf_len);
 
-  s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
-  s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
+    s_event_storage.write_state = (sMemfaultEventStorageWriteState){ 0 };
+    s_event_storage.read_state = (sMemfaultEventStorageReadState){ 0 };
+  }
 
   static const sMemfaultEventStorageImpl s_event_storage_impl = {
     .begin_write_cb = &prv_event_storage_storage_begin_write,
@@ -356,7 +396,7 @@ static bool prv_nv_event_storage_enabled(void) {
   if (s_nv_event_storage_enabled && !enabled) {
     // This shouldn't happen and is indicative of a failure in nv storage. Let's reset the read
     // state in case we were in the middle of a read() trying to copy data into nv storage.
-    s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
+    s_event_storage.read_state = (sMemfaultEventStorageReadState){ 0 };
   }
   if (enabled) {
     // if nonvolatile storage is enabled, it is a configuration error if all the
@@ -446,7 +486,7 @@ size_t memfault_event_storage_bytes_used(void) {
   size_t bytes_used;
 
   memfault_lock();
-  { bytes_used = memfault_circular_buffer_get_read_size(&s_event_storage); }
+  { bytes_used = memfault_circular_buffer_get_read_size(&s_event_storage.buffer); }
   memfault_unlock();
 
   return bytes_used;
@@ -456,7 +496,7 @@ size_t memfault_event_storage_bytes_free(void) {
   size_t bytes_free;
 
   memfault_lock();
-  { bytes_free = memfault_circular_buffer_get_write_size(&s_event_storage); }
+  { bytes_free = memfault_circular_buffer_get_write_size(&s_event_storage.buffer); }
   memfault_unlock();
 
   return bytes_free;
@@ -468,7 +508,7 @@ bool memfault_event_storage_booted(void) {
   // circular buffer used internally. If the buffer structure has been initialized (storage pointer
   // is not null), then we can assume that memfault_events_storage_boot was called.
   // This check breaks the circular buffer API contract but is intentional for simplicity/efficiency
-  return (s_event_storage.storage != NULL);
+  return (s_event_storage.buffer.storage != NULL);
 }
 
 // Resets the internal structures of the event storage component. This function is to only be used
@@ -477,7 +517,7 @@ void memfault_event_storage_reset(void);
 void memfault_event_storage_reset(void) {
   // Delete the circular buffer and read/write state
   // NB: storage implementation is const so cannot be reset
-  memset(&s_event_storage, 0, sizeof(s_event_storage));
-  s_event_storage_write_state = (sMemfaultEventStorageWriteState){ 0 };
-  s_event_storage_read_state = (sMemfaultEventStorageReadState){ 0 };
+  memset(&s_event_storage.buffer, 0, sizeof(s_event_storage.buffer));
+  s_event_storage.write_state = (sMemfaultEventStorageWriteState){ 0 };
+  s_event_storage.read_state = (sMemfaultEventStorageReadState){ 0 };
 }

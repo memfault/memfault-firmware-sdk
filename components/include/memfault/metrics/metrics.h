@@ -28,6 +28,7 @@
 //!  https://mflt.io/fw-event-serialization
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "memfault/config.h"
 #include "memfault/core/event_storage.h"
@@ -274,6 +275,14 @@ void memfault_metrics_all_sessions_debug_print(void);
 //! value for MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS.
 void memfault_metrics_heartbeat_debug_trigger(void);
 
+//! Trigger heartbeat collection, including
+//! memfault_metrics_heartbeat_collect_data(). This is normally automatically
+//! called when the heartbeat timer fires, but can be manually called in
+//! scenarios where non-timer metrics should be tallied (for example, prior to
+//! entering deep sleep, when system state is lost, and metrics should be added
+//! up before saving metrics state).
+void memfault_metrics_heartbeat_collect(void);
+
 //! For debugging and unit test purposes, allows for the extraction of different values
 int memfault_metrics_heartbeat_read_unsigned(MemfaultMetricId key, uint32_t *read_val);
 int memfault_metrics_heartbeat_read_signed(MemfaultMetricId key, int32_t *read_val);
@@ -335,6 +344,24 @@ int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key);
 //! @note By default, a weak version of this function is implemented which is empty
 //! @note This API is for internal use only and should never be called by an end user
 void memfault_metrics_heartbeat_collect_sdk_data(void);
+
+//! Return a pointer to the metrics state. This is used to back up the metrics
+//! state prior to loss of memory (i.e. when entering a low power sleep mode).
+//! Note that the state can change at any time if a metrics API is called. This
+//! function is intended to be called just before the system enters deep sleep.
+//!
+//! @returns a pointer to the metrics state. The size of the state is
+//! MEMFAULT_METRICS_CONTEXT_SIZE_BYTES bytes.
+const void *memfault_metrics_get_state(void);
+
+//! Restore the metrics state. This is used to restore the metrics state after
+//! the system restarts from deep sleep.
+//!
+//! @param state The pointer to the metrics state backup. This should be the
+//! data previously returned by memfault_metrics_get_state(). Size of the data
+//! must be MEMFAULT_METRICS_CONTEXT_SIZE_BYTES bytes.
+//! @return true if the state was restored successfully, false otherwise
+extern bool memfault_metrics_restore_state(void *state);
 
 #ifdef __cplusplus
 }

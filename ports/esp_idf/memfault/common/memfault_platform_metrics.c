@@ -21,6 +21,7 @@
 #include "esp_wifi_types.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
+#include "memfault/core/platform/core.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/esp_port/metrics.h"
 #include "memfault/metrics/connectivity.h"
@@ -47,9 +48,13 @@
 #endif  // CONFIG_MEMFAULT_METRICS_CPU_TEMP
 
 #if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
-  #include "esp_flash.h"
   #include "hal/efuse_hal.h"
-#endif
+#endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+  #include "esp_flash.h"
+  #include "esp_spi_flash_counters.h"
+#endif  // CONFIG_MEMFAULT_METRICS_FLASH_ENABLE
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 
@@ -110,6 +115,34 @@ static void prv_enable_network_io_tap(void) {
   }
 }
 #endif  // CONFIG_MEMFAULT_METRICS_NETWORK_IO
+
+#if defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  // for esp-idf 5.4+, use esp_log_timestamp.h, otherwise use esp_log.h
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 4, 0)
+    #include "esp_log_timestamp.h"
+  #else
+    #include "esp_log.h"
+  #endif
+void __wrap_esp_startup_start_app(void);
+void __real_esp_startup_start_app(void);
+
+static uint32_t s_memfault_boot_time_ms = 0;
+
+void __wrap_esp_startup_start_app(void) {
+  s_memfault_boot_time_ms = esp_log_early_timestamp();
+
+  __real_esp_startup_start_app();
+}
+
+static void prv_boot_time_metric_handler(void) {
+  // Record the boot time once on the first heartbeat
+  if (s_memfault_boot_time_ms == 0) {
+    return;
+  }
+  MEMFAULT_METRIC_SET_UNSIGNED(boot_time_ms, s_memfault_boot_time_ms);
+  s_memfault_boot_time_ms = 0;
+}
+#endif  // CONFIG_MEMFAULT_METRICS_BOOT_TIME
 
 #if defined(CONFIG_MEMFAULT_ESP_WIFI_METRICS)
 static void prv_wifi_metric_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
@@ -370,16 +403,6 @@ static void prv_collect_chip_metrics(void) {
     return;
   }
 
-  uint32_t flash_chip_id;
-  esp_err_t err = esp_flash_read_id(NULL, &flash_chip_id);
-  if (err == ESP_OK) {
-    // flash_chip_id is 24 bits. convert to hex.
-    char flash_chip_id_str[7];
-    snprintf(flash_chip_id_str, sizeof(flash_chip_id_str), "%06" PRIx32, flash_chip_id);
-    // Set the chip id metric
-    MEMFAULT_METRIC_SET_STRING(spi_flash_chip_id, flash_chip_id_str);
-  }
-
   uint32_t efuse_chip_id = efuse_hal_chip_revision();
   // Chip version in format: Major * 100 + Minor
   // e.g. Major = 3, Minor = 0 -> 300
@@ -395,6 +418,59 @@ static void prv_collect_chip_metrics(void) {
   did_collect = true;
 }
 #endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+sMfltFlashCounters memfault_platform_metrics_get_flash_counters(
+  sMfltFlashCounters *last_counter_values) {
+  // this API was renamed in v5.1
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  const esp_flash_counters_t *esp_flash_counters = esp_flash_get_counters();
+  #else
+  const spi_flash_counters_t *esp_flash_counters = spi_flash_get_counters();
+  #endif
+
+  // Compute delta from last heartbeat. Depends on less than 4GB erased or
+  // written in a single heartbeat period.
+  uint32_t flash_erase_bytes = esp_flash_counters->erase.bytes;
+  uint32_t flash_erase_delta = flash_erase_bytes - last_counter_values->erase_bytes;
+  last_counter_values->erase_bytes = flash_erase_bytes;
+  uint32_t flash_write_bytes = esp_flash_counters->write.bytes;
+  uint32_t flash_write_delta = flash_write_bytes - last_counter_values->write_bytes;
+  last_counter_values->write_bytes = flash_write_bytes;
+
+  return (sMfltFlashCounters){
+    .erase_bytes = flash_erase_delta,
+    .write_bytes = flash_write_delta,
+  };
+}
+
+static void prv_collect_flash_metrics(void) {
+  // collect chip id only one time on boot
+  static bool did_collect_chip_id = false;
+
+  if (!did_collect_chip_id) {
+    uint32_t flash_chip_id;
+    esp_err_t err = esp_flash_read_id(NULL, &flash_chip_id);
+    if (err == ESP_OK) {
+      // flash_chip_id is 24 bits. convert to hex.
+      char flash_chip_id_str[7];
+      snprintf(flash_chip_id_str, sizeof(flash_chip_id_str), "%06" PRIx32, flash_chip_id);
+      // Set the chip id metric
+      MEMFAULT_METRIC_SET_STRING(flash_spi_manufacturer_id, flash_chip_id_str);
+    }
+
+    did_collect_chip_id = true;
+  }
+
+  static sMfltFlashCounters last_counter_values = { 0 };
+  sMfltFlashCounters flash_counters =
+    memfault_platform_metrics_get_flash_counters(&last_counter_values);
+
+  // Set the metrics
+  MEMFAULT_METRIC_SET_UNSIGNED(flash_spi_erase_bytes, flash_counters.erase_bytes);
+  MEMFAULT_METRIC_SET_UNSIGNED(flash_spi_write_bytes, flash_counters.write_bytes);
+}
+#endif  // CONFIG_MEMFAULT_METRICS_FLASH_ENABLE
 
 void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_LWIP_METRICS)
@@ -428,6 +504,14 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 #if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
   prv_collect_chip_metrics();
 #endif  // CONFIG_MEMFAULT_METRICS_CHIP_ENABLE
+
+#if defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  prv_boot_time_metric_handler();
+#endif  // CONFIG_MEMFAULT_METRICS_BOOT_TIME
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+  prv_collect_flash_metrics();
+#endif  // CONFIG_MEMFAULT_METRICS_FLASH_ENABLE
 }
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)

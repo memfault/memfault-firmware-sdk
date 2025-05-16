@@ -214,6 +214,15 @@ extern "C" {
   #define MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME 1
 #endif
 
+//! Enable save/restore of event storage state. This is useful for systems that
+//! enter a deep sleep state, and need to persist the event storage state for
+//! later restoration. This is not necessary if non-volatile event storage is
+//! enabled, as the event storage data will be saved to non-volatile storage
+//! automatically.
+#ifndef MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+  #define MEMFAULT_EVENT_STORAGE_RESTORE_STATE 0
+#endif
+
 //! The max size of a chunk. Should be a size suitable to write to transport
 //! data is being dumped over.
 #ifndef MEMFAULT_DATA_EXPORT_CHUNK_MAX_LEN
@@ -378,6 +387,13 @@ extern "C" {
 //! memory but prevents the use of Metrics Sessions.
 #ifndef MEMFAULT_METRICS_SESSIONS_ENABLED
   #define MEMFAULT_METRICS_SESSIONS_ENABLED 1
+#endif
+
+//! Enable save/restore of metrics component state. This is useful for systems
+//! that enter a deep sleep state, and want to persist the metrics state
+//! across sleep cycles.
+#ifndef MEMFAULT_METRICS_RESTORE_STATE
+  #define MEMFAULT_METRICS_RESTORE_STATE 0
 #endif
 
 //

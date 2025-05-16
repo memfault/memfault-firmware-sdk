@@ -112,6 +112,12 @@ if (CONFIG_MEMFAULT_SYSTEM_TIME)
   )
 endif()
 
+if (CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_DEEP_SLEEP)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_deep_sleep.c
+  )
+endif()
+
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
   include
   include/${MEMFAULT_ESP_IDF_PORT}
@@ -330,6 +336,10 @@ if(CONFIG_MEMFAULT_HEAP_STATS)
   if (CONFIG_MEMFAULT_HEAP_STATS_CALLOC)
     target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=calloc")
   endif()
+endif()
+
+if(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_startup_start_app")
 endif()
 
 # Include a linker script fragment to support compact logs unconditionally. It's

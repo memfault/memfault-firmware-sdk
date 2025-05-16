@@ -31,6 +31,22 @@
 static StackType_t metrics_task_stack[EXAMPLE_TASK_STACKS];
 static StaticTask_t metrics_task_tcb;
 
+#if MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+// Just a stub, not implemented in this example
+bool memfault_event_storage_restore_state(sMfltEventStorageSaveState *state) {
+  (void)state;
+  return false;
+}
+#endif
+
+#if MEMFAULT_METRICS_RESTORE_STATE
+// Just a stub, not implemented in this example
+bool memfault_metrics_restore_state(void *state) {
+  (void)state;
+  return false;
+}
+#endif
+
 // This is incompatible with cstd=gnu11 and gcc < 5
 #if (__STDC_VERSION__ < 201100L) || (__GNUC__ >= 5)
 MEMFAULT_METRICS_DEFINE_THREAD_METRICS(

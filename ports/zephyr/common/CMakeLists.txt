@@ -28,6 +28,10 @@ if (CONFIG_MEMFAULT_CACHE_FAULT_REGS)
   zephyr_ld_options(-Wl,--wrap=z_arm_fault)
 endif()
 
+if (CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  zephyr_ld_options(-Wl,--wrap=main)
+endif()
+
 # Allow users to Kconfig memfault logging as a backend as needed. See
 # memfault/sdk/embedded/ports/zephyr/Kconfig and adjust MEMFAULT_LOGGING_XXX.
 if (CONFIG_MEMFAULT_LOGGING_ENABLE)

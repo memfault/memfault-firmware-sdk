@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "cmd_decl.h"
+#include "deep_sleep.h"
 #include "esp_console.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
@@ -182,6 +183,16 @@ static int prv_esp_task_watchdog(int argc, char **argv) {
   return 0;
 }
 
+static int prv_deep_sleep(int argc, char **argv) {
+  if (argc < 2) {
+    ESP_LOGE(__func__, "Usage: deep_sleep <seconds>");
+    return -1;
+  }
+  uint32_t sleep_seconds = strtoul(argv[1], NULL, 0);
+
+  return deep_sleep_start(sleep_seconds);
+}
+
 void register_app(void) {
 #if MEMFAULT_TASK_WATCHDOG_ENABLE
   const esp_console_cmd_t test_watchdog_cmd = {
@@ -210,6 +221,14 @@ void register_app(void) {
     .func = &prv_esp_task_watchdog,
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&esp_task_watchdog_cmd));
+
+  const esp_console_cmd_t deep_sleep_cmd = {
+    .command = "deep_sleep",
+    .help = "Enter deep sleep mode",
+    .hint = NULL,
+    .func = &prv_deep_sleep,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&deep_sleep_cmd));
 
 #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
   !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)

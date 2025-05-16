@@ -71,6 +71,10 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_sysworkq_pct_max, kMemfaultM
                                              CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
 #endif  // defined(CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS)
 
+#if defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+MEMFAULT_METRICS_KEY_DEFINE(boot_time_ms, kMemfaultMetricType_Unsigned)
+#endif  // defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+
 #if defined(CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE)
   #include "memfault_metrics_heartbeat_extra.def"
 #endif

@@ -37,14 +37,6 @@ menu "Memfault"
             The option can be used if other MCUs forward data through the ESP32 and
             these functions need to handle additional sources.
 
-    config MEMFAULT_METRICS_LOGS_ENABLE
-        bool "Enable collection of metrics for log message counts"
-        default y
-        help
-          When enabled, Memfault will collect metrics for log messages.
-          This can be useful for tracking the number of logs generated
-          by the system.
-
     config MEMFAULT_CLI_ENABLED
         bool "Enables the Memfault CLI"
         default y
@@ -162,31 +154,86 @@ endif
             The name of the file which contains the Memfault platform config
             options. This file must be included in the project's include path.
 
-    config MEMFAULT_TIME_SINCE_BOOT_CUSTOM
-        bool "Use custom time since boot implementation"
+    menuconfig MEMFAULT_DEEP_SLEEP_SUPPORT
+        bool "Enable deep sleep support"
+        default n
         help
-            The Memfault SDK ESP-IDF port contains an implementation of
-            memfault_platform_get_time_since_boot_ms() using
-            esp_timer_get_time(). Enabling this option will require a
-            user implementation of the function instead.
+            Enable Memfault deep sleep support. This is required for tracking
+            metrics across deep sleep cycles. This option is only required if
+            the device uses deep sleep.
 
-    config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
-        int "The interval in seconds between heartbeats"
-        default 3600
-        help
-            The interval in seconds between heartbeat metrics tallying.
+    if MEMFAULT_DEEP_SLEEP_SUPPORT
 
-    config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
-        bool "Initialize platform-specific connectivity metrics on system init"
-        default y
-        depends on MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+        config MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG
+            bool "Enable debug logging for deep sleep"
+            default n
+            help
+                When enabled, debug logging will be enabled for deep sleep
+                support.
+
+        config MEMFAULT_DEEP_SLEEP_HTTP_UPLOAD_ON_SLEEP
+            bool "Enable HTTP upload on deep sleep"
+            default y
+            help
+                When enabled, the device will upload any buffered Memfault data
+                to the Memfault cloud before going into deep sleep.
+
+        config MEMFAULT_DEEP_SLEEP_HTTP_UPLOAD_INTERVAL_SECS
+            int "Interval in seconds between deep sleep HTTP uploads"
+            default 3600
+            help
+                The interval in seconds between deep sleep HTTP uploads. This
+                is the maximum amount of time the device will wait before
+                uploading buffered data to the Memfault cloud.
+
+        config MEMFAULT_DEEP_SLEEP_HTTP_UPLOAD_TRIGGER_LOGS
+            bool "Enable HTTP upload on deep sleep trigger logs"
+            default y if MEMFAULT_DEEP_SLEEP_HTTP_UPLOAD_ON_SLEEP
+            help
+                Upload buffered logs when performing a deep sleep HTTP upload
+
+        config MEMFAULT_DEEP_SLEEP_HEARTBEAT_ON_SLEEP
+            bool "Enable heartbeat on deep sleep"
+            default y
+            help
+                When enabled, the device will check the end-of-heartbeat interval
+                before going into deep sleep. If the interval has been reached,
+                the device will capture a heartbeat.
+
+        config MEMFAULT_DEEP_SLEEP_METRICS
+            bool "Enable deep sleep metrics"
+            default y
+            help
+                Enable some default deep sleep metrics.
+
+    endif  # MEMFAULT_DEEP_SLEEP_SUPPORT
+
+    choice MEMFAULT_PLATFORM_TIME_SINCE_BOOT
+        prompt "Select the time since boot implementation"
+        default MEMFAULT_PLATFORM_TIME_SINCE_BOOT_DEEP_SLEEP if MEMFAULT_DEEP_SLEEP_SUPPORT
+        default MEMFAULT_PLATFORM_TIME_SINCE_BOOT_ESP_TIMER
         help
-          When enabled, memfault_metrics_boot() will call a platform-implemented
-          memfault_platform_metrics_connectivity_boot() function. If not already
-          implemented for the user's platform, the user must supply their own implementation.
-          This function is typically used to register event handlers to that will mark
-          the connectivity state changes when the device connects and disconnects.
-          Marking these state changes is required to calculate the connectivity time metrics.
+            Select the implementation of memfault_platform_get_time_since_boot_ms()
+
+        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_ESP_TIMER
+            bool "Use esp_timer_get_time() to get time since boot"
+            help
+                Use esp_timer_get_time() to get the time since boot in
+                milliseconds. This is the default implementation and is
+                recommended for most use cases.
+
+        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_DEEP_SLEEP
+            bool "Deep-sleep compensating implementation"
+            help
+                Only required when esp32 deep sleep is used. See
+                https://docs.memfault.com/docs/mcu/deep-sleep for a detailed
+                guide.
+
+        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM
+            bool "User provided implementation"
+            help
+                User must implement memfault_platform_get_time_since_boot_ms().
+    endchoice
 
     config MEMFAULT_USER_CONFIG_SILENT_FAIL
         bool "Continue with build even if user configuration of Memfault SDK is missing"
@@ -206,6 +253,34 @@ endif
             The Memfault HTTP client timeout in milliseconds. This is the
             maximum amount of time the HTTP client will wait for a response from
             the server.
+
+    menu "Metrics"
+
+    config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
+        int "The interval in seconds between heartbeats"
+        default 3600
+        help
+            The interval in seconds between heartbeat metrics tallying.
+
+    config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
+        bool "Initialize platform-specific connectivity metrics on system init"
+        default y
+        depends on MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+        help
+            When enabled, memfault_metrics_boot() will call a platform-implemented
+            memfault_platform_metrics_connectivity_boot() function. If not already
+            implemented for the user's platform, the user must supply their own implementation.
+            This function is typically used to register event handlers to that will mark
+            the connectivity state changes when the device connects and disconnects.
+            Marking these state changes is required to calculate the connectivity time metrics.
+
+    config MEMFAULT_METRICS_LOGS_ENABLE
+        bool "Enable collection of metrics for log message counts"
+        default y
+        help
+            When enabled, Memfault will collect metrics for log messages.
+            This can be useful for tracking the number of logs generated
+            by the system.
 
     config MEMFAULT_LWIP_METRICS
         bool "Collect TCP/UDP metrics from LwIP"
@@ -232,7 +307,7 @@ endif
             cpu_usage_pct for cpu0 and cpu1_usage_pct for cpu1
 
     config MEMFAULT_MBEDTLS_METRICS
-        bool "Collect metrics from mbedTLS"
+        bool "Enable mbedTLS metrics"
         default y
         depends on ESP_TLS_USING_MBEDTLS && !MBEDTLS_CUSTOM_MEM_ALLOC
         help
@@ -240,14 +315,14 @@ endif
             during the current heartbeat interval.
 
     config MEMFAULT_ESP_WIFI_METRICS
-        bool "Collect metrics from ESP WiFi"
+        bool "Enable ESP WiFi metrics"
         default y
         help
             Collects Memfault metrics measuring the minimum RSSI, time connected to
             WiFi, and the number of WiFi disconnects.
 
     config MEMFAULT_ESP_WIFI_CONNECTIVITY_TIME_METRICS
-        bool "Enable Memfault Core Metric: connectivity_connected_time"
+        bool "Enable connected time metrics for WiFi connection"
         default y
         depends on MEMFAULT_ESP_WIFI_METRICS && MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
         help
@@ -255,60 +330,75 @@ endif
             WiFi connection state.
 
     config MEMFAULT_METRICS_CPU_TEMP
-        bool "Enable collection of a temperature metric"
+        bool "Enable CPU temperature metric"
         default y
         depends on !IDF_TARGET_ESP32 && !ENABLE_ARDUINO_DEPENDS
         help
             Collects a Memfault metric for the CPU die temperature.
 
     config MEMFAULT_METRICS_MEMORY_USAGE
-        bool "Enable collection of memory usage metrics"
+        bool "Enable memory usage metrics"
         default y
         help
             Collects Memfault metrics for memory usage stats.
 
     config MEMFAULT_METRICS_SYNC_SUCCESS
-        bool "Enable collection of sync success metrics"
+        bool "Enable sync success metrics"
         default y
         help
-         Memfault user-defined sync success metric component. More information
-         at https://mflt.io/core-metrics .
+            Memfault user-defined sync success metric component. More information
+            at https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
-        bool "Enable collection of memfault sync success metrics"
+        bool "Enable memfault sync success metrics"
         default y
         help
-         Collects Memfault metrics for the number of successful and failed
-         syncs to the Memfault cloud. More information at
-             https://mflt.io/core-metrics .
+            Collects Memfault metrics for the number of successful and failed
+            syncs to the Memfault cloud. More information at
+            https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
-        bool "Enable collection of memfault connectivity time metrics"
+        bool "Enable memfault connectivity time metrics"
         default y
         help
-         Memfault connectivity time metric component. More information at
-         https://mflt.io/core-metrics .
+            Memfault connectivity time metric component. More information at
+            https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_BATTERY_ENABLE
-        bool "Enable collection of battery metrics"
+        bool "Enable battery metrics"
         default n
         help
-          Memfault battery metric component. More information at
-          https://mflt.io/core-metrics .
+            Memfault battery metric component. More information at
+            https://mflt.io/core-metrics .
 
     config MEMFAULT_METRICS_CHIP_ENABLE
-        bool "Enable collection of chip ID metrics"
+        bool "Enable chip ID metrics"
         default y
         help
-          Collect metrics about chip ID and revision.
+            Collect metrics about chip ID and revision.
 
     config MEMFAULT_METRICS_NETWORK_IO
-        bool "Enable collection of network I/O metrics"
+        bool "Enable network I/O metrics"
         default y
         depends on ESP_NETIF_REPORT_DATA_TRAFFIC
         depends on MEMFAULT_ESP_WIFI_METRICS
         help
-          Collects network I/O metrics for the device
+            Collects network I/O metrics for the device
+
+    config MEMFAULT_METRICS_BOOT_TIME
+        bool "Enable boot time metrics"
+        default y
+        help
+            Collects boot time metrics for the device
+
+    config MEMFAULT_METRICS_FLASH_ENABLE
+        bool "Enable collection of flash metrics"
+        default y
+        select SPI_FLASH_ENABLE_COUNTERS
+        help
+          Collects flash metrics for the device
+
+    endmenu  # Metrics
 
     config MEMFAULT_ASSERT_ON_ALLOC_FAILURE
         bool "Assert on allocation failure"

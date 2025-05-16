@@ -36,11 +36,13 @@ MEMFAULT_DISABLE_WARNING("-Wunused-macros")
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 
+//! Return codes used in this file
 #define MEMFAULT_METRICS_KEY_NOT_FOUND (-1)
 #define MEMFAULT_METRICS_TYPE_INCOMPATIBLE (-2)
 #define MEMFAULT_METRICS_TYPE_BAD_PARAM (-3)
@@ -49,6 +51,243 @@ MEMFAULT_DISABLE_WARNING("-Wunused-macros")
 #define MEMFAULT_METRICS_TIMER_BOOT_FAILED (-6)
 #define MEMFAULT_METRICS_VALUE_NOT_SET (-7)
 
+// Macros to check for scale values vs metric type
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, kMemfaultMetricType_String)
+
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
+  MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                     \
+  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##MemfaultSdkMetric_IntervalMs, \
+                              kMemfaultMetricType_Timer)                      \
+  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                           max_value, session_key)          \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, 0, 0, session_key)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)
+
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
+  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, 1)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)                   \
+  MEMFAULT_STATIC_ASSERT((scale_value == 1) || (value_type != kMemfaultMetricType_Timer), \
+                         "Scale values are only valid for signed and unsigned integer metrics");
+
+// Generate static asserts to check for non-integer metric types with scale values
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
+
+// END: Macros to check for scale values vs metric type
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
+  MEMFAULT_METRICS_STRING_KEY_DEFINE(session_key##__##key_name, max_length)
+
+//! Sessions have the following built-in keys:
+//! - "<session name>__MemfaultSdkMetric_IntervalMs"
+//! - "<session name>__operational_crashes"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                     \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##MemfaultSdkMetric_IntervalMs, \
+                              kMemfaultMetricType_Timer)                  \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                           max_value, session_key)          \
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, 0, 0, session_key)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
+
+//! Pre-declare the sMemfaultMetricValues type, so we can take the size of it
+//! in the top-level struct for the heartbeat_value_is_set_flags[] member
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) +1
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) +1
+typedef struct {
+  union MemfaultMetricValue values[0
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+  ];
+} sMemfaultMetricValues;
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
+
+#define MEMFAULT_METRICS_TIMER_VAL_MAX 0x80000000
+typedef struct MemfaultMetricValueMetadata {
+  bool is_running:1;
+  // We'll use 32 bits since the rollover time is ~25 days which is much much greater than a
+  // reasonable heartbeat interval. This let's us track whether or not the timer is running in the
+  // top bit
+  uint32_t start_time_ms:31;
+} sMemfaultMetricValueMetadata;
+
+// Value Set flag data structures and definitions
+typedef struct MemfaultMetricValueInfo {
+  union MemfaultMetricValue *valuep;
+  sMemfaultMetricValueMetadata *meta_datap;
+  bool is_set;
+} sMemfaultMetricValueInfo;
+
+//! This structure contains all in-memory context for the metrics system
+static struct sMemfaultMetricsContext {
+  const sMemfaultEventStorageImpl *storage_impl;
+
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, min_value, max_value)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                           max_value, session_key)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key)
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name) +1
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value)
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
+                                                                 session_key, scale_value)
+
+  MemfaultMetricsSessionStartCb session_start_cbs[0
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+                                                  + 1  // dummy entry to prevent empty array
+  ];
+  MemfaultMetricsSessionEndCb session_end_cbs[0
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+                                              + 1  // dummy entry to prevent empty array
+  ];
+
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
+
+  // From this point forward in this struct definition, higher level macros (i.e.
+  // MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE) are not undefined.
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
+  MEMFAULT_METRICS_STRING_KEY_DEFINE(session_key##__##key_name, max_length)
+
+//! Sessions have the following built-in keys:
+//! - "<session name>__MemfaultSdkMetric_IntervalMs"
+//! - "<session name>__operational_crashes"
+#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(key_name)                     \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##MemfaultSdkMetric_IntervalMs, \
+                              kMemfaultMetricType_Timer)                  \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
+                                                           max_value, session_key)          \
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
+  MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, 0, 0, session_key)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+
+#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
+                                                                 session_key, scale_value) \
+  MEMFAULT_METRICS_KEY_DEFINE(session_key##__##key_name, value_type)
+
+  sMemfaultMetricValues heartbeat_values;
+
+  // Create a byte array to contain an is-set flag for each entry in heartbeat_values
+  uint8_t heartbeat_value_is_set_flags[MEMFAULT_CEIL_DIV(
+    MEMFAULT_ARRAY_SIZE(((sMemfaultMetricValues *)0)->values), MEMFAULT_IS_SET_FLAGS_PER_BYTE)];
+
+// Timer metadata table
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_name)
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_name)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
+#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(_name) +1
+#define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
+  sMemfaultMetricValueMetadata heartbeat_timer_values_metadata[0
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+  ];
+  // Work-around for unused-macros error in case not all types are used in the .def file:
+  MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_)
+    MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_)
+
+    // Allocate storage for string values- additional byte for null terminator.
+    // Packed to ensure no padding bytes are inserted, which would make it
+    // difficult to compute the size of this structure.
+    MEMFAULT_PACKED_STRUCT sMemfaultStringMetricStorage {
+#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
+  MEMFAULT_METRICS_STRING_KEY_DEFINE_(key_name, max_length)
+#define MEMFAULT_METRICS_STRING_KEY_DEFINE_(key_name, max_length) \
+  char g_memfault_metrics_string_##key_name[max_length + 1 /* for NUL */];
+#include "memfault/metrics/heartbeat_config.def"
+#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_
+  }
+  string_metrics_storage;
+
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
+
+} s_memfault_metrics_ctx = {
+  .session_start_cbs = {
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key)
@@ -61,15 +300,15 @@ MEMFAULT_DISABLE_WARNING("-Wunused-macros")
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                  session_key, scale_value)
 
-static MemfaultMetricsSessionStartCb s_session_start_cbs[] = {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-  NULL,  // dummy entry to prevent empty array
-};
-
-static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
+      NULL,  // dummy entry to prevent empty array
+    },
+     .session_end_cbs = {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
+      NULL,  // dummy entry to prevent empty array
+    },
 #undef MEMFAULT_METRICS_KEY_DEFINE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
 #undef MEMFAULT_METRICS_STRING_KEY_DEFINE
@@ -79,8 +318,27 @@ static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
-  NULL,  // dummy entry to prevent empty array
-};
+
+  };
+
+// clang-format off
+MEMFAULT_STATIC_ASSERT(sizeof(s_memfault_metrics_ctx) == MEMFAULT_METRICS_CONTEXT_SIZE_BYTES,
+                       "s_memfault_metrics_ctx size mismatch");
+// Uncomment below to see the size of MEMFAULT_METRICS_CONTEXT_SIZE_BYTES at compile time
+// #define BOOM(size_) MEMFAULT_PACKED_STRUCT kaboom { char dummy[size_]; }; char (*__kaboom)[sizeof(struct kaboom)] = 1;
+// BOOM(MEMFAULT_METRICS_CONTEXT_SIZE_BYTES)
+// BOOM(sizeof(s_memfault_metrics_ctx))
+// clang-format on
+
+#undef MEMFAULT_METRICS_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
+#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
+#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 
 // Generate session key to timer name mapping
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
@@ -96,7 +354,7 @@ static MemfaultMetricsSessionEndCb s_session_end_cbs[] = {
 #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                  session_key, scale_value)
 
-static MemfaultMetricId s_memfault_metrics_session_timer_keys[] = {
+static const MemfaultMetricId s_memfault_metrics_session_timer_keys[] = {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
 #undef MEMFAULT_METRICS_KEY_DEFINE
@@ -126,7 +384,7 @@ static MemfaultMetricId s_memfault_metrics_session_timer_keys[] = {
   #define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type, \
                                                                    session_key, scale_value)
 
-static MemfaultMetricId s_memfault_metrics_operational_crashes_keys[] = {
+static const MemfaultMetricId s_memfault_metrics_operational_crashes_keys[] = {
   #include "memfault/metrics/heartbeat_config.def"
   #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
   #undef MEMFAULT_METRICS_KEY_DEFINE
@@ -236,59 +494,6 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 #undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
 };
 
-// Macros to check for scale values vs metric type
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE(key_name, value_type, _min, _max) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, kMemfaultMetricType_String)
-
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION(key_name, max_length, session_key) \
-  MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
-
-#define MEMFAULT_METRICS_SESSION_KEY_DEFINE(session_name)                     \
-  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##MemfaultSdkMetric_IntervalMs, \
-                              kMemfaultMetricType_Timer)                      \
-  MEMFAULT_METRICS_KEY_DEFINE(session_name##__##operational_crashes, kMemfaultMetricType_Unsigned)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, min_value, \
-                                                           max_value, session_key)          \
-  MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(key_name, value_type, session_key) \
-  MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION(key_name, value_type, 0, 0, session_key)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(key_name, value_type, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE(key_name, value_type,     \
-                                                                 session_key, scale_value) \
-  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)
-
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) \
-  MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, 1)
-
-#define MEMFAULT_METRICS_KEY_DEFINE_(key_name, value_type, scale_value)                   \
-  MEMFAULT_STATIC_ASSERT((scale_value == 1) || (value_type != kMemfaultMetricType_Timer), \
-                         "Scale values are only valid for signed and unsigned integer metrics");
-
-// Generate static asserts to check for non-integer metric types with scale values
-#include "memfault/metrics/heartbeat_config.def"
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-#undef MEMFAULT_METRICS_KEY_DEFINE
-#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_WITH_SESSION
-#undef MEMFAULT_METRICS_SESSION_KEY_DEFINE
-#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION
-#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE_AND_SESSION
-#undef MEMFAULT_METRICS_KEY_DEFINE_
-#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE
-#undef MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION_AND_SCALE_VALUE
-
-// END: Macros to check for scale values vs metric type
-
 // From this point forward in the file, higher level macros (i.e.
 // MEMFAULT_METRICS_KEY_DEFINE_WITH_RANGE) are not undefined. This means if you need to redefine a
 // higher-level macro OR need to redefine the interface of the low-level macros
@@ -325,33 +530,6 @@ static const sMemfaultMetricKVPair s_memfault_heartbeat_keys[] = {
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_keys) != 0,
                        "At least one \"MEMFAULT_METRICS_KEY_DEFINE\" must be defined");
-
-#define MEMFAULT_METRICS_TIMER_VAL_MAX 0x80000000
-typedef struct MemfaultMetricValueMetadata {
-  bool is_running:1;
-  // We'll use 32 bits since the rollover time is ~25 days which is much much greater than a
-  // reasonable heartbeat interval. This let's us track whether or not the timer is running in the
-  // top bit
-  uint32_t start_time_ms:31;
-} sMemfaultMetricValueMetadata;
-
-typedef struct MemfaultMetricValueInfo {
-  union MemfaultMetricValue *valuep;
-  sMemfaultMetricValueMetadata *meta_datap;
-  bool is_set;
-} sMemfaultMetricValueInfo;
-
-// Allocate storage for string values- additional byte for null terminator.
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-  MEMFAULT_METRICS_STRING_KEY_DEFINE_(key_name, max_length)
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE_(key_name, max_length) \
-  static char g_memfault_metrics_string_##key_name[max_length + 1 /* for NUL */];
-#include "memfault/metrics/heartbeat_config.def"
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-#undef MEMFAULT_METRICS_KEY_DEFINE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE_
 
 // Generate a mapping of key index to key value position in s_memfault_heartbeat_values.
 // First produce a sparse enum for the key values that are stored in s_memfault_heartbeat_values.
@@ -418,36 +596,11 @@ MEMFAULT_STATIC_ASSERT(
     MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_string_key_to_index),
   "Mismatch between s_memfault_heartbeat_keys and s_memfault_heartbeat_string_key_to_index");
 
-// Generate heartbeat values table (RAM), sparsely populated: only for the scalar types
-#define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type) { 0 },
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
-static union MemfaultMetricValue s_memfault_heartbeat_values[] = {
-#include "memfault/metrics/heartbeat_config.def"
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-#undef MEMFAULT_METRICS_KEY_DEFINE
-#undef MEMFAULT_METRICS_STRING_KEY_DEFINE
-};
-
-// Value Set flag data structures and definitions
-// MEMFAULT_IS_SET_FLAGS_PER_BYTE must be a power of 2
-// MEMFAULT_IS_SET_FLAGS_DIVIDER must be equal to log2(MEMFAULT_IS_SET_FLAGS_PER_BYTE)
-#define MEMFAULT_IS_SET_FLAGS_PER_BYTE 8
-#define MEMFAULT_IS_SET_FLAGS_DIVIDER 3
-
-// Create a byte array to contain an is-set flag for each entry in s_memfault_heartbeat_values
-static uint8_t s_memfault_heatbeat_value_is_set_flags[MEMFAULT_CEIL_DIV(
-  MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_values), MEMFAULT_IS_SET_FLAGS_PER_BYTE)];
-
-MEMFAULT_STATIC_ASSERT(
-  MEMFAULT_ARRAY_SIZE(s_memfault_heatbeat_value_is_set_flags) >=
-    (MEMFAULT_ARRAY_SIZE(s_memfault_heartbeat_values) / MEMFAULT_IS_SET_FLAGS_PER_BYTE),
-  "Mismatch between s_memfault_heatbeat_value_is_set_flags and s_memfault_heartbeat_values");
-
 // String value lookup table. Const- the pointers do not change at runtime, so
 // this table can be stored in ROM and save a little RAM.
 #define MEMFAULT_METRICS_KEY_DEFINE(key_name, value_type)
 #define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length) \
-  { .ptr = g_memfault_metrics_string_##key_name },
+  { .ptr = s_memfault_metrics_ctx.string_metrics_storage.g_memfault_metrics_string_##key_name },
 static const union MemfaultMetricValue s_memfault_heartbeat_string_values[] = {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
@@ -457,27 +610,9 @@ static const union MemfaultMetricValue s_memfault_heartbeat_string_values[] = {
   { .ptr = NULL },
 };
 
-// Timer metadata table
-#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_name)
-#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_name)
-#define MEMFAULT_METRICS_STRING_KEY_DEFINE(key_name, max_length)
-#define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(_name) { 0 },
-#define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
-static sMemfaultMetricValueMetadata s_memfault_heartbeat_timer_values_metadata[] = {
-#include "memfault/metrics/heartbeat_config.def"
-#include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-  // allocate at least one entry so we don't have an empty array in the situation
-  // where no Timer metrics are defined:
-  MEMFAULT_METRICS_KEY_DEFINE(_, kMemfaultMetricType_Timer)
-#undef MEMFAULT_METRICS_KEY_DEFINE
-};
-// Work-around for unused-macros error in case not all types are used in the .def file:
-MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_)
-  MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed(_)
-
 // We need a key-index table of pointers to timer metadata for fast lookups.
 // The enum eMfltMetricsTimerIndex will create a subset of indexes for use
-// in the s_memfault_heartbeat_timer_values_metadata[] table. The
+// in the s_memfault_metrics_ctx.heartbeat_timer_values_metadata[] table. The
 // s_metric_timer_metadata_mapping[] table provides the mapping from the
 // exhaustive list of keys to valid timer indexes or -1 if not a timer.
 #define MEMFAULT_METRICS_KEY_DEFINE(_name, _type) MEMFAULT_METRICS_STATE_HELPER_##_type(_name)
@@ -489,10 +624,10 @@ MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned(_)
 #define MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Timer(key_name) \
   kMfltMetricsTimerIndex_##key_name,
 
-    typedef enum MfltTimerIndex {
+typedef enum MfltTimerIndex {
 #include "memfault/metrics/heartbeat_config.def"
 #include MEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE
-    } eMfltMetricsTimerIndex;
+} eMfltMetricsTimerIndex;
 
 #undef MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Unsigned
 #undef MEMFAULT_METRICS_STATE_HELPER_kMemfaultMetricType_Signed
@@ -514,10 +649,6 @@ static const int s_metric_timer_metadata_mapping[] = {
 #define MEMFAULT_METRICS_KEY_TO_KV_INDEX(key) (s_memfault_heartbeat_key_to_valueindex[(key)])
 #define MEMFAULT_METRICS_ID_TO_KV_INDEX(id) \
   (MEMFAULT_METRICS_KEY_TO_KV_INDEX(MEMFAULT_METRICS_ID_TO_KEY(id)))
-
-static struct {
-  const sMemfaultEventStorageImpl *storage_impl;
-} s_memfault_metrics_ctx;
 
 //
 // Routines which can be overridden by customers
@@ -592,7 +723,7 @@ static sMemfaultMetricValueMetadata *prv_find_timer_metadatap(eMfltMetricsIndex 
     return NULL;
   }
 
-  return &s_memfault_heartbeat_timer_values_metadata[timer_index];
+  return &s_memfault_metrics_ctx.heartbeat_timer_values_metadata[timer_index];
 }
 
 //! Helper function to read/write is_set bits for the provided metric
@@ -603,26 +734,26 @@ static sMemfaultMetricValueMetadata *prv_find_timer_metadatap(eMfltMetricsIndex 
 //! true
 static bool prv_read_write_is_value_set(MemfaultMetricId id, bool write) {
   // Shift the kv index by MEMFAULT_IS_SET_FLAGS_DIVIDER to select byte within
-  // s_memfault_heartbeat_value_is_set_flags
+  // s_memfault_metrics_ctx.heartbeat_value_is_set_flags
   size_t byte_index = MEMFAULT_METRICS_ID_TO_KV_INDEX(id) >> MEMFAULT_IS_SET_FLAGS_DIVIDER;
   // Modulo the kv index by MEMFAULT_IS_SET_FLAGS_PER_BYTE to get bit of the selected byte
   size_t bit_index = MEMFAULT_METRICS_ID_TO_KV_INDEX(id) % MEMFAULT_IS_SET_FLAGS_PER_BYTE;
 
   if (write) {
-    s_memfault_heatbeat_value_is_set_flags[byte_index] |= (1 << bit_index);
+    s_memfault_metrics_ctx.heartbeat_value_is_set_flags[byte_index] |= (1 << bit_index);
   }
 
-  return (s_memfault_heatbeat_value_is_set_flags[byte_index] >> bit_index) & 0x01;
+  return (s_memfault_metrics_ctx.heartbeat_value_is_set_flags[byte_index] >> bit_index) & 0x01;
 }
 
 static void prv_clear_is_value_set(eMfltMetricKeyToValueIndex key) {
   // Shift the kv index by MEMFAULT_IS_SET_FLAGS_DIVIDER to select byte within
-  // s_memfault_heartbeat_value_is_set_flags
+  // s_memfault_metrics_ctx.heartbeat_value_is_set_flags
   size_t byte_index = key >> MEMFAULT_IS_SET_FLAGS_DIVIDER;
   // Modulo the kv index by MEMFAULT_IS_SET_FLAGS_PER_BYTE to get bit of the selected byte
   size_t bit_index = key % MEMFAULT_IS_SET_FLAGS_PER_BYTE;
 
-  s_memfault_heatbeat_value_is_set_flags[byte_index] &= ~(1 << bit_index);
+  s_memfault_metrics_ctx.heartbeat_value_is_set_flags[byte_index] &= ~(1 << bit_index);
 }
 
 static eMemfaultMetricType prv_find_value_for_key(MemfaultMetricId id,
@@ -637,7 +768,7 @@ static eMemfaultMetricType prv_find_value_for_key(MemfaultMetricId id,
   eMfltMetricKeyToValueIndex key_index = MEMFAULT_METRICS_KEY_TO_KV_INDEX(idx);
   // for scalar types, this will be the returned value pointer. non-scalars
   // will be handled in the switch below
-  union MemfaultMetricValue *value_ptr = &s_memfault_heartbeat_values[key_index];
+  union MemfaultMetricValue *value_ptr = &s_memfault_metrics_ctx.heartbeat_values.values[key_index];
 
   eMemfaultMetricType key_type = s_memfault_heartbeat_keys[idx].type;
   switch (key_type) {
@@ -873,9 +1004,10 @@ static bool prv_tally_and_update_timer_cb(MEMFAULT_UNUSED void *ctx,
 static void prv_reset_metrics(bool full_reset, eMfltMetricsSessionIndex session_key) {
   if (full_reset) {
     // if a full reset is indicated zero out all metrics regardless of session.
-    memset(s_memfault_heartbeat_values, 0, sizeof(s_memfault_heartbeat_values));
-    memset(s_memfault_heatbeat_value_is_set_flags, 0,
-           sizeof(s_memfault_heatbeat_value_is_set_flags));
+    memset(s_memfault_metrics_ctx.heartbeat_values.values, 0,
+           sizeof(s_memfault_metrics_ctx.heartbeat_values.values));
+    memset(s_memfault_metrics_ctx.heartbeat_value_is_set_flags, 0,
+           sizeof(s_memfault_metrics_ctx.heartbeat_value_is_set_flags));
 
     // reset all string metric values. -1 to skip the last, stub entry in the
     // table
@@ -900,7 +1032,8 @@ static void prv_reset_metrics(bool full_reset, eMfltMetricsSessionIndex session_
         case kMemfaultMetricType_Timer:
         case kMemfaultMetricType_Signed:
         case kMemfaultMetricType_Unsigned: {
-          s_memfault_heartbeat_values[key_index] = (union MemfaultMetricValue){ 0 };
+          s_memfault_metrics_ctx.heartbeat_values.values[key_index] =
+            (union MemfaultMetricValue){ 0 };
           prv_clear_is_value_set(key_index);
           break;
         }
@@ -922,12 +1055,17 @@ static void prv_heartbeat_timer_update(void) {
   prv_metric_iterator(NULL, prv_tally_and_update_timer_cb);
 }
 
-//! Trigger an update of heartbeat metrics, serialize out to storage, and reset.
-static void prv_heartbeat_timer(void) {
-  prv_heartbeat_timer_update();
+//! Triggers a heartbeat update only, no timer update
+static void prv_heartbeat_update(void) {
   memfault_metrics_heartbeat_collect_sdk_data();
   prv_collect_builtin_data();
   memfault_metrics_heartbeat_collect_data();
+}
+
+//! Trigger an update of heartbeat timers + metrics, serialize out to storage, and reset.
+static void prv_heartbeat_timer(void) {
+  prv_heartbeat_timer_update();
+  prv_heartbeat_update();
 
   memfault_metrics_heartbeat_serialize(s_memfault_metrics_ctx.storage_impl);
 
@@ -1112,7 +1250,8 @@ static int prv_metrics_session_start(eMfltMetricsSessionIndex session_key, bool 
   }
   memfault_unlock();
 
-  MemfaultMetricsSessionStartCb session_start_cb = s_session_start_cbs[session_key];
+  MemfaultMetricsSessionStartCb session_start_cb =
+    s_memfault_metrics_ctx.session_start_cbs[session_key];
   if (session_start_cb != NULL) {
     session_start_cb();
   }
@@ -1125,7 +1264,7 @@ int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key) {
 }
 
 static int prv_metrics_session_end(eMfltMetricsSessionIndex session_key, bool stop_timer) {
-  MemfaultMetricsSessionEndCb session_end_cb = s_session_end_cbs[session_key];
+  MemfaultMetricsSessionEndCb session_end_cb = s_memfault_metrics_ctx.session_end_cbs[session_key];
   if (session_end_cb != NULL) {
     session_end_cb();
   }
@@ -1160,14 +1299,14 @@ int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
 void memfault_metrics_session_register_start_cb(eMfltMetricsSessionIndex session_key,
                                                 MemfaultMetricsSessionStartCb session_start_cb) {
   memfault_lock();
-  { s_session_start_cbs[session_key] = session_start_cb; }
+  { s_memfault_metrics_ctx.session_start_cbs[session_key] = session_start_cb; }
   memfault_unlock();
 }
 
 void memfault_metrics_session_register_end_cb(eMfltMetricsSessionIndex session_key,
                                               MemfaultMetricsSessionEndCb session_end_cb) {
   memfault_lock();
-  { s_session_end_cbs[session_key] = session_end_cb; }
+  { s_memfault_metrics_ctx.session_end_cbs[session_key] = session_end_cb; }
   memfault_unlock();
 }
 
@@ -1336,6 +1475,10 @@ void memfault_metrics_heartbeat_debug_trigger(void) {
   prv_heartbeat_timer();
 }
 
+void memfault_metrics_heartbeat_collect(void) {
+  prv_heartbeat_update();
+}
+
 #if MEMFAULT_METRICS_SESSIONS_ENABLED
 //! Called on boot, this function checks if the reboot was unexpected. If so,
 //! any session that was active at time of reboot is triggered to record an
@@ -1385,40 +1528,54 @@ static void prv_session_check_for_unexpected_reboot(void) {
 }
 #endif
 
+const void *memfault_metrics_get_state(void) {
+  return (const void *)&s_memfault_metrics_ctx;
+}
+
 int memfault_metrics_boot(const sMemfaultEventStorageImpl *storage_impl,
                           const sMemfaultMetricBootInfo *info) {
   if (storage_impl == NULL || info == NULL) {
     return MEMFAULT_METRICS_TYPE_BAD_PARAM;
   }
 
-  s_memfault_metrics_ctx.storage_impl = storage_impl;
-  prv_reset_metrics(true, MEMFAULT_METRICS_SESSION_KEY(heartbeat));
+#if MEMFAULT_METRICS_RESTORE_STATE
+  const bool restored = memfault_metrics_restore_state(&s_memfault_metrics_ctx);
+  if (restored) {
+    // If we restored the state, attach the storage impl to the restored context
+    s_memfault_metrics_ctx.storage_impl = storage_impl;
+  } else
+  // Otherwise, continue with normal metrics boot sequence
+#endif  // MEMFAULT_METRICS_RESTORE_STATE
+  {
+    s_memfault_metrics_ctx.storage_impl = storage_impl;
+    prv_reset_metrics(true, MEMFAULT_METRICS_SESSION_KEY(heartbeat));
 
-  const bool success = memfault_platform_metrics_timer_boot(
-    MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS, prv_heartbeat_timer);
-  if (!success) {
-    return MEMFAULT_METRICS_TIMER_BOOT_FAILED;
-  }
+    const bool success = memfault_platform_metrics_timer_boot(
+      MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS, prv_heartbeat_timer);
+    if (!success) {
+      return MEMFAULT_METRICS_TIMER_BOOT_FAILED;
+    }
 
-  if (!memfault_serializer_helper_check_storage_size(
-        storage_impl, memfault_metrics_heartbeat_compute_worst_case_storage_size, "metrics")) {
-    return MEMFAULT_METRICS_STORAGE_TOO_SMALL;
-  }
+    if (!memfault_serializer_helper_check_storage_size(
+          storage_impl, memfault_metrics_heartbeat_compute_worst_case_storage_size, "metrics")) {
+      return MEMFAULT_METRICS_STORAGE_TOO_SMALL;
+    }
 
-  int rv = MEMFAULT_METRIC_TIMER_START(MemfaultSdkMetric_IntervalMs);
-  if (rv != 0) {
-    return rv;
-  }
+    int rv = MEMFAULT_METRIC_TIMER_START(MemfaultSdkMetric_IntervalMs);
+    if (rv != 0) {
+      return rv;
+    }
 
-  rv = MEMFAULT_METRIC_SET_UNSIGNED(MemfaultSdkMetric_UnexpectedRebootCount,
-                                    info->unexpected_reboot_count);
-  if (rv != 0) {
-    return rv;
-  }
+    rv = MEMFAULT_METRIC_SET_UNSIGNED(MemfaultSdkMetric_UnexpectedRebootCount,
+                                      info->unexpected_reboot_count);
+    if (rv != 0) {
+      return rv;
+    }
 
 #if MEMFAULT_METRICS_SESSIONS_ENABLED
-  prv_session_check_for_unexpected_reboot();
+    prv_session_check_for_unexpected_reboot();
 #endif
+  }
 
 #if MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
   memfault_platform_metrics_connectivity_boot();

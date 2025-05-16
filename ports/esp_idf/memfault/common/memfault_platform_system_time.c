@@ -20,9 +20,6 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *mflt_time) {
     return false;
   }
 
-  ESP_LOGD("mflt", "Time: %u-%u-%u %u:%u:%u", tm_time.tm_year + 1900, tm_time.tm_mon + 1,
-           tm_time.tm_mday, tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec);
-
   // confirm the year is reasonable (>=2024)
   if ((tm_time.tm_year < 124) || (tm_time.tm_year > 200)) {
     return false;

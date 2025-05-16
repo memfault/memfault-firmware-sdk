@@ -1,18 +1,20 @@
-## Memfault Zephyr `nucleo_wba55cg` Example Application
+# Memfault Zephyr `nucleo_wba55cg` Example Application
 
 This folder contains an example integration of the Memfault SDK using the port
 provided in `ports/zephyr`
 
-The demo was tested using the
-[ST NUCLEO-WBA55CG board](https://docs.zephyrproject.org/3.6.0/boards/st/nucleo_wba55cg/doc/nucleo_wba55cg.html).
+The demo was tested on the following boards:
 
-### Prerequisite
+- [ST NUCLEO-WBA55CG board](https://docs.zephyrproject.org/3.7.0/boards/st/nucleo_wba55cg/doc/nucleo_wba55cg.html).
+- [ST NUCLEO-H563ZI board](https://docs.zephyrproject.org/3.7.0/boards/st/nucleo_h563zi/doc/index.html)
+
+## Prerequisite
 
 We assume you already have a working Zephyr toolchain installed locally.
 Step-by-step instructions can be found in the
 [Zephyr Documentation](https://docs.zephyrproject.org/2.5.0/getting_started/index.html#build-hello-world).
 
-### Setup
+## Setup
 
 From a Zephyr-enabled shell environment (`west` tool is available), initialize
 the workspace:
@@ -23,7 +25,7 @@ west update
 west blobs fetch stm32
 ```
 
-### Building
+## Building
 
 ```bash
 west build --board nucleo_wba55cg memfault_demo_app
@@ -31,7 +33,7 @@ west build --board nucleo_wba55cg memfault_demo_app
 [271/271] Linking C executable zephyr/zephyr.elf
 ```
 
-### Flashing
+## Flashing
 
 The build can be flashed on the development board using `west flash` ( See
 Zephyr

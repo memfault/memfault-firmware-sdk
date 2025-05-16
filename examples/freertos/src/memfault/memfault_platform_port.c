@@ -22,6 +22,13 @@
 
 #define MEMFAULT_COREDUMP_MAX_TASK_REGIONS ((MEMFAULT_PLATFORM_MAX_TRACKED_TASKS) * 2)
 
+#define MEMFAULT_APP_DEBUG 0
+#if MEMFAULT_APP_DEBUG
+  #define MEMFAULT_APP_PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define MEMFAULT_APP_PRINTF(...)
+#endif
+
 // Reboot tracking storage, must be placed in no-init RAM to keep state after reboot
 MEMFAULT_PUT_IN_SECTION(".noinit.mflt_reboot_info") static uint8_t
   s_reboot_tracking[MEMFAULT_REBOOT_TRACKING_REGION_SIZE];
@@ -99,12 +106,12 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time_output) {
   time_t time_now = time(NULL);
 
   struct tm *tm_time = gmtime(&time_now);
-  MEMFAULT_LOG_DEBUG("Time: %u-%u-%u %u:%u:%u", tm_time->tm_year + 1900, tm_time->tm_mon + 1,
-                     tm_time->tm_mday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec);
+  MEMFAULT_APP_PRINTF("Time: %u-%u-%u %u:%u:%u", tm_time->tm_year + 1900, tm_time->tm_mon + 1,
+                      tm_time->tm_mday, tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec);
 
   // If pre-2023, something is wrong
   if ((tm_time->tm_year < 123) || (tm_time->tm_year > 200)) {
-    MEMFAULT_LOG_WARN("Time doesn't make sense: year %u", tm_time->tm_year + 1900);
+    MEMFAULT_APP_PRINTF("Time doesn't make sense: year %u", tm_time->tm_year + 1900);
     return false;
   }
 

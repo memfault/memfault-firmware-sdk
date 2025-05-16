@@ -33,6 +33,22 @@ choice APP_MEMFAULT_TRANSPORT
         depends on !MEMFAULT_HTTP_PERIODIC_UPLOAD
 endchoice
 
+config MEMFAULT_APP_AUTO_DEEP_SLEEP
+    bool "Enable deep sleep"
+    default n
+    select MEMFAULT_DEEP_SLEEP_SUPPORT
+    help
+        Enable deep sleep functionality. This will put the device into deep
+        sleep periodically, and auto wake up.
+
+config MEMFAULT_APP_AUTO_DEEP_SLEEP_PERIOD_SECONDS
+    int "Deep sleep period in seconds"
+    default 60
+    depends on MEMFAULT_APP_AUTO_DEEP_SLEEP
+    help
+        The period in seconds to put the device into deep sleep.
+        This is only used if MEMFAULT_APP_AUTO_DEEP_SLEEP is enabled.
+
 if APP_MEMFAULT_TRANSPORT_MQTT
 config MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE
     string "Override default software version for the application"
