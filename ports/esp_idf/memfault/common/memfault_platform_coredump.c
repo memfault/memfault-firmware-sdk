@@ -29,10 +29,12 @@
   #include "soc/soc.h"
 #endif
 
+#include "esp_task_wdt.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/core/task_watchdog.h"
+#include "memfault/esp_port/coredump.h"
 #include "memfault/esp_port/spi_flash.h"
 #include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16.h"
@@ -63,19 +65,6 @@
   #define GET_COREDUMP_PARTITION() \
     esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL)
 #endif
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
-  // Memory regions used for esp-idf >= 4.4.3
-  // Active stack (1) + task/timer and bss/common regions (4) + freertos tasks
-  //(MEMFAULT_PLATFORM_MAX_TASK_REGIONS) + task_tcbs(1) + task_watermarks(1) +
-  // bss(1) + data(1) + heap(1)
-  #define MEMFAULT_ESP_PORT_NUM_REGIONS \
-    (1 + 4 + MEMFAULT_PLATFORM_MAX_TASK_REGIONS + 1 + 1 + 1 + 1 + 1)
-#else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
-  // Memory regions for esp-idf < 4.4.3
-  // Active stack (1) + bss(1) + data(1) + heap(1)
-  #define MEMFAULT_ESP_PORT_NUM_REGIONS (1 + 1 + 1 + 1)
-#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 
 typedef struct {
   uint32_t magic;
@@ -167,15 +156,78 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
   return desired_size;
 }
 
-//! By default we prioritize collecting active stack, bss, data, and heap.
+#if defined(CONFIG_MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG) && \
+  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4))
+static char s_mflt_task_watchdog_data[CONFIG_MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG_SIZE];
+
+static void prv_task_watchdog_msg_handler(void *opaque, const char *msg) {
+  int call_count = *(int *)opaque;
+  *(int *)opaque = call_count + 1;
+
+  // the first call is a caption, skip
+  if (call_count == 0) {
+    s_mflt_task_watchdog_data[0] = '\0';
+    return;
+  }
+  // after that, this function is called 3 times per triggered task:
+  // msg_handler(opaque, "\n - ");
+  // msg_handler(opaque, name);
+  // msg_handler(opaque, cpu);
+  //
+  // we will copy only the name + cpu, in this format:
+  //  <name> <cpu>|<name> <cpu>...
+  if ((call_count - 1) % 3 == 0) {
+    // skip the first call, which is a caption
+    return;
+  }
+  // copy the name
+  if ((call_count - 1) % 3 == 1) {
+    strlcat(s_mflt_task_watchdog_data, "|\"", sizeof(s_mflt_task_watchdog_data) - 1);
+    strlcat(s_mflt_task_watchdog_data, msg, sizeof(s_mflt_task_watchdog_data) - 1);
+    strlcat(s_mflt_task_watchdog_data, "\"", sizeof(s_mflt_task_watchdog_data) - 1);
+    return;
+  }
+  // copy the cpu
+  if ((call_count - 1) % 3 == 2) {
+    strlcat(s_mflt_task_watchdog_data, msg, sizeof(s_mflt_task_watchdog_data) - 1);
+    strlcat(s_mflt_task_watchdog_data, "|", sizeof(s_mflt_task_watchdog_data) - 1);
+    return;
+  }
+}
+
+size_t prv_get_task_watchdog_region(sMfltCoredumpRegion *regions, size_t num_regions) {
+  if (num_regions == 0) {
+    return 0;
+  }
+
+  // the TWDT might not be initialized, check it first
+  esp_err_t err = esp_task_wdt_status(NULL);
+  if (err == ESP_ERR_INVALID_STATE) {
+    return 0;
+  }
+
+  // run the task wdt printer to extract the data
+  // keep track of the number of calls to the msg_handler
+  int call_count = 0;
+  err = esp_task_wdt_print_triggered_tasks(prv_task_watchdog_msg_handler, &call_count, NULL);
+
+  if (err != ESP_OK) {
+    return 0;
+  } else {
+    // attach the s_mflt_task_watchdog_data as a region
+    *regions = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
+      s_mflt_task_watchdog_data,
+      strnlen(s_mflt_task_watchdog_data, sizeof(s_mflt_task_watchdog_data) - 1));
+    return 1;
+  }
+}
+#endif  // CONFIG_MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG
+
+//! Collecting active stack, bss, data, and heap.
 //!
 //! In esp-idf >= 4.4.3, we additionally collect bss and stack regions for
 //! FreeRTOS tasks.
-//!
-//! @note The function is intentionally defined as weak so someone can
-//! easily override the port defaults by re-defining a non-weak version of
-//! the function in another file
-MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+const sMfltCoredumpRegion *memfault_esp_port_coredump_get_regions(
   const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
   static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_ESP_PORT_NUM_REGIONS];
   int region_idx = 0;
@@ -197,6 +249,13 @@ MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
                                             MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
 
+// Conditionally capture the Task Watchdog data
+#if defined(CONFIG_MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG) && \
+  (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 4))
+  region_idx += prv_get_task_watchdog_region(&s_coredump_regions[region_idx],
+                                             MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+#endif
+
   // Next, capture all of .bss + .data that we can fit.
   extern uint32_t _data_start;
   extern uint32_t _data_end;
@@ -216,6 +275,18 @@ MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
 
   return &s_coredump_regions[0];
 }
+
+#if defined(CONFIG_MEMFAULT_COREDUMP_REGIONS_BUILT_IN)
+//! Built-in Coredump Regions function
+//!
+//! @note The function is intentionally defined as weak so someone can
+//! easily override the port defaults by re-defining a non-weak version of
+//! the function in another file
+MEMFAULT_WEAK const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
+  const sCoredumpCrashInfo *crash_info, size_t *num_regions) {
+  return memfault_esp_port_coredump_get_regions(crash_info, num_regions);
+}
+#endif  // CONFIG_MEMFAULT_COREDUMP_REGIONS_BUILT_IN
 
 static uint32_t prv_get_adjusted_size(const esp_partition_t *core_part) {
   return
@@ -352,7 +423,7 @@ static void prv_panic_safe_putstr(const char *str) {
 }
 
 bool memfault_port_coredump_save_begin(void) {
-  // Update task watchdog bookkeeping, if it's enabled
+  // Update Memfault task watchdog bookkeeping, if it's enabled
   memfault_task_watchdog_bookkeep();
 
   // Disable the interrupt watchdog (IWDT) if it's enabled, to avoid contention

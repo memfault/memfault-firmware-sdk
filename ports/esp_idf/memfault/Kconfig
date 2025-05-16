@@ -79,6 +79,8 @@ if MEMFAULT_CLI_SELF_TEST
 
 endif
 
+    menu "Memfault Coredump Settings"
+
     config MEMFAULT_COREDUMP_USE_OTA_SLOT
         bool "Enables the use of an OTA slot for coredump storage"
         default n
@@ -122,6 +124,29 @@ endif
         help
             The number of CPU cores to include in coredumps. By default, all
             cores are included.
+
+    config MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG
+        bool "Capture the task watchdog state in coredumps"
+        default y if ESP_TASK_WDT_EN
+        help
+            Include task watchdog state in coredumps.
+
+    config MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG_SIZE
+        int "Size of the task watchdog state in coredumps"
+        default 128
+        depends on MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG
+        help
+            The size of the task watchdog state included in coredumps.
+
+    config MEMFAULT_COREDUMP_REGIONS_BUILT_IN
+        bool "Enable built-in memfault_platform_coredump_get_regions()"
+        default y
+        help
+            This is a wrapper around memfault_esp_port_coredump_get_regions().
+            Disable this option to use a custom implementation of
+            memfault_platform_coredump_get_regions().
+
+    endmenu  # Memfault Coredump Settings
 
     config MEMFAULT_AUTOMATIC_INIT
         bool "[DEPRECATED] Automatically initialize the SDK when the system is booted"
