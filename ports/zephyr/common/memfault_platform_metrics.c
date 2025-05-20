@@ -146,6 +146,8 @@ __attribute__((noinline)) static const char *prv_wifi_security_type_to_string(
       return "EAP-TTLS-MSCHAPV2";
     case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
       return "EAP-PEAP-TLS";
+  // only for zephyr >= 4.1.0
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 1)
     case WIFI_SECURITY_TYPE_FT_PSK:
       return "FT-PSK";
     case WIFI_SECURITY_TYPE_FT_SAE:
@@ -154,8 +156,6 @@ __attribute__((noinline)) static const char *prv_wifi_security_type_to_string(
       return "FT-EAP";
     case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
       return "FT-EAP-SHA384";
-  // only for zephyr >= 4.1.0
-  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 1)
     case WIFI_SECURITY_TYPE_SAE_EXT_KEY:
       return "SAE-EXT-KEY";
   #endif
@@ -201,10 +201,12 @@ static void prv_record_wifi_connection_metrics(struct net_if *iface) {
   MEMFAULT_METRIC_SET_UNSIGNED(wifi_dtim_interval, status.dtim_period);
   MEMFAULT_METRIC_SET_UNSIGNED(wifi_twt_capable, status.twt_capable);
 
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 1)
   // some devices will not have this value set
   if (status.current_phy_tx_rate != 0) {
     MEMFAULT_METRIC_SET_UNSIGNED(wifi_tx_rate_mbps, status.current_phy_tx_rate);
   }
+  #endif
 
   char oui[9];
   snprintf(oui, sizeof(oui), "%02x:%02x:%02x", status.bssid[0], status.bssid[1], status.bssid[2]);
