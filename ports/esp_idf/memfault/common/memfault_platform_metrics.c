@@ -199,7 +199,7 @@ static const char *auth_mode_strings[] = {
   // clang-format on
 };
 
-static const char *prv_esp_idf_authomode_to_str(wifi_auth_mode_t auth_mode) {
+static const char *prv_esp_idf_authmode_to_str(wifi_auth_mode_t auth_mode) {
   if (auth_mode >= MEMFAULT_ARRAY_SIZE(auth_mode_strings)) {
     return "UNKNOWN";
   }
@@ -264,8 +264,8 @@ static void prv_collect_wifi_metrics(void) {
   // Primary channel
   MEMFAULT_METRIC_SET_UNSIGNED(wifi_primary_channel, ap_info.primary);
 
-  const char *auth_mode_str = prv_esp_idf_authomode_to_str(ap_info.authmode);
-  MEMFAULT_METRIC_SET_STRING(wifi_auth_mode, auth_mode_str);
+  const char *auth_mode_str = prv_esp_idf_authmode_to_str(ap_info.authmode);
+  MEMFAULT_METRIC_SET_STRING(wifi_security_type, auth_mode_str);
 
   prv_collect_wifi_version(&ap_info);
 

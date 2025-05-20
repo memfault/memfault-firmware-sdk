@@ -45,6 +45,17 @@ MEMFAULT_METRICS_KEY_DEFINE(net_bytes_sent, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
 // MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
+
+MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_standard_version, sizeof("802.11ax/6GHz") - 1)
+MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_security_type, sizeof("WPA-AUTO-PERSONAL") - 1)
+MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_frequency_band, sizeof("2.4") - 1)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_primary_channel, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_rssi, kMemfaultMetricType_Signed)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_beacon_interval, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_dtim_interval, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_twt_capable, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(wifi_tx_rate_mbps, kMemfaultMetricType_Unsigned)
+
 MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_ap_oui, sizeof("00:00:00") - 1)
 #endif  // defined(CONFIG_MEMFAULT_METRICS_WIFI)
 

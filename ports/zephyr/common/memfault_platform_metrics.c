@@ -14,7 +14,9 @@
 #endif
 
 #if defined(CONFIG_MEMFAULT_METRICS_WIFI)
+#include <stdio.h>
 #include MEMFAULT_ZEPHYR_INCLUDE(net/net_mgmt.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/wifi.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/wifi_mgmt.h)
 #endif
 
@@ -81,11 +83,127 @@ static void prv_collect_ip_statistics(void) {
 #endif  // defined(MEMFAULT_METRICS_TCP_IP)
 
 #if defined(CONFIG_MEMFAULT_METRICS_WIFI)
-static void prv_record_iface_ap_oui(struct net_if *iface) {
+const char *prv_link_mode_to_str(enum wifi_link_mode link_mode) {
+  switch (link_mode) {
+    case WIFI_0:
+      return "802.11";
+    case WIFI_1:
+      return "802.11b";
+    case WIFI_2:
+      return "802.11a";
+    case WIFI_3:
+      return "802.11g";
+    case WIFI_4:
+      return "802.11n";
+    case WIFI_5:
+      return "802.11ac";
+    case WIFI_6:
+      return "802.11ax";
+    case WIFI_6E:
+      return "802.11ax/6GHz";
+    case WIFI_7:
+      return "802.11be";
+    case WIFI_LINK_MODE_UNKNOWN:
+    default:
+      return "unknown";
+  }
+}
+
+__attribute__((noinline)) static const char *prv_wifi_security_type_to_string(
+  enum wifi_security_type type) {
+  switch (type) {
+    case WIFI_SECURITY_TYPE_NONE:
+      return "NONE";
+    case WIFI_SECURITY_TYPE_PSK:
+      return "WPA2-PSK";
+    case WIFI_SECURITY_TYPE_PSK_SHA256:
+      return "WPA2-PSK-SHA256";
+    case WIFI_SECURITY_TYPE_SAE:
+      // case WIFI_SECURITY_TYPE_SAE_HNP:
+      return "WPA3-SAE";
+    case WIFI_SECURITY_TYPE_SAE_H2E:
+      return "WPA3-SAE-H2E";
+    case WIFI_SECURITY_TYPE_SAE_AUTO:
+      return "WPA3-SAE-AUTO";
+    case WIFI_SECURITY_TYPE_WAPI:
+      return "WAPI";
+    case WIFI_SECURITY_TYPE_EAP:
+      // case WIFI_SECURITY_TYPE_EAP_TLS:
+      return "EAP";
+    case WIFI_SECURITY_TYPE_WEP:
+      return "WEP";
+    case WIFI_SECURITY_TYPE_WPA_PSK:
+      return "WPA-PSK";
+    case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+      return "WPA-AUTO-PERSONAL";
+    case WIFI_SECURITY_TYPE_DPP:
+      return "DPP";
+    case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+      return "EAP-PEAP-MSCHAPV2";
+    case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+      return "EAP-PEAP-GTC";
+    case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+      return "EAP-TTLS-MSCHAPV2";
+    case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+      return "EAP-PEAP-TLS";
+    case WIFI_SECURITY_TYPE_FT_PSK:
+      return "FT-PSK";
+    case WIFI_SECURITY_TYPE_FT_SAE:
+      return "FT-SAE";
+    case WIFI_SECURITY_TYPE_FT_EAP:
+      return "FT-EAP";
+    case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
+      return "FT-EAP-SHA384";
+  // only for zephyr >= 4.1.0
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 1)
+    case WIFI_SECURITY_TYPE_SAE_EXT_KEY:
+      return "SAE-EXT-KEY";
+  #endif
+    default:
+      return "UNKNOWN";
+  }
+}
+
+const char *prv_wifi_frequency_band_to_str(enum wifi_frequency_bands band) {
+  switch (band) {
+    case WIFI_FREQ_BAND_2_4_GHZ:
+      return "2.4";
+    case WIFI_FREQ_BAND_5_GHZ:
+      return "5";
+    case WIFI_FREQ_BAND_6_GHZ:
+      return "6";
+    default:
+      return "x";
+  }
+}
+
+static void prv_record_wifi_connection_metrics(struct net_if *iface) {
   struct wifi_iface_status status = { 0 };
 
   if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status, sizeof(struct wifi_iface_status))) {
     return;
+  }
+
+  MEMFAULT_METRIC_SET_STRING(wifi_standard_version, prv_link_mode_to_str(status.link_mode));
+
+  MEMFAULT_METRIC_SET_STRING(wifi_security_type, prv_wifi_security_type_to_string(status.security));
+
+  MEMFAULT_METRIC_SET_STRING(wifi_frequency_band, prv_wifi_frequency_band_to_str(status.band));
+
+  MEMFAULT_METRIC_SET_UNSIGNED(wifi_primary_channel, status.channel);
+
+  if (status.iface_mode == WIFI_MODE_INFRA) {
+    MEMFAULT_METRIC_SET_SIGNED(wifi_sta_rssi, status.rssi);
+  }
+  MEMFAULT_LOG_INFO("beacon interval = %u, dtim period = %u, twt capable = %u",
+                    status.beacon_interval, status.dtim_period, status.twt_capable);
+  MEMFAULT_METRIC_SET_UNSIGNED(wifi_beacon_interval, status.beacon_interval);
+  MEMFAULT_METRIC_SET_UNSIGNED(wifi_dtim_interval, status.dtim_period);
+  MEMFAULT_METRIC_SET_UNSIGNED(wifi_twt_capable, status.twt_capable);
+
+  // some devices will not have this value set
+  if (status.current_phy_tx_rate != 0) {
+    MEMFAULT_METRIC_SET_UNSIGNED(wifi_tx_rate_mbps, status.current_phy_tx_rate);
   }
 
   char oui[9];
@@ -104,8 +222,8 @@ static void prv_wifi_event_callback(struct net_mgmt_event_callback *cb, uint32_t
         // start connected-time timer
         MEMFAULT_METRIC_TIMER_START(wifi_connected_time_ms);
 
-        // record AP OUI
-        prv_record_iface_ap_oui(iface);
+        // record connection metrics
+        prv_record_wifi_connection_metrics(iface);
       }
     } break;
 
