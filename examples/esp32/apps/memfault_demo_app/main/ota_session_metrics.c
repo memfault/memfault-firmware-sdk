@@ -14,7 +14,9 @@
 #include "esp_wifi.h"
 #include "lwip/stats.h"
 #include "memfault/components.h"
+#include "memfault/esp_port/metrics.h"
 #include "memfault/ports/mbedtls/metrics.h"
+#include "sdkconfig.h"
 
 static struct ota_session_metrics_lwip_stats_prev {
   uint32_t tx;
@@ -26,6 +28,10 @@ static struct ota_session_metrics_mbedtls_stats {
   uint32_t recv;
 } s_ota_session_metrics_mbedtls_stats;
 
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+static sMfltFlashCounters s_ota_session_metrics_flash_counters = { 0 };
+#endif
+
 void ota_session_metrics_start(void) {
   // save starting tcp_tx_count and tcp_rx_count metrics
   s_ota_session_metrics_lwip_stats_prev = (struct ota_session_metrics_lwip_stats_prev){
@@ -35,6 +41,11 @@ void ota_session_metrics_start(void) {
 
   // reset mbedtls tx/rx stats
   s_ota_session_metrics_mbedtls_stats = (struct ota_session_metrics_mbedtls_stats){ 0 };
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+  // initialize baseline for flash counters
+  (void)memfault_platform_metrics_get_flash_counters(&s_ota_session_metrics_flash_counters);
+#endif
 
   (void)MEMFAULT_METRICS_SESSION_START(ota);
 }
@@ -89,7 +100,14 @@ void ota_session_metrics_end(int ota_error_code) {
   sMemfaultMbedtlsMetricData mbedtls_stats;
   memfault_mbedtls_heartbeat_get_data(&mbedtls_stats);
   MEMFAULT_METRIC_SESSION_SET_UNSIGNED(ota_mbedtls_mem_max_bytes, ota, mbedtls_stats.mem_max_bytes);
-#endif
+#endif  // CONFIG_MEMFAULT_MBEDTLS_METRICS
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+  sMfltFlashCounters flash_counters =
+    memfault_platform_metrics_get_flash_counters(&s_ota_session_metrics_flash_counters);
+  MEMFAULT_METRIC_SESSION_ADD(flash_spi_erase_bytes, ota, flash_counters.erase_bytes);
+  MEMFAULT_METRIC_SESSION_ADD(flash_spi_write_bytes, ota, flash_counters.write_bytes);
+#endif  // CONFIG_MEMFAULT_METRICS_FLASH_ENABLE
 
   (void)MEMFAULT_METRICS_SESSION_END(ota);
 

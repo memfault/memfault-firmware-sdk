@@ -112,6 +112,12 @@ if (CONFIG_MEMFAULT_SYSTEM_TIME)
   )
 endif()
 
+if (CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_DEEP_SLEEP)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_deep_sleep.c
+  )
+endif()
+
 list(APPEND MEMFAULT_COMPONENTS_INC_FOLDERS
   include
   include/${MEMFAULT_ESP_IDF_PORT}
@@ -332,6 +338,10 @@ if(CONFIG_MEMFAULT_HEAP_STATS)
   endif()
 endif()
 
+if(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  target_link_libraries(${this_component} INTERFACE "-Wl,--wrap=esp_startup_start_app")
+endif()
+
 # Include a linker script fragment to support compact logs unconditionally. It's
 # Include a linker script fragment to support compact logs unconditionally. It's
 # only populated if compact logs are enabled, and otherwise is ignored. We keep
@@ -379,7 +389,11 @@ if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
   # Dependency chain:
   # app -> gen_project_binary -> memfault_build_id -> ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt -> ${IDF_PROJECT_EXECUTABLE}
   add_custom_target(memfault_build_id DEPENDS "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt")
-  add_dependencies(gen_project_binary memfault_build_id)
+  if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+    add_dependencies(gen_signed_project_binary memfault_build_id)
+  else()
+    add_dependencies(gen_project_binary memfault_build_id)
+  endif()
 endif()
 
 # Link required libraries and add compiler flags needed for FreeRTOS region collection

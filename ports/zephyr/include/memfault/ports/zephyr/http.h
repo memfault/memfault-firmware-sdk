@@ -211,6 +211,11 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx);
 //! < 0 : Error
 int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len);
 
+#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+//! Enable or disable periodic log upload at runtime
+void memfault_zephyr_port_http_periodic_upload_logs(bool enable);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

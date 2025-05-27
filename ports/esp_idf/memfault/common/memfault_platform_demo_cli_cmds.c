@@ -453,7 +453,7 @@ void memfault_register_cli(void) {
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "memfault_self_test",
     .help = "Performs on-device tests to validate integration with Memfault",
-    .hint = NULL,
+    .hint = "<reboot|reboot_verify|coredump_storage>",
     .func = memfault_demo_cli_cmd_self_test,
   }));
 #endif

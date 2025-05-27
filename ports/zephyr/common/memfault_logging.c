@@ -88,6 +88,7 @@ typedef struct MfltLogProcessCtx {
 
 #if CONFIG_LOG_MODE_IMMEDIATE
   int write_idx;
+  bool flushed;
 #endif
 
 } sMfltLogProcessCtx;
@@ -133,6 +134,14 @@ static void prv_log_process(const struct log_backend *const backend, union log_m
 
   log_output_ctx_set(&s_log_output_mflt, &log_process_ctx);
   log_output_msg_process(&s_log_output_mflt, &msg->log, flags);
+
+#if CONFIG_LOG_MODE_IMMEDIATE
+  if (!log_process_ctx.flushed) {
+    // In Zephyr 3.7.0, prv_log_out() won't flush data. Call it one more time to
+    // emulate the previous behavior.
+    (void)prv_log_out(NULL, 0, &log_process_ctx);
+  }
+#endif
 
   atomic_clear_bit(&s_log_output_busy_flag, MFLT_LOG_BUFFER_BUSY);
 }
@@ -182,8 +191,9 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   //       https://github.com/zephyrproject-rtos/zephyr/blob/15fdee04e3daf4d63064e4195aeeef6ccc52e694/subsys/logging/log_output.c#L105-L112
   //
   //  2. We will use length == 0 to determine that log has been entirely
-  //     flushed. log_output_msg_process() always calls log_output_flush() but in immediate mode
-  //     there is no buffer filled to be flushed so the length will be zero
+  //     flushed. On Zephyr 3.7.0, a change was made to no longer issue a zero-length
+  //     log_output_flush().log_output_msg_process() always calls log_output_flush() but in
+  //     immediate mode there is no buffer filled to be flushed so the length will be zero
   if (length > 0 && mflt_ctx->write_idx < sizeof(s_zephyr_render_buf)) {
     s_zephyr_render_buf[mflt_ctx->write_idx] = data[0];
     mflt_ctx->write_idx++;
@@ -204,6 +214,7 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
     }
     break;
   }
+  mflt_ctx->flushed = true;
   data = &s_zephyr_render_buf[0];
 #endif
 

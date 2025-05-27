@@ -330,6 +330,27 @@ static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc,
 }
 #endif
 
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD) && \
+  !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+static int prv_upload_logs(const struct shell *shell, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_print(shell, "Enter 'enable' or 'disable'");
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "enable")) {
+    memfault_zephyr_port_http_periodic_upload_logs(true);
+    shell_print(shell, "Periodic log upload enabled");
+  } else if (!strcmp(argv[1], "disable")) {
+    memfault_zephyr_port_http_periodic_upload_logs(false);
+    shell_print(shell, "Periodic log upload disabled");
+  } else {
+    shell_print(shell, "Unknown option. Enter 'enable' or 'disable'");
+  }
+  return 0;
+}
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
 //! different crash types that should result in a coredump being collected
@@ -359,6 +380,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_trigger_heartbeat),
   SHELL_CMD(log_capture, NULL, "trigger capture of current log buffer contents", prv_trigger_logs),
   SHELL_CMD(logs, NULL, "writes test logs to log buffer", prv_test_log),
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD) && \
+  !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+  SHELL_CMD(logs_upload, NULL, "enable/disable periodic upload of logs", prv_upload_logs),
+#endif
   SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),
 #if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)
   SHELL_CMD(self, NULL, "test Memfault components on-device", prv_self_test),

@@ -158,6 +158,34 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_fault_reason(unsigned int re
 // Note: There is no header exposed for this zephyr function
 extern void sys_arch_reboot(int type);
 
+//! Flush the data cache. This is used to ensure that any buffered data is
+//! written to RAM before the system reboots, on systems with a data cache.
+static void prv_flush_dcache(void) {
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 2)
+  // Zephyr 3.3.0 introduced a new API for flushing the data cache
+  (void)sys_cache_data_flush_all();
+
+  #if defined(CONFIG_DCACHE) && !defined(CONFIG_CACHE_MANAGEMENT) && \
+    !defined(MEMFAULT_SUPPRESS_MISSING_CACHE_MGMT_ERROR)
+    #error \
+      "CONFIG_DCACHE is enabled but CONFIG_CACHE_MANAGEMENT is not. Please enable CONFIG_CACHE_MANAGEMENT to avoid data loss."
+  #endif
+#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
+  // Zephyr 2.6.0-3.2.0 uses a different Kconfig symbol for indicating dcache is
+  // really enabled for the current SOC. The data cache flush API name is also
+  // different. Note: Memfault's minimum supported Zephyr version as of
+  // 2025-04-11 is 2.7.0.
+  #if defined(CONFIG_CPU_CORTEX_M_HAS_CACHE)
+  (void)sys_cache_data_all(K_CACHE_WB);
+
+    #if !defined(CONFIG_CACHE_MANAGEMENT) && !defined(MEMFAULT_SUPPRESS_MISSING_CACHE_MGMT_ERROR)
+      #error \
+        "CONFIG_DCACHE is enabled but CONFIG_CACHE_MANAGEMENT is not. Please enable CONFIG_CACHE_MANAGEMENT to avoid data loss."
+    #endif
+  #endif
+#endif
+}
+
 // Intercept zephyr/kernel/fatal.c:z_fatal_error(). Note that the signature
 // changed in zephyr 3.7.
 #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
@@ -217,6 +245,8 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
   memfault_fault_handler(&reg, fault_reason);
 
 #if MEMFAULT_FAULT_HANDLER_RETURN
+  prv_flush_dcache();
+
   // instead of returning, call the Zephyr fatal error handler. This is done
   // here instead of in memfault_platform_reboot(), because we need to pass the
   // function parameters through
@@ -229,9 +259,7 @@ MEMFAULT_WEAK MEMFAULT_NORETURN void memfault_platform_reboot(void) {
   memfault_platform_halt_if_debugging();
 #endif
 
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-  (void)sys_cache_data_flush_all();
-#endif
+  prv_flush_dcache();
 
   sys_arch_reboot(0);
   CODE_UNREACHABLE;

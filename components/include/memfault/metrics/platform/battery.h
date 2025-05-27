@@ -16,7 +16,17 @@ extern "C" {
 #endif
 
 typedef struct MfltPlatformBatterySoc {
-  // The current state of charge of the battery, typically in percent (0-100%).
+  // Battery state of charge, scaled by MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE (default: 1).
+  // Valid range: 0 to (100 * scale value).
+  //
+  // Example mappings:
+  // +------------+-------------+------------+-------------------------------+
+  // | Battery %  | Scale Value | .soc Value | battery_soc_pct in Memfault   |
+  // +------------+-------------+------------+-------------------------------+
+  // | 85%        | 1           | 85         | 85                            |
+  // | 85.3%      | 10          | 853        | 85.3                          |
+  // | 85.37%     | 100         | 8537       | 85.37                         |
+  // +------------+-------------+------------+-------------------------------+
   uint32_t soc;
   // Whether the battery is currently discharging.
   bool discharging;

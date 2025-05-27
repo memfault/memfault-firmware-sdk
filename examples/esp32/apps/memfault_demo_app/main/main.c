@@ -15,6 +15,7 @@
 #include "argtable3/argtable3.h"
 #include "button.h"
 #include "cmd_decl.h"
+#include "deep_sleep.h"
 #include "driver/uart.h"
 #include "esp_console.h"
 #include "esp_log.h"
@@ -30,6 +31,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "ota_session_metrics.h"
+#include "sdkconfig.h"
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0)
   #include "driver/uart_vfs.h"
@@ -412,6 +414,8 @@ static void prv_load_memfault_settings_from_nvs(void) {
 }
 
   #if defined(CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM)
+// Simulate a user-defined memfault_platform_get_time_since_boot_ms
+// implementation, just as an example
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();
   return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
@@ -468,6 +472,8 @@ void app_main() {
   settings_register_shell_commands();
 
   prv_load_memfault_settings_from_nvs();
+
+  deep_sleep_wakeup();
 
   #if MEMFAULT_COMPACT_LOG_ENABLE
   MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "This is a compact log example");
