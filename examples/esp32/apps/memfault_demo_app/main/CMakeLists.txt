@@ -10,6 +10,7 @@ if (CONFIG_MEMFAULT)
       COMPONENT_SRCS
       cmd_app.c
       cmd_system.c
+      deep_sleep.c
       metrics.c
       ota_session_metrics.c
    )

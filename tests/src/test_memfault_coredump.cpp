@@ -248,8 +248,15 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
   const uint32_t regs[] = { 0x10111213, 0x20212223, 0x30313233, 0x40414243, 0x50515253 };
   const uint32_t trace_reason = 0xdeadbeef;
 
-  // update coredump_size_without_build_id if you add/remove regions.
+// update coredump_size_without_build_id if you add/remove regions.
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
   const size_t coredump_size_without_build_id = 308;
+  const size_t coredump_metadata_size = 182;
+#else
+  const size_t coredump_size_without_build_id = 296;
+  const size_t coredump_metadata_size = 169;
+#endif
+  (void)coredump_metadata_size;
   const size_t coredump_size_with_build_id =
     coredump_size_without_build_id + 20 /* sha1 */ + 12 /* sMfltCoredumpBlock */;
   for (size_t i = 1; i <= coredump_size_with_build_id; i++) {
@@ -281,7 +288,7 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpStorageTooSmall) {
 
     // once we get to the memory regions section, the save can succeed, we just won't get all the
     // memory regions!
-    CHECK(success == (i >= 182));
+    CHECK(success == (i >= coredump_metadata_size));
   }
 }
 
@@ -295,7 +302,11 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpTruncated) {
   fake_memfault_platform_coredump_storage_setup(NULL, 0, 0);
   const size_t space_needed = prv_compute_space_needed_with_build_id(
     (void *)&regs, sizeof(regs), trace_reason, do_collect_build_id);
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
   LONGS_EQUAL(292, space_needed);
+#else
+  LONGS_EQUAL(280, space_needed);
+#endif
 
   size_t num_regions;
   const sMfltCoredumpRegion *regions = memfault_platform_coredump_get_regions(NULL, &num_regions);
@@ -462,9 +473,13 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
 
   struct MemfaultDeviceInfo info;
   memfault_platform_get_device_info(&info);
-  total_length += (6 * segment_hdr_sz) + sizeof(s_fake_memfault_build_id) +
-                  strlen(info.device_serial) + strlen(info.hardware_version) +
-                  strlen(info.software_version) + strlen(info.software_type) + sizeof(uint32_t);
+  total_length += (5 * segment_hdr_sz) + sizeof(s_fake_memfault_build_id) +
+                  strlen(info.hardware_version) + strlen(info.software_version) +
+                  strlen(info.software_type) + sizeof(uint32_t);
+
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
+  total_length += segment_hdr_sz + strlen(info.device_serial);
+#endif
 
   const uint32_t pad_needed = prv_compute_padding_needed(total_length);
   total_length += pad_needed ? pad_needed + segment_hdr_sz : 0;
@@ -522,11 +537,13 @@ TEST(MfltCoredumpTestGroup, Test_MfltCoredumpSaveCore) {
   MEMCMP_EQUAL(s_fake_memfault_build_id, coredump_buf, sizeof(s_fake_memfault_build_id));
   coredump_buf += sizeof(s_fake_memfault_build_id);
 
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
   memcpy(&actual_value, coredump_buf, sizeof(actual_value));
   LONGS_EQUAL(2, actual_value);
   coredump_buf += segment_hdr_sz;
   MEMCMP_EQUAL(info.device_serial, coredump_buf, strlen(info.device_serial));
   coredump_buf += strlen(info.device_serial);
+#endif
 
   memcpy(&actual_value, coredump_buf, sizeof(actual_value));
   LONGS_EQUAL(10, actual_value);

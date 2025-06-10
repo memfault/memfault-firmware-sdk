@@ -58,10 +58,31 @@ typedef struct {
   // before trying to collect the region.
   sMfltLogStorageRegionInfo region_info;
 } sMfltRamLogger;
-
 static sMfltRamLogger s_memfault_ram_logger = {
   .enabled = false,
 };
+
+#if MEMFAULT_LOG_RESTORE_STATE
+MEMFAULT_STATIC_ASSERT(sizeof(sMfltRamLogger) == MEMFAULT_LOG_STATE_SIZE_BYTES,
+                       "Update MEMFAULT_LOG_STATE_SIZE_BYTES to match s_memfault_ram_logger.");
+// clang-format off
+// Uncomment below to see the size of MEMFAULT_LOG_STATE_SIZE_BYTES at compile time
+// #define BOOM(size_) MEMFAULT_PACKED_STRUCT kaboom { char dummy[size_]; }; char (*__kaboom)[sizeof(struct kaboom)] = 1;
+// BOOM(MEMFAULT_LOG_STATE_SIZE_BYTES)
+// BOOM(sizeof(sMfltRamLogger))
+// clang-format on
+
+sMfltLogSaveState memfault_log_get_state(void) {
+  sMfltLogSaveState state = { 0 };
+  if (s_memfault_ram_logger.enabled) {
+    state.context = &s_memfault_ram_logger;
+    state.context_len = sizeof(s_memfault_ram_logger);
+    state.storage = s_memfault_ram_logger.circ_buffer.storage;
+    state.storage_len = s_memfault_ram_logger.circ_buffer.total_space;
+  }
+  return state;
+}
+#endif  // MEMFAULT_LOG_RESTORE_STATE
 
 static uint16_t prv_compute_log_region_crc16(void) {
   return memfault_crc16_compute(MEMFAULT_CRC16_INITIAL_VALUE, &s_memfault_ram_logger.region_info,
@@ -248,6 +269,8 @@ static bool prv_read_log_iter_callback(sMfltLogIterator *iter) {
 }
 
 static bool prv_read_log(sMemfaultLog *log) {
+  // Note: if the log state is restored through a deep sleep loss of system
+  // state, this static variable will be desynchronized.
   static uint32_t s_last_dropped_count = 0;
 
   if (s_last_dropped_count != s_memfault_ram_logger.dropped_msg_count) {
@@ -509,18 +532,42 @@ bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {
     return false;
   }
 
-  s_memfault_ram_logger = (sMfltRamLogger){
-    .version = MEMFAULT_RAM_LOGGER_VERSION,
-    .min_log_level = MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL,
-    .region_info = {
-      .storage = storage_buffer,
-      .len = buffer_len,
-    },
-  };
+#if MEMFAULT_LOG_RESTORE_STATE
+  sMfltLogSaveState state = { 0 };
+  bool retval = memfault_log_restore_state(&state);
+  if (retval && (sizeof(s_memfault_ram_logger) == state.context_len) &&
+      (buffer_len == state.storage_len)) {
+    // restore the state
+    memmove(&s_memfault_ram_logger, state.context, sizeof(s_memfault_ram_logger));
+    // restore the storage buffer
+    s_memfault_ram_logger.circ_buffer.storage = storage_buffer;
+    memmove(s_memfault_ram_logger.circ_buffer.storage, state.storage, state.storage_len);
+    s_memfault_ram_logger.circ_buffer.total_space = state.storage_len;
+  }
+  // if the user didn't restore the state or there was a size mismatch, we
+  // need to initialize it
+  else {
+    if (retval) {
+      MEMFAULT_LOG_ERROR("Log restore size mismatch: %d != %d or %d != %d",
+                         (int)sizeof(s_memfault_ram_logger), (int)state.context_len,
+                         (int)buffer_len, (int)state.storage_len);
+    }
+#else
+  {
+#endif  // MEMFAULT_LOG_RESTORE_STATE
+    s_memfault_ram_logger = (sMfltRamLogger){
+      .version = MEMFAULT_RAM_LOGGER_VERSION,
+      .min_log_level = MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL,
+      .region_info = {
+        .storage = storage_buffer,
+        .len = buffer_len,
+      },
+    };
+
+    memfault_circular_buffer_init(&s_memfault_ram_logger.circ_buffer, storage_buffer, buffer_len);
+  }
 
   s_memfault_ram_logger.region_info.crc16 = prv_compute_log_region_crc16();
-
-  memfault_circular_buffer_init(&s_memfault_ram_logger.circ_buffer, storage_buffer, buffer_len);
 
   // finally, enable logging
   s_memfault_ram_logger.enabled = true;

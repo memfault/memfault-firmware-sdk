@@ -292,12 +292,14 @@ static bool prv_write_device_info_blocks(sMfltCoredumpWriteCtx *ctx) {
   }
 #endif
 
+#if MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL
   if (info.device_serial) {
     if (!prv_write_non_memory_block(kMfltCoredumpRegionType_DeviceSerial, info.device_serial,
                                     strlen(info.device_serial), ctx)) {
       return false;
     }
   }
+#endif
 
   if (info.software_version) {
     if (!prv_write_non_memory_block(kMfltCoredumpRegionType_SoftwareVersion, info.software_version,

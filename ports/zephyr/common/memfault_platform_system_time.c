@@ -12,7 +12,10 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
 // clang-format on
 
-LOG_MODULE_REGISTER(mflt_systime /* , LOG_LEVEL_DBG */);
+// Disable logging in this module. memfault_platform_time_get_current() can be
+// called from the Memfault logging subsystem, and if that function then logs,
+// it can infinitely recurse.
+LOG_MODULE_REGISTER(mflt_systime, LOG_LEVEL_NONE);
 
 // This implementation uses the Nordic Date-Time library:
 // https://docs.nordicsemi.com/bundle/ncs-2.5.0/page/nrf/libraries/others/date_time.html

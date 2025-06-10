@@ -18,6 +18,7 @@ manifest:
         # Limit the Zephyr modules to the required set
         name-allowlist:
             - cmsis
+            - cmsis_6
             - picolibc
             - hal_stm32
 

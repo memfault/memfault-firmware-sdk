@@ -487,7 +487,7 @@ int memfault_esp_port_http_client_post_data(void) {
   const eMfltPostDataStatus rv = (eMfltPostDataStatus)memfault_http_client_post_data(http_client);
   switch (rv) {
     case kMfltPostDataStatus_Success:
-      MEMFAULT_LOG_INFO("Data posted successfully, %zu bytes sent", g_chunk_bytes_sent);
+      MEMFAULT_LOG_INFO("Data posted successfully, %d bytes sent", (int)g_chunk_bytes_sent);
   #if defined(CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS)
       memfault_metrics_connectivity_record_memfault_sync_success();
   #endif

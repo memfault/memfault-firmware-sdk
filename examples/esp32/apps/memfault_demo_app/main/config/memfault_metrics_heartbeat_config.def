@@ -21,6 +21,10 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tls_sent_bytes, kMemfaultMetricType
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_tls_recv_bytes, kMemfaultMetricType_Unsigned, ota)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(ota_mbedtls_mem_max_bytes, kMemfaultMetricType_Unsigned,
                                          ota)
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(flash_spi_erase_bytes, kMemfaultMetricType_Unsigned, ota)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(flash_spi_write_bytes, kMemfaultMetricType_Unsigned, ota)
+#endif
 
 // Thread stack usage metrics.
 // Note: We test this application in CI in a "zero-config" form, by removing

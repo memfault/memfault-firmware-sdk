@@ -25,10 +25,18 @@ bool memfault_log_data_source_has_been_triggered(void) {
   return s_fake_data_source_has_been_triggered;
 }
 
+static bool s_memfault_log_restore_state_retval;
+static sMfltLogSaveState s_memfault_log_restore_state;
+bool memfault_log_restore_state(sMfltLogSaveState *state) {
+  *state = s_memfault_log_restore_state;
+  return s_memfault_log_restore_state_retval;
+}
+
 TEST_GROUP(MemfaultLog) {
   void setup() {
     fake_memfault_metrics_platform_locking_reboot();
     s_fake_data_source_has_been_triggered = false;
+    s_memfault_log_restore_state_retval = false;
 
     // we selectively enable memfault_log_handle_saved_callback() for certain tests
     mock().disable();
@@ -222,6 +230,11 @@ TEST(MemfaultLog, Test_MemfaultLogExpireOldest) {
   memfault_log_save_preformatted(level, log3, strlen(log3));
 
   prv_run_header_check(&s_ram_log_store[4], level, log3, strlen(log3));
+
+  uint32_t dropped_count = memfault_log_get_dropped_count();
+  uint32_t recorded_count = memfault_log_get_recorded_count();
+  LONGS_EQUAL(2, dropped_count);
+  LONGS_EQUAL(4, recorded_count);
 }
 
 TEST(MemfaultLog, Test_MemfaultLogFrozenBuffer) {
@@ -402,6 +415,43 @@ TEST(MemfaultLog, Test_LogExportNullLog) {
   if (setjmp(s_assert_jmp_buf) == 0) {
     memfault_log_export_log(NULL);
   }
+}
+
+TEST(MemfaultLog, Test_SaveAndRestoreState) {
+  uint8_t s_ram_log_store[20];
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+
+  eMemfaultPlatformLogLevel level = kMemfaultPlatformLogLevel_Info;
+  const char *log0 = "Normal Log";
+  const size_t log0_len = strlen(log0);
+  memfault_log_save_preformatted(level, log0, log0_len);
+
+  // Save the current state
+  sMfltLogSaveState state = memfault_log_get_state();
+  void *context_storage = malloc(state.context_len);
+  void *storage_storage = malloc(state.storage_len);
+  memcpy(context_storage, state.context, state.context_len);
+  memcpy(storage_storage, state.storage, state.storage_len);
+  state.context = context_storage;
+  state.storage = storage_storage;
+
+  // Reset the logger- this will wipe out the internal state
+  memfault_log_reset();
+  // Zero out the log buffer
+  memset(s_ram_log_store, 0, sizeof(s_ram_log_store));
+
+  // Restore the state by rebooting the log system
+  s_memfault_log_restore_state = state;
+  s_memfault_log_restore_state_retval = true;
+  memfault_log_boot(s_ram_log_store, sizeof(s_ram_log_store));
+  s_memfault_log_restore_state_retval = false;
+  free(context_storage);
+  free(storage_storage);
+
+  // Check that the log is still there
+  prv_run_header_check(s_ram_log_store, level, log0, log0_len);
+
+  prv_read_log_and_check(level, kMemfaultLogRecordType_Preformatted, log0, log0_len);
 }
 
 #if MEMFAULT_COMPACT_LOG_ENABLE

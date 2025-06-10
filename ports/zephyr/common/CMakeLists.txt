@@ -3,6 +3,7 @@ zephyr_library_sources(memfault_platform_core.c)
 zephyr_library_sources(memfault_zephyr_ram_regions.c)
 zephyr_library_sources(memfault_platform_lock.c)
 zephyr_library_sources(memfault_platform_coredump_regions.c)
+zephyr_library_sources(memfault_platform_metrics.c)
 zephyr_library_sources(memfault_platform_system_time.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.c)
@@ -13,10 +14,6 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_ST
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL_SELF_TEST memfault_self_test_platform.c)
 
-if (NOT CONFIG_MEMFAULT_METRICS_TIMER_CUSTOM)
-  zephyr_library_sources(memfault_platform_metrics.c)
-endif()
-
 if (NOT CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM)
   zephyr_library_sources(memfault_software_watchdog.c)
 endif()
@@ -26,6 +23,10 @@ if (CONFIG_MEMFAULT_CACHE_FAULT_REGS)
   # of the fault registers before Zephyr consumes and
   # clears the CFSR. See ports/zephyr/common/memfault_platform_core.c.
   zephyr_ld_options(-Wl,--wrap=z_arm_fault)
+endif()
+
+if (CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  zephyr_ld_options(-Wl,--wrap=main)
 endif()
 
 # Allow users to Kconfig memfault logging as a backend as needed. See

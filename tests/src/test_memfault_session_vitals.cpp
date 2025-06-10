@@ -44,7 +44,10 @@ bool memfault_reboot_tracking_metrics_session_was_active(uint32_t index) {
   return mock().actualCall(__func__).withParameter("index", index).returnBoolValueOrDefault(true);
 }
 
-// fake
+// fakes
+void memfault_metrics_reliability_boot(sMemfaultMetricsReliabilityCtx *ctx) {
+  (void)ctx;
+}
 void memfault_metrics_reliability_collect(void) { }
 }
 
@@ -93,10 +96,6 @@ TEST(SessionVitals, Test_SessionOperationalCrashes) {
   MEMFAULT_METRICS_SESSION_START(test_key_session);
 
   mock()
-    .expectOneCall("memfault_platform_metrics_timer_boot")
-    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
-    .andReturnValue(true);
-  mock()
     .expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
     .andReturnValue(FAKE_STORAGE_SIZE);
   bool unexpected_reboot = true;
@@ -128,6 +127,11 @@ TEST(SessionVitals, Test_SessionOperationalCrashes) {
 
   mock().expectOneCall("memfault_reboot_tracking_clear_metrics_sessions");
 
+  mock()
+    .expectOneCall("memfault_platform_metrics_timer_boot")
+    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
+    .andReturnValue(true);
+
   prv_call_metrics_boot(1);
 }
 
@@ -143,10 +147,6 @@ TEST(SessionVitals, Test_SessionOperationalCrashesExpectedReboot) {
   MEMFAULT_METRICS_SESSION_START(test_key_session);
 
   mock()
-    .expectOneCall("memfault_platform_metrics_timer_boot")
-    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
-    .andReturnValue(true);
-  mock()
     .expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
     .andReturnValue(FAKE_STORAGE_SIZE);
   bool unexpected_reboot = false;
@@ -156,6 +156,10 @@ TEST(SessionVitals, Test_SessionOperationalCrashesExpectedReboot) {
                                   sizeof(unexpected_reboot))
     .andReturnValue(0);
   mock().expectOneCall("memfault_reboot_tracking_clear_metrics_sessions");
+  mock()
+    .expectOneCall("memfault_platform_metrics_timer_boot")
+    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
+    .andReturnValue(true);
 
   prv_call_metrics_boot(0);
 }
@@ -165,10 +169,6 @@ TEST(SessionVitals, Test_SessionOperationalCrashesExpectedReboot) {
 //    2. boot metrics with unexpected_reboot=true
 //    3. confirm no session is serialized, and session_active bit is cleared
 TEST(SessionVitals, Test_SessionOperationalCrashesInactive) {
-  mock()
-    .expectOneCall("memfault_platform_metrics_timer_boot")
-    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
-    .andReturnValue(true);
   mock()
     .expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
     .andReturnValue(FAKE_STORAGE_SIZE);
@@ -191,6 +191,11 @@ TEST(SessionVitals, Test_SessionOperationalCrashesInactive) {
     .andReturnValue(false);
 
   mock().expectOneCall("memfault_reboot_tracking_clear_metrics_sessions");
+
+  mock()
+    .expectOneCall("memfault_platform_metrics_timer_boot")
+    .withParameter("period_sec", MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS)
+    .andReturnValue(true);
 
   prv_call_metrics_boot(1);
 }

@@ -229,11 +229,24 @@ static int prv_memfault_demo_cli_cmd_time(int argc, char **argv) {
   }
 
   if (time.type == kMemfaultCurrentTimeType_UnixEpochTimeSec) {
-    MEMFAULT_LOG_INFO("Current time: %llu", time.info.unix_timestamp_secs);
+    // convert to broken-down time
+    struct tm broken_down_time;
+    time_t unix_time = (time_t)time.info.unix_timestamp_secs;
+    localtime_r(&unix_time, &broken_down_time);
+    MEMFAULT_LOG_INFO("Current time: %llu | %04d-%02d-%02d %02d:%02d:%02d",
+                      time.info.unix_timestamp_secs, broken_down_time.tm_year + 1900,
+                      broken_down_time.tm_mon + 1, broken_down_time.tm_mday,
+                      broken_down_time.tm_hour, broken_down_time.tm_min, broken_down_time.tm_sec);
   } else {
     MEMFAULT_LOG_INFO("Unknown time type: %d", time.type);
   }
 
+  return 0;
+}
+
+static int prv_event_storage_used(int argc, char **argv) {
+  MEMFAULT_LOG_INFO("Event storage used: %zu/%zu bytes", memfault_event_storage_bytes_used(),
+                    CONFIG_MEMFAULT_EVENT_STORAGE_RAM_SIZE);
   return 0;
 }
 
@@ -426,6 +439,14 @@ void memfault_register_cli(void) {
     .func = prv_memfault_demo_cli_cmd_time,
   }));
 
+  // dump the memfault_event_storage_bytes_used() result
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "event_storage_used",
+    .help = "Print the number of bytes used in event storage",
+    .hint = NULL,
+    .func = prv_event_storage_used,
+  }));
+
 #if MEMFAULT_ESP_HTTP_CLIENT_ENABLE
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "post_chunks",
@@ -453,7 +474,7 @@ void memfault_register_cli(void) {
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
     .command = "memfault_self_test",
     .help = "Performs on-device tests to validate integration with Memfault",
-    .hint = NULL,
+    .hint = "<reboot|reboot_verify|coredump_storage>",
     .func = memfault_demo_cli_cmd_self_test,
   }));
 #endif

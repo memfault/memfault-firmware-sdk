@@ -7,7 +7,10 @@
 #include "memfault/core/platform/core.h"
 
 #include <stdio.h>
+#include <sys/types.h>
+#if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/hwinfo.h)
+#endif
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(logging/log_ctrl.h)
@@ -62,9 +65,11 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 }
 #endif
 
+#if defined(CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET)
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   return k_uptime_get();
 }
+#endif
 
 //! Provide a strong implementation of assert_post_action for Zephyr's built-in
 //! __ASSERT() macro.
@@ -83,6 +88,27 @@ void assert_post_action(const char *file, unsigned int line)
 }
 #endif
 
+#if defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+  #if defined(CONFIG_BOOTARGS)
+extern int __real_main(int, char **);
+int __wrap_main(int argc, char **argv);
+int __wrap_main(int argc, char **argv) {
+  #else
+extern int __real_main(void);
+int __wrap_main(void);
+int __wrap_main(void) {
+  #endif
+  // Record the boot time once on startup, when main() is called.
+  MEMFAULT_METRIC_SET_UNSIGNED(boot_time_ms, k_uptime_get());
+
+  #if defined(CONFIG_BOOTARGS)
+  return __real_main(argc, argv);
+  #else
+  return __real_main();
+  #endif
+}
+#endif  // CONFIG_MEMFAULT_METRICS_BOOT_TIME
+
 // On boot-up, log out any information collected as to why the
 // reset took place
 
@@ -91,8 +117,7 @@ MEMFAULT_PUT_IN_SECTION(CONFIG_MEMFAULT_REBOOT_TRACKING_REGION) static uint8_t
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_SIZE];
 
-#if !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
-  #if defined(CONFIG_HWINFO)
+#if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
 static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset_reason_reg) {
   // Some hwinfo device implementations will use a value of 0 (unset) to
   // implicitly specify a power on reset, for example the nRF52840:
@@ -148,12 +173,13 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
 
   return reset_reason;
 }
-  #endif  // CONFIG_HWINFO
+#endif  // CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO
 
+#if !defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM)
 MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
   uint32_t reset_reason_reg = 0;
-  #if defined(CONFIG_HWINFO)
+  #if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
   int rv = hwinfo_get_reset_cause(&reset_reason_reg);
 
   if (rv == 0) {
@@ -199,14 +225,14 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   (void)hwinfo_clear_reset_cause();
     #endif
 
-  #endif  // CONFIG_HWINFO
+  #endif  // CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO
 
   *info = (sResetBootupInfo){
     .reset_reason = reset_reason,
     .reset_reason_reg = reset_reason_reg,
   };
 }
-#endif
+#endif  // !CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM
 
 void memfault_zephyr_collect_reset_info(void) {
   memfault_reboot_tracking_collect_reset_info(s_memfault_event_storage);
@@ -219,7 +245,7 @@ MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
   static const char *dev_str = "UNKNOWN";
 
 // Obtain the device id
-#if defined(CONFIG_HWINFO)
+#if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
   ssize_t length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
 #else
   ssize_t length = 0;

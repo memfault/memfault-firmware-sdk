@@ -354,7 +354,14 @@ uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
                                 size_t data_len_bytes) {
   return crc16_itu_t(crc_initial_value, data, data_len_bytes);
 }
+#endif
 
+#if defined(CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM)
+uint64_t memfault_platform_get_time_since_boot_ms(void) {
+  // Simple custom implementation, identical to the default one, to demonstrate
+  // how to override the time since boot function.
+  return k_uptime_get();
+}
 #endif
 
 int main(void) {

@@ -71,7 +71,7 @@ MEMFAULT_WEAK bool memfault_esp_port_get_chunk(void *buf, size_t *buf_len) {
 
 #endif  // !defined(CONFIG_MEMFAULT_DATA_CHUNK_HANDLERS_CUSTOM)
 
-#if !defined(CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM)
+#if defined(CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_ESP_TIMER)
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   const int64_t time_since_boot_us = esp_timer_get_time();
   return (uint64_t)(time_since_boot_us / 1000) /* us per ms */;
@@ -98,7 +98,7 @@ void memfault_platform_halt_if_debugging(void) {
   }
 }
 
-static void prv_record_reboot_reason(void) {
+static eMemfaultRebootReason prv_record_reboot_reason(void) {
   eMemfaultRebootReason reboot_reason = kMfltRebootReason_Unknown;
   int esp_reset_cause = (int)esp_reset_reason();
   switch (esp_reset_cause) {
@@ -163,6 +163,8 @@ static void prv_record_reboot_reason(void) {
   };
 
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
+  return reboot_reason;
 }
 
 static SemaphoreHandle_t s_memfault_lock;
@@ -234,12 +236,21 @@ void memfault_boot(void) {
   esp_log_set_vprintf(&prv_memfault_log_wrapper);
 #endif
 
-  prv_record_reboot_reason();
+  eMemfaultRebootReason reboot_reason = prv_record_reboot_reason();
+  (void)reboot_reason;
 
   const sMemfaultEventStorageImpl *evt_storage =
     memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
   memfault_trace_event_boot(evt_storage);
-  memfault_reboot_tracking_collect_reset_info(evt_storage);
+
+// If CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT is enabled, and wakeup reason is Deep
+// Sleep, don't record the reset reason again
+#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT)
+  if (reboot_reason != kMfltRebootReason_DeepSleep)
+#endif
+  {
+    memfault_reboot_tracking_collect_reset_info(evt_storage);
+  }
 
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),

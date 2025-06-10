@@ -78,7 +78,7 @@ That's it! You should be good to go!
 ### Memfault Project Key
 
 An API key will need to be configured for Memfault HTTP client to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
+with Memfault's web services. Go to <https://app.memfault.com/>, navigate to the
 project you want to use and select 'Settings'. Copy the 'Project Key', and
 configure it; either by running `idf.py menuconfig` and setting the
 `MEMFAULT_PROJECT_KEY` config value, or by inserting to `sdkconfig.defaults`:
@@ -149,7 +149,7 @@ Let's walk through this process step by step:
 ### Memfault Project Key
 
 An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Go to https://app.memfault.com/, navigate to the
+with Memfault's web services. Go to <https://app.memfault.com/>, navigate to the
 project you want to use and select 'Settings'. Copy the 'Project Key' and paste
 it into `esp32/apps/memfault_demo_app/main/config.c`, replacing
 `<YOUR PROJECT KEY HERE>` with your API key. Save the file and rebuild, reflash
@@ -283,6 +283,12 @@ The following steps can be used to exercise OTA functionality:
    D (26028) mflt: Posting Memfault Data
    D (33288) mflt: Posting Memfault Data Complete!
    I (33288) mflt: Result: 0
+   ```
+
+   Optionally, persist these settings to non-volatile memory so your device auto-connects to your network on boot:
+
+   ```bash
+   esp32> wifi_config <ssid> <pw>
    ```
 
 3. Use `idf.py menuconfig` to change the value of

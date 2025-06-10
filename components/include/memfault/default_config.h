@@ -58,7 +58,13 @@ extern "C" {
   #define MEMFAULT_ASSERT_CSTDLIB_HOOK_ENABLED 1
 #endif
 
-//! Controls whether or not device serial is encoded in events
+//! Controls whether or not device serial is encoded in messages. Applies to all
+//! Data Sources exported by the SDK:
+//!
+//!   - Coredumps
+//!   - Events (Reboots, Heartbeats, Trace Events)
+//!   - Logs
+//!   - CDR
 //!
 //! When disabled (default), the device serial is derived from the API route
 //! used to post data to the cloud
@@ -172,6 +178,13 @@ extern "C" {
   #define MEMFAULT_LOG_TIMESTAMPS_ENABLE 1
 #endif
 
+//! Enable save/restore of log state.  This is useful for systems that
+//! enter a deep sleep state, and need to persist the log state for
+//! later restoration.
+#ifndef MEMFAULT_LOG_RESTORE_STATE
+  #define MEMFAULT_LOG_RESTORE_STATE 0
+#endif
+
 //! Controls whether or not multiple events will be batched into a single
 //! message when reading information via the event storage data source.
 //!
@@ -212,6 +225,14 @@ extern "C" {
 //! need to exclude the weak definition entirely.
 #ifndef MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME
   #define MEMFAULT_EVENT_STORAGE_STUB_SYSTEM_TIME 1
+#endif
+
+//! Enable save/restore of event storage state, similar to
+//! MEMFAULT_LOG_RESTORE_STATE. This is not necessary if non-volatile event
+//! storage is enabled, as the event storage data will be saved to non-volatile
+//! storage automatically.
+#ifndef MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+  #define MEMFAULT_EVENT_STORAGE_RESTORE_STATE 0
 #endif
 
 //! The max size of a chunk. Should be a size suitable to write to transport
@@ -378,6 +399,13 @@ extern "C" {
 //! memory but prevents the use of Metrics Sessions.
 #ifndef MEMFAULT_METRICS_SESSIONS_ENABLED
   #define MEMFAULT_METRICS_SESSIONS_ENABLED 1
+#endif
+
+//! Enable save/restore of metrics component state. This is useful for systems
+//! that enter a deep sleep state, and want to persist the metrics state
+//! across sleep cycles.
+#ifndef MEMFAULT_METRICS_RESTORE_STATE
+  #define MEMFAULT_METRICS_RESTORE_STATE 0
 #endif
 
 //

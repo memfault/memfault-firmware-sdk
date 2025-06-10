@@ -39,7 +39,10 @@ size_t memfault_metrics_heartbeat_compute_worst_case_storage_size(void) {
   return (size_t)mock().actualCall(__func__).returnIntValueOrDefault(FAKE_STORAGE_SIZE);
 }
 
-// fake
+// fakes
+void memfault_metrics_reliability_boot(sMemfaultMetricsReliabilityCtx *ctx) {
+  (void)ctx;
+}
 void memfault_metrics_reliability_collect(void) { }
 }
 

@@ -109,6 +109,12 @@ TEST(MemfaultEventStorage, Test_MemfaultMetricStoreSingleEvent) {
   // should be a no-op
   s_storage_impl->finish_write_cb(rollback);
 
+  // test memfault_event_storage_bytes_used() + memfault_event_storage_bytes_free()
+  size_t bytes_used = memfault_event_storage_bytes_used();
+  size_t bytes_free = memfault_event_storage_bytes_free();
+  LONGS_EQUAL(sizeof(payload) + MEMFAULT_STORAGE_OVERHEAD, bytes_used);
+  LONGS_EQUAL(s_ram_store_size - bytes_used, bytes_free);
+
   prv_assert_read((void *)&payload, sizeof(payload));
 
   // should be a no-op
@@ -598,3 +604,88 @@ TEST(MemfaultEventStorage, Test_EventStorageBoot) {
   CHECK(storage_impl != NULL);
   CHECK(memfault_event_storage_booted());
 }
+
+#if MEMFAULT_EVENT_STORAGE_RESTORE_STATE
+static sMfltEventStorageSaveState s_memfault_event_restore_state = { 0 };
+static bool s_memfault_event_restore_state_retval = false;
+bool memfault_event_storage_restore_state(sMfltEventStorageSaveState *state) {
+  *state = s_memfault_event_restore_state;
+  return s_memfault_event_restore_state_retval;
+}
+
+TEST(MemfaultEventStorage, Test_SaveAndRestore) {
+  size_t space_available = s_storage_impl->begin_write_cb();
+  LONGS_EQUAL(s_ram_store_size - MEMFAULT_STORAGE_OVERHEAD, space_available);
+
+  const uint8_t payload[] = { 0x1, 0x2, 0x3, 0x4 };
+  s_storage_impl->append_data_cb(&payload, sizeof(payload));
+
+  // complete the transaction
+  const bool rollback = false;
+  s_storage_impl->finish_write_cb(rollback);
+
+  // should be a no-op
+  s_storage_impl->finish_write_cb(rollback);
+
+  // Save the current state
+  sMfltEventStorageSaveState state = memfault_event_storage_get_state();
+  void *context_storage = malloc(state.context_len);
+  void *storage_storage = malloc(state.storage_len);
+  memcpy(context_storage, state.context, state.context_len);
+  memcpy(storage_storage, state.storage, state.storage_len);
+  state.context = context_storage;
+  state.storage = storage_storage;
+
+  // Reset the event storage
+  memset(s_ram_store, 0, s_ram_store_size);
+  // this also wipes out the internal state
+  memfault_event_storage_reset();
+
+  // First test booting without restoring the state
+  s_memfault_event_restore_state_retval = false;
+  memfault_events_storage_boot(s_ram_store, s_ram_store_size);
+  // Should be empty
+  space_available = s_storage_impl->begin_write_cb();
+  LONGS_EQUAL(s_ram_store_size - MEMFAULT_STORAGE_OVERHEAD, space_available);
+  // Read should fail since there are no events
+  uint8_t c;
+  bool success = prv_fake_event_impl_read(0, &c, sizeof(c));
+  CHECK(!success);
+
+  // Reset again
+  memset(s_ram_store, 0, s_ram_store_size);
+  memfault_event_storage_reset();
+  // Now test with a bad size. Should result in a blank state
+  s_memfault_event_restore_state = state;
+  s_memfault_event_restore_state.context_len = 0;
+  s_memfault_event_restore_state_retval = true;
+  memfault_events_storage_boot(s_ram_store, s_ram_store_size);
+  s_memfault_event_restore_state_retval = false;
+  // Should be empty
+  space_available = s_storage_impl->begin_write_cb();
+  LONGS_EQUAL(s_ram_store_size - MEMFAULT_STORAGE_OVERHEAD, space_available);
+  // Read should fail since there are no events
+  success = prv_fake_event_impl_read(0, &c, sizeof(c));
+  CHECK(!success);
+
+  // This time we should restore the state
+  s_memfault_event_restore_state = state;
+  s_memfault_event_restore_state_retval = true;
+  memfault_events_storage_boot(s_ram_store, s_ram_store_size);
+  s_memfault_event_restore_state_retval = false;
+  free(context_storage);
+  free(storage_storage);
+
+  // Check that the event storage is available
+  LONGS_EQUAL(s_ram_store_size, s_storage_impl->get_storage_size_cb());
+
+  // Read the event back
+  // We should have the same payload as before
+  prv_assert_read((void *)&payload, sizeof(payload));
+
+  // should be a no-op
+  prv_fake_event_impl_mark_event_read();
+
+  prv_assert_no_more_events();
+}
+#endif  // MEMFAULT_EVENT_STORAGE_RESTORE_STATE

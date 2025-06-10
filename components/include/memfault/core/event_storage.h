@@ -18,6 +18,7 @@
 //! events to a non-volatile storage medium. More details can be found in
 //! "memfault/core/platform/nonvolatile_event_storage.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -123,6 +124,47 @@ size_t memfault_event_storage_bytes_free(void);
 //!
 //! @returns true if event storage booted or false if not
 bool memfault_event_storage_booted(void);
+
+typedef struct {
+  // Event storage uses 2 separate buffers, one for context and one for the
+  // circular buffer storage. The context size is fixed, but the storage
+  // size is user-configurable.
+  void *context;
+  size_t context_len;
+  void *storage;
+  size_t storage_len;
+} sMfltEventStorageSaveState;
+//! Provide a define for the size of the context storage state. This can be used
+//! to appropriately size the full state storage buffer.
+#if (INTPTR_MAX == 0x7fffffff)
+  #define MEMFAULT_EVENT_STORAGE_STATE_SIZE_BYTES 44
+#elif (INTPTR_MAX == 0x7fffffffffffffff)
+  #define MEMFAULT_EVENT_STORAGE_STATE_SIZE_BYTES 80
+#endif
+
+//! Return a pointer to the event storage state. This is used to save the state
+//! prior to loss of system power, if the platform needs to restore the state
+//! after restart.
+//!
+//! @note If event storage is accessed after this function is called, the event
+//! storage state may be undefined. This function should only be called during a
+//! planned shutdown or deep sleep entry, when the rest of the system is
+//! inactive.
+sMfltEventStorageSaveState memfault_event_storage_get_state(void);
+
+//! Restore the event storage state. This is used to restore the state after
+//! system restarts, and is called from memfault_events_storage_boot. A platform
+//! can implement this function to restore the event storage state after a deep
+//! sleep or power loss.
+//!
+//! Must be implemented if MEMFAULT_EVENT_STORAGE_RESTORE_STATE is enabled.
+//!
+//! @param state The state to restore- should match the state returned from
+//!   memfault_event_storage_get_state. This function assumes the state is valid
+//!   (uncorrupted).
+//!
+//! @return true if the state was restored successfully, false otherwise.
+extern bool memfault_event_storage_restore_state(sMfltEventStorageSaveState *state);
 
 #ifdef __cplusplus
 }

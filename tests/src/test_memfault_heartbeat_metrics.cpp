@@ -17,6 +17,7 @@
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/overrides.h"
 #include "memfault/metrics/platform/timer.h"
+#include "memfault/metrics/reliability.h"
 #include "memfault/metrics/serializer.h"
 #include "memfault/metrics/utils.h"
 
@@ -37,6 +38,14 @@ static void prv_fake_time_incr(uint64_t fake_time_delta_ms) {
 }
 
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
+
+static void *s_metrics_restore_state;
+bool memfault_metrics_restore_state(void *state) {
+  if (s_metrics_restore_state) {
+    memcpy(state, s_metrics_restore_state, MEMFAULT_METRICS_CONTEXT_SIZE_BYTES);
+  }
+  return s_metrics_restore_state != NULL;
+}
 }
 
 bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
@@ -78,11 +87,13 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
     static uint8_t s_storage[FAKE_STORAGE_SIZE];
     mock().strictOrder();
 
+    mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+    mock().expectOneCall("memfault_metrics_reliability_boot").withParameter("ctx", (sMemfaultMetricsReliabilityCtx*)NULL);
     // Check that by default the heartbeat interval is once / hour
     mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
 
     s_fake_event_storage_impl = memfault_events_storage_boot(&s_storage, sizeof(s_storage));
-    mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+    s_metrics_restore_state = NULL;
 
     sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 7 };
     int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
@@ -126,9 +137,6 @@ TEST_GROUP(MemfaultHeartbeatMetrics){
 // clang-format on
 
 TEST(MemfaultHeartbeatMetrics, Test_BootStorageTooSmall) {
-  // Check that by default the heartbeat interval is once / hour
-  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
-
   // reboot metrics with storage that is too small to actually hold an event
   // this should result in a warning being emitted
   mock()
@@ -143,6 +151,10 @@ TEST(MemfaultHeartbeatMetrics, Test_BootStorageTooSmall) {
 
 TEST(MemfaultHeartbeatMetrics, Test_TimerInitFailed) {
   // Nothing else should happen if timer initialization failed for some reason
+  mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+  mock()
+    .expectOneCall("memfault_metrics_reliability_boot")
+    .withParameter("ctx", (sMemfaultMetricsReliabilityCtx *)NULL);
   mock()
     .expectOneCall("memfault_platform_metrics_timer_boot")
     .withParameter("period_sec", 3600)
@@ -179,6 +191,11 @@ TEST(MemfaultHeartbeatMetrics, Test_UnsignedHeartbeatValue) {
   rv = memfault_metrics_heartbeat_read_unsigned(key, &val);
   LONGS_EQUAL(0, rv);
   LONGS_EQUAL(UINT32_MAX, val);
+
+  // confirm metrics count makes sense
+  size_t num_metrics =
+    memfault_metrics_session_get_num_metrics(MEMFAULT_METRICS_SESSION_KEY(heartbeat));
+  LONGS_EQUAL(12, num_metrics);
 }
 
 TEST(MemfaultHeartbeatMetrics, Test_SignedHeartbeatValue) {
@@ -420,11 +437,14 @@ TEST(MemfaultHeartbeatMetrics, Test_BadBoot) {
   rv = memfault_metrics_boot(NULL, NULL);
   LONGS_EQUAL(-3, rv);
 
-  // calling boot with valid args twice in a row should fail (interval timer already running)
-  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
+  // calling boot with valid args twice in a row should succeed
   mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+  mock()
+    .expectOneCall("memfault_metrics_reliability_boot")
+    .withParameter("ctx", (sMemfaultMetricsReliabilityCtx *)NULL);
+  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
   rv = memfault_metrics_boot(s_fake_event_storage_impl, &info);
-  LONGS_EQUAL(-4, rv);
+  LONGS_EQUAL(0, rv);
 }
 
 TEST(MemfaultHeartbeatMetrics, Test_KeyDONE) {
@@ -544,4 +564,45 @@ TEST(MemfaultHeartbeatMetrics, Test_HeartbeatCollectionAltSetter) {
   LONGS_EQUAL(valu32, 200);
   STRCMP_EQUAL(buf, "test");
   LONGS_EQUAL(timer_valu32, 10);
+}
+
+TEST(MemfaultHeartbeatMetrics, Test_SaveAndRestoreState) {
+  mock().expectOneCall("memfault_metrics_reliability_get_ctx");
+  const void *metrics_state = memfault_metrics_get_state();
+
+  s_metrics_restore_state = malloc(MEMFAULT_METRICS_CONTEXT_SIZE_BYTES);
+  memcpy(s_metrics_restore_state, metrics_state, MEMFAULT_METRICS_CONTEXT_SIZE_BYTES);
+
+  // reboot the metrics system with the saved state
+  mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+  mock().expectOneCall("memfault_metrics_reliability_boot").ignoreOtherParameters();
+  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
+
+  sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 7 };
+  int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
+  free(s_metrics_restore_state);
+  s_metrics_restore_state = NULL;
+
+  LONGS_EQUAL(0, rv);
+
+  // crash count should have beem copied into heartbeat
+  uint32_t logged_crash_count = 0;
+  memfault_metrics_heartbeat_read_unsigned(
+    MEMFAULT_METRICS_KEY(MemfaultSdkMetric_UnexpectedRebootCount), &logged_crash_count);
+  LONGS_EQUAL(boot_info.unexpected_reboot_count, logged_crash_count);
+
+  // IntervalMs & RebootCount & operational_hours * operational_crashfree_hours
+  const size_t num_memfault_sdk_metrics = 4;
+  // One heartbeat metric defined using _WITH_SCALE_VALUE
+  const size_t num_scale_value_metrics = 1;
+  // 2 log metrics
+  const size_t num_log_metrics = 2;
+  // 1 uptime metric
+  const size_t num_uptime_metrics = 1;
+
+  // We should test all the types of available metrics so if this
+  // fails it means there's a new type we aren't yet covering
+  LONGS_EQUAL(kMemfaultMetricType_NumTypes + num_memfault_sdk_metrics + num_scale_value_metrics +
+                num_log_metrics + num_uptime_metrics,
+              memfault_metrics_heartbeat_get_num_metrics());
 }

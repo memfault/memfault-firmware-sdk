@@ -29,7 +29,7 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_pct_max, kMemfaultMetricType
 MEMFAULT_METRICS_KEY_DEFINE(wifi_connected_time_ms, kMemfaultMetricType_Timer)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_sta_min_rssi, kMemfaultMetricType_Signed)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_primary_channel, kMemfaultMetricType_Unsigned)
-MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_auth_mode, sizeof("WPA3-EXT-PSK-MIXED-MODE") - 1)
+MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_security_type, sizeof("WPA3-EXT-PSK-MIXED-MODE") - 1)
 MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_standard_version, sizeof("802.11ax") - 1)
 MEMFAULT_METRICS_KEY_DEFINE(wifi_disconnect_count, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_ap_oui, sizeof("00:00:00") - 1)
@@ -42,7 +42,8 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(thermal_cpu_c, kMemfaultMetricType_
 
 #if defined(CONFIG_MEMFAULT_METRICS_CHIP_ENABLE)
 // SPI Flash chip ID is captured as 24 bits in hex
-MEMFAULT_METRICS_STRING_KEY_DEFINE(spi_flash_chip_id, sizeof("012345") - 1)
+MEMFAULT_METRICS_STRING_KEY_DEFINE(flash_spi_manufacturer_id, sizeof("012345") - 1)
+MEMFAULT_METRICS_KEY_DEFINE(flash_spi_total_size_bytes, kMemfaultMetricType_Unsigned)
 // ESP32 Chip Revision is captured as "esp32s3-1.2" etc.
 MEMFAULT_METRICS_STRING_KEY_DEFINE(esp_chip_revision,
                                    sizeof(CONFIG_IDF_TARGET) + sizeof("-00.00") - 1)
@@ -52,6 +53,21 @@ MEMFAULT_METRICS_STRING_KEY_DEFINE(esp_chip_revision,
 MEMFAULT_METRICS_KEY_DEFINE(network_rx_bytes, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(network_tx_bytes, kMemfaultMetricType_Unsigned)
 #endif  // CONFIG_MEMFAULT_METRICS_NETWORK_IO
+
+#if defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
+MEMFAULT_METRICS_KEY_DEFINE(boot_time_ms, kMemfaultMetricType_Unsigned)
+#endif  // CONFIG_MEMFAULT_METRICS_BOOT_TIME
+
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_ENABLE)
+MEMFAULT_METRICS_KEY_DEFINE(flash_spi_write_bytes, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(flash_spi_erase_bytes, kMemfaultMetricType_Unsigned)
+#endif  // CONFIG_MEMFAULT_METRICS_FLASH_ENABLE
+
+#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_METRICS)
+MEMFAULT_METRICS_KEY_DEFINE(deep_sleep_time_ms, kMemfaultMetricType_Timer)
+MEMFAULT_METRICS_KEY_DEFINE(deep_sleep_wakeup_count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(active_time_ms, kMemfaultMetricType_Timer)
+#endif  // CONFIG_MEMFAULT_DEEP_SLEEP_METRICS
 
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL)
 

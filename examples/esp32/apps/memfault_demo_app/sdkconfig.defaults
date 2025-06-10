@@ -62,3 +62,11 @@ CONFIG_ESP_TASK_WDT_PANIC=y
 # Enable OTA
 CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA=y
 CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_OTA_CUSTOM_CBS=y
+
+# Enable Memfault Deep Sleep support
+CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT=y
+CONFIG_MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG=y
+
+# The app's deep sleep timer function can use significant stack, especially if
+non-nano formatting is enabled. Bump this up to accommodate
+CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096

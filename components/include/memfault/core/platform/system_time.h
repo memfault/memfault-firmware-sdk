@@ -36,6 +36,9 @@ typedef struct {
 //! track the exact time events occurred on device. If no time is provided, the Memfault backend
 //! will automatically create a timestamp based on when an event is received by the chunks endpoint.
 //!
+//! This function should not issue any logs, because it is called from within the Memfault logging
+//! system when log timestamps are enabled.
+//!
 //! @note By default, a weak version of this function is implemented which always returns false (no
 //! time available)
 //!

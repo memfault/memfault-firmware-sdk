@@ -72,11 +72,14 @@ void memfault_metrics_heartbeat_collect_data(void) {
 TEST(MemfaultHeartbeatMetricsDebug, Test_DebugPrints) {
   static uint8_t s_storage[1000];
 
-  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
-
   const sMemfaultEventStorageImpl *s_fake_event_storage_impl =
     memfault_events_storage_boot(&s_storage, sizeof(s_storage));
+
   mock().expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size");
+  mock()
+    .expectOneCall("memfault_metrics_reliability_boot")
+    .withParameter("ctx", (sMemfaultMetricsReliabilityCtx *)NULL);
+  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
   sMemfaultMetricBootInfo boot_info = { .unexpected_reboot_count = 1 };
   int rv = memfault_metrics_boot(s_fake_event_storage_impl, &boot_info);
   LONGS_EQUAL(0, rv);

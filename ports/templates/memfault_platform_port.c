@@ -67,6 +67,7 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   // !FIXME: If the device tracks real time, update 'unix_timestamp_secs' with seconds since epoch
   // This will cause events logged by the SDK to be timestamped on the device rather than when they
   // arrive on the server
+  // NOTE: do not log within this function: it is called from the logging subsystem.
   *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
     .info = { .unix_timestamp_secs = 0 },

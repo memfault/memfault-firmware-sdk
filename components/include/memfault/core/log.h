@@ -249,6 +249,46 @@ typedef struct {
 //! Return the number of unsent logs and their total size
 sMfltLogUnsentCount memfault_log_get_unsent_count(void);
 
+typedef struct {
+  // Logging uses 2 separate buffers, one for context and one for the circular
+  // buffer storage. The context size is fixed, but the storage size is
+  // user-configurable.
+  void *context;
+  size_t context_len;
+  void *storage;
+  size_t storage_len;
+} sMfltLogSaveState;
+//! Provide a define for the size of the context storage state. This can be used
+//! to appropriately size the full state storage buffer.
+#if (INTPTR_MAX == 0x7fffffff)
+  #define MEMFAULT_LOG_STATE_SIZE_BYTES (44 + ((sizeof(eMemfaultPlatformLogLevel) == 4) ? 4 : 0))
+#elif (INTPTR_MAX == 0x7fffffffffffffff)
+  #define MEMFAULT_LOG_STATE_SIZE_BYTES (76 + ((sizeof(eMemfaultPlatformLogLevel) == 4) ? 4 : 0))
+#endif
+
+//! Return a pointer to the log state. This is used to save the state prior to
+//! loss of system power, if the platform needs to restore the state after
+//! restart.
+//!
+//! @note the state data will change if logs are captured or exported. It's
+//! recommended to call this function when the system is idle, just before deep
+//! sleep power down.
+sMfltLogSaveState memfault_log_get_state(void);
+
+//! Restore the event storage state. This is used to restore the state after
+//! system restarts, and is called from memfault_events_storage_boot. A platform
+//! can implement this function to restore the event storage state after a deep
+//! sleep or power loss.
+//!
+//! Must be implemented if MEMFAULT_EVENT_STORAGE_RESTORE_STATE is enabled.
+//!
+//! @param state The state to restore- should match the state returned from
+//!   memfault_event_storage_get_state. This function assumes the state is valid
+//!   (uncorrupted).
+//!
+//! @return true if the state was restored successfully, false otherwise.
+extern bool memfault_log_restore_state(sMfltLogSaveState *state);
+
 #ifdef __cplusplus
 }
 #endif

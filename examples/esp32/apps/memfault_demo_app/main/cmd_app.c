@@ -10,10 +10,13 @@
 #include <string.h>
 
 #include "cmd_decl.h"
+#include "deep_sleep.h"
 #include "esp_console.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
-#include "esp_task_wdt.h"
+#if defined(CONFIG_ESP_TASK_WDT_EN)
+  #include "esp_task_wdt.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -151,6 +154,7 @@ static int prv_heap_task_stats(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char **
 }
 #endif  // CONFIG_HEAP_TASK_TRACKING
 
+#if defined(CONFIG_ESP_TASK_WDT_EN)
 static void prv_stuck_task(void *pvParameters) {
   // Register a task watchdog for the current task
   esp_err_t res = esp_task_wdt_add(NULL);
@@ -175,11 +179,23 @@ static int prv_esp_task_watchdog(int argc, char **argv) {
 
   // Create and start a task that will stall
   ESP_LOGI(__func__, "Starting stuck task on core %d", cpuid);
+  ESP_LOGI(__func__, "Task watchdog will fire in %d seconds", CONFIG_ESP_TASK_WDT_TIMEOUT_S);
   const portBASE_TYPE res = xTaskCreatePinnedToCore(
     prv_stuck_task, "stuck task", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL, cpuid);
   MEMFAULT_ASSERT(res == pdTRUE);
 
   return 0;
+}
+#endif  // CONFIG_ESP_TASK_WDT_EN
+
+static int prv_deep_sleep(int argc, char **argv) {
+  if (argc < 2) {
+    ESP_LOGE(__func__, "Usage: deep_sleep <seconds>");
+    return -1;
+  }
+  uint32_t sleep_seconds = strtoul(argv[1], NULL, 0);
+
+  return deep_sleep_start(sleep_seconds);
 }
 
 void register_app(void) {
@@ -203,6 +219,7 @@ void register_app(void) {
   ESP_ERROR_CHECK(esp_console_cmd_register(&heap_task_stats_cmd));
 #endif
 
+#if defined(CONFIG_ESP_TASK_WDT_EN)
   const esp_console_cmd_t esp_task_watchdog_cmd = {
     .command = "esp_task_watchdog",
     .help = "Register an idle hook that stalls the system",
@@ -210,6 +227,15 @@ void register_app(void) {
     .func = &prv_esp_task_watchdog,
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&esp_task_watchdog_cmd));
+#endif
+
+  const esp_console_cmd_t deep_sleep_cmd = {
+    .command = "deep_sleep",
+    .help = "Enter deep sleep mode",
+    .hint = NULL,
+    .func = &prv_deep_sleep,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&deep_sleep_cmd));
 
 #if defined(CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK) || \
   !defined(CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE)

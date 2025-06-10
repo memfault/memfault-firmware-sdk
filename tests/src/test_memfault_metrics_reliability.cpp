@@ -33,6 +33,10 @@ TEST_GROUP(MemfaultMetricsReliability){
     s_fake_time_ms = 0;
     mock().strictOrder();
     mock().installComparator("MemfaultMetricId", s_metric_id_comparator);
+
+    // zero state
+    sMemfaultMetricsReliabilityCtx ctx = { 0 };
+    memfault_metrics_reliability_boot(&ctx);
   }
   void teardown() {
     mock().checkExpectations();
@@ -162,5 +166,63 @@ TEST(MemfaultMetricsReliability, Test_OperationalHours) {
   // 1 ms more (UINT64_MAX + 1 total)
   prv_fake_time_incr(1);
   // no mocks should be called
+  memfault_metrics_reliability_collect();
+}
+
+//! Test that pre-seeding with memfault_metrics_reliability_boot() yields
+//! correct operational time
+TEST(MemfaultMetricsReliability, Test_Boot) {
+  sMemfaultMetricsReliabilityCtx ctx = {
+    .last_heartbeat_ms = 1000u * 60u * 60u * 1000u,  // 1k hours
+    .operational_ms = 1000,                          // accumulated 1 second of operational time
+    .counted_unexpected_reboot = 1,
+  };
+  memfault_metrics_reliability_boot(&ctx);
+
+  prv_fake_time_incr(ctx.last_heartbeat_ms);
+
+  // advance by 1 hr - 999 ms
+  uint32_t operational_hours = 1;
+  prv_fake_time_incr(operational_hours * 60 * 60 * 1000 - 999);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_hours_key)
+    .withParameter("amount", operational_hours)
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_crashfree_hours_key)
+    .withParameter("amount", operational_hours)
+    .andReturnValue(0);
+
+  memfault_metrics_reliability_collect();
+}
+
+TEST(MemfaultMetricsReliability, Test_BootTimeSinceBootNonZero) {
+  // test cold booting with time-since-boot non-zero (i.e. rtc backed)
+  prv_fake_time_incr(1000u * 60u * 60u * 1000u);  // 1k hours
+  memfault_metrics_reliability_boot(NULL);
+
+  // advance by 1 hr
+  uint32_t operational_hours = 1;
+  prv_fake_time_incr(operational_hours * 60 * 60 * 1000);
+  bool unexpected_reboot = false;
+
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_hours_key)
+    .withParameter("amount", operational_hours)
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_reboot_tracking_get_unexpected_reboot_occurred")
+    .withOutputParameterReturning("unexpected_reboot_occurred", &unexpected_reboot,
+                                  sizeof(unexpected_reboot))
+    .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_heartbeat_add")
+    .withParameterOfType("MemfaultMetricId", "key", &operational_crashfree_hours_key)
+    .withParameter("amount", operational_hours)
+    .andReturnValue(0);
+
   memfault_metrics_reliability_collect();
 }

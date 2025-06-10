@@ -7,6 +7,8 @@
 A script which can be used to add the memfault-firmware-sdk to a project using an Eclipse-based IDE
 """
 
+from __future__ import annotations
+
 import argparse
 import fnmatch
 import glob
@@ -16,7 +18,7 @@ import re
 import xml.etree.ElementTree as ET  # noqa: N817
 
 
-def get_depth_from_parent(project_dir, memfault_dir):
+def get_depth_from_parent(project_dir: str, memfault_dir: str):
     common_prefix = os.path.commonpath([memfault_dir, project_dir])
     depth = 1
     dirname = project_dir
@@ -66,7 +68,9 @@ def generate_linked_resources():
     return ele
 
 
-def get_file_element(file_name, virtual_dir, common_prefix, parent_dir, path_type="1"):
+def get_file_element(
+    file_name: str, virtual_dir: str, common_prefix: str, parent_dir: str, path_type: str = "1"
+):
     name = "{}/{}".format(virtual_dir, os.path.basename(file_name))
 
     relative_path = os.path.relpath(
@@ -99,7 +103,7 @@ def generate_st_build_id_flag():
     return ele
 
 
-def recursive_glob_backport(dir_glob):
+def recursive_glob_backport(dir_glob: str):
     # Find first directory wildcard and walk the tree from there
     glob_root = dir_glob.split("/*")[0]
 
@@ -117,7 +121,7 @@ def recursive_glob_backport(dir_glob):
                 yield file_path
 
 
-def files_to_link(dir_glob, virtual_dir, common_prefix, parent_dir):
+def files_to_link(dir_glob: str, virtual_dir: str, common_prefix: str, parent_dir: str):
     try:
         files = glob.glob(dir_glob, recursive=True)
     except TypeError:
@@ -138,12 +142,12 @@ def files_to_link(dir_glob, virtual_dir, common_prefix, parent_dir):
 
 
 def patch_project(
-    project_dir,
-    memfault_sdk_dir,
-    components,
-    location_prefix=None,
-    target_port=None,
-    output_dir=None,
+    project_dir: str,
+    memfault_sdk_dir: str,
+    components: list[str],
+    location_prefix: str | None = None,
+    target_port: str | None = None,
+    output_dir: str | None = None,
 ):
     project_file = "{}/.project".format(project_dir)
 
@@ -202,6 +206,7 @@ def patch_project(
     )
 
     for component in components:
+        logging.debug("Adding %s component", component)
         for ele in files_to_link(
             dir_glob="{}/components/{}/**/*.c".format(memfault_sdk_dir, component),
             virtual_dir=comp_folder_name,
@@ -258,8 +263,8 @@ def patch_project(
 
 
 def patch_cproject(
-    project_dir,
-    output_dir=None,
+    project_dir: str,
+    output_dir: str | None = None,
 ):
     cproject_file = "{}/.cproject".format(project_dir)
 
@@ -287,7 +292,7 @@ def patch_cproject(
     #   ${MEMFAULT_FIRMWARE_SDK}/ports/include
     #
 
-    def _find_include_nodes(option):
+    def _find_include_nodes(option: ET.Element):
         return option.get("id", "").startswith((
             # this is the element id used by Dialog's Smart Snippets Studio
             # IDE (and possibly others)
@@ -322,18 +327,18 @@ def patch_cproject(
     # Add GNU build id to STM32Cube IDE based projects
     #
 
-    def _find_st_linker_tools(tool):
+    def _find_st_linker_tools(tool: ET.Element):
         return tool.get("id", "").startswith(
             # Element used by ST's STM32Cube IDE for linker arguments
             "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker",
         )
 
-    def _find_st_linker_options(option):
+    def _find_st_linker_options(option: ET.Element):
         return option.get("id", "").startswith(
             "com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.linker.option.otherflags"
         )
 
-    def _find_st_build_id_linker_flag(option):
+    def _find_st_build_id_linker_flag(option: ET.Element):
         return "--build-id" in option.get("value", "")
 
     tools = root.findall(".//tool")
@@ -363,7 +368,7 @@ def patch_cproject(
     # Add GNU build id generation for all build configurations:
     #
 
-    def _find_linker_flags(option):
+    def _find_linker_flags(option: ET.Element):
         return option.get("id", "").startswith(
             # Element used by Dialog's Smart Snippets Studio IDE
             "ilg.gnuarmeclipse.managedbuild.cross.option.c.linker.other"
@@ -441,7 +446,7 @@ $ python eclipse_patch.py --project-dir . --memfault-sdk-dir /path/to/memfault-f
         "-c",
         "--components",
         help="The components to include in an eclipse project.",
-        default="core,util,metrics,panics",
+        default="core,util,metrics,panics,demo",
     )
 
     parser.add_argument(

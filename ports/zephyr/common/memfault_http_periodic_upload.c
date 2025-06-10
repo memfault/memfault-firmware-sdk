@@ -27,8 +27,30 @@ static K_THREAD_STACK_DEFINE(memfault_http_stack_area,
 static struct k_work_q memfault_http_work_q;
 #endif
 
-static void prv_metrics_work_handler(struct k_work *work) {
+#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+// Runtime configurable
+static bool s_mflt_upload_logs;
+#endif
+
+#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+void memfault_zephyr_port_http_periodic_upload_logs(bool enable) {
+  s_mflt_upload_logs = enable;
+}
+#endif
+
+static void prv_periodic_upload_work_handler(struct k_work *work) {
+#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+  MEMFAULT_LOG_DEBUG("Triggering log collection");
+  memfault_log_trigger_collection();
+#else
+  if (s_mflt_upload_logs) {
+    MEMFAULT_LOG_DEBUG("Triggering log collection");
+    memfault_log_trigger_collection();
+  }
+#endif
+
   if (!memfault_packetizer_data_available()) {
+    MEMFAULT_LOG_DEBUG("No Memfault data available");
     return;
   }
 
@@ -36,7 +58,7 @@ static void prv_metrics_work_handler(struct k_work *work) {
   memfault_zephyr_port_post_data();
 }
 
-K_WORK_DEFINE(s_upload_timer_work, prv_metrics_work_handler);
+K_WORK_DEFINE(s_upload_timer_work, prv_periodic_upload_work_handler);
 
 static void prv_timer_expiry_handler(struct k_timer *dummy) {
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE

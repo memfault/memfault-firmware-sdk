@@ -63,12 +63,14 @@ TEST(MemfaultHeartbeatMetricsNoCustom, Test_CompileAndMetricCount) {
 //! Confirm we can boot without any issues (eg writing to unpopulated key
 //! position)
 TEST(MemfaultHeartbeatMetricsNoCustom, Test_Boot) {
-  // Check that by default the heartbeat interval is once / hour
-  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
-
   mock()
     .expectOneCall("memfault_metrics_heartbeat_compute_worst_case_storage_size")
     .andReturnValue(0);
+  mock()
+    .expectOneCall("memfault_metrics_reliability_boot")
+    .withParameter("ctx", (sMemfaultMetricsReliabilityCtx *)NULL);
+  // Check that by default the heartbeat interval is once / hour
+  mock().expectOneCall("memfault_platform_metrics_timer_boot").withParameter("period_sec", 3600);
 
   static uint8_t s_storage[1000];
 

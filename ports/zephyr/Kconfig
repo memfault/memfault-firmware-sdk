@@ -5,6 +5,12 @@ config MEMFAULT
         select RUNTIME_NMI if CPU_CORTEX_M
         select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
         select DEBUG_THREAD_INFO
+        imply HWINFO
+        # Use CPU_HAS_DCACHE to selectively enable CACHE_MANAGEMENT, which
+        # Memfault uses to flush the data cache on fault handling prior to
+        # system reboot. DCACHE is default=y unconditionally in Zephyr < 3.2.0,
+        # so we cannot use the more accurate DCACHE dep here.
+        imply CACHE_MANAGEMENT if CPU_HAS_DCACHE
         help
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets
@@ -364,6 +370,10 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
           The first check will run between [60, 60+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS]
           Subsequent checks will run at MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
 
+config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
+        bool "Upload log buffer in addition to other data"
+        default n
+
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
         default y if MBEDTLS
@@ -457,12 +467,40 @@ config MEMFAULT_EVENT_STORAGE_SIZE
         The storage area used to batch memfault events before they are flushed
         to persistent storage or the Memfault Cloud.
 
+choice MEMFAULT_REBOOT_REASON_GET
+       prompt "Memfault Reboot Reason"
+       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK
+       default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
+       help
+        Choose the implementation used to track the reboot reason
+
+config MEMFAULT_REBOOT_REASON_GET_HWINFO
+       bool "Use the hardware information to track the reboot reason"
+       depends on HWINFO
+       help
+        The Memfault SDK will use the hardware information to track the reboot reason.
+        This is the default implementation.
+
+config MEMFAULT_REBOOT_REASON_GET_BASIC
+        bool "Use the default implementation to track the reboot reason"
+        help
+          The Memfault SDK will use a built-in implementation to track the reboot reason.
+          This is a basic implementation that does not rely on hardware information.
+
 config MEMFAULT_REBOOT_REASON_GET_CUSTOM
        bool "Provide a custom implementation for recovering reboot information"
-       default n
        help
         User of SDK must provide their own implementation of memfault_reboot_reason_get()
-        when disabled
+        when enabled
+
+endchoice # MEMFAULT_REBOOT_REASON_GET
+
+config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
+    bool "Pretty print reboot reason on boot"
+    default y
+    help
+        Print out the reboot reason, eg "Watchdog", on boot. Adds a few hundred bytes of
+        code space.
 
 config MEMFAULT_REBOOT_TRACKING_REGION
        string "Memfault Reboot Tracking Region"
@@ -479,9 +517,11 @@ config MEMFAULT_CLEAR_RESET_REG
         When disabled, the end user is responsible for clearing the reset register. (Bits
         generally persist across resets)
 
-config MEMFAULT_METRICS
-       bool "Enable the memfault Metrics subsystem"
+menuconfig MEMFAULT_METRICS
+       bool "Metrics collection"
        default y
+       help
+        Enable the memfault Metrics subsystem
 
 if MEMFAULT_METRICS
 
@@ -509,8 +549,26 @@ config MEMFAULT_METRICS_TIMER_CUSTOM
         ports/zephyr/common/memfault_platform_metrics.c and allow for
         a custom implementation of memfault_platform_metrics_timer_boot() to be provided
 
+choice MEMFAULT_PLATFORM_TIME_SINCE_BOOT
+        prompt "Select the time since boot implementation"
+        default MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
+        help
+         Select the implementation of memfault_platform_get_time_since_boot_ms()
+
+        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
+               bool "Deep-sleep compensating implementation"
+               help
+                Implementation using k_uptime_get(), suitable for most
+                applications.
+
+        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM
+               bool "User provided implementation"
+               help
+                User must implement memfault_platform_get_time_since_boot_ms().
+endchoice
+
 config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
-       bool "Enable collection of a default set of metrics by the Zephyr port"
+       bool "Enable a default set of metrics by the Zephyr port"
        default y
        depends on INIT_STACKS
        depends on THREAD_RUNTIME_STATS
@@ -522,7 +580,7 @@ config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
         When disabled, no default metrics will be collected.
 
 config MEMFAULT_FS_BYTES_FREE_METRIC
-        bool "Enable collection of a metric for the amount of free space on the filesystem"
+        bool "Enable a metric for the amount of free space on the filesystem"
         default y
         depends on FILE_SYSTEM
 
@@ -535,7 +593,7 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
          metrics for, omitting the leading '/'.
 
 config MEMFAULT_METRICS_CPU_TEMP
-        bool "Enable collection of CPU temperature metrics"
+        bool "Enable CPU temperature metrics"
         default y if "$(dt_alias_enabled,die-temp0)"
         depends on SENSOR
         help
@@ -543,14 +601,14 @@ config MEMFAULT_METRICS_CPU_TEMP
          device tree node alias.
 
 config MEMFAULT_METRICS_SYNC_SUCCESS
-        bool "Enable collection of sync success metrics"
+        bool "Enable sync success metrics"
         default y
         help
          Memfault user-defined sync success metric component. More information
          at https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
-        bool "Enable collection of memfault sync success metrics"
+        bool "Enable memfault sync success metrics"
         default y
         depends on MEMFAULT_HTTP_ENABLE
         help
@@ -559,14 +617,14 @@ config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
          https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
-        bool "Enable collection of memfault connectivity time metrics"
+        bool "Enable memfault connectivity time metrics"
         default y
         help
          Memfault connectivity time metric component. More information at
          https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_BATTERY_ENABLE
-       bool "Enable collection of battery metrics"
+       bool "Enable battery metrics"
        default n
        help
          Memfault battery metric component. More information at
@@ -580,26 +638,26 @@ config MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT
         Automatically initialize the battery metric subsystem on bootup
 
 config MEMFAULT_METRICS_TCP_IP
-        bool "Enable collection of TCP/IP metrics"
+        bool "Enable TCP/IP metrics"
         default y
         depends on NET_STATISTICS && NET_STATISTICS_USER_API
         help
          Collects Memfault metrics for TCP/IP statistics.
 
 config MEMFAULT_METRICS_WIFI
-        bool "Enable collection of Wi-Fi metrics"
+        bool "Enable Wi-Fi metrics"
         default y
         depends on NET_MGMT_EVENT && WIFI
 
 config MEMFAULT_METRICS_MEMORY_USAGE
-        bool "Enable collection of memory usage metrics"
+        bool "Enable memory usage metrics"
         default y
         depends on SYS_HEAP_RUNTIME_STATS
         help
          Collects Memfault metrics for memory usage stats.
 
 config MEMFAULT_METRICS_THREADS
-        bool "Enable collection of per-thread metrics"
+        bool "Enable per-thread metrics"
         default y
         depends on THREAD_STACK_INFO
         depends on INIT_STACKS
@@ -620,12 +678,18 @@ config MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
          when Memfault's cloud processes the data.
 
 config MEMFAULT_METRICS_THREADS_DEFAULTS
-        bool "Enable collection of default thread metrics"
+        bool "Enable default thread metrics"
         default y
         depends on MEMFAULT_METRICS_THREADS
         help
          Enables default set of threads to track metrics on (idle, sysworkq). If
          providing a custom set of threads to track, disable this option.
+
+config MEMFAULT_METRICS_BOOT_TIME
+        bool "Enable boot time metrics"
+        default y
+        help
+         Collects boot time metrics for the device
 
 endif # MEMFAULT_METRICS
 

@@ -6,6 +6,183 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2025-06-09
+
+This is a feature release of the Memfault Firmware SDK. The main new feature
+released in this version is support for tracking metrics through deep sleep on
+ESP32 devices. Full release notes are below.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add a new choice config `CONFIG_MEMFAULT_REBOOT_REASON_GET`. By default,
+    `CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO=y`, which is supported by
+    `imply CONFIG_HWINFO` in the overarching `MEMFAULT` symbol. This default
+    enables better reboot reasons out-of-the-box via Zephyr's `hwinfo` module.
+    The fall-back option is `CONFIG_MEMFAULT_REBOOT_REASON_GET_BASIC`, which
+    provides a simple implementation. As before, users can override the default
+    implementations with `CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM=y`.
+
+  - Add a new Kconfig setting, `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP`, to
+    print the reboot reason code on system boot, for debugging purposes. This
+    feature is enabled by default. It can be disabled with
+    `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP=n`.
+
+  - Add a `boot_time_ms` metric, which tracks how long the system takes to boot
+    the application. Can be disabled with `CONFIG_MEMFAULT_METRICS_BOOT_TIME=n`.
+
+  - Add new builtin Wi-Fi metrics, enabled by default when `CONFIG_WIFI=y`, and
+    can be disabled with `CONFIG_MEMFAULT_METRICS_WIFI=n`:
+
+    - `wifi_beacon_interval`
+    - `wifi_dtim_interval`
+    - `wifi_frequency_band`
+    - `wifi_primary_channel`
+    - `wifi_security_type`
+    - `wifi_sta_rssi`
+    - `wifi_standard_version`
+    - `wifi_twt_capable`
+    - `wifi_tx_rate_mbps` (Zephyr 4.1.0+ only)
+
+    These add on top of the existing Zephyr Wi-Fi metrics:
+
+    - `wifi_ap_oui`
+    - `wifi_connected_time_ms`
+    - `wifi_disconnect_count`
+
+  - Add an option to upload logs by default when using
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD`, controlled with the Kconfig symbol
+    `MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS`. This can also be controlled at runtime
+    with the included API
+    `memfault_zephyr_port_http_periodic_upload_logs(bool enable)`
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM`,
+    to provide a custom implementation of
+    `memfault_platform_get_time_since_boot_ms()` in your application. The
+    default is an implementation using `k_uptime_get()`.
+
+- ESP-IDF:
+
+  - Add a `boot_time_ms` metric, which tracks how long the system takes to boot
+    the application. Can be disabled with `CONFIG_MEMFAULT_METRICS_BOOT_TIME=n`.
+
+  - Add support for tracking metrics across ESP32 deep sleep cycles, enabled
+    with the Kconfig `CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT=y`. To utilize this
+    feature, these functions must be called by the application:
+
+    - `memfault_platform_deep_sleep_save_state()`
+
+      Must be called just prior to entering deep sleep
+      (`esp_deep_sleep_start()`)
+
+    - `memfault_platform_deep_sleep_restore_state()`
+
+      Must be called before `memfault_platform_boot()` in the application
+      startup sequence.
+
+    This feature includes built-in metrics for tracking deep sleep:
+
+    - `deep_sleep_time_ms` - time spent in deep sleep
+    - `active_time_ms` - time spent out of deep sleep
+    - `deep_sleep_wakeup_count` - number of times the device woke up from deep
+      sleep
+
+    There are several Kconfig options for controlling the deep sleep feature,
+    including controlling the heartbeat trigger and HTTP periodic upload. See
+    `menuconfig` "Memfault deep sleep support" or
+    [`ports/esp_idf/memfault/Kconfig`](ports/esp_idf/memfault/Kconfig) for
+    details.
+
+  - Add new metrics tracking flash usage:
+
+    - `flash_spi_erase_bytes`
+    - `flash_spi_write_bytes`
+    - `flash_spi_total_size_bytes`
+
+  - Add capture of the ESP-IDF Task Watchdog stuck task list in coredumps. This
+    is enabled by default if ESP-IDF Task Watchdog is enabled, and can be
+    disabled with the Kconfig
+    `CONFIG_MEMFAULT_COREDUMP_CAPTURE_TASK_WATCHDOG=n`.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - `CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM` is now a choice in the new choice
+    config `CONFIG_MEMFAULT_REBOOT_REASON_GET`. As a result, it will be the
+    default choice if `CONFIG_MEMFAULT_NRF_CONNECT_SDK=y` instead of being
+    `imply`-ed by `CONFIG_MEMFAULT_NRF_CONNECT_SDK` to work around the
+    restriction that choice configs cannot be selected. As before, users can
+    override this behavior with `CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM=n`.
+
+- ESP-IDF:
+
+  - Rename `CONFIG_MEMFAULT_TIME_SINCE_BOOT_CUSTOM` ->
+    `CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM`. A new ESP-IDF port choice
+    Kconfig `CONFIG_MEMFAULT_PLATFORM_TIME_SINCE_BOOT` now supports 3 settings
+    for platform time since boot:
+
+    1. `MEMFAULT_PLATFORM_TIME_SINCE_BOOT_ESP_TIMER` default, suitable for most
+       applications
+    2. `MEMFAULT_PLATFORM_TIME_SINCE_BOOT_DEEP_SLEEP` applicable for deep-sleep
+       applications
+    3. `MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM` disable builtin
+       implementations and implement a custom
+       `memfault_platform_get_time_since_boot_ms()`
+
+  - Renamed the `spi_flash_chip_id` metric (added in `1.23.0`) to
+    `flash_spi_manufacturer_id`.
+
+  - Renamed the `wifi_auth_mode` metric to `wifi_security_type` to more
+    accurately indicate the property being measured.
+
+- General:
+
+  - Add the `demo` component to the default set of components added to an
+    Eclipse project when using the
+    [`eclipse_patch.py`](scripts/eclipse_patch.py) utility. The default
+    components can be overridden with the `--components` argument.
+
+  - Coredumps no longer include the device serial by default. The uploading
+    serial (passed to the chunks endpoint) is instead used to identify the
+    device associated with the coredump. Enabling
+    `#define MEMFAULT_EVENT_INCLUDE_DEVICE_SERIAL 1` in
+    `memfault_platform_config.h` will include the device serial in coredumps.
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Remove debug logging from `memfault_platform_time_get_current()`. When log
+    timestamps are enabled, and debug level logs are enabled, this function can
+    infinitely recurse.
+
+  - Fix Memfault Build ID insertion when
+    `CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y`. Previously, the build ID was
+    inserted at the wrong build step, resulting in a missing build ID in the
+    flashable image.
+
+- Zephyr:
+
+  - Remove debug logging from the RTC-backed
+    `memfault_platform_time_get_current()` (enabled when
+    `CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_RTC=y`). When log timestamps are
+    enabled, logging from this function can result in infinite recursion under
+    certain conditions.
+
+  - Update the west module allowlist to include `cmsis_6` in the
+    [Zephyr QEMU Sample App](examples/zephyr/qemu/qemu-app). The `cmsis_6`
+    module is now used for TF-M and Cortex-M as of
+    [this PR](https://github.com/zephyrproject-rtos/zephyr/pull/89370/files).
+
+  - Update the Memfault Zephyr logging backend to properly capture log lines
+    when `CONFIG_LOG_MODE_IMMEDIATE=y` on Zephyr 3.7.0+.
+
+- Wiced:
+
+  - Fix broken symlinks in the [Wiced example](examples/wiced).
+
 ## [1.24.0] - 2025-05-06
 
 ### 📈 Added
@@ -144,6 +321,11 @@ and this project adheres to
 
   - Set the User-Agent to `MemfaultSDK/<version>` when sending HTTP requests to
     Memfault.
+
+- Zephyr:
+
+  - Improve support for flushing data cache prior to reboot, for SOCs with
+    `CONFIG_DCACHE` enabled.
 
 ### 🛠️ Changed
 
