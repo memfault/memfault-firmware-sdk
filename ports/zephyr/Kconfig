@@ -1,7 +1,7 @@
 config MEMFAULT
         bool "Memfault Support"
         default n
-        depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32S3
+        depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3
         select RUNTIME_NMI if CPU_CORTEX_M
         select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
         select DEBUG_THREAD_INFO

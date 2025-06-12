@@ -47,9 +47,17 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
     #include <zephyr/kernel.h>
 
 void memfault_platform_halt_if_debugging(void) {
+    // Zephyr 3.7.0 deprecated cpu_ll_is_debugger_attached() in favor of
+    // esp_cpu_dbgr_is_attached(). Support both Kconfigs.
+    #if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+  if (esp_cpu_dbgr_is_attached()) {
+    MEMFAULT_BREAKPOINT();
+  }
+    #else
   if (cpu_ll_is_debugger_attached()) {
     MEMFAULT_BREAKPOINT();
   }
+    #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
 }
 
 bool memfault_arch_is_inside_isr(void) {

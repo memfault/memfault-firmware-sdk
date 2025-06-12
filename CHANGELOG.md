@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [x.x.x] - Unreleased
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add support for the ESP32 chip on Zephyr, adding to the existing support for
+    ESP32-S3 and ESP32 C series chips.
+
 ## [1.25.0] - 2025-06-09
 
 This is a feature release of the Memfault Firmware SDK. The main new feature
