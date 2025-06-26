@@ -206,7 +206,12 @@ static void prv_record_wifi_connection_metrics(struct net_if *iface) {
   MEMFAULT_METRIC_SET_STRING(wifi_ap_oui, oui);
 }
 
-static void prv_wifi_event_callback(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void prv_wifi_event_callback(struct net_mgmt_event_callback *cb,
+#if MEMFAULT_ZEPHYR_VERSION_GT(4, 1)
+                                    uint64_t mgmt_event,
+#else
+                                    uint32_t mgmt_event,
+#endif
                                     struct net_if *iface) {
   switch (mgmt_event) {
     case NET_EVENT_WIFI_CONNECT_RESULT: {
