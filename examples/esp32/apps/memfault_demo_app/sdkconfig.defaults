@@ -68,5 +68,5 @@ CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT=y
 CONFIG_MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG=y
 
 # The app's deep sleep timer function can use significant stack, especially if
-non-nano formatting is enabled. Bump this up to accommodate
+# non-nano formatting is enabled. Bump this up to accommodate
 CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096

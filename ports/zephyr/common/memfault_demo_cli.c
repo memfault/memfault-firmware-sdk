@@ -306,6 +306,8 @@ static int prv_cli_cmd_double_free(const struct shell *shell, size_t argc, char 
   return -1;
 }
 
+//! Note: TOOLCHAIN_DISABLE_WARNING() etc were added to Zephyr in v4.1.0
+MEMFAULT_DISABLE_WARNING("-Warray-bounds")
 static int prv_bad_ptr_deref_example(const struct shell *shell, size_t argc, char **argv) {
   volatile uint32_t *bad_ptr = (void *)0x1;
   *bad_ptr = 0xbadcafe;
@@ -316,6 +318,7 @@ static void prv_crash_timer_handler(struct k_timer *dummy) {
   volatile uint32_t *bad_ptr = (void *)0x1;
   *bad_ptr = 0xbadcafe;
 }
+MEMFAULT_ENABLE_WARNING("-Warray-bounds")
 
 K_TIMER_DEFINE(s_isr_crash_timer, prv_crash_timer_handler, NULL);
 

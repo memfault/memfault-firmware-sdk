@@ -345,16 +345,18 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
   // stats.total_cycles added in Zephyr 3.0
   #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
-  uint64_t non_idle_tasks_cycles_delta =
-    prv_cycle_delta_update(all_tasks_stats.total_cycles, &s_prev_non_idle_tasks_cycles);
-  MEMFAULT_LOG_DEBUG("Non-idle tasks cycles: %u", (uint32_t)non_idle_tasks_cycles_delta);
+  if (all_tasks_cycles_delta > 0) {
+    uint64_t non_idle_tasks_cycles_delta =
+      prv_cycle_delta_update(all_tasks_stats.total_cycles, &s_prev_non_idle_tasks_cycles);
+    MEMFAULT_LOG_DEBUG("Non-idle tasks cycles: %u", (uint32_t)non_idle_tasks_cycles_delta);
 
-  // Range is 0-10000 for 0.00-100.00%
-  // Multiply by 100 for 2 decimals of precision via the scale factor, then by 100 again
-  // for percentage conversion
-  uint32_t usage_pct = (uint32_t)(non_idle_tasks_cycles_delta * 10000 / all_tasks_cycles_delta);
-  MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct, usage_pct);
-  MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%\n", usage_pct / 100, usage_pct % 100);
+    // Range is 0-10000 for 0.00-100.00%
+    // Multiply by 100 for 2 decimals of precision via the scale factor, then by 100 again
+    // for percentage conversion
+    uint32_t usage_pct = (uint32_t)(non_idle_tasks_cycles_delta * 10000 / all_tasks_cycles_delta);
+    MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct, usage_pct);
+    MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%\n", usage_pct / 100, usage_pct % 100);
+  }
   #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 0)
 
   #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC

@@ -434,6 +434,11 @@ snapshots['test_eclipse_project_patcher 1'] = {
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_armv7_a_r.c</locationURI>
 \t</link>
 \t<link>
+\t\t<name>memfault_components/memfault_fault_handling_posix.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_posix.c</locationURI>
+\t</link>
+\t<link>
 \t\t<name>memfault_components/memfault_fault_handling_riscv.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_riscv.c</locationURI>
@@ -922,6 +927,11 @@ snapshots['test_eclipse_project_patcher_nested_port 1'] = {
 \t\t<name>memfault_components/memfault_fault_handling_armv7_a_r.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_armv7_a_r.c</locationURI>
+\t</link>
+\t<link>
+\t\t<name>memfault_components/memfault_fault_handling_posix.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_posix.c</locationURI>
 \t</link>
 \t<link>
 \t\t<name>memfault_components/memfault_fault_handling_riscv.c</name>
@@ -1447,6 +1457,11 @@ snapshots['test_eclipse_project_patcher_single_dir_port 1'] = {
 \t\t<name>memfault_components/memfault_fault_handling_armv7_a_r.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_armv7_a_r.c</locationURI>
+\t</link>
+\t<link>
+\t\t<name>memfault_components/memfault_fault_handling_posix.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/panics/src/memfault_fault_handling_posix.c</locationURI>
 \t</link>
 \t<link>
 \t\t<name>memfault_components/memfault_fault_handling_riscv.c</name>

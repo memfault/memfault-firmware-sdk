@@ -1,5 +1,0 @@
-config MEMFAULT_COMPACT_LOG
-        select REQUIRES_STD_C11
-        select GNU_C_EXTENSIONS
-
-rsource "Kconfig"

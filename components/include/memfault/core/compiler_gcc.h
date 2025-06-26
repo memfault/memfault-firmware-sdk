@@ -124,8 +124,11 @@ extern "C" {
 #else
   #define MEMFAULT_PRAGMA_PREFIX GCC
 #endif
-#define MEMFAULT_DISABLE_WARNING(warning) \
-  _Pragma(MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PRAGMA_PREFIX diagnostic ignored warning))
+#define MEMFAULT_DISABLE_WARNING(warning)                                    \
+  _Pragma(MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PRAGMA_PREFIX diagnostic push)) \
+    _Pragma(MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PRAGMA_PREFIX diagnostic ignored warning))
+#define MEMFAULT_ENABLE_WARNING(warning) \
+  _Pragma(MEMFAULT_EXPAND_AND_QUOTE(MEMFAULT_PRAGMA_PREFIX diagnostic pop))
 
 #ifdef __cplusplus
 }

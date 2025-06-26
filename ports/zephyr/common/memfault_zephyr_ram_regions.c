@@ -89,7 +89,7 @@ void __wrap_z_thread_abort(struct k_thread *thread) {
 
 MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
                                                               size_t desired_size) {
-#if (defined(CONFIG_RISCV) || defined(CONFIG_XTENSA))
+#if (defined(CONFIG_RISCV) || defined(CONFIG_XTENSA) || defined(CONFIG_ARCH_POSIX))
   // Linker script does not define _image_ram_start/end for RISC-V or Xtensa currently. Zephyr may
   // be defining them in >3.6.0, however, so this could change soon
   const uint32_t ram_start = 0;
@@ -223,6 +223,9 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
       // TODO, needs to be implemented. see here for reference:
       // https://github.com/zephyrproject-rtos/zephyr/blob/a6eef0ba3755f2530c5ce93524e5ac4f5be30194/arch/xtensa/core/xtensa-asm2.c#L109
       0
+#elif CONFIG_ARCH_POSIX
+      // Stubbed out, not supported
+      0
 #endif
       ;
 
@@ -276,20 +279,24 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
     return 0;
   }
 
+#if defined(CONFIG_ARCH_POSIX)
+  return 0;
+#else
+
   // These linker variables are defined in linker.ld in Zephyr RTOS. Note that
   // the data region name changed in v2.7 of the kernel.
   //
   // Also check for a user override, in case of non-standard configurations.
-#if !defined(ZEPHYR_DATA_REGION_START) && !defined(ZEPHYR_DATA_REGION_END)
-  #if MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES
-    // The old names are used in previous Zephyr versions (<=2.6)
-    #define ZEPHYR_DATA_REGION_START __data_ram_start
-    #define ZEPHYR_DATA_REGION_END __data_ram_end
-  #else
-    #define ZEPHYR_DATA_REGION_START __data_region_start
-    #define ZEPHYR_DATA_REGION_END __data_region_end
+  #if !defined(ZEPHYR_DATA_REGION_START) && !defined(ZEPHYR_DATA_REGION_END)
+    #if MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES
+      // The old names are used in previous Zephyr versions (<=2.6)
+      #define ZEPHYR_DATA_REGION_START __data_ram_start
+      #define ZEPHYR_DATA_REGION_END __data_ram_end
+    #else
+      #define ZEPHYR_DATA_REGION_START __data_region_start
+      #define ZEPHYR_DATA_REGION_END __data_region_end
+    #endif
   #endif
-#endif
 
   extern uint32_t ZEPHYR_DATA_REGION_START[];
   extern uint32_t ZEPHYR_DATA_REGION_END[];
@@ -298,6 +305,7 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
     (uint32_t)ZEPHYR_DATA_REGION_END - (uint32_t)ZEPHYR_DATA_REGION_START;
   regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(ZEPHYR_DATA_REGION_START, size_to_collect);
   return 1;
+#endif  // defined(CONFIG_ARCH_POSIX)
 }
 
 size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_regions) {

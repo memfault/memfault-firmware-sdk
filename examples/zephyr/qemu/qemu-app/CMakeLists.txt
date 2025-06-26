@@ -32,3 +32,5 @@ endif()
 zephyr_compile_definitions(
   ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1=\"${ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1}\"
 )
+
+zephyr_compile_options(--param=min-pagesize=0x1000)

@@ -39,6 +39,7 @@ extern "C" {
   enum { MEMFAULT_CONCAT(MEMFAULT_ASSERTION_AT_, __LINE__) = sizeof(char[(expr) ? 1 : -1]) }
 
 #define MEMFAULT_DISABLE_WARNING(warning)
+#define MEMFAULT_ENABLE_WARNING(warning)
 
 #ifdef __cplusplus
 }

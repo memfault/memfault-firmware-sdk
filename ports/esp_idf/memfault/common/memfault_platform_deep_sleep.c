@@ -59,6 +59,7 @@ static void prv_clear_backup_data(void) {
   s_mflt_metrics_backup_data.log_magic = 0;
 }
 
+#if !defined(CONFIG_MEMFAULT_METRICS_HEARTBEAT_TIMER_ENABLE)
 //! Provide a stub implementation of memfault_platform_metrics_timer_boot().
 //! Deep sleep enabled apps will not use a timer to trigger end of heartbeat
 //! collection, but instead will check on deep sleep entry.
@@ -68,6 +69,7 @@ bool memfault_platform_metrics_timer_boot(uint32_t period_sec,
   (void)callback;
   return true;
 }
+#endif  // !defined(MEMFAULT_METRICS_HEARTBEAT_TIMER_ENABLE)
 
 uint64_t memfault_platform_get_time_since_boot_ms(void) {
   // use the RTC timer to get the time since boot. this runs through deep sleep.

@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.0] - 2025-06-26
+
+This is a feature release, primarily addressing future compatibility changes for
+the next nRF-Connect SDK release.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add support for the ESP32 chip on Zephyr, adding to the existing support for
+    ESP32-S3 and ESP32 C series chips.
+
+  - Add support for building the Memfault SDK on the `native_sim` board. Note
+    that Memfault does not support reboot tracking or coredumps on this target,
+    but other features are supported.
+
+### 🛠️ Changed
+
+- General:
+
+  - Add a `MEMFAULT_ENABLE_WARNING(warning)` macro complementing the existing
+    `MEMFAULT_DISABLE_WARNING(warning)` macro. This macro is only implemented
+    for GCC + Clang.
+
+- Zephyr:
+
+  - Remove the External Module logic, used to support multiple Zephyr versions,
+    and instead use the normal Zephyr module Kconfig path specifier. There
+    should be no user-facing changes from this change. It addresses an issue
+    with Kconfig symbol linting.
+
+  - In the [Zephyr QEMU sample app](examples/zephyr/qemu/qemu-app/prj.conf), add
+    the `--param=min-pagesize=0x1000` compiler option, which will catch
+    dereferences to low memory addresses. This is only for static analysis
+    purposes and does not affect any behavior.
+
+- ESP-IDF:
+
+  - The heartbeat metrics timer is now enabled by default when
+    `CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT=y`. Version `1.25.0`, which added deep
+    sleep support, had disabled the normal heartbeat metrics timer by default.
+    The default behavior can be overridden with the Kconfig option
+    `CONFIG_MEMFAULT_METRICS_HEARTBEAT_TIMER_ENABLE`.
+
+- nRF-Connect SDK:
+
+  - Replace use of `LTE_LC_ON_CFUN` with `NRF_MODEM_LIB_ON_CFUN` for nRF-Connect
+    SDK v2.8.0+. This deprecated API is scheduled to be removed in the next
+    nRF-Connect SDK release.
+
 ## [1.25.0] - 2025-06-09
 
 This is a feature release of the Memfault Firmware SDK. The main new feature

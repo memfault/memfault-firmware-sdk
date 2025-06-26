@@ -4,17 +4,17 @@
 //! See LICENSE for details
 //!
 //! @brief
-//! Fault handling for RISC-V based architectures
+//! Fault handling for Posix (i386)
 
-#if defined(__riscv)
+#if defined(__i386__)
 
   #include "memfault/core/compiler.h"
   #include "memfault/core/platform/core.h"
   #include "memfault/core/reboot_tracking.h"
-  #include "memfault/panics/arch/riscv/riscv.h"
+  #include "memfault/panics/arch/posix/posix.h"
+  #include "memfault/panics/assert.h"
   #include "memfault/panics/coredump.h"
   #include "memfault/panics/coredump_impl.h"
-  #include "memfault/panics/fault_handling.h"
 
 const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_regions) {
   *num_regions = 0;
@@ -36,77 +36,33 @@ static void prv_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason 
   memfault_reboot_tracking_mark_reset_imminent(s_crash_reason, &info);
 }
 
-void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReason reason) {
-  prv_fault_handling_assert(pc, lr, reason);
-}
-
-// For non-esp-idf riscv implementations, provide a full assert handler and
-// other utilities.
-  #if defined(__ZEPHYR__) && (defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32))
-    #include <hal/cpu_hal.h>
-    #include <zephyr/kernel.h>
-
 void memfault_platform_halt_if_debugging(void) {
-    // Zephyr 3.7.0 deprecated cpu_ll_is_debugger_attached() in favor of
-    // esp_cpu_dbgr_is_attached(). Support both Kconfigs.
-    #if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
-  if (esp_cpu_dbgr_is_attached()) {
-    MEMFAULT_BREAKPOINT();
-  }
-    #else
-  if (cpu_ll_is_debugger_attached()) {
-    MEMFAULT_BREAKPOINT();
-  }
-    #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+  // unimplemented
 }
 
 bool memfault_arch_is_inside_isr(void) {
-  // Use the Zephyr-specific implementation.
-  //
-  // It's not clear if there's a RISC-V standard way to check if the CPU is in
-  // an exception mode. The mcause register comes close but it won't tell us if
-  // a trap was taken due to a non-interrupt cause:
-  // https://five-embeddev.com/riscv-isa-manual/latest/machine.html#sec:mcause
-  return k_is_in_isr();
-}
-
-static void prv_fault_handling_assert_native(void *pc, void *lr, eMemfaultRebootReason reason) {
-  prv_fault_handling_assert(pc, lr, reason);
-
-    #if MEMFAULT_ASSERT_HALT_IF_DEBUGGING_ENABLED
-  memfault_platform_halt_if_debugging();
-    #endif
-
-  // dereference a null pointer to trigger fault
-  *(uint32_t *)0 = 0x77;
-
-  // We just trap'd into the fault handler logic so it should never be possible to get here but if
-  // we do the best thing that can be done is rebooting the system to recover it.
-  memfault_platform_reboot();
+  return false;  // unimplemented
 }
 
 MEMFAULT_NO_OPT void memfault_fault_handling_assert_extra(void *pc, void *lr,
                                                           sMemfaultAssertInfo *extra_info) {
-  prv_fault_handling_assert_native(pc, lr, extra_info->assert_reason);
+  prv_fault_handling_assert(pc, lr, extra_info->assert_reason);
+  memfault_platform_reboot();
 
   MEMFAULT_UNREACHABLE;
 }
 
 MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
-  prv_fault_handling_assert_native(pc, lr, kMfltRebootReason_Assert);
+  prv_fault_handling_assert(pc, lr, kMfltRebootReason_Assert);
+  memfault_platform_reboot();
 
   MEMFAULT_UNREACHABLE;
 }
 
-  #elif !defined(ESP_PLATFORM)
-    #error "Unsupported RISC-V platform. Please visit https://mflt.io/contact-support"
-  #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
-
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {
   if (s_crash_reason == kMfltRebootReason_Unknown) {
-    // TODO confirm this works correctly- we should have the correct
-    // pre-exception reg set here
-    prv_fault_handling_assert((void *)regs->mepc, (void *)regs->ra, reason);
+    // skip LR saving here.
+    prv_fault_handling_assert((void *)regs->eip, (void *)0, reason);
   }
 
   sMemfaultCoredumpSaveInfo save_info = {
@@ -116,8 +72,7 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   };
 
   sCoredumpCrashInfo info = {
-    // Zephyr fault shim saves the stack pointer in s[0]
-    .stack_address = (void *)regs->s[0],
+    .stack_address = (void *)regs->esp,
     .trace_reason = save_info.trace_reason,
     .exception_reg_state = regs,
   };
@@ -127,16 +82,11 @@ void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason rea
   if (coredump_saved) {
     memfault_reboot_tracking_mark_coredump_saved();
   }
-
-  #if !MEMFAULT_FAULT_HANDLER_RETURN
-  memfault_platform_reboot();
-  MEMFAULT_UNREACHABLE;
-  #endif
 }
 
 size_t memfault_coredump_storage_compute_size_required(void) {
   // actual values don't matter since we are just computing the size
-  sMfltRegState core_regs = { 0 };
+  sMfltRegState core_regs[MEMFAULT_COREDUMP_CPU_COUNT] = { 0 };
   sMemfaultCoredumpSaveInfo save_info = {
     .regs = &core_regs,
     .regs_size = sizeof(core_regs),
@@ -154,4 +104,4 @@ size_t memfault_coredump_storage_compute_size_required(void) {
   return memfault_coredump_get_save_size(&save_info);
 }
 
-#endif  // __riscv
+#endif /* __i386__ */

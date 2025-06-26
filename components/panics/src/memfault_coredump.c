@@ -96,6 +96,7 @@ sMfltTraceReasonBlock;
 
 typedef enum MfltCoredumpMachineType {
   kMfltCoredumpMachineType_None = 0,
+  kMfltCoredumpMachineType_Intel80386 = 3,
   kMfltCoredumpMachineType_ARM = MEMFAULT_MACHINE_TYPE_ARM,
   kMfltCoredumpMachineType_Aarch64 = 183,
   kMfltCoredumpMachineType_Xtensa = MEMFAULT_MACHINE_TYPE_XTENSA,
@@ -272,6 +273,8 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
     kMfltCoredumpMachineType_XtensaLx106
 #elif defined(__riscv)
     kMfltCoredumpMachineType_RiscV
+#elif defined(__i386__)
+    kMfltCoredumpMachineType_Intel80386
 #else
   #error "Coredumps are not supported for target architecture"
 #endif

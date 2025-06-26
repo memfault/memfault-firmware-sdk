@@ -11,6 +11,8 @@ elseif(CONFIG_XTENSA)
     # supports. Therefore, we have to add an include path to the folder where
     # the header defining xtensa stack frames lives.
     zephyr_include_directories(${ZEPHYR_BASE}/arch/xtensa/include)
+elseif(CONFIG_ARCH_POSIX)
+    zephyr_library_sources(memfault_fault_handler_posix.c)
 else()
     # Unsupported configuration
     message(FATAL_ERROR "Unsupported chip architecture")

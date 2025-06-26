@@ -290,8 +290,8 @@ endif
             The interval in seconds between heartbeat metrics tallying.
 
     config MEMFAULT_METRICS_HEARTBEAT_TIMER_ENABLE
+        default y
         bool "Enable the built-in heartbeat timer"
-        default y if !MEMFAULT_DEEP_SLEEP_SUPPORT
         help
             When enabled, the Memfault SDK will install a timer to trigger
             heartbeat metrics collection.

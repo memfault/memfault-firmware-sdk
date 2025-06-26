@@ -1,10 +1,4 @@
 name: memfault-firmware-sdk
 build:
   cmake: ports/zephyr
-  # Enable external module integration files. This enables customizing the
-  # Memfault Kconfig tree based on Zephyr version, to support compatibility
-  # changes between Zephyr versions.
-  # https://docs.zephyrproject.org/latest/develop/modules.html#module-integration-files-external
-  kconfig-ext: True
-  settings:
-    module_ext_root: ports/zephyr
+  kconfig: ports/zephyr/Kconfig

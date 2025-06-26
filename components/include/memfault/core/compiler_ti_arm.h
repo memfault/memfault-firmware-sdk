@@ -73,6 +73,7 @@ MEMFAULT_NAKED_FUNC static uint32_t __get_PSP(void) {
 #endif
 
 #define MEMFAULT_DISABLE_WARNING(warning)
+#define MEMFAULT_ENABLE_WARNING(warning)
 
 #ifdef __cplusplus
 }

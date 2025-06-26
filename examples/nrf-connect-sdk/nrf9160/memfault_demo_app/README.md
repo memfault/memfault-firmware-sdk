@@ -6,8 +6,7 @@ SDK which includes a Memfault Integration!
 ## Setup
 
 An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. Provision a project and key from
-https://goto.memfault.com/create-key/nrf91
+with Memfault's web services. nRF91 users can provision a project and key from [here](https://goto.memfault.com/create-key/nrf91).
 
 ## Compiling
 
@@ -23,7 +22,7 @@ $ west build -b nrf9160dk/nrf9160/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_
 [181/181] Linking C executable zephyr/zephyr.elf
 ```
 
-Note that the board argument (`-b`) for the nRF9160DK has changed across releases -- if you are targeting nRF Connect SDK <= 1.6, use, `-b nrf9160_pca10090ns`. Also, you may want to target a version of the DK by passing `-b <board>@<revision>`, for example `nrf9160dk_nrf9160@1.0.0`, in order to use [specific hardware](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/boards/arm/nrf9160dk_nrf9160/doc/index.html#additional-hardware-in-v0-14-0).
+Note: you may want to target a version of the DK by passing `-b <board>@<revision>/<qualifiers>`, for example `nrf9160dk@1.0.0/nrf9160/ns`, in order to use [specific hardware](https://docs.nordicsemi.com/bundle/ncs-2.9.2/page/zephyr/boards/nordic/nrf9160dk/doc/index.html#additional_hardware_in_v0140). For NCS < 2.7.0, use `<board>@<revision>`, for example `nrf9160dk_nrf9160@1.0.0`.
 
 ## Testing the Integration
 
@@ -47,6 +46,4 @@ Subcommands:
 ## Adding the Memfault SDK to your Project
 
 For more details on how to add the memfault-firmware-sdk to your own nRF Connect
-SDK based project, follow our step-by-step guide available here:
-
-https://mflt.io/nrf-connect-sdk-integration-guide
+SDK based project, follow our step-by-step guide available [here](https://mflt.io/nrf-connect-sdk-integration-guide).

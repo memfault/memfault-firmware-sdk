@@ -71,7 +71,7 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
     .software_type = "zephyr-app",
     .software_version =
       CONFIG_ZEPHYR_MEMFAULT_EXAMPLE_SOFTWARE_VERSION "+" ZEPHYR_MEMFAULT_EXAMPLE_GIT_SHA1,
-    .hardware_version = CONFIG_BOARD_TARGET,
+    .hardware_version = CONFIG_BOARD,
   };
 }
 
@@ -168,8 +168,10 @@ static void prv_collect_main_thread_run_stats(void) {
   // Calculate percent of main thread execution vs total CPU time. The metric is
   // defined as scaled *10- the value is recorded as percent * 10 (1000), and
   // will be scaled down on ingestion to a float.
-  uint32_t main_thread_cpu_time = (current_main_thread_cycles * 1000) / current_cpu_total_cycles;
-  MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_main_pct, main_thread_cpu_time);
+  if (current_cpu_total_cycles > 0) {
+    uint32_t main_thread_cpu_time = (current_main_thread_cycles * 1000) / current_cpu_total_cycles;
+    MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_main_pct, main_thread_cpu_time);
+  }
 
   // Update previous values
   s_prev_main_thread_cycles = current_main_thread_cycles;
@@ -365,7 +367,7 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 #endif
 
 int main(void) {
-  LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD_TARGET);
+  LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();
 
   memfault_cdr_register_source(&g_custom_data_recording_source);

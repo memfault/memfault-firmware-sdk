@@ -3,6 +3,14 @@
 # This is loaded when building this directory with west.
 menu "Memfault Example Application Configuration"
 
+config ZEPHYR_MEMFAULT_EXAMPLE_AUTO_SETTINGS
+    bool
+    default y
+    # Force on CONFIG_GPIO if the led0 alias is enabled
+    select GPIO if $(dt_alias_enabled,led0)
+    help
+      Non-user-settable configuration options for the example app.
+
 config ZEPHYR_MEMFAULT_EXAMPLE_THREAD_TOGGLE
     bool "Example thread create + abort toggling every 10 seconds"
     default n
