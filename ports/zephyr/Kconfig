@@ -254,7 +254,7 @@ config MEMFAULT_COMPACT_LOG
           information here: https://mflt.io/compact-logs
 
 config MEMFAULT_LOGGING_ENABLE
-        bool "Memfault Zephyr backend logging Enable [EXPERIMENTAL]"
+        bool "Memfault Zephyr backend logging Enable"
         default n
         select LOG
         select LOG_OUTPUT
@@ -282,6 +282,27 @@ config MEMFAULT_METRICS_LOGS_ENABLE
           by the system.
 
 endif # MEMFAULT_LOGGING_ENABLE
+
+menuconfig MEMFAULT_FS_LOG_EXPORT
+        bool "Enable exporting logs from fs log backend to Memfault"
+        default n
+        depends on LOG_BACKEND_FS
+        help
+          Enables exporting logs from the fs log backend to Memfault. Use
+          memfault_fs_log_trigger_export() to initiate an export. The
+          packetizer will then issue a one-time drain of log data from the fs
+          log data store.
+
+if MEMFAULT_FS_LOG_EXPORT
+
+config MEMFAULT_FS_LOG_EXPORT_TEMPDIR
+        string "Temporary scratch directory for exporting logs"
+        default ""
+        help
+          Temporary directory where log data is staged before uploading to
+          Memfault. Must be set by the user.
+
+endif  # MEMFAULT_FS_LOG_EXPORT
 
 config MEMFAULT_ROOT_CERT_STORAGE
         bool "Memfault TLS root certificate storage enabled"

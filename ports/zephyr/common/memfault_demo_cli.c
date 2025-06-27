@@ -354,6 +354,22 @@ static int prv_upload_logs(const struct shell *shell, size_t argc, char **argv) 
 }
 #endif
 
+#if defined(CONFIG_MEMFAULT_FS_LOG_EXPORT)
+  #include "memfault/ports/zephyr/memfault_fs_log_export.h"
+static int prv_fs_log_capture(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc;
+  (void)argv;
+
+  size_t staged_size = memfault_fs_log_trigger_export();
+  if (staged_size == 0) {
+    shell_print(shell, "No logs staged for export");
+  } else {
+    shell_print(shell, "Staged %zu bytes of logs for export", staged_size);
+  }
+  return 0;
+}
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_memfault_crash_cmds,
 //! different crash types that should result in a coredump being collected
@@ -386,6 +402,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD) && \
   !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
   SHELL_CMD(logs_upload, NULL, "enable/disable periodic upload of logs", prv_upload_logs),
+#endif
+#if defined(CONFIG_MEMFAULT_FS_LOG_EXPORT)
+  SHELL_CMD(fs_log_capture, NULL, "trigger capture of logs from the filesystem",
+            prv_fs_log_capture),
 #endif
   SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),
 #if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)

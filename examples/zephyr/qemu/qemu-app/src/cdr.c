@@ -17,8 +17,6 @@
 
 LOG_MODULE_REGISTER(cdr);
 
-#include "memfault/components.h"
-
 // Only read the CDR payload when this is set
 static bool s_cdr_ready_to_send = false;
 // keep track of the offset into the CDR data; the packetizer may call
