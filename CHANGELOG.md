@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.26.1] - 2025-06-30
+
+This is a minor fix release, addressing one future compatibility issue with the
+Zephyr port.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Apply a compatibility fix for upcoming Zephyr 4.2.0, fixing the size of the
+    `net_mgmt` callback `mgmt_event` parameter. Thanks to @rlubos for providing
+    the fix in [#91](https://github.com/memfault/memfault-firmware-sdk/pull/91)
+    🎉!
+
 ## [1.26.0] - 2025-06-26
 
 This is a feature release, primarily addressing future compatibility changes for
