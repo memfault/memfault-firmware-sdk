@@ -165,6 +165,11 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
 
   size_t region_idx = 0;
 
+  // Collect the s_task_tcbs array, in case any TCB or thread stack fails to
+  // collect completely, we can still recover the state of the other threads.
+  regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
+  region_idx++;
+
   // First we will try to store all the task TCBs. This way if we run out of
   // space while storing task stacks, we will still be able to recover the state
   // of all the threads. Zephyr stores the thread list as a linked list, so we
@@ -267,9 +272,6 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
                                                              sizeof(s_memfault_task_watermarks_v2));
   region_idx++;
 #endif  // defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
-
-  regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
-  region_idx++;
 
   return region_idx;
 }
