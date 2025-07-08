@@ -704,9 +704,8 @@ ssize_t memfault_zephyr_port_post_data_return_size(void) {
     rv = memfault_zephyr_port_http_upload_sdk_data(&ctx);
   }
 
-  if (rv == 0) {
-    memfault_zephyr_port_http_close_socket(&ctx);
-  }
+  // Always close the socket to prevent leaks
+  memfault_zephyr_port_http_close_socket(&ctx);
 
 #if defined(CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS)
   if (rv == 0) {
