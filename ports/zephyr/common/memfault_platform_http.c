@@ -388,7 +388,12 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
   memfault_http_start_chunk_post(prv_send_data, &sock, metadata.single_chunk_message_length);
 
   while (1) {
-    uint8_t buf[128];
+    // Allow somehow a larger buffer for more efficient transfers
+#if defined(CONFIG_MEMFAULT_HTTP_CHUNK_TRANSFER_BUFFER_SIZE)
+    uint8_t buf[CONFIG_MEMFAULT_HTTP_CHUNK_TRANSFER_BUFFER_SIZE];
+#else
+    uint8_t buf[1024];
+#endif
     size_t buf_len = sizeof(buf);
     eMemfaultPacketizerStatus status = memfault_packetizer_get_next(buf, &buf_len);
     if (status == kMemfaultPacketizerStatus_NoMoreData) {
