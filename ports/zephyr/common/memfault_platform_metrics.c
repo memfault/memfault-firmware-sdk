@@ -330,7 +330,6 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
   static uint64_t s_prev_timer_task_cycles = 0;
   static uint64_t s_prev_all_tasks_cycles = 0;
-  static uint64_t s_prev_non_idle_tasks_cycles = 0;
 
   k_thread_runtime_stats_t timer_task_stats;
   k_thread_runtime_stats_get(me, &timer_task_stats);
@@ -350,6 +349,8 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
   // stats.total_cycles added in Zephyr 3.0
   #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(3, 0)
+  static uint64_t s_prev_non_idle_tasks_cycles = 0;
+
   if (all_tasks_cycles_delta > 0) {
     uint64_t non_idle_tasks_cycles_delta =
       prv_cycle_delta_update(all_tasks_stats.total_cycles, &s_prev_non_idle_tasks_cycles);

@@ -135,6 +135,14 @@ static const sMemfaultShellCommand s_memfault_shell_commands[] = {
     "Run a self test to check integration with the SDK" },
 #endif
 
+#if MEMFAULT_DEMO_CLI_WATCHDOG
+  { "wdog_enable", memfault_demo_cli_cmd_software_watchdog_enable, "Enable the software watchdog" },
+  { "wdog_disable", memfault_demo_cli_cmd_software_watchdog_disable,
+    "Disable the software watchdog" },
+  { "wdog_update", memfault_demo_cli_cmd_software_watchdog_update_timeout,
+    "Update the software watchdog timeout" },
+#endif
+
   { "help", memfault_shell_help_handler, "Lists all commands" },
 };
 

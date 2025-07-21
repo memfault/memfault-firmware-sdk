@@ -15,6 +15,12 @@
   #include "memfault/panics/coredump_impl.h"
   #include "memfault/panics/fault_handling.h"
 
+//! Provide stub implementations here to support building only
+void memfault_platform_halt_if_debugging(void) { }
+bool memfault_arch_is_inside_isr(void) {
+  return false;
+}
+
 MEMFAULT_WEAK void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
                                                    MEMFAULT_UNUSED eMemfaultRebootReason reason) { }
 

@@ -95,18 +95,18 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
   const uint32_t ram_start = 0;
   const uint32_t ram_end = 0xffffffff;
 #else
-  // NB: This only works for MCUs which have a contiguous RAM address range. (i.e Any MCU in the
-  // nRF53, nRF52, and nRF91 family). All of these MCUs have a contiguous RAM address range so it is
-  // sufficient to just look at _image_ram_start/end from the Zephyr linker script
-  extern uint32_t _image_ram_start[];
-  extern uint32_t _image_ram_end[];
+  // NB: This only works for MCUs which have a contiguous RAM address range. The
+  // allowed addresses for capturing coredump data is anything the kernel has
+  // access to.
+  extern uint32_t __kernel_ram_start[];
+  extern uint32_t __kernel_ram_end[];
 
-  const uint32_t ram_start = (uint32_t)_image_ram_start;
-  const uint32_t ram_end = (uint32_t)_image_ram_end;
+  const uint32_t ram_start = (uint32_t)__kernel_ram_start;
+  const uint32_t ram_end = (uint32_t)__kernel_ram_end;
 #endif
 
-  if ((uint32_t)start_addr >= ram_start && (uint32_t)start_addr < ram_end) {
-    return MEMFAULT_MIN(desired_size, ram_end - (uint32_t)start_addr);
+  if ((uintptr_t)start_addr >= ram_start && (uintptr_t)start_addr < ram_end) {
+    return MEMFAULT_MIN(desired_size, ram_end - (uintptr_t)start_addr);
   }
 
   return 0;
@@ -164,6 +164,11 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
   }
 
   size_t region_idx = 0;
+
+  // Collect the s_task_tcbs array, in case any TCB or thread stack fails to
+  // collect completely, we can still recover the state of the other threads.
+  regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
+  region_idx++;
 
   // First we will try to store all the task TCBs. This way if we run out of
   // space while storing task stacks, we will still be able to recover the state
@@ -241,7 +246,7 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
     const uint32_t stack_top =
       thread->stack_info.start + thread->stack_info.size - thread->stack_info.delta;
     size_t stack_size_to_collect =
-      MEMFAULT_MIN(stack_top - (uint32_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
+      MEMFAULT_MIN(stack_top - (uintptr_t)sp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
   #endif
 #else
     size_t stack_size_to_collect = CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT;
@@ -267,9 +272,6 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
                                                              sizeof(s_memfault_task_watermarks_v2));
   region_idx++;
 #endif  // defined(CONFIG_MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE)
-
-  regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(s_task_tcbs, sizeof(s_task_tcbs));
-  region_idx++;
 
   return region_idx;
 }
@@ -317,7 +319,7 @@ size_t memfault_zephyr_get_bss_regions(sMfltCoredumpRegion *regions, size_t num_
   extern uint32_t __bss_start[];
   extern uint32_t __bss_end[];
 
-  const size_t size_to_collect = (uint32_t)__bss_end - (uint32_t)__bss_start;
+  const size_t size_to_collect = (uintptr_t)__bss_end - (uintptr_t)__bss_start;
   regions[0] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(__bss_start, size_to_collect);
   return 1;
 }

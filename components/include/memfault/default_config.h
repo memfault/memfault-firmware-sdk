@@ -600,6 +600,15 @@ extern "C" {
   #define MEMFAULT_DEMO_CLI_SELF_TEST_COREDUMP_STORAGE 0
 #endif
 
+//! Enable testing of the software watchdog through the Demo CLI component
+//!
+//! Setting this config to 1 will add new commands to enable, disable, and update the timeout
+//! of the software watchdog. To use this feature, a software watchdog implementation must be
+//! provided. See https://docs.memfault.com/docs/mcu/watchdogs for more details.
+#ifndef MEMFAULT_DEMO_CLI_WATCHDOG
+  #define MEMFAULT_DEMO_CLI_WATCHDOG 0
+#endif
+
 //
 // Custom Data Recording configuration options [EXPERIMENTAL]
 //

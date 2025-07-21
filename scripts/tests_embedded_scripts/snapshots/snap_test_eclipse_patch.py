@@ -479,6 +479,11 @@ snapshots['test_eclipse_project_patcher 1'] = {
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_shell_commands.c</locationURI>
 \t</link>
 \t<link>
+\t\t<name>memfault_components/memfault_demo_watchdog.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_watchdog.c</locationURI>
+\t</link>
+\t<link>
 \t\t<name>memfault_components/memfault_demo_cli_aux.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/panics/memfault_demo_cli_aux.c</locationURI>
@@ -972,6 +977,11 @@ snapshots['test_eclipse_project_patcher_nested_port 1'] = {
 \t\t<name>memfault_components/memfault_demo_shell_commands.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_shell_commands.c</locationURI>
+\t</link>
+\t<link>
+\t\t<name>memfault_components/memfault_demo_watchdog.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_watchdog.c</locationURI>
 \t</link>
 \t<link>
 \t\t<name>memfault_components/memfault_demo_cli_aux.c</name>
@@ -1502,6 +1512,11 @@ snapshots['test_eclipse_project_patcher_single_dir_port 1'] = {
 \t\t<name>memfault_components/memfault_demo_shell_commands.c</name>
 \t\t<type>1</type>
 \t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_shell_commands.c</locationURI>
+\t</link>
+\t<link>
+\t\t<name>memfault_components/memfault_demo_watchdog.c</name>
+\t\t<type>1</type>
+\t\t<locationURI>PARENT-3-PROJECT_LOC/components/demo/src/memfault_demo_watchdog.c</locationURI>
 \t</link>
 \t<link>
 \t\t<name>memfault_components/memfault_demo_cli_aux.c</name>

@@ -34,3 +34,9 @@ zephyr_compile_definitions(
 )
 
 zephyr_compile_options(--param=min-pagesize=0x1000)
+
+# For Zephyr >=3.0.0,<3.6.0, explicitly enable -Werror
+if (${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_GREATER_EQUAL 3.0.0 AND
+    ${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_PATCHLEVEL} VERSION_LESS 3.6.0)
+  zephyr_compile_options(-Werror)
+endif()

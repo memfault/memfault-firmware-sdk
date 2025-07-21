@@ -127,6 +127,15 @@ int memfault_demo_cli_cmd_heartbeat(int argc, char *argv[]);
 //! This command triggers a test which exercises different subsystems
 int memfault_demo_cli_cmd_self_test(int argc, char *argv[]);
 
+//! Enable the software watchdog
+int memfault_demo_cli_cmd_software_watchdog_enable(int argc, char *argv[]);
+
+//! Disable the software watchdog
+int memfault_demo_cli_cmd_software_watchdog_disable(int argc, char *argv[]);
+
+//! Update the software watchdog timeout
+int memfault_demo_cli_cmd_software_watchdog_update_timeout(int argc, char *argv[]);
+
 #ifdef __cplusplus
 }
 #endif

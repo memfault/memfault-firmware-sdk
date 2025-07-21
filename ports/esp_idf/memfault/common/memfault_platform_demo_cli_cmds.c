@@ -22,6 +22,8 @@
   #include "esp32/clk.h"
 #endif
 
+#include <time.h>
+
 #include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"

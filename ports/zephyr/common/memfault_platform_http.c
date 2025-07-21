@@ -387,9 +387,20 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
 
   memfault_http_start_chunk_post(prv_send_data, &sock, metadata.single_chunk_message_length);
 
+  // If the configured buffer size is large, use malloc instead of stack to
+  // avoid stack overflow.
+  #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
+  uint8_t *buf = prv_calloc(1, CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE);
+  if (buf == NULL) {
+    MEMFAULT_LOG_ERROR("Failed to allocate buffer for reading data");
+    memfault_packetizer_abort();
+    return -1;
+  }
+  #else
+  uint8_t buf[CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE];
+  #endif
   while (1) {
-    uint8_t buf[128];
-    size_t buf_len = sizeof(buf);
+    size_t buf_len = CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE;
     eMemfaultPacketizerStatus status = memfault_packetizer_get_next(buf, &buf_len);
     if (status == kMemfaultPacketizerStatus_NoMoreData) {
       break;
@@ -397,6 +408,10 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
 
     if (!prv_try_send(sock, buf, buf_len)) {
       // unexpected failure, abort in-flight transaction
+  #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
+      prv_free(buf);
+  #endif
+
       memfault_packetizer_abort();
       return -1;
     }
@@ -408,6 +423,10 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
       break;
     }
   }
+
+  #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
+  prv_free(buf);
+  #endif
 
   // message sent, await response
   return 1;
@@ -697,9 +716,6 @@ ssize_t memfault_zephyr_port_post_data_return_size(void) {
 
   if (rv == 0) {
     rv = memfault_zephyr_port_http_upload_sdk_data(&ctx);
-  }
-
-  if (rv == 0) {
     memfault_zephyr_port_http_close_socket(&ctx);
   }
 
@@ -790,7 +806,8 @@ bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) {
 }
 
 int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
-  int max_messages_to_send = 5;
+  int max_messages_to_send = CONFIG_MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND;
+
 #if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE && CONFIG_MEMFAULT_RAM_BACKED_COREDUMP
   // The largest data type we will send is a coredump. If CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
   // is being used, make sure we issue enough HTTP POSTS such that an entire coredump will be sent.
@@ -799,9 +816,10 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
                  CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE);
 #endif
   bool success = true;
+  int rv = -1;
 
   while (max_messages_to_send-- > 0) {
-    int rv = prv_send_next_msg(ctx);
+    rv = prv_send_next_msg(ctx);
     if (rv == 0) {
       // no more messages to send
       break;
@@ -814,6 +832,12 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
       break;
     }
   }
+
+  if ((max_messages_to_send <= 0) && memfault_packetizer_data_available()) {
+    MEMFAULT_LOG_WARN(
+      "Hit max message limit: " STRINGIFY(CONFIG_MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND));
+  }
+
   return success ? 0 : -1;
 }
 

@@ -6,6 +6,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.27.0] - 2025-07-21
+
+### 📈 Added
+
+- General:
+
+  - Add a reference software watchdog port for the STM32L4 series LPTIM
+    peripheral. Users of the STM32 HAL can now compile in the reference port and
+    the `MemfaultWatchdog_Handler`. The handler will save a coredump so the full
+    system state can be recovered when a watchdog takes place. More details can
+    be found in
+    [`ports/include/memfault/ports/watchdog.h`](ports/include/memfault/ports/watchdog.h).
+
+  - Add CLI commands `wdg_enable`, `wdg_disable`, and `wdog_update <timeout_ms>`
+    for testing a software watchdog port. These commands are disabled by default
+    and can be enabled for platforms using the minimal shell/console with
+    `MEMFAULT_DEMO_CLI_WATCHDOG`.
+
+- Zephyr:
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND`, which
+    controls the max number of messages that will be sent in a single invocation
+    of `memfault_zephyr_port_post_data()` or similar APIs. The default is `100`,
+    which is suitable for most applications. Before this change, the limit was
+    hard coded to 5 messages, which was too low for systems with infrequent
+    upload intervals.
+
+  - Support building for `native_sim` on arm64 hosts (specifically, the
+    `native_sim/native/64` target), in addition to x86 hosts.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Improve the default implementation of
+    `memfault_platform_sanitize_address_range()` to include all memory
+    accessible by the kernel. This enables collection of heap-allocated task
+    control blocks, which was previously unsupported. Users with discontiguous
+    memory regions should provide their own implementation, as before.
+
+  - Prioritize the thread bookkeeping array when collecting thread information
+    in a coredump (when `CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS=y`, the
+    default). This improves the quality of the processed coredump if the
+    coredump region is too small to collect all stacks for all threads in the
+    system (impacts systems with many threads and limited coredump storage
+    space).
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE`,
+    which controls the size of the intermediate buffer used when reading data
+    from the underlying data source (coredump storage, log buffer, CDR, etc)
+    when uploading data to Memfault via HTTP. The default size is 128 bytes, and
+    1024 bytes on nRF91x series SOCs to better support modem trace CDR upload.
+    Thanks to @DematteisGiacomo for submitting this in
+    [#92](https://github.com/memfault/memfault-firmware-sdk/pull/92).
+
+- ESP-IDF:
+
+  - Handle deprecated Deep Sleep API calls for upcoming ESP-IDF v5.5 and v6.
+
+  - Supporting building with the Memfault CLI commands disabled,
+    `CONFIG_MEMFAULT_CLI_ENABLED=n`. Thanks to @finger563 for reporting this
+    issue and providing a fix in
+    [#93](https://github.com/memfault/memfault-firmware-sdk/issues/93) 🎉!
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix an issue where the socket file descriptor can potentially be leaked when
+    the connection terminated unexpectedly during an HTTP chunk upload. Thanks
+    to @DematteisGiacomo for submitting this in
+    [#92](https://github.com/memfault/memfault-firmware-sdk/pull/92).
+
 ## [1.26.1] - 2025-06-30
 
 This is a minor fix release, addressing one future compatibility issue with the

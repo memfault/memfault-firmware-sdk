@@ -4,6 +4,7 @@
 #
 
 import os
+import re
 import shutil
 import sys
 
@@ -144,6 +145,46 @@ def esp32_app_gdb(ctx, gdb=None, reset=False):
         ctx.run(gdb_cmd, pty=True)
 
 
+@task
+def esp32_decode_backtrace(ctx, backtrace_str, symbol_file, verbose=False):
+    """Decode a backtrace emitted by ESP-IDF panic handling
+
+    The backtrace_str should be passed as a string of separated address pairs
+    where each pair has the format "pc:sp". For example:
+        "0x40081cda:0x3ffd00a0 0x40082ce3:0x3ffd00c0 0x4008927d:0x3ffd00e0"
+
+    This backtrace is printed by the ESP-IDF debug helpers here:
+    https://github.com/espressif/esp-idf/blob/v5.4.2/components/esp_system/port/arch/xtensa/debug_helpers.c
+
+    Note: `idf.py monitor` will automatically decode the backtrace for you
+    https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/tools/idf-monitor.html#automatic-address-decoding
+    so this task is primarily used if only the raw backtrace is supplied (e.g. via support ticket or logs).
+    """
+
+    addr_tuples = [
+        (int(pc, 16), int(sp, 16))
+        for pc, sp in re.findall(r"0x([0-9a-fA-F]+):0x([0-9a-fA-F]+)", backtrace_str)
+    ]
+
+    for i in range(len(addr_tuples)):
+        result = ctx.run(
+            "addr2line -e {} {address:x}".format(symbol_file, address=addr_tuples[i][0]),
+            hide=True,
+            warn=True,
+        )
+        if result.ok:
+            print("Frame {frame:>2}: {line}".format(frame=i, line=result.stdout.strip()))
+            if verbose:
+                print("  PC  = 0x{address:x}".format(address=addr_tuples[i][0]))
+                print("  SP  = 0x{sp:x}".format(sp=addr_tuples[i][1]))
+        else:
+            print(
+                "Error processing 0x{address:x}: {error}".format(
+                    address=addr_tuples[i][0], error=result.stderr.strip()
+                )
+            )
+
+
 ns = Collection("esp32")
 ns.add_task(esp32_console, name="console")
 ns.add_task(esp32_openocd, name="gdbserver")
@@ -154,3 +195,4 @@ ns.add_task(esp32_app_clean, name="clean")
 ns.add_task(esp32_app_flash, name="flash")
 ns.add_task(esp32_app_gdb, name="app-gdb")
 ns.add_task(esp32_app_menuconfig, name="app-menuconfig")
+ns.add_task(esp32_decode_backtrace, name="decode-backtrace")

@@ -93,12 +93,17 @@ list(APPEND MEMFAULT_COMPONENTS_SRCS
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_core.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_coredump.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_debug_log.c
-  ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_device_info.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client_buffer.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_http_client.c
   ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_metrics.c
 )
+
+if (CONFIG_MEMFAULT_CLI_ENABLED)
+  list(APPEND MEMFAULT_COMPONENTS_SRCS
+    ${MEMFAULT_ESP_IDF_PORT_COMMON}/memfault_platform_demo_cli_cmds.c
+  )
+endif()
 
 if (CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD)
   list(APPEND MEMFAULT_COMPONENTS_SRCS

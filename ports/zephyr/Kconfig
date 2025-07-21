@@ -319,13 +319,40 @@ if MEMFAULT_HTTP_ENABLE
 config MEMFAULT_HTTP_MAX_POST_SIZE
         int "Set the Maximum HTTP Body Size Memfault will use in a POST request"
         default 0
-        depends on MEMFAULT_HTTP_ENABLE
         help
           Some network drivers have bugs which limit the maximum amount of
           data that can be sent in a single HTTP request. When the value is 0 (default),
           no size restriction on HTTP post size will be enforced. For a non-zero value,
           this will be the maximum body length of a posted check. This size is allocated
           on the stack posting the data.
+
+config MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND
+        int "Set the maximum number of messages to send when uploading data to Memfault"
+        default 100
+        range 1 10000
+        depends on MEMFAULT_HTTP_ENABLE
+        help
+          The maximum number of messages to send per execution when using
+          the Memfault HTTP client to upload Memfault data, i.e.
+          memfault_zephyr_port_post_data() and similar APIs. A Memfault message
+          is a single logical data unit, eg coredump, metrics report, etc.
+
+config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
+        int "Set the size of the HTTP packetizer buffer"
+        # Use a larger default on nRF91x series, specifically to support modem
+        # trace CDR export more efficiently.
+        default 1024 if SOC_SERIES_NRF91X
+        default 128
+        help
+          This buffer is used when reading incremental chunk data when posting
+          via HTTP. It does NOT set the size of the HTTP body (see
+          MEMFAULT_HTTP_MAX_POST_SIZE), but is instead used when issuing reads
+          to the underlying data source (e.g. coredump, logs, CDR, etc).
+          Increasing the size of this buffer can improve upload performance when
+          the data source is reading from a storage medium that benefits from
+          larger sequential reads.
+          Note that larger values will be dynamically allocated instead of stack
+          allocated.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Enables a work job to periodically push new data to Memfault"

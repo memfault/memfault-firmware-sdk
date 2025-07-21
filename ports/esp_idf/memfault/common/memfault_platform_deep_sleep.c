@@ -6,7 +6,14 @@
 #include <string.h>
 #include <time.h>
 
-#include "rtc.h"
+#include "esp_idf_version.h"
+
+// rtc.h is used for ESP-IDF < v5.5, otherwise use esp_rtc_time.h
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 5, 0)
+  #include "rtc.h"
+#else
+  #include "esp_rtc_time.h"
+#endif
 
 #if defined(CONFIG_MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG)
   #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -356,16 +363,35 @@ extern bool memfault_log_restore_state(sMfltLogSaveState *state) {
   return true;
 }
 
+static bool prv_woke_up_from_deep_sleep(void) {
+  // This API changed in ESP-IDF v6
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  bool result =
+    (wakeup_reason != ESP_SLEEP_WAKEUP_UNDEFINED) && (wakeup_reason != ESP_SLEEP_WAKEUP_ALL);
+#else
+  uint32_t wakeup_reason = esp_sleep_get_wakeup_causes();
+  bool result =
+    (wakeup_reason & (BIT(ESP_SLEEP_WAKEUP_UNDEFINED) | BIT(ESP_SLEEP_WAKEUP_ALL))) == 0;
+#endif
+
+  if (result) {
+    ESP_LOGD(TAG, "🌅 Woke up from deep sleep, reason: 0x%x", (int)wakeup_reason);
+  } else {
+    ESP_LOGD(TAG, "Woke up from non-deep sleep, reason: 0x%x", (int)wakeup_reason);
+  }
+
+  return result;
+}
+
 void memfault_platform_deep_sleep_restore_state(void) {
+#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG)
+  esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
+
   // Check if wakeup was from deep sleep. The current implementation doesn't
   // need to run any specific code on wakeup, so annotate only.
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-  if ((wakeup_reason != ESP_SLEEP_WAKEUP_UNDEFINED) && (wakeup_reason != ESP_SLEEP_WAKEUP_ALL)) {
-#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_ENABLE_DEBUG_LOG)
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
-    ESP_LOGD(TAG, "🌅 Woke up from deep sleep, reason: %d", esp_sleep_get_wakeup_cause());
-
+  if (prv_woke_up_from_deep_sleep()) {
     ESP_LOGD(TAG, "RTC time ms at wakeup: %" PRIu32 "", (uint32_t)(esp_rtc_get_time_us() / 1000));
     ESP_LOGD(TAG, "Time-since-boot ms at wakeup: %" PRIu32 "",
              (uint32_t)memfault_platform_get_time_since_boot_ms());

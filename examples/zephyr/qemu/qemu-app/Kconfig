@@ -31,6 +31,17 @@ config ZEPHYR_MEMFAULT_EXAMPLE_SOFTWARE_VERSION
     help
       The software version to report to Memfault.
 
+# Stub expressions, to support backwards compatibility with older Zephyr
+# versions where these options were not available.
+config COMPILER_WARNINGS_AS_ERRORS  # v3.6.0+
+    bool "Treat warnings as errors"
+
+config CRC  # v3.3.0+
+    bool "Cyclic redundancy check (CRC) Support"
+
+config BUILD_OUTPUT_META  # v3.0.0+
+    bool "Create a build meta file"
+
 endmenu
 
 source "Kconfig.zephyr"
