@@ -43,3 +43,9 @@ target_link_libraries(app INTERFACE "-Wl,--wrap=z_fatal_error")
 #   https://github.com/zephyrproject-rtos/zephyr/blob/390537b/include/tracing/tracing.h#L57-L61
 target_link_libraries(app INTERFACE "-Wl,--wrap=arch_new_thread")
 target_link_libraries(app INTERFACE "-Wl,--wrap=z_thread_abort")
+
+# To backtrace correctly through NMI exception, we need to substitute our
+# function in the vector table, only when CONFIG_CPU_CORTEX_M is set.
+if (CONFIG_CPU_CORTEX_M)
+  target_link_libraries(app INTERFACE "-Wl,--wrap=z_arm_nmi")
+endif()

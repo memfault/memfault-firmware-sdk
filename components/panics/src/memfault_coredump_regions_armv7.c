@@ -20,10 +20,16 @@
   #include "memfault/panics/coredump_impl.h"
   #include "memfault/panics/platform/coredump.h"
 
-MEMFAULT_STATIC_ASSERT(((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT) % 32 == 0) ||
-                         ((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT) == 496),
+//! Round up to the nearest multiple of 32. Interrupt state is collected in
+//! groups of 32 due to register layout.
+  #define MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP \
+    ((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT + 31) / 32 * 32)
+
+MEMFAULT_STATIC_ASSERT(((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP) % 32 == 0) ||
+                         ((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP) == 496),
                        "Must be a multiple of 32 or 496");
-MEMFAULT_STATIC_ASSERT((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT) <= 512, "Exceeded max possible size");
+MEMFAULT_STATIC_ASSERT((MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP) <= 512,
+                       "Exceeded max possible size");
 
 MEMFAULT_STATIC_ASSERT((MEMFAULT_MPU_REGIONS_TO_COLLECT) <= 16, "Exceeded max possible size");
 
@@ -74,14 +80,14 @@ sMfltDebugExcMonCtrlReg;
 typedef MEMFAULT_PACKED_STRUCT {
   // representation for NVIC ISER, ISPR, and IABR ...
   // A single bit encodes whether or not the interrupt is enabled, pending, active, respectively.
-  uint32_t IxxR[(MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT + 31) / 32];
+  uint32_t IxxR[MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP / 32];
 }
 sMfltNvicIserIsprIabr;
 
 typedef MEMFAULT_PACKED_STRUCT {
   // 8 bits are used to encode the priority so 4 interrupts are covered by each register
   // NB: unimplemented priority levels read back as 0
-  uint32_t IPR[MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT / 4];
+  uint32_t IPR[MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT_ROUNDED_UP / 4];
 }
 sMfltNvicIpr;
 
@@ -167,6 +173,14 @@ const sMfltCoredumpRegion *memfault_coredump_get_arch_regions(size_t *num_region
     }
   }
   #endif /* MEMFAULT_COLLECT_MPU_STATE */
+
+  #if MEMFAULT_CACHE_FAULT_REGS
+  // Cache the faults registers if it hasn't happened already
+  sMfltCachedBlock *fault_regs = (sMfltCachedBlock *)&s_cached_fault_regs[0];
+  if (!fault_regs->valid_cache) {
+    memfault_coredump_cache_fault_regs();
+  }
+  #endif
 
   static const sMfltCoredumpRegion s_coredump_regions[] = {
     { .type = FAULT_REG_REGION_TYPE,

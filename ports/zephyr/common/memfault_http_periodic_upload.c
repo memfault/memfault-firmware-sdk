@@ -55,7 +55,10 @@ static void prv_periodic_upload_work_handler(struct k_work *work) {
   }
 
   MEMFAULT_LOG_DEBUG("POSTing Memfault Data");
-  memfault_zephyr_port_post_data();
+  ssize_t rv = memfault_zephyr_port_post_data_return_size();
+  if (rv > 0) {
+    MEMFAULT_LOG_DEBUG("Uploaded %zd bytes of Memfault data", rv);
+  }
 }
 
 K_WORK_DEFINE(s_upload_timer_work, prv_periodic_upload_work_handler);

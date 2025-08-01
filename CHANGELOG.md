@@ -6,6 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.28.0] - 2025-08-04
+
+This is a minor update release. Highlights:
+
+- added a new test command for simulating hangs in ISRs
+- improved NMI exception capture
+- fixed a build issue in the nRF-Connect SDK port
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add a new test command, `mflt test isr_hang`, which will cause a busy loop
+    hang inside a `k_timer`, which normally is executing from an ISR context.
+    The system will only exit this condition if there is a watchdog or other
+    higher-priority interrupt capable of preempting the `k_timer` ISR. The
+    [`qemu` sample app](examples/zephyr/qemu) is updated to enable a watchdog
+    which generates an NMI exception, caught by Memfault.
+
+  - Added a debug print when uploading data using
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD` that shows the bytes sent:
+
+    ```bash
+    [00:09:45.821,000] <dbg> mflt: memfault_platform_log: Uploaded 118 bytes of Memfault data
+    ```
+
+    Only enabled when debug level prints are enabled for Memfault
+    (`CONFIG_MEMFAULT_LOG_LEVEL_DBG=y`).
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - NMI exceptions are now properly handled. Prior to this change, a coredump
+    was captured on NMI exceptions but the MSP context was not fully unwound and
+    the NVIC state was not included in the trace data.
+
+  - Add a new Kconfig option,
+    `CONFIG_MEMFAULT_COREDUMP_NVIC_INTERRUPTS_TO_COLLECT`, which controls the
+    existing `memfault_platform_config.h` setting
+    `MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT` for Cortex-M targets. The default now
+    is to collect all `NUM_IRQS` as defined by Zephyr, which on many platforms
+    will increase from the previous default of `32`. This improves the
+    out-of-the-box information at the cost of 44 bytes in coredump storage
+    consumed per additional 32 interrupts. Some example deltas shown below,
+    including the byte delta in the stored coredump:
+
+    | Platform  | Previous Default | New Default                                     | Byte Delta |
+    | --------- | ---------------- | ----------------------------------------------- | ---------- |
+    | nRF52840  | 32               | 64 (\*48, rounded up to nearest multiple of 32) | +44        |
+    | nRF91     | 32               | 96 (\*65 rounded up)                            | +88        |
+    | nRF53     | 32               | 96 (\*69 rounded up)                            | +88        |
+    | STM32F407 | 32               | 96 (\*82 rounded up)                            | +88        |
+    | STM32H7B0 | 32               | 160 (\*155 rounded up)                          | +176       |
+    | STM32H563 | 32               | 160 (\*155 rounded up)                          | +176       |
+
+    To restore the previous default, set
+    `CONFIG_MEMFAULT_COREDUMP_NVIC_INTERRUPTS_TO_COLLECT=32`.
+
+- nRF-Connect SDK:
+
+  - Fix a build issue impacting some nRF54 series chips related to reboot reason
+    decoding. Thanks to [@grochu](https://github.com/grochu) for providing the
+    fix in [#94](https://github.com/memfault/memfault-firmware-sdk/pull/94) 🎉!
+
 ## [1.27.0] - 2025-07-21
 
 ### 📈 Added

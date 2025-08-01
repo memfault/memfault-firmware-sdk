@@ -154,9 +154,11 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_DOG1_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Watchdog 1");
     reset_reason = kMfltRebootReason_HardwareWatchdog;
+  #if NRF_RESET_HAS_NFC_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_NFC_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" NFC Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
+  #endif
   } else if (reset_cause == 0) {
     // absence of a value, means a power on reset took place
     MEMFAULT_PRINT_RESET_INFO(" Power on Reset");

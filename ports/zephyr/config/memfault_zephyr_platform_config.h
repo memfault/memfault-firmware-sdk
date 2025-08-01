@@ -116,6 +116,14 @@ extern "C" {
   #define MEMFAULT_CRC16_BUILTIN 0
 #endif
 
+#if defined(CONFIG_MEMFAULT_COREDUMP_NVIC_INTERRUPTS_TO_COLLECT)
+  #define MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT CONFIG_MEMFAULT_COREDUMP_NVIC_INTERRUPTS_TO_COLLECT
+#endif
+
+// This must be set to correctly wrap the Zephyr fault handler, and is not
+// user-configurable
+#define MEMFAULT_EXC_HANDLER_NMI __wrap_z_arm_nmi
+
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 
   // Pick up any user configuration overrides. This should be kept at the bottom

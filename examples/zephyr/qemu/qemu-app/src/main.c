@@ -366,6 +366,26 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 }
 #endif
 
+#if defined(CONFIG_WDOG_CMSDK_APB_START_AT_BOOT)
+  #include MEMFAULT_ZEPHYR_INCLUDE(drivers/watchdog.h)
+// Watchdog feed timer
+static void prv_watchdog_feed_timer_handler(struct k_timer *dummy) {
+  ARG_UNUSED(dummy);
+  const struct device *const wdt = DEVICE_DT_GET(DT_ALIAS(watchdog0));
+  // the CMSDK WDOG doesn't use a channel, pass 0
+  wdt_feed(wdt, 0);
+}
+K_TIMER_DEFINE(s_watchdog_feed_timer, prv_watchdog_feed_timer_handler, NULL);
+
+static int prv_start_watchdog_feed_timer() {
+  // Start the watchdog feed timer to prevent the watchdog from resetting the system
+  k_timer_start(&s_watchdog_feed_timer, K_MSEC(100), K_MSEC(100));
+  return 0;
+}
+
+SYS_INIT(prv_start_watchdog_feed_timer, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif  // CONFIG_WDOG_CMSDK_APB_START_AT_BOOT
+
 int main(void) {
   LOG_INF("👋 Memfault Demo App! Board %s\n", CONFIG_BOARD);
   memfault_device_info_dump();

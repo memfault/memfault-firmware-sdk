@@ -432,7 +432,7 @@ extern "C" {
 // the "ISR Analysis" tab for the Issue analyzed in the Memfault UI about the
 // appropriate setting needed.
 //
-// NB: For each additional 32 NVIC interrupts analyzed, 40 extra bytes are
+// NB: For each additional 32 NVIC interrupts analyzed, 44 extra bytes are
 // needed for coredump storage.
 #ifndef MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT
   #define MEMFAULT_NVIC_INTERRUPTS_TO_COLLECT 32

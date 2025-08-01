@@ -327,6 +327,24 @@ static int prv_timer_isr_crash_example(const struct shell *shell, size_t argc, c
   return 0;
 }
 
+static void prv_hang_timer_handler(struct k_timer *dummy) {
+  while (1) {
+    k_busy_wait(1000);
+  }
+}
+
+K_TIMER_DEFINE(s_isr_hang_timer, prv_hang_timer_handler, NULL);
+
+static int prv_timer_isr_hang_example(const struct shell *shell, size_t argc, char **argv) {
+#if !defined(CONFIG_WATCHDOG)
+  shell_print(shell, "Hanging in ISR. Warning, no watchdog configured, this may hang forever!");
+#else
+  shell_print(shell, "Hanging in ISR, waiting for watchdog to trigger");
+#endif
+  k_timer_start(&s_isr_hang_timer, K_MSEC(10), K_MSEC(10));
+  return 0;
+}
+
 #if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)
 static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_self_test(argc, argv);
@@ -374,6 +392,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(badptr, NULL, "trigger fault via store to a bad address", prv_bad_ptr_deref_example),
   SHELL_CMD(isr_badptr, NULL, "trigger fault via store to a bad address from an ISR",
             prv_timer_isr_crash_example),
+  SHELL_CMD(isr_hang, NULL, "trigger a hang in an ISR", prv_timer_isr_hang_example),
 
   //! user initiated reboot
   SHELL_CMD(reboot, NULL, "trigger a reboot and record it using memfault", prv_test_reboot),

@@ -22,20 +22,6 @@
 #include "memfault/panics/fault_handling.h"
 #include "memfault/ports/zephyr/version.h"
 
-// Starting in v3.4, the handler set function was renamed and the declaration
-// added to a public header
-#if MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-  #if MEMFAULT_ZEPHYR_VERSION_GT(3, 4)
-    #include <cmsis_core.h>
-  #else
-    #include MEMFAULT_ZEPHYR_INCLUDE(arch/arm/aarch32/nmi.h)
-  #endif
-  #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_arm_nmi_set_handler
-#else
-  #define MEMFAULT_ZEPHYR_NMI_HANDLER_SET z_NmiHandlerSet
-extern void MEMFAULT_ZEPHYR_NMI_HANDLER_SET(void (*pHandler)(void));
-#endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 3)
-
 // The z_fatal_error() signature changed in Zephyr 3.7.0, during release
 // candidate development. NCS uses an intermediate version in NCS v2.7.0, so use
 // a strict version check instead of also accepting 3.6.99 as equivalent to
@@ -46,21 +32,6 @@ extern void MEMFAULT_ZEPHYR_NMI_HANDLER_SET(void (*pHandler)(void));
 #include <zephyr/arch/exception.h>
 #endif
 // clang-format on
-
-// By default, the Zephyr NMI handler is an infinite loop. Instead
-// let's register the Memfault Exception Handler
-//
-// Note: the function signature has changed here across zephyr releases
-// "struct device *dev" -> "const struct device *dev"
-//
-// Since we don't use the arguments we match anything with () to avoid
-// compiler warnings and share the same bootup logic
-static int prv_install_nmi_handler() {
-  MEMFAULT_ZEPHYR_NMI_HANDLER_SET(MEMFAULT_EXC_HANDLER_NMI);
-  return 0;
-}
-
-SYS_INIT(prv_install_nmi_handler, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 static eMemfaultRebootReason prv_zephyr_to_memfault_fault_reason(unsigned int reason) {
   // See the lists here for reference:
