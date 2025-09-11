@@ -62,10 +62,11 @@ static int prv_example_trace_event_capture(const struct shell *shell, size_t arg
   return 0;
 }
 
+#if defined(CONFIG_NETWORKING)
 static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
   // For more information on user-defined error reasons, see
   // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
-#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+  #if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   MEMFAULT_LOG_INFO("Posting Memfault Data");
   ssize_t rv = memfault_zephyr_port_post_data_return_size();
 
@@ -77,11 +78,12 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
     MEMFAULT_LOG_INFO("Data posted successfully, %d bytes sent", rv);
   }
   return (rv < 0) ? rv : 0;
-#else
+  #else
   shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
   return 0;
-#endif
+  #endif
 }
+#endif  // CONFIG_NETWORKING
 
 static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
@@ -427,7 +429,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
   SHELL_CMD(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump),
+#if defined(CONFIG_NETWORKING)
   SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
+#endif
   SHELL_CMD(test, &sub_memfault_crash_cmds,
             "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",
             NULL),

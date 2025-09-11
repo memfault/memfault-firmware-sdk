@@ -1,0 +1,15 @@
+/*
+ Adjust the fixed partitions in MRAM1 to add a 'memfault_coredump' partition
+ for storing coredumps when using MRAM-backed coredump storage.
+*/
+
+&mram1x {
+	partitions {
+		storage_partition: partition@1a4000 {
+			reg = <0x1a4000 DT_SIZE_K(20)>;
+		};
+		memfault_coredump_partition: partition@1a9000 {
+			reg = <0x1a9000 DT_SIZE_K(20)>;
+		};
+	};
+};

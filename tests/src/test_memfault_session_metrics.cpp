@@ -70,6 +70,8 @@ TEST_GROUP(MemfaultSessionMetrics){
         static uint8_t s_storage[FAKE_STORAGE_SIZE];
 
         s_fake_event_storage_impl = memfault_events_storage_boot(&s_storage, sizeof(s_storage));
+
+        prv_fake_time_set(0);
     }
     void teardown() {
         // Clear session CBs
@@ -93,12 +95,12 @@ TEST(MemfaultSessionMetrics, Test_SessionTimer) {
   mock().expectOneCall("memfault_metrics_session_serialize");
 
   rv = MEMFAULT_METRICS_SESSION_START(test_key_session);
+  LONGS_EQUAL(0, rv);
   prv_fake_time_set(expected);
   rv = MEMFAULT_METRICS_SESSION_END(test_key_session);
   LONGS_EQUAL(0, rv);
 
   uint32_t val = 0;
-  rv = 0;
   rv = memfault_metrics_heartbeat_timer_read(key, &val);
   LONGS_EQUAL(0, rv);
   LONGS_EQUAL(expected, val);
@@ -209,4 +211,52 @@ TEST(MemfaultSessionMetrics, Test_UnRegisterSessionEndCb) {
 
   MEMFAULT_METRICS_SESSION_START(test_key_session);
   MEMFAULT_METRICS_SESSION_END(test_key_session);
+}
+
+TEST(MemfaultSessionMetrics, Test_ResetSession) {
+  int rv = MEMFAULT_METRICS_SESSION_START(test_key_session);
+  LONGS_EQUAL(0, rv);
+  prv_fake_time_set(1234);
+
+  // Set a session metric to a non-default value
+  MemfaultMetricId key = MEMFAULT_METRICS_KEY_WITH_SESSION(test_unsigned, test_key_session);
+  rv = memfault_metrics_heartbeat_set_unsigned(key, 42);
+  LONGS_EQUAL(0, rv);
+
+  // Verify the metric is set
+  uint32_t val = 0;
+  rv = memfault_metrics_heartbeat_read_unsigned(key, &val);
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(42, val);
+
+  // Reset the session metrics
+  MEMFAULT_METRICS_SESSION_RESET(test_key_session);
+
+  // After reset, metric should be unset
+  val = 0;
+  rv = memfault_metrics_heartbeat_read_unsigned(key, &val);
+  LONGS_EQUAL(-7, rv);  // -7 = MEMFAULT_METRICS_VALUE_NOT_SET
+  LONGS_EQUAL(0, val);
+  MemfaultMetricId session_timer_key =
+    MEMFAULT_METRICS_KEY_WITH_SESSION(MemfaultSdkMetric_IntervalMs, test_key_session);
+  val = 0;
+  rv = memfault_metrics_heartbeat_timer_read(session_timer_key, &val);
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(0, val);
+
+  // Now run a new session, and confirm the time matches
+  uint64_t expected = 100;
+  mock().expectOneCall("memfault_metrics_session_serialize");
+  prv_fake_time_set(0);
+
+  rv = MEMFAULT_METRICS_SESSION_START(test_key_session);
+  LONGS_EQUAL(0, rv);
+  prv_fake_time_set(expected);
+  rv = MEMFAULT_METRICS_SESSION_END(test_key_session);
+  LONGS_EQUAL(0, rv);
+
+  val = 0;
+  rv = memfault_metrics_heartbeat_timer_read(session_timer_key, &val);
+  LONGS_EQUAL(0, rv);
+  LONGS_EQUAL(expected, val);
 }

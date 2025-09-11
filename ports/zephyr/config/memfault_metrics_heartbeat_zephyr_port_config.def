@@ -59,6 +59,25 @@ MEMFAULT_METRICS_KEY_DEFINE(wifi_tx_rate_mbps, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_STRING_KEY_DEFINE(wifi_ap_oui, sizeof("00:00:00") - 1)
 #endif  // defined(CONFIG_MEMFAULT_METRICS_WIFI)
 
+#if defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
+MEMFAULT_METRICS_KEY_DEFINE(bt_gatt_mtu_size, kMemfaultMetricType_Unsigned)
+  #if defined(CONFIG_BT_REMOTE_VERSION)
+// String representation of remote info:
+// [bt version]:[manufacturer id].[subversion]
+// [8 bits]:[16 bits].[16 bits]
+MEMFAULT_METRICS_STRING_KEY_DEFINE(bt_connection_remote_info, sizeof("ff:ffff.ffff") - 1)
+  #endif  // defined(CONFIG_BT_REMOTE_VERSION)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connection_event_count, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connection_interval, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connection_latency, kMemfaultMetricType_Unsigned)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connection_timeout, kMemfaultMetricType_Unsigned)
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connection_rssi, kMemfaultMetricType_Signed)
+#endif  // defined(CONFIG_BT_CTLR_CONN_RSSI)
+MEMFAULT_METRICS_KEY_DEFINE(bt_connected_time_ms, kMemfaultMetricType_Timer)
+MEMFAULT_METRICS_KEY_DEFINE(bt_disconnect_count, kMemfaultMetricType_Unsigned)
+#endif  // defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
+
 #if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
 // One decimal place of precision
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(thermal_cpu_c, kMemfaultMetricType_Signed, 10)

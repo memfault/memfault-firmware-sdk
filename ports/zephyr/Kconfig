@@ -61,19 +61,44 @@ config MEMFAULT_SOC_FAMILY_ESP32
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
 
+# For backwards compatibility, this must be outside of the choice block below
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
-        bool
-        default n
+        bool "Custom coredump storage implementation"
         help
-          Can be used by another Kconfig option to disable the RAM backed
-          coredump implementation using select.
+          Disable any built-in coredump storage implementations. The user must
+          provide their own implementation for coredump storage.
 
-config MEMFAULT_RAM_BACKED_COREDUMP
-        bool "Memfault Ram Backed Coredump"
-        default y if !MEMFAULT_COREDUMP_STORAGE_CUSTOM
+choice MEMFAULT_COREDUMP_STORAGE
+        prompt "Coredump storage backend"
+        default MEMFAULT_RAM_BACKED_COREDUMP
         depends on !MEMFAULT_COREDUMP_STORAGE_CUSTOM
         help
+          Choose the implementation used to store coredumps
+
+config MEMFAULT_RAM_BACKED_COREDUMP
+        bool "RAM backed coredump storage"
+        help
           Save a minimal coredump in noinit RAM.
+
+config MEMFAULT_COREDUMP_STORAGE_RRAM
+        bool "RRAM backed coredump storage"
+        depends on NRFX_RRAMC
+        depends on PARTITION_MANAGER_ENABLED
+        help
+          Use an internal RRAM-backed coredump storage implementation. Requires
+          a partition labeled `memfault_coredump_partition`.
+
+config MEMFAULT_COREDUMP_STORAGE_MRAM
+        bool "MRAM backed coredump storage"
+        depends on SOC_FLASH_NRF_MRAM
+        depends on FLASH
+        help
+          Use an internal MRAM-backed coredump storage implementation. Requires
+          a partition labeled `memfault_coredump_partition`.
+
+endchoice # MEMFAULT_COREDUMP_STORAGE
+
+if MEMFAULT_RAM_BACKED_COREDUMP
 
 config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
         int "Memfault Ram Backed Coredump"
@@ -89,6 +114,8 @@ config MEMFAULT_RAM_BACKED_COREDUMP_REGION
         help
           The region in memory where the coredump will be stored.
           This region should be marked as NOINIT in the linker script.
+
+endif  # MEMFAULT_RAM_BACKED_COREDUMP
 
 config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
         bool "Include data region in coredump"
@@ -320,6 +347,7 @@ config MEMFAULT_HTTP_ENABLE
         bool "Enables support for using Memfault's HTTP APIs"
         default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
         imply POSIX_API
+        depends on NETWORKING
         help
           Enables support for querying the Memfault API for OTA updates
           and posting Memfault chunks
@@ -416,7 +444,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
-        default y if MBEDTLS
+        default y if MBEDTLS && !NRF_MODEM_LIB
         help
           Configure Memfault HTTP for using mbedTLS- perform some sanity checks
           at compile time that it is configured correctly. Note that if MbedTLS
@@ -688,6 +716,27 @@ config MEMFAULT_METRICS_WIFI
         bool "Enable Wi-Fi metrics"
         default y
         depends on NET_MGMT_EVENT && WIFI
+
+config MEMFAULT_METRICS_BLUETOOTH
+        bool "Enable Bluetooth metrics"
+        default y
+        depends on BT && BT_CONN
+        # BT_REMOTE_INFO enables the connection callback when remote info is
+        # available
+        imply BT_REMOTE_INFO
+        # BT_REMOTE_VERSION enables the bt_conn_get_remote_info() API
+        imply BT_REMOTE_VERSION
+        # BT_CTLR_CONN_RSSI enables reading the connection RSSI
+        imply BT_CTLR_CONN_RSSI
+
+config MEMFAULT_METRICS_BLUETOOTH_DELAYED_MS
+        int "Delay before reading additional Bluetooth connection metrics"
+        default 1000
+        depends on MEMFAULT_METRICS_BLUETOOTH
+        help
+         The delay, in milliseconds, before reading additional Bluetooth
+         connection metrics after a connection is established. Some values like
+         RSSI + remote info are invalid on initial connection callback.
 
 config MEMFAULT_METRICS_MEMORY_USAGE
         bool "Enable memory usage metrics"

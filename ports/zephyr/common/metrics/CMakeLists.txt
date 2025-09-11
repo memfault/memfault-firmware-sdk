@@ -1,0 +1,5 @@
+zephyr_library_sources(memfault_platform_metrics.c)
+
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_METRICS_BLUETOOTH memfault_platform_bluetooth_metrics.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_METRICS_THREADS memfault_platform_thread_metrics.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_METRICS_WIFI memfault_platform_wifi_metrics.c)

@@ -26,6 +26,13 @@ commands:
 ❯ west flash
 ```
 
+> Optionally, for the `nrf54l` series only, to store coredumps in RAM instead of
+> RRAM, comment out the line in the `memfault_demo_app/boards/nrf54l15dk_nrf54l15_cpuapp.conf` file:
+>
+> ```bash
+> # CONFIG_MEMFAULT_COREDUMP_STORAGE_RRAM=y
+> ```
+
 Open a serial terminal to access the console:
 
 ```bash

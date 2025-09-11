@@ -351,8 +351,12 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
       },
     .http_client_init_cb = NULL,
     .bulk_flash_erase = false,
+    // The following 2 config options were made optional in ESP-IDF v6
+    #if (ESP_IDF_VERSION <= ESP_IDF_VERSION_VAL(5, 5, 0)) || \
+      defined(CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD)
     .partial_http_download = false,
     .max_http_request_size = 0,
+    #endif
   };
   #else
   esp_http_client_config_t config = {

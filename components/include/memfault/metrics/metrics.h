@@ -325,16 +325,26 @@ void memfault_metrics_session_register_end_cb(eMfltMetricsSessionIndex session_k
 //! powered off.
 int memfault_metrics_session_start(eMfltMetricsSessionIndex session_key);
 
-//! Used to stop a metric "session".
+//! Used to end a metric "session"- the session timer is stopped, the end
+//! callback is executed, and metric data is serialized. Session data is cleared
+//! after serialization.
 //!
 //! Same as @memfault_metrics_session_start except for stopping a session.
 int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key);
+
+//! Reset a session. Used to deactivate a session instead of ending it. Session
+//! timer is stopped and session metric data is cleared.
+//!
+//! Safe to call on an inactive session.
+void memfault_metrics_session_reset(eMfltMetricsSessionIndex session_key);
 
 //! Alternate API that includes the 'MEMFAULT_METRICS_SESSION_KEY()' expansion
 #define MEMFAULT_METRICS_SESSION_START(key) \
   memfault_metrics_session_start(MEMFAULT_METRICS_SESSION_KEY(key))
 #define MEMFAULT_METRICS_SESSION_END(key) \
   memfault_metrics_session_end(MEMFAULT_METRICS_SESSION_KEY(key))
+#define MEMFAULT_METRICS_SESSION_RESET(key) \
+  memfault_metrics_session_reset(MEMFAULT_METRICS_SESSION_KEY(key))
 
 //! Collect built-in metrics as part of default ports in memfault-firmware-sdk.
 //!

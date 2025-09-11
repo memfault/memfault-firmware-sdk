@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
+#if defined(CONFIG_HWINFO)
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/hwinfo.h)
 #endif
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
@@ -245,7 +245,7 @@ MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
   static const char *dev_str = "UNKNOWN";
 
 // Obtain the device id
-#if defined(CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO)
+#if defined(CONFIG_HWINFO)
   ssize_t length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
 #else
   ssize_t length = 0;

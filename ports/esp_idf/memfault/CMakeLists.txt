@@ -373,6 +373,7 @@ if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
 
   set(IDF_PROJECT_EXECUTABLE "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.elf")
   idf_build_get_property(python PYTHON)
+  idf_build_get_property(elf_target EXECUTABLE GENERATOR_EXPRESSION)
 
   add_custom_command(OUTPUT "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
     # Compute and insert the build id
@@ -380,25 +381,33 @@ if(CONFIG_MEMFAULT_USE_MEMFAULT_BUILD_ID)
     # Compress debug sections; this reduces the elf file size from ~10MB -> ~4.8MB
     COMMAND ${CMAKE_OBJCOPY} --compress-debug-sections ${IDF_PROJECT_EXECUTABLE}
     # Save a copy of the ELF that includes the 'log_fmt' section
-    COMMAND ${CMAKE_COMMAND} -E copy ${IDF_PROJECT_EXECUTABLE} ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt
-    COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt ***"
+    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>" "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>.memfault_log_fmt"
+    COMMAND ${CMAKE_COMMAND} -E echo "*** NOTE: the symbol file to upload to app.memfault.com is $<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>.memfault_log_fmt ***"
     # Remove the 'log_fmt' compact log section, which confuses elf2image
-    COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt ${IDF_PROJECT_EXECUTABLE}
+    COMMAND ${CMAKE_OBJCOPY} --remove-section log_fmt "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
     # Update the timestamp of the .memfault_log_fmt file to be newer than its
     # just-edited dependency, ${IDF_PROJECT_EXECUTABLE}, so that the custom
     # target doesn't run every time
-    COMMAND ${CMAKE_COMMAND} -E touch "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt"
-    DEPENDS "${IDF_PROJECT_EXECUTABLE}"
+    COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>.memfault_log_fmt"
+    DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>"
   )
 
-  # Dependency chain:
-  # app -> gen_project_binary -> memfault_build_id -> ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt -> ${IDF_PROJECT_EXECUTABLE}
-  add_custom_target(memfault_build_id DEPENDS "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt")
-  if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_dependencies(gen_signed_project_binary memfault_build_id)
+  if (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "5.6")
+    add_custom_target(memfault_build_id DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf_target}>>.memfault_log_fmt")
+    idf_build_add_post_elf_dependency("${CMAKE_PROJECT_NAME}.elf" memfault_build_id)
   else()
-    add_dependencies(gen_project_binary memfault_build_id)
-  endif()
+    # On ESP-IDF 5.5 and lower, we'll inject a dependency between
+    # gen_project_binary and the ELF.
+
+    # Dependency chain:
+    # app -> gen_project_binary -> memfault_build_id -> ${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt -> ${IDF_PROJECT_EXECUTABLE}
+    add_custom_target(memfault_build_id DEPENDS "${IDF_PROJECT_EXECUTABLE}.memfault_log_fmt")
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+      add_dependencies(gen_signed_project_binary memfault_build_id)
+    else()
+      add_dependencies(gen_project_binary memfault_build_id)
+    endif()
+  endif()  # ESP-IDF >= 5.6
 endif()
 
 # Link required libraries and add compiler flags needed for FreeRTOS region collection

@@ -16,15 +16,11 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(device.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 #include <string.h>
 
+#include "memfault/components.h"
 #include "memfault/ports/zephyr/thread_metrics.h"
-#include "memfault/metrics/metrics.h"
-#include "memfault/core/build_info.h"
-#include "memfault/core/compiler.h"
-#include "memfault/core/math.h"
-#include "memfault/core/platform/device_info.h"
-#include "memfault/http/http_client.h"
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/ports/ncs/version.h"
 #include "memfault_demo_app.h"
@@ -156,3 +152,33 @@ int main(void) {
 cleanup:
   return err;
 }
+
+static int prv_reboot_custom(const struct shell *shell, size_t argc, char **argv) {
+  if (argc != 2) {
+    shell_print(shell, "Usage: app reboot_custom <expected|unexpected>");
+    return -1;
+  }
+  if (strcmp(argv[1], "expected") == 0) {
+    MEMFAULT_REBOOT_MARK_RESET_IMMINENT_CUSTOM(CustomExpectedReboot);
+  } else if (strcmp(argv[1], "unexpected") == 0) {
+    MEMFAULT_REBOOT_MARK_RESET_IMMINENT_CUSTOM(CustomUnexpectedReboot);
+  } else {
+    shell_print(shell, "Invalid argument: %s", argv[1]);
+    return -1;
+  }
+
+  shell_print(shell, "Rebooting with custom reason...");
+
+  // Allow the shell output buffer to be flushed before the reboot
+  k_sleep(K_MSEC(100));
+  memfault_platform_reboot();
+  return 0;  // should be unreachable
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_app_cmds,
+                               SHELL_CMD(reboot_custom, NULL, "test custom reboot",
+                                         prv_reboot_custom),
+                               SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
+SHELL_CMD_REGISTER(app, &sub_app_cmds, "Memfault Demo App Test Commands", NULL);

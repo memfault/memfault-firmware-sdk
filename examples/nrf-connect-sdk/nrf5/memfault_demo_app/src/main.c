@@ -101,6 +101,7 @@ static void prv_start_watchdog_feed_thread(void) {
 
 int main(void) {
   LOG_INF("Booting Memfault sample app!");
+  LOG_INF("Board: " CONFIG_BOARD);
 
   // Set the device id based on the hardware UID
   prv_set_device_id();

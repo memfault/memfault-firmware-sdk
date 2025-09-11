@@ -102,34 +102,35 @@ size_t prv_get_freertos_bss_common(sMfltCoredumpRegion *regions, size_t num_regi
   size_t region_index = 0;
   extern uint32_t _memfault_timers_bss_start;
   extern uint32_t _memfault_timers_bss_end;
+  extern uint32_t _memfault_timers_sbss_start;
+  extern uint32_t _memfault_timers_sbss_end;
   extern uint32_t _memfault_timers_common_start;
   extern uint32_t _memfault_timers_common_end;
   extern uint32_t _memfault_tasks_bss_start;
   extern uint32_t _memfault_tasks_bss_end;
+  extern uint32_t _memfault_tasks_sbss_start;
+  extern uint32_t _memfault_tasks_sbss_end;
   extern uint32_t _memfault_tasks_common_start;
   extern uint32_t _memfault_tasks_common_end;
 
   // ldgen has a bug that does not exclude rules matching multiple input sections at the
   // same time. To work around this, we instead emit a symbol for each section we're attempting
-  // to collect. This means 8 symbols (tasks/timers + bss/common). If this is ever fixed we
-  // can remove the need to collect 4 separate regions.
-  size_t timers_bss_length =
-    (uintptr_t)&_memfault_timers_bss_end - (uintptr_t)&_memfault_timers_bss_start;
-  size_t timers_common_length =
-    (uintptr_t)&_memfault_timers_common_end - (uintptr_t)&_memfault_timers_common_start;
-  size_t tasks_bss_length =
-    (uintptr_t)&_memfault_tasks_bss_end - (uintptr_t)&_memfault_tasks_bss_start;
-  size_t tasks_common_length =
-    (uintptr_t)&_memfault_tasks_common_end - (uintptr_t)&_memfault_tasks_common_start;
+  // to collect. This means 12 symbols (tasks + timers for sbss, bss, and common). If this is ever
+  // fixed we can remove the need to collect 6 separate regions.
+  //
+  // Note: Some regions may be empty (size zero). That is fine - they are skipped when writing to
+  // flash, so they use no storage.
+  #define REGION_SIZE(start, end) ((uintptr_t)&(end) - (uintptr_t)&(start))
+  #define ADD_REGION(start, end) \
+    regions[region_index++] =    \
+      MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&(start), REGION_SIZE(start, end))
 
-  regions[region_index++] =
-    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_timers_bss_start, timers_bss_length);
-  regions[region_index++] =
-    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_timers_common_start, timers_common_length);
-  regions[region_index++] =
-    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_tasks_bss_start, tasks_bss_length);
-  regions[region_index++] =
-    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_memfault_tasks_common_start, tasks_common_length);
+  ADD_REGION(_memfault_timers_bss_start, _memfault_timers_bss_end);
+  ADD_REGION(_memfault_timers_sbss_start, _memfault_timers_sbss_end);
+  ADD_REGION(_memfault_timers_common_start, _memfault_timers_common_end);
+  ADD_REGION(_memfault_tasks_sbss_start, _memfault_tasks_sbss_end);
+  ADD_REGION(_memfault_tasks_bss_start, _memfault_tasks_bss_end);
+  ADD_REGION(_memfault_tasks_common_start, _memfault_tasks_common_end);
 
   return region_index;
 }

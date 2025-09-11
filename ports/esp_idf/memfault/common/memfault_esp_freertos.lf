@@ -28,6 +28,7 @@
 entries:
     common -> dram0_bss
     bss -> dram0_bss
+    legacy_bss -> dram0_bss
 
 # Create a mapping using the defined scheme. Add linker symbols around
 # to capture start and end of task and timer location.
@@ -39,7 +40,9 @@ archive: libfreertos.a
 entries:
     timers (memfault);
         bss-> dram0_bss SURROUND(memfault_timers_bss),
+        legacy_bss-> dram0_bss SURROUND(memfault_timers_sbss),
         common -> dram0_bss SURROUND(memfault_timers_common)
     tasks (memfault);
         bss -> dram0_bss SURROUND(memfault_tasks_bss),
+        legacy_bss -> dram0_bss SURROUND(memfault_tasks_sbss),
         common -> dram0_bss SURROUND(memfault_tasks_common)

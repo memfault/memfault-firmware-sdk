@@ -6,6 +6,106 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.29.0] - 2025-09-11
+
+This is a minor release. Highlights:
+
+- Added 9 new built-in metrics for BLE devices for Zephyr projects 🎉
+- Added a session metrics API to deactivate a session
+- Fixed a bug where thread state was missing from small coredumps in ESP-IDF
+
+### 📈 Added
+
+- General:
+
+  - Add a new Session Metric API: `MEMFAULT_METRICS_SESSION_RESET()`, which can
+    be used to deactivate an active session instead of ending it with
+    `MEMFAULT_METRICS_SESSION_END()`. This will discard the metrics in the
+    specified session.
+
+- nRF-Connect SDK:
+
+  - Added an implementation for storing coredumps in RRAM, for SOCs that support
+    it (nRF54L series for example). Enable with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_RRAM=y`. Requires a partition manager
+    entry named `memfault_coredump_partition`.
+
+  - Also added a coredump storage implementation for MRAM, specifically
+    targeting the nRF54H series of devices. Enable with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_MRAM=y`. Requires adding a fixed partition
+    entry named `memfault_coredump_partition`, for example via a devicetree
+    overlay.
+
+    For the `nrf54h20dk_nrf54h20_cpuapp`, the following sample overlay reduces
+    the default size of the `storage_partition` and adds the necessary
+    `memfault_coredump_partition` entry:
+
+    ```c
+    &mram1x {
+      partitions {
+        storage_partition: partition@1a4000 {
+          reg = <0x1a4000 DT_SIZE_K(20)>;
+        };
+        memfault_coredump_partition: partition@1b4000 {
+          reg = <0x1a9000 DT_SIZE_K(20)>;
+        };
+      };
+    };
+    ```
+
+  - Added example definition and usage of custom reboot reasons in the nRF9160
+    app. These reboot reasons can be triggered with a new shell command:
+    `app reboot_custom <expected|unexpected>`
+
+### 🛠️ Changed
+
+- nRF-Connect SDK:
+
+  - Moved the default statement setting `CONFIG_MEMFAULT_HTTP_USES_MBEDTLS=n`
+    when `CONFIG_NRF_MODEM_LIB=y` into the Memfault SDK Kconfig file. This
+    default currently exists in NCS in a symbol re-definition but will be
+    removed in the next version of NCS (`v3.2` expected).
+
+- Zephyr:
+
+  - The default implementation of `memfault_zephyr_get_device_id()`, used to
+    populate the Device Serial, will use the `hwinfo_get_device_id()` value by
+    default if `CONFIG_HWINFO` is enabled. Previously this also required
+    `CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO=y`, and would default to
+    `{BOARD}-testserial` when that was not enabled.
+
+  - Add several new built-in BLE metrics:
+
+    - `bt_gatt_mtu_size`
+    - `bt_connection_remote_info`
+    - `bt_connection_event_count`
+    - `bt_connection_interval`
+    - `bt_connection_latency`
+    - `bt_connection_timeout`
+    - `bt_connection_rssi`
+    - `bt_connected_time_ms`
+    - `bt_disconnect_count`
+
+    These metrics are enabled by default when `CONFIG_BT=y` and
+    `CONFIG_BT_CONN=y`.
+
+- ESP-IDF:
+
+  - Support `CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` optional HTTP client
+    parameters in upcoming ESP-IDF v6
+    ([this change](https://github.com/espressif/esp-idf/commit/2db4bcf87db492c03c90cb086c0b3bde06e51201)
+    made them optionally declared).
+
+  - Update the post-link steps to be compatible with upcoming ESP-IDF build
+    changes for ESP-IDF > 5.5.
+
+### 🐛 Fixed
+
+- ESP-IDF
+
+  - Fixed a bug where some FreeRTOS symbols needed for thread awareness were
+    missing from coredumps if the coredump storage was too small.
+
 ## [1.28.0] - 2025-08-04
 
 This is a minor update release. Highlights:
@@ -123,16 +223,22 @@ This is a minor update release. Highlights:
     from the underlying data source (coredump storage, log buffer, CDR, etc)
     when uploading data to Memfault via HTTP. The default size is 128 bytes, and
     1024 bytes on nRF91x series SOCs to better support modem trace CDR upload.
-    Thanks to @DematteisGiacomo for submitting this in
+    Thanks to [@DematteisGiacomo](https://github.com/DematteisGiacomo) for
+    submitting this in
     [#92](https://github.com/memfault/memfault-firmware-sdk/pull/92).
+
+  - Make the `mflt post_chunks` CLI command available only when
+    `CONFIG_NETWORKING` is enabled, to avoid confusion on platforms without
+    networking support.
 
 - ESP-IDF:
 
   - Handle deprecated Deep Sleep API calls for upcoming ESP-IDF v5.5 and v6.
 
   - Supporting building with the Memfault CLI commands disabled,
-    `CONFIG_MEMFAULT_CLI_ENABLED=n`. Thanks to @finger563 for reporting this
-    issue and providing a fix in
+    `CONFIG_MEMFAULT_CLI_ENABLED=n`. Thanks to
+    [@finger563](https://github.com/finger563) for reporting this issue and
+    providing a fix in
     [#93](https://github.com/memfault/memfault-firmware-sdk/issues/93) 🎉!
 
 ### 🐛 Fixed
@@ -141,8 +247,8 @@ This is a minor update release. Highlights:
 
   - Fix an issue where the socket file descriptor can potentially be leaked when
     the connection terminated unexpectedly during an HTTP chunk upload. Thanks
-    to @DematteisGiacomo for submitting this in
-    [#92](https://github.com/memfault/memfault-firmware-sdk/pull/92).
+    to [@DematteisGiacomo](https://github.com/DematteisGiacomo) for submitting
+    this in [#92](https://github.com/memfault/memfault-firmware-sdk/pull/92).
 
 ## [1.26.1] - 2025-06-30
 
@@ -154,9 +260,9 @@ Zephyr port.
 - Zephyr:
 
   - Apply a compatibility fix for upcoming Zephyr 4.2.0, fixing the size of the
-    `net_mgmt` callback `mgmt_event` parameter. Thanks to @rlubos for providing
-    the fix in [#91](https://github.com/memfault/memfault-firmware-sdk/pull/91)
-    🎉!
+    `net_mgmt` callback `mgmt_event` parameter. Thanks to
+    [@rlubos](https://github.com/rlubos) for providing the fix in
+    [#91](https://github.com/memfault/memfault-firmware-sdk/pull/91) 🎉!
 
 ## [1.26.0] - 2025-06-26
 
@@ -1207,8 +1313,8 @@ earlier versions!
   - Add an optional `memfault_port_coredump_save_begin()` callback, for use by
     Memfault ports. This allows `memfault_platform_coredump_save_begin()` to be
     implemented by the platform instead, for custom pre-coredump operations.
-    Thanks to @finger563 for reporting this issue in
-    [#77](https://github.com/memfault/memfault-firmware-sdk/issues/77)!
+    Thanks to [@finger563](https://github.com/finger563) for reporting this
+    issue in [#77](https://github.com/memfault/memfault-firmware-sdk/issues/77)!
 
   - Improved API docs for events and data packetizer components by noting
     restrictions for use in ISR contexts
@@ -1698,7 +1804,8 @@ earlier versions!
 
   - Fix a compilation issue with older versions of `gcc-arm-none-eabi` that do
     not support the `PRIu64` format specifier (or are missing C99 format
-    specifiers). Thanks to @iotengtr for reporting this issue in
+    specifiers). Thanks to [@iotengtr](https://github.com/iotengtr) for
+    reporting this issue in
     [#72](https://github.com/memfault/memfault-firmware-sdk/issues/72) !
 
 - Zephyr:
@@ -1871,7 +1978,7 @@ earlier versions!
   - Fix a case where `esp_http_client_cleanup()` was not called in certain
     scenarios (for example, if the access point is connected, but there is no
     outside internet access), which resulted in a memory leak. Thanks to
-    @mykmelez for providing the fix in
+    [@mykmelez](https://github.com/mykmelez) for providing the fix in
     [#71](https://github.com/memfault/memfault-firmware-sdk/pull/71) 🎉!
 
 ## [1.9.1] - 2024-05-21
@@ -1917,8 +2024,8 @@ earlier versions!
   - Improve support for
     [event timestamps](https://docs.memfault.com/docs/mcu/event-timestamps)
     using Zephyr RTC devices, by adding support for RTC nodes identified using
-    `DT_ALIAS()` in addition to `DT_NODELABEL()`. Thanks to @corytodd for
-    providing the fix in
+    `DT_ALIAS()` in addition to `DT_NODELABEL()`. Thanks to
+    [@corytodd](https://github.com/corytodd) for providing the fix in
     [#68](https://github.com/memfault/memfault-firmware-sdk/issues/68)!
 
   - Add a Memfault HTTP OTA client backend for Zephyr MCUBoot platforms. This is
@@ -2576,7 +2683,7 @@ earlier versions!
   - Remove a warning in Zephyr 3.5+ where the `zephyr/random/rand32.h` header
     was renamed to `zephyr/random/random.h`. This was reported in
     [#66](https://github.com/memfault/memfault-firmware-sdk/issues/66)- thanks
-    to @nordicjm for reporting this!
+    to [@nordicjm](https://github.com/nordicjm) for reporting this!
 
   - Add test commands for exercising Secure Faults in ARM TrustZone-enabled
     chips:
@@ -2708,7 +2815,7 @@ earlier versions!
   - Perform an update of the timer when calling the
     `memfault_metrics_heartbeat_timer_read()` debug function. Fixes
     [#65](https://github.com/memfault/memfault-firmware-sdk/pull/65). Thanks to
-    @LuskeyNoah for providing this fix!
+    [@LuskeyNoah](https://github.com/LuskeyNoah) for providing this fix!
 
 - ESP-IDF:
 
@@ -2922,8 +3029,9 @@ earlier versions!
 
 - Zephyr:
 
-  - use `<cmsis_core.h>` instead of `<nmi.h>`. Thanks @kmeinhar for this change!
-    (see [#64](https://github.com/memfault/memfault-firmware-sdk/pull/64))
+  - use `<cmsis_core.h>` instead of `<nmi.h>`. Thanks
+    [@kmeinhar](https://github.com/kmeinhar) for this change! (see
+    [#64](https://github.com/memfault/memfault-firmware-sdk/pull/64))
 
 - nRF Connect SDK:
 
@@ -2985,7 +3093,7 @@ earlier versions!
   - Include the current MCU SDK version in the http client user agent header
 - Zephyr:
   - Update include paths for CMSIS headers for upcoming Zephyr support. Thanks
-    @gmarull for the patch!
+    [@gmarull](https://github.com/gmarull) for the patch!
 - Modus Toolbox:
   - Allow a user application to override
     `memfault_metrics_heartbeat_collect_data`.
@@ -3041,8 +3149,8 @@ earlier versions!
   - Fix a 🐛 and warnings involving older Zephyr header paths. Resolves
     [#62](https://github.com/memfault/memfault-firmware-sdk/issues/62) and
     [#57](https://github.com/memfault/memfault-firmware-sdk/issues/57). Thanks
-    [@JordanYates](https://github.com/JordanYates) and @YHusain1 for reporting
-    these issues.
+    [@JordanYates](https://github.com/JordanYates) and
+    [@YHusain1](https://github.com/YHusain1) for reporting these issues.
 
 ### Changes between Memfault SDK 1.1.2 and 1.1.3 - Aug 8, 2023
 
@@ -3068,7 +3176,7 @@ earlier versions!
     [ports/zephyr/include/memfault/ports/zephyr/http.h](ports/zephyr/include/memfault/ports/zephyr/http.h)
     for details. Fixes
     [#52](https://github.com/memfault/memfault-firmware-sdk/issues/52)- thanks
-    to @anicare-tero for posting this 🎉
+    to [@anicare-tero](https://github.com/anicare-tero) for posting this 🎉
 
 ### Changes between Memfault SDK 1.1.1 and 1.1.2 - July 11, 2023
 
@@ -3219,7 +3327,8 @@ are enough 🤞.
   - The `z_NmiHandlerSet` function is renamed for the upcoming Zephyr 3.4.
     Support the new name. Fixes
     [#49](https://github.com/memfault/memfault-firmware-sdk/issues/49). Thanks
-    @mbolivar-nordic for filing this issue!
+    [@mbolivar-nordic](https://github.com/mbolivar-nordic) for filing this
+    issue!
 
 ### Changes between Memfault SDK 0.43.0 and 0.42.1 - April 18, 2023
 
@@ -3267,7 +3376,7 @@ are enough 🤞.
     determining stack high watermarks. This feature is enabled by setting
     `CONFIG_MEMFAULT_COREDUMP_FULL_THREAD_STACKS=y`
   - Remove usage of the `zephyr.h` header in preparation for Zephyr v3.4.0.
-    Thanks to @jfischer-no for the patch!
+    Thanks to [@jfischer-no](https://github.com/jfischer-no) for the patch!
 
 - `memfault_gdb.py`:
   - Add support for exporting data from GCC 12 compiled symbol files
@@ -3388,8 +3497,9 @@ are enough 🤞.
     [#43](https://github.com/memfault/memfault-firmware-sdk/pull/43) !
   - Use the `info all-registers` command when dumping registers, instead of the
     deprecated `info registers all` command, which works better on certain
-    arch/monitor setups. Thanks to @alvarop for this patch
-    [#44](https://github.com/memfault/memfault-firmware-sdk/pull/44) !
+    arch/monitor setups. Thanks to [@alvarop](https://github.com/alvarop) for
+    this patch [#44](https://github.com/memfault/memfault-firmware-sdk/pull/44)
+    !
 
 ### Changes between Memfault SDK 0.37.1 and SDK 0.37.0 - Jan 17, 2023
 
@@ -3454,8 +3564,8 @@ are enough 🤞.
 
   - Add support for
     [just-released ESP-IDF v5](https://github.com/espressif/esp-idf/releases/tag/v5.0)
-    🎉! Thanks to @jlubawy and the patch supplied in #39 for this, very much
-    appreciated!
+    🎉! Thanks to [@jlubawy](https://github.com/jlubawy) and the patch supplied
+    in #39 for this, very much appreciated!
   - Add an auto-OTA (and auto-WiFi-join) feature to the
     [ESP32 example app](examples/esp32)- enabled by default but can be disabled
     with Kconfig
@@ -3597,8 +3707,8 @@ are enough 🤞.
 
 #### 📈 Improvements
 
-- Fix a 🐛 in the heap stats component (#32), thanks @christophgreen for
-  reporting it!
+- Fix a 🐛 in the heap stats component (#32), thanks
+  [@christophgreen](https://github.com/christophgreen) for reporting it!
 - Zephyr port updates:
   - add support for the newly namespaced Zephyr include path in upcoming Zephyr
     v3.2 (`#include <zephyr.h>` → `#include <zephyr/zephyr.h>`). The includes
@@ -3654,7 +3764,7 @@ are enough 🤞.
 #### 📈 Improvements
 
 - Zephyr port: added a fix for upcoming Zephyr 3.2 compatibility, thanks
-  @nordicjm for the fix!
+  [@nordicjm](https://github.com/nordicjm) for the fix!
 
 ### Changes between Memfault SDK 0.32.1 and SDK 0.32.0 - Aug 8, 2022
 
@@ -3813,7 +3923,7 @@ are enough 🤞.
 #### 📈 Improvements
 
 - Support Zephyr v3.1+ by conditionally compiling out Logger v1 code, thanks to
-  @tejlmand for the patch!
+  [@tejlmand](https://github.com/tejlmand) for the patch!
 
 ### Changes between Memfault SDK 0.31.2 and SDK 0.31.1 - June 24, 2022
 
@@ -3822,8 +3932,8 @@ are enough 🤞.
 - Fixed a 🐛 in the
   [Zephyr port HTTP implementation](ports/zephyr/common/memfault_platform_http.c),
   where a socket file descriptor was leaked. This caused every HTTP operation
-  after the first to fail on Zephyr platforms. Thanks to @rerickson1 for the
-  fix!
+  after the first to fail on Zephyr platforms. Thanks to
+  [@rerickson1](https://github.com/rerickson1) for the fix!
 - Added an update to improve the quality of stack traces when using
   `MEMFAULT_ASSERT` with the TI ARM Clang Compiler
 
@@ -4016,7 +4126,7 @@ Added clarifications around licensing in ports and examples folders. See
 - Fix the STM32F7xx reboot reason port to correctly account for the internally
   wired Pin Reset
 - Fix a function prototype mismatch in the STM32L4 flash port (thanks to
-  @schultetwin for reporting this in #22!)
+  [@schultetwin](https://github.com/schultetwin) for reporting this in #22!)
 
 ### Changes between Memfault SDK 0.28.0 and SDK 0.27.3 - Jan 4, 2022
 
@@ -4045,7 +4155,7 @@ Added clarifications around licensing in ports and examples folders. See
   and emit an error
 - Fix an outdated comment in `cmake/Memfault.cmake`, as reported in
   [issue #21](https://github.com/memfault/memfault-firmware-sdk/issues/21)
-  (thank you @C47D !)
+  (thank you [@C47D](https://github.com/C47D) !)
 
 #### 🏠 Internal
 
@@ -4075,7 +4185,8 @@ Added clarifications around licensing in ports and examples folders. See
 
 - The Mynewt integration now supports the Memfault demo shell via
   `mflt_shell_init()`, see the [Mynewt port README.md](ports/mynewt/README.md)
-  for details. Huge thanks to @t3zeng for providing this implementation!
+  for details. Huge thanks to [@t3zeng](https://github.com/t3zeng) for providing
+  this implementation!
 - Add support for ESP-IDF v4.3.1. This update should fix the bootlooping issue
   seen when using the port with v4.3.1+ of ESP-IDF.
 - Add support for `LOG2` deferred mode on zephyr. This should fix bootloops when
@@ -4112,8 +4223,8 @@ Added clarifications around licensing in ports and examples folders. See
 
 - Added support for using [compact logs](https://mflt.io/compact-logs) with the
   Memfault [log subsystem](https://mflt.io/logging).
-- Added port for mynewt RTOS to Memfault SDK. (Huge thanks to @t3zeng for the
-  help here!) See
+- Added port for mynewt RTOS to Memfault SDK. (Huge thanks to
+  [@t3zeng](https://github.com/t3zeng) for the help here!) See
   [sdk/embedded/ports/mynewt](sdk/embedded/ports/mynewt/README.md) for more
   details.
 - Added support for
@@ -4164,7 +4275,7 @@ Added clarifications around licensing in ports and examples folders. See
   For more details about how to run the Memfault example, see
   [examples/cypress/CY8CKIT-064S0S2-4343W/README.md](examples/cypress/CY8CKIT-064S0S2-4343W/README.md).
 - Fixed a compiler warning emitted when using TI's GCC Compiler as reported by
-  @albertskog in
+  [@albertskog](https://github.com/albertskog) in
   [issue #18](https://github.com/memfault/memfault-firmware-sdk/issues/18)
 
 #### 🏠 Internal
@@ -4219,11 +4330,13 @@ Added clarifications around licensing in ports and examples folders. See
 
 #### 📈 Improvements
 
-- Applied suggestions from @elliot-wdtl for the Zephyr ports
+- Applied suggestions from [@elliot-wdtl](https://github.com/elliot-wdtl) for
+  the Zephyr ports
   ([#15](https://github.com/memfault/memfault-firmware-sdk/pull/15)):
   - Updated software watchdog port to make use of `MEMFAULT_SOFTWARE_WATCHDOG`
     macro
-- Applied suggestions from @ioannisg & @mbolivar-nordic in
+- Applied suggestions from [@ioannisg](https://github.com/ioannisg) &
+  [@mbolivar-nordic](https://github.com/mbolivar-nordic) in
   ([#14](https://github.com/memfault/memfault-firmware-sdk/pull/14)) to change
   the KConfig options used to select `CONFIG_MEMFAULT_HTTP_ENABLE` &
   `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM` &
@@ -4277,8 +4390,8 @@ Added clarifications around licensing in ports and examples folders. See
 
 #### 📈 Improvements
 
-- Support for Dialog DA1469x chip family (Huge thanks to @iandmorris for the
-  help here!)
+- Support for Dialog DA1469x chip family (Huge thanks to
+  [@iandmorris](https://github.com/iandmorris) for the help here!)
   - Example eclipse project and more details about how to add the port to any
     DA1469x based project [can be found here](examples/dialog/da1469x).
 - Added a simple utility to track heap allocations. This can be used to more
@@ -4454,8 +4567,8 @@ Added clarifications around licensing in ports and examples folders. See
 
 #### 📈 Improvements
 
-- Support for Dialog DA145xx chip family (Huge thanks to @iandmorris for the
-  help here!)
+- Support for Dialog DA145xx chip family (Huge thanks to
+  [@iandmorris](https://github.com/iandmorris) for the help here!)
   - GCC & Keil based demo application for the DA14531 & DA14585/DA14586
     [can be found here](examples/dialog/da145xx).
   - Ports for applications using the DA145xx SDK
@@ -4476,8 +4589,8 @@ Added clarifications around licensing in ports and examples folders. See
   [memfault_http_parse_response()](components/http/src/memfault_http_utils.c)
   utility to parse HTTP responses with headers that exceed a length of 128 bytes
 - Fixed a 🐛 in`memfault_log_save_preformatted()` leading to invalid logs being
-  reported when attempting to save log lines > 128 bytes. (thanks @alvarop for
-  the report!)
+  reported when attempting to save log lines > 128 bytes. (thanks
+  [@alvarop](https://github.com/alvarop) for the report!)
 - Added a convenience API,
   [`memfault_create_unique_version_string()`](components/include/memfault/core/platform/device_info.h),
   which can be used for easily appending a build id on the software version
@@ -4859,7 +4972,8 @@ path needs to be updated to `examples`:
 - Fixed a 🐛 leading to Root CAs not get loaded correctly when using the nRF
   Connect SDK port and the `MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE=y`
   Kconfig option.
-- Applied suggestions from @rerickson1 for the Zephyr and nRF Connect SDK ports:
+- Applied suggestions from [@rerickson1](https://github.com/rerickson1) for the
+  Zephyr and nRF Connect SDK ports:
   - [`CONFIG_MEMFAULT_METRICS=y`](https://github.com/memfault/memfault-firmware-sdk/pull/8)
     can now be used to compile the metrics component into the Zephyr and nRF
     Connect SDK ports.

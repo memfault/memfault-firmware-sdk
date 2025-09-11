@@ -10,7 +10,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(fs_shell)
 
 FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE
+  src/main.c
+  src/shell_commands.c
+)
 
 zephyr_include_directories(config)
 

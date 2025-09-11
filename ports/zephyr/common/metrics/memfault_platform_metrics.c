@@ -21,6 +21,10 @@
 #include "memfault/ports/zephyr/version.h"
 #include "memfault/ports/zephyr/thread_metrics.h"
 
+#if defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
+#include "memfault/ports/zephyr/bluetooth_metrics.h"
+#endif
+
 #if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/net_stats.h)
 // Directory traversal is needed to access the header for net_stats_reset(),
@@ -209,6 +213,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
 #if defined(CONFIG_MEMFAULT_METRICS_THREADS)
   memfault_zephyr_thread_metrics_record();
+#endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
+  memfault_bluetooth_metrics_heartbeat_update();
 #endif
 }
 

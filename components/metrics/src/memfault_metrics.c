@@ -1308,6 +1308,19 @@ int memfault_metrics_session_end(eMfltMetricsSessionIndex session_key) {
   return prv_metrics_session_end(session_key, true);
 }
 
+void memfault_metrics_session_reset(eMfltMetricsSessionIndex session_key) {
+  memfault_lock();
+  {
+    // Reset all metrics for the session, including the session timer
+    MemfaultMetricId key = s_memfault_metrics_session_timer_keys[session_key];
+    (void)prv_find_timer_metric_and_update(key, kMemfaultTimerOp_Stop);
+    prv_reset_metrics(false, session_key);
+
+    memfault_reboot_tracking_metrics_session(false, session_key);
+  }
+  memfault_unlock();
+}
+
 void memfault_metrics_session_register_start_cb(eMfltMetricsSessionIndex session_key,
                                                 MemfaultMetricsSessionStartCb session_start_cb) {
   memfault_lock();

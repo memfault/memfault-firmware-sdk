@@ -166,7 +166,8 @@ bool wifi_join(const char *ssid, const char *pass) {
   return false;
 }
 
-static int wifi_disconnect() {
+static int wifi_disconnect(int argc, char **argv) {
+  (void)argc, (void)argv;
   return esp_wifi_disconnect();
 }
 
