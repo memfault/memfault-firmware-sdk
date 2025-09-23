@@ -39,7 +39,7 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
 
 #if CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
   size_t stack_size_to_collect = memfault_platform_sanitize_address_range(
-    crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT);
+    crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT);
 
   regions[region_idx] =
     MEMFAULT_COREDUMP_MEMORY_REGION_INIT(crash_info->stack_address, stack_size_to_collect);
@@ -56,7 +56,7 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
     // exception frame that will have been stacked on it as well
     const uint32_t extra_stack_bytes = 128;
     stack_size_to_collect = memfault_platform_sanitize_address_range(
-      psp, CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT + extra_stack_bytes);
+      psp, CONFIG_MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT + extra_stack_bytes);
     regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(psp, stack_size_to_collect);
     region_idx++;
   }

@@ -171,6 +171,13 @@ config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
         The larger the size, the more stack frames Memfault can recover for tasks. The
         default setting typically allows for 4 or more frames to be recovered.
 
+config MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT
+       int "Maximum amount of bytes to collect for active task"
+       default MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
+       help
+        The larger the size, the more stack frames Memfault can recover for the active task.
+        The default setting typically allows for 4 or more frames to be recovered.
+
 config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
        bool "Collect full thread stacks in coredumps"
        default n
@@ -427,6 +434,7 @@ endchoice # MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
         int "Stack size for dedicated http upload queue, in bytes"
+        default 4096 if WIFI_NRF70
         default 2048
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
@@ -649,16 +657,24 @@ config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
 
 config MEMFAULT_FS_BYTES_FREE_METRIC
         bool "Enable a metric for the amount of free space on the filesystem"
-        default y
+        default y if "$(dt_path_enabled,/fstab)"
         depends on FILE_SYSTEM
+        help
+         Collects a metric for the amount of free space on the virtual filesystem.
+         If using fstab, the first mount point found will be used. Otherwise, the
+         user must update MEMFAULT_FS_BYTES_FREE_VFS_PATH to the mount point of
+         the filesystem to collect metrics for. Note: may be performance intensive
+         depending on flash technology and filesystem type.
 
 config MEMFAULT_FS_BYTES_FREE_VFS_PATH
         string "Path to the mount point to collect free space metrics for"
-        default "lfs1"
+        default ""
         depends on FILE_SYSTEM && MEMFAULT_FS_BYTES_FREE_METRIC
         help
          The path to the virtual filesystem mount point to collect free space
-         metrics for, omitting the leading '/'.
+         metrics for, omitting the leading '/'. If left empty and an fstab node
+         exists in the device tree, the first available mount point from the
+         fstab nodes will be used.
 
 config MEMFAULT_METRICS_CPU_TEMP
         bool "Enable CPU temperature metrics"

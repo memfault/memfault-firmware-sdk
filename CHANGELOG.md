@@ -6,6 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.0] - 2025-09-23
+
+This is a minor release. Highlights:
+
+- Added active task stack collection control in Zephyr
+- Changed mount point selection for filesystem metric to look up from Zephyr
+  device tree fstab entries
+- Fixed potential WiFi stack overflow on nRF70 series devices during HTTP
+  uploads
+
+### 📈 Added
+
+- Zephyr
+
+  - Add Kconfig option
+    `CONFIG_MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT` to control how
+    much of the active task stack is collected in coredumps. This can be used to
+    prioritize capturing details about the running task when coredump storage
+    space is limited. Defaults to
+    `CONFIG_MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT` for backwards
+    compatibility.
+
+  - Add the `mflt_http` workqueue thread to the default set of threads tracked
+    with max stack usage metrics. The default thread metrics can be controlled
+    with `CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS`.
+
+### 🛠️ Changed
+
+- Zephyr
+
+  - Replace use of deprecated API `bt_hci_cmd_create()` with
+    `bt_hci_cmd_alloc()` for Zephyr 4.2+.
+
+  - Enable `FileSystem_BytesFree` metric by default only when fstab is present
+    in the device tree. If present, the mount point is now automatically
+    detected from checking fstab nodes. Manual configuration of the mount point
+    via `CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH` still takes precedence when
+    set. If not using fstab, set `CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC=y` to
+    enable collection.
+
+### 🐛 Fixed
+
+- nRF-Connect SDK:
+
+  - Increase the default value of
+    `CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE` to 4kB when uploading
+    via WiFi on the nRF70 series. This avoids potential stack overflows caused
+    while performing periodic uploads via HTTP. Thanks to
+    [@chshzh](https://github.com/chshzh) for reporting this and proposing a fix
+    in [#95](https://github.com/memfault/memfault-firmware-sdk/issues/95)!
+
 ## [1.29.0] - 2025-09-11
 
 This is a minor release. Highlights:

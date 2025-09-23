@@ -74,7 +74,12 @@ static void prv_record_connection_rssi(struct bt_conn *conn) {
 
   struct bt_hci_cp_read_rssi *cp;
 
+  #if MEMFAULT_ZEPHYR_VERSION_GT(4, 1)
+  struct net_buf *buf = bt_hci_cmd_alloc(K_FOREVER);
+  #else
   struct net_buf *buf = bt_hci_cmd_create(BT_HCI_OP_READ_RSSI, sizeof(*cp));
+  #endif
+
   if (!buf) {
     return;
   }

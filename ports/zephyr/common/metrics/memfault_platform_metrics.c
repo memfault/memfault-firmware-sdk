@@ -137,6 +137,56 @@ static void prv_collect_memory_usage_metrics(void) {
 }
 #endif  // defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 
+#if defined(CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC)
+void prv_collect_fs_bytes_free_metric(void) {
+  const char *mount_point = NULL;
+
+  // User configured path takes priority
+  #ifdef CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH
+  char normalized_path[64];
+  if (CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH[0] != '\0') {
+    MEMFAULT_LOG_DEBUG("Using user-configured mount point for FS bytes free metric");
+    snprintf(normalized_path, sizeof(normalized_path), "/%s",
+             CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH);
+    mount_point = normalized_path;
+  }
+  #endif
+
+  // Auto-detect from fstab only
+  #if DT_NODE_EXISTS(DT_PATH(fstab))
+  MEMFAULT_LOG_DEBUG("Auto-detecting mount point from fstab for FS bytes free metric");
+
+    // Create a ternary chain to find the first mount point available
+    //
+    // The return statement here will expand to something like:
+    // return (DT_NODE_HAS_PROP(child1, mount_point) ? DT_PROP(child1, mount_point) :)
+    //        (DT_NODE_HAS_PROP(child2, mount_point) ? DT_PROP(child2, mount_point) :)
+    //        (DT_NODE_HAS_PROP(child3, mount_point) ? DT_PROP(child3, mount_point) :)
+    //         NULL;
+    #define FIND_FIRST_MOUNT(node_id) \
+      DT_NODE_HAS_PROP(node_id, mount_point) ? DT_PROP(node_id, mount_point):
+
+  mount_point = DT_FOREACH_CHILD_SEP(DT_PATH(fstab), FIND_FIRST_MOUNT, ) NULL;
+  #endif
+
+  if (mount_point == NULL) {
+    MEMFAULT_LOG_WARN("No mount point configured - skipping FS bytes free metric");
+    return;
+  }
+
+  MEMFAULT_LOG_DEBUG("Collecting FS bytes free metric for mount point %s", mount_point);
+
+  struct fs_statvfs fs_stats;
+  int retval = fs_statvfs(mount_point, &fs_stats);
+  if (retval == 0) {
+    // compute free bytes
+    uint32_t bytes_free = fs_stats.f_frsize * fs_stats.f_bfree;
+    MEMFAULT_METRIC_SET_UNSIGNED(FileSystem_BytesFree, bytes_free);
+  }
+}
+
+#endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
+
 // Written as a function vs. in-line b/c we might want to extern this at some point?
 // See ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def for
 // where the metrics key names come from.
@@ -181,20 +231,12 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
     // for percentage conversion
     uint32_t usage_pct = (uint32_t)(non_idle_tasks_cycles_delta * 10000 / all_tasks_cycles_delta);
     MEMFAULT_METRIC_SET_UNSIGNED(cpu_usage_pct, usage_pct);
-    MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%\n", usage_pct / 100, usage_pct % 100);
+    MEMFAULT_LOG_DEBUG("CPU usage: %u.%02u%%", usage_pct / 100, usage_pct % 100);
   }
   #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 0)
 
-  #if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
-  {
-    struct fs_statvfs fs_stats;
-    int retval = fs_statvfs("/" CONFIG_MEMFAULT_FS_BYTES_FREE_VFS_PATH, &fs_stats);
-    if (retval == 0) {
-      // compute free bytes
-      uint32_t bytes_free = fs_stats.f_frsize * fs_stats.f_bfree;
-      MEMFAULT_METRIC_SET_UNSIGNED(FileSystem_BytesFree, bytes_free);
-    }
-  }
+  #if defined(CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC)
+  prv_collect_fs_bytes_free_metric();
   #endif /* CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC */
 
 #endif /* CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE */

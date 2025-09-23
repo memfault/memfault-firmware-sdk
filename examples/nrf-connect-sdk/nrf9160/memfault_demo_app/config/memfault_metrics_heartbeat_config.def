@@ -1,4 +1,3 @@
 // Thread stack usage metrics
-MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_mflt_http_pct_max, kMemfaultMetricType_Unsigned, 100)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_wdt_pct_max, kMemfaultMetricType_Unsigned, 100)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_shell_uart_pct_max, kMemfaultMetricType_Unsigned, 100)
