@@ -3,24 +3,32 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
 import json
 import os
+from typing import TYPE_CHECKING
 
 from invoke import task
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ZEPHYR_ROOT = os.path.join(SDK_FW_ROOT, "examples", "zephyr", "stm32l4_disco")
 ZEPHYR_UPSTREAM_REPO = "https://github.com/zephyrproject-rtos/zephyr.git"
 
 
-def _shallow_clone_and_checkout(ctx, repo_uri, branch, dest_dir, commit):
+def _shallow_clone_and_checkout(
+    ctx: Context, repo_uri: str, branch: str, dest_dir: str, commit: str
+) -> None:
     ctx.run(f"git clone {repo_uri} --single-branch --branch {branch} {dest_dir}")
     with ctx.cd(dest_dir):
         ctx.run(f"git checkout {commit}")
 
 
 @task()
-def zephyr_project_ci_setup(ctx):
+def zephyr_project_ci_setup(ctx: Context) -> None:
     """Prepare Zephyr Projects for CI Tests
 
     Clones the repos specified in .ci-project-setup.json if and only

@@ -3,17 +3,24 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
+from collections.abc import Generator
 from contextlib import contextmanager
 from os import uname
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 APPLE_FTDI_DRIVER_BUNDLE_ID = "com.apple.driver.AppleUSBFTDI"
 
 
-def is_macos():
+def is_macos() -> bool:
     return uname()[0] == "Darwin"
 
 
-def _unload_apple_ftdi_driver_if_needed(ctx):
+def _unload_apple_ftdi_driver_if_needed(ctx: Context) -> bool | None:
     if not is_macos():
         return None
     result = ctx.run("kextstat -b {}".format(APPLE_FTDI_DRIVER_BUNDLE_ID), hide=True)
@@ -24,7 +31,7 @@ def _unload_apple_ftdi_driver_if_needed(ctx):
     return loaded
 
 
-def _load_apple_ftdi_driver_if_needed(ctx):
+def _load_apple_ftdi_driver_if_needed(ctx: Context) -> None:
     if not is_macos():
         return
     print("Re-loading Apple FTDI driver...")
@@ -32,7 +39,7 @@ def _load_apple_ftdi_driver_if_needed(ctx):
 
 
 @contextmanager
-def apple_ftdi_driver_disable(ctx):
+def apple_ftdi_driver_disable(ctx: Context) -> Generator[None, None, None]:
     was_ftdi_driver_loaded = _unload_apple_ftdi_driver_if_needed(ctx)
     try:
         yield

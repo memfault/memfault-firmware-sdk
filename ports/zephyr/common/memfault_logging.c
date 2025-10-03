@@ -104,14 +104,11 @@ typedef struct MfltLogProcessCtx {
 #endif
 
 static void prv_log_process(const struct log_backend *const backend, union log_msg_generic *msg) {
-  // This can be called in IMMEDIATE mode from an ISR, so in that case,
-  // immediately bail. We currently can't safely serialize to the Memfault
-  // buffer from ISR context
-#if CONFIG_LOG_MODE_IMMEDIATE
+  // This can be called in IMMEDIATE mode from an ISR or when flushing logs via LOG_PANIC, so
+  // immediately bail. We currently can't safely serialize to the Memfault buffer from ISR context
   if (memfault_arch_is_inside_isr()) {
     return;
   }
-#endif
 
   // Copied flagging from Zephry's ring buffer (rb) implementation.
   const uint32_t flags = IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP) ?
@@ -166,16 +163,14 @@ LOG_BACKEND_DEFINE(log_backend_mflt, log_backend_mflt_api, true);
 
 // Tie Memfault's log function to the Zephyr buffer sender. This is *the* connection to Memfault.
 static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
-#if defined(CONFIG_LOG_MODE_IMMEDIATE)
-  // In synchronous mode, logging can occur from ISRs. The zephyr fault handlers are chatty so
-  // don't save info while in an ISR to avoid wrapping over the info we are collecting.
-  // This function may also be run from LOG_PANIC. We also want to skip saving data in this case
-  // because the context object uses local stack memory which may not be valid when run from
-  // LOG_PANIC
+  // In IMMEDIATE mode, logging can occur from ISRs. The zephyr fault handlers are chatty so don't
+  // save info while in an ISR to avoid wrapping over the info we are collecting. This function may
+  // also be run from LOG_PANIC. We also want to skip saving data in this case because we currently
+  // can't safely serialize to the Memfault buffer from ISR context and the context object uses
+  // local stack memory which may not be valid when run from LOG_PANIC
   if (memfault_arch_is_inside_isr()) {
     return (int)length;
   }
-#endif
 
   sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx *)ctx;
   size_t save_length = length;

@@ -3,14 +3,20 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
 import os
 import shlex
 import shutil
 import sys
+from typing import TYPE_CHECKING
 
 from invoke import Collection, task
 
 from .print_chunk_watcher import PrintChunkWatcher
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.dirname(TASKS_DIR)
@@ -29,7 +35,7 @@ MBED_DEMO_APP_ELF = os.path.join(MBED_DEMO_APP_BUILD_ROOT, "memfault_demo_app.el
 
 
 @task
-def mbed_clean(ctx):
+def mbed_clean(ctx: Context) -> None:
     """Clean demo app that runs on Mbed OS 5"""
     print("Mbed CLI does not have a separate 'clean' action; approximating it...")
     if os.path.exists(MBED_DEMO_APP_BUILD_ROOT):
@@ -38,7 +44,7 @@ def mbed_clean(ctx):
 
 
 @task
-def mbed_update(ctx):
+def mbed_update(ctx: Context) -> None:
     """Update or install the library dependencies for the Mbed demo app"""
     cmd = "mbed update"
     with ctx.cd(MBED_DEMO_APP_ROOT):
@@ -74,7 +80,7 @@ def mbed_update(ctx):
 
 
 @task
-def _mbed_update_required(ctx):
+def _mbed_update_required(ctx: Context) -> None:
     """Most tasks require that the mbed_update task have been run at least once
     before to install mbed-os.  Do it now if it has not been done yet."""
     mbed_dir = os.path.join(MBED_DEMO_APP_ROOT, "mbed-os")
@@ -93,12 +99,12 @@ def _mbed_update_required(ctx):
     },
 )
 def mbed_build(
-    ctx,
-    profile=MBED_DEMO_APP_BUILD_PROFILE,
-    toolchain=MBED_TOOLCHAIN,
-    target=MBED_TARGET,
-    flash=False,
-):
+    ctx: Context,
+    profile: str = MBED_DEMO_APP_BUILD_PROFILE,
+    toolchain: str = MBED_TOOLCHAIN,
+    target: str = MBED_TARGET,
+    flash: bool = False,
+) -> None:
     """Build the demo app that runs on Mbed OS 5"""
     cmd = "mbed compile --profile {} --toolchain {} --target {}".format(
         shlex.quote(profile), shlex.quote(toolchain), shlex.quote(target)
@@ -124,7 +130,7 @@ def mbed_build(
 @task(
     pre=[_mbed_update_required], help={"target": "Mbed target name (def: {})".format(MBED_TARGET)}
 )
-def mbed_flash(ctx, target=MBED_TARGET):
+def mbed_flash(ctx: Context, target: str = MBED_TARGET) -> None:
     """Flash (and first build) the demo app that runs on Mbed OS 5"""
     print("Mbed CLI does not have a separate 'flash' action; approximating it...")
     mbed_build(ctx, flash=True, target=target)
@@ -138,7 +144,7 @@ def mbed_flash(ctx, target=MBED_TARGET):
         "target": "Mbed target name (def: {})".format(MBED_TARGET),
     },
 )
-def mbed_console(ctx, baudrate=MBED_BAUD_RATE, target=MBED_TARGET):
+def mbed_console(ctx: Context, baudrate: int = MBED_BAUD_RATE, target: str = MBED_TARGET) -> None:
     """Start an Mbed serial console to interact with the demo app"""
     cmd = "mbed sterm --baudrate {:d} --echo off --target {}".format(baudrate, shlex.quote(target))
     with ctx.cd(MBED_DEMO_APP_ROOT):

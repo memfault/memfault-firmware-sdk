@@ -3,15 +3,21 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
 import contextlib
 import os
 import sys
 from glob import glob
+from typing import TYPE_CHECKING
 
 from invoke import Collection, task
 
 from .gdb import gdb_build_cmd
 from .print_chunk_watcher import PrintChunkWatcher
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.join(TASKS_DIR, "..")
@@ -30,8 +36,8 @@ DEMO_APP_ELF = os.path.join(
 )
 
 
-def _wiced_guess_console_port():
-    def _wiced_find_console_port():
+def _wiced_guess_console_port() -> str:
+    def _wiced_find_console_port() -> str:
         usb_paths = glob("/dev/cu.usbserial-*1")
         if usb_paths:
             return usb_paths[0]
@@ -46,12 +52,12 @@ def _wiced_guess_console_port():
     return port
 
 
-def _wiced_make(ctx, *args, **kwargs):
+def _wiced_make(ctx: Context, *args: str, **kwargs: object) -> None:
     with ctx.cd(WICED_SDK_43X_ROOT):
         ctx.run("{make} {args}".format(make=WICED_MAKE, args=" ".join(args)), **kwargs)
 
 
-def _run_openocd_cmd(ctx, openocd_cmd=None):
+def _run_openocd_cmd(ctx: Context, openocd_cmd: str | None = None) -> None:
     cmd = (
         "./tools/OpenOCD/OSX/openocd-all-brcm-libftdi"
         " -s ./tools/OpenOCD/scripts"
@@ -67,19 +73,19 @@ def _run_openocd_cmd(ctx, openocd_cmd=None):
 
 
 @task
-def wiced_build(ctx):
+def wiced_build(ctx: Context) -> None:
     """Build WICED demo app"""
     _wiced_make(ctx, DEMO_APP_TARGET)
 
 
 @task
-def wiced_clean(ctx):
+def wiced_clean(ctx: Context) -> None:
     """Clean WICED demo app"""
     _wiced_make(ctx, "clean")
 
 
 @task
-def wiced_flash(ctx):
+def wiced_flash(ctx: Context) -> None:
     """Flashes WICED demo app"""
 
     # See doc/make_target_examples.txt:
@@ -95,13 +101,13 @@ def wiced_flash(ctx):
 
 
 @task
-def wiced_debug(ctx):
+def wiced_debug(ctx: Context) -> None:
     """Runs GDB using WICED's debug Makefile target -- this runs OpenOCD inside a GDB shell"""
     _wiced_make(ctx, DEMO_APP_TARGET, "debug", pty=True)
 
 
 @task
-def wiced_gdb(ctx, elf=DEMO_APP_ELF, gdb=3333):
+def wiced_gdb(ctx: Context, elf: str = DEMO_APP_ELF, gdb: int = 3333) -> None:
     """Runs GDB, loads the demo app elf and attaches it to openocd"""
     with ctx.cd(WICED_SDK_43X_ROOT):
         # Remove the generated .gdbinit -- running openocd using "shell start" within gdb doesn't seem to work very
@@ -113,13 +119,13 @@ def wiced_gdb(ctx, elf=DEMO_APP_ELF, gdb=3333):
 
 
 @task
-def wiced_openocd(ctx):
+def wiced_openocd(ctx: Context) -> None:
     """Runs openocd"""
     _run_openocd_cmd(ctx)
 
 
 @task
-def wiced_console(ctx, port=None):
+def wiced_console(ctx: Context, port: str | None = None) -> None:
     """Attach debug console"""
     if port is None:
         port = _wiced_guess_console_port()

@@ -3,14 +3,20 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
 import os
 import re
 import shutil
 import sys
+from typing import TYPE_CHECKING
 
 from invoke import Collection, task
 
 from .gdb import gdb_build_cmd
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 TASKS_DIR = os.path.dirname(__file__)
 MEMFAULT_SDK_ROOT = os.path.join(TASKS_DIR, "..")
@@ -25,7 +31,7 @@ ESP32_FTDI_VID_PID = [(0x0403, 0x6010)]
 OPENOCD_GDB_PORT_DEFAULT = 3333
 
 
-def _run_idf_script(ctx, *args, **kwargs):
+def _run_idf_script(ctx: "Context", *args: str, **kwargs: object) -> None:
     # allow selecting a specific python interpreter instead of the active one.
     # this is necessary in CI, because the mbed build task modifies the python
     # environment 😖, and idf.py runs a pkg_resources.require() which fails if
@@ -52,7 +58,7 @@ def _run_idf_script(ctx, *args, **kwargs):
 
 
 @task
-def run_xtensa_toolchain_check(ctx):
+def run_xtensa_toolchain_check(ctx: "Context") -> None:
     if sys.version_info.major < 3:
         # shutil which is only available for python3
         return
@@ -70,19 +76,19 @@ def run_xtensa_toolchain_check(ctx):
 
 
 @task(pre=[run_xtensa_toolchain_check])
-def esp32_app_build(ctx):
+def esp32_app_build(ctx: "Context") -> None:
     """Build the ESP32 test app"""
     _run_idf_script(ctx, "build")
 
 
 @task
-def esp32_app_clean(ctx):
+def esp32_app_clean(ctx: "Context") -> None:
     """Clean the ESP32 test app"""
     _run_idf_script(ctx, "fullclean")
 
 
 @task(pre=[run_xtensa_toolchain_check])
-def esp32s2_app_build(ctx):
+def esp32s2_app_build(ctx: "Context") -> None:
     """Build the ESP32-S2 test app"""
     # !NOTE! 'set-target' was added in ESP-IDF v4.1. If you are using an older
     # version of ESP-IDF, building for the ESP32-S2 + ESP32-S3 won't work.
@@ -91,32 +97,32 @@ def esp32s2_app_build(ctx):
 
 
 @task(pre=[run_xtensa_toolchain_check])
-def esp32s3_app_build(ctx):
+def esp32s3_app_build(ctx: "Context") -> None:
     """Build the ESP32-S3 test app"""
     _run_idf_script(ctx, "set-target esp32s3")
     _run_idf_script(ctx, "build")
 
 
 @task
-def esp32_app_flash(ctx):
+def esp32_app_flash(ctx: "Context") -> None:
     """Flash the ESP32 test app"""
     _run_idf_script(ctx, "flash")
 
 
 @task
-def esp32_console(ctx):
+def esp32_console(ctx: "Context") -> None:
     """Flash the ESP32 test app"""
     _run_idf_script(ctx, "monitor")
 
 
 @task
-def esp32_app_menuconfig(ctx):
+def esp32_app_menuconfig(ctx: "Context") -> None:
     """Run menuconfig for the ESP32 test app"""
     _run_idf_script(ctx, "menuconfig", pty=True)
 
 
 @task
-def esp32_openocd(ctx):
+def esp32_openocd(ctx: "Context") -> None:
     """Launch openocd"""
     if "ESP32_OPENOCD" not in os.environ:
         print("Set ESP32_OPENOCD environment variable to point to openocd-esp32 root directory!")
@@ -134,7 +140,7 @@ def esp32_openocd(ctx):
 
 
 @task
-def esp32_app_gdb(ctx, gdb=None, reset=False):
+def esp32_app_gdb(ctx: "Context", gdb: int | None = None, reset: bool = False) -> None:
     """Launches xtensa-gdb with app elf and connects to openocd gdb server"""
     if gdb is None:
         gdb = OPENOCD_GDB_PORT_DEFAULT
@@ -146,7 +152,9 @@ def esp32_app_gdb(ctx, gdb=None, reset=False):
 
 
 @task
-def esp32_decode_backtrace(ctx, backtrace_str, symbol_file, verbose=False):
+def esp32_decode_backtrace(
+    ctx: "Context", backtrace_str: str, symbol_file: str, verbose: bool = False
+) -> None:
     """Decode a backtrace emitted by ESP-IDF panic handling
 
     The backtrace_str should be passed as a string of separated address pairs

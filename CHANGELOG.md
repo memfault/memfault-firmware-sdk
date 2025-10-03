@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.1] - 2025-10-03
+
+This is a patch release, fixing one bug and applying a minor code quality
+improvement to the Python tooling files.
+
+### 🐛 Fixed
+
+- nRF-Connect SDK:
+
+  - Fixed an issue where panic logs generated from ISRs caused a double fault
+    for Nordic nRF91 users where `CONFIG_LOG_MODE_IMMEDIATE=n` and
+    `MEMFAULT_LOG_TIMESTAMPS_ENABLE` is 1.
+
+- General:
+
+  - Added Python type annotations to the files in the `tasks` directory.
+
 ## [1.30.0] - 2025-09-23
 
 This is a minor release. Highlights:

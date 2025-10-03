@@ -3,10 +3,16 @@
 # See LICENSE for details
 #
 
+from __future__ import annotations
+
 import sys
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING
 
 from invoke.watchers import StreamWatcher
+
+if TYPE_CHECKING:
+    from tasks.lib.invoke_utils import Context
 
 
 class PrintChunkWatcher(StreamWatcher):
@@ -18,12 +24,12 @@ class PrintChunkWatcher(StreamWatcher):
     user doesn't have to copy & paste the large block manually
     """
 
-    def __init__(self, ctx):
+    def __init__(self, ctx: Context) -> None:
         super(PrintChunkWatcher, self).__init__()
         self.search_start_idx = 0
         self.ctx = ctx
 
-    def submit(self, stream):
+    def submit(self, stream: str | None) -> list[str]:
         if stream is None:
             return []
 
