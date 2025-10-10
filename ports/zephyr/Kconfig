@@ -27,7 +27,7 @@ config MEMFAULT_CACHE_FAULT_REGS
           in the Memfault Issues view.
 
 config MEMFAULT_USER_CONFIG_ENABLE
-        bool "Enable user configuration of the Memfault SDK"
+        bool "User configuration of the Memfault SDK"
         default y
         help
           When enabled, a user must add the three Memfault
@@ -48,7 +48,7 @@ config MEMFAULT_USER_CONFIG_SILENT_FAIL
           memfault_trace_reason_user_config.def
 
 config MEMFAULT_SOC_FAMILY_ESP32
-        bool "Enable ESP32 support"
+        bool "ESP32 support"
         # Note: the generic ESP32 family config changed from SOC_FAMILY_ESP32 to
         # SOC_FAMILY_ESPRESSIF_ESP32 in Zephyr 3.7.0. To provide backwards
         # compatible support without referencing unavailable Kconfig values,
@@ -288,7 +288,7 @@ config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
           by the default set of reboot reasons.
 
 config MEMFAULT_COMPACT_LOG
-        bool "Enable compact logging"
+        bool "Compact logging"
         default n
         select REQUIRES_STD_C11
         select GNU_C_EXTENSIONS
@@ -318,7 +318,7 @@ config MEMFAULT_LOGGING_RAM_SIZE
           room for a reasonalbe number of log entries.
 
 config MEMFAULT_METRICS_LOGS_ENABLE
-        bool "Enable collection of metrics for log message counts"
+        bool "Metrics for log message counts"
         default y
         help
           When enabled, Memfault will collect metrics for log messages.
@@ -351,7 +351,7 @@ config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
 endchoice
 
 config MEMFAULT_HTTP_ENABLE
-        bool "Enables support for using Memfault's HTTP APIs"
+        bool "Support for using Memfault's HTTP APIs"
         default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
         imply POSIX_API
         depends on NETWORKING
@@ -400,7 +400,7 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
           allocated.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
-        bool "Enables a work job to periodically push new data to Memfault"
+        bool "Work job to periodically push new data to Memfault"
         default y if SOC_SERIES_NRF91X
         help
           This implementation makes use of a k_timer_* and k_work_submit to schedule
@@ -602,7 +602,7 @@ menuconfig MEMFAULT_METRICS
 if MEMFAULT_METRICS
 
 config MEMFAULT_METRICS_EXTRA_DEFS_FILE
-       bool "Enable inclusion of additional metrics definition file"
+       bool "Include additional metrics definition file"
        default n
        help
         Enables inclusion of an additional metric definition file,
@@ -644,7 +644,7 @@ choice MEMFAULT_PLATFORM_TIME_SINCE_BOOT
 endchoice
 
 config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
-       bool "Enable a default set of metrics by the Zephyr port"
+       bool "Default set of metrics by the Zephyr port"
        default y
        depends on INIT_STACKS
        depends on THREAD_RUNTIME_STATS
@@ -656,7 +656,7 @@ config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
         When disabled, no default metrics will be collected.
 
 config MEMFAULT_FS_BYTES_FREE_METRIC
-        bool "Enable a metric for the amount of free space on the filesystem"
+        bool "Metric for the amount of free space on the filesystem"
         default y if "$(dt_path_enabled,/fstab)"
         depends on FILE_SYSTEM
         help
@@ -677,7 +677,7 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
          fstab nodes will be used.
 
 config MEMFAULT_METRICS_CPU_TEMP
-        bool "Enable CPU temperature metrics"
+        bool "CPU temperature metrics"
         default y if "$(dt_alias_enabled,die-temp0)"
         depends on SENSOR
         help
@@ -685,14 +685,14 @@ config MEMFAULT_METRICS_CPU_TEMP
          device tree node alias.
 
 config MEMFAULT_METRICS_SYNC_SUCCESS
-        bool "Enable sync success metrics"
+        bool "Sync success metrics"
         default y
         help
          Memfault user-defined sync success metric component. More information
          at https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
-        bool "Enable memfault sync success metrics"
+        bool "Memfault sync success metrics"
         default y
         depends on MEMFAULT_HTTP_ENABLE
         help
@@ -701,14 +701,14 @@ config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
          https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
-        bool "Enable memfault connectivity time metrics"
+        bool "Memfault connectivity time metrics"
         default y
         help
          Memfault connectivity time metric component. More information at
          https://mflt.io/core-metrics .
 
 config MEMFAULT_METRICS_BATTERY_ENABLE
-       bool "Enable battery metrics"
+       bool "Battery metrics"
        default n
        help
          Memfault battery metric component. More information at
@@ -722,19 +722,19 @@ config MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT
         Automatically initialize the battery metric subsystem on bootup
 
 config MEMFAULT_METRICS_TCP_IP
-        bool "Enable TCP/IP metrics"
+        bool "TCP/IP metrics"
         default y
         depends on NET_STATISTICS && NET_STATISTICS_USER_API
         help
          Collects Memfault metrics for TCP/IP statistics.
 
 config MEMFAULT_METRICS_WIFI
-        bool "Enable Wi-Fi metrics"
+        bool "Wi-Fi metrics"
         default y
         depends on NET_MGMT_EVENT && WIFI
 
 config MEMFAULT_METRICS_BLUETOOTH
-        bool "Enable Bluetooth metrics"
+        bool "Bluetooth metrics"
         default y
         depends on BT && BT_CONN
         # BT_REMOTE_INFO enables the connection callback when remote info is
@@ -755,14 +755,14 @@ config MEMFAULT_METRICS_BLUETOOTH_DELAYED_MS
          RSSI + remote info are invalid on initial connection callback.
 
 config MEMFAULT_METRICS_MEMORY_USAGE
-        bool "Enable memory usage metrics"
+        bool "Memory usage metrics"
         default y
         depends on SYS_HEAP_RUNTIME_STATS
         help
          Collects Memfault metrics for memory usage stats.
 
 config MEMFAULT_METRICS_THREADS
-        bool "Enable per-thread metrics"
+        bool "Per-thread metrics"
         default y
         depends on THREAD_STACK_INFO
         depends on INIT_STACKS
@@ -783,7 +783,7 @@ config MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
          when Memfault's cloud processes the data.
 
 config MEMFAULT_METRICS_THREADS_DEFAULTS
-        bool "Enable default thread metrics"
+        bool "Default thread metrics"
         default y
         depends on MEMFAULT_METRICS_THREADS
         help
@@ -791,7 +791,7 @@ config MEMFAULT_METRICS_THREADS_DEFAULTS
          providing a custom set of threads to track, disable this option.
 
 config MEMFAULT_METRICS_BOOT_TIME
-        bool "Enable boot time metrics"
+        bool "Boot time metrics"
         default y
         help
          Collects boot time metrics for the device
@@ -846,7 +846,7 @@ config MEMFAULT_CATCH_ZEPHYR_ASSERT
          a MEMFAULT_ASSERT() invocation.
 
 config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
-       bool "Enable inclusion of additional platform config file"
+       bool "Additional platform config file"
        default n
        help
         Enables inclusion of an additional platform config file,
@@ -917,7 +917,7 @@ config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
          the application's date_time event handler.
 
 config MEMFAULT_CDR_ENABLE
-        bool "Enable the Memfault CDR component"
+        bool "Memfault CDR component"
         default y
         help
          Permits usage of the Memfault CDR feature. See

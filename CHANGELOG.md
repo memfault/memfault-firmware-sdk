@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.2] - 2025-10-10
+
+This is a patch release, including only a change to boolean Kconfig prompts so
+they comply with Kconfig requirements in the nRF-Connect SDK.
+
 ## [1.30.1] - 2025-10-03
 
 This is a patch release, fixing one bug and applying a minor code quality
