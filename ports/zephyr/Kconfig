@@ -83,7 +83,6 @@ config MEMFAULT_RAM_BACKED_COREDUMP
 config MEMFAULT_COREDUMP_STORAGE_RRAM
         bool "RRAM backed coredump storage"
         depends on NRFX_RRAMC
-        depends on PARTITION_MANAGER_ENABLED
         help
           Use an internal RRAM-backed coredump storage implementation. Requires
           a partition labeled `memfault_coredump_partition`.
@@ -871,6 +870,15 @@ config MEMFAULT_FAULT_HANDLER_RETURN
         When enabled, the Memfault fault handler will call `z_fatal_error`
         instead of rebooting the system. Useful if the system needs to hook into
         `k_sys_fatal_error_handler` at the end of system fault handling.
+
+config MEMFAULT_FAULT_HANDLER_LOG_PANIC
+        bool "Trigger LOG_PANIC() on fault handling"
+        default n
+        help
+         When enabled, the Memfault fault handler will call `LOG_PANIC()` to
+         flush logs during fault handling. Note that this can cause unexpected
+         behavior in some log backends that are not safe to call from fault
+         context.
 
 choice MEMFAULT_SYSTEM_TIME_SOURCE
         prompt "Memfault system time source"

@@ -18,6 +18,7 @@
 #include "memfault/panics/arch/riscv/riscv.h"
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
+#include "memfault/ports/zephyr/log_panic.h"
 #include "memfault/ports/zephyr/version.h"
 
 // Note: There is no header exposed for this zephyr function
@@ -47,7 +48,7 @@ void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
   // TODO log panic may not be working correctly in fault handler context :(
   // // flush logs prior to capturing coredump & rebooting
-  // LOG_PANIC();
+  // MEMFAULT_LOG_PANIC();
 
   sMfltRegState reg = {
     .mepc = esf->mepc, /* machine exception program counter */

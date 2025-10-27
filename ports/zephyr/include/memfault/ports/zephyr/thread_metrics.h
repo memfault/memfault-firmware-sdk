@@ -45,8 +45,10 @@ typedef struct MfltZephyrThreadMetricsIndex {
 //!   },
 //! );
 extern const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[];
-#define MEMFAULT_METRICS_DEFINE_THREAD_METRICS(...) \
-  const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[] = { __VA_ARGS__, { 0 } }
+#define MEMFAULT_METRICS_DEFINE_THREAD_METRICS(...)                         \
+  const sMfltZephyrThreadMetricsIndex g_memfault_thread_metrics_index[] = { \
+    __VA_ARGS__ __VA_OPT__(, ){ 0 }                                         \
+  }
 
 #ifdef __cplusplus
 }

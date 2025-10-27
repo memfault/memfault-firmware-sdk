@@ -21,6 +21,7 @@
 #include "memfault/panics/coredump.h"
 #include "memfault/panics/fault_handling.h"
 #include "memfault/ports/zephyr/version.h"
+#include "memfault/ports/zephyr/log_panic.h"
 
 // The z_fatal_error() signature changed in Zephyr 3.7.0, during release
 // candidate development. NCS uses an intermediate version in NCS v2.7.0, so use
@@ -186,8 +187,8 @@ void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 void __wrap_z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 #endif
 {
-  // flush logs prior to capturing coredump & rebooting
-  LOG_PANIC();
+  // Optionally flush logs prior to capturing coredump & rebooting
+  MEMFAULT_LOG_PANIC();
 
   const struct __extra_esf_info *extra_info = &esf->extra_info;
   const _callee_saved_t *callee_regs = extra_info->callee;

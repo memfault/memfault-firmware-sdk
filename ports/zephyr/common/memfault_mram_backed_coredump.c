@@ -2,6 +2,35 @@
 //!
 //! Copyright (c) Memfault, Inc.
 //! See LICENSE for details
+//!
+//! MRAM backed coredump storage implementation. To make use of this, be sure to
+//! add a fixed partition named "memfault_coredump_partition" to your device
+//! tree or use partition manager to define one.
+//!
+//! For example, if using partition manager, you might add an entry like this to
+//! the application's pm_static.yml file:
+//!
+//!  memfault_coredump_partition:
+//!    address: 0x155000
+//!    end_address: 0x165000
+//!    placement:
+//!      align:
+//!        start: 0x1000
+//!      before:
+//!      - end
+//!    region: flash_primary
+//!    size: 0x10000
+//!
+//! If using device tree specified partitions, you might add something like this
+//! to your board's dts file/overlay:
+//!
+//!  &mram1x {
+//!    partitions {
+//!      memfault_coredump_partition: partition@1a9000 {
+//!        reg = <0x1a9000 DT_SIZE_K(20)>;
+//!      };
+//!    };
+//!  };
 
 #include <memfault/components.h>
 #include <zephyr/drivers/flash.h>

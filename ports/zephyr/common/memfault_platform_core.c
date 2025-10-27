@@ -24,6 +24,7 @@
 #include "memfault/ports/reboot_reason.h"
 #include "memfault/ports/zephyr/core.h"
 #include "memfault/ports/zephyr/log_backend.h"
+#include "memfault/ports/zephyr/log_panic.h"
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
 #include "memfault/ports/zephyr/version.h"
 // clang-format on
@@ -50,7 +51,7 @@ void __wrap_z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
   // in the log buffer. That should be an unusual configuration, since the fault
   // register capture disable is a very small size optimization, and logs are
   // likely not used on devices with space constraints.
-  LOG_PANIC();
+  MEMFAULT_LOG_PANIC();
     #if !defined(CONFIG_LOG_MODE_MINIMAL)
   memfault_zephyr_log_backend_disable();
     #endif

@@ -102,7 +102,9 @@ static void led_config(void) {
 }
   #endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 
-static void prv_heartbeat_led_callback(MEMFAULT_UNUSED TimerHandle_t handle) {
+static void prv_heartbeat_led_callback(TimerHandle_t handle) {
+  (void)handle;
+
   static bool s_led_state = true;
 
   /* If the addressable LED is enabled */

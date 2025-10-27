@@ -51,7 +51,7 @@ static void prv_record_thread_metrics(const struct k_thread *thread, void *user_
 
   const char *name = k_thread_name_get((k_tid_t)thread);
   if (!name || name[0] == '\0') {
-    MEMFAULT_LOG_ERROR("No thread name registered for %p", thread);
+    return;
   }
 
   // Iterate over the thread list. A blank thread name indicates the end of the list.

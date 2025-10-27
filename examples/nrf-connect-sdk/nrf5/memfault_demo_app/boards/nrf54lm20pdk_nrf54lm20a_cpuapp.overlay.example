@@ -1,0 +1,19 @@
+/*
+ Example device tree overlay for the nrf54lm20dk, showing how to set a
+ fixed-partition region for RRAM-backed coredump storage. Pass it with
+ '-DDTC_OVERLAY_FILE=boards/nrf54lm20pdk_nrf54lm20a_cpuapp.overlay.example'
+ when building.
+*/
+
+&cpuapp_rram {
+	partitions {
+		storage_partition: partition@1d1000 {
+			label = "storage";
+			reg = < 0x1d1000 0x4000 >;
+		};
+		memfault_coredump_partition: partition@1d5000 {
+			label = "memfault_coredump_partition";
+			reg = <0x1d5000 0x5000>;
+		};
+	};
+};

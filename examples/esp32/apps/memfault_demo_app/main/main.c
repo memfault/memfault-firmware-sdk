@@ -361,7 +361,7 @@ void esp_heap_trace_alloc_hook(void *ptr, size_t size, uint32_t caps) {
 }
 #endif
 
-#if !defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
+#if defined(CONFIG_MEMFAULT) && !defined(CONFIG_MEMFAULT_LOG_USE_VPRINTF_HOOK)
 // Demonstrate a custom vprintf hook that prefixes all log messages with
 // "[IDF]", before invoking the Memfault log hook, and then printing to stdout.
 static int prv_vprintf_hook(const char *fmt, va_list args) {

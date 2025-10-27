@@ -2,6 +2,34 @@
 //!
 //! Copyright (c) Memfault, Inc.
 //! See LICENSE for details
+//!
+//! RRAM backed coredump storage implementation. To make use of this, be sure to
+//! add a fixed partition named "memfault_coredump_partition" to your device
+//! tree or use partition manager to define one.
+//!
+//! For example, if using partition manager, you might add an entry like this to
+//! the application's pm_static.yml file:
+//!
+//!  memfault_coredump_partition:
+//!    address: 0x1fc000
+//!    end_address: 0x1fd000
+//!    placement:
+//!      after:
+//!      - mcuboot_secondary
+//!    region: flash_primary
+//!    size: 0x1000
+//!
+//! If using device tree specified partitions, you might add something like this
+//! to your board's dts file/overlay:
+//!
+//!  &mram1x {
+//!    partitions {
+//!      memfault_coredump_partition: partition@1d5000 {
+//!        label = "memfault_coredump_partition";
+//!        reg = <0x1d5000 0x5000>;
+//!      };
+//!    };
+//!  };
 
 #include <hal/nrf_rramc.h>
 #include <memfault/components.h>
@@ -15,18 +43,27 @@
 #include <memfault/ports/buffered_coredump_storage.h>
 
 // Ensure the memfault_coredump_partition entry exists
-#if !FIXED_PARTITION_EXISTS(memfault_coredump_partition)
+
+// Fixed partitions in use
+#if DT_HAS_FIXED_PARTITION_LABEL(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_OFFSET \
+    DT_FIXED_PARTITION_ADDR(DT_NODELABEL(memfault_coredump_partition))
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE DT_REG_SIZE(DT_NODELABEL(memfault_coredump_partition))
+
+// Partition-manager defined partitions
+#elif FIXED_PARTITION_EXISTS(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_OFFSET FIXED_PARTITION_OFFSET(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
+#else
   #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
 #endif
 
-MEMFAULT_STATIC_ASSERT(FIXED_PARTITION_SIZE(memfault_coredump_partition) %
-                           MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE ==
-                         0,
+MEMFAULT_STATIC_ASSERT(MEMFAULT_COREDUMP_PARTITION_SIZE % MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE == 0,
                        "Storage size must be a multiple of 128-bit (16 bytes)");
 
 void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info) {
   *info = (sMfltCoredumpStorageInfo){
-    .size = FIXED_PARTITION_SIZE(memfault_coredump_partition),
+    .size = MEMFAULT_COREDUMP_PARTITION_SIZE,
   };
 }
 
@@ -44,15 +81,14 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t
 
   // special case: if the first word is 0, the coredump is cleared, and reads
   // should return all zeros
-  const uint32_t first_wordline =
-    *(const uint32_t *)(FIXED_PARTITION_OFFSET(memfault_coredump_partition));
+  const uint32_t first_wordline = *(const uint32_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET);
   if (first_wordline == 0) {
     memset(data, 0, read_len);
     return true;
   }
 
   // RRAM is memory mapped, so we can just read it directly
-  const uint32_t address = FIXED_PARTITION_OFFSET(memfault_coredump_partition) + offset;
+  const uint32_t address = MEMFAULT_COREDUMP_PARTITION_OFFSET + offset;
 
   memcpy(data, (void *)address, read_len);
   return true;
@@ -68,7 +104,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 }
 
 bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *blk) {
-  const uint32_t start_addr = FIXED_PARTITION_OFFSET(memfault_coredump_partition);
+  const uint32_t start_addr = MEMFAULT_COREDUMP_PARTITION_OFFSET;
   const uint32_t addr = start_addr + blk->write_offset;
 
   if (!prv_op_within_flash_bounds(blk->write_offset, MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE)) {

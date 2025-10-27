@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.30.3] - 2025-10-23
+
+This is a patch release, fixing build errors and one bug.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Update the RRAM coredump storage backend implementation to support the
+    Nordic nRF54LM20 (and other Nordic nRF54L series chips) when not using
+    partition manager to assign flash regions (i.e. using device tree fixed
+    partitions). See
+    [`ports/zephyr/common/memfault_rram_backed_coredump.c`](ports/zephyr/common/memfault_rram_backed_coredump.c)
+    for details, and how to enable the coredump storage backend.
+
+  - Fix a compilation error when `CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS=n`.
+
+  - Remove an error log statement from
+    [`memfault_platform_thread_metrics.c`](ports/zephyr/common/memfault_platform_thread_metrics.c).
+    Previously this would log as
+    `<err> mflt: No thread name registered for 0x2000eae8`, for example, but was
+    not useful in many cases, and is not an error in any case.
+
+### 🐛 Fixed
+
+- ESP-IDF:
+
+  - Fix a compilation issue when building the [ESP32 sample app](examples/esp32)
+    for an ESP32-C6 with `MEMFAULT_DISABLE=` set (i.e.
+    `MEMFAULT_DISABLE=1 idf.py set-target esp32c6 build`). This only impacts the
+    sample application.
+
+- Zephyr:
+
+  - Disable invoking `LOG_PANIC()` during fault handling by default. When
+    deferred logging is used (`CONFIG_LOG_MODE_DEFERRED=y`), triggering a panic
+    flush from fault context may result in some log backends
+    (`CONFIG_SHELL_LOG_BACKEND` for example) to double-fault, which results in
+    failed coredump captures. This specifically can happen when running a
+    non-secure application with TF-M, and passing back from a secure fault
+    handler using `CONFIG_TFM_ALLOW_NON_SECURE_FAULT_HANDLING=y`. Users who are
+    comfortable enabling this can re-enable `LOG_PANIC()` with
+    `CONFIG_MEMFAULT_FAULT_HANDLER_LOG_PANIC=y`.
+
+  - Remove an unnecessary `depends on PARTITION_MANAGER_ENABLED` in the
+    `MEMFAULT_COREDUMP_STORAGE_RRAM` Kconfig setting. This feature only requires
+    a partition labeled `memfault_coredump_partition`, but does not require
+    partition manager specifically (which is a Nordic nRF-Connect SDK feature,
+    not a Zephyr feature). Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this issue in
+    [#96](https://github.com/memfault/memfault-firmware-sdk/issues/96)!
+
 ## [1.30.2] - 2025-10-10
 
 This is a patch release, including only a change to boolean Kconfig prompts so
@@ -40,7 +92,7 @@ This is a minor release. Highlights:
 
 ### 📈 Added
 
-- Zephyr
+- Zephyr:
 
   - Add Kconfig option
     `CONFIG_MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT` to control how
@@ -56,7 +108,7 @@ This is a minor release. Highlights:
 
 ### 🛠️ Changed
 
-- Zephyr
+- Zephyr:
 
   - Replace use of deprecated API `bt_hci_cmd_create()` with
     `bt_hci_cmd_alloc()` for Zephyr 4.2+.

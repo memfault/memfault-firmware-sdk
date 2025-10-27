@@ -21,6 +21,7 @@
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/panics/arch/posix/posix.h"
 #include "memfault/panics/coredump.h"
+#include "memfault/ports/zephyr/log_panic.h"
 #include "memfault/panics/fault_handling.h"
 
 // clang-format on
@@ -83,7 +84,7 @@ _Static_assert(__builtin_types_compatible_p(__typeof__(&z_fatal_error),
 
 void __wrap_z_fatal_error(unsigned int reason, const struct arch_esf *esf) {
   // flush logs prior to capturing coredump & rebooting
-  LOG_PANIC();
+  MEMFAULT_LOG_PANIC();
 
   sMfltRegState reg = { 0 };
 
