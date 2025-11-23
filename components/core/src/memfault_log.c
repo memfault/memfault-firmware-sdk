@@ -438,6 +438,12 @@ static void prv_log_save(eMemfaultPlatformLogLevel level, const void *log, size_
     return;
   }
 
+  // Compact log msg should never exceed MEMFAULT_LOG_MAX_LINE_SAVE_LEN. Return
+  // immediately if it does.
+  if ((log_type == kMemfaultLogRecordType_Compact) && (log_len > MEMFAULT_LOG_MAX_LINE_SAVE_LEN)) {
+    return;
+  }
+
   bool log_written = false;
 #if MEMFAULT_LOG_TIMESTAMPS_ENABLE
   sMemfaultCurrentTime timestamp;
@@ -449,10 +455,8 @@ static void prv_log_save(eMemfaultPlatformLogLevel level, const void *log, size_
   const size_t timestamped_len = 0;
 #endif
 
-  // maximum msg length is truncated by timestamp, when enabled and valid.
-  const size_t max_log_msg_len = MEMFAULT_LOG_MAX_LINE_SAVE_LEN - timestamped_len;
-
-  const size_t truncated_log_len = MEMFAULT_MIN(log_len, max_log_msg_len);
+  // safe to truncate now- this can only happen for preformatted logs
+  const size_t truncated_log_len = MEMFAULT_MIN(log_len, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
   // total log length for the log entry .len field includes the timestamp.
   const uint8_t total_log_len = (uint8_t)(truncated_log_len + timestamped_len);
   // circular buffer space needed includes the metadata (hdr + len) and msg
@@ -508,11 +512,28 @@ void memfault_compact_log_save(eMemfaultPlatformLogLevel level, uint32_t log_id,
   va_end(args);
 
   if (!success) {
-    return;
+    // if we failed serialization due to lack of space (entire CBOR structure too large),
+    // insert a placeholder instead. Note: truncation only handles string content being too long
+    if (memfault_cbor_encoder_get_status(&encoder) == MEMFAULT_CBOR_ENCODER_STATUS_ENOMEM) {
+      // first compute serialized size
+      memfault_cbor_encoder_size_only_init(&encoder);
+      va_start(args, compressed_fmt);
+      memfault_vlog_compact_serialize(&encoder, log_id, compressed_fmt, args);
+      va_end(args);
+      size_t computed_size = memfault_cbor_encoder_deinit(&encoder);
+
+      // now serialize the fallback entry
+      memfault_cbor_encoder_init(&encoder, memfault_cbor_encoder_memcpy_write, log_buf,
+                                 sizeof(log_buf));
+      success = memfault_vlog_compact_serialize_fallback_entry(&encoder, log_id, computed_size);
+    }
   }
 
-  const size_t bytes_written = memfault_cbor_encoder_deinit(&encoder);
-  prv_log_save(level, log_buf, bytes_written, kMemfaultLogRecordType_Compact, true);
+  // if we succeeded in serializing either the original or fallback entry, save it
+  if (success) {
+    const size_t bytes_written = memfault_cbor_encoder_deinit(&encoder);
+    prv_log_save(level, log_buf, bytes_written, kMemfaultLogRecordType_Compact, true);
+  }
 }
 
 #endif /* MEMFAULT_COMPACT_LOG_ENABLE */
@@ -540,7 +561,7 @@ bool memfault_log_boot(void *storage_buffer, size_t buffer_len) {
     // restore the state
     memmove(&s_memfault_ram_logger, state.context, sizeof(s_memfault_ram_logger));
     // restore the storage buffer
-    s_memfault_ram_logger.circ_buffer.storage = storage_buffer;
+    s_memfault_ram_logger.circ_buffer.storage = (uint8_t *)storage_buffer;
     memmove(s_memfault_ram_logger.circ_buffer.storage, state.storage, state.storage_len);
     s_memfault_ram_logger.circ_buffer.total_space = state.storage_len;
   }

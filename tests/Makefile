@@ -93,7 +93,7 @@ else
 	fastcov --gcov $(GCOV_TOOL) --lcov -o $(LCOV_INFO_FILE) --branch-coverage \
 		--process-gcno --exclude-glob $(LCOV_EXCLUDE_DIRS)
 endif
-	genhtml --prefix $(PROJECT_DIR) --branch-coverage --highlight --legend \
+	genhtml --prefix $(PROJECT_DIR) --branch-coverage --legend \
 		-o test_coverage -t "coverage" --num-spaces 4 \
 		$(LCOV_INFO_FILE) -o $(BUILD_DIR)/test_coverage/ $(GENHTML_EXTRA_ARGS)
 	@echo See coverage output in file://$(abspath $(BUILD_DIR)/test_coverage/index.html)

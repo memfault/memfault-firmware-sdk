@@ -162,6 +162,9 @@ struct MemfaultLogArgPromotionType<const unsigned char *>
       // inside _Generic so just disable it when the file is used
       #pragma clang diagnostic push
       #pragma clang diagnostic ignored "-Wsizeof-array-decay"
+      // Similarly for "-Wpre-c11-compat", since this implementation relies on C11 _Generic
+      #pragma clang diagnostic ignored "-Wpre-c11-compat"
+
     #endif
 
   // clang-format off

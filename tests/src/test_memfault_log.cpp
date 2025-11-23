@@ -459,10 +459,25 @@ TEST(MemfaultLog, Test_SaveAndRestoreState) {
 bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, MEMFAULT_UNUSED uint32_t log_id,
                                      MEMFAULT_UNUSED uint32_t compressed_fmt,
                                      MEMFAULT_UNUSED va_list args) {
+  size_t mock_compact_log_overlong =
+    mock().getData("mock_compact_log_overlong").getUnsignedIntValue();
+
+  if (mock_compact_log_overlong) {
+    // Simulate an overlong log by returning false
+    encoder->encoded_size = mock_compact_log_overlong;
+    encoder->status = MEMFAULT_CBOR_ENCODER_STATUS_ENOMEM;
+    return false;
+  }
+
   uint8_t *mock_compact_log = (uint8_t *)mock().getData("mock_compact_log").getPointerValue();
   size_t mock_compact_log_len = mock().getData("mock_compact_log_len").getUnsignedIntValue();
 
   return memfault_cbor_join(encoder, mock_compact_log, mock_compact_log_len);
+}
+bool memfault_vlog_compact_serialize_fallback_entry(MEMFAULT_UNUSED sMemfaultCborEncoder *encoder,
+                                                    MEMFAULT_UNUSED uint32_t log_id,
+                                                    MEMFAULT_UNUSED uint32_t serialized_len) {
+  return false;
 }
 
 TEST(MemfaultLog, Test_CompactLog) {

@@ -134,6 +134,7 @@ CFLAGS += \
     -Werror \
     -Wall \
     -Wextra \
+    -Werror=undef \
     -ffunction-sections \
     -fdata-sections \
     -ggdb3 \

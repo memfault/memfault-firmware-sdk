@@ -78,7 +78,7 @@ bool memfault_chunk_transport_get_next_chunk(sMfltChunkTransportCtx *ctx, void *
     return true;
   }
 
-  uint8_t *chunk_msg = out_buf;
+  uint8_t *chunk_msg = (uint8_t *)out_buf;
 
   size_t varint_len = 0;
   size_t chunk_msg_start_offset = 0;

@@ -12,7 +12,9 @@
 #include "esp_idf_version.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 0, 0)
+  #include "driver/gptimer.h"
+#elif ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
   #include "driver/gptimer.h"
   #include "esp_private/esp_clk.h"
   #include "soc/timer_periph.h"
@@ -27,10 +29,6 @@
 #include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
 #include "memfault/esp_port/http_client.h"
-
-#define TIMER_DIVIDER (16ULL)  //  Hardware timer clock divider
-#define TIMER_SCALE_TICKS_PER_MS(_baseFrequency) \
-  (((_baseFrequency) / TIMER_DIVIDER) / 1000ULL)  // convert counter value to milliseconds
 
 static void IRAM_ATTR prv_recursive_crash(int depth) {
   if (depth == 15) {
@@ -102,15 +100,16 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
   ESP_ERROR_CHECK(gptimer_set_alarm_action(s_gptimer, &alarm_config));
   ESP_ERROR_CHECK(gptimer_start(s_gptimer));
 }
-#else
+#else  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+
+  #define TIMER_DIVIDER (16ULL)  //  Hardware timer clock divider
+  #define TIMER_SCALE_TICKS_PER_MS(_baseFrequency) \
+    (((_baseFrequency) / TIMER_DIVIDER) / 1000ULL)  // convert counter value to milliseconds
+
 static void IRAM_ATTR prv_timer_group0_isr(void *para) {
   // Always clear the interrupt:
   #if CONFIG_IDF_TARGET_ESP32
-    #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-  TIMERG0.int_clr_timers.t0_int_clr = 1;
-    #else
   TIMERG0.int_clr_timers.t0 = 1;
-    #endif
   #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
   TIMERG0.int_clr_timers.t0_int_clr = 1;
   #endif
@@ -121,9 +120,6 @@ static void IRAM_ATTR prv_timer_group0_isr(void *para) {
 
 static void prv_timer_init(void) {
   const timer_config_t config = {
-  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    .clk_src = TIMER_SRC_CLK_DEFAULT,
-  #endif
     .divider = TIMER_DIVIDER,
     .counter_dir = TIMER_COUNT_UP,
     .counter_en = TIMER_PAUSE,
@@ -148,7 +144,7 @@ static void prv_timer_start(uint32_t timer_interval_ms) {
   timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN);
   timer_start(TIMER_GROUP_0, TIMER_0);
 }
-#endif
+#endif  // ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 
 static int prv_esp32_assert_example(int argc, char **argv) {
   // default to assert()

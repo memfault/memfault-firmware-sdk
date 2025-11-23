@@ -7,13 +7,13 @@ menu "MEMFAULT_APP"
 # setting. Note: the Kconfig flag MEMFAULT_NCS_FW_VERSION is defined in the NCS
 # repo, here it's just overriding the default string to be set to the desired value.
 config MEMFAULT_NCS_FW_VERSION
-    default "$(APP_VERSION_TWEAK_STRING)"
+	default "$(APP_VERSION_TWEAK_STRING)"
 
 config MEMFAULT_APP_CAPTURE_ALL_RAM
-    bool "Capture all RAM"
-    help
-      Capture all RAM regions. This is useful for debugging purposes, but
-      will increase the amount of data captured by the Memfault SDK.
+	bool "Capture all RAM"
+	help
+	  Capture all RAM regions. This is useful for debugging purposes, but
+	  will increase the amount of data captured by the Memfault SDK.
 
 # If MEMFAULT_APP_CAPTURE_ALL_RAM is enabled, increase the configured space
 # for the Memfault storage partition to accommodate the larger coredump.
@@ -28,13 +28,72 @@ config MEMFAULT_APP_CAPTURE_ALL_RAM
 # precedence.
 if MEMFAULT_NCS_INTERNAL_FLASH_BACKED_COREDUMP
 config PM_PARTITION_SIZE_MEMFAULT_STORAGE
-    hex "Size of the Memfault storage partition"
-    # The default size is set to one page above the total RAM size on the
-    # NRF52840 SOC, which provides room for the coredump header and NVIC and CPU
-    # registers. This size needs to be flash page-aligned ("minimum eraseable
-    # unit").
-    default 0x41000 if MEMFAULT_APP_CAPTURE_ALL_RAM
+	hex "Size of the Memfault storage partition"
+	# The default size is set to one page above the total RAM size on the
+	# NRF52840 SOC, which provides room for the coredump header and NVIC and CPU
+	# registers. This size needs to be flash page-aligned ("minimum eraseable
+	# unit").
+	default 0x41000 if MEMFAULT_APP_CAPTURE_ALL_RAM
 endif
 endmenu
+
+#
+# Copyright (c) 2024 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+config SETTINGS
+	default y
+
+config ZMS
+	default y if (SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+
+config NVS
+	default y if !(SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+
+### Memfault Device Identification settings ###
+#
+# There are 3 places device identification is used:
+#
+# | Field             | Memfault (NCS)          | Bluetooth DIS            | MCUboot                      |
+# |-------------------|-------------------------|--------------------------|------------------------------|
+# | .software_version | MEMFAULT_NCS_FW_VERSION | BT_DIS_FW_REV_STR        | MCUBOOT_IMGTOOL_SIGN_VERSION |
+# | .software_type    | MEMFAULT_NCS_FW_TYPE    | BT_DIS_SW_REV_STR        | N/A                          |
+# | .hardware_version | MEMFAULT_NCS_HW_VERSION | BT_DIS_HW_REV_STR        | N/A                          |
+# | .device_serial    | MEMFAULT_NCS_DEVICE_ID  | BT_DIS_SERIAL_NUMBER_STR | N/A                          |
+#
+# How each is used:
+# - Memfault uses these values to tag telemetry data sent to the Memfault cloud.
+# - The Bluetooth Device Information Service (DIS) exposes these values over
+#   BLE. These are used by the nRF Connect Device Manager app to execute FOTA
+#   with nRF Cloud (Memfault). These values are required when performing the
+#   FOTA requests.
+# - MCUboot contains the .software_version in the image header, mostly used for
+#   informational purposes.
+#
+# We use this Kconfig override file to set all 3 places simultaneously to ensure
+# consistency.
+
+# .software_version
+config MEMFAULT_NCS_FW_VERSION
+	# The MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION default uses the VERSION
+	# file for the software version value
+	default MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION
+config MCUBOOT_IMGTOOL_SIGN_VERSION
+	default MEMFAULT_NCS_FW_VERSION
+config BT_DIS_FW_REV_STR
+	default MEMFAULT_NCS_FW_VERSION
+
+# .software_type
+config MEMFAULT_NCS_FW_TYPE
+	# Defaults to "app"
+	default MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE
+config BT_DIS_SW_REV_STR
+	default MEMFAULT_NCS_FW_TYPE
+
+# .hardware_version
+config BT_DIS_HW_REV_STR
+	default MEMFAULT_NCS_HW_VERSION
 
 source "Kconfig.zephyr"

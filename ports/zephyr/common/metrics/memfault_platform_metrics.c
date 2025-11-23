@@ -81,12 +81,25 @@ static void prv_collect_ip_statistics(void) {
 static void prv_collect_cpu_temp(void) {
   struct sensor_value val;
 
-  #if DT_NODE_HAS_STATUS(DT_ALIAS(die_temp0), okay)
-    #define CPU_TEMP_NODE_ID DT_ALIAS(die_temp0)
+  // Check for a compatible CPU temperature sensor node in the device tree
+
+  // 1. Check for a user-defined alias first
+  #if DT_NODE_HAS_STATUS(DT_ALIAS(memfault_cpu_temp), okay)
+    #define CPU_TEMP_NODE_ID DT_ALIAS(memfault_cpu_temp)
+  // 2. 'nordic_nrf_temp' is used on Nordic nRF51/nRF52/nRF53/nRF54 series
+  #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_temp)
+    #define CPU_TEMP_NODE_ID DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_temp)
+  // 3. 'temp' is used on some Nordic platforms
   #elif DT_NODE_HAS_STATUS(DT_NODELABEL(temp), okay)
     #define CPU_TEMP_NODE_ID DT_NODELABEL(temp)
+  // 4. 'die_temp0' and 'die_temp' are commonly used on STM32 and NXP platforms
+  #elif DT_NODE_HAS_STATUS(DT_ALIAS(die_temp0), okay)
+    #define CPU_TEMP_NODE_ID DT_ALIAS(die_temp0)
+  #elif DT_NODE_HAS_STATUS(DT_ALIAS(die_temp), okay)
+    #define CPU_TEMP_NODE_ID DT_ALIAS(die_temp)
   #else
-    #error "No CPU temperature sensor found"
+    #error \
+      "No CPU temperature sensor found, make sure to enable a compatible node in the device tree"
   #endif
 
   const struct device *dev = DEVICE_DT_GET(CPU_TEMP_NODE_ID);
@@ -107,7 +120,7 @@ static void prv_collect_cpu_temp(void) {
   // precision
   const int32_t temperature = (val.val1 * 10) + (val.val2 / 100000);
 
-  MEMFAULT_LOG_INFO("CPU Temp: %d.%06d", val.val1, val.val2);
+  MEMFAULT_LOG_DEBUG("CPU Temp: %d.%06d", val.val1, val.val2);
 
   MEMFAULT_METRIC_SET_SIGNED(thermal_cpu_c, temperature);
 }

@@ -1233,7 +1233,7 @@ int memfault_metrics_heartbeat_read_string(MemfaultMetricId key, char *read_val,
     if (rv == 0) {
       // copy up to the min of the length of the string and the length of the
       // provided buffer
-      size_t len = strlen(value->ptr) + 1;
+      size_t len = strlen((const char *)value->ptr) + 1;
       memcpy(read_val, value->ptr, MEMFAULT_MIN(len, read_val_len));
       // always null terminate
       read_val[read_val_len - 1] = '\0';

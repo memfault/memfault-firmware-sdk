@@ -18,7 +18,7 @@ The project requires the following:
 
 ## FreeRTOS Installation
 
-By default the project will clone FreeRTOS V10.4.6 into the project directory. If you would like to use a
+By default the project will clone FreeRTOS V11.2.0 into the project directory. If you would like to use a
 different version, please set `FREERTOS_DIR` to an existing FreeRTOS directory.
 
 ## Building

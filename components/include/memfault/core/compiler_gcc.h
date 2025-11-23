@@ -112,7 +112,15 @@ extern "C" {
 #if defined(__cplusplus)
   #define MEMFAULT_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
 #else
-  #define MEMFAULT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+// For clang builds, disable -Wpre-c11-compat, which prohibits use of _Static_assert
+  #if defined(__clang__)
+    #define MEMFAULT_STATIC_ASSERT(cond, msg)                                              \
+      _Pragma("clang diagnostic push")                                                     \
+        _Pragma("clang diagnostic ignored \"-Wpre-c11-compat\"") _Static_assert(cond, msg) \
+          _Pragma("clang diagnostic pop")
+  #else
+    #define MEMFAULT_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+  #endif
 #endif
 
 // Macro for disabling specific warnings. There must be quotes in the argument

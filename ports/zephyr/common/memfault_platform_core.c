@@ -140,16 +140,15 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
   // bits, so to cut the table size in half, use uint16_t. If either one grows
   // beyond 16 bits, this will need to be updated.
   //
-  // A further optimization (that saves a few more bytes) is to omit the
+  // A further optimization (that saves a few more bytes) would be to omit the
   // bitmask, since they're consecutive in the current zephyr implementation.
-  // That forces us to keep the reset reason priority in the zephyr bit order.
+  // That would force us to keep the reset reason priority in the zephyr bit
+  // order, so we'll keep the bitmask.
   eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
   const struct hwinfo_bit_to_memfault_reset_reason {
     uint16_t hwinfo_bit;
     uint16_t memfault_reason;
   } s_hwinfo_to_memfault[] = {
-    { RESET_PIN, kMfltRebootReason_PinReset },
-    { RESET_SOFTWARE, kMfltRebootReason_SoftwareReset },
     { RESET_BROWNOUT, kMfltRebootReason_BrownOutReset },
     { RESET_POR, kMfltRebootReason_PowerOnReset },
     { RESET_WATCHDOG, kMfltRebootReason_HardwareWatchdog },
@@ -163,6 +162,13 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
     { RESET_HARDWARE, kMfltRebootReason_Hardware },
     { RESET_USER, kMfltRebootReason_UserReset },
     { RESET_TEMPERATURE, kMfltRebootReason_Temperature },
+    // Software reset is second lowest precedence since it can be set in
+    // addition to other bits and is not as precise
+    { RESET_SOFTWARE, kMfltRebootReason_SoftwareReset },
+    // Pin reset must be last; for STM32 SOCs, NRST is often wired internally to
+    // SYSRESETREQ, which means the Pin Reset bit is always set for
+    // software-initiated resets
+    { RESET_PIN, kMfltRebootReason_PinReset },
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(s_hwinfo_to_memfault); i++) {
@@ -271,13 +277,17 @@ MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
   return dev_str;
 }
 
-MEMFAULT_WEAK void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
+void memfault_zephyr_get_device_info(sMemfaultDeviceInfo *info) {
   *info = (sMemfaultDeviceInfo){
     .device_serial = memfault_zephyr_get_device_id(),
     .software_type = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE,
     .software_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION,
     .hardware_version = CONFIG_MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION,
   };
+}
+
+MEMFAULT_WEAK void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
+  memfault_zephyr_get_device_info(info);
 }
 
 // Note: the function signature has changed here across zephyr releases

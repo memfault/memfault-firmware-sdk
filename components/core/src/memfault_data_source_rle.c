@@ -85,7 +85,7 @@ bool memfault_data_source_rle_encoder_set_active(const sMemfaultDataSourceImpl *
 }
 
 static bool prv_data_source_rle_has_more_msgs_prepare(const void *data, size_t data_len) {
-  const uint8_t *buf = data;
+  const uint8_t *buf = (const uint8_t *)data;
 
   size_t bytes_encoded = 0;
   while (bytes_encoded != data_len) {

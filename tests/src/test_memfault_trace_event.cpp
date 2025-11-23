@@ -24,6 +24,12 @@ bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, MEMFAULT_UNU
   return memfault_cbor_join(encoder, &cbor, sizeof(cbor));
 }
 
+bool memfault_vlog_compact_serialize_fallback_entry(MEMFAULT_UNUSED sMemfaultCborEncoder *encoder,
+                                                    MEMFAULT_UNUSED uint32_t log_id,
+                                                    MEMFAULT_UNUSED uint32_t serialized_len) {
+  return false;
+}
+
 static const sMemfaultEventStorageImpl *s_fake_event_storage_impl;
 
 #define MEMFAULT_TRACE_EVENT_WORST_CASE_SIZE_BYTES (59)

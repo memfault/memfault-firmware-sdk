@@ -8,6 +8,7 @@
 #include "CppUTest/MemoryLeakDetectorNewMacros.h"
 #include "CppUTest/TestHarness.h"
 #include "CppUTestExt/MockSupport.h"
+#include "memfault/config.h"
 #include "memfault/core/compact_log_serializer.h"
 
 extern "C" {
@@ -127,6 +128,25 @@ TEST(MfltCompactLog, Test_MfltCompactLog_String) {
     memfault_log_compact_serialize(&encoder, prv_get_fake_log_id(), compressed_fmt, str_arg);
   CHECK(success);
   prv_check_result(&encoder, result_buf, expected_seq, expected_seq_len);
+}
+
+TEST(MfltCompactLog, Test_MfltCompactLog_StringTooLong) {
+  sMemfaultCborEncoder encoder;
+#define OVERLONG_STRING                                                  \
+  "This is a very long string that is intended to make the compact log " \
+  "serialization exceed the maximum allowed log size for testing purposes."
+  static_assert(sizeof(OVERLONG_STRING) - 1 > MEMFAULT_LOG_MAX_LINE_SAVE_LEN,
+                "Test string is not long enough to trigger truncation");
+
+  char *result_buf = prv_setup_encoder(&encoder, MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
+
+  const uint32_t compressed_fmt = 0x7;  // 0b111
+  const bool success = memfault_log_compact_serialize(&encoder, prv_get_fake_log_id(),
+                                                      compressed_fmt, OVERLONG_STRING);
+  free(result_buf);
+  CHECK(success == false);
+  int status = memfault_cbor_encoder_get_status(&encoder);
+  LONGS_EQUAL(MEMFAULT_CBOR_ENCODER_STATUS_ENOMEM, status);
 }
 
 TEST(MfltCompactLog, Test_MfltCompactLog_MultiArg) {

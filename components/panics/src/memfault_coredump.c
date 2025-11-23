@@ -134,7 +134,7 @@ typedef struct {
 // because the block is not valid.
 static bool prv_fixup_if_cached_block(sMfltCoredumpRegion *region, uint32_t *cached_address) {
   if (region->type == kMfltCoredumpRegionType_CachedMemory) {
-    const sMfltCachedBlock *cached_blk = region->region_start;
+    const sMfltCachedBlock *cached_blk = (const sMfltCachedBlock *)region->region_start;
     if (!cached_blk->valid_cache) {
       // Ignore this block.
       return false;
@@ -216,7 +216,7 @@ static bool prv_write_block_with_address(eMfltCoredumpBlockType block_type,
   // We have a region that needs to be read 32 bits at a time.
   //
   // Typically these are very small regions such as a memory mapped register address
-  const uint32_t *word_data = block_payload;
+  const uint32_t *word_data = (const uint32_t *)block_payload;
   for (uint32_t i = 0; i < block_payload_size / 4; i++) {
     const uint32_t data = word_data[i];
     if (!prv_platform_coredump_write(&data, sizeof(data), write_ctx)) {

@@ -139,6 +139,10 @@ unsigned long ulGetRunTimeCounterValue(
 // the kernel crashes on startup. Set it to 4.
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 4
 
+// For the qemu_mps2_an505 target, configENABLE_PAC must be defined since it is referenced here:
+// https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V11.2.0/portable/GCC/ARM_CM33/non_secure/portmacrocommon.h#L131
+#define configENABLE_PAC 0
+
 /* Prototype for the function used to print out. */
 extern void vLoggingPrintf(const char *pcFormatString, ...);
 

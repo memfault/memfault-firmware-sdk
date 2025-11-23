@@ -5,7 +5,7 @@ manifest:
   projects:
     - name: nrf
       url: https://github.com/nrfconnect/sdk-nrf
-      revision: v3.1.0
+      revision: v3.1.1
       import: true
 
     # Adding the memfault-firmware-sdk module here overrides the version the nRF

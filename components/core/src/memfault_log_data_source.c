@@ -187,7 +187,7 @@ static bool prv_encode(sMemfaultCborEncoder *encoder, void *iter) {
   if (!memfault_cbor_encode_array_begin(encoder, elements_per_log * ctx->num_logs)) {
     return false;
   }
-  memfault_log_iterate(prv_log_iterate_encode_callback, iter);
+  memfault_log_iterate(prv_log_iterate_encode_callback, (sMfltLogIterator *)iter);
   return ctx->has_encoding_error;
 }
 
@@ -245,7 +245,7 @@ static void prv_encoder_callback(void *encoder_ctx, uint32_t src_offset, const v
 static bool prv_logs_read(uint32_t offset, void *buf, size_t buf_len) {
   sMfltLogsDestCtx dest_ctx = (sMfltLogsDestCtx){
     .offset = offset,
-    .buf = buf,
+    .buf = (uint8_t *)buf,
     .buf_len = buf_len,
   };
 

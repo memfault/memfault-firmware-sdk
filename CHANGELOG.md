@@ -6,6 +6,87 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.31.0] - 2025-11-22
+
+This is a minor feature and bugfix release. Key updates:
+
+- Fix for compact log serialization error when logs exceed max length
+- Handle an upcoming Zephyr API change that renames BLE connection interval
+  field (used in built-in Bluetooth metrics)
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added CPU temperature metrics support for additional platforms:
+
+    - Devices with a die temp device tree node with
+      `compatible = "nordic,nrf-temp"`;
+
+    - Platforms using `die_temp` or `die_temp0` aliases, a `temp` nodelabel, or
+      the `memfault_cpu_temp` alias. This support is enabled out of the box for
+      the nRF54L15-DK board.
+
+  - Add a new demo CLI command, `mflt get_reboot_reason`, which displays the
+    device reboot reason and the prior stored reboot reason. Example output:
+
+    ```bash
+    uart:~$ mflt get_reboot_reason
+    Current Reboot Reason Reg: 0x0008
+    Prior Stored Reboot Reason: 0x0002
+    ```
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Updated the `mflt export` command to print out chunk data using
+    `shell_print()` instead of `printk()`. Using `printk()` can lead to dropped
+    chunk data when `CONFIG_LOG_PRINTK=y` and `CONFIG_LOG_MODE_DEFERRED=y`.
+    Using `shell_print()` avoids this issue.
+
+  - Change the precedence of reboot reason bits when decoding the Zephyr hwinfo
+    reset reason register. This improves the accuracy of reboot reasons on STM32
+    platforms, where the Pin Reset and Software Reset bits can be set
+    simultaneously with other reset reasons.
+
+  - Support an
+    [upcoming change](https://github.com/zephyrproject-rtos/zephyr/commit/c14dcaf1995ea9c70b4ce334e4c9765da09eb35d)
+    in Zephyr v4.4.0 / nRF Connect SDK v3.2.0, where the
+    `bt_conn_le_info.interval` field changes to `bt_conn_le_info.interval_us`.
+    Thanks to [@weeTike](https://github.com/weeTike) for providing this patch in
+    [#97](https://github.com/memfault/memfault-firmware-sdk/pull/97) 🎉!
+
+    This removes the existing metric `bt_connection_interval`, replacing with
+    `bt_connection_interval_us`. Please reach out if you need support for the
+    previous metric (which was added in SDK v1.29.0)
+
+- General:
+
+  - Fix a few new warnings when building with clang 21.0.0+.
+
+### 🐛 Fixed
+
+- General:
+
+  - Fixed an error in Compact Log serialization that resulted in invalid log
+    data, which caused decoding to fail when processing the log in the Memfault
+    cloud. This issue only impacted compact logs that were within 4 bytes of the
+    `MEMFAULT_LOG_MAX_LINE_SAVE_LEN` limit; longer compact logs were silently
+    dropped but did not cause decoding failures.
+
+    This fix will now insert a placeholder log line when a compact log exceeds
+    the maximum length:
+    `[MFLT] compact log too long: 1234 bytes (file:<line number>)` (where `1234`
+    is the serialized log entry length that exceeded the limit).
+
+- FreeRTOS
+
+  - Fixed an undefined macros build error on FreeRTOS versions < V11.0.0 in the
+    FreeRTOS thread metrics port. Thread metric collection is enabled by default
+    on FreeRTOS platforms but can be disabled with
+    `#define MEMFAULT_FREERTOS_COLLECT_THREAD_METRICS 0`.
+
 ## [1.30.3] - 2025-10-23
 
 This is a patch release, fixing build errors and one bug.
@@ -2601,8 +2682,8 @@ earlier versions!
 
 - nRF-Connect SDK:
 
-  - Add support for the new `fota_download_any()` (see documentation
-    [here](https://github.com/nrfconnect/sdk-nrf/blob/0692684d0e0b924335882969bc7bf474c673ac81/doc/nrf/releases_and_maturity/releases/release-notes-changelog.rst#L847-L848)),
+  - Add support for the new `fota_download_any()` (see
+    [documentation here](https://github.com/nrfconnect/sdk-nrf/blob/0692684d0e0b924335882969bc7bf474c673ac81/doc/nrf/releases_and_maturity/releases/release-notes-changelog.rst#L847-L848)),
     which accepts a list of certificates to use when executing FOTA downloads.
     This API is expected to be included in the upcoming nRF-Connect SDK v2.6.0
     release.

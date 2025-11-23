@@ -341,7 +341,7 @@ const sMemfaultEventStorageImpl *memfault_events_storage_boot(void *buf, size_t 
     // restore the state
     s_event_storage = *(sMfltEventStorageContext *)state.context;
     // restore the storage buffer
-    s_event_storage.buffer.storage = buf;
+    s_event_storage.buffer.storage = (uint8_t *)buf;
     memmove(s_event_storage.buffer.storage, state.storage, state.storage_len);
     s_event_storage.buffer.total_space = state.storage_len;
   }

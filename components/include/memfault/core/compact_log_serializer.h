@@ -31,6 +31,17 @@ extern "C" {
 bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log_id,
                                      uint32_t compressed_fmt, va_list args);
 
+//! Serializes a fallback entry, when the compact log is too large to fit the
+//! provided log entry limit.
+//!
+//! @param encoder The cbor encoder to write into
+//! @param log_id A unique identifier for the log being serialized
+//! @param serialized_len The computed serialized length of the original compact log
+//!
+//! @return true if serialization succeeded, false otherwise
+bool memfault_vlog_compact_serialize_fallback_entry(sMemfaultCborEncoder *encoder, uint32_t log_id,
+                                                    uint32_t serialized_len);
+
 //! Same as "memfault_vlog_compact_serialize" but takes a variable list of arguments
 bool memfault_log_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log_id,
                                     uint32_t compressed_fmt, ...);

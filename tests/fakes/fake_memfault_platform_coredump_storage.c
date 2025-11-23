@@ -29,7 +29,7 @@ void memfault_platform_coredump_storage_get_info(sMfltCoredumpStorageInfo *info)
 void fake_memfault_platform_coredump_storage_setup(void *storage_buf, size_t storage_size,
                                                    size_t sector_size) {
   s_fake_mflt_storage_ctx = (sFakeMfltStorage){
-    .buf = storage_buf,
+    .buf = (uint8_t *)storage_buf,
     .size = storage_size,
     .sector_size = sector_size,
   };

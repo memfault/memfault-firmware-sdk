@@ -119,6 +119,46 @@ bool memfault_vlog_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log
   return true;
 }
 
+// serialize a fallback entry when the compact log is too large to fit the
+// provided log entry limit. the fallback looks like this:
+// [<log_id>, {0:1, 1:serialized_len}]
+// where the map contains two entries:
+// key 0 -> indicates this is a fallback entry
+// key 1 -> the computed serialized length of the original compact log
+typedef enum {
+  kMemfaultCompactLogExtendedReason_Fallback = 1,
+} eMemfaultCompactLogExtendedReason;
+bool memfault_vlog_compact_serialize_fallback_entry(sMemfaultCborEncoder *encoder, uint32_t log_id,
+                                                    uint32_t serialized_len) {
+  if (!memfault_cbor_encode_array_begin(encoder, 2)) {
+    return false;
+  }
+
+  // We use an offset within the section to reduce the space needed when serializing
+  // the log.
+  uint32_t log_fmt_offset = log_id - (uint32_t)(uintptr_t)&__start_log_fmt;
+
+  if (!memfault_cbor_encode_unsigned_integer(encoder, log_fmt_offset)) {
+    return false;
+  }
+
+  if (!memfault_cbor_encode_dictionary_begin(encoder, 2)) {
+    return false;
+  }
+
+  if (!memfault_cbor_encode_unsigned_integer(encoder, 0 /* type is 0 */) ||
+      !memfault_cbor_encode_unsigned_integer(encoder, kMemfaultCompactLogExtendedReason_Fallback)) {
+    return false;
+  }
+
+  if (!memfault_cbor_encode_unsigned_integer(encoder, 1 /* serialized_len */) ||
+      !memfault_cbor_encode_unsigned_integer(encoder, serialized_len)) {
+    return false;
+  }
+
+  return true;
+}
+
 bool memfault_log_compact_serialize(sMemfaultCborEncoder *encoder, uint32_t log_id,
                                     uint32_t compressed_fmt, ...) {
   va_list args;

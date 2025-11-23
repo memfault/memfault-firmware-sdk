@@ -22,8 +22,9 @@ void main(void) {
 
 ## Heap Tracking
 
-The memfault-firmware-sdk has a built in utility for tracking heap allocations to facilitate debug
-of out of memory bugs. To enable, add the following to your `memfault_platform_config.h` file:
+The memfault-firmware-sdk has a built in utility for tracking heap allocations
+to facilitate debug of out of memory bugs. To enable, add the following to your
+`memfault_platform_config.h` file:
 
 ```c
 #define MEMFAULT_FREERTOS_PORT_HEAP_STATS_ENABLE 1

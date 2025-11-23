@@ -35,6 +35,12 @@ extern "C" {
 //  T = timestamped (1 if the first 4 bytes of the message is a timestamp, 0 otherwise)
 //  t = type (0 = formatted log, 1 = compact log)
 //  l = log level (eMemfaultPlatformLogLevel)
+//      * note: real levels are only 0-3 (see debug_log.h). upper values can have alternate
+//      meanings:
+//      * 4 = log line indicating truncated message:
+//      *   - only if type=compact, the msg is a special payload:
+//      *     [log_id, size_of_msg (encoded CBOR compact log size that didn't fit)]
+//      * 5-7 = reserved for future use
 
 #define MEMFAULT_LOG_HDR_LEVEL_POS 0
 #define MEMFAULT_LOG_HDR_LEVEL_MASK 0x07u
@@ -81,8 +87,8 @@ sMfltRamLogEntry;
 
 // In the current version of the log entry structure, the maximum length of a
 // log message is 255 bytes due to the width of the 'len' field.
-MEMFAULT_STATIC_ASSERT(MEMFAULT_LOG_MAX_LINE_SAVE_LEN <= 255,
-                       "MEMFAULT_LOG_MAX_LINE_SAVE_LEN must be <= 255");
+MEMFAULT_STATIC_ASSERT(MEMFAULT_LOG_MAX_LINE_SAVE_LEN <= 251,
+                       "MEMFAULT_LOG_MAX_LINE_SAVE_LEN must be <= 251");
 
 typedef struct {
   uint32_t read_offset;

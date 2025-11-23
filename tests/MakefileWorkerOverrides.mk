@@ -17,7 +17,6 @@ TEST_SRC_FILES += \
 
 MEMFAULT_EXTRA_INC_PATHS += \
   -I$(CPPUTEST_HOME)/include \
-  -I$(PROJECT_DIR)/src \
   -I$(MFLT_TEST_ROOT)/ \
   -I$(MFLT_TEST_ROOT)/stub_includes \
   -I$(PROJECT_DIR)
@@ -100,6 +99,8 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-zero-length-array \
   -Wno-unsafe-buffer-usage \
   -Wno-cast-function-type-strict \
+  -Wno-implicit-int-enum-cast \
+  -Wno-ms-bitfield-padding \
 
 # Clang-only C-only warning flags
 COMPILER_SPECIFIC_C_WARNINGS += -Wc23-extensions

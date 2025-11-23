@@ -73,7 +73,7 @@ int memfault_demo_cli_cmd_crash(int argc, char *argv[]) {
       break;
 
     case 2: {
-      uint64_t *buf = g_memfault_unaligned_buffer;
+      uint64_t *buf = (uint64_t *)g_memfault_unaligned_buffer;
       *buf = 0xbadcafe0000;
     } break;
 
@@ -149,7 +149,7 @@ int memfault_demo_cli_cmd_cassert(int argc, char *argv[]) {
 int memfault_demo_cli_cmd_hardfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
   memfault_arch_disable_configurable_faults();
 
-  uint64_t *buf = g_memfault_unaligned_buffer;
+  uint64_t *buf = (uint64_t *)g_memfault_unaligned_buffer;
   *buf = 0xdeadbeef0000;
 
   return -1;
@@ -186,7 +186,7 @@ int memfault_demo_cli_cmd_busfault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED cha
 }
 
 int memfault_demo_cli_cmd_usagefault(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  uint64_t *buf = g_memfault_unaligned_buffer;
+  uint64_t *buf = (uint64_t *)g_memfault_unaligned_buffer;
   *buf = 0xbadcafe0000;
 
   // We should never get here -- platforms UsageFault or HardFault handler should be tripped due to

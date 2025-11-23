@@ -56,7 +56,7 @@ size_t memfault_rle_encode(sMemfaultRleCtx *ctx, const void *buf, size_t buf_siz
   ctx->write_info = (sMemfaultRleWriteInfo){ 0 };
 
   const uint32_t start_offset = ctx->curr_offset;
-  const uint8_t *byte_buf = buf;
+  const uint8_t *byte_buf = (const uint8_t *)buf;
   for (uint32_t i = 0; i < buf_size; i++) {
     const uint8_t byte = byte_buf[i];
 

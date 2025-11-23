@@ -509,7 +509,7 @@ static bool prv_startswith_str(const char *match, size_t match_len, const void *
     return false;
   }
 
-  return prv_strcasecmp(uri, match, match_len);
+  return prv_strcasecmp((const char *)uri, match, match_len);
 }
 
 static size_t prv_is_http_or_https_scheme(const void *uri, size_t total_len,

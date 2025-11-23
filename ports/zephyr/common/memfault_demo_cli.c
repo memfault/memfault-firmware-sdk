@@ -37,20 +37,34 @@ static int prv_get_device_info(const struct shell *shell, size_t argc, char **ar
   return memfault_demo_cli_cmd_get_device_info(argc, argv);
 }
 
-//! Route the 'export' command to output via printk, so we don't drop messages
-//! from logging a big burst.
+static int prv_get_reboot_reason(const struct shell *shell, size_t argc, char **argv) {
+  sMfltRebootReason reboot_reason;
+  int result = memfault_reboot_tracking_get_reboot_reason(&reboot_reason);
+  if (result != 0) {
+    shell_print(shell, "Error retrieving reboot reason: %d", result);
+    return result;
+  }
+  shell_print(shell, "Current Reboot Reason Reg: 0x%04x", reboot_reason.reboot_reg_reason);
+  shell_print(shell, "Prior Stored Reboot Reason: 0x%04x", reboot_reason.prior_stored_reason);
+
+  return 0;
+}
+
+//! Route the 'export' command to output using shell_print when available.
+static const struct shell *s_memfault_shell;
 void memfault_data_export_base64_encoded_chunk(const char *base64_chunk) {
-  printk("%s\n", base64_chunk);
+  if (s_memfault_shell != NULL) {
+    shell_print(s_memfault_shell, "%s", base64_chunk);
+  } else {
+    printk("%s\n", base64_chunk);
+  }
 }
 
 static int prv_chunk_data_export(const struct shell *shell, size_t argc, char **argv) {
-#if defined(CONFIG_LOG_PRINTK) && !defined(CONFIG_LOG_MODE_IMMEDIATE)
-  // printk is configured to pass through the deferred logging subsystem,
-  // which can result in dropped Memfault chunk messages
-  MEMFAULT_LOG_WARN("CONFIG_LOG_PRINTK=y and CONFIG_LOG_MODE_IMMEDIATE=n can result in dropped "
-                    "'mflt export' messages");
-#endif
+  // Set the shell context so our overridden chunk handler can use it to print
+  s_memfault_shell = shell;
   memfault_data_export_dump_chunks();
+  s_memfault_shell = NULL;
   return 0;
 }
 
@@ -147,17 +161,16 @@ static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **
 static int prv_metrics_dump(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_METRICS)
   if (argc < 2) {
-    shell_print(shell, "Enter 'heartbeat' or 'sessions'");
-    return 0;
-  }
-
-  if (!strcmp(argv[1], "sessions")) {
-    memfault_metrics_all_sessions_debug_print();
-  } else if (!strcmp(argv[1], "heartbeat")) {
     memfault_metrics_heartbeat_debug_print();
   } else {
-    shell_print(shell, "Unknown option. Enter 'heartbeat' or 'sessions'");
-    return 0;
+    if (!strcmp(argv[1], "sessions")) {
+      memfault_metrics_all_sessions_debug_print();
+    } else if (!strcmp(argv[1], "heartbeat")) {
+      memfault_metrics_heartbeat_debug_print();
+    } else {
+      shell_print(shell, "Unknown option. Enter 'heartbeat' or 'sessions'");
+      return 0;
+    }
   }
 #else
   shell_print(shell, "CONFIG_MEMFAULT_METRICS not enabled");
@@ -423,12 +436,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_chunk_data_export),
   SHELL_CMD(get_core, NULL, "check if coredump is stored and present", prv_get_core_cmd),
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
+  SHELL_CMD(get_reboot_reason, NULL, "display last reboot reason", prv_get_reboot_reason),
   SHELL_CMD(get_latest_url, NULL, "gets latest release URL", prv_get_latest_url_cmd),
   SHELL_CMD(get_latest_release, NULL, "performs an OTA update using Memfault client",
             prv_check_and_fetch_ota_payload_cmd),
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
-  SHELL_CMD(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump),
+  SHELL_CMD_ARG(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump,
+                1, 1),
 #if defined(CONFIG_NETWORKING)
   SHELL_CMD(post_chunks, NULL, "Post Memfault data to cloud", prv_post_data),
 #endif

@@ -169,6 +169,12 @@ bool memfault_cbor_encode_null(sMemfaultCborEncoder *encoder);
 void memfault_cbor_encoder_memcpy_write(void *ctx, uint32_t offset, const void *buf,
                                         size_t buf_len);
 
+//! Get the current status of the encoder
+//! @param encoder The encoder context to query
+//! @return 0 if no errors have occurred, non-zero error code compatible with errno otherwise
+#define MEMFAULT_CBOR_ENCODER_STATUS_ENOMEM 12
+int memfault_cbor_encoder_get_status(sMemfaultCborEncoder *encoder);
+
 //! NOTE: For internal use only, included in the header so it's easy for a caller to statically
 //! allocate the structure
 struct MemfaultCborEncoder {
@@ -178,6 +184,8 @@ struct MemfaultCborEncoder {
   size_t buf_len;
 
   size_t encoded_size;
+
+  int status;
 };
 
 #ifdef __cplusplus

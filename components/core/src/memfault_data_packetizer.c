@@ -184,7 +184,7 @@ static void prv_reset_packetizer_state(void) {
 }
 
 static void prv_data_source_chunk_transport_msg_reader(uint32_t offset, void *buf, size_t buf_len) {
-  uint8_t *bufp = buf;
+  uint8_t *bufp = (uint8_t *)buf;
   size_t read_offset = 0;
   const size_t hdr_size = sizeof(sMfltPacketizerHdr);
 

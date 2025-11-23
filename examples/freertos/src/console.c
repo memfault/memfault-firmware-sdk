@@ -200,6 +200,26 @@ static int prv_stack_overflow(int argc, char *argv[]) {
   return 0;
 }
 
+// issue a compact log that exceeds the max MEMFAULT_LOG_MAX_LINE_SAVE_LEN
+static int prv_long_compact_log(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  #if MEMFAULT_COMPACT_LOG_ENABLE
+  MEMFAULT_LOG_INFO("Issuing a long compact log (> %d bytes)", MEMFAULT_LOG_MAX_LINE_SAVE_LEN);
+  char *long_string = pvPortMalloc(MEMFAULT_LOG_MAX_LINE_SAVE_LEN + 1);
+  if (long_string == NULL) {
+    MEMFAULT_LOG_ERROR("Failed to allocate memory for long compact log");
+    return -1;
+  }
+  for (size_t i = 0; i < MEMFAULT_LOG_MAX_LINE_SAVE_LEN; i++) {
+    long_string[i] = 'A' + (i % 26);
+  }
+  long_string[MEMFAULT_LOG_MAX_LINE_SAVE_LEN] = '\0';
+  MEMFAULT_COMPACT_LOG_SAVE(kMemfaultPlatformLogLevel_Info, "%s", long_string);
+  vPortFree(long_string);
+  #endif  // MEMFAULT_COMPACT_LOG_ENABLE
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -250,6 +270,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "stack_overflow",
     .handler = prv_stack_overflow,
     .help = "Trigger a stack overflow",
+  },
+  {
+    .command = "long_compact_log",
+    .handler = prv_long_compact_log,
+    .help = "Issue a very long compact log (> MEMFAULT_LOG_MAX_LINE_SAVE_LEN)",
   }
 };
 #endif

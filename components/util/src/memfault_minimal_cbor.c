@@ -76,6 +76,7 @@ static bool prv_add_to_result_buffer(sMemfaultCborEncoder *encoder, const void *
 
   if ((encoder->encoded_size + data_len) > encoder->buf_len) {
     // not enough space
+    encoder->status = MEMFAULT_CBOR_ENCODER_STATUS_ENOMEM;
     return false;
   }
   encoder->write_cb(encoder->write_cb_ctx, encoder->encoded_size, data, data_len);
@@ -207,4 +208,8 @@ void memfault_cbor_encoder_memcpy_write(void *ctx, uint32_t offset, const void *
                                         size_t buf_len) {
   uint8_t *out_buf = (uint8_t *)ctx;
   memcpy(&out_buf[offset], buf, buf_len);
+}
+
+int memfault_cbor_encoder_get_status(sMemfaultCborEncoder *encoder) {
+  return encoder->status;
 }

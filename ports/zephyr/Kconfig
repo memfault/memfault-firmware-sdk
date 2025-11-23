@@ -677,11 +677,23 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
 
 config MEMFAULT_METRICS_CPU_TEMP
         bool "CPU temperature metrics"
+        default y if "$(dt_alias_enabled,memfault_cpu_temp)"
+        default y if "$(dt_alias_enabled,die-temp)"
         default y if "$(dt_alias_enabled,die-temp0)"
+        default y if "$(dt_nodelabel_enabled,temp)"
+        default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED
         depends on SENSOR
         help
-         Memfault CPU temperature metric component. Requires a `die-temp0`
-         device tree node alias.
+         Memfault CPU temperature metric component. Requires a compatible
+         temperature sensor to be enabled in the device tree.
+
+config MEMFAULT_NRF54_CPU_TEMP_SENSOR_HELPER
+        bool
+        default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED && BOARD_NRF54L15DK
+        imply SENSOR
+        help
+         Helper symbol to enable SENSOR by default when using the nRF54L15-DK,
+         for demonstration purposes.
 
 config MEMFAULT_METRICS_SYNC_SUCCESS
         bool "Sync success metrics"

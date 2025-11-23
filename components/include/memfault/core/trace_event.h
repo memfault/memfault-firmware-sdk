@@ -45,7 +45,9 @@ int memfault_trace_event_boot(const sMemfaultEventStorageImpl *storage_impl);
 //! information on how to define reason values.
 //! @see memfault_trace_event_capture
 //! @see MEMFAULT_TRACE_REASON_DEFINE
-//! @note Ensure memfault_trace_event_boot() has been called before using this API!
+//! @note Ensure memfault_trace_event_boot() has been called before using this API. On Zephyr and
+//! ESP-IDF platforms, this will be done automatically. Other platforms may need to call this during
+//! system initialization.
 #define MEMFAULT_TRACE_EVENT(reason)                                               \
   do {                                                                             \
     void *mflt_pc;                                                                 \

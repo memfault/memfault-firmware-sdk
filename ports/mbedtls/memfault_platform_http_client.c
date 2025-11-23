@@ -118,6 +118,8 @@ static void prv_teardown_mbedtls(sMfltHttpClient *client) {
 }
 
 sMfltHttpClient *memfault_platform_http_client_create(void) {
+  char port[10] = { 0 };
+
   if (s_client.active) {
     MEMFAULT_LOG_ERROR("Memfault HTTP client already in use");
     return NULL;
@@ -137,29 +139,28 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
     mbedtls_hmac_drbg_seed(&s_client.hmac_drbg, md_info, mbedtls_entropy_func, &s_client.entropy,
                            (const unsigned char *)HMAC_PERS, sizeof(HMAC_PERS) - 1);
   if (ret != 0) {
-    MEMFAULT_LOG_ERROR("mbedtls_hmac_drbg_seed returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_hmac_drbg_seed returned -0x%x", (unsigned int)-ret);
     goto cleanup;
   }
 
   ret = mbedtls_x509_crt_parse(&s_client.cacert, (const unsigned char *)MEMFAULT_ROOT_CERTS_PEM,
                                sizeof(MEMFAULT_ROOT_CERTS_PEM));
   if (ret != 0) {
-    MEMFAULT_LOG_ERROR("mbedtls_x509_crt_parse returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_x509_crt_parse returned -0x%x", (unsigned int)-ret);
     goto cleanup;
   }
 
   // Perform DNS lookup for Memfault server and open connection
-  char port[10] = { 0 };
   snprintf(port, sizeof(port), "%d", MEMFAULT_HTTP_GET_CHUNKS_API_PORT());
   ret = mbedtls_net_connect(&s_client.net_ctx, MEMFAULT_HTTP_CHUNKS_API_HOST, port,
                             MBEDTLS_NET_PROTO_TCP);
   if (ret != 0) {
-    MEMFAULT_LOG_ERROR("mbedtls_net_connect returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_net_connect returned -0x%x", (unsigned int)-ret);
   }
   ret = mbedtls_ssl_config_defaults(&s_client.conf, MBEDTLS_SSL_IS_CLIENT,
                                     MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
   if (ret != 0) {
-    MEMFAULT_LOG_ERROR("mbedtls_ssl_config_defaults returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_ssl_config_defaults returned -0x%x", (unsigned int)-ret);
     goto cleanup;
   }
 
@@ -169,12 +170,12 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
 
   ret = mbedtls_ssl_setup(&s_client.ssl, &s_client.conf);
   if (ret != 0) {
-    MEMFAULT_LOG_ERROR("mbedtls_ssl_setup returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_ssl_setup returned -0x%x", (unsigned int)-ret);
   }
 
   ret = mbedtls_ssl_set_hostname(&s_client.ssl, MEMFAULT_HTTP_CHUNKS_API_HOST);
   if (ret) {
-    MEMFAULT_LOG_ERROR("mbedtls_ssl_set_hostname returned -0x%x", -ret);
+    MEMFAULT_LOG_ERROR("mbedtls_ssl_set_hostname returned -0x%x", (unsigned int)-ret);
     goto cleanup;
   }
 
@@ -190,7 +191,7 @@ sMfltHttpClient *memfault_platform_http_client_create(void) {
       continue;
     } else {
       // all other errors are fatal
-      MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", -ret);
+      MEMFAULT_LOG_ERROR("mbedtls_ssl_handshake returned -0x%x\n", (unsigned int)-ret);
       goto cleanup;
     }
   } while (1);
@@ -229,7 +230,7 @@ static bool prv_try_send(sMfltHttpClient *client, const uint8_t *buf, size_t buf
       continue;
     }
 
-    MEMFAULT_LOG_ERROR("Data Send Error: bytes_sent=%d, ret=0x%x", (int)idx, rv);
+    MEMFAULT_LOG_ERROR("Data Send Error: bytes_sent=%d, ret=0x%x", (int)idx, (unsigned int)rv);
     return false;
   }
   return true;

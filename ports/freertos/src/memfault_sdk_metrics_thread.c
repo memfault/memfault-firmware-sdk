@@ -76,20 +76,22 @@ MEMFAULT_WEAK const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_inde
 struct MfltFreeRTOSTCB {
   char pcTaskName[configMAX_TASK_NAME_LEN];
     // Two cases require additional adjustment:
-    // 1. vanilla FreeRTOS SMP versions (i.e V11.1.0+ or SMP branch) that enable
+    // 1. vanilla FreeRTOS SMP versions (i.e V11.0.0+) that enable
     //    configUSE_TASK_PREEMPTION_DISABLE:
-    //    https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V11.1.0/tasks.c#L380
+    //    https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/V11.0.0/tasks.c#L373
     // 2. ESP-IDF fork, with configNUMBER_OF_CORES > 1:
     //    https://github.com/espressif/esp-idf/blob/v5.3/components/freertos/FreeRTOS-Kernel/tasks.c#L408
-    #if (configUSE_TASK_PREEMPTION_DISABLE == 1) || (configNUMBER_OF_CORES > 1)
+    #if MEMFAULT_FREERTOS_VERSION_GTE(11, 0, 0) || defined(ESP_PLATFORM)
+      #if (configUSE_TASK_PREEMPTION_DISABLE == 1) || (configNUMBER_OF_CORES > 1)
   BaseType_t xPreemptionDisable_or_xCoreID;
-    #elif defined(MEMFAULT_USE_ESP32_FREERTOS_INCLUDE)
-      // ESP-IDF TCB_t unconditionally included the xCoreID until v5.3.0:
-      // https://github.com/espressif/esp-idf/commit/439c7c4261837b4563f278b095c77accb266a8c1
-      #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
+      #elif defined(MEMFAULT_USE_ESP32_FREERTOS_INCLUDE)
+        // ESP-IDF TCB_t unconditionally included the xCoreID until v5.3.0:
+        // https://github.com/espressif/esp-idf/commit/439c7c4261837b4563f278b095c77accb266a8c1
+        #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 3, 0)
   BaseType_t xCoreID;
+        #endif
       #endif
-    #endif
+    #endif  // MEMFAULT_FREERTOS_VERSION_GTE(11, 0, 0) || defined(ESP_PLATFORM)
   uint32_t pxEndOfStack;
 };
   #else

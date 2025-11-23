@@ -12,6 +12,9 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(bluetooth/gatt.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(bluetooth/hci.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/byteorder.h)
+#include "controller/util/memq.h"
+// keep below memq.h to avoid missing definition error
+#include "controller/ll_sw/lll.h"
 
 // clang-format on
 
@@ -23,9 +26,12 @@
 #include "memfault/metrics/metrics.h"
 #include "memfault/metrics/platform/timer.h"
 #include "memfault/ports/zephyr/version.h"
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+  #include "memfault/ports/ncs/version.h"
+#endif
 
 static struct bt_conn *s_mflt_bt_current_conn = NULL;
-static uint16_t s_mflt_bt_connection_interval = 0;
+static uint32_t s_mflt_bt_connection_interval_us = 0;
 struct k_work_delayable s_mflt_bt_delayed_metrics_work;
 
 static void prv_record_gatt_mtu(struct bt_conn *conn) {
@@ -33,7 +39,7 @@ static void prv_record_gatt_mtu(struct bt_conn *conn) {
   MEMFAULT_METRIC_SET_UNSIGNED(bt_gatt_mtu_size, mtu);
 }
 
-static void prv_count_connection_events(uint16_t interval, bool reset_time) {
+static void prv_count_connection_events(uint32_t interval_us, bool reset_time) {
   // to accumulate data correctly on:
   // - connection interval change
   // - connection up/down
@@ -47,15 +53,13 @@ static void prv_count_connection_events(uint16_t interval, bool reset_time) {
     return;
   }
 
-  if (interval) {
-    // connection interval is in units of 1.25ms
-    // calculate events per second: 1000ms / (interval * 1.25ms)
-    int32_t events_per_second = 800 / interval;  // 1000 / 1.25 = 800
-
+  if (interval_us) {
     // compute connection events accumulated
     const uint64_t current_time_ms = memfault_platform_get_time_since_boot_ms();
+    // Note: this computation has some quantization error, but should be close
+    // enough to draw conclusions safely
     const int32_t connection_events =
-      events_per_second * (int32_t)(current_time_ms - s_last_measurement_time_ms) / 1000;
+      (int32_t)((current_time_ms - s_last_measurement_time_ms) * 1000ull / (uint64_t)interval_us);
     MEMFAULT_METRIC_ADD(bt_connection_event_count, connection_events);
     s_last_measurement_time_ms = current_time_ms;
   }
@@ -134,17 +138,34 @@ static void prv_delayed_metrics_work_handler(struct k_work *work) {
 #endif  // defined(CONFIG_BT_REMOTE_INFO)
 }
 
+//! Helper function to contain some ugly compile-time logic to handle a change
+//! in the BT LE info structure in Zephyr > 4.3.0 (backported to NCS >= 3.2)
+static void prv_set_connection_interval_us(const struct bt_conn_info *info) {
+#if MEMFAULT_ZEPHYR_VERSION_GT(4, 3)
+  s_mflt_bt_connection_interval_us = info->le.interval_us;
+#elif defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+  // nRF Connect SDK needs special handling, due to backporting of Zephyr changes
+  #if MEMFAULT_ZEPHYR_VERSION_GT(4, 2) && MEMFAULT_NCS_VERSION_GT(3, 1)
+  s_mflt_bt_connection_interval_us = info->le.interval_us;
+  #else
+  s_mflt_bt_connection_interval_us = info->le.interval * CONN_INT_UNIT_US;
+  #endif
+#else
+  s_mflt_bt_connection_interval_us = info->le.interval * CONN_INT_UNIT_US;
+#endif
+}
+
 //! Read connection params, and update connection interval for later usage
 static void prv_record_connection_params(struct bt_conn *conn) {
   struct bt_conn_info info;
   if (bt_conn_get_info(conn, &info) == 0) {
-    MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_interval, info.le.interval);
     MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_latency, info.le.latency);
     MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_timeout, info.le.timeout);
-    s_mflt_bt_connection_interval = info.le.interval;
+    prv_set_connection_interval_us(&info);
+    MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_interval_us, s_mflt_bt_connection_interval_us);
   } else {
     MEMFAULT_LOG_ERROR("Failed to get connection info");
-    s_mflt_bt_connection_interval = 0;
+    s_mflt_bt_connection_interval_us = 0;
   }
 }
 
@@ -172,8 +193,8 @@ static void prv_bt_connected_cb(struct bt_conn *conn, uint8_t err) {
 
 static void prv_bt_disconnected_cb(struct bt_conn *conn, uint8_t reason) {
   // tally connection events
-  prv_count_connection_events(s_mflt_bt_connection_interval, false);
-  s_mflt_bt_connection_interval = 0;
+  prv_count_connection_events(s_mflt_bt_connection_interval_us, false);
+  s_mflt_bt_connection_interval_us = 0;
 
   if (s_mflt_bt_current_conn == conn) {
     bt_conn_unref(s_mflt_bt_current_conn);
@@ -203,16 +224,18 @@ static void prv_record_remote_info_cb(struct bt_conn *conn,
 
 static void prv_bt_le_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency,
                                        uint16_t timeout) {
+  uint32_t interval_us = interval * CONN_INT_UNIT_US;
+
   // Record LE connection parameters
-  MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_interval, interval);
+  MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_interval_us, interval_us);
   MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_latency, latency);
   MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_timeout, timeout);
 
   // Tally connection event counts received with the previous interval setting
-  prv_count_connection_events(s_mflt_bt_connection_interval, false);
+  prv_count_connection_events(s_mflt_bt_connection_interval_us, false);
 
   // Update connection interval for computing connection event count
-  s_mflt_bt_connection_interval = interval;
+  s_mflt_bt_connection_interval_us = interval_us;
 }
 
 BT_CONN_CB_DEFINE(bt_metrics_conn_callbacks) = {
@@ -227,7 +250,7 @@ BT_CONN_CB_DEFINE(bt_metrics_conn_callbacks) = {
 static void prv_bt_att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx) {
   // note: the BT spec requires a symmetric tx/rx MTU size
   // see reference:
-  // https://github.com/zephyrproject-rtos/zephyr/blob/v4.2.0/subsys/bluetooth/host/att.c#L136-L144
+  // https://github.com/zephyrproject-rtos/zephyr/blob/v4.3.0/subsys/bluetooth/host/att.c#L136-L144
   MEMFAULT_METRIC_SET_UNSIGNED(bt_gatt_mtu_size, MIN(tx, rx));
 }
 
@@ -238,7 +261,7 @@ static struct bt_gatt_cb prv_gatt_callbacks = {
 void memfault_bluetooth_metrics_heartbeat_update(void) {
   if (s_mflt_bt_current_conn != NULL) {
     // Update connection event count estimate
-    prv_count_connection_events(s_mflt_bt_connection_interval, false);
+    prv_count_connection_events(s_mflt_bt_connection_interval_us, false);
 
     // Record current RSSI (if available)
     prv_record_connection_rssi(s_mflt_bt_current_conn);

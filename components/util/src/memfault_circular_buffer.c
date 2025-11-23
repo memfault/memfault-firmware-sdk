@@ -24,7 +24,7 @@ bool memfault_circular_buffer_init(sMfltCircularBuffer *circular_buf, void *stor
   memset(storage_buf, 0x0, storage_len);
 
   *circular_buf = (sMfltCircularBuffer){
-    .read_offset = 0, .read_size = 0, .total_space = storage_len, .storage = storage_buf
+    .read_offset = 0, .read_size = 0, .total_space = storage_len, .storage = (uint8_t *)storage_buf
   };
 
   return true;
@@ -45,7 +45,7 @@ bool memfault_circular_buffer_read(sMfltCircularBuffer *circular_buf, size_t off
   size_t bytes_to_read =
     (contiguous_space_available > data_len) ? data_len : contiguous_space_available;
 
-  uint8_t *buf = data;
+  uint8_t *buf = (uint8_t *)data;
   memcpy(buf, &circular_buf->storage[read_idx], bytes_to_read);
   buf += bytes_to_read;
   size_t bytes_rem = data_len - bytes_to_read;
@@ -172,7 +172,7 @@ static bool prv_write_at_offset_from_end(sMfltCircularBuffer *circular_buf, size
   size_t bytes_to_write =
     (contiguous_space_available > data_len) ? data_len : contiguous_space_available;
 
-  const uint8_t *buf = data;
+  const uint8_t *buf = (const uint8_t *)data;
   memcpy(&circular_buf->storage[write_idx], buf, bytes_to_write);
   buf += bytes_to_write;
   size_t bytes_rem = data_len - bytes_to_write;

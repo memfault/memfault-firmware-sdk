@@ -77,7 +77,7 @@ static bool prv_metric_heartbeat_writer(void *ctx, const sMemfaultMetricInfo *me
       break;
     }
     case kMemfaultMetricType_String: {
-      const char *value = metric_info->val.ptr;
+      const char *value = (const char *)metric_info->val.ptr;
       state->encode_success = memfault_cbor_encode_string(encoder, value);
       break;
     }

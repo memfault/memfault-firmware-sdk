@@ -56,7 +56,7 @@ uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
                                 size_t data_len_bytes) {
   uint16_t crc = crc_initial_value;
 
-  const uint8_t *curr_ptr = data;
+  const uint8_t *curr_ptr = (const uint8_t *)data;
   for (size_t i = 0; i < data_len_bytes; i++) {
     uint16_t table_idx = ((crc >> 8) ^ *curr_ptr++) & 0xff;
 
@@ -72,7 +72,7 @@ uint16_t memfault_crc16_compute(uint16_t crc_initial_value, const void *data,
                                 size_t data_len_bytes) {
   const uint32_t polynomial = 0x1021;
   uint32_t crc = crc_initial_value;
-  const uint8_t *curr_ptr = data;
+  const uint8_t *curr_ptr = (const uint8_t *)data;
   for (size_t i = 0; i < data_len_bytes; i++) {
     crc = (crc ^ (uint32_t)(*curr_ptr++ << 8));
     for (int bit = 0; bit < 8; bit++) {

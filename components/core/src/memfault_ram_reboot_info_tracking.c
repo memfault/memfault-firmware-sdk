@@ -171,7 +171,7 @@ MEMFAULT_WEAK void memfault_reboot_tracking_save(const sMemfaultRebootTrackingSt
 }
 
 void memfault_reboot_tracking_boot(void *start_addr, const sResetBootupInfo *bootup_info) {
-  s_mflt_reboot_info = start_addr;
+  s_mflt_reboot_info = (sMfltRebootInfo *)start_addr;
 
   if (start_addr == NULL) {
     return;
@@ -294,9 +294,9 @@ void memfault_reboot_tracking_metrics_session(bool active, uint32_t index) {
   }
 
   if (active) {
-    s_mflt_reboot_info->active_sessions |= (1 << index);
+    s_mflt_reboot_info->active_sessions |= (1u << index);
   } else {
-    s_mflt_reboot_info->active_sessions &= ~(1 << index);
+    s_mflt_reboot_info->active_sessions &= ~(1u << index);
   }
 }
 
