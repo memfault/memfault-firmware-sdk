@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [x.xx.x] - xxxx-xx-xx
+
+This is a major|minor|patch release. Key updates:
+
+- ...
+- ...
+- ...
+
+### 📈 Added
+
+- nRF-Connect SDK
+
+  - Add a battery metrics port for the nPM1300 and nPM1304 PMICs, which includes
+    collecting battery metrics for the
+    [Battery Device Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
+    and a heartbeat metric for battery voltage. To leverage this port, set
+    `CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX=y`. Note that users must
+    provide the header `memfault_nrf_platform_battery_model.h`, which should
+    define the battery model as specified by the nRF Fuel Gauge API. See the
+    [Nordic docs](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrfxlib/nrf_fuel_gauge/README.html#nrf-fuel-gauge)
+    for more detail. Since this port calls `nrf_fuel_gauge_process()`,
+    applications that want to read state of charge should call
+    `memfault_platform_get_stateofcharge()` to avoid conflicting calls to the
+    fuel gauge library.
+
+- Zephyr
+
+  - Add the symbol `CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE` with a
+    default value of 1000, which maps to 3 decimal places of precision for
+    battery metrics. See the
+    [Battery Device Vital docs](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
+    for more information on configuring battery metric collection.
+
+  - Add a coredump storage implementation for the Ambiq Apollo4 series. This storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_APOLLO4X_MRAM=y`. Requires adding a fixed
+    partition named `memfault_coredump_partition` to the device tree. See
+    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    for details.
+
+### 🛠️ Changed
+
+### 🐛 Fixed
+
 ## [1.31.0] - 2025-11-22
 
 This is a minor feature and bugfix release. Key updates:

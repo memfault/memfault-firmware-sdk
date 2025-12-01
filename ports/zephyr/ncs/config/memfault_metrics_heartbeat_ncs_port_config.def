@@ -1,0 +1,3 @@
+#if defined(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_voltage, kMemfaultMetricType_Unsigned, 1000)
+#endif

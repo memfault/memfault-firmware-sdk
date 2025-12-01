@@ -76,4 +76,30 @@ config MEMFAULT_NRF_NRF5_CPU_TEMP
           Enables collection of CPU temperature metrics for supported devices.
           Use the MEMFAULT_METRICS_CPU_TEMP config option to disable support.
 
+config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
+        bool "nPM13xx Battery Support"
+        default y if BOARD_THINGY91X_NRF9151_NS
+        select MEMFAULT_METRICS_BATTERY_ENABLE
+        depends on NRF_FUEL_GAUGE
+	      depends on NPM13XX_CHARGER
+        help
+          Enables battery metrics support for devices using the nPM13xx PMIC.
+          The user must provide memfault_nrf_platform_battery_model.h with the
+          model of the battery as defined by the nRF Fuel Gauge API.
+          Note, since this port calls nrf_fuel_gauge_process(), applications
+          that want to read state of charge should call
+          memfault_platform_get_stateofcharge() to avoid conflicting calls to
+          the fuel gauge library.
+
+config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY
+        int "nPM13xx Battery Initialization Priority"
+        # Set to the default for MEMFAULT_INIT_PRIORITY - 1
+        default 39
+        depends on MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
+        help
+          Sets the initialization priority for the nPM13xx battery platform
+          integration. This value is should be set to be lower than
+          MEMFAULT_INIT_PRIORITY (higher priority) to ensure that the platform
+          battery SOC can be collected during Memfault initialization.
+
 endif # MEMFAULT_NRF_CONNECT_SDK

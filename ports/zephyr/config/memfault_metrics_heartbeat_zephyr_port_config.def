@@ -113,6 +113,10 @@ MEMFAULT_METRICS_KEY_DEFINE(boot_time_ms, kMemfaultMetricType_Unsigned)
   #include "memfault_metrics_heartbeat_extra.def"
 #endif
 
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+  #include "memfault_metrics_heartbeat_ncs_port_config.def"
+#endif
+
 // Pull in the user's heartbeat defs
 #if defined(CONFIG_MEMFAULT_USER_CONFIG_ENABLE)
 

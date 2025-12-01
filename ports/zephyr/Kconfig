@@ -95,6 +95,13 @@ config MEMFAULT_COREDUMP_STORAGE_MRAM
           Use an internal MRAM-backed coredump storage implementation. Requires
           a partition labeled `memfault_coredump_partition`.
 
+config MEMFAULT_COREDUMP_STORAGE_APOLLO4X_MRAM
+        bool "Apollo4x MRAM backed coredump storage"
+        depends on SOC_SERIES_APOLLO4X
+        help
+          Use an internal Apollo4x MRAM-backed coredump storage implementation.
+          Requires a partition labeled `memfault_coredump_partition`.
+
 endchoice # MEMFAULT_COREDUMP_STORAGE
 
 if MEMFAULT_RAM_BACKED_COREDUMP
@@ -731,6 +738,18 @@ config MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT
        depends on MEMFAULT_METRICS_BATTERY_ENABLE
        help
         Automatically initialize the battery metric subsystem on bootup
+
+config MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE
+        int "Scale factor for battery state of charge percentage metric"
+        range 1 1000
+        default 1000
+        depends on MEMFAULT_METRICS_BATTERY_ENABLE
+        help
+          The scale factor to use for the battery state of charge percentage metric.
+          The value recorded is multiplied by this factor before being stored in the metric.
+          For example, if the battery state of charge is 75.00%, and the scale factor is 100,
+          the value stored in the metric will be 7500, and is scaled back to 75.00% when
+          Memfault's cloud processes the data.
 
 config MEMFAULT_METRICS_TCP_IP
         bool "TCP/IP metrics"
