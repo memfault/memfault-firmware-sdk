@@ -121,7 +121,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-  #if NRF_RESET_HAS_NETWORK
+  #if NRF_RESET_HAS_LSREQ_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LSREQ_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Software (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
@@ -141,7 +141,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
     MEMFAULT_PRINT_RESET_INFO(" Force off (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
   #endif
-  #if NRF_RESET_HAS_NETWORK
+  #if NRF_RESET_HAS_LCTRLAP_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LCTRLAP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debugger (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
