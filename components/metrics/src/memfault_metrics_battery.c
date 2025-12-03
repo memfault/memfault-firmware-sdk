@@ -32,7 +32,13 @@ static void prv_accumulate_discharge_session_drop(bool session_valid,
     (int32_t)s_memfault_battery_ctx.last_state_of_charge - (int32_t)current_stateofcharge;
 
   if (drop < 0) {
-    MEMFAULT_LOG_DEBUG("Battery drop was negative (%" PRIi32 "), skipping", drop);
+    // Format drop as percentage with max 3 decimal places
+    const int32_t scale = MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE;
+    const int32_t integer_part = -drop / scale;
+    const uint32_t fractional_part =
+      (((uint32_t)(-drop) % (uint32_t)scale) * 1000) / (uint32_t)scale;
+    MEMFAULT_LOG_DEBUG("Battery drop was negative (-%" PRIi32 ".%03" PRIu32 "%%), skipping",
+                       integer_part, fractional_part);
   }
 
   // compute elapsed time since last data collection

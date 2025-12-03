@@ -6,6 +6,74 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.32.0] - 2025-12-03
+
+This is a minor release. Key updates:
+
+- Integrated fuel gauge battery metrics for nPM13xx PMICs on nRF Connect SDK.
+- Added CoAP client for uploading Memfault data via nRF Cloud.
+- Fixed build issues and compiler warnings on Zephyr and nRF Connect SDK.
+
+### 📈 Added
+
+- nRF-Connect SDK:
+
+  - Add a battery metrics port for the nPM1300 and nPM1304 PMICs, which includes
+    collecting battery metrics for the
+    [Battery Device Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
+    and a heartbeat metric for battery voltage. To leverage this port, set
+    `CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX=y`. Note that users must
+    provide the header `memfault_nrf_platform_battery_model.h`, which should
+    define the battery model as specified by the nRF Fuel Gauge API. See the
+    [Nordic docs](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrfxlib/nrf_fuel_gauge/README.html#nrf-fuel-gauge)
+    for more detail. Since this port calls `nrf_fuel_gauge_process()`,
+    applications that want to read state of charge should call
+    `memfault_platform_get_stateofcharge()` to avoid conflicting calls to the
+    fuel gauge library.
+
+  - Added a CoAP client implementation capable of uploading Memfault data
+    through an [nRF Cloud](https://www.nrfcloud.com/) connection. This is
+    primarily intended for use with the Nordic nRF91x series devices using LTE-M
+    or NB-IoT connectivity. To enable, use
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_TRANSPORT=y`. This will change the protocol
+    used by `memfault_zephyr_port_post_data()` (and
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD`), from HTTP to CoAP.
+
+- Zephyr:
+
+  - Add the symbol `CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE` with a
+    default value of 1000, which maps to 3 decimal places of precision for
+    battery metrics. See the
+    [Battery Device Vital docs](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
+    for more information on configuring battery metric collection.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a compiler warning on Zephyr v4.1, when using
+    `CONFIG_MEMFAULT_METRICS_WIFI`. Thanks to
+    [@chshzh](https://github.com/chshzh) for reporting this issue in
+    [#98](https://github.com/memfault/memfault-firmware-sdk/issues/98) 🎉!
+
+  - Fix an incorrect check for the Kconfig option
+    `CONFIG_MEMFAULT_FAULT_HANDLER_LOG_PANIC` (previously was checking for
+    `defined(MEMFAULT_FAULT_HANDLER_LOG_PANIC)`, which is incorrect). Thanks to
+    [@konstk1](https://github.com/konstk1) for providing this fix in
+    [#100](https://github.com/memfault/memfault-firmware-sdk/pull/100) 🎉!
+
+- General:
+
+  - Fix a few files that were missing necessary `#include <stdio.h>` or
+    `#include <string.h>` directives.
+
+- nRF Connect SDK:
+
+  - Fix a compilation error when building for the nRF53 series on nRF Connect
+    SDK v3.2.0-rc1 and later, caused by a change in the NRFX HAL. Thanks to
+    [@Damian-Nordic](https://github.com/Damian-Nordic) for providing the fix in
+    [#99](https://github.com/memfault/memfault-firmware-sdk/pull/99) 🎉!
+
 ## [1.31.0] - 2025-11-22
 
 This is a minor feature and bugfix release. Key updates:

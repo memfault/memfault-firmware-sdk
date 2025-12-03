@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdatomic.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "esp_idf_version.h"

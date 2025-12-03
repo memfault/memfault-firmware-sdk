@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if defined(MEMFAULT_FAULT_HANDLER_LOG_PANIC)
+#if defined(CONFIG_MEMFAULT_FAULT_HANDLER_LOG_PANIC)
   #define MEMFAULT_LOG_PANIC() LOG_PANIC()
 #else
   #define MEMFAULT_LOG_PANIC()

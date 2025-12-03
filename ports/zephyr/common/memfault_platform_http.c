@@ -704,7 +704,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   return success ? 1 : -1;
 }
 
-ssize_t memfault_zephyr_port_post_data_return_size(void) {
+ssize_t memfault_zephyr_port_http_post_data_return_size(void) {
   if (!memfault_packetizer_data_available()) {
     return 0;
   }
@@ -728,11 +728,6 @@ ssize_t memfault_zephyr_port_post_data_return_size(void) {
 #endif
 
   return (rv == 0) ? (ctx.bytes_sent) : rv;
-}
-
-int memfault_zephyr_port_post_data(void) {
-  ssize_t rv = memfault_zephyr_port_post_data_return_size();
-  return (rv >= 0) ? 0 : rv;
 }
 
 int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {

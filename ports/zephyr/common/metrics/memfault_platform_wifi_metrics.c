@@ -147,7 +147,7 @@ static void prv_record_wifi_connection_metrics(struct net_if *iface) {
 }
 
 static void prv_wifi_event_callback(struct net_mgmt_event_callback *cb,
-#if MEMFAULT_ZEPHYR_VERSION_GT(4, 1)
+#if MEMFAULT_ZEPHYR_VERSION_GT(4, 2)
                                     uint64_t mgmt_event,
 #else
                                     uint32_t mgmt_event,

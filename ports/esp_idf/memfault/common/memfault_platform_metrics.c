@@ -10,6 +10,7 @@
 //!   -DMEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS=15
 
 #include <inttypes.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "esp_err.h"

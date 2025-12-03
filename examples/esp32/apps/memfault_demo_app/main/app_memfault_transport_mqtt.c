@@ -5,6 +5,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "app_memfault_transport.h"
 #include "esp_log.h"

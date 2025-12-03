@@ -14,6 +14,7 @@
 #endif
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "memfault/core/debug_log.h"
 #include "memfault/metrics/metrics.h"

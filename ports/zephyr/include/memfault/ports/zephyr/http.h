@@ -42,6 +42,12 @@ int memfault_zephyr_port_post_data(void);
 //! sent, in bytes. 0 indicates no data was ready to send (and no data was sent)
 ssize_t memfault_zephyr_port_post_data_return_size(void);
 
+//! HTTP specific version of memfault_zephyr_port_post_data_return_size
+//!
+//! @return negative error code on error, else the size of the data that was
+//! sent, in bytes. 0 indicates no data was ready to send (and no data was sent)
+ssize_t memfault_zephyr_port_http_post_data_return_size(void);
+
 typedef struct MemfaultOtaInfo {
   // The size, in bytes, of the OTA payload.
   size_t size;

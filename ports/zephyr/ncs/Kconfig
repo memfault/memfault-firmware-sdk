@@ -76,4 +76,62 @@ config MEMFAULT_NRF_NRF5_CPU_TEMP
           Enables collection of CPU temperature metrics for supported devices.
           Use the MEMFAULT_METRICS_CPU_TEMP config option to disable support.
 
+config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
+        bool "nPM13xx Battery Support"
+        default y if BOARD_THINGY91X_NRF9151_NS
+        select MEMFAULT_METRICS_BATTERY_ENABLE
+        depends on NRF_FUEL_GAUGE
+	      depends on NPM13XX_CHARGER
+        help
+          Enables battery metrics support for devices using the nPM13xx PMIC.
+          The user must provide memfault_nrf_platform_battery_model.h with the
+          model of the battery as defined by the nRF Fuel Gauge API.
+          Note, since this port calls nrf_fuel_gauge_process(), applications
+          that want to read state of charge should call
+          memfault_platform_get_stateofcharge() to avoid conflicting calls to
+          the fuel gauge library.
+
+config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY
+        int "nPM13xx Battery Initialization Priority"
+        # Set to the default for MEMFAULT_INIT_PRIORITY - 1
+        default 39
+        depends on MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
+        help
+          Sets the initialization priority for the nPM13xx battery platform
+          integration. This value is should be set to be lower than
+          MEMFAULT_INIT_PRIORITY (higher priority) to ensure that the platform
+          battery SOC can be collected during Memfault initialization.
+
+menuconfig MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+        bool "Use nRF Cloud CoAP endpoint"
+        depends on MODEM_JWT
+        depends on COAP
+        depends on (COAP_EXTENDED_OPTIONS_LEN_VALUE >= 192)
+        help
+          Note: Requires device to be provisioned with nRF Cloud.
+
+if MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+
+config MEMFAULT_NRF_CLOUD_SEC_TAG
+        int "Security tag to use for nRF Cloud connection"
+        default 16842753
+
+config MEMFAULT_NRF_CLOUD_HOST_NAME
+        string "nRF Cloud server hostname"
+        default "coap.nrfcloud.com"
+
+config MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE
+        int "Set the size of the CoAP packetizer buffer"
+        default 1400
+
+config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
+        int "The CoAP client timeout in milliseconds"
+        default 5000
+        help
+          The Memfault CoAP client timeout in milliseconds. This is the
+          maximum amount of time the CoAP client will wait for a response from
+          the server.
+
+endif # MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+
 endif # MEMFAULT_NRF_CONNECT_SDK

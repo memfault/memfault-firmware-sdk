@@ -86,6 +86,22 @@ static eMemfaultRebootReason prv_decode_power_resetreas(uint32_t reset_cause) {
   return reset_reason;
 }
 #else
+
+// nRF Connect SDK v3.2.0 changed how these macros are defined. Check for the
+// presence of the new macros, falling back on the prior
+// 'NRF_RESET_HAS_NETWORK' workaround.
+  #if defined(NRF_RESET_HAS_LSREQ_RESET)
+    #define MEMFAULT_NRF_RESET_HAS_LSREQ_RESET NRF_RESET_HAS_LSREQ_RESET
+  #else
+    #define MEMFAULT_NRF_RESET_HAS_LSREQ_RESET NRF_RESET_HAS_NETWORK
+  #endif
+
+  #if defined(NRF_RESET_HAS_LCTRLAP_RESET)
+    #define MEMFAULT_NRF_RESET_HAS_LCTRLAP_RESET NRF_RESET_HAS_LCTRLAP_RESET
+  #else
+    #define MEMFAULT_NRF_RESET_HAS_LCTRLAP_RESET NRF_RESET_HAS_NETWORK
+  #endif
+
 static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   eMemfaultRebootReason reset_reason;
   if (reset_cause & NRF_RESET_RESETREAS_RESETPIN_MASK) {
@@ -121,7 +137,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
   } else if (reset_cause & NRF_RESET_RESETREAS_DIF_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debug Interface Wakeup");
     reset_reason = kMfltRebootReason_DeepSleep;
-  #if NRF_RESET_HAS_NETWORK
+  #if MEMFAULT_NRF_RESET_HAS_LSREQ_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LSREQ_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Software (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
@@ -141,7 +157,7 @@ static eMemfaultRebootReason prv_decode_reset_resetreas(uint32_t reset_cause) {
     MEMFAULT_PRINT_RESET_INFO(" Force off (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;
   #endif
-  #if NRF_RESET_HAS_NETWORK
+  #if MEMFAULT_NRF_RESET_HAS_LCTRLAP_RESET
   } else if (reset_cause & NRF_RESET_RESETREAS_LCTRLAP_MASK) {
     MEMFAULT_PRINT_RESET_INFO(" Debugger (Network)");
     reset_reason = kMfltRebootReason_SoftwareReset;

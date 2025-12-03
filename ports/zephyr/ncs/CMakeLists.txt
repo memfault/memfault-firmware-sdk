@@ -8,6 +8,7 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
 
   add_subdirectory(src)
   zephyr_include_directories(include)
+  zephyr_include_directories(config)
 
   # Note: Starting in nRF Connect SDK >= 1.3, NCS_VERSION_* fields are exposed.
   # Prior to that, they're unset and cause the VERSION_GREATER_EQUAL check to be

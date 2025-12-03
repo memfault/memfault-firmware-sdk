@@ -14,8 +14,12 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_ST
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL_SELF_TEST memfault_self_test_platform.c)
 
+if(CONFIG_MEMFAULT_HTTP_ENABLE OR CONFIG_USE_NRF_CLOUD_TRANSPORT)
+  zephyr_library_sources(memfault_platform_post.c)
+endif()
+
 if (NOT CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM)
-  zephyr_library_sources(memfault_software_watchdog.c)
+zephyr_library_sources(memfault_software_watchdog.c)
 endif()
 
 if (CONFIG_MEMFAULT_CACHE_FAULT_REGS)
