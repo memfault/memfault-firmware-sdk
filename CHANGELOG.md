@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED] - xxxx-xx-xx
+
+This is a major|minor|patch release.
+
+### 📈 Added
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Eliminate some noisy warning/error logs that were being emitted on boot,
+    such as:
+
+    ```plaintext
+    E (345) task_wdt: esp_task_wdt_status(765): TWDT was never initialized
+    W (362) mflt_sleep: No log backup data
+    W (372) mflt_sleep: No event storage backup data
+    W (372) mflt_sleep: No metrics backup data
+    ```
+
+- Zephyr:
+
+  - Changed the maximum compiled-in log level for `MEMFAULT_LOG_x()` statements
+    to match `CONFIG_MEMFAULT_LOG_LEVEL`. Previously, all log levels were
+    compiled in by default, and runtime filtering was applied based on the
+    configured log level. Now, only log statements at or below the configured
+    log level are compiled in, reducing code size. To restore the previous
+    behavior, set `CONFIG_MEMFAULT_PLATFORM_HAS_LOG_CONFIG=n` to disable the
+    custom log config header.
+
+  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
+    storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_APOLLO4X_MRAM=y`. Requires adding a fixed
+    partition named `memfault_coredump_partition` to the device tree. See
+    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    for details.
+
 ## [1.32.0] - 2025-12-03
 
 This is a minor release. Key updates:
@@ -46,6 +83,15 @@ This is a minor release. Key updates:
     battery metrics. See the
     [Battery Device Vital docs](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
     for more information on configuring battery metric collection.
+
+  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
+    storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM=y`. Requires adding a fixed
+    partition named `memfault_coredump_partition` to the device tree. See
+    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    for details.
+
+### 🛠️ Changed
 
 ### 🐛 Fixed
 

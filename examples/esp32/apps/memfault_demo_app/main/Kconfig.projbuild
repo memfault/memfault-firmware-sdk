@@ -49,6 +49,14 @@ config MEMFAULT_APP_AUTO_DEEP_SLEEP_PERIOD_SECONDS
         The period in seconds to put the device into deep sleep.
         This is only used if MEMFAULT_APP_AUTO_DEEP_SLEEP is enabled.
 
+config MEMFAULT_APP_TASK_WDT_TIMEOUT_S
+    int "Task Watchdog timeout in seconds"
+    default ESP_TASK_WDT_TIMEOUT_S
+    default 5
+    help
+        Helper symbol to make it simple to get the Task Watchdog timeout value
+        whether it's enabled or not.
+
 if APP_MEMFAULT_TRANSPORT_MQTT
 config MEMFAULT_DEVICE_INFO_SOFTWARE_TYPE
     string "Override default software version for the application"

@@ -280,6 +280,11 @@ void memfault_boot(void) {
     MEMFAULT_LOG_ERROR("Failed to initialize SNTP, err %d", err);
   }
 #endif
+
+  // Log an error if there is not enough space to save the configured coredump
+  // data. Run the check here, which is after app_init(), so TWDT should be
+  // configured by now if CONFIG_ESP_TASK_WDT_INIT=y.
+  memfault_coredump_storage_check_size();
 }
 
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {

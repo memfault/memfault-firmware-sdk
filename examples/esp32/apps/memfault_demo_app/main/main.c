@@ -21,6 +21,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_task.h"
+#include "esp_task_wdt.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
@@ -423,8 +424,41 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
   #endif
 #endif  // defined(CONFIG_MEMFAULT)
 
+static void prv_conditionally_init_task_wdt(void) {
+#if defined(CONFIG_ESP_TASK_WDT_INIT)
+  // note: we would need to also run esp_task_wdt_reconfigure() if
+  // CONFIG_ESP_TASK_WDT_PANIC=n, but leaving that out for simplicity
+  #if !defined(CONFIG_ESP_TASK_WDT_PANIC)
+    #warning "CONFIG_ESP_TASK_WDT_PANIC=n is not fully supported by this example"
+  #endif
+#else
+  // Initialize now
+  // API changed in ESP-IDF v5.0.0
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+  esp_task_wdt_config_t twdt_config = {
+    .timeout_ms = CONFIG_MEMFAULT_APP_TASK_WDT_TIMEOUT_S * 1000,
+    .idle_core_mask = 0,
+    .trigger_panic = true,
+  };
+    #if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+  twdt_config.idle_core_mask |= (1 << 0);
+    #endif
+    #if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+  twdt_config.idle_core_mask |= (1 << 1);
+    #endif
+  ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
+  #else
+  // Pre-5.0.0 API
+  ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_MEMFAULT_APP_TASK_WDT_TIMEOUT_S * 1000, true));
+  #endif
+#endif
+}
+
 // This task started by cpu_start.c::start_cpu0_default().
 void app_main() {
+  // keep before memfault_boot()
+  prv_conditionally_init_task_wdt();
+
 #if defined(CONFIG_MEMFAULT)
   #if !defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
   memfault_boot();

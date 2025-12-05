@@ -1,0 +1,39 @@
+/*
+ Adjust the fixed partitions in flash (MRAM) to add a 'memfault_coredump'
+ partition for storing coredumps
+*/
+
+/* Remove the old standalone flash0 node */
+&flash0 {
+	status = "disabled";
+};
+/ {
+	chosen {
+		zephyr,flash = &flash1;
+	};
+	soc {
+		flash: flash-controller@410000 {
+			compatible = "ambiq,flash-controller";
+			reg = < 0x410000 0x3f0000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+
+			flash1: flash@410000 {
+				compatible = "soc-nv-flash";
+				reg = < 0x410000 0x3f0000 >;
+				erase-block-size = < 0x2000 >;
+				write-block-size = < 0x10 >;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = < 0x1 >;
+					#size-cells = < 0x1 >;
+
+					memfault_coredump_partition: partition@3f0000 {
+						reg = < 0x3ec000 0x4000 >;
+					};
+				};
+			};
+		};
+	};
+};

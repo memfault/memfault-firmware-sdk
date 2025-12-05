@@ -95,6 +95,14 @@ config MEMFAULT_COREDUMP_STORAGE_MRAM
           Use an internal MRAM-backed coredump storage implementation. Requires
           a partition labeled `memfault_coredump_partition`.
 
+config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
+        bool "Apollo4x MRAM backed coredump storage"
+        depends on SOC_SERIES_APOLLO4X
+        depends on SOC_SERIES_APOLLO5X=y
+        help
+          Use an internal Apollo4x MRAM-backed coredump storage implementation.
+          Requires a partition labeled `memfault_coredump_partition`.
+
 endchoice # MEMFAULT_COREDUMP_STORAGE
 
 if MEMFAULT_RAM_BACKED_COREDUMP
@@ -1051,6 +1059,16 @@ config MEMFAULT_DTS_IN_ELF
 module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"
+
+config MEMFAULT_PLATFORM_HAS_LOG_CONFIG
+        bool
+        default y
+        help
+          Indicates that the Memfault port provides a
+          memfault_platform_log_config.h header to control which log levels are
+          compiled in. Disable this to compile in all MEMFAULT_LOG_x levels
+          (enabling runtime filtering), or to provide your own custom log
+          config header.
 
 rsource "ncs/Kconfig"
 
