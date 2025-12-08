@@ -192,8 +192,9 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
   } else {
+#if CONFIG_MEMFAULT_LOG_LEVEL >= 4  // DBG
     struct sockaddr_in *addr = net_sin((*res)->ai_addr);
-
+#endif
     MEMFAULT_LOG_DEBUG("DNS lookup for %s = %d.%d.%d.%d", host, addr->sin_addr.s4_addr[0],
                        addr->sin_addr.s4_addr[1], addr->sin_addr.s4_addr[2],
                        addr->sin_addr.s4_addr[3]);

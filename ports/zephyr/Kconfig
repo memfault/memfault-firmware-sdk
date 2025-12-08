@@ -535,6 +535,18 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
+menuconfig MEMFAULT_MCUMGR_GRP
+        bool "Memfault MCUmgr group"
+        depends on MCUMGR
+        select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+        help
+          Enables a custom MCUmgr group for accessing Memfault device information
+          and project key over Bluetooth. This is useful for FOTA over Bluetooth
+          scenarios where MDS (Memfault Diagnostic GATT Service) is not used.
+          The group provides commands to read device serial, hardware version,
+          software type, current version, and project key - all information needed
+          for Memfault FOTA functionality.
+
 config MEMFAULT_EVENT_STORAGE_SIZE
        int "Memfault Event Storage RAM Buffer Size"
        default 1024
@@ -1051,6 +1063,16 @@ config MEMFAULT_DTS_IN_ELF
 module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"
+
+config MEMFAULT_PLATFORM_HAS_LOG_CONFIG
+        bool
+        default y
+        help
+          Indicates that the Memfault port provides a
+          memfault_platform_log_config.h header to control which log levels are
+          compiled in. Disable this to compile in all MEMFAULT_LOG_x levels
+          (enabling runtime filtering), or to provide your own custom log
+          config header.
 
 rsource "ncs/Kconfig"
 
