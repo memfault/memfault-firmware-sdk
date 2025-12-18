@@ -277,7 +277,32 @@ void memfault_platform_deep_sleep_save_state(void) {
   esp_rom_delay_us(250 * 1000);
 }
 
+static bool prv_woke_up_from_deep_sleep(void) {
+  // This API changed in ESP-IDF v6
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  bool result =
+    (wakeup_reason != ESP_SLEEP_WAKEUP_UNDEFINED) && (wakeup_reason != ESP_SLEEP_WAKEUP_ALL);
+#else
+  uint32_t wakeup_reason = esp_sleep_get_wakeup_causes();
+  bool result =
+    (wakeup_reason & (BIT(ESP_SLEEP_WAKEUP_UNDEFINED) | BIT(ESP_SLEEP_WAKEUP_ALL))) == 0;
+#endif
+
+  if (result) {
+    ESP_LOGD(TAG, "🌅 Woke up from deep sleep, reason: 0x%x", (int)wakeup_reason);
+  } else {
+    ESP_LOGD(TAG, "Woke up from non-deep sleep, reason: 0x%x", (int)wakeup_reason);
+  }
+
+  return result;
+}
+
 bool memfault_event_storage_restore_state(sMfltEventStorageSaveState *state) {
+  if (!prv_woke_up_from_deep_sleep()) {
+    return false;
+  }
+
   // check magic number first
   if (s_mflt_metrics_backup_data.event_storage_magic != MEMFAULT_DEEP_SLEEP_MAGIC) {
     ESP_LOGW(TAG, "No event storage backup data");
@@ -306,6 +331,10 @@ bool memfault_event_storage_restore_state(sMfltEventStorageSaveState *state) {
 }
 
 bool memfault_metrics_restore_state(void *state) {
+  if (!prv_woke_up_from_deep_sleep()) {
+    return false;
+  }
+
   // check magic number first
   if (s_mflt_metrics_backup_data.metrics_magic != MEMFAULT_DEEP_SLEEP_MAGIC) {
     ESP_LOGW(TAG, "No metrics backup data");
@@ -337,6 +366,10 @@ bool memfault_metrics_restore_state(void *state) {
 }
 
 extern bool memfault_log_restore_state(sMfltLogSaveState *state) {
+  if (!prv_woke_up_from_deep_sleep()) {
+    return false;
+  }
+
   // check magic number first
   if (s_mflt_metrics_backup_data.log_magic != MEMFAULT_DEEP_SLEEP_MAGIC) {
     ESP_LOGW(TAG, "No log backup data");
@@ -361,27 +394,6 @@ extern bool memfault_log_restore_state(sMfltLogSaveState *state) {
   s_mflt_metrics_backup_data.log_magic = 0;
 
   return true;
-}
-
-static bool prv_woke_up_from_deep_sleep(void) {
-  // This API changed in ESP-IDF v6
-#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
-  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-  bool result =
-    (wakeup_reason != ESP_SLEEP_WAKEUP_UNDEFINED) && (wakeup_reason != ESP_SLEEP_WAKEUP_ALL);
-#else
-  uint32_t wakeup_reason = esp_sleep_get_wakeup_causes();
-  bool result =
-    (wakeup_reason & (BIT(ESP_SLEEP_WAKEUP_UNDEFINED) | BIT(ESP_SLEEP_WAKEUP_ALL))) == 0;
-#endif
-
-  if (result) {
-    ESP_LOGD(TAG, "🌅 Woke up from deep sleep, reason: 0x%x", (int)wakeup_reason);
-  } else {
-    ESP_LOGD(TAG, "Woke up from non-deep sleep, reason: 0x%x", (int)wakeup_reason);
-  }
-
-  return result;
 }
 
 void memfault_platform_deep_sleep_restore_state(void) {

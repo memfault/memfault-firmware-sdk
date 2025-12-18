@@ -1052,6 +1052,16 @@ module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"
 
+config MEMFAULT_PLATFORM_HAS_LOG_CONFIG
+        bool
+        default y
+        help
+          Indicates that the Memfault port provides a
+          memfault_platform_log_config.h header to control which log levels are
+          compiled in. Disable this to compile in all MEMFAULT_LOG_x levels
+          (enabling runtime filtering), or to provide your own custom log
+          config header.
+
 rsource "ncs/Kconfig"
 
 endif # MEMFAULT

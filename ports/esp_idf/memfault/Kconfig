@@ -138,6 +138,24 @@ endif
             Disable this option to use a custom implementation of
             memfault_platform_coredump_get_regions().
 
+    config MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY
+        bool "Capture only thread stacks in coredumps"
+        default n
+        help
+            When enabled, only thread-related data (stacks, TCBs, and FreeRTOS
+            metadata) will be captured in coredumps, excluding .bss/.data and
+            heap sections. Optionally, the task watchdog state may also be
+            included if enabled. This can be useful for reducing the size of
+            coredumps.
+
+    config MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT
+        int "The maximum stack size to collect per task in coredumps"
+        default 512 if MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY
+        default 256
+        help
+            The maximum stack size to collect per task in coredumps. This can
+            be used to limit the amount of stack data collected for each task.
+
     endmenu  # Memfault Coredump Settings
 
     config MEMFAULT_AUTOMATIC_INIT
@@ -444,6 +462,14 @@ endif
             this operates similarly to HEAP_ABORT_WHEN_ALLOCATION_FAILS, but the
             Memfault Issue created will be tagged as "Out of Memory" instead of
             a generic "Assert".
+
+    config MEMFAULT_PLATFORM_REBOOT_CUSTOM
+        bool "Provide a custom memfault_platform_reboot() implementation"
+        default n
+        help
+            When enabled, the user must provide their own implementation of
+            memfault_platform_reboot(). This can be useful for platforms that
+            require a specific reboot procedure.
 
     config MEMFAULT_HEAP_STATS
         bool "Heap tracing"

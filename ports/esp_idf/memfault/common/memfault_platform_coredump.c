@@ -203,7 +203,9 @@ size_t prv_get_task_watchdog_region(sMfltCoredumpRegion *regions, size_t num_reg
     return 0;
   }
 
-  // the TWDT might not be initialized, check it first
+  // the TWDT might not be initialized, check it first. note: unfortunately this
+  // unconditionally prints an error level log if the TWDT is not initialized,
+  // and there's no other way as of ESP-IDF v5.5 to check the TWDT status.
   esp_err_t err = esp_task_wdt_status(NULL);
   if (err == ESP_ERR_INVALID_STATE) {
     return 0;
@@ -259,6 +261,7 @@ const sMfltCoredumpRegion *memfault_esp_port_coredump_get_regions(
                                              MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 #endif
 
+#if !defined(CONFIG_MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY)
   // Next, capture all of .bss + .data that we can fit.
   extern uint32_t _data_start;
   extern uint32_t _data_end;
@@ -273,6 +276,7 @@ const sMfltCoredumpRegion *memfault_esp_port_coredump_get_regions(
   // Finally, capture as much of the heap as we can fit
   s_coredump_regions[region_idx++] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(
     &_heap_start, (uint32_t)(esp32_dram_end_addr - (uintptr_t)&_heap_start));
+#endif  // !defined(CONFIG_MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY)
 
   *num_regions = region_idx;
 
@@ -327,9 +331,6 @@ void __wrap_esp_core_dump_init(void) {
     .partition = *core_part,
   };
   s_esp32_coredump_partition_info.crc = prv_get_partition_info_crc();
-
-  // Log an error if there is not enough space to save the information requested
-  memfault_coredump_storage_check_size();
 }
 
 esp_err_t __wrap_esp_core_dump_image_get(size_t *out_addr, size_t *out_size) {

@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [UNRELEASED] - xxxx-xx-xx
+
+This is a major|minor|patch release.
+
+### 📈 Added
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Eliminate some noisy warning/error logs that were being emitted on boot,
+    such as:
+
+    ```plaintext
+    E (345) task_wdt: esp_task_wdt_status(765): TWDT was never initialized
+    W (362) mflt_sleep: No log backup data
+    W (372) mflt_sleep: No event storage backup data
+    W (372) mflt_sleep: No metrics backup data
+    ```
+
+  - Change the default implementation of `memfault_platform_reboot()` to call
+    `panic_restart()` instead of `esp_restart()`. The latter is meant to be
+    called during a graceful reboot, while `panic_restart()` is what should be
+    used at the end of fault handling, to restart the system. Use
+    `CONFIG_MEMFAULT_PLATFORM_REBOOT_CUSTOM=y` to provide a custom
+    implementation of `memfault_platform_reboot()`.
+
+  - Add a new Kconfig option, `MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY`, which can
+    be used to limit coredump collection to only thread-related data (stacks,
+    TCBs, and FreeRTOS metadata), excluding .bss/.data and heap sections. This
+    can be useful for reducing the size of coredumps. When enabled, the
+    `MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT` option can be used to adjust
+    the amount of stack data collected for each task.
+
+- Zephyr:
+
+  - Changed the maximum compiled-in log level for `MEMFAULT_LOG_x()` statements
+    to match `CONFIG_MEMFAULT_LOG_LEVEL`. Previously, all log levels were
+    compiled in by default, and runtime filtering was applied based on the
+    configured log level. Now, only log statements at or below the configured
+    log level are compiled in, reducing code size. To restore the previous
+    behavior, set `CONFIG_MEMFAULT_PLATFORM_HAS_LOG_CONFIG=n` to disable the
+    custom log config header.
+
 ## [1.32.0] - 2025-12-03
 
 This is a minor release. Key updates:
