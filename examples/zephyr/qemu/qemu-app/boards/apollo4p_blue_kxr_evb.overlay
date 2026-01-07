@@ -1,0 +1,16 @@
+/*
+ Adjust the fixed partitions in flash (MRAM) to add a 'memfault_coredump'
+ partition for storing coredumps
+*/
+
+&flash0 {
+	partitions {
+		storage_partition: partition@1e4000 {
+			label = "storage";
+			reg = < 0x1e4000 0x2000 >;
+		};
+		memfault_coredump_partition: partition@1e6000 {
+			reg = <0x1e6000 0x2000>;
+		};
+	};
+};

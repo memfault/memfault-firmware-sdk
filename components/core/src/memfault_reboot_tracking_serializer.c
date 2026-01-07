@@ -97,6 +97,7 @@ int memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl 
     const size_t storage_max_size = impl->get_storage_size_cb();
     const size_t worst_case_size_needed =
       memfault_reboot_tracking_compute_worst_case_storage_size();
+    (void)storage_max_size, (void)worst_case_size_needed;  // to silence unused variable warnings
     MEMFAULT_LOG_WARN("Event storage (%d) smaller than largest reset reason (%d)",
                       (int)storage_max_size, (int)worst_case_size_needed);
     return MEMFAULT_REBOOT_TRACKING_STORAGE_TOO_SMALL;

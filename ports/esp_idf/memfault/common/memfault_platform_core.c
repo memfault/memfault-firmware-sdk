@@ -32,6 +32,9 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 
+// We unfortunately have to traverse to access the panic_restart() declaration
+#include "../port/include/port/panic_funcs.h"
+
 #if defined(CONFIG_MEMFAULT_USE_NTP)
 // If ESP-IDF version < 5.1, print a warning and disable NTP. The API was added
 // in this commit:
@@ -280,11 +283,18 @@ void memfault_boot(void) {
     MEMFAULT_LOG_ERROR("Failed to initialize SNTP, err %d", err);
   }
 #endif
+
+  // Log an error if there is not enough space to save the configured coredump
+  // data. Run the check here, which is after app_init(), so TWDT should be
+  // configured by now if CONFIG_ESP_TASK_WDT_INIT=y.
+  memfault_coredump_storage_check_size();
 }
 
+#if !defined(CONFIG_MEMFAULT_PLATFORM_REBOOT_CUSTOM)
 MEMFAULT_NORETURN void memfault_platform_reboot(void) {
-  esp_restart();
+  panic_restart();
 }
+#endif
 
 #if defined(CONFIG_MEMFAULT_AUTOMATIC_INIT)
 // register an initialization routine that will be run from do_global_ctors()

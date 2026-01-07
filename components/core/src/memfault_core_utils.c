@@ -116,8 +116,6 @@ void memfault_build_info_dump(void) {
     return;
   }
 
-  const bool is_gnu = (g_memfault_build_id.type == kMemfaultBuildIdType_GnuBuildIdSha1);
-
   char build_id_sha[41] = { 0 };
   for (size_t i = 0; i < sizeof(info.build_id); i++) {
     uint8_t c = info.build_id[i];
@@ -126,7 +124,10 @@ void memfault_build_info_dump(void) {
     build_id_sha[idx + 1] = prv_nib_to_hex_ascii(c & 0xf);
   }
 
-  MEMFAULT_LOG_INFO("%s Build ID: %s", is_gnu ? "GNU" : "Memfault", build_id_sha);
+  MEMFAULT_LOG_INFO(
+    "%s Build ID: %s",
+    (g_memfault_build_id.type == kMemfaultBuildIdType_GnuBuildIdSha1) ? "GNU" : "Memfault",
+    build_id_sha);
 }
 
 void memfault_device_info_dump(void) {

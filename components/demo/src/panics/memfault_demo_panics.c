@@ -224,6 +224,7 @@ int memfault_demo_cli_loadaddr(int argc, char *argv[]) {
   }
   uint32_t addr = (uint32_t)strtoul(argv[1], NULL, 0);
   uint32_t val = *(uint32_t *)(uintptr_t)addr;
+  (void)addr, (void)val;  // to silence unused variable warnings if logging is disabled
 
   MEMFAULT_LOG_INFO("Read 0x%08" PRIx32 " from 0x%08" PRIx32, val, (uint32_t)(uintptr_t)addr);
   return 0;

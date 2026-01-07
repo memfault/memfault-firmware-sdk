@@ -134,6 +134,15 @@ int main(void) {
     goto cleanup;
   }
 
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+  // Set the network interface name to use for Memfault HTTP uploads
+  err = memfault_zephyr_port_http_set_interface_name("net0");
+  if (err) {
+    printk("Failed to set Memfault HTTP network interface name, err %d\n", err);
+    goto cleanup;
+  }
+#endif
+
   printk("Waiting for network...\n");
   // lte_lc_init_and_connect is deprecated in NCS 2.6
   err =
@@ -175,10 +184,29 @@ static int prv_reboot_custom(const struct shell *shell, size_t argc, char **argv
   return 0;  // should be unreachable
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_app_cmds,
-                               SHELL_CMD(reboot_custom, NULL, "test custom reboot",
-                                         prv_reboot_custom),
-                               SHELL_SUBCMD_SET_END /* Array terminated. */
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+static int prv_set_net_iface(const struct shell *shell, size_t argc, char **argv) {
+  if (argc != 2) {
+    shell_print(shell, "Usage: app set_net_iface <if_name>");
+    return -1;
+  }
+  const char *if_name = argv[1];
+  int err = memfault_zephyr_port_http_set_interface_name(if_name);
+  if (err) {
+    shell_print(shell, "Failed to set Memfault HTTP network interface name, err %d", err);
+    return err;
+  }
+  shell_print(shell, "Set Memfault HTTP network interface name to: %s", if_name);
+  return 0;
+}
+#endif
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+  sub_app_cmds, SHELL_CMD(reboot_custom, NULL, "test custom reboot", prv_reboot_custom),
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+  SHELL_CMD(set_net_iface, NULL, "set net iface name", prv_set_net_iface),
+#endif
+  SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(app, &sub_app_cmds, "Memfault Demo App Test Commands", NULL);

@@ -246,6 +246,7 @@ static void prv_print_region_group_info(const char *group_name, const sMfltCored
   MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
   for (size_t i = 0; (regions != NULL) && (i < num_regions); i++) {
     sMfltCoredumpRegion region = regions[i];
+    (void)region;  // to silence compiler warning when logs are disabled
     MEMFAULT_SELF_TEST_OUTPUT_LOG("0x%08" PRIxPTR "|%10" PRIu32 "|%6u|",
                                   (uintptr_t)region.region_start, region.region_size, region.type);
   }

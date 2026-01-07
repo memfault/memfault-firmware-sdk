@@ -42,24 +42,57 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
 
 // For non-esp-idf riscv implementations, provide a full assert handler and
 // other utilities.
-  #if defined(__ZEPHYR__) && (defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32))
-    #include <hal/cpu_hal.h>
+  #if defined(__ZEPHYR__)
     #include <zephyr/kernel.h>
 
+  // Zephyr RISC-V targets have different ways to check if a debugger is
+  // attached
+    #if defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
+      #include <hal/cpu_hal.h>
+
 void memfault_platform_halt_if_debugging(void) {
-    // Zephyr 3.7.0 deprecated cpu_ll_is_debugger_attached() in favor of
-    // esp_cpu_dbgr_is_attached(). Support both Kconfigs.
-    #if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+      // Zephyr 3.7.0 deprecated cpu_ll_is_debugger_attached() in favor of
+      // esp_cpu_dbgr_is_attached(). Support both Kconfigs.
+      #if MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
   if (esp_cpu_dbgr_is_attached()) {
     MEMFAULT_BREAKPOINT();
   }
-    #else
+      #else
   if (cpu_ll_is_debugger_attached()) {
     MEMFAULT_BREAKPOINT();
   }
-    #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
+      #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 6)
 }
+    #elif defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+      #include <haly/nrfy_vpr.h>
+void memfault_platform_halt_if_debugging(void) {
+      #if defined(CONFIG_SOC_NRF54H20_CPUPPR) || defined(CONFIG_SOC_NRF9280_CPUPPR)
+        #define MEMFAULT_VPR_NODELABEL cpuppr_vpr
+      #else
+        #define MEMFAULT_VPR_NODELABEL cpuflpr_vpr
+      #endif
 
+  NRF_VPR_Type const volatile *vpr =
+    (NRF_VPR_Type const volatile *)DT_REG_ADDR(DT_NODELABEL(MEMFAULT_VPR_NODELABEL));
+  bool dbg_enabled =
+    nrfy_vpr_debugif_dmcontrol_get((NRF_VPR_Type const *)vpr, NRF_VPR_DMCONTROL_DMACTIVE);
+  if (dbg_enabled) {
+    MEMFAULT_BREAKPOINT();
+  }
+}
+    #elif !defined(ESP_PLATFORM)
+    // Current target is not one of the supported configurations:
+    // 1. Zephyr on ESP32 (__ZEPHYR__ && CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
+    // 2. Zephyr on Nordic VPR RISC-V (__ZEPHYR__ &&
+    //    CONFIG_RISCV_CORE_NORDIC_VPR)
+    // 3. ESP-IDF RISC-V (!defined(__ZEPHYR__) && defined(ESP_PLATFORM));
+    //    memfault_platform_halt_if_debugging() is implemented in a generic
+    //    esp_idf port file.
+    //
+    // Error out- it's not a hard limitation but we want to double check when
+    // a user hits this case.
+      #error "Unsupported RISC-V platform. Please visit https://mflt.io/contact-support"
+    #endif
 bool memfault_arch_is_inside_isr(void) {
   // Use the Zephyr-specific implementation.
   //
@@ -98,8 +131,6 @@ MEMFAULT_NO_OPT void memfault_fault_handling_assert(void *pc, void *lr) {
   MEMFAULT_UNREACHABLE;
 }
 
-  #elif !defined(ESP_PLATFORM)
-    #error "Unsupported RISC-V platform. Please visit https://mflt.io/contact-support"
   #endif  // !defined(ESP_PLATFORM) && defined(__ZEPHYR__)
 
 void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {

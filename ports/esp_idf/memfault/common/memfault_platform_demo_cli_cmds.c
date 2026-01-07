@@ -24,6 +24,7 @@
   #include "esp32/clk.h"
 #endif
 
+#include <string.h>
 #include <time.h>
 
 #include "memfault/components.h"
@@ -209,6 +210,41 @@ static int prv_esp32_leak_cmd(int argc, char **argv) {
   return 0;
 }
 
+static int prv_esp32_reboot_cmd(int argc, char **argv) {
+  bool hard_reboot = false;
+  int reboot_code = kMfltRebootReason_UserReset;
+
+  // Parse optional arguments: <hard|soft> <code>
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "hard") == 0) {
+      hard_reboot = true;
+    } else if (strcmp(argv[i], "soft") == 0) {
+      hard_reboot = false;
+    } else {
+      // Try to parse as reboot code (hex or decimal)
+      char *endptr;
+      long parsed_code = strtol(argv[i], &endptr, 0);  // base 0 auto-detects hex (0x) or decimal
+      if (*endptr != '\0') {
+        MEMFAULT_LOG_ERROR("Invalid argument: %s. Expected 'hard', 'soft', or reboot code",
+                           argv[i]);
+        return 1;
+      }
+      reboot_code = (int)parsed_code;
+    }
+  }
+
+  MEMFAULT_LOG_INFO("Rebooting system: code (%d) type (%s)", reboot_code,
+                    hard_reboot ? "hard" : "soft");
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(reboot_code);
+  if (hard_reboot) {
+    memfault_platform_reboot();
+  } else {
+    esp_restart();
+  }
+
+  return 0;
+}
+
 static int prv_esp32_memfault_heartbeat(int argc, char **argv) {
   memfault_metrics_heartbeat_debug_trigger();
   return 0;
@@ -358,6 +394,13 @@ void memfault_register_cli(void) {
     .help = "Allocate the specified number of bytes without freeing",
     .hint = "<num_bytes>",
     .func = prv_esp32_leak_cmd,
+  }));
+
+  ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){
+    .command = "reboot",
+    .help = "Reboot the system",
+    .hint = "[hard|soft] [code]",
+    .func = prv_esp32_reboot_cmd,
   }));
 
   ESP_ERROR_CHECK(esp_console_cmd_register(&(esp_console_cmd_t){

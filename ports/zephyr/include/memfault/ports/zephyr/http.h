@@ -222,6 +222,13 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
 void memfault_zephyr_port_http_periodic_upload_logs(bool enable);
 #endif
 
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+//! Sets the network interface name to use for Memfault HTTP uploads
+//! @param if_name Null-terminated string containing the interface name
+//! @return 0 on success, -1 on error
+int memfault_zephyr_port_http_set_interface_name(const char *if_name);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -179,7 +179,8 @@ static int prv_esp_task_watchdog(int argc, char **argv) {
 
   // Create and start a task that will stall
   ESP_LOGI(__func__, "Starting stuck task on core %d", cpuid);
-  ESP_LOGI(__func__, "Task watchdog will fire in %d seconds", CONFIG_ESP_TASK_WDT_TIMEOUT_S);
+  ESP_LOGI(__func__, "Task watchdog will fire in %d seconds",
+           CONFIG_MEMFAULT_APP_TASK_WDT_TIMEOUT_S);
   const portBASE_TYPE res = xTaskCreatePinnedToCore(
     prv_stuck_task, "stuck task", ESP_TASK_MAIN_STACK, NULL, ESP_TASK_MAIN_PRIO, NULL, cpuid);
   MEMFAULT_ASSERT(res == pdTRUE);

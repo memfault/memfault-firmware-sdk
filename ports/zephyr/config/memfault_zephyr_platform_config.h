@@ -11,6 +11,10 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_MEMFAULT_PLATFORM_HAS_LOG_CONFIG)
+  #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 1
+#endif
+
 #if defined(CONFIG_MEMFAULT_USE_GNU_BUILD_ID)
   // Add a unique identifier to the firmware build
   //

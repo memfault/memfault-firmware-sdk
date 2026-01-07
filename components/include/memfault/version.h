@@ -20,8 +20,8 @@ typedef struct {
 } sMfltSdkVersion;
 
 #define MEMFAULT_SDK_VERSION \
-  { .major = 1, .minor = 32, .patch = 0 }
-#define MEMFAULT_SDK_VERSION_STR "1.32.0"
+  { .major = 1, .minor = 33, .patch = 0 }
+#define MEMFAULT_SDK_VERSION_STR "1.33.0"
 
 #ifdef __cplusplus
 }

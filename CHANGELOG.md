@@ -6,6 +6,92 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.33.0] - 2026-01-07
+
+This is a minor release.
+
+### 🚩 Deprecated
+
+- ESP8266:
+
+  - This release deprecates support for the ESP8266 platform in the Memfault
+    Firmware SDK and backend. After this release, Memfault's cloud will no
+    longer process coredumps from ESP8266 devices, and a future version of the
+    SDK will remove ESP8266 support.
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - Add a new Kconfig option, `MEMFAULT_COREDUMP_REGIONS_THREAD_ONLY`, which can
+    be used to limit coredump collection to only thread-related data (stacks,
+    TCBs, and FreeRTOS metadata), excluding .bss/.data and heap sections. This
+    can be useful for reducing the size of coredumps. When enabled, the
+    `MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT` option can be used to adjust
+    the amount of stack data collected for each task.
+
+- Zephyr
+
+  - Add support for dispatching the socket used for Memfault HTTP upload to a
+    specific network interface when multiple network interfaces are being used
+    (i.e. `CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER=y`). Enable this support with
+    `CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH` and specify the interface to dispatch
+    the socket to at runtime with the new API
+    `memfault_zephyr_port_http_set_interface_name()`.
+
+  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
+    storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_APOLLO4X_MRAM=y`. Requires adding a fixed
+    partition named `memfault_coredump_partition` to the device tree. See
+    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    for details.
+
+- nRF-Connect SDK
+
+  - Add the nRF54LM20-DK to the list of tested targets for the
+    [nRF52/53/54 sample app](examples/nrf-connect-sdk/nrf5/).
+
+### 🛠️ Changed
+
+- ESP-IDF:
+
+  - Eliminate some noisy warning/error logs that were being emitted on boot,
+    such as:
+
+    ```plaintext
+    E (345) task_wdt: esp_task_wdt_status(765): TWDT was never initialized
+    W (362) mflt_sleep: No log backup data
+    W (372) mflt_sleep: No event storage backup data
+    W (372) mflt_sleep: No metrics backup data
+    ```
+
+  - Change the default implementation of `memfault_platform_reboot()` to call
+    `panic_restart()` instead of `esp_restart()`. The latter is meant to be
+    called during a graceful reboot, while `panic_restart()` is what should be
+    used at the end of fault handling, to restart the system. Use
+    `CONFIG_MEMFAULT_PLATFORM_REBOOT_CUSTOM=y` to provide a custom
+    implementation of `memfault_platform_reboot()`.
+
+- Zephyr:
+
+  - Changed the maximum compiled-in log level for `MEMFAULT_LOG_x()` statements
+    to match `CONFIG_MEMFAULT_LOG_LEVEL`. Previously, all log levels were
+    compiled in by default, and runtime filtering was applied based on the
+    configured log level. Now, only log statements at or below the configured
+    log level are compiled in, reducing code size. To restore the previous
+    behavior, set `CONFIG_MEMFAULT_PLATFORM_HAS_LOG_CONFIG=n` to disable the
+    custom log config header.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a compilation error when targeting the VPR RISC-V coprocessors on Nordic
+    chips such as the nRF54L15 and nRF54LM20.
+
+  - Fix a few `-Wunused-variable` warnings when building with logs disabled
+    (`CONFIG_LOG=n`).
+
 ## [1.32.0] - 2025-12-03
 
 This is a minor release. Key updates:
@@ -46,6 +132,15 @@ This is a minor release. Key updates:
     battery metrics. See the
     [Battery Device Vital docs](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
     for more information on configuring battery metric collection.
+
+  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
+    storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM=y`. Requires adding a fixed
+    partition named `memfault_coredump_partition` to the device tree. See
+    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    for details.
+
+### 🛠️ Changed
 
 ### 🐛 Fixed
 

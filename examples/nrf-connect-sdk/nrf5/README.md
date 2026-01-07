@@ -7,6 +7,7 @@ supporting `CONFIG_BT` should work. The example has been tested on:
 - nRF52840-DK (`nrf52840dk/nrf52840`)
 - nRF5340-DK (`nrf5340dk/nrf5340/cpuapp`)
 - nRF54L15-DK (`nrf54l15dk/nrf54l15/cpuapp`)
+- nRF54LM20-DK (`nrf54lm20dk/nrf54lm20a/cpuapp`)
 
 You can follow a guided tutorial for this example here:
 

@@ -1430,6 +1430,8 @@ static bool prv_metrics_debug_print(void *ctx, const sMemfaultMetricInfo *metric
 
   const char *key_name = s_idx_to_metric_name[key->_impl];
 
+  (void)value, (void)key_name;  // to silence unused variable warnings if logging is disabled
+
   switch (metric_info->type) {
     case kMemfaultMetricType_Timer:
       MEMFAULT_LOG_INFO("  %s: %" PRIu32, key_name, value->u32);

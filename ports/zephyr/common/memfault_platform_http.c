@@ -89,6 +89,11 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 };
 #endif
 
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+// Runtime configurable
+static char s_mflt_http_net_interface_name[IFNAMSIZ];
+#endif
+
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 static void *prv_calloc(size_t count, size_t size) {
   return calloc(count, size);
@@ -192,8 +197,9 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
   } else {
+#if CONFIG_MEMFAULT_LOG_LEVEL >= 4  // DBG
     struct sockaddr_in *addr = net_sin((*res)->ai_addr);
-
+#endif
     MEMFAULT_LOG_DEBUG("DNS lookup for %s = %d.%d.%d.%d", host, addr->sin_addr.s4_addr[0],
                        addr->sin_addr.s4_addr[1], addr->sin_addr.s4_addr[2],
                        addr->sin_addr.s4_addr[3]);
@@ -214,6 +220,34 @@ static int prv_create_socket(struct addrinfo **res, const char *host, int port_n
   if (fd < 0) {
     MEMFAULT_LOG_ERROR("Failed to open socket, errno=%d", errno);
   }
+
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+  if (s_mflt_http_net_interface_name[0] == '\0') {
+    // No interface name has been set
+    MEMFAULT_LOG_WARN("No network interface name set for Memfault HTTP uploads");
+    return fd;
+  }
+
+  static struct ifreq ifreq = { 0 };
+  strncpy(ifreq.ifr_name, s_mflt_http_net_interface_name, IFNAMSIZ);
+
+  #if defined(CONFIG_NET_INTERFACE_NAME)
+  // Use the name utilities if available to get the interface index for debug
+  rv = net_if_get_by_name(ifreq.ifr_name);
+  if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Interface \"%s\" not found, error=%d", ifreq.ifr_name, rv);
+    return rv;
+  }
+  MEMFAULT_LOG_DEBUG("Binding socket to interface \"%s\", idx=%d", ifreq.ifr_name, rv);
+  #endif
+
+  rv = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+  if (rv) {
+    MEMFAULT_LOG_ERROR("Failed to bind socket to interface \"%s\" with errno=%d", ifreq.ifr_name,
+                       errno);
+    return rv;
+  }
+#endif
 
   return fd;
 }
@@ -853,3 +887,16 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
 
   return 0;
 }
+
+#if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
+int memfault_zephyr_port_http_set_interface_name(const char *if_name) {
+  const size_t if_name_len = strlen(if_name);
+  if (if_name_len == 0 || if_name_len >= IFNAMSIZ) {
+    return -1;
+  }
+
+  strncpy(s_mflt_http_net_interface_name, if_name, IFNAMSIZ - 1);
+  s_mflt_http_net_interface_name[IFNAMSIZ - 1] = '\0';
+  return 0;
+}
+#endif

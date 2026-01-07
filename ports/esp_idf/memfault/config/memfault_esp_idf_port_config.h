@@ -101,6 +101,9 @@ extern "C" {
 
 #define MEMFAULT_COREDUMP_CPU_COUNT CONFIG_MEMFAULT_COREDUMP_CPU_COUNT
 
+#define MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT \
+  CONFIG_MEMFAULT_PLATFORM_TASK_STACK_SIZE_TO_COLLECT
+
 // Pick up any user configuration overrides. This should be kept at the bottom
 // of this file
 #if CONFIG_MEMFAULT_USER_CONFIG_SILENT_FAIL

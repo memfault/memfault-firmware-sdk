@@ -322,6 +322,7 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
   }
 
   size_t original_size = *buf_len;
+  (void)original_size;  // to silence compiler warning when logs are disabled
   bool md =
     memfault_chunk_transport_get_next_chunk(&s_mflt_packetizer_state.curr_msg_ctx, buf, buf_len);
 
