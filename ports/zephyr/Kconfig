@@ -334,7 +334,7 @@ config MEMFAULT_ROOT_CERT_STORAGE
 
 choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
     bool "Implementation used to store Memfault Root certificates"
-    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
+    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
     default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
     depends on MEMFAULT_ROOT_CERT_STORAGE
 
@@ -351,7 +351,7 @@ endchoice
 
 config MEMFAULT_HTTP_ENABLE
         bool "Support for using Memfault's HTTP APIs"
-        default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
+        default y if SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
         imply POSIX_API
         depends on NETWORKING
         help
@@ -385,7 +385,7 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
         int "Set the size of the HTTP packetizer buffer"
         # Use a larger default on nRF91x series, specifically to support modem
         # trace CDR export more efficiently.
-        default 1024 if SOC_SERIES_NRF91X
+        default 1024 if SOC_SERIES_NRF91
         default 128
         help
           This buffer is used when reading incremental chunk data when posting
@@ -400,7 +400,7 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Work job to periodically push new data to Memfault"
-        default y if SOC_SERIES_NRF91X
+        default y if SOC_SERIES_NRF91
         help
           This implementation makes use of a k_timer_* and k_work_submit to schedule
           a background job that periodically checks to see if new Memfault data
@@ -409,7 +409,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
         prompt "Work queue implementation to use for periodic HTTP posting"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
-        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if SOC_SERIES_NRF91X
+        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if SOC_SERIES_NRF91
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE

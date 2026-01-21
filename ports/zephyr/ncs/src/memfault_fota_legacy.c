@@ -38,7 +38,7 @@
     "DOWNLOAD_CLIENT_MAX_FILENAME_SIZE range may need to be extended in nrf/subsys/net/lib/download_client/Kconfig"
 #endif
 
-#if CONFIG_SOC_SERIES_NRF91X
+#if CONFIG_SOC_SERIES_NRF91
 
   #if CONFIG_DOWNLOAD_CLIENT_HTTP_FRAG_SIZE > 1024
     #warning "nRF91 modem TLS secure socket buffer limited to 2kB"
