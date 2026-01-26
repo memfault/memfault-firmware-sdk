@@ -281,7 +281,7 @@ class XtensaCoredumpArch(CoredumpArch):
         pass
 
     def guess_ram_regions(self, elf_sections):
-        # TODO: support esp32-s2 & esp8266
+        # TODO: support esp32-s2
         # For now we just use the memory map from the esp32 for xtensa
 
         # Memory map:

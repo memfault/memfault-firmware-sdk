@@ -40,7 +40,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   SRC->SYS_RST_CLR = reset_cause;
 #endif
 
-  MEMFAULT_LOG_INFO("Reset Reason, SYS_RST_STATUS=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, SYS_RST_STATUS=0x%" PRIx32, reset_cause);
 
   MEMFAULT_PRINT_RESET_INFO("Reset Cause: ");
   if (reset_cause & PMU_SYS_RST_STATUS_CM33_SYSRESETREQ_MASK) {

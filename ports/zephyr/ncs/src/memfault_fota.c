@@ -6,6 +6,7 @@
 // clang-format off
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/nrfconnect_port/fota.h"
+#include "memfault/nrfconnect_port/coap.h"
 
 #include "memfault/components.h"
 
@@ -35,7 +36,7 @@
     "DOWNLOADER_MAX_FILENAME_SIZE range may need to be extended in nrf/subsys/net/lib/download_client/Kconfig"
 #endif
 
-#if defined(CONFIG_SOC_SERIES_NRF91X)
+#if defined(CONFIG_MEMFAULT_SOC_SERIES_NRF91)
 
   #if CONFIG_MEMFAULT_FOTA_HTTP_FRAG_SIZE > 1024
     #warning "nRF91 modem TLS secure socket buffer limited to 2kB"
@@ -50,7 +51,12 @@ static char *s_download_url = NULL;
 
 static void prv_fota_url_cleanup(void) {
   MEMFAULT_LOG_DEBUG("Freeing download URL");
+
+#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+  memfault_zephyr_port_coap_release_download_url(&s_download_url);
+#else
   memfault_zephyr_port_release_download_url(&s_download_url);
+#endif
 }
 
 #if !CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
@@ -97,7 +103,11 @@ static const int s_memfault_fota_certs[] = { kMemfaultRootCert_DigicertRootG2,
 
 int memfault_fota_start(void) {
   // Note: The download URL is allocated on the heap and must be freed when done
+#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+  int rv = memfault_zephyr_port_coap_get_download_url(&s_download_url);
+#else
   int rv = memfault_zephyr_port_get_download_url(&s_download_url);
+#endif
   if (rv <= 0) {
     return rv;
   }

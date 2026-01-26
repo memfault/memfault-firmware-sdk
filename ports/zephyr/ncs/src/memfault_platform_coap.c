@@ -13,20 +13,35 @@
 #include <nrf_modem_at.h>
 #include <zephyr/random/random.h>
 
-#include "memfault/core/data_packetizer.h"
-#include "memfault/core/debug_log.h"
-#include "memfault/core/platform/device_info.h"
-#include "memfault/http/http_client.h"
-#include "memfault/http/utils.h"
+#include "memfault/components.h"
 #include "memfault/nrfconnect_port/coap.h"
 #include "memfault/ports/zephyr/http.h"
 
-extern sMfltHttpClientConfig g_mflt_http_client_config;
+//! Default buffer size for proxy URLS. This may need to be higher by the user if there are
+//! particularly long device properties (serial, hardware version, software version, or type)
+#ifndef MEMFAULT_PROXY_URL_MAX_LEN
+  #define MEMFAULT_PROXY_URL_MAX_LEN (200)
+#endif
 
-#if defined(CONFIG_MEMFAULT_NCS_PROJECT_KEY)
-  #undef CONFIG_MEMFAULT_PROJECT_KEY
-  #define CONFIG_MEMFAULT_PROJECT_KEY CONFIG_MEMFAULT_NCS_PROJECT_KEY
-#endif  // defined(CONFIG_MEMFAULT_NCS_PROJECT_KEY)
+#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+static void *prv_calloc(size_t count, size_t size) {
+  return calloc(count, size);
+}
+
+static void prv_free(void *ptr) {
+  free(ptr);
+}
+#elif CONFIG_HEAP_MEM_POOL_SIZE > 0
+static void *prv_calloc(size_t count, size_t size) {
+  return k_calloc(count, size);
+}
+
+static void prv_free(void *ptr) {
+  k_free(ptr);
+}
+#else
+  #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
+#endif
 
 static int prv_generate_jwt(char *jwt_buf, size_t jwt_buf_sz, int sec_tag) {
   int err = 0;
@@ -74,11 +89,11 @@ static const uint8_t coap_auth_request_template[] = {
 #define COAP_AUTH_REQ_TOKEN_OFFSET 4
 #define COAP_REQ_WAIT_TIME_MS 300
 
-static int auth_socket(int socket) {
+static int prv_auth_socket(int socket) {
   int32_t err = 0;
   struct coap_packet reply;
   uint8_t token[COAP_TOKEN_MAX_LEN];
-  uint8_t *packet_buf = k_malloc(COAP_AUTH_REQ_BUF_SIZE);
+  uint8_t *packet_buf = prv_calloc(1, COAP_AUTH_REQ_BUF_SIZE);
   uint8_t response_token[COAP_TOKEN_MAX_LEN];
   uint16_t mid = sys_cpu_to_be16(coap_next_id());
   size_t request_size;
@@ -153,7 +168,7 @@ static int auth_socket(int socket) {
   err = -ETIMEDOUT;
 
 end:
-  k_free(packet_buf);
+  prv_free(packet_buf);
   return err;
 }
 
@@ -265,7 +280,7 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
     return rv;
   }
 
-  rv = auth_socket(sock_fd);
+  rv = prv_auth_socket(sock_fd);
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to auth socket, errno=%d", rv);
     zsock_close(sock_fd);
@@ -274,55 +289,76 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
   return sock_fd;
 }
 
-static int memfault_coap_make_header(sMemfaultCoAPContext *ctx, uint8_t *buf, size_t buf_len) {
-  const char *uri_path = "proxy";
-  const char *proxy_uri = "https://chunks.memfault.com/api/v0/chunks/%s";
-  sMemfaultDeviceInfo info = { 0 };
-
-  memfault_http_get_device_info(&info);
-
-  const size_t proxy_uri_max_len = strlen(proxy_uri) - 2 + strlen(info.device_serial) + 1;
-  uint8_t *proxy_uri_buf = k_malloc(proxy_uri_max_len);
-
-  if (!proxy_uri_buf) {
-    return -ENOMEM;
-  }
-
-  snprintf(proxy_uri_buf, proxy_uri_max_len, proxy_uri, info.device_serial);
-
-  int rv = 0;
-  struct coap_packet request;
+static bool prv_build_coap_to_memfault_proxy_header(sMemfaultCoAPContext *ctx,
+                                                    const char *proxy_url, enum coap_method method,
+                                                    uint8_t *msg_buf, size_t *msg_buf_len) {
+  struct coap_packet request = { 0 };
+  // get a token so we can match responses to requests
   memcpy(ctx->message_token, coap_next_token(), sizeof(ctx->message_token));
 
-  rv = coap_packet_init(&request, buf, buf_len, 1, COAP_TYPE_CON, COAP_TOKEN_MAX_LEN,
-                        ctx->message_token, COAP_METHOD_POST, coap_next_id());
-  if (rv) {
-    goto exit;
+  int rv = coap_packet_init(&request, msg_buf, *msg_buf_len, 1, COAP_TYPE_CON, COAP_TOKEN_MAX_LEN,
+                            ctx->message_token, method, coap_next_id());
+  if (rv != 0) {
+    goto error;
   }
+
+  const char *uri_path = "proxy";
   rv = coap_packet_append_option(&request, COAP_OPTION_URI_PATH, uri_path, strlen(uri_path));
-  if (rv) {
-    goto exit;
+  if (rv != 0) {
+    goto error;
   }
-  rv = coap_packet_append_option(&request, COAP_OPTION_PROXY_URI, proxy_uri_buf,
-                                 strlen(proxy_uri_buf));
-  if (rv) {
-    goto exit;
+
+  rv = coap_packet_append_option(&request, COAP_OPTION_PROXY_URI, proxy_url, strlen(proxy_url));
+  if (rv != 0) {
+    goto error;
   }
+
   rv = coap_packet_append_option(&request, MEMFAULT_NRF_CLOUD_COAP_PROJECT_KEY_OPTION_NO,
-                                 CONFIG_MEMFAULT_PROJECT_KEY, strlen(CONFIG_MEMFAULT_PROJECT_KEY));
-  if (rv) {
-    goto exit;
+                                 g_mflt_http_client_config.api_key,
+                                 strlen(g_mflt_http_client_config.api_key));
+  if (rv != 0) {
+    goto error;
   }
+
   rv = coap_packet_append_payload_marker(&request);
-  if (rv) {
-    goto exit;
+  if (rv != 0) {
+    goto error;
   }
 
-  rv = request.offset;
+  *msg_buf_len = request.offset;
+  return true;
 
-exit:
-  k_free(proxy_uri_buf);
-  return rv;
+error:
+  MEMFAULT_LOG_ERROR("Failed to build coap header, rv=%d", rv);
+  return false;
+}
+
+static bool prv_build_header_for_chunk_proxy_request(sMemfaultCoAPContext *ctx, uint8_t *buf,
+                                                     size_t *buf_len) {
+  char *chunk_url = prv_calloc(1, MEMFAULT_PROXY_URL_MAX_LEN);
+  if (!memfault_http_build_chunk_post_url(chunk_url, MEMFAULT_PROXY_URL_MAX_LEN)) {
+    prv_free(chunk_url);
+    return false;
+  }
+
+  bool success =
+    prv_build_coap_to_memfault_proxy_header(ctx, chunk_url, COAP_METHOD_POST, buf, buf_len);
+  prv_free(chunk_url);
+  return success;
+}
+
+static bool prv_build_header_for_fota_proxy_request(sMemfaultCoAPContext *ctx, uint8_t *buf,
+                                                    size_t *buf_len) {
+  char *latest_url = prv_calloc(1, MEMFAULT_PROXY_URL_MAX_LEN);
+  if (!memfault_http_build_latest_ota_url(latest_url, MEMFAULT_PROXY_URL_MAX_LEN)) {
+    prv_free(latest_url);
+    return false;
+  }
+
+  bool success =
+    prv_build_coap_to_memfault_proxy_header(ctx, latest_url, COAP_METHOD_GET, buf, buf_len);
+  prv_free(latest_url);
+  return success;
 }
 
 static int prv_poll_socket(int sock_fd, int events) {
@@ -366,16 +402,11 @@ static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
   return true;
 }
 
-//! Returns:
-//! 0  - no more data to send
-//! 1  - data sent, awaiting response
-//! -1 - error
 static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   int sock = ctx->sock_fd;
-  uint8_t *buf = k_malloc(CONFIG_MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE);
+  uint8_t *buf = prv_calloc(1, CONFIG_MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE);
   size_t buf_len = CONFIG_MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE;
   size_t chunk_size = 0;
-  int header_len = 0;
   int rv = 0;
 
   if (!buf) {
@@ -383,9 +414,10 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
     return -1;
   }
 
-  header_len = memfault_coap_make_header(ctx, buf, buf_len);
-  if (header_len < 0) {
-    MEMFAULT_LOG_ERROR("Failed to make coap header, err: %d", header_len);
+  size_t header_len = buf_len;
+  bool success = prv_build_header_for_chunk_proxy_request(ctx, buf, &header_len);
+  if (!success) {
+    MEMFAULT_LOG_ERROR("Failed to make coap header");
     rv = -1;
     goto exit;
   }
@@ -415,7 +447,7 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
 
   // message sent, await response
 exit:
-  k_free(buf);
+  prv_free(buf);
   return rv;
 }
 
@@ -452,43 +484,51 @@ void memfault_zephyr_port_coap_close_socket(sMemfaultCoAPContext *ctx) {
   }
 }
 
-static int prv_wait_for_coap_response(sMemfaultCoAPContext *ctx) {
-  int rv = -1;
-  uint8_t packet_buf[32];  // empirically 17 bytes
-  struct coap_packet reply;
-  uint8_t response_token[COAP_TOKEN_MAX_LEN];
-
+static bool prv_wait_for_coap_response(sMemfaultCoAPContext *ctx, struct coap_packet *resp,
+                                       void *buf, size_t buf_len) {
   while (true) {
-    rv = prv_poll_socket(ctx->sock_fd, ZSOCK_POLLIN);
+    int rv = prv_poll_socket(ctx->sock_fd, ZSOCK_POLLIN);
     if (rv <= 0) {
-      return -1;
+      return false;
     }
-    rv = zsock_recv(ctx->sock_fd, packet_buf, sizeof(packet_buf), ZSOCK_MSG_DONTWAIT);
+
+    rv = zsock_recv(ctx->sock_fd, buf, buf_len, ZSOCK_MSG_DONTWAIT);
     if (rv < 0) {
-      rv = -errno;
-      MEMFAULT_LOG_ERROR("Error receiving response: %d", rv);
-      return rv;
+      return false;
     }
-    MEMFAULT_LOG_DEBUG("Received CoAP response, size %d", rv);
-    // Parse response
-    rv = coap_packet_parse(&reply, packet_buf, rv, NULL, 0);
+
+    rv = coap_packet_parse(resp, buf, rv, NULL, 0);
     if (rv < 0) {
-      MEMFAULT_LOG_ERROR("Error parsing response: %d", rv);
-      return rv;
+      MEMFAULT_LOG_ERROR("Failed to parse CoAP packet, rv=%d", rv);
+      return false;
     }
-    // Match token
-    coap_header_get_token(&reply, response_token);
+
+    uint8_t response_token[COAP_TOKEN_MAX_LEN];
+    coap_header_get_token(resp, response_token);
+
     if (memcmp(response_token, ctx->message_token, COAP_TOKEN_MAX_LEN) != 0) {
+      MEMFAULT_LOG_WARN("CoAP response token did not match, waiting for next packet");
       continue;
     }
-    // Check response code
-    if (coap_header_get_code(&reply) != COAP_RESPONSE_CODE_CREATED) {
-      MEMFAULT_LOG_ERROR("Unexpected response code: %d", coap_header_get_code(&reply));
-      return -1;
-    } else {
-      return 0;
-    }
+
+    return true;
   }
+}
+
+static int prv_wait_for_chunk_coap_response(sMemfaultCoAPContext *ctx) {
+  uint8_t packet_buf[32];  // empirically 17 bytes
+  struct coap_packet reply = { 0 };
+
+  if (!prv_wait_for_coap_response(ctx, &reply, packet_buf, sizeof(packet_buf))) {
+    return -1;
+  }
+
+  if (coap_header_get_code(&reply) != COAP_RESPONSE_CODE_CREATED) {
+    MEMFAULT_LOG_ERROR("Unexpected response code: %d", coap_header_get_code(&reply));
+    return -1;
+  }
+
+  return 0;
 }
 
 int memfault_zephyr_port_coap_upload_sdk_data(sMemfaultCoAPContext *ctx) {
@@ -513,7 +553,7 @@ int memfault_zephyr_port_coap_upload_sdk_data(sMemfaultCoAPContext *ctx) {
       success = false;
       break;
     }
-    success = !prv_wait_for_coap_response(ctx);
+    success = !prv_wait_for_chunk_coap_response(ctx);
     if (!success) {
       break;
     }
@@ -552,4 +592,76 @@ ssize_t memfault_zephyr_port_coap_post_data_return_size(void) {
 #endif
 
   return (rv == 0) ? (ctx.bytes_sent) : rv;
+}
+
+static bool prv_parse_new_ota_payload_response(sMemfaultCoAPContext *ctx, uint8_t *buf,
+                                               size_t buf_len, char **download_url_out) {
+  struct coap_packet resp = { 0 };
+  if (!prv_wait_for_coap_response(ctx, &resp, buf, buf_len)) {
+    return false;
+  }
+
+  int code = coap_header_get_code(&resp);
+  if (code != COAP_RESPONSE_CODE_CONTENT) {
+    return true;  // up to date or error
+  }
+
+  uint16_t payload_len = 0;
+  const uint8_t *payload = coap_packet_get_payload(&resp, &payload_len);
+
+  char *download_url = prv_calloc(1, payload_len + 1);
+  if (download_url == NULL) {
+    MEMFAULT_LOG_ERROR("Unable to allocate %d bytes for url", (int)payload_len);
+    return false;
+  }
+
+  memcpy(download_url, payload, payload_len);
+  *download_url_out = download_url;
+  return true;
+}
+
+int memfault_zephyr_port_coap_get_download_url(char **download_url) {
+  sMemfaultCoAPContext ctx = {
+    .sock_fd = -1,
+  };
+  int rv = memfault_zephyr_port_coap_open_socket(&ctx);
+  if (rv != 0) {
+    return rv;
+  }
+
+  // We use the same buffer for inbound/outbound sized to hold our URL and sufficient extra space
+  // for CoAP headers
+  size_t msg_len =
+    MEMFAULT_MAX(CONFIG_DOWNLOADER_MAX_FILENAME_SIZE, MEMFAULT_PROXY_URL_MAX_LEN) + 100;
+  uint8_t *msg = prv_calloc(1, msg_len);
+  size_t header_len = msg_len;
+  if (!prv_build_header_for_fota_proxy_request(&ctx, msg, &header_len)) {
+    rv = -1;
+    goto cleanup;
+  }
+
+  // In this case, there's no message body so header length is total msg len
+  if (!prv_try_send(ctx.sock_fd, msg, header_len)) {
+    MEMFAULT_LOG_ERROR("Failed to send CoAP request, errno %d", errno);
+    rv = -1;
+    goto cleanup;
+  }
+
+  if (!prv_parse_new_ota_payload_response(&ctx, msg, msg_len, download_url)) {
+    rv = -1;
+    goto cleanup;
+  }
+
+  rv = ((*download_url == NULL) ? 0 : 1);
+
+cleanup:
+  prv_free(msg);
+  memfault_zephyr_port_coap_close_socket(&ctx);
+  return rv;
+}
+
+int memfault_zephyr_port_coap_release_download_url(char **download_url) {
+  prv_free(*download_url);
+  *download_url = NULL;
+  return 0;
 }

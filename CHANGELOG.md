@@ -6,6 +6,101 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] - 2026-01-26
+
+### 🔥 Removed
+
+- ESP8266:
+
+  - This release removes support for the ESP8266 platform in the Memfault
+    Firmware SDK. ESP8266 support was deprecated in SDK 1.33.0, and is disabled
+    in the Memfault cloud. Please reach out to <https://mflt.io/contact-support>
+    if you need assistance!
+
+### 📈 Added
+
+- General:
+
+  - Add the printing of the stored reboot reason on boot to the
+    `memfault_platform_port.c` template when `MEMFAULT_ENABLE_REBOOT_DIAG_DUMP`
+    is enabled.
+
+- ESP-IDF:
+
+  - Add support for downloading OTA images in multiple HTTP requests. This
+    feature is automatically enabled when
+    `CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD=y` is set, but can also be
+    manually controlled with `CONFIG_MEMFAULT_HTTP_PARTIAL_DOWNLOAD_ENABLE`. The
+    chunk size for each request can be configured using
+    `CONFIG_MEMFAULT_HTTP_MAX_REQUEST_SIZE`, which defaults to 15kB. This
+    support can reduce RAM usage by allowing a smaller mbedTLS receive buffer.
+
+  - Add the raw ESP reboot value and the Memfault-stored reboot reason to the
+    reboot reason information printed on boot when
+    `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP=y`. Only the raw enumerated values
+    are printed to save space. See
+    [reboot_reason_types.h](components/include/memfault/core/reboot_reason_types.h)
+    for all Memfault reboot reasons. Note: custom reason values equal the base
+    unexpected/expected reboot reason address plus their declaration order in
+    `memfault_reboot_reason_user_config.h`.
+
+- Zephyr:
+
+  - Add the raw Zephyr hwinfo value and the Memfault-stored reboot reason to the
+    reboot reason information printed on boot when
+    `CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP=y`. Only the raw enumerated values
+    are printed to save space. See
+    [reboot_reason_types.h](components/include/memfault/core/reboot_reason_types.h)
+    for all Memfault reboot reasons. Note: custom reason values equal the base
+    unexpected/expected reboot reason address plus their declaration order in
+    `memfault_reboot_reason_user_config.h`.
+
+  - Add a new API, `memfault_zephyr_port_http_periodic_upload_enable()`, which
+    can be used to enable or disable periodic Memfault data uploads at runtime.
+    This complements the existing Kconfig option
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD`, which enables periodic uploads at
+    boot time. See
+    [`ports/zephyr/include/memfault/ports/zephyr/http.h`](ports/zephyr/include/memfault/ports/zephyr/http.h)
+    for details.
+
+### 🛠️ Changed
+
+- General
+
+  - Align reboot tracking implementations to print the reboot reason register
+    value when `MEMFAULT_ENABLE_REBOOT_DIAG_DUMP` is enabled.
+
+- nRF Connect SDK:
+
+  - Remove references to `SOC_SERIES_NRF52X` and similar, which have been
+    renamed in Zephyr v4.4. Thanks to [@nordicjm](https://github.com/nordicjm)
+    for providing this fix in
+    [#102](https://github.com/memfault/memfault-firmware-sdk/pull/102) 🎉!
+
+  - Changed name of Kconfig option `MEMFAULT_USE_NRF_CLOUD_TRANSPORT` to
+    `MEMFAULT_USE_NRF_CLOUD_COAP`. If you were using this Kconfig option, you
+    will need to rename it in your `prj.conf`.
+
+- Zephyr:
+
+  - Remove the dependencies on `NET_SOCKETS_OFFLOAD` and
+    `NET_SOCKETS_OFFLOAD_DISPATCHER` for the Kconfig option
+    `MEMFAULT_HTTP_SOCKET_DISPATCH`. It's possible to use `SO_BINDTODEVICE`
+    sockopt without offloaded sockets, and it's useful to allow setting the
+    `netif` used for Memfault HTTP operations via
+    `memfault_zephyr_port_http_set_interface_name()` in cases where offloaded
+    sockets are not used. Thanks to [@chirambaht](https://github.com/chirambaht)
+    for reporting this issue in
+    [#101](https://github.com/memfault/memfault-firmware-sdk/issues/101) 🎉!
+
+### 🐛 Fixed
+
+- nRF-Connect SDK:
+
+  - Support user-configurable values for `MEMFAULT_HTTP_CHUNKS_API_HOST` and
+    `MEMFAULT_HTTP_DEVICE_API_HOST`. This was supported on other platforms,
+    including Zephyr, but was not supported on the nRF Connect SDK port.
+
 ## [1.33.0] - 2026-01-07
 
 This is a minor release.
@@ -39,11 +134,11 @@ This is a minor release.
     the socket to at runtime with the new API
     `memfault_zephyr_port_http_set_interface_name()`.
 
-  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
-    storage implementation can be enabled with
-    `CONFIG_MEMFAULT_COREDUMP_STORAGE_APOLLO4X_MRAM=y`. Requires adding a fixed
+  - Add a coredump storage implementation for the Ambiq Apollo4 and Apollo510
+    series. This storage implementation can be enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM=y`. Requires adding a fixed
     partition named `memfault_coredump_partition` to the device tree. See
-    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
+    [`ports/zephyr/common/coredump_storage/memfault_ambiq_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_ambiq_mram_backed_coredump.c)
     for details.
 
 - nRF-Connect SDK
@@ -121,8 +216,8 @@ This is a minor release. Key updates:
     through an [nRF Cloud](https://www.nrfcloud.com/) connection. This is
     primarily intended for use with the Nordic nRF91x series devices using LTE-M
     or NB-IoT connectivity. To enable, use
-    `CONFIG_MEMFAULT_USE_NRF_CLOUD_TRANSPORT=y`. This will change the protocol
-    used by `memfault_zephyr_port_post_data()` (and
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`. This will change the protocol used
+    by `memfault_zephyr_port_post_data()` (and
     `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD`), from HTTP to CoAP.
 
 - Zephyr:
@@ -132,15 +227,6 @@ This is a minor release. Key updates:
     battery metrics. See the
     [Battery Device Vital docs](https://docs.memfault.com/docs/platform/memfault-core-metrics?platform=MCU#battery)
     for more information on configuring battery metric collection.
-
-  - Add a coredump storage implementation for the Ambiq Apollo4 series. This
-    storage implementation can be enabled with
-    `CONFIG_MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM=y`. Requires adding a fixed
-    partition named `memfault_coredump_partition` to the device tree. See
-    [`ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_apollo4x_mram_backed_coredump.c)
-    for details.
-
-### 🛠️ Changed
 
 ### 🐛 Fixed
 

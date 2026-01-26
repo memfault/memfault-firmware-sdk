@@ -22,7 +22,8 @@ typedef enum {
   kMemfaultEsp32RegCollectionType_Full = 0,
   // A collection of only the active register window
   kMemfaultEsp32RegCollectionType_ActiveWindow = 1,
-  // ESP8266 (Tensilica LX106 Core) register collection variant
+  // ESP8266 (Tensilica LX106 Core) register collection variant. Supported in
+  // earlier versions of the SDK and kept as a reserved type.
   kMemfaultEsp32RegCollectionType_Lx106 = 2,
 } eMemfaultEsp32RegCollectionType;
 

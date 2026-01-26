@@ -199,7 +199,7 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
   const uint32_t reset_cause = *resetreas_reg;
 
-  MEMFAULT_LOG_INFO("Reset Reason, RESETREAS=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, RESETREAS=0x%" PRIx32, reset_cause);
   MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");
 
   eMemfaultRebootReason reset_reason;

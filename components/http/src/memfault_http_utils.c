@@ -706,3 +706,69 @@ void memfault_http_get_device_info(sMemfaultDeviceInfo *info) {
   }
   memfault_platform_get_device_info(info);  // note: HTTP functions should always call this
 }
+
+bool memfault_http_build_latest_ota_url(char *buf, size_t buf_len) {
+  if ((buf == NULL) || (buf_len == 0)) {
+    return false;
+  }
+
+  sMemfaultDeviceInfo device_info;
+  memfault_http_get_device_info(&device_info);
+
+  // Write the base URL
+  int rv = snprintf(buf, buf_len, "%s://%s/api/v0/releases/latest/url?", MEMFAULT_HTTP_GET_SCHEME(),
+                    MEMFAULT_HTTP_GET_DEVICE_API_HOST());
+  if ((rv < 0) || ((size_t)rv >= buf_len)) {
+    return false;
+  }
+  size_t offset = (size_t)rv;
+
+  // Append each query parameter, URL-encoding values one at a time to save stack space
+  const struct {
+    const char *name;
+    const char *value;
+  } params[] = {
+    { "device_serial", device_info.device_serial },
+    { "hardware_version", device_info.hardware_version },
+    { "software_type", device_info.software_type },
+    { "current_version", device_info.software_version },
+  };
+
+  for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(params); i++) {
+    // Write separator and param name
+    const char *sep = (i == 0) ? "" : "&";
+    rv = snprintf(&buf[offset], buf_len - offset, "%s%s=", sep, params[i].name);
+    if (rv < 0 || (size_t)rv >= buf_len - offset) {
+      return false;
+    }
+    offset += (size_t)rv;
+
+    // URL-encode value directly into remaining buffer space
+    if (memfault_http_urlencode(params[i].value, strlen(params[i].value), &buf[offset],
+                                buf_len - offset) != 0) {
+      MEMFAULT_LOG_ERROR("Failed to URL encode device info param");
+      return false;
+    }
+    offset += strlen(&buf[offset]);
+  }
+
+  return true;
+}
+
+bool memfault_http_build_chunk_post_url(char *buf, size_t buf_len) {
+  if ((buf == NULL) || (buf_len == 0)) {
+    return false;
+  }
+
+  sMemfaultDeviceInfo device_info;
+  memfault_http_get_device_info(&device_info);
+
+  const int rv = snprintf(buf, buf_len, "%s://%s/api/v0/chunks/%s", MEMFAULT_HTTP_GET_SCHEME(),
+                          MEMFAULT_HTTP_GET_CHUNKS_API_HOST(), device_info.device_serial);
+  if ((rv < 0) || ((size_t)rv >= buf_len)) {
+    MEMFAULT_LOG_ERROR("Chunk URL buffer too small. Was %dB but need %dB", (int)buf_len, rv);
+    return false;
+  }
+
+  return true;
+}

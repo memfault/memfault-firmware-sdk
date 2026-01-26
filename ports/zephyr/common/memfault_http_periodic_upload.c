@@ -21,6 +21,8 @@
 #include "memfault/ports/zephyr/http.h"
 // clang-format on
 
+static bool s_mflt_upload_enabled = true;
+
 #if CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(memfault_http_stack_area,
                              CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE);
@@ -38,7 +40,16 @@ void memfault_zephyr_port_http_periodic_upload_logs(bool enable) {
 }
 #endif
 
+// API to enable/disable all periodic uploads at runtime
+void memfault_zephyr_port_http_periodic_upload_enable(bool enable) {
+  s_mflt_upload_enabled = enable;
+}
+
 static void prv_periodic_upload_work_handler(struct k_work *work) {
+  if (!s_mflt_upload_enabled) {
+    return;
+  }
+
 #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
   MEMFAULT_LOG_DEBUG("Triggering log collection");
   memfault_log_trigger_collection();

@@ -27,7 +27,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
   const uint32_t reset_cause = Cy_SysLib_GetResetReason();
 
-  MEMFAULT_LOG_INFO("Reset Reason, Cy_SysLib_GetResetReason=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, Cy_SysLib_GetResetReason=0x%" PRIx32, reset_cause);
   MEMFAULT_PRINT_RESET_INFO("Reset Cause: ");
 
   switch (reset_cause) {

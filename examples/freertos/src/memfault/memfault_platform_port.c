@@ -133,6 +133,14 @@ void memfault_platform_reboot_tracking_boot(void) {
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
+#if MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
+  sMfltRebootReason stored_reboot_reason;
+  int rv = memfault_reboot_tracking_get_reboot_reason(&stored_reboot_reason);
+  if (!rv) {
+    MEMFAULT_LOG_INFO("Reset Cause Stored: 0x%04x", stored_reboot_reason.prior_stored_reason);
+  }
+#endif  // MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 }
 
 int memfault_platform_boot(void) {

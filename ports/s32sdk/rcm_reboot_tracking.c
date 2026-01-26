@@ -34,7 +34,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
   eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
 
-  MEMFAULT_LOG_INFO("Reset Reason, SRS=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, SRS=0x%" PRIx32, reset_cause);
   MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");
 
   // From the S32K-RM:

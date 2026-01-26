@@ -7,7 +7,6 @@ makefile
 ports/atmel
 ports/dialog
 ports/emlib
-ports/esp8266_sdk
 ports/esp_idf
 ports/freertos/src/memfault_sdk_metrics_freertos.c
 ports/lwip

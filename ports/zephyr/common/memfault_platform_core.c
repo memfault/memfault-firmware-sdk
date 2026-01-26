@@ -224,7 +224,8 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
       }
     }
 
-    printk("Reset Cause: %s / 0x%04x\n", reset_reason_str, reset_reason_reg);
+    MEMFAULT_LOG_INFO("Reset Reason, HWINFO=0x%04x", reset_reason_reg);
+    MEMFAULT_LOG_INFO("Reset Cause: %s", reset_reason_str);
     #endif  // CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
   }
 
@@ -299,6 +300,14 @@ static int prv_boot_memfault() {
   sResetBootupInfo reset_info = { 0 };
   memfault_reboot_reason_get(&reset_info);
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
+#if defined(CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP)
+  sMfltRebootReason stored_reboot_reason;
+  int rv = memfault_reboot_tracking_get_reboot_reason(&stored_reboot_reason);
+  if (!rv) {
+    MEMFAULT_LOG_INFO("Reset Cause Stored: 0x%04x", stored_reboot_reason.prior_stored_reason);
+  }
+#endif  // CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 
   s_memfault_event_storage = memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
 #if defined(CONFIG_MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT)

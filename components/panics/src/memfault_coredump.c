@@ -78,7 +78,7 @@ sMfltTraceReasonBlock;
 //! ESP32
 #define MEMFAULT_MACHINE_TYPE_XTENSA 94
 
-//! ESP8266
+//! ESP8266 is kept as a reserved type, it was supported in earlier versions of the SDK
 #define MEMFAULT_MACHINE_TYPE_XTENSA_LX106 \
   ((1 << MEMFAULT_MACHINE_TYPE_SUBTYPE_OFFSET) | MEMFAULT_MACHINE_TYPE_XTENSA)
 
@@ -269,7 +269,7 @@ static eMfltCoredumpMachineType prv_get_machine_type(void) {
     // default xtensa windowed target is vanilla ESP32
     kMfltCoredumpMachineType_Xtensa
 #elif defined(__XTENSA__)
-    // finally, ESP8266
+    // ESP8266 is kept as a reserved type, it was supported in earlier versions of the SDK
     kMfltCoredumpMachineType_XtensaLx106
 #elif defined(__riscv)
     kMfltCoredumpMachineType_RiscV

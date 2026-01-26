@@ -1,6 +1,6 @@
 config MEMFAULT_NRF_CONNECT_SDK
         bool "nRF Connect SDK extensions"
-        default y if ZEPHYR_NRF_MODULE && (SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX || SOC_SERIES_NRF91X)
+        default y if ZEPHYR_NRF_MODULE && MEMFAULT_SOC_NRF
 
 if MEMFAULT_NRF_CONNECT_SDK
 
@@ -26,12 +26,11 @@ config MEMFAULT_NRF_SHELL
 
 choice MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME
         bool "Select the platform implementation for capturing connected time metric"
-        default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if SOC_SERIES_NRF91X
+        default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if LTE_LINK_CONTROL
 
 config MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X
         bool "Capture connected time metric on nRF91x platforms"
         select MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
-        depends on SOC_SERIES_NRF91X
         depends on LTE_LINK_CONTROL
         help
           Enables connection uptime device vital for the nRF91X platform.
@@ -81,7 +80,7 @@ config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
         default y if BOARD_THINGY91X_NRF9151_NS
         select MEMFAULT_METRICS_BATTERY_ENABLE
         depends on NRF_FUEL_GAUGE
-	      depends on NPM13XX_CHARGER
+        depends on NPM13XX_CHARGER
         help
           Enables battery metrics support for devices using the nPM13xx PMIC.
           The user must provide memfault_nrf_platform_battery_model.h with the
@@ -102,7 +101,7 @@ config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY
           MEMFAULT_INIT_PRIORITY (higher priority) to ensure that the platform
           battery SOC can be collected during Memfault initialization.
 
-menuconfig MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+menuconfig MEMFAULT_USE_NRF_CLOUD_COAP
         bool "Use nRF Cloud CoAP endpoint"
         depends on MODEM_JWT
         depends on COAP
@@ -110,7 +109,7 @@ menuconfig MEMFAULT_USE_NRF_CLOUD_TRANSPORT
         help
           Note: Requires device to be provisioned with nRF Cloud.
 
-if MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+if MEMFAULT_USE_NRF_CLOUD_COAP
 
 config MEMFAULT_NRF_CLOUD_SEC_TAG
         int "Security tag to use for nRF Cloud connection"
@@ -132,6 +131,6 @@ config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
           maximum amount of time the CoAP client will wait for a response from
           the server.
 
-endif # MEMFAULT_USE_NRF_CLOUD_TRANSPORT
+endif # MEMFAULT_USE_NRF_CLOUD_COAP
 
 endif # MEMFAULT_NRF_CONNECT_SDK

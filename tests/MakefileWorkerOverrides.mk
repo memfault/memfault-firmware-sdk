@@ -101,6 +101,7 @@ COMPILER_SPECIFIC_WARNINGS += \
   -Wno-cast-function-type-strict \
   -Wno-implicit-int-enum-cast \
   -Wno-ms-bitfield-padding \
+  -Wno-missing-designated-field-initializers
 
 # Clang-only C-only warning flags
 COMPILER_SPECIFIC_C_WARNINGS += -Wc23-extensions

@@ -58,6 +58,25 @@ config MEMFAULT_SOC_FAMILY_ESP32
         help
           Enable ESP32 support in the Memfault SDK
 
+# The "SOC_SERIES_NRF" symbols were renamed in Zephyr 4.4. Generate some
+# backwards-compatible symbols compatible with earlier Zephyr versions.
+config MEMFAULT_SOC_NRF
+        bool
+        default y if \
+            ( \
+                (SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_SERIES_NRF54L || SOC_SERIES_NRF91) || \
+                (SOC_SERIES = "nrf52" || SOC_SERIES = "nrf53" || SOC_SERIES = "nrf54h" || SOC_SERIES = "nrf54l" || SOC_SERIES = "nrf71" || SOC_SERIES = "nrf91" || SOC_SERIES = "nrf92") \
+            )
+        help
+          Non-user configurable option indicating a compatible Nordic SOC is in
+          use.
+
+config MEMFAULT_SOC_SERIES_NRF91
+        bool
+        default y if SOC_SERIES_NRF91 || (SOC_SERIES = "nrf91")
+        help
+          Non-user configurable option indicating a nRF91 series SOC is in use.
+
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
 
@@ -342,7 +361,7 @@ config MEMFAULT_ROOT_CERT_STORAGE
 
 choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
     bool "Implementation used to store Memfault Root certificates"
-    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
+    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
     default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
     depends on MEMFAULT_ROOT_CERT_STORAGE
 
@@ -359,7 +378,7 @@ endchoice
 
 config MEMFAULT_HTTP_ENABLE
         bool "Support for using Memfault's HTTP APIs"
-        default y if SOC_SERIES_NRF91X && TRUSTED_EXECUTION_NONSECURE
+        default y if MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
         imply POSIX_API
         depends on NETWORKING
         help
@@ -393,7 +412,7 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
         int "Set the size of the HTTP packetizer buffer"
         # Use a larger default on nRF91x series, specifically to support modem
         # trace CDR export more efficiently.
-        default 1024 if SOC_SERIES_NRF91X
+        default 1024 if MEMFAULT_SOC_SERIES_NRF91
         default 128
         help
           This buffer is used when reading incremental chunk data when posting
@@ -408,7 +427,7 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
         bool "Work job to periodically push new data to Memfault"
-        default y if SOC_SERIES_NRF91X
+        default y if MEMFAULT_SOC_SERIES_NRF91
         help
           This implementation makes use of a k_timer_* and k_work_submit to schedule
           a background job that periodically checks to see if new Memfault data
@@ -417,7 +436,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
         prompt "Work queue implementation to use for periodic HTTP posting"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
-        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if SOC_SERIES_NRF91X
+        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if MEMFAULT_SOC_SERIES_NRF91
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
@@ -505,12 +524,12 @@ config MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
           the server.
 
 config MEMFAULT_HTTP_SOCKET_DISPATCH
-        bool "Dispatch socket used for Memfault HTTP upload to specific network interface"
-        depends on NET_SOCKETS_OFFLOAD
-        depends on NET_SOCKETS_OFFLOAD_DISPATCHER
+        bool "Permit specifying a network interface for Memfault HTTP uploads"
         help
           Adds support for specifying a network interface to dispatch the socket
-          used for Memfault data upload to.
+          used for Memfault data upload, via
+          memfault_zephyr_port_http_set_interface_name(). This must be set
+          before performing Memfault data uploads.
 
 endif # MEMFAULT_HTTP_ENABLE
 
@@ -587,11 +606,12 @@ config MEMFAULT_REBOOT_REASON_GET_CUSTOM
 endchoice # MEMFAULT_REBOOT_REASON_GET
 
 config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-    bool "Pretty print reboot reason on boot"
+    bool "Print reboot reason information on boot"
     default y
     help
-        Print out the reboot reason, eg "Watchdog", on boot. Adds a few hundred bytes of
-        code space.
+        Print out the MCU-derived and Memfault-stored reboot reason
+        information on boot. Adds a few hundred bytes of code space
+        to pretty print MCU-derived reason (e.g. "Watchdog").
 
 config MEMFAULT_REBOOT_TRACKING_REGION
        string "Memfault Reboot Tracking Region"

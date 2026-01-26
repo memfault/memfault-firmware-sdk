@@ -143,7 +143,7 @@ endif
 # Starting in macOS Sonoma (version 23 and above), we do not pick up libs (eg libc++) automagically from the conda env. To work
 # around this, we explicitly set rpath and -L to point to the conda env lib directory
 ifeq ($(UNAME_OS), $(MACOSX_STR))
-ifeq ($(call VERSION_GREATER_OR_EQUAL, 23, $(UNAME_MAJOR_VERSION)), true)
+ifeq ($(call VERSION_GREATER_OR_EQUAL, $(UNAME_MAJOR_VERSION), 23), true)
 ifneq ($(CONDA_PREFIX),)
 CPPUTEST_LDFLAGS += \
 	-rpath $(CONDA_PREFIX)/lib \

@@ -56,13 +56,6 @@ extern "C" {
   #define MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE 1
 #endif
 
-#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
-
-  #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
-  #define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
-
-#endif
-
 #if defined(CONFIG_MEMFAULT_FAULT_HANDLER_RETURN)
   #define MEMFAULT_FAULT_HANDLER_RETURN 1
 #endif
@@ -156,6 +149,27 @@ extern "C" {
 // Pick up any extra configuration settings
 #if defined(CONFIG_MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE)
   #include "memfault_platform_config_extra.h"
+#endif
+
+// User and platform config are included above. Settings after this point can
+// be used as fallbacks or to enforce deprecations.
+
+// Alternate default HTTP URLs for nRF Connect SDK devices
+#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
+
+  // Skip if we are proxying requests via COAP & use the default HTTP urls
+  #if !defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+
+    #ifndef MEMFAULT_HTTP_CHUNKS_API_HOST
+      #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
+    #endif
+
+    #ifndef MEMFAULT_HTTP_DEVICE_API_HOST
+      #define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
+    #endif
+
+  #endif
+
 #endif
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT)

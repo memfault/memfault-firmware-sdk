@@ -214,6 +214,30 @@ int memfault_http_urlencode(const char *inbuf, size_t inbuf_len, char *outbuf, s
 //! @param[out] info The device information to populate
 void memfault_http_get_device_info(sMemfaultDeviceInfo *info);
 
+//! Builds the URL for querying the Memfault latest OTA release endpoint
+//!
+//! The URL will be in the format:
+//!   https://<device_api_host>/api/v0/releases/latest/url?device_serial=<>&hardware_version=<>&software_type=<>&current_version=<>
+//!
+//! @param buf The buffer to write the URL into
+//! @param buf_len The size of the buffer
+//!
+//! @return true if the URL was successfully written to the buffer, false if the buffer was too
+//! small or an encoding error occurred
+bool memfault_http_build_latest_ota_url(char *buf, size_t buf_len);
+
+//! Builds the URL for posting chunks to the Memfault chunks endpoint
+//!
+//! The URL will be in the format:
+//!   https://<chunks_api_host>/api/v0/chunks/<device_serial>
+//!
+//! @param buf The buffer to write the URL into
+//! @param buf_len The size of the buffer
+//!
+//! @return true if the URL was successfully written to the buffer, false if the buffer was too
+//! small
+bool memfault_http_build_chunk_post_url(char *buf, size_t buf_len);
+
 #ifdef __cplusplus
 }
 #endif

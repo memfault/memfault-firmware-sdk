@@ -35,6 +35,12 @@
 
   #define MEMFAULT_HTTP_USER_AGENT "MemfaultSDK/" MEMFAULT_SDK_VERSION_STR
 
+  #if CONFIG_MEMFAULT_HTTP_MAX_REQUEST_SIZE > 0 && \
+    (CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN < (CONFIG_MEMFAULT_HTTP_MAX_REQUEST_SIZE + 1024))
+    #warning \
+      "MBEDTLS_SSL_IN_CONTENT_LEN < CONFIG_MEMFAULT_HTTP_MAX_REQUEST_SIZE + 1kB recommended room for TLS overhead"
+  #endif
+
 MEMFAULT_STATIC_ASSERT(
   sizeof(CONFIG_MEMFAULT_PROJECT_KEY) > 1,
   "Memfault Project Key not configured. Please visit https://mflt.io/project-key "
@@ -355,8 +361,12 @@ int memfault_esp_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
     // The following 2 config options were made optional in ESP-IDF v6
     #if (ESP_IDF_VERSION <= ESP_IDF_VERSION_VAL(5, 5, 0)) || \
       defined(CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD)
+      #if defined(CONFIG_MEMFAULT_HTTP_PARTIAL_DOWNLOAD_ENABLE)
+    .partial_http_download = true,
+      #else
     .partial_http_download = false,
-    .max_http_request_size = 0,
+      #endif
+    .max_http_request_size = CONFIG_MEMFAULT_HTTP_MAX_REQUEST_SIZE,
     #endif
   };
   #else

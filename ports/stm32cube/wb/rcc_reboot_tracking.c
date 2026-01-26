@@ -29,7 +29,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
 
   eMemfaultRebootReason reset_reason = kMfltRebootReason_Unknown;
 
-  MEMFAULT_LOG_INFO("Reset Reason, RCC_CSR=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, RCC_CSR=0x%" PRIx32, reset_cause);
   MEMFAULT_PRINT_RESET_INFO("Reset Causes: ");
 
   if (reset_cause & LL_RCC_CSR_SFTRSTF) {

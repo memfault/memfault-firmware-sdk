@@ -30,7 +30,7 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   SRC->SRSR = SRC_SRSR_W1C_BITS_MASK;
 #endif
 
-  MEMFAULT_LOG_INFO("Reset Reason, SRC_SRSR=0x%" PRIx32, reset_cause);
+  MEMFAULT_PRINT_RESET_INFO("Reset Reason, SRC_SRSR=0x%" PRIx32, reset_cause);
 
   MEMFAULT_PRINT_RESET_INFO("Reset Cause: ");
   if (reset_cause & SRC_SRSR_JTAG_SW_RST_MASK) {

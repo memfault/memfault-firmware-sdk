@@ -222,6 +222,11 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
 void memfault_zephyr_port_http_periodic_upload_logs(bool enable);
 #endif
 
+//! Enable or disable periodic Memfault data uploads at runtime
+//!
+//! @param enable true to enable periodic uploads, false to disable
+void memfault_zephyr_port_http_periodic_upload_enable(bool enable);
+
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
 //! Sets the network interface name to use for Memfault HTTP uploads
 //! @param if_name Null-terminated string containing the interface name

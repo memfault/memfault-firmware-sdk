@@ -12,7 +12,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_SHELL memfault_nrf_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X memfault_platform_metrics_connectivity_lte.c)
 
-if (CONFIG_MEMFAULT_USE_NRF_CLOUD_TRANSPORT)
+if (CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   # if Zephyr is less than 3.5.0, print an error
   if(${KERNEL_VERSION_MAJOR}.${KERNEL_VERSION_MINOR}.${KERNEL_VERSION_PATCH} VERSION_LESS "3.5.0")
     message(FATAL_ERROR

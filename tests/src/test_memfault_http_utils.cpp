@@ -644,3 +644,82 @@ TEST(MfltHttpClientUtils, Test_UrlNeedsEscape) {
     CHECK_TEXT(needs_escape == result, instring);
   }
 }
+
+TEST(MfltHttpClientUtils, Test_BuildLatestOtaUrl) {
+  char url_buf[256];
+  bool success = memfault_http_build_latest_ota_url(url_buf, sizeof(url_buf));
+  CHECK(success);
+
+  const char *expected_url = "https://device.memfault.com/api/v0/releases/latest/url"
+                             "?device_serial=DEMOSERIAL"
+                             "&hardware_version=main-proto"
+                             "&software_type=main"
+                             "&current_version=1.0.0";
+  STRCMP_EQUAL(expected_url, url_buf);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildLatestOtaUrlWithUrlEncoding) {
+  g_device_info.device_serial = "DEMO SERIAL";
+  g_device_info.hardware_version = "main+proto";
+  g_device_info.software_type = "main&test";
+  g_device_info.software_version = "1.0.0/beta";
+
+  char url_buf[256];
+  bool success = memfault_http_build_latest_ota_url(url_buf, sizeof(url_buf));
+  CHECK(success);
+
+  const char *expected_url = "https://device.memfault.com/api/v0/releases/latest/url"
+                             "?device_serial=DEMO%20SERIAL"
+                             "&hardware_version=main%2Bproto"
+                             "&software_type=main%26test"
+                             "&current_version=1.0.0%2Fbeta";
+  STRCMP_EQUAL(expected_url, url_buf);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildLatestOtaUrlBufferTooSmall) {
+  char url_buf[10];
+  bool success = memfault_http_build_latest_ota_url(url_buf, sizeof(url_buf));
+  CHECK(!success);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildLatestOtaUrlNullBuffer) {
+  bool success = memfault_http_build_latest_ota_url(NULL, 256);
+  CHECK(!success);
+
+  char url_buf[256];
+  success = memfault_http_build_latest_ota_url(url_buf, 0);
+  CHECK(!success);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildLatestOtaUrlEncodingBufferOverflow) {
+  // Use a device serial that is too long to URL encode into the buffer
+  g_device_info.device_serial = "+++++++++++++++++++++++++++++++++++++++++++";
+
+  char url_buf[256];
+  bool success = memfault_http_build_latest_ota_url(url_buf, sizeof(url_buf));
+  CHECK(!success);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildChunkPostUrl) {
+  char url_buf[128];
+  bool success = memfault_http_build_chunk_post_url(url_buf, sizeof(url_buf));
+  CHECK(success);
+
+  const char *expected_url = "https://chunks.memfault.com/api/v0/chunks/DEMOSERIAL";
+  STRCMP_EQUAL(expected_url, url_buf);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildChunkPostUrlBufferTooSmall) {
+  char url_buf[10];
+  bool success = memfault_http_build_chunk_post_url(url_buf, sizeof(url_buf));
+  CHECK(!success);
+}
+
+TEST(MfltHttpClientUtils, Test_BuildChunkPostUrlNullBuffer) {
+  bool success = memfault_http_build_chunk_post_url(NULL, 128);
+  CHECK(!success);
+
+  char url_buf[128];
+  success = memfault_http_build_chunk_post_url(url_buf, 0);
+  CHECK(!success);
+}

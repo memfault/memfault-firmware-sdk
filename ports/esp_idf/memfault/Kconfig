@@ -547,11 +547,12 @@ endif
             debugging.
 
     config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-        bool "Pretty print reboot reason on boot"
+        bool "Print reboot reason information on boot"
         default y
         help
-            Print out the reboot reason, eg "Watchdog", on boot. Adds a few
-            hundred bytes of code space.
+            Print out the MCU-derived and Memfault-stored reboot reason
+            information on boot. Adds a few hundred bytes of code space
+            to pretty print MCU-derived reason (e.g. "Watchdog").
 
     # HTTPS Periodic Upload
     menuconfig MEMFAULT_HTTP_PERIODIC_UPLOAD
@@ -622,6 +623,22 @@ endif
                 g_memfault_ota_update_handler.
 
     endif  # MEMFAULT_HTTP_PERIODIC_UPLOAD
+
+    config MEMFAULT_HTTP_PARTIAL_DOWNLOAD_ENABLE
+        bool "Enable partial download support for OTA updates"
+        default y if ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD
+        help
+            When enabled, the Memfault SDK can download a firmware
+            image in multiple HTTP requests.
+
+    config MEMFAULT_HTTP_MAX_REQUEST_SIZE
+        int "Maximum size of an HTTP request in bytes"
+        default 0 if !MEMFAULT_HTTP_PARTIAL_DOWNLOAD_ENABLE
+        # set to default MBEDTLS_SSL_IN_CONTENT_LEN - 1kB estimated TLS overhead
+        default 15360 if MEMFAULT_HTTP_PARTIAL_DOWNLOAD_ENABLE
+        help
+            The maximum size of an HTTP request in bytes. This is the maximum
+            amount of data that can be sent in a single HTTP request.
 
     config MEMFAULT_USE_NTP
         bool "Use NTP to set the system time"

@@ -34,9 +34,9 @@ zephyr_compile_options(
     -Wa,--debug-prefix-map=${WEST_PROJECT_ROOT_PATH}=.
 )
 
-# If CONFIG_SOC_SERIES_NRF54LX, add a custom linker fragment for placing the
+# If building for nrf54l15dk, add a custom linker fragment for placing the
 # noinit section.
-if(CONFIG_SOC_SERIES_NRF54LX)
+if(CONFIG_BOARD_NRF54L15DK)
   zephyr_linker_sources(SECTIONS
     ${CMAKE_CURRENT_SOURCE_DIR}/boards/nrf54l15dk_nrf54l15_cpuapp_noinit.ld
   )

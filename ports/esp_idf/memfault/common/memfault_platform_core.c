@@ -137,6 +137,8 @@ static eMemfaultRebootReason prv_record_reboot_reason(void) {
   }
 
 #if defined(CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP)
+  MEMFAULT_LOG_INFO("Reboot Reason, ESP=0x%04x", esp_reset_cause);
+
   // pretty-print the reset reason
   struct esp_rst_reason_to_string {
     esp_reset_reason_t reason;
@@ -155,7 +157,7 @@ static eMemfaultRebootReason prv_record_reboot_reason(void) {
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(esp_rst_reasons); i++) {
     if (esp_rst_reasons[i].reason == esp_reset_cause) {
-      MEMFAULT_LOG_INFO("Reboot reason: %s", esp_rst_reasons[i].str);
+      MEMFAULT_LOG_INFO("Reset Cause: %s", esp_rst_reasons[i].str);
       break;
     }
   }
@@ -167,6 +169,14 @@ static eMemfaultRebootReason prv_record_reboot_reason(void) {
   };
 
   memfault_reboot_tracking_boot(s_reboot_tracking, &reset_info);
+
+#if defined(CONFIG_MEMFAULT_ENABLE_REBOOT_DIAG_DUMP)
+  sMfltRebootReason stored_reboot_reason;
+  int rv = memfault_reboot_tracking_get_reboot_reason(&stored_reboot_reason);
+  if (!rv) {
+    MEMFAULT_LOG_INFO("Reset Cause Stored: 0x%04x", stored_reboot_reason.prior_stored_reason);
+  }
+#endif  // MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 
   return reboot_reason;
 }
