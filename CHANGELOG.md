@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.0] - 2026-01-29
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add a new API, `memfault_zephyr_port_http_periodic_upload_enabled()`, which
+    returns the current state of periodic Memfault data uploads.
+
 ## [1.34.0] - 2026-01-26
 
 ### 🔥 Removed

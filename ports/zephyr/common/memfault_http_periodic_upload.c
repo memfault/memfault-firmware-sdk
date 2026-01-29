@@ -45,6 +45,10 @@ void memfault_zephyr_port_http_periodic_upload_enable(bool enable) {
   s_mflt_upload_enabled = enable;
 }
 
+bool memfault_zephyr_port_http_periodic_upload_enabled(void) {
+  return s_mflt_upload_enabled;
+}
+
 static void prv_periodic_upload_work_handler(struct k_work *work) {
   if (!s_mflt_upload_enabled) {
     return;

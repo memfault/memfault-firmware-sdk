@@ -227,6 +227,11 @@ void memfault_zephyr_port_http_periodic_upload_logs(bool enable);
 //! @param enable true to enable periodic uploads, false to disable
 void memfault_zephyr_port_http_periodic_upload_enable(bool enable);
 
+//! Gets the current state of periodic Memfault data uploads
+//!
+//! @return true if Memfault upload is enabled, false if disabled
+bool memfault_zephyr_port_http_periodic_upload_enabled(void);
+
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
 //! Sets the network interface name to use for Memfault HTTP uploads
 //! @param if_name Null-terminated string containing the interface name
