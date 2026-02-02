@@ -22,7 +22,9 @@ void vAssertCalled(MEMFAULT_UNUSED const char *file, MEMFAULT_UNUSED int line) {
 //!
 //! @note: Depends on FreeRTOS kernel being compiled with
 //!  configCHECK_FOR_STACK_OVERFLOW != 0
+#if !defined(MEMFAULT_FREERTOS_DISABLE_STACK_OVERFLOW_HOOK)
 void vApplicationStackOverflowHook(MEMFAULT_UNUSED TaskHandle_t xTask,
                                    MEMFAULT_UNUSED char *pcTaskName) {
   MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_StackOverflow);
 }
+#endif

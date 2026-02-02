@@ -121,7 +121,7 @@
 #endif
 
 #if !defined(MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE)
-  #if !configRECORD_STACK_HIGH_ADDRESS
+  #if !configRECORD_STACK_HIGH_ADDRESS && !(configUSE_TRACE_FACILITY && INCLUDE_uxTaskGetStackHighWaterMark)
     #warning To see FreeRTOS thread stack sizes in coredumps, Add\
       '#define configRECORD_STACK_HIGH_ADDRESS 1' to FreeRTOSConfig.h. Otherwise, set\
       '#define MEMFAULT_FREERTOS_WARN_STACK_HIGH_ADDRESS_UNAVAILABLE 0' in\
