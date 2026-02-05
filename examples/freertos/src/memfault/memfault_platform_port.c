@@ -143,8 +143,17 @@ void memfault_platform_reboot_tracking_boot(void) {
 #endif  // MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
 }
 
+const char g_memfault_project_key[33];
+
 int memfault_platform_boot(void) {
   puts(MEMFAULT_BANNER_COLORIZED);
+
+#if MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY
+  // Initialize the injected project key. This needs to be set before any
+  // calls to the packetizer are made.
+  memcpy((void *)g_memfault_project_key, "bf8KeeFTRvoO0XOnXbwYzWL8GNT9QK6X",
+         sizeof(g_memfault_project_key));
+#endif
 
   memfault_freertos_port_boot();
 

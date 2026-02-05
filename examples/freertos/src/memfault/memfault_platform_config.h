@@ -23,6 +23,11 @@
 // Enable adding custom demo shell commands
 #define MEMFAULT_DEMO_SHELL_COMMAND_EXTENSIONS 1
 
+// Provide a custom runtime-configurable project key
+#define MEMFAULT_MESSAGE_HEADER_CONTAINS_PROJECT_KEY 1
+extern const char g_memfault_project_key[33];
+#define MEMFAULT_PROJECT_KEY g_memfault_project_key
+
 #if !defined(MEMFAULT_PLATFORM_HAS_LOG_CONFIG)
   #define MEMFAULT_PLATFORM_HAS_LOG_CONFIG 1
 #endif
