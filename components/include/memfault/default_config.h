@@ -520,6 +520,13 @@ extern "C" {
   #define MEMFAULT_FAULT_HANDLER_RETURN 0
 #endif
 
+// Enable this flag to return from the Watchdog ISR instead of rebooting the
+// device. The platform is responsible for clearing the necessary interrupt
+// flags etc, in memfault_platform_fault_handler().
+#ifndef MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  #define MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN 0
+#endif
+
 //
 // Http Configuration Options
 //

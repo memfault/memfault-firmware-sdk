@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "memfault/components.h"
+
 typedef struct UART_t {
   volatile uint32_t DATA;
   volatile uint32_t STATE;
@@ -140,9 +142,18 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
   0,
   0,
   0,
-  vPortSVCHandler,     /* SVC_Handler              -5 */
-  0,                   /* DebugMon_Handler         -4 */
-  0,                   /* reserved */
-  xPortPendSVHandler,  /* PendSV handler    -2 */
-  xPortSysTickHandler, /* SysTick_Handler   -1 */
+  vPortSVCHandler,                /* SVC_Handler              -5 */
+  0,                              /* DebugMon_Handler         -4 */
+  0,                              /* reserved */
+  xPortPendSVHandler,             /* PendSV handler    -2 */
+  xPortSysTickHandler,            /* SysTick_Handler   -1 */
+  0,                              // 16 UART 0
+  0,                              // 17 UART 0
+  0,                              // 18 UART 1
+  0,                              // 19 UART 1
+  0,                              // 20 UART 2
+  0,                              // 21 UART 2
+  0,                              // 22 GPIO 0
+  0,                              // 23 GPIO 1
+  MEMFAULT_EXC_HANDLER_WATCHDOG,  // 24 Timer 0
 };
