@@ -99,8 +99,8 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_idle_pct_max, kMemfaultMetri
 
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_sysworkq_pct_max, kMemfaultMetricType_Unsigned,
                                              CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
-  #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
-MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_mflt_http_pct_max, kMemfaultMetricType_Unsigned,
+  #if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_mflt_upload_pct_max, kMemfaultMetricType_Unsigned,
                                              CONFIG_MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR)
   #endif
 #endif  // defined(CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS)

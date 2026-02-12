@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <sys/types.h>
 
+#include "memfault/ports/zephyr/periodic_upload.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -217,20 +219,14 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx);
 //! < 0 : Error
 int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data, size_t data_len);
 
-#if !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
-//! Enable or disable periodic log upload at runtime
-void memfault_zephyr_port_http_periodic_upload_logs(bool enable);
+// Alias periodic upload functions for backwards compatibility
+#if !defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_LOGS)
+  //! Enable or disable periodic log upload at runtime
+  #define memfault_zephyr_port_http_periodic_upload_logs memfault_zephyr_port_periodic_upload_logs
 #endif
-
-//! Enable or disable periodic Memfault data uploads at runtime
-//!
-//! @param enable true to enable periodic uploads, false to disable
-void memfault_zephyr_port_http_periodic_upload_enable(bool enable);
-
-//! Gets the current state of periodic Memfault data uploads
-//!
-//! @return true if Memfault upload is enabled, false if disabled
-bool memfault_zephyr_port_http_periodic_upload_enabled(void);
+#define memfault_zephyr_port_http_periodic_upload_enable memfault_zephyr_port_periodic_upload_enable
+#define memfault_zephyr_port_http_periodic_upload_enabled \
+  memfault_zephyr_port_periodic_upload_enabled
 
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
 //! Sets the network interface name to use for Memfault HTTP uploads

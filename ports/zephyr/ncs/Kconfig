@@ -7,7 +7,7 @@ if MEMFAULT_NRF_CONNECT_SDK
 config MEMFAULT_FOTA
         bool "Memfault FOTA Library"
         default n
-        depends on MEMFAULT_HTTP_ENABLE
+        depends on (MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP)
         depends on FOTA_DOWNLOAD
         help
           Adds support for using Memfaults Release Management infrastructure
@@ -103,9 +103,12 @@ config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY
 
 menuconfig MEMFAULT_USE_NRF_CLOUD_COAP
         bool "Use nRF Cloud CoAP endpoint"
+        depends on NETWORKING
         depends on MODEM_JWT
         depends on COAP
+        depends on COAP_CLIENT
         depends on (COAP_EXTENDED_OPTIONS_LEN_VALUE >= 192)
+        depends on (CONFIG_NRF_CLOUD_COAP_MAX_USER_OPTIONS >= 2)
         help
           Note: Requires device to be provisioned with nRF Cloud.
 
@@ -122,6 +125,28 @@ config MEMFAULT_NRF_CLOUD_HOST_NAME
 config MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE
         int "Set the size of the CoAP packetizer buffer"
         default 1400
+        help
+          The size of the CoAP packetizer buffer. This is the buffer used when
+          reading incremental chunk data when posting via CoAP. It does NOT set
+          the size of the CoAP body (see MEMFAULT_COAP_MAX_POST_SIZE), but is
+          instead used when issuing reads to the underlying data source (e.g.
+          coredump, logs, CDR, etc). Increasing the size of this buffer can
+          improve upload performance when the data source is reading from a
+          storage medium that benefits from larger sequential reads. Note that
+          this buffer is dynamically allocated.
+
+config MEMFAULT_COAP_MAX_POST_SIZE
+        int "Set the maximum CoAP payload size per message"
+        default 256
+        range 64 COAP_CLIENT_MESSAGE_SIZE
+        help
+          The maximum payload length per CoAP message (excluding CoAP header).
+          This value limits the size of data sent in a single CoAP POST request.
+          Defaults to the COAP_CLIENT_MESSAGE_SIZE default value of 256 to ensure
+          compatibility with the default CoAP client message size limit. Cannot
+          exceed COAP_CLIENT_MESSAGE_SIZE + CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE
+          - options overhead (checked at build time), but the upper limit is set to
+          COAP_CLIENT_MESSAGE_SIZE for convenience.
 
 config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
         int "The CoAP client timeout in milliseconds"
@@ -130,6 +155,26 @@ config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
           The Memfault CoAP client timeout in milliseconds. This is the
           maximum amount of time the CoAP client will wait for a response from
           the server.
+
+config MEMFAULT_COAP_MAX_MESSAGES_TO_SEND
+        int "Set the maximum number of CoAP messages to send per upload"
+        default 100
+        range 1 10000
+        help
+          The maximum number of messages to send per execution when using
+          the Memfault CoAP client to upload data (e.g. memfault_zephyr_port_post_data()).
+          A message is a single logical data unit (e.g. coredump chunk, metrics report).
+
+config MEMFAULT_COAP_FOTA_URL_BUFFER_SIZE
+        int "Buffer size for CoAP FOTA download URL response"
+        default 512
+        range 256 2048
+        help
+          Size of the buffer used when querying for an OTA update via CoAP
+          (memfault_zephyr_port_coap_get_download_url). Must be large enough
+          for the download URL plus CoAP response overhead. If using Memfault
+          FOTA with the nRF download client, this should be at least as large
+          as CONFIG_DOWNLOADER_MAX_FILENAME_SIZE plus header overhead.
 
 endif # MEMFAULT_USE_NRF_CLOUD_COAP
 

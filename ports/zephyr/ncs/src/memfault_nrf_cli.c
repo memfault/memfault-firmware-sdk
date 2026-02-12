@@ -13,7 +13,7 @@
 // clang-format on
 
 static int prv_mflt_fota(const struct shell *shell, size_t argc, char **argv) {
-#if CONFIG_MEMFAULT_FOTA_CLI_CMD
+#if defined(CONFIG_MEMFAULT_FOTA_CLI_CMD)
   MEMFAULT_LOG_INFO("Checking for FOTA");
   const int rv = memfault_fota_start();
   if (rv == 0) {
@@ -27,7 +27,7 @@ static int prv_mflt_fota(const struct shell *shell, size_t argc, char **argv) {
 }
 
 static int prv_mflt_get_latest_url(const struct shell *shell, size_t argc, char **argv) {
-#if CONFIG_MEMFAULT_HTTP_ENABLE || CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE) || defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   char *protocol = (argc >= 2) ? argv[1] : "https";
 #else
   MEMFAULT_LOG_ERROR("Either HTTPS or nRF Cloud CoAP required");
@@ -36,14 +36,14 @@ static int prv_mflt_get_latest_url(const struct shell *shell, size_t argc, char 
   char *url = NULL;
   int rv = -1;
 
-#if CONFIG_MEMFAULT_HTTP_ENABLE
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   if (strcmp(protocol, "https") == 0) {
     MEMFAULT_LOG_INFO("Checking for FOTA over HTTPS!");
     rv = memfault_zephyr_port_get_download_url(&url);
   }
 #endif
 
-#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   if (strcmp(protocol, "coap") == 0) {
     MEMFAULT_LOG_INFO("Checking for FOTA over COAP!");
     rv = memfault_zephyr_port_coap_get_download_url(&url);
@@ -62,13 +62,13 @@ static int prv_mflt_get_latest_url(const struct shell *shell, size_t argc, char 
 
   printk("Download URL: '%s'\n", url);
 
-#if CONFIG_MEMFAULT_HTTP_ENABLE
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   if (strcmp(protocol, "https") == 0) {
     memfault_zephyr_port_release_download_url(&url);
   }
 #endif
 
-#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   if (strcmp(protocol, "coap") == 0) {
     memfault_zephyr_port_coap_release_download_url(&url);
   }

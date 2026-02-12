@@ -12,10 +12,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/coap.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/coap_client.h)
+#include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 
 #include "memfault/ports/zephyr/include_compatibility.h"
-
-#include MEMFAULT_ZEPHYR_INCLUDE(net/coap.h)
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +29,12 @@ typedef struct {
   struct zsock_addrinfo *res;
   size_t bytes_sent;
   uint8_t message_token[COAP_TOKEN_MAX_LEN];
+  int last_result_code;
+  char *download_url;
+  struct coap_client *coap_client;
+  struct k_sem response_sem;
+  bool response_received;
+  const char *proxy_url;  // Used by nrf_cloud_coap_get_user_options to add PROXY_URI option
 } sMemfaultCoAPContext;
 
 //! Open a socket to the Memfault chunks upload server
@@ -38,8 +46,13 @@ typedef struct {
 //! @param ctx If the socket is opened successfully, this will be populated with
 //! the connection state for the other COAP functions below
 //!
+//! @note This function will use nRF Cloud CoAP APIs to open the socket, so that the connection id
+//! can be shared with other nRF Cloud CoAP operations. nrf_cloud_coap_transport_init() must be
+//! called before this function to initialize the nRF Cloud CoAP transport.
+//!
 //! @note After use, memfault_zephyr_port_coap_close_socket() must be called
 //!  to close the socket and free any associated memory.
+//!
 //! @note In the case of an error, it is not required to call memfault_zephyr_port_coap_close_socket
 //!
 //! @return
@@ -62,6 +75,10 @@ int memfault_zephyr_port_coap_upload_sdk_data(sMemfaultCoAPContext *ctx);
 
 //! CoAP specific version of memfault_zephyr_port_post_data_return_size
 //!
+//! @note This function will use nRF Cloud CoAP APIs to open the socket, so that the connection id
+//! can be shared with other nRF Cloud CoAP operations. nrf_cloud_coap_transport_init() must be
+//! called before this function to initialize the nRF Cloud CoAP transport.
+//!
 //! @return negative error code on error, else the size of the data that was
 //! sent, in bytes. 0 indicates no data was ready to send (and no data was sent)
 ssize_t memfault_zephyr_port_coap_post_data_return_size(void);
@@ -70,6 +87,10 @@ ssize_t memfault_zephyr_port_coap_post_data_return_size(void);
 //!
 //! @param download_url populated with a string containing the download URL to use
 //! if an OTA update is available.
+//!
+//! @note This function will use nRF Cloud CoAP APIs to open the socket, so that the connection id
+//! can be shared with other nRF Cloud CoAP operations. nrf_cloud_coap_transport_init() must be
+//! called before this function to initialize the nRF Cloud CoAP transport.
 //!
 //! @note After use, memfault_zephyr_port_coap_release_download_url() must be called
 //!  to free the memory where the download URL is stored.

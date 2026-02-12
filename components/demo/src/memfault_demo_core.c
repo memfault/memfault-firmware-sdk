@@ -23,16 +23,7 @@ int memfault_demo_cli_cmd_get_device_info(MEMFAULT_UNUSED int argc, MEMFAULT_UNU
 }
 
 int memfault_demo_cli_cmd_system_reboot(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char *argv[]) {
-  void *pc;
-  MEMFAULT_GET_PC(pc);
-  void *lr;
-  MEMFAULT_GET_LR(lr);
-  sMfltRebootTrackingRegInfo reg_info = {
-    .pc = (uint32_t)(uintptr_t)pc,
-    .lr = (uint32_t)(uintptr_t)lr,
-  };
-
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, &reg_info);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_UserReset);
   memfault_platform_reboot();
   return 0;
 }

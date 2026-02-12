@@ -426,55 +426,51 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
           allocated.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
-        bool "Work job to periodically push new data to Memfault"
-        default y if MEMFAULT_SOC_SERIES_NRF91
+        bool "Work job to periodically push new data to Memfault (deprecated)"
+        select MEMFAULT_PERIODIC_UPLOAD
         help
-          This implementation makes use of a k_timer_* and k_work_submit to schedule
-          a background job that periodically checks to see if new Memfault data
-          is available and pushes it to Memfault if so (via a HTTP POST).
+          Use MEMFAULT_PERIODIC_UPLOAD instead.
 
+# Keep choice, due to choice override in NCS Memfault port
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
-        prompt "Work queue implementation to use for periodic HTTP posting"
+        prompt "Work queue implementation to use for periodic posting (deprecated)"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if MEMFAULT_SOC_SERIES_NRF91
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Periodically push new data to Memfault from system workqueue"
+        bool "Periodically push new data to Memfault from system workqueue (deprecated)"
         help
-          When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
-          is set appropriately for the board's HTTP stack to not cause a stack overflow.
-          Using the system workqueue reduces RAM usage compared to a dedicated workqueue.
-          Sending data from the system workqueue with LTE networks is known to cause issues and
-          a dedicated workqueue maybe be required.
+          Use MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Periodically push new data to Memfault using a dedicated workqueue"
+        bool "Periodically push new data to Memfault using a dedicated workqueue (deprecated)"
         help
-          When using this feature, make sure CONFIG_MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
-          is set appropriately for the board's HTTP stack to not cause a stack overflow. A dedicated
-          workqueue over the system workqueue is beneficial if http requests for the network stack
-          in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
+          Use MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE instead.
 
 endchoice # MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
-        int "Stack size for dedicated http upload queue, in bytes"
+        int "Stack size for dedicated upload workqueue, in bytes (deprecated)"
         default 4096 if WIFI_NRF70
         default 2048
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+        help
+          Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Interval with which the periodic upload task should run"
+        int "Interval with which the periodic upload task should run (deprecated)"
         default 3600
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         help
-          The first check will run between [60, 60+MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS]
-          Subsequent checks will run at MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
+          Use MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
-        bool "Upload log buffer in addition to other data"
-        default n
+        bool "Upload log buffer in addition to other data (deprecated)"
+        select MEMFAULT_PERIODIC_UPLOAD_LOGS
+        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+        help
+          Use MEMFAULT_PERIODIC_UPLOAD_LOGS instead.
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
@@ -532,6 +528,62 @@ config MEMFAULT_HTTP_SOCKET_DISPATCH
           before performing Memfault data uploads.
 
 endif # MEMFAULT_HTTP_ENABLE
+
+config MEMFAULT_PERIODIC_UPLOAD
+        bool "Work job to periodically push new data to Memfault"
+        default y if MEMFAULT_SOC_SERIES_NRF91
+        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+        help
+          Schedules a background job that periodically checks for new Memfault
+          data and pushes it to Memfault (via HTTP or CoAP depending on
+          transport configuration).
+
+choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
+  prompt "Work queue implementation to use for periodic posting"
+  depends on MEMFAULT_PERIODIC_UPLOAD
+  default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
+  default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+
+config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+        bool "Periodically push new data to Memfault from system workqueue"
+        help
+          When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
+          is set appropriately for the upload stack to not cause a stack overflow.
+          Using the system workqueue reduces RAM usage compared to a dedicated workqueue.
+          Sending data from the system workqueue with LTE networks is known to cause issues and
+          a dedicated workqueue maybe be required.
+
+config MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+        bool "Periodically push new data to Memfault using a dedicated workqueue"
+        help
+          When using this feature, make sure CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
+          is set appropriately for the upload stack to not cause a stack overflow. A dedicated
+          workqueue over the system workqueue is beneficial if uploads for the network stack
+          in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
+
+endchoice # MEMFAULT_PERIODIC_UPLOAD_CONTEXT
+
+config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
+        int "Stack size for dedicated upload workqueue, in bytes"
+        default MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE if MEMFAULT_HTTP_PERIODIC_UPLOAD
+        default 4096 if WIFI_NRF70
+        default 2048
+        depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+
+config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
+        int "Interval with which the periodic upload task should run"
+        default MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS if MEMFAULT_HTTP_PERIODIC_UPLOAD
+        default 3600
+        depends on MEMFAULT_PERIODIC_UPLOAD
+        help
+          The first check will run between [60, 60+MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS]
+          Subsequent checks will run at MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
+
+config MEMFAULT_PERIODIC_UPLOAD_LOGS
+        bool "Upload log buffer in addition to other data"
+        default n
+        depends on MEMFAULT_PERIODIC_UPLOAD
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
@@ -741,7 +793,7 @@ config MEMFAULT_METRICS_SYNC_SUCCESS
 config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
         bool "Memfault sync success metrics"
         default y
-        depends on MEMFAULT_HTTP_ENABLE
+        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
         help
          Collects Memfault metrics for the number of successful and failed
          syncs to the Memfault cloud. More information at

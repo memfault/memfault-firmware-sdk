@@ -13,6 +13,7 @@
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/fota.h"
+#include "memfault/ports/zephyr/periodic_upload.h"
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 // clang-format on
@@ -80,7 +81,7 @@ static int prv_example_trace_event_capture(const struct shell *shell, size_t arg
 static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
   // For more information on user-defined error reasons, see
   // the MEMFAULT_TRACE_REASON_DEFINE macro in trace_reason_user.h .
-  #if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+  #if defined(CONFIG_MEMFAULT_HTTP_ENABLE) || defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   MEMFAULT_LOG_INFO("Posting Memfault Data");
   ssize_t rv = memfault_zephyr_port_post_data_return_size();
 
@@ -93,7 +94,8 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
   }
   return (rv < 0) ? rv : 0;
   #else
-  shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
+  shell_print(shell,
+              "CONFIG_MEMFAULT_HTTP_ENABLE or CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP not enabled");
   return 0;
   #endif
 }
@@ -179,7 +181,7 @@ static int prv_metrics_dump(const struct shell *shell, size_t argc, char **argv)
 }
 
 static int prv_test_reboot(const struct shell *shell, size_t argc, char **argv) {
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_UserReset);
   memfault_platform_reboot();
   return 0;  // should be unreachable
 }
@@ -366,8 +368,7 @@ static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc,
 }
 #endif
 
-#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD) && \
-  !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD) && !defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_LOGS)
 static int prv_upload_logs(const struct shell *shell, size_t argc, char **argv) {
   if (argc < 2) {
     shell_print(shell, "Enter 'enable' or 'disable'");
@@ -417,8 +418,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_trigger_heartbeat),
   SHELL_CMD(log_capture, NULL, "trigger capture of current log buffer contents", prv_trigger_logs),
   SHELL_CMD(logs, NULL, "writes test logs to log buffer", prv_test_log),
-#if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD) && \
-  !defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS)
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD) && !defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_LOGS)
   SHELL_CMD(logs_upload, NULL, "enable/disable periodic upload of logs", prv_upload_logs),
 #endif
   SHELL_CMD(trace, NULL, "capture an example trace event", prv_example_trace_event_capture),

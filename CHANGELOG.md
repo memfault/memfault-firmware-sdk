@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [x.xx.x] - xxxx-xx-xx
+
+### 📈 Added
+
+- ESP-IDF
+
+  - Add support for the upcoming ESP-IDF v6 release.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Decouple CoAP upload from HTTP. Data upload over nRF Cloud CoAP via
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP` no longer requires
+    `CONFIG_MEMFAULT_HTTP_ENABLE`.
+
+  - Use new options `CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND`,
+    `CONFIG_MEMFAULT_COAP_MAX_POST_SIZE`, and
+    `CONFIG_MEMFAULT_COAP_FOTA_URL_BUFFER_SIZE` instead of HTTP or
+    download-client configs to control CoAP upload behavior.
+
+  - Remove redundant default-enabled configs from the
+    [nRF91 sample app](examples/nrf-connect-sdk/nrf9160/) `prj.conf`.
+
+  - Rename `mflt_http` thread to `mflt_upload`. The associated thread metric
+    name is now `memory_mflt_upload_pct_max`.
+
+  - Add `CONFIG_NETWORKING` as a dependency for
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP`.
+
+- Zephyr:
+
+  - Deprecate `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD` and related Kconfig in
+    favor of `CONFIG_MEMFAULT_PERIODIC_UPLOAD`. The legacy
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_*` configs remain as
+    backwards-compatibility aliases. Choice config
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT` is kept to allow for choice
+    override in NCS.
+
+### 🐛 Fixed
+
+- nRF-Connect SDK
+
+  - Fix a missed reference of Kconfig symbol `MEMFAULT_USE_NRF_CLOUD_TRANSPORT`
+    when it was updated to `MEMFAULT_USE_NRF_CLOUD_COAP` in SDK v1.34.0.
+  - Fix a reference of `CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS` to
+    `CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS` when marking sync successes
+    for the Memfault cloud
+    [Sync Success Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics#periodic-connectivity).
+
 ## [1.35.0] - 2026-01-29
 
 ### 📈 Added

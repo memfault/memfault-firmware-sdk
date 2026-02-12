@@ -10,7 +10,8 @@ if(CONFIG_MEMFAULT)
   # Collect Memfault SDK dependencies
   list(APPEND MEMFAULT_COMPONENTS core util panics demo)
 
-  if(CONFIG_MEMFAULT_HTTP_ENABLE)
+  if(CONFIG_MEMFAULT_HTTP_ENABLE OR CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+    # Use http utils for constructing both HTTP and CoAP requests
     list(APPEND MEMFAULT_COMPONENTS http)
   endif()
 
