@@ -18,10 +18,10 @@
 
 MEMFAULT_WEAK MEMFAULT_METRICS_DEFINE_THREAD_METRICS(
 #if defined(CONFIG_MEMFAULT_METRICS_THREADS_DEFAULTS)
-  #if defined(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
+  #if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
   {
-    .thread_name = "mflt_http",
-    .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_mflt_http_pct_max),
+    .thread_name = "mflt_upload",
+    .stack_usage_metric_key = MEMFAULT_METRICS_KEY(memory_mflt_upload_pct_max),
   },
   #endif
   {
