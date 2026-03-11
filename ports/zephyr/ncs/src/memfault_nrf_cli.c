@@ -4,10 +4,14 @@
 //! See LICENSE for details
 
 // clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
 #include "memfault/core/debug_log.h"
-#include "memfault/nrfconnect_port/coap.h"
+#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+  #include "memfault/nrfconnect_port/coap.h"
+#endif
 #include "memfault/nrfconnect_port/fota.h"
 #include "memfault/ports/zephyr/http.h"
 // clang-format on
@@ -27,14 +31,32 @@ static int prv_mflt_fota(const struct shell *shell, size_t argc, char **argv) {
 }
 
 static int prv_mflt_get_latest_url(const struct shell *shell, size_t argc, char **argv) {
+  int rv = -1;
+  char *protocol = NULL;
+  (void)protocol;
 #if CONFIG_MEMFAULT_HTTP_ENABLE || CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
-  char *protocol = (argc >= 2) ? argv[1] : "https";
+  if (argc == 2) {
+    protocol = argv[1];
+    if (strcmp(protocol, "https") != 0 && strcmp(protocol, "coap") != 0) {
+      shell_print(shell, "Usage: mflt_nrf get_latest_url [https|coap]");
+      return rv;
+    }
+  } else {
+  // Provide defaults for backwards compatibility if user doesn't specify protocol
+  #if CONFIG_MEMFAULT_HTTP_ENABLE
+    protocol = "https";
+  #elif CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+    protocol = "coap";
+  #endif
+  }
+
 #else
-  MEMFAULT_LOG_ERROR("Either HTTPS or nRF Cloud CoAP required");
+  shell_print(shell,
+              "Enable CONFIG_MEMFAULT_HTTP_ENABLE and/or CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP");
+  return rv;
 #endif
 
   char *url = NULL;
-  int rv = -1;
 
 #if CONFIG_MEMFAULT_HTTP_ENABLE
   if (strcmp(protocol, "https") == 0) {

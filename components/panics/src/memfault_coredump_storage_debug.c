@@ -253,6 +253,7 @@ static void prv_log_error_hexdump(const char *prefix, const uint8_t *buf, size_t
   }
   // make sure buffer is NUL terminated even if buf_len = 0
   hex_buffer[buf_len * 2] = '\0';
+  (void)prefix;
   MEMFAULT_LOG_ERROR("%s: %s", prefix, hex_buffer);
 }
 
@@ -314,6 +315,7 @@ bool memfault_coredump_storage_debug_test_finish(void) {
       break;
   }
 
+  (void)reason_str, (void)op_suffix;
   MEMFAULT_LOG_ERROR("%s memfault_platform_coredump_storage_%s() test", reason_str, op_suffix);
   MEMFAULT_LOG_ERROR("Storage offset: 0x%08" PRIx32 ", %s size: %d", s_test_result.offset,
                      op_suffix, (int)s_test_result.size);

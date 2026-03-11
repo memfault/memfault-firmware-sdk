@@ -32,14 +32,33 @@ extern "C" {
     memfault_platform_log(_level, "%s|%lu " #str_level " " fmt, time_str, uptime, ##__VA_ARGS__); \
   } while (0)
 
-#define MEMFAULT_LOG_DEBUG(fmt, ...) \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Debug, D, fmt, ##__VA_ARGS__)
-#define MEMFAULT_LOG_INFO(fmt, ...) \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Info, I, fmt, ##__VA_ARGS__)
-#define MEMFAULT_LOG_WARN(fmt, ...) \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Warning, W, fmt, ##__VA_ARGS__)
-#define MEMFAULT_LOG_ERROR(fmt, ...) \
-  _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Error, E, fmt, ##__VA_ARGS__)
+#if MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL <= 0
+  #define MEMFAULT_LOG_DEBUG(fmt, ...) \
+    _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Debug, D, fmt, ##__VA_ARGS__)
+#else
+  #define MEMFAULT_LOG_DEBUG(fmt, ...)
+#endif
+
+#if MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL <= 1
+  #define MEMFAULT_LOG_INFO(fmt, ...) \
+    _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Info, I, fmt, ##__VA_ARGS__)
+#else
+  #define MEMFAULT_LOG_INFO(fmt, ...)
+#endif
+
+#if MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL <= 2
+  #define MEMFAULT_LOG_WARN(fmt, ...) \
+    _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Warning, W, fmt, ##__VA_ARGS__)
+#else
+  #define MEMFAULT_LOG_WARN(fmt, ...)
+#endif
+
+#if MEMFAULT_RAM_LOGGER_DEFAULT_MIN_LOG_LEVEL <= 3
+  #define MEMFAULT_LOG_ERROR(fmt, ...) \
+    _MEMFAULT_LOG_IMPL(kMemfaultPlatformLogLevel_Error, E, fmt, ##__VA_ARGS__)
+#else
+  #define MEMFAULT_LOG_ERROR(fmt, ...)
+#endif
 
 //! Only needs to be implemented when using demo component
 #define MEMFAULT_LOG_RAW(...) memfault_platform_log_raw(__VA_ARGS__)

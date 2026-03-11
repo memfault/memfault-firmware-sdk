@@ -10,8 +10,11 @@
 #include "FreeRTOS.h"
 #include "memfault/components.h"
 #include "task.h"
+#include "timers.h"
 
 #define CONSOLE_INPUT_STACK_SIZE 500
+
+#define SIMULATED_WATCHDOG_INTERRUPT_NUM 8
 
 /* Structure that will hold the TCB of the task being created. */
 static StaticTask_t console_input_task;
@@ -220,6 +223,64 @@ static int prv_long_compact_log(int argc, char *argv[]) {
   return 0;
 }
 
+// Note: this callback is invoked from exception context
+void memfault_platform_fault_handler(MEMFAULT_UNUSED const sMfltRegState *regs,
+                                     eMemfaultRebootReason reason) {
+  if (reason == kMfltRebootReason_SoftwareWatchdog) {
+    printf("Entered Watchdog interrupt...\n");
+
+    // In a real platform implementation, clear any watchdog or timer interrupt
+    // flags here to prevent the interrupt from immediately retriggering. For
+    // this example, we also clear the NVIC pending bit for the simulated
+    // external interrupt 8 used below in prv_watchdog_cmd().
+    volatile uint32_t *nvic_icpr0 = (volatile uint32_t *)0xE000E280;
+    *nvic_icpr0 = (uint32_t)(1u << SIMULATED_WATCHDOG_INTERRUPT_NUM);
+  }
+}
+
+// Timer callback to reboot the device
+static void prv_reboot_timer_callback(TimerHandle_t xTimer) {
+  (void)xTimer;
+  printf("⏰ Reboot timer expired, rebooting now...\n");
+  memfault_platform_reboot();
+}
+
+static int prv_watchdog_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+
+  printf("🐶 Triggering a simulated watchdog!\n");
+
+  // enable external interrupt 8
+  #define NVIC_ISER0 ((volatile uint32_t *)0xE000E100)
+  #define NVIC_ISPR0 ((volatile uint32_t *)0xE000E200)
+  *(uint32_t *)NVIC_ISER0 |= 1 << SIMULATED_WATCHDOG_INTERRUPT_NUM;
+
+  // set the bit in the NVIC register to trigger external
+  // interrupt 8
+  *(uint32_t *)NVIC_ISPR0 = 1 << SIMULATED_WATCHDOG_INTERRUPT_NUM;
+
+  const unsigned int reboot_delay_ms = 10000;
+  printf("✅ Returned from watchdog! Scheduling reboot in %u ms\n", reboot_delay_ms);
+
+  // Set a one-shot timer to reboot the device in a bit, to allow time to see
+  // the message above before the reboot happens. In a real platform
+  // implementation, there would be some mechanism to reboot the system after
+  // the watchdog cleanup operations are completed.
+  TimerHandle_t reboot_timer =
+    xTimerCreate("RebootTimer",                  /* Timer name */
+                 pdMS_TO_TICKS(reboot_delay_ms), /* Timer period in ticks */
+                 pdFALSE,                        /* Auto-reload (pdFALSE = one-shot) */
+                 NULL,                           /* Timer ID (unused) */
+                 prv_reboot_timer_callback       /* Callback function */
+    );
+
+  if (reboot_timer != NULL) {
+    xTimerStart(reboot_timer, 0);
+  }
+
+  return 0;
+}
+
 static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
   {
     .command = "freertos_vassert",
@@ -275,7 +336,12 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "long_compact_log",
     .handler = prv_long_compact_log,
     .help = "Issue a very long compact log (> MEMFAULT_LOG_MAX_LINE_SAVE_LEN)",
-  }
+  },
+  {
+    .command = "watchdog",
+    .handler = prv_watchdog_cmd,
+    .help = "Trigger a simulated watchdog interrupt",
+  },
 };
 #endif
 

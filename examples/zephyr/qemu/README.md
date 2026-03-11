@@ -1,16 +1,22 @@
 # Example Memfault Zephyr QEMU application
 
-Based on https://github.com/zephyrproject-rtos/example-application , this
+Based on [Zephyr's Example Application](https://github.com/zephyrproject-rtos/example-application), this
 provides a minimal reference for Memfault integration.
 
-> Note: this example can also target other boards and should work normally- for
-> example `nrf52840dk_nrf52840`. It's primarily tested on the `mps2/an385`
-> board, which is also the default.
+> Note: this example can also target other boards and should work normally.
+> It's primarily tested on the `mps2/an385` (the default board), but also:
+>
+> - `nrf52840dk_nrf52840`
+> - `mimxrt1170_evk/mimxrt1176/cm7`
+> - `nucleo_f756zg`
+> - `nucleo_l496zg`
+>
+> Note: You may need to add the board HAL module to the `name-allowlist` in the applications
+> `west.yml` (modules limited to reduce `west update` time).
 
 ## Usage
 
-After setting up a zephyr development environment
-(https://docs.zephyrproject.org/latest/getting_started/index.html), you can run
+After setting up a Zephyr development environment (see [Getting Started](https://docs.zephyrproject.org/latest/getting_started/index.html) to set up), you can run
 the following commands to test the application:
 
 ```shell

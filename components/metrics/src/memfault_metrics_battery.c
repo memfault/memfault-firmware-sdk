@@ -37,6 +37,8 @@ static void prv_accumulate_discharge_session_drop(bool session_valid,
     const int32_t integer_part = -drop / scale;
     const uint32_t fractional_part =
       (((uint32_t)(-drop) % (uint32_t)scale) * 1000) / (uint32_t)scale;
+    (void)integer_part;
+    (void)fractional_part;  // to silence unused variable warning if debug logging is disabled
     MEMFAULT_LOG_DEBUG("Battery drop was negative (-%" PRIi32 ".%03" PRIu32 "%%), skipping",
                        integer_part, fractional_part);
   }

@@ -180,6 +180,13 @@ MEMFAULT_USED void memfault_fault_handler(const sMfltRegState *regs, eMemfaultRe
     memfault_reboot_tracking_mark_coredump_saved();
   }
 
+  #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  if (reason == kMfltRebootReason_SoftwareWatchdog) {
+    // In this configuration, just return from the fault handler
+    return;
+  }
+  #endif
+
   #if !MEMFAULT_FAULT_HANDLER_RETURN
   memfault_platform_reboot();
   MEMFAULT_UNREACHABLE;
@@ -306,6 +313,10 @@ void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   ldr r0, =0x8006 // kMfltRebootReason_SoftwareWatchdog
   ldr r1, =memfault_fault_handling_shim
   bx r1
+  #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+    #error \
+      "Please contact mflt.io/contact-support for assistance enabling watchdog return support for ARM Compiler"
+  #endif
   ALIGN
 }
 
@@ -359,8 +370,13 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 }
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+      #error \
+        "Please contact mflt.io/contact-support for assistance enabling watchdog return support for TI ARM Compiler"
+    #else
   __asm(" mov r0, #0x8006 \n"  // kMfltRebootReason_SoftwareWatchdog
         " b memfault_fault_handling_shim \n");
+    #endif
 }
 
   #elif defined(__GNUC__) || defined(__clang__)
@@ -378,16 +394,16 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
 
     #if (!defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER) && \
          !defined(MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER))
-      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)    \
-        __asm volatile("tst lr, #4 \n"               \
-                       "ite eq \n"                   \
-                       "mrseq r3, msp \n"            \
-                       "mrsne r3, psp \n"            \
-                       "push {r3-r11, lr} \n"        \
-                       "mov r0, sp \n"               \
-                       "ldr r1, =%c0 \n"             \
-                       "b memfault_fault_handler \n" \
-                       :                             \
+      #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)     \
+        __asm volatile("tst lr, #4 \n"                \
+                       "ite eq \n"                    \
+                       "mrseq r3, msp \n"             \
+                       "mrsne r3, psp \n"             \
+                       "push {r3-r11, lr} \n"         \
+                       "mov r0, sp \n"                \
+                       "ldr r1, =%c0 \n"              \
+                       "bl memfault_fault_handler \n" \
+                       :                              \
                        : "i"((uint32_t)_x))
     #else
       #define MEMFAULT_HARDFAULT_HANDLING_ASM(_x)      \
@@ -407,7 +423,7 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
                        "push {r3-r7} \n"               \
                        "mov r0, sp \n"                 \
                        "ldr r1, =%c0 \n"               \
-                       "b memfault_fault_handler \n"   \
+                       "bl memfault_fault_handler \n"  \
                        :                               \
                        : "i"((uint32_t)_x))
     #endif
@@ -440,7 +456,28 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 }
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  // For watchdog-return builds, reuse the hardfault handling macro to collect
+  // register state and call memfault_fault_handler, then unwind the stack
+  // frame it created and perform a normal exception return via the original LR.
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
+      #if (!defined(MEMFAULT_USE_ARMV6M_FAULT_HANDLER) && \
+           !defined(MEMFAULT_USE_ARMV8M_BASE_FAULT_HANDLER))
+  __asm volatile(" pop {r3-r11, lr} \n"
+                 " bx lr ");
+      #else
+  __asm volatile(" pop {r3-r7} \n"
+                 " mov r12, r3 \n"
+                 " pop {r0-r3, lr} \n"
+                 " mov r8, r0 \n"
+                 " mov r9, r1 \n"
+                 " mov r10, r2 \n"
+                 " mov r11, r3 \n"
+                 " bx lr ");
+      #endif
+    #else
+  MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
+    #endif
 }
 
   #elif defined(__ICCARM__)
@@ -521,6 +558,11 @@ MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_NMI(void) {
 
 MEMFAULT_NAKED_FUNC void MEMFAULT_EXC_HANDLER_WATCHDOG(void) {
   MEMFAULT_HARDFAULT_HANDLING_ASM(kMfltRebootReason_SoftwareWatchdog);
+
+    #if MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+      #error \
+        "Please contact mflt.io/contact-support for assistance enabling watchdog return support for IAR ARM Compiler"
+    #endif
 }
 
   #else

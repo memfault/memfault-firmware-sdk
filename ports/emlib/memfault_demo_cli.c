@@ -79,7 +79,7 @@ void memfault_emlib_cli_heartbeat(sl_cli_command_arg_t *arguments) {
 
 void memfault_emlib_cli_reboot(sl_cli_command_arg_t *arguments) {
   (void)arguments;
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_UserReset);
   memfault_platform_reboot();
 }
 

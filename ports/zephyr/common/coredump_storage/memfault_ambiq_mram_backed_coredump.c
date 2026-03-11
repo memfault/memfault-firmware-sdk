@@ -17,6 +17,7 @@
 
 #include <memfault/components.h>
 #include <soc.h>
+#include <zephyr/cache.h>
 
 // Note: this is only used for the FIXED_PARTITION_OFFSET/ SIZE macros. The
 // FLASH_AMBIQ driver uses a semaphore for concurrent access protection, which
@@ -70,12 +71,26 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t
 }
 
 bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size) {
-  // Erase is only ever called just prior to writing a new coredump or in debug
-  // testing, so we only need to wipe the first 32 bits. We'll overwrite the
-  // first unit of write size for simplicity.
-  uint8_t erase_buf[sizeof(((sCoredumpWorkingBuffer *)0)->data)] = { 0 };
+  if (!prv_op_within_flash_bounds(offset, erase_size)) {
+    return false;
+  }
 
-  return memfault_platform_coredump_storage_write(offset, erase_buf, sizeof(erase_buf));
+  // use am_hal_mram_main_fill():
+  // extern int am_hal_mram_main_fill(uint32_t ui32ProgramKey, uint32_t ui32Value,
+  // uint32_t *pui32Dst, uint32_t ui32NumWords);
+  // Note: this function requires 4-byte aligned data and size in words
+  uint32_t aligned_value = 0;
+  unsigned int key = irq_lock();
+  int ret = am_hal_mram_main_fill(AM_HAL_MRAM_PROGRAM_KEY, aligned_value,
+                                  (uint32_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET + offset),
+                                  erase_size / sizeof(uint32_t));
+  irq_unlock(key);
+
+  // Invalidate the data cache for this region to ensure subsequent reads see the new data
+  (void)sys_cache_data_invd_range((void *)(MEMFAULT_COREDUMP_PARTITION_OFFSET + offset),
+                                  erase_size);
+
+  return (ret == 0);
 }
 
 bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *blk) {
@@ -97,10 +112,14 @@ bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *b
   int ret = am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY, aligned, (uint32_t *)addr,
                                      sizeof(blk->data) / sizeof(uint32_t));
 
+  // Invalidate the data cache for this region to ensure subsequent reads see the new data
+  (void)sys_cache_data_invd_range((void *)addr, sizeof(blk->data));
+
   return (ret == 0);
 }
 
-//! Primarily used for debug. Call erase to wipe out the coredump magic.
+//! Primarily used for debug. Test function reads the entire region, so we need
+//! to wipe everything.
 void memfault_platform_coredump_storage_clear(void) {
-  memfault_platform_coredump_storage_erase(0, 0);
+  memfault_platform_coredump_storage_erase(0, MEMFAULT_COREDUMP_PARTITION_SIZE);
 }

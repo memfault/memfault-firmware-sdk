@@ -172,8 +172,8 @@ extern "C" {
 #endif
 
 //! Enable log line timestamps, when memfault_platform_time_get_current() is
-//! available. Currently timestamps are only decoded from logs embedded in
-//! coredumps.
+//! available. Log timestamps are included in all log entries when platform
+//! time is enabled.
 #ifndef MEMFAULT_LOG_TIMESTAMPS_ENABLE
   #define MEMFAULT_LOG_TIMESTAMPS_ENABLE 1
 #endif
@@ -518,6 +518,14 @@ extern "C" {
 // exception handling code instead of rebooting the device.
 #ifndef MEMFAULT_FAULT_HANDLER_RETURN
   #define MEMFAULT_FAULT_HANDLER_RETURN 0
+#endif
+
+// Enable this flag to return from the Watchdog ISR instead of rebooting the
+// device. Depending on the hardware, the platform may need to clear any
+// watchdog or timer interrupt flags in memfault_platform_fault_handler()
+// (or equivalent) to prevent the interrupt from immediately retriggering.
+#ifndef MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN
+  #define MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN 0
 #endif
 
 //

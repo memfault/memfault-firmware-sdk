@@ -41,7 +41,7 @@ static void log_init(void) {
 static void prv_wdt_event_handler(void) {
   // Note: This handler should be entirely unreachable as the software watchdog should kick in
   // first but just in case let's reboot if it is invoked.
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_HardwareWatchdog, NULL);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_HardwareWatchdog);
   memfault_platform_reboot();
   MEMFAULT_UNREACHABLE;
 }

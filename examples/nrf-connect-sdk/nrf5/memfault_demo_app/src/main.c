@@ -146,6 +146,7 @@ static struct bt_conn_auth_cb conn_auth_callbacks = {
   .cancel = auth_cancel,
 };
 
+#if defined(CONFIG_BT_MDS)
 static bool mds_access_enable(struct bt_conn *conn) {
   if (mds_conn && (conn == mds_conn)) {
     return true;
@@ -157,6 +158,7 @@ static bool mds_access_enable(struct bt_conn *conn) {
 static const struct bt_mds_cb mds_cb = {
   .access_enable = mds_access_enable,
 };
+#endif
 
 static void button_handler(uint32_t button_state, uint32_t has_changed) {
   static bool time_measure_start;
@@ -297,11 +299,48 @@ static int cmd_set_bt_serial(const struct shell *shell_ptr, size_t argc, char *a
   return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_config,
-                               SHELL_CMD_ARG(set_bt_serial, NULL,
-                                             "Set Bluetooth serial number in settings",
-                                             cmd_set_bt_serial, 2, 0),
-                               SHELL_SUBCMD_SET_END);
+#if defined(CONFIG_MEMFAULT_MCUMGR_GRP)
+  #include "memfault/ports/zephyr/memfault_mcumgr.h"
+
+//! The access-enabled variable is passed as user arg for demonstration purposes
+static bool s_memfault_mcumgr_access_allowed = true;
+static bool prv_memfault_mgmt_is_access_allowed(void *user_arg) {
+  return *(bool *)user_arg;
+}
+
+static int cmd_memfault_mcumgr_access(const struct shell *shell_ptr, size_t argc, char **argv) {
+  memfault_mcumgr_set_access_callback(prv_memfault_mgmt_is_access_allowed,
+                                      &s_memfault_mcumgr_access_allowed);
+
+  if (argc > 1) {
+    if (strcmp(argv[1], "1") == 0) {
+      s_memfault_mcumgr_access_allowed = true;
+    } else if (strcmp(argv[1], "0") == 0) {
+      s_memfault_mcumgr_access_allowed = false;
+    } else {
+      shell_print(shell_ptr, "Usage: memfault-mcumgr-access <1|0>");
+      return -EINVAL;
+    }
+  }
+
+  shell_print(shell_ptr, "Memfault MCUmgr group access is now %s",
+              s_memfault_mcumgr_access_allowed ? "ENABLED" : "DISABLED");
+  return 0;
+}
+
+#endif  // defined(CONFIG_MEMFAULT_MCUMGR_GRP)
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+  sub_config,
+  SHELL_CMD_ARG(set_bt_serial, NULL, "Set Bluetooth serial number in settings", cmd_set_bt_serial,
+                2, 0),
+#if defined(CONFIG_MEMFAULT_MCUMGR_GRP)
+  SHELL_CMD_ARG(memfault_mcumgr_access, NULL,
+                "Enable or disable Memfault MCUmgr group access. Usage: "
+                "memfault-mcumgr-access <1|0>",
+                cmd_memfault_mcumgr_access, 1, 1),
+#endif  // defined(CONFIG_MEMFAULT_MCUMGR_GRP)
+  SHELL_SUBCMD_SET_END);
 SHELL_CMD_REGISTER(config, &sub_config, "Configure the example", NULL);
 
 #if CONFIG_MEMFAULT_APP_CAPTURE_ALL_RAM
@@ -366,11 +405,13 @@ int main(void) {
     return 0;
   }
 
+#if defined(CONFIG_BT_MDS)
   err = bt_mds_cb_register(&mds_cb);
   if (err) {
     printk("Memfault Diagnostic service callback registration failed (err %d)\n", err);
     return 0;
   }
+#endif  // defined(CONFIG_BT_MDS)
 
   err = bt_enable(NULL);
   if (err) {

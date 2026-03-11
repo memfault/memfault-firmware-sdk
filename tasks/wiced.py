@@ -52,9 +52,12 @@ def _wiced_guess_console_port() -> str:
     return port
 
 
-def _wiced_make(ctx: Context, *args: str, **kwargs: object) -> None:
+def _wiced_make(ctx: Context, *args: str, pty: bool = False) -> None:
     with ctx.cd(WICED_SDK_43X_ROOT):
-        ctx.run("{make} {args}".format(make=WICED_MAKE, args=" ".join(args)), **kwargs)
+        ctx.run(
+            "{make} {args}".format(make=WICED_MAKE, args=" ".join(args)),
+            pty=pty,
+        )
 
 
 def _run_openocd_cmd(ctx: Context, openocd_cmd: str | None = None) -> None:

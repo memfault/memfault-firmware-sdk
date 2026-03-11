@@ -240,6 +240,7 @@ void memfault_self_test_data_export_test(void) {
 
 static void prv_print_region_group_info(const char *group_name, const sMfltCoredumpRegion *regions,
                                         const size_t num_regions) {
+  (void)group_name;
   MEMFAULT_SELF_TEST_OUTPUT_LOG("Coredump group: %s", group_name);
   MEMFAULT_SELF_TEST_OUTPUT_LOG("-----------------------------");
   MEMFAULT_SELF_TEST_OUTPUT_LOG("%10s|%10s|%6s|", "Address", "Length", "Type");

@@ -3,7 +3,10 @@
  partition for storing coredumps
 */
 
-/* Remove the old standalone flash0 node */
+/*
+ Remove the standalone flash0 node, and replace it with a new one set as
+ compatible with Ambiq flash driver
+*/
 &flash0 {
 	status = "disabled";
 };
@@ -29,8 +32,8 @@
 					#address-cells = < 0x1 >;
 					#size-cells = < 0x1 >;
 
-					memfault_coredump_partition: partition@3f0000 {
-						reg = < 0x3ec000 0x4000 >;
+					memfault_coredump_partition: partition@7FC000 {
+						reg = < 0x7FC000 0x4000 >;
 					};
 				};
 			};

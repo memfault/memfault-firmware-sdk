@@ -58,6 +58,7 @@ void memfault_metrics_connectivity_connected_state_change(eMemfaultMetricsConnec
       (void)MEMFAULT_METRIC_TIMER_START(connectivity_expected_time_ms);
       (void)MEMFAULT_METRIC_TIMER_STOP(connectivity_connected_time_ms);
       break;
+    case kMemfaultMetricsConnectivityState_NumStates:
     default:
       MEMFAULT_LOG_ERROR("Unexpected connection state: %u", state);
       break;

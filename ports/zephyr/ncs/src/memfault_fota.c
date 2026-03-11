@@ -4,9 +4,16 @@
 //! See LICENSE for details
 
 // clang-format off
+#include "memfault/ports/zephyr/include_compatibility.h"
+
+#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
+
 #include "memfault/nrfconnect_port/http.h"
 #include "memfault/nrfconnect_port/fota.h"
-#include "memfault/nrfconnect_port/coap.h"
+
+#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+  #include "memfault/nrfconnect_port/coap.h"
+#endif
 
 #include "memfault/components.h"
 
@@ -14,8 +21,6 @@
 
 #include "net/downloader.h"
 #include "net/fota_download.h"
-
-#include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 // clang-format on
 
 #if !defined(CONFIG_DOWNLOADER)
@@ -133,10 +138,12 @@ int memfault_fota_start(void) {
   // Insert a null terminator to split host and file, so we avoid additional memory allocations
   // Note: this will not effect the free()-ing of the original URL string
   *file = '\0';
-  file++;
+  file++;  // file now points to the path after the first '/'
 
   // Assign a new pointer, indicating we have isolated the host
   const char *host = s_download_url;
+
+  MEMFAULT_LOG_DEBUG("Split URL - host: '%s', file: '%s'", host, file);
 
   // NCS 2.6 introduced a new API to support multiple certificates, so no need to iterate through
   // to find a matching one

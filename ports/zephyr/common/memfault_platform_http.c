@@ -29,27 +29,13 @@
 #include "memfault/ports/zephyr/version.h"
 
 #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
-
-//! Zephyr 3.7.0 deprecated NET_SOCKETS_POSIX_NAMES, and requires POSIX_API to be enabled instead.
-//! Confirm it's set.
-#if !defined(CONFIG_POSIX_API)
-#error "CONFIG_POSIX_API must be enabled"
-#endif
-
 //! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
 #if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"
 #endif
 #endif
 
-#if defined(CONFIG_POSIX_API)
-  #include MEMFAULT_ZEPHYR_INCLUDE(posix/netdb.h)
-  #include MEMFAULT_ZEPHYR_INCLUDE(posix/poll.h)
-  #include MEMFAULT_ZEPHYR_INCLUDE(posix/sys/socket.h)
-  #include MEMFAULT_ZEPHYR_INCLUDE(posix/unistd.h)
-#else
-  #include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
-#endif
+#include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 // clang-format on
 
 #if defined(CONFIG_MEMFAULT_HTTP_USES_MBEDTLS)
@@ -180,7 +166,7 @@ int memfault_zephyr_port_install_root_certs(void) {
 
 static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   int fd = *(int *)ctx;
-  int rv = send(fd, data, data_len, 0);
+  int rv = zsock_send(fd, data, data_len, 0);
   return (rv == data_len);
 }
 
@@ -193,7 +179,7 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   char port[10] = { 0 };
   snprintf(port, sizeof(port), "%d", port_num);
 
-  int rv = getaddrinfo(host, port, &hints, res);
+  int rv = zsock_getaddrinfo(host, port, &hints, res);
   if (rv != 0) {
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
   } else {
@@ -208,7 +194,7 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
   return rv;
 }
 
-static int prv_create_socket(struct addrinfo **res, const char *host, int port_num) {
+static int prv_create_socket(struct zsock_addrinfo **res, const char *host, int port_num) {
   const int protocol = g_mflt_http_client_config.disable_tls ? IPPROTO_TCP : IPPROTO_TLS_1_2;
 
   int rv = prv_getaddrinfo(res, host, port_num);
@@ -216,7 +202,7 @@ static int prv_create_socket(struct addrinfo **res, const char *host, int port_n
     return rv;
   }
 
-  int fd = socket((*res)->ai_family, (*res)->ai_socktype, protocol);
+  int fd = zsock_socket((*res)->ai_family, (*res)->ai_socktype, protocol);
   if (fd < 0) {
     MEMFAULT_LOG_ERROR("Failed to open socket, errno=%d", errno);
   }
@@ -241,7 +227,7 @@ static int prv_create_socket(struct addrinfo **res, const char *host, int port_n
   MEMFAULT_LOG_DEBUG("Binding socket to interface \"%s\", idx=%d", ifreq.ifr_name, rv);
   #endif
 
-  rv = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+  rv = zsock_setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
   if (rv) {
     MEMFAULT_LOG_ERROR("Failed to bind socket to interface \"%s\" with errno=%d", ifreq.ifr_name,
                        errno);
@@ -256,7 +242,7 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   const sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2,
                                     kMemfaultRootCert_AmazonRootCa1,
                                     kMemfaultRootCert_DigicertRootCa };
-  int rv = setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
+  int rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;
   }
@@ -269,7 +255,7 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   };
 
   int verify = REQUIRED;
-  rv = setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
+  rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(verify));
   if (rv) {
     MEMFAULT_LOG_ERROR("Failed to setup peer verification, err %d\n", errno);
     return rv;
@@ -281,7 +267,7 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   // are met. Parsing PEM does not require this socket option.
 #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER) && defined(TLS_CERT_NOCOPY_OPTIONAL)
   const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
-  rv = setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
+  rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
   if (rv) {
     MEMFAULT_LOG_ERROR("Failed to set tls nocopy, err %d\n", errno);
     return rv;
@@ -289,7 +275,7 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
 #endif
 
   const size_t host_name_len = strlen(host);
-  return setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
+  return zsock_setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
 static int prv_configure_socket(int fd, const char *host) {
@@ -304,24 +290,24 @@ static int prv_configure_socket(int fd, const char *host) {
   return rv;
 }
 
-static int prv_connect_socket(int fd, struct addrinfo *res) {
-  int rv = connect(fd, res->ai_addr, res->ai_addrlen);
+static int prv_connect_socket(int fd, struct zsock_addrinfo *res) {
+  int rv = zsock_connect(fd, res->ai_addr, res->ai_addrlen);
 
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to connect socket, errno=%d", errno);
-    close(fd);
+    zsock_close(fd);
   }
 
   return rv;
 }
 
 static int prv_poll_socket(int sock_fd, int events) {
-  struct pollfd poll_fd = {
+  struct zsock_pollfd poll_fd = {
     .fd = sock_fd,
     .events = events,
   };
   const int timeout_ms = POLL_TIMEOUT_MS;
-  int rv = poll(&poll_fd, 1, timeout_ms);
+  int rv = zsock_poll(&poll_fd, 1, timeout_ms);
   if (rv == 0) {
     MEMFAULT_LOG_ERROR("Timeout waiting for socket event(s): event(s)=%d, errno=%d", events, errno);
   }
@@ -334,12 +320,12 @@ static bool prv_try_send(int sock_fd, const uint8_t *buf, size_t buf_len) {
     // Wait for socket to become available within a timeout in case the socket is busy processing
     // other tx data. This will prevent busy looping in this loop (since the send call is
     // non-blocking), therefore allowing other threads to run.
-    int rv = prv_poll_socket(sock_fd, POLLOUT);
+    int rv = prv_poll_socket(sock_fd, ZSOCK_POLLOUT);
     if (rv <= 0) {
       return false;
     }
 
-    rv = send(sock_fd, &buf[idx], buf_len - idx, MSG_DONTWAIT);
+    rv = zsock_send(sock_fd, &buf[idx], buf_len - idx, ZSOCK_MSG_DONTWAIT);
     if (rv > 0) {
       idx += rv;
       continue;
@@ -363,7 +349,7 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
 
   int rv = prv_configure_socket(sock_fd, host);
   if (rv < 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
     return -1;
   }
 
@@ -468,12 +454,12 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
 }
 
 static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
-  int rv = prv_poll_socket(sock_fd, POLLIN);
+  int rv = prv_poll_socket(sock_fd, ZSOCK_POLLIN);
   if (rv <= 0) {
     return false;
   }
 
-  const int len = recv(sock_fd, buf, *buf_len, MSG_DONTWAIT);
+  const int len = zsock_recv(sock_fd, buf, *buf_len, ZSOCK_MSG_DONTWAIT);
   if (len <= 0) {
     if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
       *buf_len = 0;
@@ -602,7 +588,7 @@ static bool prv_fetch_ota_payload(const char *url, const sMemfaultOtaUpdateHandl
   host[uri_info.host_len] = '\0';
 
   // create the connection
-  struct addrinfo *res = NULL;
+  struct zsock_addrinfo *res = NULL;
   int sock_fd = prv_open_socket(&res, host, uri_info.port);
   if (sock_fd < 0) {
     goto cleanup;
@@ -615,11 +601,11 @@ static bool prv_fetch_ota_payload(const char *url, const sMemfaultOtaUpdateHandl
   success = prv_install_ota_payload(sock_fd, handler);
 cleanup:
   if (sock_fd >= 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
   }
 
   if (res != NULL) {
-    freeaddrinfo(res);
+    zsock_freeaddrinfo(res);
   }
   return success;
 }
@@ -676,7 +662,7 @@ static bool prv_check_for_ota_update(char **download_url) {
   const char *host = MEMFAULT_HTTP_GET_DEVICE_API_HOST();
   const int port = MEMFAULT_HTTP_GET_DEVICE_API_PORT();
 
-  struct addrinfo *res = NULL;
+  struct zsock_addrinfo *res = NULL;
   int sock_fd = prv_open_socket(&res, host, port);
   if (sock_fd < 0) {
     goto cleanup;
@@ -690,11 +676,11 @@ static bool prv_check_for_ota_update(char **download_url) {
   success = prv_parse_new_ota_payload_url_response(sock_fd, download_url);
 cleanup:
   if (sock_fd >= 0) {
-    close(sock_fd);
+    zsock_close(sock_fd);
   }
 
   if (res) {
-    freeaddrinfo(res);
+    zsock_freeaddrinfo(res);
   }
   return success;
 }
@@ -820,12 +806,12 @@ int memfault_zephyr_port_http_connect_socket(sMemfaultHttpContext *ctx) {
 
 void memfault_zephyr_port_http_close_socket(sMemfaultHttpContext *ctx) {
   if (ctx->sock_fd >= 0) {
-    close(ctx->sock_fd);
+    zsock_close(ctx->sock_fd);
   }
   ctx->sock_fd = -1;
 
   if (ctx->res != NULL) {
-    freeaddrinfo(ctx->res);
+    zsock_freeaddrinfo(ctx->res);
     ctx->res = NULL;
   }
 }

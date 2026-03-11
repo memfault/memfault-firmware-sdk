@@ -162,6 +162,10 @@ int memfault_platform_boot(void) {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
   memfault_metrics_boot(evt_storage, &boot_info);
+
+  #if MEMFAULT_METRICS_BATTERY_ENABLE
+  memfault_metrics_battery_boot();
+  #endif
 #endif
 
   memfault_log_boot(s_log_buf_storage, MEMFAULT_ARRAY_SIZE(s_log_buf_storage));

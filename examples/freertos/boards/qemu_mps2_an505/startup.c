@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "memfault/components.h"
+
 typedef struct UART_t {
   volatile uint32_t DATA;
   volatile uint32_t STATE;
@@ -128,20 +130,29 @@ extern void UsageFault_Handler(void);
 
 // A minimal vector table for a Cortex M.
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
-  (void *)(&__stack),     // initial stack pointer
-  Reset_Handler,          /*     Reset Handler */
-  NMI_Handler,            /* -14 NMI Handler */
-  HardFault_Handler,      /* -13 Hard Fault Handler */
-  MemManage_Handler,      /* -12 MPU Fault Handler */
-  BusFault_Handler,       /* -11 Bus Fault Handler */
-  UsageFault_Handler,     /* -10 Usage Fault Handler */
-  0,                      /*  -9 Secure Fault Handler */
-  0,                      /*     Reserved */
-  0,                      /*     Reserved */
-  0,                      /*     Reserved */
-  SVC_Handler,            /*  -5 SVCall Handler */
-  0 /*DebugMon_Handler*/, /*  -4 Debug Monitor Handler */
-  0,                      /*     Reserved */
-  PendSV_Handler,         /*  -2 PendSV Handler */
-  SysTick_Handler,        /*  -1 SysTick Handler */
+  (void *)(&__stack),             // initial stack pointer
+  Reset_Handler,                  /*     Reset Handler */
+  NMI_Handler,                    /* -14 NMI Handler */
+  HardFault_Handler,              /* -13 Hard Fault Handler */
+  MemManage_Handler,              /* -12 MPU Fault Handler */
+  BusFault_Handler,               /* -11 Bus Fault Handler */
+  UsageFault_Handler,             /* -10 Usage Fault Handler */
+  0,                              /*  -9 Secure Fault Handler */
+  0,                              /*     Reserved */
+  0,                              /*     Reserved */
+  0,                              /*     Reserved */
+  SVC_Handler,                    /*  -5 SVCall Handler */
+  0 /*DebugMon_Handler*/,         /*  -4 Debug Monitor Handler */
+  0,                              /*     Reserved */
+  PendSV_Handler,                 /*  -2 PendSV Handler */
+  SysTick_Handler,                /*  -1 SysTick Handler */
+  0,                              // 16 UART 0
+  0,                              // 17 UART 0
+  0,                              // 18 UART 1
+  0,                              // 19 UART 1
+  0,                              // 20 UART 2
+  0,                              // 21 UART 2
+  0,                              // 22 GPIO 0
+  0,                              // 23 GPIO 1
+  MEMFAULT_EXC_HANDLER_WATCHDOG,  // 24 Timer 0
 };

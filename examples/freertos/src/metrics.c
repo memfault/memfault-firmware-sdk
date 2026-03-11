@@ -159,6 +159,23 @@ static void prv_daily_heartbeat(void) {
 }
 #endif  // MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE
 
+#if MEMFAULT_METRICS_BATTERY_ENABLE
+int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc) {
+  static uint32_t s_soc = 100 * MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE;  // 100.0%
+
+  *soc = (sMfltPlatformBatterySoc){
+    .soc = s_soc,
+    .discharging = true,
+  };
+
+  if (s_soc > 0) {
+    s_soc -= 1 * MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE;  // discharge 1% every heartbeat
+  }
+
+  return 0;
+}
+#endif
+
 void memfault_metrics_heartbeat_collect_data(void) {
   MEMFAULT_LOG_INFO("💓 Heartbeat callback triggered");
 
@@ -173,6 +190,24 @@ void memfault_metrics_heartbeat_collect_data(void) {
 
 #if MEMFAULT_EXAMPLE_DAILY_HEARTBEAT_ENABLE
   prv_daily_heartbeat();
+#endif
+
+#if MEMFAULT_METRICS_SYNC_SUCCESS
+  memfault_metrics_connectivity_record_sync_success();
+  memfault_metrics_connectivity_record_sync_failure();
+#endif
+
+#if MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
+  memfault_metrics_connectivity_record_memfault_sync_success();
+  memfault_metrics_connectivity_record_memfault_sync_failure();
+#endif
+
+#if MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
+  static eMemfaultMetricsConnectivityState s_connectivity_state =
+    kMemfaultMetricsConnectivityState_Stopped;
+  // Increment the state on each call, for demonstration purposes
+  memfault_metrics_connectivity_connected_state_change(s_connectivity_state++ %
+                                                       kMemfaultMetricsConnectivityState_NumStates);
 #endif
 
   // For demonstration purposes, print the current values. This is not

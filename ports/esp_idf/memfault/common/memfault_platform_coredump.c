@@ -36,13 +36,26 @@
 #include "memfault/core/task_watchdog.h"
 #include "memfault/esp_port/coredump.h"
 #include "memfault/esp_port/spi_flash.h"
-#include "memfault/esp_port/uart.h"
 #include "memfault/util/crc16.h"
 
 // Needed for >= v4.4.3 default coredump collection
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 3)
   #include "memfault/ports/freertos_coredump.h"
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32
+  #include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+  #include "esp32s2/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+  #include "esp32s3/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+  #include "esp32c3/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+  #include "esp32c6/rom/uart.h"
+#endif
+
+#define MEMFAULT_ESP32_CONSOLE_UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
 
 // Factor out issues with Espressif's ESP32 to ESP conversion in sdkconfig
 #define COREDUMPS_ENABLED (CONFIG_ESP32_ENABLE_COREDUMP || CONFIG_ESP_COREDUMP_ENABLE)

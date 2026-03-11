@@ -118,7 +118,7 @@ static int prv_test_trace(int argc, char *argv[]) {
 
 //! Trigger a user initiated reboot and confirm reason is persisted
 static int prv_test_reboot(int argc, char *argv[]) {
-  memfault_reboot_tracking_mark_reset_imminent(kMfltRebootReason_UserReset, NULL);
+  MEMFAULT_REBOOT_MARK_RESET_IMMINENT(kMfltRebootReason_UserReset);
   memfault_platform_reboot();
 }
 

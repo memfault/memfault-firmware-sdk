@@ -7,6 +7,7 @@ zephyr_library_sources(memfault_platform_system_time.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_fota.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_MCUMGR_GRP memfault_mcumgr.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP memfault_platform_ram_backed_coredump.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_COREDUMP_STORAGE_MRAM coredump_storage/memfault_mram_backed_coredump.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM coredump_storage/memfault_ambiq_mram_backed_coredump.c)
@@ -15,7 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_ST
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL memfault_demo_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL_SELF_TEST memfault_self_test_platform.c)
 
-if(CONFIG_MEMFAULT_HTTP_ENABLE OR CONFIG_USE_NRF_CLOUD_TRANSPORT)
+if(CONFIG_MEMFAULT_HTTP_ENABLE OR CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   zephyr_library_sources(memfault_platform_post.c)
 endif()
 
@@ -53,7 +54,7 @@ if (CONFIG_MEMFAULT_LOGGING_ENABLE)
   endif()
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD memfault_http_periodic_upload.c)
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_PERIODIC_UPLOAD memfault_periodic_upload.c)
 
 # Make sure RAM based storage regions are not initialized on boot
 # by placing them in special linker sections

@@ -4,6 +4,13 @@ manifest:
   self:
     path: qemu-app
 
+  group-filter:
+    # Disable the ambiq hal by default; it's compatible only with Zephyr v4.3.0.
+    # To enable it, run:
+    #   west config manifest.group-filter +ambiq
+    #   west update
+    - "-ambiq"
+
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
@@ -21,7 +28,17 @@ manifest:
             - cmsis_6
             - picolibc
             - hal_ambiq
+            - hal_nxp
             - hal_stm32
+
+    # Override the hal_ambiq module to use our patched version, which supports
+    # MRAM flash driver on Apollo510
+    - name: hal_ambiq
+      path: modules/hal/ambiq
+      remote: memfault
+      revision: zephyr-v4.3.0-apollo510-mram-patch
+      groups:
+        - ambiq
 
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk

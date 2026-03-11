@@ -123,6 +123,7 @@ void memfault_build_info_dump(void) {
     build_id_sha[idx] = prv_nib_to_hex_ascii((c >> 4) & 0xf);
     build_id_sha[idx + 1] = prv_nib_to_hex_ascii(c & 0xf);
   }
+  (void)build_id_sha;
 
   MEMFAULT_LOG_INFO(
     "%s Build ID: %s",

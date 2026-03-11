@@ -6,6 +6,128 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.36.0] - 2026-03-11
+
+This is a minor release, including several improvements and bug fixes across all
+platforms. Highlights:
+
+- Improved support for accessing Memfault over CoAP (vs. HTTPS) for Zephyr-based
+  devices
+
+- Added support for optionally returning from a Watchdog interrupt handler,
+  instead of rebooting immediately
+
+- For Zephyr-based devices, added a custom MCUmgr command group for Memfault
+  metadata. This enables Memfault FOTA via MCUmgr without sending device
+  information on a secondary interface (e.g., Bluetooth DIS)
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - Add support for the upcoming ESP-IDF v6 release.
+
+- General:
+
+  - Add support for optionally returning from a Watchdog interrupt handler,
+    instead of rebooting. Use the define
+    `MEMFAULT_FAULT_HANDLER_WATCHDOG_RETURN` to enable this behavior. Note that
+    the user is required to handle any necessary clean up or reboot in this
+    configuration.
+
+- Zephyr:
+
+  - A custom
+    [MCUmgr](https://docs.zephyrproject.org/latest/services/device_mgmt/mcumgr_handlers.html)
+    command group for Memfault metadata, which allows a MCUmgr client to read
+    the following device information over the MCUmgr protocol:
+
+    - Device Serial
+    - Software Version
+    - Software Type
+    - Hardware Version
+    - Memfault Project Key
+
+    This enables using Memfault FOTA with only MCUmgr enabled on the target
+    device (i.e. SMP over BLE).
+
+    Memfault recommends enabling the
+    [Memfault Diagnostic Service (MDS)](https://docs.memfault.com/docs/mcu/mds)
+    when using the Nordic nRF Connect SDK on a Bluetooth-enabled application:
+    MDS provides a built-in way to export Memfault telemetry data over BLE,
+    using the Nordic-provided companion mobile apps.
+
+    See the [documentation here](https://docs.memfault.com/docs/mcu/mcumgr) for
+    more details on the Memfault MCUmgr command group.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Decouple CoAP upload from HTTP. Data upload over nRF Cloud CoAP via
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP` no longer requires
+    `CONFIG_MEMFAULT_HTTP_ENABLE`.
+
+  - Use new options `CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND`,
+    `CONFIG_MEMFAULT_COAP_MAX_POST_SIZE`, and
+    `CONFIG_MEMFAULT_COAP_FOTA_URL_BUFFER_SIZE` instead of HTTP or
+    download-client configs to control CoAP upload behavior.
+
+  - Remove redundant default-enabled configs from the
+    [nRF91 sample app](examples/nrf-connect-sdk/nrf9160/) `prj.conf`.
+
+  - Rename `mflt_http` thread to `mflt_upload`. The associated thread metric
+    name is now `memory_mflt_upload_pct_max`.
+
+  - Add `CONFIG_NETWORKING` as a dependency for
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP`.
+
+  - Add `CONFIG_COAP_CLIENT` and `CONFIG_NRF_CLOUD_COAP_MAX_USER_OPTIONS >= 2`
+    as dependencies for `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP`.
+
+  - Use the NCS nRF Cloud CoAP APIs in the Memfault CoAP port to share
+    connection ID with other nRF Cloud connections. Requires the latest NCS
+    development version when using `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP`.
+
+- Zephyr:
+
+  - Deprecate `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD` and related Kconfig in
+    favor of `CONFIG_MEMFAULT_PERIODIC_UPLOAD`. The legacy
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_*` configs remain as
+    backwards-compatibility aliases. Choice config
+    `CONFIG_MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT` is kept to allow for choice
+    override in NCS.
+
+  - Refactor HTTP client implementation to use `zsock_` prefixed socket
+    functions instead of depending on `CONFIG_POSIX_API`. This aligns with
+    Zephyr's native socket API and removes the requirement for POSIX API
+    compatibility layer to be enabled. As part of this change, add a missing
+    `NET_SOCKETS` Kconfig dependency to `CONFIG_MEMFAULT_HTTP_ENABLE`; this
+    dependency was always required, but not previously included.
+
+### 🐛 Fixed
+
+- General:
+
+  - Fix a few `-Wunused-variable` warnings in the battery metrics module when
+    debug logs are disabled.
+
+- nRF-Connect SDK
+
+  - Fix a missed reference of Kconfig symbol `MEMFAULT_USE_NRF_CLOUD_TRANSPORT`
+    when it was updated to `MEMFAULT_USE_NRF_CLOUD_COAP` in SDK v1.34.0.
+
+  - Fix a reference of `CONFIG_MEMFAULT_METRICS_SYNC_SUCCESS` to
+    `CONFIG_MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS` when marking sync successes
+    for the Memfault cloud
+    [Sync Success Vital](https://docs.memfault.com/docs/platform/memfault-core-metrics#periodic-connectivity).
+
+- Zephyr:
+
+  - Fix an error in the Kconfig dependencies for the
+    `MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM` symbol. This affects users on Ambiq
+    Apollo4 and Apollo510 SOCs.
+
 ## [1.35.0] - 2026-01-29
 
 ### 📈 Added

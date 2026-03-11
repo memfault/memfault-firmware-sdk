@@ -74,6 +74,7 @@ typedef enum {
   kMemfaultMetricsConnectivityState_Started,
   kMemfaultMetricsConnectivityState_Connected,
   kMemfaultMetricsConnectivityState_ConnectionLost,
+  kMemfaultMetricsConnectivityState_NumStates,
 } eMemfaultMetricsConnectivityState;
 
 //! Signal a connectivity state change event. For a device that should be always

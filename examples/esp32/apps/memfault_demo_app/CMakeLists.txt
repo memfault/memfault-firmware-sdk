@@ -54,25 +54,3 @@ project(${PROJECT_NAME})
 if (IDF_VERSION_MAJOR VERSION_GREATER_EQUAL 5)
   idf_build_set_property(COMPILE_OPTIONS "-Werror=deprecated-declarations" APPEND)
 endif()
-
-# Check for invalid partition table configurations
-if (
-  CONFIG_APP_MEMFAULT_TRANSPORT_HTTP AND
-  NOT CONFIG_PARTITION_TABLE_CUSTOM_FILENAME STREQUAL "partitions_example.csv"
-)
-  message(WARNING "Data transport is HTTP but using partition table ${CONFIG_PARTITION_TABLE_CUSTOM_FILENAME}")
-  set(INVALID_PARTITION_TABLE true)
-elseif(
-  CONFIG_APP_MEMFAULT_TRANSPORT_MQTT AND
-  NOT CONFIG_PARTITION_TABLE_CUSTOM_FILENAME STREQUAL "partitions_example_mqtt.csv"
-)
-  message(WARNING "Data transport is MQTT but using partition table ${CONFIG_PARTITION_TABLE_CUSTOM_FILENAME}")
-  set(INVALID_PARTITION_TABLE true)
-endif()
-
-if (INVALID_PARTITION_TABLE)
-  message(FATAL_ERROR
-    "Invalid partition table configuration, check CONFIG_APP_MEMFAULT_TRANSPORT configs.\
-    If this error occurs repeatedly run `idf.py fullclean && rm sdkconfig`"
-  )
-endif()

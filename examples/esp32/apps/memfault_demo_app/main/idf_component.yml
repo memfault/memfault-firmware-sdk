@@ -6,7 +6,15 @@
 
 dependencies:
   espressif/led_strip:
-    version: "^2.0.0"
+    # esp-idf v6+ requires led_strip v3.0.0+, but that is incompatible with
+    # esp-idf v4.x, so we use a looser dependency spec here.
+    version: "<4.0.0"
     rules: # will add dependency only when all if clauses are True
       - if: "idf_version >=5.0" # supports all SimpleSpec grammars (https://python-semanticversion.readthedocs.io/en/latest/reference.html#semantic_version.SimpleSpec)
       - if: "target not in [esp32]" # supports boolean operator ==, !=, in, not in.
+  espressif/mqtt:
+    version: "^1.0.0"
+    rules:
+      # moved to a component manager component in this commit:
+      # https://github.com/espressif/esp-idf/commit/448714b056ec79172bcbf8724a23f3acca7a4667
+      - if: "idf_version >=6.0"
