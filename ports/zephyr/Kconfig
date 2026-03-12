@@ -489,7 +489,8 @@ choice MEMFAULT_TLS_CERTS_FORMAT
 
 config MEMFAULT_TLS_CERTS_USE_PEM
         bool "Use PEM format for TLS certificates"
-        depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || !(MBEDTLS && MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"))
+        depends on (MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C) || \
+		   !(MBEDTLS && MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h")
         help
           When enabled, Memfault will use PEM format for TLS certificates.
           When disabled, DER format will be used.
