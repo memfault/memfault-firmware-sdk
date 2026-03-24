@@ -15,6 +15,19 @@ config MEMFAULT
           Enable Zephyr Integration with the Memfault SDK
           At the moment a port is only provided for Cortex-M based targets
 
+# This symbol was renamed in Zephyr v4.4. To avoid triggering Kconfig lints that
+# check for missing symbols, provide a fallback definition here, so we can
+# maintain the dependency checks for PEM support on older Zephyr versions.
+config MBEDTLS_PEM_CERTIFICATE_FORMAT
+        bool
+
+# These symbols are new to Zephyr v4.4. Add stubs here to prevent Kconfig linter
+# from triggering on earlier Zephyr versions
+config MBEDTLS_PEM_PARSE_C
+        bool
+config MBEDTLS_PEM_WRITE_C
+        bool
+
 if MEMFAULT
 
 config MEMFAULT_CACHE_FAULT_REGS
@@ -63,22 +76,23 @@ config MEMFAULT_SOC_FAMILY_ESP32
 config MEMFAULT_SOC_NRF
         bool
         default y if \
-            ( \
-                (SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_SERIES_NRF54L || SOC_SERIES_NRF91) || \
-                (SOC_SERIES = "nrf52" || SOC_SERIES = "nrf53" || SOC_SERIES = "nrf54h" || SOC_SERIES = "nrf54l" || SOC_SERIES = "nrf71" || SOC_SERIES = "nrf91" || SOC_SERIES = "nrf92") \
-            )
+          (SOC_SERIES = "nrf52" || SOC_SERIES = "nrf53" || SOC_SERIES = "nrf54h" || SOC_SERIES = "nrf54l" || SOC_SERIES = "nrf71" || SOC_SERIES = "nrf91" || SOC_SERIES = "nrf92")
         help
           Non-user configurable option indicating a compatible Nordic SOC is in
           use.
 
 config MEMFAULT_SOC_SERIES_NRF91
         bool
-        default y if SOC_SERIES_NRF91 || (SOC_SERIES = "nrf91")
+        default y if (SOC_SERIES = "nrf91")
         help
           Non-user configurable option indicating a nRF91 series SOC is in use.
 
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
+
+# Stub for backwards compatibility with Kconfig linter on older Zephyr versions
+config SOC_SERIES_APOLLO5X
+        bool
 
 # For backwards compatibility, this must be outside of the choice block below
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
@@ -360,20 +374,44 @@ config MEMFAULT_ROOT_CERT_STORAGE
 
 choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
     bool "Implementation used to store Memfault Root certificates"
-    default MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM if MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
-    default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
+    default MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM if (MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE) || MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
+    default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE if TLS_CREDENTIALS
+    default MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
     depends on MEMFAULT_ROOT_CERT_STORAGE
 
-config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
-    bool "Uses the storage on the NRF9160 modem for storing root certificates"
+config MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
+    bool "Uses the storage on nRF modems for storing root certificates (deprecated)"
+    depends on MODEM_KEY_MGMT
+    help
+      Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
 
 config MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
     bool "Uses Zephyr's tls_credential_add() API for storing root certificates"
+    depends on TLS_CREDENTIALS
+    depends on NET_SOCKETS_SOCKOPT_TLS
 
 config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
     bool "Provide a custom implementation of memfault_root_cert_storage_add()"
 
 endchoice
+
+config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
+    bool "Uses the storage on nRF modems for storing root certificates (deprecated)"
+    depends on MEMFAULT_ROOT_CERT_STORAGE
+    select DEPRECATED
+    help
+      Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
+
+config MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT
+    bool "Install root certificates on modem library initialization"
+    default y
+    depends on MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
+    help
+      When enabled, Memfault root certificates (from memfault/http/root_certs.h)
+      will be installed automatically from an NRF_MODEM_LIB_ON_INIT callback,
+      after modem library initialization. Disable this to manage root certificate
+      installation manually. Note, installation must occur after modem library
+      initialization and before the LTE connection is active.
 
 config MEMFAULT_HTTP_ENABLE
         bool "Support for using Memfault's HTTP APIs"
@@ -489,7 +527,8 @@ choice MEMFAULT_TLS_CERTS_FORMAT
 
 config MEMFAULT_TLS_CERTS_USE_PEM
         bool "Use PEM format for TLS certificates"
-        depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || !(MBEDTLS && MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"))
+        depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || (MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C)) || \
+                   !(MBEDTLS && MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h")
         help
           When enabled, Memfault will use PEM format for TLS certificates.
           When disabled, DER format will be used.
@@ -621,7 +660,7 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
-menuconfig MEMFAULT_MCUMGR_GRP
+config MEMFAULT_MCUMGR_GRP
         bool "Memfault MCUmgr group"
         depends on MCUMGR
         default y

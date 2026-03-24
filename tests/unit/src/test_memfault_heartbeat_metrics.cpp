@@ -357,9 +357,10 @@ TEST(MemfaultHeartbeatMetrics, Test_TimerActiveWhenHeartbeatCollected) {
 
 TEST(MemfaultHeartbeatMetrics, Test_String) {
 #define SAMPLE_STRING "0123456789abcdef"
-  static_assert(__builtin_strlen(SAMPLE_STRING) == 16,
-                "be sure to modify tests/stub_includes/memfault_metrics_heartbeat_config.def to "
-                "match exactly, so we can check for buffer overflows!");
+  static_assert(
+    __builtin_strlen(SAMPLE_STRING) == 16,
+    "be sure to modify tests/unit/stub_includes/memfault_metrics_heartbeat_config.def to "
+    "match exactly, so we can check for buffer overflows!");
 
   MemfaultMetricId key = MEMFAULT_METRICS_KEY(test_key_string);
 

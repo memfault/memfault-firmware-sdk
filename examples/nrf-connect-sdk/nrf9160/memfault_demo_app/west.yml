@@ -2,7 +2,7 @@ manifest:
   projects:
     - name: nrf
       url: https://github.com/nrfconnect/sdk-nrf
-      revision: v3.1.0
+      revision: f6b4550c9c384c93c390c33cad5edd3f4431d949  # v3.2.4 + nrf_cloud_coap_get_user_options()
       import: true
       import:
         path-blocklist: modules/lib/memfault-firmware-sdk

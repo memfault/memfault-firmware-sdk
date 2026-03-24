@@ -2,13 +2,6 @@
 //!
 //! Copyright (c) Memfault, Inc.
 //! See LICENSE for details
-//!
-//! Entry point to Memfault Radio. In this file you will find:
-//!  1. Implementation for memfault_platform_get_device_info()
-//!  2. g_mflt_http_client_config dependency which needs to be filled in with your Project Key
-//!  3. A call to install the Root Certs used by Memfault on the nRF91 modem
-//!     (memfault_nrfconnect_port_install_root_certs())
-//!  4. Start of the LTE modem & AT interface
 
 // clang-format off
 #include "memfault/ports/zephyr/include_compatibility.h"
@@ -21,12 +14,33 @@
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/thread_metrics.h"
-#include "memfault/nrfconnect_port/http.h"
+#include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/ncs/version.h"
+#include "memfault/ports/ncs/date_time_callback.h"
 #include "memfault_demo_app.h"
 
 #include <modem/modem_info.h>
 #include <modem/lte_lc.h>
+
+#if defined(CONFIG_NRF_CLOUD_COAP)
+#include <date_time.h>
+#include <net/nrf_cloud_coap.h>
+
+static K_SEM_DEFINE(s_date_time_ready, 0, 1);
+
+static void prv_date_time_evt_handler(const struct date_time_evt *evt) {
+#if defined(CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME)
+  // Forward event to Memfault's date/time callback handler, which will update
+  // the system time used for timestamping events and coredumps
+  memfault_zephyr_date_time_evt_handler(evt);
+#endif
+
+  // Only signal that date/time is ready on successful time obtain events
+  if ((evt != NULL) && (evt->type != DATE_TIME_NOT_OBTAINED)) {
+    k_sem_give(&s_date_time_ready);
+  }
+}
+#endif
 
 MEMFAULT_METRICS_DEFINE_THREAD_METRICS(
 {
@@ -127,12 +141,15 @@ int main(void) {
   // requires AT modem interface to be up
   prv_init_device_info();
 
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE) && \
+  !defined(CONFIG_MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT)
   // Note: We must provision certs prior to connecting to the LTE network
   // in order to use them
-  err = memfault_nrfconnect_port_install_root_certs();
+  err = memfault_zephyr_port_install_root_certs();
   if (err) {
     goto cleanup;
   }
+#endif
 
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
   // Set the network interface name to use for Memfault HTTP uploads
@@ -141,6 +158,12 @@ int main(void) {
     printk("Failed to set Memfault HTTP network interface name, err %d\n", err);
     goto cleanup;
   }
+#endif
+
+#if defined(CONFIG_NRF_CLOUD_COAP)
+  // Register early so we don't miss the time-update event after LTE connects.
+  // JWT authentication (used by nRF Cloud CoAP) requires a valid timestamp.
+  date_time_register_handler(prv_date_time_evt_handler);
 #endif
 
   printk("Waiting for network...\n");
@@ -157,6 +180,30 @@ int main(void) {
     goto cleanup;
   }
   printk("OK\n");
+
+#if defined(CONFIG_NRF_CLOUD_COAP)
+  // Wait for the date/time library to sync from the network (up to 10 minutes).
+  // nrf_cloud_coap_connect() uses a JWT signed with the current time; connecting
+  // before the clock is set will result in an authentication failure.
+  printk("Waiting for date/time sync...\n");
+  k_sem_take(&s_date_time_ready, K_MINUTES(10));
+  if (!date_time_is_valid()) {
+    printk("Warning: date/time not yet valid, CoAP connect may fail\n");
+  }
+
+  err = nrf_cloud_coap_init();
+  if (err) {
+    printk("Failed to initialize nRF Cloud CoAP client, err %d\n", err);
+    goto cleanup;
+  }
+
+  err = nrf_cloud_coap_connect(NULL);
+  if (err) {
+    printk("Failed to connect to nRF Cloud via CoAP, err %d\n", err);
+    goto cleanup;
+  }
+  printk("Connected to nRF Cloud via CoAP\n");
+#endif
 
 cleanup:
   return err;

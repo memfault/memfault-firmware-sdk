@@ -6,6 +6,77 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] - 2026-03-23
+
+This is a minor release, including several improvements and bug fixes across
+several platforms.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Use the native `/chunks` endpoint instead of the HTTP proxy endpoint for
+    sending Memfault data via nRF Cloud CoAP. This also enables sending data
+    with a Memfault Project Key built into the application. The `/chunks`
+    endpoint will automatically route data to the associated Memfault Project
+    🪄!
+
+  - Add `CONFIG_MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT` to optionally
+    install Memfault root certificates from an `NRF_MODEM_LIB_ON_INIT` callback
+    after modem library initialization. This option is enabled by default for
+    nRF modem users. Note that the Memfault root cert installation is
+    idempotent.
+
+  - Update the nRF9160 sample app to call
+    `memfault_zephyr_port_install_root_certs()` only when
+    `CONFIG_MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT` is disabled.
+
+- Zephyr:
+
+  - Update a check in the Memfault HTTP implementation that was not correctly
+    using heap when `CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=-1` (default, using
+    all unallocated memory for heap). Thanks to
+    [@SeppoTakalo](https://github.com/SeppoTakalo) for providing this fix in
+    [#104](https://github.com/memfault/memfault-firmware-sdk/pull/104) 🎉!
+
+  - Add missing Kconfig dependencies for choice config
+    `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_CONTEXT`.
+
+  - Generalize the nRF modem root certificate storage Kconfig naming by adding
+    `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM` and deprecating
+    `CONFIG_MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM`.
+
+- General:
+
+  - Move the SDK unit tests from `tests/` to `tests/unit/`, to allow for
+    additional types of tests to be added in the future under `tests/` (i.e.
+    integration/port tests).
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fixed a bug in the Ambiq MRAM driver, where `FIXED_PARTITION_OFFSET` was
+    incorrectly used instead of `FIXED_PARTITION_ADDRESS` when accessing the
+    coredump partition.
+
+  - The Kconfig option `MBEDTLS_PEM_CERTIFICATE_FORMAT` was renamed into
+    `MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C`. Update
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_PEM` to depend on the new symbol. Thanks to
+    [@tomi-font](https://github.com/tomi-font) for providing this fix in
+    [#105](https://github.com/memfault/memfault-firmware-sdk/pull/105) 🎉!
+
+  - Fix a [number](https://github.com/memfault/memfault-firmware-sdk/issues/107)
+    [of](https://github.com/memfault/memfault-firmware-sdk/issues/108)
+    [Kconfig](https://github.com/memfault/memfault-firmware-sdk/issues/109)
+    lints on older Zephyr versions. Thank you to
+    [@JordanYates](https://github.com/JordanYates) for reporting these issues.
+
+  - Fix a compilation issue due to missing `CONFIG_MEMFAULT_PROJECT_KEY`
+    definition when using the Memfault MCUmgr command group. Thanks to
+    [@JordanYates](https://github.com/JordanYates) for reporting this issue in
+    [#106](https://github.com/memfault/memfault-firmware-sdk/pull/106).
+
 ## [1.36.0] - 2026-03-11
 
 This is a minor release, including several improvements and bug fixes across all

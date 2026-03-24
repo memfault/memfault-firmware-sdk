@@ -2,6 +2,14 @@ config MEMFAULT_NRF_CONNECT_SDK
         bool "nRF Connect SDK extensions"
         default y if ZEPHYR_NRF_MODULE && MEMFAULT_SOC_NRF
 
+# Stub to prevent Kconfig lint errors
+config ZEPHYR_NRF_MODULE
+        bool
+
+# Stub for backwards compatibility with Kconfig linter on older Zephyr versions
+config NPM13XX_CHARGER
+        bool
+
 if MEMFAULT_NRF_CONNECT_SDK
 
 config MEMFAULT_FOTA
@@ -177,3 +185,42 @@ config MEMFAULT_COAP_FOTA_URL_BUFFER_SIZE
 endif # MEMFAULT_USE_NRF_CLOUD_COAP
 
 endif # MEMFAULT_NRF_CONNECT_SDK
+
+# Provide placeholder definitions for symbols that are only defined when
+# MEMFAULT_NRF_CONNECT_SDK is enabled, to avoid Kconfig lints about missing
+# symbols in other Zephyr configurations.
+if !MEMFAULT_NRF_CONNECT_SDK
+
+# Stub bool symbols - all NCS-specific, not present in upstream Zephyr
+config FOTA_DOWNLOAD
+	bool
+
+config LTE_LINK_CONTROL
+	bool
+
+config TEMP_NRF5_MPSL
+	bool
+
+config BOARD_THINGY91X_NRF9151_NS
+	bool
+
+config NRF_FUEL_GAUGE
+	bool
+
+config MODEM_JWT
+	bool
+
+config MODEM_KEY_MGMT
+	bool
+
+config NRF_MODEM_LIB
+	bool
+
+config DATE_TIME
+	bool
+
+config NRF_CLOUD_COAP_MAX_USER_OPTIONS
+	int
+	default 0
+
+endif # !MEMFAULT_NRF_CONNECT_SDK

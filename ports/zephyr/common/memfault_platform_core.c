@@ -269,8 +269,9 @@ MEMFAULT_WEAK const char *memfault_zephyr_get_device_id(void) {
     length = strlen(dev_str);
   } else {
     // Render the obtained serial number in hexadecimal representation
-    for (size_t i = 0; i < length; i++) {
-      (void)snprintf(&dev_id_str[i * 2], sizeof(dev_id_str), "%02x", dev_id[i]);
+    const size_t dev_id_len = (size_t)length > sizeof(dev_id) ? sizeof(dev_id) : (size_t)length;
+    for (size_t i = 0; i < dev_id_len; i++) {
+      (void)snprintf(&dev_id_str[i * 2], sizeof(dev_id_str) - (i * 2), "%02x", dev_id[i]);
     }
     dev_str = dev_id_str;
   }

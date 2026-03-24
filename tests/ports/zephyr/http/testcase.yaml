@@ -1,0 +1,4 @@
+tests:
+  memfault.platform.http:
+    platform_allow:
+      - native_sim

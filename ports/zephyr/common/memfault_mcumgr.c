@@ -85,10 +85,17 @@ static int memfault_mgmt_project_key(struct smp_streamer *ctxt) {
 
   zcbor_state_t *zse = ctxt->writer->zs;
 
-#ifdef CONFIG_MEMFAULT_NCS_PROJECT_KEY
+#if defined(CONFIG_MEMFAULT_NCS_PROJECT_KEY)
   const char *project_key = CONFIG_MEMFAULT_NCS_PROJECT_KEY;
-#else
+#elif defined(CONFIG_MEMFAULT_PROJECT_KEY)
   const char *project_key = CONFIG_MEMFAULT_PROJECT_KEY;
+#else
+  // Fallback to NULL if the project key is not configured in Kconfig. The
+  // handler will return an error response in this case.
+  #warning "No Memfault project key configured in Kconfig. Please set " \
+    "CONFIG_MEMFAULT_PROJECT_KEY or CONFIG_MEMFAULT_NCS_PROJECT_KEY to your " \
+    "Memfault project key https://mflt.io/project-key"
+  const char *project_key = NULL;
 #endif
 
   bool ok;

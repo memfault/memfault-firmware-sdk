@@ -131,10 +131,10 @@ def nrf_debug(
 
 
 ns = Collection("nrf")
-ns.add_task(nrf_build, name="build")
-ns.add_task(nrf_clean, name="clean")
-ns.add_task(nrf_console, name="console")
-ns.add_task(nrf_debug, name="debug")
-ns.add_task(nrf_eraseflash, name="eraseflash")
-ns.add_task(nrf_flash, name="flash")
-ns.add_task(nrf_gdbserver, name="gdbserver")
+ns.add_task(nrf_build, name="build")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_clean, name="clean")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_console, name="console")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_debug, name="debug")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_eraseflash, name="eraseflash")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_flash, name="flash")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(nrf_gdbserver, name="gdbserver")  # pyright: ignore [reportUnknownMemberType]

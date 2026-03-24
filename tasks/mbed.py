@@ -152,8 +152,8 @@ def mbed_console(ctx: Context, baudrate: int = MBED_BAUD_RATE, target: str = MBE
 
 
 ns = Collection("mbed")
-ns.add_task(mbed_build, name="build")
-ns.add_task(mbed_clean, name="clean")
-ns.add_task(mbed_console, name="console")
-ns.add_task(mbed_flash, name="flash")
-ns.add_task(mbed_update, name="update")
+ns.add_task(mbed_build, name="build")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(mbed_clean, name="clean")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(mbed_console, name="console")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(mbed_flash, name="flash")  # pyright: ignore [reportUnknownMemberType]
+ns.add_task(mbed_update, name="update")  # pyright: ignore [reportUnknownMemberType]

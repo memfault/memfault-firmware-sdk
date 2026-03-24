@@ -1,0 +1,9 @@
+platforms:
+  override_default_platforms: false
+  increased_platform_scope: true
+levels:
+  - name: smoke
+    description: >
+      Run only Memfault Zephyr test suites.
+    adds:
+      - memfault.*

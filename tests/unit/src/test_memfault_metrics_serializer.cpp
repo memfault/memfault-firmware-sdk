@@ -75,7 +75,7 @@ void memfault_metrics_heartbeat_iterate(MemfaultMetricIteratorCallback cb, void 
 
   info.type = kMemfaultMetricType_String;
 // chosen to be exactly 16 bytes to match the max storage set in
-// tests/stub_includes/memfault_metrics_heartbeat_config.def
+// tests/unit/stub_includes/memfault_metrics_heartbeat_config.def
 #define SAMPLE_STRING "123456789abcde"
   uint8_t sample_string[sizeof(SAMPLE_STRING)];
   info.val.ptr = sample_string;

@@ -19,7 +19,7 @@
 #include <soc.h>
 #include <zephyr/cache.h>
 
-// Note: this is only used for the FIXED_PARTITION_OFFSET/ SIZE macros. The
+// Note: this is only used for the FIXED_PARTITION_ADDRESS / SIZE macros. The
 // FLASH_AMBIQ driver uses a semaphore for concurrent access protection, which
 // prohibits using it from the fault handler context.
 #include <zephyr/storage/flash_map.h>
@@ -33,7 +33,7 @@
   #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
 #endif
 
-#define MEMFAULT_COREDUMP_PARTITION_OFFSET FIXED_PARTITION_OFFSET(memfault_coredump_partition)
+#define MEMFAULT_COREDUMP_PARTITION_ADDRESS FIXED_PARTITION_ADDRESS(memfault_coredump_partition)
 #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_COREDUMP_PARTITION_SIZE % MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE == 0,
@@ -59,14 +59,14 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t
 
   // special case: if the first word is 0, the coredump is cleared, and reads
   // should return all zeros
-  uint32_t first_word = *(volatile uint32_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET);
+  uint32_t first_word = *(volatile uint32_t *)(MEMFAULT_COREDUMP_PARTITION_ADDRESS);
   if (first_word == 0) {
     memset(data, 0, read_len);
     return true;
   }
 
   // read the data directly from flash memory
-  memcpy(data, (uint8_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET + offset), read_len);
+  memcpy(data, (uint8_t *)(MEMFAULT_COREDUMP_PARTITION_ADDRESS + offset), read_len);
   return true;
 }
 
@@ -82,19 +82,19 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
   uint32_t aligned_value = 0;
   unsigned int key = irq_lock();
   int ret = am_hal_mram_main_fill(AM_HAL_MRAM_PROGRAM_KEY, aligned_value,
-                                  (uint32_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET + offset),
+                                  (uint32_t *)(MEMFAULT_COREDUMP_PARTITION_ADDRESS + offset),
                                   erase_size / sizeof(uint32_t));
   irq_unlock(key);
 
   // Invalidate the data cache for this region to ensure subsequent reads see the new data
-  (void)sys_cache_data_invd_range((void *)(MEMFAULT_COREDUMP_PARTITION_OFFSET + offset),
+  (void)sys_cache_data_invd_range((void *)(MEMFAULT_COREDUMP_PARTITION_ADDRESS + offset),
                                   erase_size);
 
   return (ret == 0);
 }
 
 bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *blk) {
-  const uint32_t addr = MEMFAULT_COREDUMP_PARTITION_OFFSET + blk->write_offset;
+  const uint32_t addr = MEMFAULT_COREDUMP_PARTITION_ADDRESS + blk->write_offset;
 
   if (!prv_op_within_flash_bounds(blk->write_offset, sizeof(blk->data))) {
     return false;

@@ -37,5 +37,5 @@ test_makefiles = output.decode().split()
     "target_makefile",
     test_makefiles,
 )
-def test_cpputest(target_makefile):
+def test_cpputest(target_makefile: str):
     subprocess.check_call(["make", "-C", TEST_DIR, target_makefile])

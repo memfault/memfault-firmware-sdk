@@ -80,7 +80,8 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
 static char s_mflt_http_net_interface_name[IFNAMSIZ];
 #endif
 
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+// CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE was added in Zephyr v3.4.0
+#if (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0) || (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
 static void *prv_calloc(size_t count, size_t size) {
   return calloc(count, size);
 }
@@ -97,7 +98,8 @@ static void prv_free(void *ptr) {
   k_free(ptr);
 }
 #else
-  #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
+  #error \
+    "One of CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, or CONFIG_HEAP_MEM_POOL_SIZE must be non-zero"
 #endif
 
 // Select either PEM or DER format to install to certificate storage.

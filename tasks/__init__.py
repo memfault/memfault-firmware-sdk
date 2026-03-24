@@ -15,7 +15,7 @@ from .macos_ftdi import is_macos
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SDK_FW_TASKS_DIR = pathlib.Path(os.path.join(SDK_FW_ROOT, "tasks"))
-SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests")
+SDK_FW_TESTS_ROOT = os.path.join(SDK_FW_ROOT, "tests/unit")
 
 
 @task(

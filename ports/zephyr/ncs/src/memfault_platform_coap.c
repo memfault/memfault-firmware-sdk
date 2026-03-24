@@ -27,9 +27,8 @@
 #include "memfault/ports/ncs/version.h"
 // clang-format on
 
-// For now, restrict to versions with the nrf_cloud_coap_get_user_options() API. This restriction
-// can be lifted once auto-forwarding (optional project key) is available via the nRF Cloud CoAP
-// proxy
+// Restrict to versions with the nrf_cloud_coap_get_user_options() API, used to optionally inject
+// the Memfault project key via custom CoAP option 2429 for the native /chunks endpoint.
 #if !MEMFAULT_NCS_VERSION_GT(3, 2)
   #error \
     "The Memfault CoAP port currently requires support added after nRF Connect SDK version 3.2.1. Please upgrade to nRF Connect SDK > 3.2.1"
@@ -101,7 +100,29 @@ static void prv_coap_response_cb(const struct coap_client_response_data *data, v
 // This is called by nRF Cloud CoAP transport when CONFIG_NRF_CLOUD_COAP_MAX_USER_OPTIONS > 0
 void nrf_cloud_coap_get_user_options(struct coap_client_option *options, size_t *num_options,
                                      const char *resource, const char *user_data) {
-  // Only add options for NRF_CLOUD_COAP_PROXY_RSC resource (Memfault requests)
+  // For the native /chunks endpoint, optionally inject the Memfault project key (CoAP option 2429).
+  // If no project key is configured, the server uses its auto-configured mapping.
+  if (strcmp(resource, "chunks") == 0) {
+    size_t api_key_len =
+      g_mflt_http_client_config.api_key ? strlen(g_mflt_http_client_config.api_key) : 0;
+    if (api_key_len == 0) {
+      // No project key configured; rely on server-side auto-forwarding
+      *num_options = 0;
+      return;
+    }
+    if (api_key_len > CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE) {
+      MEMFAULT_LOG_ERROR("API key too long: %zu", api_key_len);
+      *num_options = 0;
+      return;
+    }
+    options[0].code = MEMFAULT_NRF_CLOUD_COAP_PROJECT_KEY_OPTION_NO;
+    options[0].len = api_key_len;
+    memcpy(options[0].value, g_mflt_http_client_config.api_key, api_key_len);
+    *num_options = 1;
+    return;
+  }
+
+  // For the proxy resource (used by FOTA URL lookup), add PROXY_URI and project key options
   if (strcmp(resource, NRF_CLOUD_COAP_PROXY_RSC) != 0) {
     *num_options = 0;
     return;
@@ -128,7 +149,8 @@ void nrf_cloud_coap_get_user_options(struct coap_client_option *options, size_t 
   opt_idx++;
 
   // Custom project key option
-  size_t api_key_len = strlen(g_mflt_http_client_config.api_key);
+  size_t api_key_len =
+    g_mflt_http_client_config.api_key ? strlen(g_mflt_http_client_config.api_key) : 0;
   if (api_key_len > CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE) {
     MEMFAULT_LOG_ERROR("API key too long: %zu", api_key_len);
     *num_options = 0;
@@ -193,15 +215,6 @@ static void prv_fota_url_response_cb(const struct coap_client_response_data *dat
 
 static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   int rv = 0;
-  char *chunk_url = prv_calloc(1, MEMFAULT_PROXY_URL_MAX_LEN);
-  if (!chunk_url) {
-    return -ENOMEM;
-  }
-
-  if (!memfault_http_build_chunk_post_url(chunk_url, MEMFAULT_PROXY_URL_MAX_LEN)) {
-    prv_free(chunk_url);
-    return -1;
-  }
 
   size_t chunk_size = CONFIG_MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE;
   if (chunk_size > CONFIG_MEMFAULT_COAP_MAX_POST_SIZE) {
@@ -210,7 +223,6 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
 
   uint8_t *chunk_buf = prv_calloc(1, chunk_size);
   if (!chunk_buf) {
-    prv_free(chunk_url);
     return -ENOMEM;
   }
 
@@ -218,27 +230,23 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");
     prv_free(chunk_buf);
-    prv_free(chunk_url);
     return 0;
   }
-
-  // Store proxy URL in context for nrf_cloud_coap_get_user_options
-  ctx->proxy_url = chunk_url;
 
   // Reset response state
   ctx->response_received = false;
   ctx->last_result_code = -1;
   k_sem_reset(&ctx->response_sem);
 
-  // Send request using nrf_cloud_coap_post (which will call nrf_cloud_coap_get_user_options)
+  // Send chunk data to the native /chunks endpoint. The project key (CoAP option 2429) is
+  // injected optionally via nrf_cloud_coap_get_user_options if configured.
   MEMFAULT_LOG_DEBUG("Sending CoAP message, size %zu", chunk_size);
-  rv = nrf_cloud_coap_post(NRF_CLOUD_COAP_PROXY_RSC, NULL, chunk_buf, chunk_size,
+  rv = nrf_cloud_coap_post("chunks", NULL, chunk_buf, chunk_size,
                            COAP_CONTENT_FORMAT_APP_OCTET_STREAM, true, prv_coap_response_cb, ctx);
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to send CoAP request: %d", rv);
     memfault_packetizer_abort();
     prv_free(chunk_buf);
-    prv_free(chunk_url);
     return -1;
   }
 
@@ -248,21 +256,18 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
     MEMFAULT_LOG_ERROR("Timeout or error waiting for CoAP response: %d", rv);
     ctx->last_result_code = -ETIMEDOUT;  // Signal async callback to abort
     prv_free(chunk_buf);
-    prv_free(chunk_url);
     return -1;
   }
 
   if (ctx->last_result_code != COAP_RESPONSE_CODE_CREATED) {
     MEMFAULT_LOG_ERROR("Unexpected CoAP response code: %d", ctx->last_result_code);
     prv_free(chunk_buf);
-    prv_free(chunk_url);
     return -1;
   }
 
   // Count bytes sent
   ctx->bytes_sent += chunk_size;
   prv_free(chunk_buf);
-  prv_free(chunk_url);
   return 1;
 }
 
