@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.1] - 2026-03-24
+
+This is a patch release, fixing a single item.
+
+### 🐛 Fixed
+
+- Zephyr/nRF Connect SDK:
+
+  - Fix an error in the previous release, where Kconfig symbol stubs were added
+    to satisfy the Kconfig linter in certain project configurations. The stubs
+    are removed in this release. To successfully run compliance checking on nRF
+    Connect SDK versions other than current main, or on vanilla Zephyr projects,
+    it's necessary to add additional ignores to the compliance check list.
+
+    This addresses issue
+    [#112](https://github.com/memfault/memfault-firmware-sdk/issues/112).
+
 ## [1.37.0] - 2026-03-23
 
 This is a minor release, including several improvements and bug fixes across
