@@ -28,7 +28,11 @@
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
 #include "memfault/ports/zephyr/version.h"
 
-#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3)
+#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_PSA_WANT_ALG_SHA_1)
+#error "CONFIG_PSA_WANT_ALG_SHA_1 must be enabled"
+#endif
+#elif MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 //! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
 #if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"

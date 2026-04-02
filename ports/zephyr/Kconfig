@@ -102,20 +102,20 @@ config MEMFAULT_RAM_BACKED_COREDUMP
         help
           Save a minimal coredump in noinit RAM.
 
-config MEMFAULT_COREDUMP_STORAGE_RRAM
-        bool "RRAM backed coredump storage"
+config MEMFAULT_COREDUMP_STORAGE_NRF_RRAM
+        bool "NRF RRAM backed coredump storage"
         depends on NRFX_RRAMC
         help
           Use an internal RRAM-backed coredump storage implementation. Requires
           a partition labeled `memfault_coredump_partition`.
 
-config MEMFAULT_COREDUMP_STORAGE_MRAM
-        bool "MRAM backed coredump storage"
+config MEMFAULT_COREDUMP_STORAGE_NRF_MRAM
+        bool "NRF MRAM backed coredump storage"
         depends on SOC_FLASH_NRF_MRAM
         depends on FLASH
         help
-          Use an internal MRAM-backed coredump storage implementation. Requires
-          a partition labeled `memfault_coredump_partition`.
+          Use an internal Nordic MRAM-backed coredump storage implementation.
+          Requires a partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
         bool "Ambiq MRAM backed coredump storage"
@@ -123,6 +123,15 @@ config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
         help
           Use an internal Ambiq MRAM-backed coredump storage implementation.
           Requires a DTS partition labeled `memfault_coredump_partition`.
+
+config MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH
+        bool "STM32U5 Flash backed coredump storage"
+        depends on SOC_SERIES_STM32U5X
+        help
+          Use an internal STM32U5 Flash-backed coredump storage implementation
+          using direct SOC flash API (bypasses Zephyr flash driver to avoid
+          semaphore usage in ISR context). Requires a partition labeled
+          `memfault_coredump_partition`.
 
 endchoice # MEMFAULT_COREDUMP_STORAGE
 

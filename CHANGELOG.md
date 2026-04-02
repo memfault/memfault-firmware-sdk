@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 🚩 Deprecated
+
+- Mbed OS:
+
+  Arm has announced that
+  [Mbed OS will reach end of life in July 2026](https://os.mbed.com/blog/entry/Important-Update-on-Mbed/).
+  As a result, the Memfault Firmware SDK port for Mbed OS is being deprecated,
+  and will be removed in a following release.
+
+  **Cloud-side support is not affected** — existing devices using the Mbed OS
+  port will continue to report data to Memfault and the Memfault cloud platform
+  will continue to process and display that data as before.
+
+  If your project relies on the Mbed OS port and you need continued SDK support,
+  please [contact us](https://mflt.io/contact-support)!
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add a coredump storage implementation for the STM32U5 series SOC. Enable it
+    with `CONFIG_MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH=y`. Requires a device
+    tree partition labeled `memfault_coredump_partition` to be defined. See
+    [`ports/zephyr/common/coredump_storage/memfault_stm32u5_flash_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_stm32u5_flash_backed_coredump.c)
+    for details.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Zephyr v4.4 removes support for the Mbed TLS legacy crypto backend, only
+    supporting PSA now. Update a compile time check in
+    `memfault_platform_http.c` to support the new option,
+    `CONFIG_PSA_WANT_ALG_SHA_1`, which replaces `CONFIG_MBEDTLS_SHA1`.
+
 ## [1.37.1] - 2026-03-24
 
 This is a patch release, fixing a single item.
