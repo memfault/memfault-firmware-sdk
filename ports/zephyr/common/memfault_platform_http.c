@@ -12,28 +12,42 @@
 #include <sys/types.h>
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/tls_credentials.h)
+#endif
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/http/http_client.h"
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include "memfault/http/root_certs.h"
+#endif
 #include "memfault/http/utils.h"
 #include "memfault/metrics/connectivity.h"
 #include "memfault/panics/assert.h"
 #include "memfault/ports/zephyr/http.h"
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
+#endif
 #include "memfault/ports/zephyr/version.h"
 
-#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3)
+#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_PSA_WANT_ALG_SHA_1)
+#error "CONFIG_PSA_WANT_ALG_SHA_1 must be enabled"
+#endif
+#elif MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 //! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
 #if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"
 #endif
 #endif
+
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
 
 #include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 // clang-format on
@@ -72,6 +86,17 @@ MEMFAULT_STATIC_ASSERT(
 
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = CONFIG_MEMFAULT_PROJECT_KEY,
+#if defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+  .disable_tls = true,
+  .chunks_api = {
+    .host = sizeof(CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST) > 1 ?
+              CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST : NULL,
+    .port = 80,
+  },
+  .device_api = {
+    .port = 80,
+  },
+#endif
 };
 #endif
 
@@ -101,6 +126,8 @@ static void prv_free(void *ptr) {
   #error \
     "One of CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, or CONFIG_HEAP_MEM_POOL_SIZE must be non-zero"
 #endif
+
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 
 // Select either PEM or DER format to install to certificate storage.
 // clang-format off
@@ -165,6 +192,14 @@ int memfault_zephyr_port_install_root_certs(void) {
 
   return 0;
 }
+
+#else /* CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
+
+int memfault_zephyr_port_install_root_certs(void) {
+  return 0;
+}
+
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
 
 static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   int fd = *(int *)ctx;
@@ -240,6 +275,8 @@ static int prv_create_socket(struct zsock_addrinfo **res, const char *host, int 
   return fd;
 }
 
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
   const sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2,
                                     kMemfaultRootCert_AmazonRootCa1,
@@ -280,14 +317,18 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   return zsock_setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
+
 static int prv_configure_socket(int fd, const char *host) {
   int rv = 0;
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
   if (!g_mflt_http_client_config.disable_tls) {
     rv = prv_configure_tls_socket(fd, host);
     if (rv < 0) {
       MEMFAULT_LOG_ERROR("Failed to configure tls w/ host, errno=%d", errno);
     }
   }
+#endif
 
   return rv;
 }

@@ -102,12 +102,12 @@ config MEMFAULT_RAM_BACKED_COREDUMP
         help
           Save a minimal coredump in noinit RAM.
 
-config MEMFAULT_COREDUMP_STORAGE_RRAM
-        bool "RRAM backed coredump storage"
+config MEMFAULT_COREDUMP_STORAGE_NRF_RRAM
+        bool "Nordic RRAM backed coredump storage"
         depends on NRFX_RRAMC
         help
-          Use an internal RRAM-backed coredump storage implementation. Requires
-          a partition labeled `memfault_coredump_partition`.
+          Use an internal RRAM-backed coredump storage implementation for
+          Nordic devices. Requires a partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_MRAM
         bool "MRAM backed coredump storage"
@@ -357,7 +357,7 @@ endif # MEMFAULT_LOGGING_ENABLE
 
 config MEMFAULT_ROOT_CERT_STORAGE
         bool "Memfault TLS root certificate storage enabled"
-        default y if MEMFAULT_HTTP_ENABLE
+        default y if MEMFAULT_HTTP_ENABLE && !MEMFAULT_HTTP_DISABLE_TLS
         help
           Enables TLS root certificate storage for Memfault data upload
 
@@ -500,7 +500,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
-        default y if MBEDTLS && !NRF_MODEM_LIB
+        default y if MBEDTLS && !NRF_MODEM_LIB && !MEMFAULT_HTTP_DISABLE_TLS
         help
           Configure Memfault HTTP for using mbedTLS- perform some sanity checks
           at compile time that it is configured correctly. Note that if MbedTLS
@@ -554,10 +554,28 @@ config MEMFAULT_HTTP_SOCKET_DISPATCH
           memfault_zephyr_port_http_set_interface_name(). This must be set
           before performing Memfault data uploads.
 
+config MEMFAULT_HTTP_DISABLE_TLS
+        bool "Disable TLS for Memfault HTTP transport [WARNING: debugging only!]"
+        help
+          When enabled, Memfault HTTP client will use plain-text HTTP instead of
+          HTTPS. All transport encryption is disabled.
+
+          WARNING: This should ONLY be used for local debugging (e.g. with a
+          local proxy server). Never enable this in production firmware.
+
+config MEMFAULT_HTTP_CHUNKS_API_HOST
+        string "Override the Memfault chunks API host"
+        depends on MEMFAULT_HTTP_DISABLE_TLS
+        default ""
+        help
+          Override the default Memfault chunks API host. This is useful when
+          using a local proxy or debugging server with plain HTTP mode. Leave
+          empty to use the default host (chunks.memfault.com).
+
 endif # MEMFAULT_HTTP_ENABLE
 
-config MEMFAULT_PERIODIC_UPLOAD
-        bool "Work job to periodically push new data to Memfault"
+menuconfig MEMFAULT_PERIODIC_UPLOAD
+        bool "Periodic Memfault check-in (telemetry upload + optionally FOTA)"
         default y if MEMFAULT_SOC_SERIES_NRF91
         depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
         help
@@ -565,15 +583,16 @@ config MEMFAULT_PERIODIC_UPLOAD
           data and pushes it to Memfault (via HTTP or CoAP depending on
           transport configuration).
 
+if MEMFAULT_PERIODIC_UPLOAD
+
 choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
-  prompt "Work queue implementation to use for periodic posting"
-  depends on MEMFAULT_PERIODIC_UPLOAD
+  prompt "Work queue implementation"
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
   default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Periodically push new data to Memfault from system workqueue"
+        bool "Use system workqueue"
         help
           When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
           is set appropriately for the upload stack to not cause a stack overflow.
@@ -582,7 +601,7 @@ config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
           a dedicated workqueue maybe be required.
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Periodically push new data to Memfault using a dedicated workqueue"
+        bool "Use dedicated workqueue"
         help
           When using this feature, make sure CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
           is set appropriately for the upload stack to not cause a stack overflow. A dedicated
@@ -599,10 +618,9 @@ config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
         depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Interval with which the periodic upload task should run"
+        int "Periodic upload task interval in seconds"
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS if MEMFAULT_HTTP_PERIODIC_UPLOAD
         default 3600
-        depends on MEMFAULT_PERIODIC_UPLOAD
         help
           The first check will run between [60, 60+MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS]
           Subsequent checks will run at MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
@@ -610,7 +628,17 @@ config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
 config MEMFAULT_PERIODIC_UPLOAD_LOGS
         bool "Upload log buffer in addition to other data"
         default n
-        depends on MEMFAULT_PERIODIC_UPLOAD
+
+config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
+        bool "Periodic upload is enabled at boot"
+        default y
+        help
+          Sets the state of periodic Memfault data uploads at boot. When
+          enabled, periodic uploads will start automatically. This can be
+          controlled at runtime using
+          memfault_zephyr_port_periodic_upload_enable().
+
+endif # MEMFAULT_PERIODIC_UPLOAD
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
@@ -671,7 +699,7 @@ config MEMFAULT_EVENT_STORAGE_SIZE
 
 choice MEMFAULT_REBOOT_REASON_GET
        prompt "Memfault Reboot Reason"
-       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK
+       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && (SOC_SERIES != "nrf54h")
        default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
        help
         Choose the implementation used to track the reboot reason

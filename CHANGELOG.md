@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 🚩 Deprecated
+
+- Mbed OS:
+
+  Arm has announced that
+  [Mbed OS will reach end of life in July 2026](https://os.mbed.com/blog/entry/Important-Update-on-Mbed/).
+  As a result, the Memfault Firmware SDK port for Mbed OS is being deprecated,
+  and will be removed in a following release.
+
+  **Cloud-side support is not affected** — existing devices using the Mbed OS
+  port will continue to report data to Memfault and the Memfault cloud platform
+  will continue to process and display that data as before.
+
+  If your project relies on the Mbed OS port and you need continued SDK support,
+  please [contact us](https://mflt.io/contact-support)!
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add a new Kconfig option,
+    `CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT`, which controls the
+    initial state of periodic Memfault data uploads at boot. Defaults to `y`
+    (enabled), preserving existing behavior. Set to `n` to start with periodic
+    uploads disabled at boot; the state can still be changed at runtime with
+    `memfault_zephyr_port_periodic_upload_enable()`.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Zephyr v4.4 removes support for the Mbed TLS legacy crypto backend, only
+    supporting PSA now. Update a compile time check in
+    `memfault_platform_http.c` to support the new option,
+    `CONFIG_PSA_WANT_ALG_SHA_1`, which replaces `CONFIG_MBEDTLS_SHA1`.
+
+  - Fix some errors in the RRAM and MRAM-backed coredump storage implementations
+    that were added in SDK v1.29.0. Incorrect offset computation was used, which
+    could result in incorrect positioning of the coredump when certain flash
+    region configurations are used (i.e. instead of partitions, flash regions
+    are used).
+
+### 🛠️ Changed
+
+- Zephyr
+
+  - Changed the Kconfig symbol `MEMFAULT_COREDUMP_STORAGE_RRAM` to
+    `MEMFAULT_COREDUMP_STORAGE_NRF_RRAM` to better reflect that it supports nRF
+    devices only.
+
+- nRF Connect SDK:
+
+  - Improved CoAP upload behavior when using the nRF Cloud CoAP library.
+    `CONFIG_MEMFAULT_COAP_MAX_POST_SIZE` has been removed; the chunk size is now
+    derived automatically from `CONFIG_COAP_CLIENT_BLOCK_SIZE` and
+    `CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE`, ensuring each Memfault chunk maps
+    1:1 to one CoAP block. The message limit is now workqueue-aware: when using
+    a dedicated workqueue
+    (`CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE`), uploads are
+    unbounded so all pending data is drained in one pass; when running on the
+    system workqueue, the limit defaults to 100
+    (`CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND`) to avoid blocking other work,
+    but can still be configured to a convenient value.
+
 ## [1.37.1] - 2026-03-24
 
 This is a patch release, fixing a single item.

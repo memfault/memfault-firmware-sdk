@@ -22,7 +22,7 @@
 #include "memfault/ports/zephyr/http.h"
 // clang-format on
 
-static bool s_mflt_upload_enabled = true;
+static bool s_mflt_upload_enabled = IS_ENABLED(CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT);
 
 #if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(memfault_periodic_upload_stack_area,

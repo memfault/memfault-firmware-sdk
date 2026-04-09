@@ -5,6 +5,7 @@
 //!
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 
 // clang-format off
@@ -40,21 +41,16 @@
   #define MEMFAULT_PROXY_URL_MAX_LEN (200)
 #endif
 
-//! Enforce the lower limit here since we do not have an upper limit that can be referenced via
-//! Kconfig range check
-#if CONFIG_MEMFAULT_COAP_MAX_POST_SIZE <= 0
-  #error "CONFIG_MEMFAULT_COAP_MAX_POST_SIZE must be > 0"
+#if CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND == 0
+  #error \
+    "CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND must not be 0. Use -1 for unlimited or a positive value to cap uploads."
 #endif
 
-// Ensure MEMFAULT_COAP_MAX_POST_SIZE doesn't exceed available payload space
-// MAX_COAP_MSG_LEN = COAP_CLIENT_MESSAGE_HEADER_SIZE + COAP_CLIENT_MESSAGE_SIZE
-// Available payload size = COAP_CLIENT_MESSAGE_HEADER_SIZE + COAP_CLIENT_MESSAGE_SIZE -
-// conservative 100 B options_size
-#if CONFIG_MEMFAULT_COAP_MAX_POST_SIZE > \
-  (CONFIG_COAP_CLIENT_MESSAGE_SIZE + CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE - 100)
-  #error \
-    "CONFIG_MEMFAULT_COAP_MAX_POST_SIZE exceeds available payload space. Increase CONFIG_COAP_CLIENT_MESSAGE_SIZE or reduce CONFIG_MEMFAULT_COAP_MAX_POST_SIZE."
-#endif
+// Each Memfault chunk maps 1:1 to one CoAP block (no blockwise transfer per chunk).
+// The payload is bounded by BLOCK_SIZE with ~100 B reserved for CoAP options overhead
+// (Block1, project key, etc.).
+#define MEMFAULT_COAP_CHUNK_SIZE \
+  (CONFIG_COAP_CLIENT_BLOCK_SIZE + CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE - 100)
 
 // Used by memfault_zephyr_port_coap_post_data_return_size() and
 // memfault_zephyr_port_coap_get_download_url(), i.e. when the user does not provide their own
@@ -217,8 +213,8 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   int rv = 0;
 
   size_t chunk_size = CONFIG_MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE;
-  if (chunk_size > CONFIG_MEMFAULT_COAP_MAX_POST_SIZE) {
-    chunk_size = CONFIG_MEMFAULT_COAP_MAX_POST_SIZE;
+  if (chunk_size > MEMFAULT_COAP_CHUNK_SIZE) {
+    chunk_size = MEMFAULT_COAP_CHUNK_SIZE;
   }
 
   uint8_t *chunk_buf = prv_calloc(1, chunk_size);
@@ -314,19 +310,15 @@ void memfault_zephyr_port_coap_close_socket(sMemfaultCoAPContext *ctx) {
 }
 
 int memfault_zephyr_port_coap_upload_sdk_data(sMemfaultCoAPContext *ctx) {
-  int max_messages_to_send = CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND;
-
-#if defined(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP)
-  // Ensure we can send a full coredump if they are stored in RAM, i.e. drainable via the packetizer
-  // Payload size per message is capped by MAX_POST_SIZE
-  size_t payload_size_per_message = CONFIG_MEMFAULT_COAP_MAX_POST_SIZE;
-  if (payload_size_per_message > 0) {
-    // Override CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND if we need more messages to send a full
-    // coredump
-    max_messages_to_send =
-      MEMFAULT_MAX(max_messages_to_send,
-                   (int)(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP_SIZE / payload_size_per_message));
-  }
+#if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+  // Dedicated workqueue: drain everything — no risk of blocking other work.
+  int max_messages_to_send = INT_MAX;
+#else
+  // System workqueue: cap message count to avoid blocking other work.
+  // -1 means unlimited; normalize to INT_MAX so the loop condition works correctly.
+  int max_messages_to_send = (CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND < 0) ?
+                               INT_MAX :
+                               CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND;
 #endif
   bool success = true;
   int rv = -1;
