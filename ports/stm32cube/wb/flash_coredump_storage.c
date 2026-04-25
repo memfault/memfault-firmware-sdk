@@ -8,7 +8,7 @@
 //!
 //! STM32WB55xx/STM32WB35xx Flash topology
 //!  - Single Bank, Up to 1MB
-//!  – Page Size: 4kB
+//!  - Page Size: 4kB
 //!  - double-word operations only (64 bits plus 8 ECC bits)
 //!
 //! Note: Wireless Coprocessor Binary is programmed to the top of internal flash so
@@ -58,7 +58,7 @@ bool memfault_stm32cubewb_flash_clear_ecc_errors(uint32_t start_addr, uint32_t e
     if (corrupted_address != NULL) {
       *corrupted_address = 0;  // no error found
     }
-    return 0;
+    return true;
   }
 
   const uint32_t eccr = FLASH->ECCR;
@@ -71,7 +71,7 @@ bool memfault_stm32cubewb_flash_clear_ecc_errors(uint32_t start_addr, uint32_t e
 
   if ((corrupted_flash_address < start_addr) || (corrupted_flash_address >= end_addr)) {
     // There is a ECC error but it is in a range we do not want to zero out
-    return -1;
+    return false;
   }
 
   // When a multi bit ECCD error is detected, it can be cleared by programming the corrupted
@@ -84,7 +84,7 @@ bool memfault_stm32cubewb_flash_clear_ecc_errors(uint32_t start_addr, uint32_t e
     res = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, corrupted_flash_address, clear_error);
   }
   HAL_FLASH_Lock();
-  return res == HAL_OK ? 0 : res;
+  return res == HAL_OK;
 }
 
 void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {

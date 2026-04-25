@@ -1,0 +1,17 @@
+/*
+ Adjust the fixed partitions in internal flash to add a
+ 'memfault_coredump_partition' for storing coredumps.
+*/
+
+&flash0 {
+	partitions {
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = < 0xf0000 0x2000 >;
+		};
+		memfault_coredump_partition: partition@f2000 {
+			label = "memfault_coredump_partition";
+			reg = <0xf2000 0x2000>;
+		};
+	};
+};

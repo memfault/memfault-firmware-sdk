@@ -40,9 +40,9 @@ void memfault_reboot_reason_get(sResetBootupInfo *info) {
   // From the S32K-RM:
   //
   // The reset value of this register depends on the reset source:
-  //   POR (including LVD) — 0x82
-  //   LVD (without POR) — 0x02
-  // Other reset — a bit is set if its corresponding reset source caused the reset
+  //   POR (including LVD) - 0x82
+  //   LVD (without POR) - 0x02
+  // Other reset - a bit is set if its corresponding reset source caused the reset
 
   if ((reset_cause & RCM_SRS_LVD(1)) && (reset_cause & RCM_SRS_POR(1))) {
     MEMFAULT_PRINT_RESET_INFO(" Low or High Voltage");

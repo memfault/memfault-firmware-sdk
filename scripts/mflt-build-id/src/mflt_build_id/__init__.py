@@ -158,7 +158,7 @@ class ELFFileHelper:
             raise BuildIdError(f"Could not locate a section with symbol {symbol_name}")
         return symbol, section
 
-    def find_section_for_address_range(self, addr_range: tuple[int, int]) -> NoteSection | None:
+    def find_section_for_address_range(self, addr_range: tuple[int, int]) -> Section | None:
         for section in self.elf.iter_sections():
             if not ELFFileHelper.section_in_binary(section):
                 continue

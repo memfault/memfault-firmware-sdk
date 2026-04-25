@@ -28,7 +28,11 @@
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
 #include "memfault/ports/zephyr/version.h"
 
-#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3)
+#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_PSA_WANT_ALG_SHA_1)
+#error "CONFIG_PSA_WANT_ALG_SHA_1 must be enabled"
+#endif
+#elif MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
 //! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
 #if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"
@@ -123,7 +127,7 @@ static void prv_free(void *ptr) {
 #endif
 // clang-format on
 
-static bool prv_install_cert(eMemfaultRootCert cert_id) {
+static int prv_install_cert(eMemfaultRootCert cert_id) {
   const char *cert;
   size_t cert_len;
 
@@ -143,7 +147,7 @@ static bool prv_install_cert(eMemfaultRootCert cert_id) {
 
     default:
       MEMFAULT_LOG_ERROR("Unknown cert id: %d", (int)cert_id);
-      return -1;
+      return -EINVAL;
   }
 
   return memfault_root_cert_storage_add(cert_id, cert, cert_len);
@@ -455,7 +459,7 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
 #endif /* CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE */
 }
 
-static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
+static bool prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
   int rv = prv_poll_socket(sock_fd, ZSOCK_POLLIN);
   if (rv <= 0) {
     return false;
@@ -475,7 +479,11 @@ static int prv_read_socket_data(int sock_fd, void *buf, size_t *buf_len) {
   return true;
 }
 
-static bool prv_wait_for_http_response(int sock_fd) {
+//! Wait for the HTTP response to be fully received and parsed, returning the
+//! HTTP status code of the response.
+//!
+//! @return HTTP status code on success, or -1 on error
+static int prv_wait_for_http_response(int sock_fd) {
   sMemfaultHttpResponseContext ctx = { 0 };
   while (1) {
     // We don't expect any response that needs to be parsed so
@@ -483,15 +491,21 @@ static bool prv_wait_for_http_response(int sock_fd) {
     char buf[32];
     size_t bytes_read = sizeof(buf);
     if (!prv_read_socket_data(sock_fd, buf, &bytes_read)) {
-      return false;
+      return -1;
     }
 
     bool done = memfault_http_parse_response(&ctx, buf, bytes_read);
     if (done) {
       MEMFAULT_LOG_DEBUG("Response Complete: Parse Status %d HTTP Status %d!", (int)ctx.parse_error,
                          ctx.http_status_code);
-      MEMFAULT_LOG_DEBUG("Body: %s", ctx.http_body);
-      return true;
+      if (ctx.parse_error != kMfltHttpParseStatus_Ok) {
+        MEMFAULT_LOG_ERROR("Failed to parse response: Parse Status %d", (int)ctx.parse_error);
+        return -1;
+      }
+      if (ctx.http_body != NULL) {
+        MEMFAULT_LOG_DEBUG("Body: %s", ctx.http_body);
+      }
+      return ctx.http_status_code;
     }
   }
 }
@@ -844,7 +858,7 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
       success = false;
       break;
     }
-    success = prv_wait_for_http_response(ctx->sock_fd);
+    success = prv_wait_for_http_response(ctx->sock_fd) == 200;
     if (!success) {
       break;
     }
@@ -869,7 +883,7 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
     return -2;
   }
 
-  if (!prv_wait_for_http_response(ctx->sock_fd)) {
+  if (prv_wait_for_http_response(ctx->sock_fd) != 200) {
     return -3;
   }
 

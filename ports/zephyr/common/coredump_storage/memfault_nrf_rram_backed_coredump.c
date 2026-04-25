@@ -43,19 +43,24 @@
 #include <memfault/ports/buffered_coredump_storage.h>
 
 // Ensure the memfault_coredump_partition entry exists
+#if !FIXED_PARTITION_EXISTS(memfault_coredump_partition)
+  #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
+#endif
+
+// Set the partition address/size based on the fixed partition definitions.
+// Note that absolute address is used, because RRAM is written as memory-mapped
+// locations (not relative to flash device).
 
 // Fixed partitions in use
 #if DT_HAS_FIXED_PARTITION_LABEL(memfault_coredump_partition)
-  #define MEMFAULT_COREDUMP_PARTITION_OFFSET \
-    DT_FIXED_PARTITION_ADDR(DT_NODELABEL(memfault_coredump_partition))
-  #define MEMFAULT_COREDUMP_PARTITION_SIZE DT_REG_SIZE(DT_NODELABEL(memfault_coredump_partition))
+  #define MEMFAULT_COREDUMP_PARTITION_ADDRESS FIXED_PARTITION_ADDRESS(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
 
 // Partition-manager defined partitions
-#elif FIXED_PARTITION_EXISTS(memfault_coredump_partition)
-  #define MEMFAULT_COREDUMP_PARTITION_OFFSET FIXED_PARTITION_OFFSET(memfault_coredump_partition)
+#elif defined(CONFIG_PARTITION_MANAGER_ENABLED)
+  #define MEMFAULT_COREDUMP_PARTITION_ADDRESS \
+    FIXED_PARTITION_DATA_FIELD(memfault_coredump_partition, _ADDRESS)
   #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
-#else
-  #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
 #endif
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_COREDUMP_PARTITION_SIZE % MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE == 0,
@@ -81,14 +86,14 @@ bool memfault_platform_coredump_storage_read(uint32_t offset, void *data, size_t
 
   // special case: if the first word is 0, the coredump is cleared, and reads
   // should return all zeros
-  const uint32_t first_wordline = *(const uint32_t *)(MEMFAULT_COREDUMP_PARTITION_OFFSET);
+  const uint32_t first_wordline = *(const uint32_t *)(MEMFAULT_COREDUMP_PARTITION_ADDRESS);
   if (first_wordline == 0) {
     memset(data, 0, read_len);
     return true;
   }
 
   // RRAM is memory mapped, so we can just read it directly
-  const uint32_t address = MEMFAULT_COREDUMP_PARTITION_OFFSET + offset;
+  const uint32_t address = MEMFAULT_COREDUMP_PARTITION_ADDRESS + offset;
 
   memcpy(data, (void *)address, read_len);
   return true;
@@ -104,7 +109,7 @@ bool memfault_platform_coredump_storage_erase(uint32_t offset, size_t erase_size
 }
 
 bool memfault_platform_coredump_storage_buffered_write(sCoredumpWorkingBuffer *blk) {
-  const uint32_t start_addr = MEMFAULT_COREDUMP_PARTITION_OFFSET;
+  const uint32_t start_addr = MEMFAULT_COREDUMP_PARTITION_ADDRESS;
   const uint32_t addr = start_addr + blk->write_offset;
 
   if (!prv_op_within_flash_bounds(blk->write_offset, MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE)) {

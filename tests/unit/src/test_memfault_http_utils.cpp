@@ -33,7 +33,7 @@ sMfltHttpClientConfig g_mflt_http_client_config;
 TEST_GROUP(MfltHttpClientUtils) {
   void setup() {
     g_mflt_http_client_config = (sMfltHttpClientConfig){
-      .api_key = "00112233445566778899aabbccddeeff",
+      .api_key = "00112233445566778899aabbccddeeff",  // gitleaks:allow
     };
     g_device_info = g_device_info_default;
 
@@ -53,7 +53,7 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientOverrides) {
   LONGS_EQUAL(443, MEMFAULT_HTTP_GET_DEVICE_API_PORT());
 
   g_mflt_http_client_config = (sMfltHttpClientConfig){
-    .api_key = "00112233445566778899aabbccddeeff",
+    .api_key = "00112233445566778899aabbccddeeff",  // gitleaks:allow
     .disable_tls = false,
     .chunks_api = {
       .host = "override-chunks.memfault.com",
@@ -94,12 +94,13 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientPost) {
   sHttpWriteCtx ctx = { 0 };
   bool success = memfault_http_start_chunk_post(prv_http_write_cb, &ctx, 123);
   CHECK(success);
-  const char *expected_string = "POST /api/v0/chunks/DEMOSERIAL HTTP/1.1\r\n"
-                                "Host:chunks.memfault.com\r\n"
-                                "User-Agent:MemfaultSDK/" MEMFAULT_SDK_VERSION_STR "\r\n"
-                                "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
-                                "Content-Type:application/octet-stream\r\n"
-                                "Content-Length:123\r\n\r\n";
+  const char *expected_string =
+    "POST /api/v0/chunks/DEMOSERIAL HTTP/1.1\r\n"
+    "Host:chunks.memfault.com\r\n"
+    "User-Agent:MemfaultSDK/" MEMFAULT_SDK_VERSION_STR "\r\n"
+    "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"  // gitleaks:allow
+    "Content-Type:application/octet-stream\r\n"
+    "Content-Length:123\r\n\r\n";
 
   STRCMP_EQUAL(expected_string, ctx.buf);
 }
@@ -125,14 +126,15 @@ TEST(MfltHttpClientUtils, Test_MfltHttpClientGetOtaPayloadUrl) {
   bool success = memfault_http_get_latest_ota_payload_url(prv_http_write_cb, &ctx);
   CHECK(success);
 
-  const char *expected_string = "GET "
-                                "/api/v0/releases/latest/"
-                                "url?&device_serial=DEMOSERIAL&hardware_version=main-proto&"
-                                "software_type=main&current_version=1.0.0 HTTP/1.1\r\n"
-                                "Host:device.memfault.com\r\n"
-                                "User-Agent:MemfaultSDK/" MEMFAULT_SDK_VERSION_STR "\r\n"
-                                "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"
-                                "\r\n";
+  const char *expected_string =
+    "GET "
+    "/api/v0/releases/latest/"
+    "url?&device_serial=DEMOSERIAL&hardware_version=main-proto&"
+    "software_type=main&current_version=1.0.0 HTTP/1.1\r\n"
+    "Host:device.memfault.com\r\n"
+    "User-Agent:MemfaultSDK/" MEMFAULT_SDK_VERSION_STR "\r\n"
+    "Memfault-Project-Key:00112233445566778899aabbccddeeff\r\n"  // gitleaks:allow
+    "\r\n";
 
   STRCMP_EQUAL(expected_string, ctx.buf);
 }

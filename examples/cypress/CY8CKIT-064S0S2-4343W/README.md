@@ -118,7 +118,7 @@ to setup an
 Once that's done, you can use the same configuration here (this example
 publishes to the same MQTT topic as the Pinnacle 100 example):
 
-> https://mflt.io/aws-iot-mqtt-cloudformation-proxy
+> <https://mflt.io/aws-iot-mqtt-cloudformation-proxy>
 
 ## Memfault port
 
@@ -167,7 +167,7 @@ There should be two `/dev/ttyACM` devices available when the board is connected
 using the KitProg USB - one of them is the console. Connect to it using e.g.
 `screen`. Serial parameters are:
 
-```
+```text
 Baud rate: 115200
 Data: 8 bit
 Parity: None
@@ -179,7 +179,7 @@ Flow control: None
 
 The demo app's symbol file is located here:
 
-```
+```text
 build/cy/CY8CKIT-064S0S2-4343W/CY8CKIT_064S0S2_4343W/Debug/aws_demos.elf
 ```
 
@@ -199,4 +199,4 @@ different IoT endpoint - try replacing the default address with:
 
 - [PSoC® 64 Secure MCU Secure Boot SDK User Guide](https://www.cypress.com/documentation/software-and-drivers/psoc-64-secure-mcu-secure-boot-sdk-user-guide)
 - [Provisioning Guide for the Cypress CY8CKIT-064S0S2-4343W Kit](https://community.cypress.com/t5/Resource-Library/Provisioning-Guide-for-the-Cypress-CY8CKIT-064S0S2-4343W-Kit/ta-p/252469)
-- [PSoC 64 Standard Secure – AWS Wi-Fi BT Pioneer Kit Guide](https://www.cypress.com/file/509676/download)
+- [PSoC 64 Standard Secure - AWS Wi-Fi BT Pioneer Kit Guide](https://www.cypress.com/file/509676/download)

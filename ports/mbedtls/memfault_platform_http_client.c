@@ -312,7 +312,7 @@ int memfault_platform_http_client_post_data(sMfltHttpClient *client,
     if (!prv_try_send(client, buf, buf_len)) {
       // unexpected failure, abort in-flight transaction
       memfault_packetizer_abort();
-      return false;
+      return -1;
     }
 
     if (status == kMemfaultPacketizerStatus_EndOfChunk) {

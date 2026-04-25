@@ -85,10 +85,11 @@ static int prv_init_modem_lib(void) {
 #endif
 // clang-format on
 
-// Since the example app manages when the modem starts/stops, we manually configure the device
-// serial even when using nRF Connect SDKs including the Memfault integration (by using
-// CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
-#define IMEI_LEN 15
+#if defined(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
+  // Since the example app manages when the modem starts/stops, we manually configure the device
+  // serial even when using nRF Connect SDKs including the Memfault integration (by using
+  // CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
+  #define IMEI_LEN 15
 static char s_device_serial[IMEI_LEN + 1 /* '\0' */] = "unknown";
 
 static int prv_get_imei(char *buf, size_t buf_len) {
@@ -118,6 +119,7 @@ static void prv_init_device_info(void) {
   // register the device id with memfault port so it is used for reporting
   memfault_ncs_device_id_set(s_device_serial, IMEI_LEN);
 }
+#endif
 
 int main(void) {
   printk("Memfault Demo App Started!\n");
@@ -138,8 +140,10 @@ int main(void) {
     goto cleanup;
   }
 
+#if defined(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
   // requires AT modem interface to be up
   prv_init_device_info();
+#endif
 
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE) && \
   !defined(CONFIG_MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT)

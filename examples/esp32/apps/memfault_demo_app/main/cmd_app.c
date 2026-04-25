@@ -14,6 +14,7 @@
 #include "esp_console.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
+#include "memfault/esp_port/core.h"
 #if defined(CONFIG_ESP_TASK_WDT_EN)
   #include "esp_task_wdt.h"
 #endif
@@ -189,6 +190,13 @@ static int prv_esp_task_watchdog(int argc, char **argv) {
 }
 #endif  // CONFIG_ESP_TASK_WDT_EN
 
+#if !defined(CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT)
+static int prv_collect_reboot_info(MEMFAULT_UNUSED int argc, MEMFAULT_UNUSED char **argv) {
+  memfault_esp_port_collect_reset_info();
+  return 0;
+}
+#endif
+
 static int prv_deep_sleep(int argc, char **argv) {
   if (argc < 2) {
     ESP_LOGE(__func__, "Usage: deep_sleep <seconds>");
@@ -228,6 +236,17 @@ void register_app(void) {
     .func = &prv_esp_task_watchdog,
   };
   ESP_ERROR_CHECK(esp_console_cmd_register(&esp_task_watchdog_cmd));
+#endif
+
+#if !defined(CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT)
+  const esp_console_cmd_t collect_reboot_info_cmd = {
+    .command = "collect_reboot_info",
+    .help = "Serialize the reboot reason event into Memfault event storage. Use when "
+            "CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT=n and device info is now available.",
+    .hint = NULL,
+    .func = &prv_collect_reboot_info,
+  };
+  ESP_ERROR_CHECK(esp_console_cmd_register(&collect_reboot_info_cmd));
 #endif
 
   const esp_console_cmd_t deep_sleep_cmd = {

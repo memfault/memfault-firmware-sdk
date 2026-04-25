@@ -58,6 +58,18 @@ int memfault_esp_port_vprintf_log_hook(const char *fmt, va_list args);
 //! Initializes the Memfault system, and should be called one time by the application during boot.
 void memfault_boot(void);
 
+//! Collect the reboot reason event and serialize it into event storage.
+//!
+//! This is normally called automatically during memfault_boot() after Memfault
+//! event storage has been initialized. If
+//! CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT is disabled (because device info is not
+//! available at boot), the application must call this function once device info
+//! is ready, but only after memfault_boot() has already run.
+//!
+//! This function should not be called on Deep Sleep wakeups. memfault_boot()
+//! already suppresses reboot-event collection in that case.
+void memfault_esp_port_collect_reset_info(void);
+
 #ifdef __cplusplus
 }
 #endif

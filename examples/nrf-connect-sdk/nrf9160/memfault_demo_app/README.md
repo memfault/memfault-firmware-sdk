@@ -24,6 +24,18 @@ $ west build -b nrf9160dk/nrf9160/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_
 
 Note: you may want to target a version of the DK by passing `-b <board>@<revision>/<qualifiers>`, for example `nrf9160dk@1.0.0/nrf9160/ns`, in order to use [specific hardware](https://docs.nordicsemi.com/bundle/ncs-2.9.2/page/zephyr/boards/nordic/nrf9160dk/doc/index.html#additional_hardware_in_v0140). For NCS < 2.7.0, use `<board>@<revision>`, for example `nrf9160dk_nrf9160@1.0.0`.
 
+## Overlays
+
+Support for uploading chunks via a CoAP connection with nRF Cloud instead over
+HTTPS is available via an overlay. To leverage this support, add it to your
+build with `-DEXTRA_CONF_FILE="overlay-coap.conf"`. Note, uploading over CoAP
+requires your device to be provisioned in nRF Cloud. See
+[Nordic's getting started documentation](https://docs.nordicsemi.com/bundle/nrf-cloud/page/GettingStarted.html)
+for more details.
+
+> [!NOTE]
+> This overlay is currently only supported on NCS >= v2.8.0.
+
 ## Testing the Integration
 
 Commands to test the integration are exposed under the `mflt` submenu in the CLI

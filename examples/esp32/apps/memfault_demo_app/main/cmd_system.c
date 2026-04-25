@@ -1,4 +1,4 @@
-/* Console example — various system commands
+/* Console example - various system commands
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 

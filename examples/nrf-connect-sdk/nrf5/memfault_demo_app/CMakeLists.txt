@@ -42,3 +42,9 @@ if(CONFIG_BOARD_NRF54L15DK)
   )
 endif()
 
+# Same for nrf54lm20DK
+if(CONFIG_BOARD_NRF54LM20DK)
+  zephyr_linker_sources(SECTIONS
+    ${CMAKE_CURRENT_SOURCE_DIR}/boards/nrf54lm20dk_nrf54lm20a_cpuapp_noinit.ld
+  )
+endif()

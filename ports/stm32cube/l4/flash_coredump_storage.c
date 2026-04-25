@@ -54,7 +54,7 @@ bool memfault_stm32cubel4_flash_clear_ecc_error(uint32_t start_addr, uint32_t en
     if (corrupted_address != NULL) {
       *corrupted_address = 0;  // no error found
     }
-    return 0;
+    return true;
   }
 
   const uint32_t eccr = FLASH->ECCR;
@@ -74,7 +74,7 @@ bool memfault_stm32cubel4_flash_clear_ecc_error(uint32_t start_addr, uint32_t en
 
   if (corrupted_flash_address < start_addr || corrupted_flash_address > end_addr) {
     // There is a ECC error but it is in a range we do not want to zero out
-    return -1;
+    return false;
   }
 
   // NB: The STM32L4 allows for a double word to reprogrammed to 0x0. If the word
@@ -88,7 +88,7 @@ bool memfault_stm32cubel4_flash_clear_ecc_error(uint32_t start_addr, uint32_t en
     res = HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, corrupted_flash_address, clear_error);
   }
   HAL_FLASH_Lock();
-  return res == HAL_OK ? 0 : res;
+  return res == HAL_OK;
 }
 
 void memfault_platform_fault_handler(const sMfltRegState *regs, eMemfaultRebootReason reason) {

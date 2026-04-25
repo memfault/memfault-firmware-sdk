@@ -58,6 +58,16 @@ void memfault_platform_get_device_info(sMemfaultDeviceInfo *info) {
 void memfault_platform_reboot(void) {
   // !FIXME: Perform any final system cleanup here
 
+  // NOTE: For SoCs with a data cache (for example, Cortex-M7 and some
+  // Cortex-M33-based SoCs), clean and invalidate the data cache before
+  // resetting to ensure cached writes are committed to memory. If CMSIS
+  // provides cache feature macros/APIs, guard this with __DCACHE_PRESENT
+  // and SCB_CleanInvalidateDCache() availability:
+  //
+  //   SCB_CleanInvalidateDCache();
+  //   __DSB();
+  //   __ISB();
+
   // !FIXME: Reset System
   // NVIC_SystemReset()
   while (1) { }  // unreachable

@@ -12,6 +12,7 @@
 #include "esp_idf_version.h"
 #include "memfault/components.h"
 #include "memfault/esp_port/cli.h"
+#include "memfault/esp_port/core.h"
 #include "memfault/esp_port/http_client.h"
 #include "memfault/metrics/metrics.h"
 
@@ -55,6 +56,8 @@
 #endif
 
 static uint8_t s_event_storage[CONFIG_MEMFAULT_EVENT_STORAGE_RAM_SIZE];
+static const sMemfaultEventStorageImpl *s_evt_storage;
+static eMemfaultRebootReason s_reboot_reason;
 static uint8_t s_log_buf_storage[CONFIG_MEMFAULT_LOG_STORAGE_RAM_SIZE];
 
 // The default '.noninit' section is placed at the end of DRAM, which can easily
@@ -181,6 +184,19 @@ static eMemfaultRebootReason prv_record_reboot_reason(void) {
   return reboot_reason;
 }
 
+void memfault_esp_port_collect_reset_info(void) {
+  if (s_evt_storage == NULL) {
+    MEMFAULT_LOG_ERROR("memfault_esp_port_collect_reset_info() called before memfault_boot()");
+    return;
+  }
+#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT)
+  if (s_reboot_reason == kMfltRebootReason_DeepSleep) {
+    return;
+  }
+#endif
+  memfault_reboot_tracking_collect_reset_info(s_evt_storage);
+}
+
 static SemaphoreHandle_t s_memfault_lock;
 
 void memfault_lock(void) {
@@ -250,26 +266,19 @@ void memfault_boot(void) {
   esp_log_set_vprintf(&prv_memfault_log_wrapper);
 #endif
 
-  eMemfaultRebootReason reboot_reason = prv_record_reboot_reason();
-  (void)reboot_reason;
+  s_reboot_reason = prv_record_reboot_reason();
 
-  const sMemfaultEventStorageImpl *evt_storage =
-    memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
-  memfault_trace_event_boot(evt_storage);
+  s_evt_storage = memfault_events_storage_boot(s_event_storage, sizeof(s_event_storage));
+  memfault_trace_event_boot(s_evt_storage);
 
-// If CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT is enabled, and wakeup reason is Deep
-// Sleep, don't record the reset reason again
-#if defined(CONFIG_MEMFAULT_DEEP_SLEEP_SUPPORT)
-  if (reboot_reason != kMfltRebootReason_DeepSleep)
+#if defined(CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT)
+  memfault_esp_port_collect_reset_info();
 #endif
-  {
-    memfault_reboot_tracking_collect_reset_info(evt_storage);
-  }
 
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
-  memfault_metrics_boot(evt_storage, &boot_info);
+  memfault_metrics_boot(s_evt_storage, &boot_info);
 
   memfault_build_info_dump();
 

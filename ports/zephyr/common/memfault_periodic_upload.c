@@ -20,14 +20,23 @@
 #include "memfault/core/debug_log.h"
 #include "memfault/ports/zephyr/periodic_upload.h"
 #include "memfault/ports/zephyr/http.h"
+
+#if defined(CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK)
+  #include "memfault/ports/zephyr/fota.h"
+#endif
 // clang-format on
 
-static bool s_mflt_upload_enabled = true;
+static bool s_mflt_upload_enabled = IS_ENABLED(CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT);
 
 #if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 static K_THREAD_STACK_DEFINE(memfault_periodic_upload_stack_area,
                              CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE);
 static struct k_work_q memfault_periodic_upload_work_q;
+
+MEMFAULT_STATIC_ASSERT(CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY <=
+                         K_LOWEST_APPLICATION_THREAD_PRIO,
+                       "Invalid priority for dedicated upload workqueue. Set to "
+                       "K_LOWEST_APPLICATION_THREAD_PRIO or higher (numerically lower).");
 #endif
 
 #if !defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_LOGS)
@@ -65,16 +74,25 @@ static void prv_periodic_upload_work_handler(struct k_work *work) {
   }
 #endif
 
-  if (!memfault_packetizer_data_available()) {
+  // Upload any staged data first, before executing FOTA check. FOTA may trigger
+  // a reboot, so we want all data uploaded before that happens.
+  if (memfault_packetizer_data_available()) {
+    MEMFAULT_LOG_DEBUG("POSTing Memfault Data");
+    ssize_t rv = memfault_zephyr_port_post_data_return_size();
+    if (rv > 0) {
+      MEMFAULT_LOG_DEBUG("Uploaded %zd bytes of Memfault data", rv);
+    }
+  } else {
     MEMFAULT_LOG_DEBUG("No Memfault data available");
-    return;
   }
 
-  MEMFAULT_LOG_DEBUG("POSTing Memfault Data");
-  ssize_t rv = memfault_zephyr_port_post_data_return_size();
-  if (rv > 0) {
-    MEMFAULT_LOG_DEBUG("Uploaded %zd bytes of Memfault data", rv);
+#if defined(CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK)
+  // FOTA check always runs, even when there's no data to upload
+  int ret = memfault_zephyr_fota_start();
+  if (ret < 0) {
+    MEMFAULT_LOG_ERROR("Error checking for FOTA update, rv=%d", ret);
   }
+#endif
 }
 
 K_WORK_DEFINE(s_upload_timer_work, prv_periodic_upload_work_handler);
@@ -111,7 +129,7 @@ static int prv_background_upload_init() {
 
   k_work_queue_start(&memfault_periodic_upload_work_q, memfault_periodic_upload_stack_area,
                      K_THREAD_STACK_SIZEOF(memfault_periodic_upload_stack_area),
-                     K_HIGHEST_APPLICATION_THREAD_PRIO, &config);
+                     CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY, &config);
 #endif
   return 0;
 }

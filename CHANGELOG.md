@@ -6,6 +6,157 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.38.0] - 2026-04-24
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 🚩 Deprecated
+
+- Mbed OS:
+
+  Arm has announced that
+  [Mbed OS will reach end of life in July 2026](https://os.mbed.com/blog/entry/Important-Update-on-Mbed/).
+  As a result, the Memfault Firmware SDK port for Mbed OS is being deprecated,
+  and will be removed in a following release.
+
+  **Cloud-side support is not affected** - existing devices using the Mbed OS
+  port will continue to report data to Memfault and the Memfault cloud platform
+  will continue to process and display that data as before.
+
+  If your project relies on the Mbed OS port and you need continued SDK support,
+  please [contact us](https://mflt.io/contact-support)!
+
+### 📈 Added
+
+- ESP-IDF:
+
+  - Added a new Kconfig option, `CONFIG_MEMFAULT_RECORD_REBOOT_ON_BOOT` (default
+    `y`), to allow deferring reboot reason event serialization to a later point
+    in time. Set this option to `n` when reboot reason collection must be
+    deferred (i.e. if device serial is not available immediately at boot). When
+    deferring, the user application must call
+    `memfault_esp_port_collect_reset_info()` (declared in
+    `memfault/esp_port/core.h`) once device info initialization is complete, to
+    record the reboot event.
+
+- Zephyr:
+
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT`,
+    which controls the initial state of periodic Memfault data uploads at boot.
+    Defaults to `y` (enabled), preserving existing behavior. Set to `n` to start
+    with periodic uploads disabled at boot; the state can still be changed at
+    runtime with `memfault_zephyr_port_periodic_upload_enable()`.
+
+  - Add support to the [nRF91 sample app](examples/nrf-connect-sdk/nrf9160/) for
+    FOTA over CoAP in the CoAP overlay.
+  - Add a new Kconfig option, `CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK`, to enable a
+    periodic FOTA check. This runs along the `CONFIG_MEMFAULT_PERIODIC_UPLOAD`
+    thread.
+
+  - Add a new Kconfig option,
+    `CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY`, which
+    controls the workqueue priority for uploading data when
+    `CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE=y`. The default is
+    the lowest priority (`K_LOWEST_APPLICATION_THREAD_PRIO`).
+
+  - Add a new system time implementation, used to timestamp events (Heartbeats,
+    Logs, Trace Events) on-device, using the Zephyr System Clock API. This adds
+    to the existing RTC and DATE_TIME implementations. It can be selected with
+    `CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK=y`, and is auto-enabled when
+    other sources are not present but Zephyr provides `SYS_CLOCK_EXISTS` (system
+    clock support). This implementation is useful on platforms lacking an RTC
+    but do synchronize System Clock from an external time source (e.g. via NTP).
+
+  - Add a coredump storage implementation for the STM32U5 series SOC. Enable it
+    with `CONFIG_MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH=y`. Requires a device
+    tree partition labeled `memfault_coredump_partition` to be defined. See
+    [`ports/zephyr/common/coredump_storage/memfault_stm32u5_flash_backed_coredump.c`](ports/zephyr/common/coredump_storage/memfault_stm32u5_flash_backed_coredump.c)
+    for details.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Change `memfault_zephyr_port_http_upload_sdk_data()` and
+    `memfault_zephyr_port_http_post_chunk()` to return non-zero if an HTTP error
+    status code is returned by the Memfault server. Previously, non-200 HTTP
+    responses were silently ignored.
+
+  - Zephyr v4.4 removes support for the Mbed TLS legacy crypto backend, only
+    supporting PSA now. Update a compile time check in
+    `memfault_platform_http.c` to support the new option,
+    `CONFIG_PSA_WANT_ALG_SHA_1`, which replaces `CONFIG_MBEDTLS_SHA1`.
+
+  - Fix some errors in the RRAM and MRAM-backed coredump storage implementations
+    that were added in SDK v1.29.0. Incorrect offset computation was used, which
+    could result in incorrect positioning of the coredump when certain flash
+    region configurations are used (i.e. instead of partitions, flash regions
+    are used).
+
+  - Fix a few minor type inconsistencies in `memfault_platform_http.c`.
+
+- General:
+
+  - Fix a few minor type inconsistencies in the following files:
+
+    - `ports/cypress/psoc6/memfault_platform_http.c`
+    - `ports/mbedtls/memfault_platform_http_client.c`
+    - `ports/stm32cube/l4/flash_coredump_storage.c`
+    - `ports/stm32cube/wb/flash_coredump_storage.c`
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Changed the Kconfig symbol `MEMFAULT_COREDUMP_STORAGE_RRAM` to
+    `MEMFAULT_COREDUMP_STORAGE_NRF_RRAM` to better reflect that it supports nRF
+    devices only.
+
+  - Changed the default thread priority when
+    `CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE=y` from the highest
+    thread priority (`K_HIGHEST_APPLICATION_THREAD_PRIO`) to the lowest
+    (`K_LOWEST_APPLICATION_THREAD_PRIO`). This change was made to prevent
+    Memfault data upload from pre-empting application threads. To change the
+    priority level, use the new Kconfig
+    `CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY`.
+
+  - Handle rename of Kconfig symbol `MBEDTLS_CFG_FILE` -> `MBEDTLS_CONFIG_FILE`.
+    Thanks to [@tomi-font](https://github.com/tomi-font) for the fix in
+    [#113](https://github.com/memfault/memfault-firmware-sdk/pull/113) 🎉!
+
+- nRF Connect SDK:
+
+  - Improved CoAP upload behavior when using the nRF Cloud CoAP library.
+    `CONFIG_MEMFAULT_COAP_MAX_POST_SIZE` has been removed; the chunk size is now
+    derived automatically from `CONFIG_COAP_CLIENT_BLOCK_SIZE` and
+    `CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE`, ensuring each Memfault chunk maps
+    1:1 to one CoAP block. The message limit is now workqueue-aware: when using
+    a dedicated workqueue
+    (`CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE`), uploads are
+    unbounded so all pending data is drained in one pass; when running on the
+    system workqueue, the limit defaults to 100
+    (`CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND`) to avoid blocking other work,
+    but can still be configured to a convenient value.
+
+  - The NCS FOTA implementation is now a backend option of the Zephyr FOTA
+    framework, selectable via `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS`. This
+    backend is chosen automatically on NCS targets with a direct connection to
+    the internet. The previous `CONFIG_MEMFAULT_FOTA` symbol no longer has any
+    effect, and is removed in this release.
+
+    The entry point `memfault_fota_start()` is replaced by
+    `memfault_zephyr_fota_start()`, consistent with the other Zephyr FOTA
+    backends. The `CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK` option now works on NCS
+    targets as well.
+
+    The deprecated headers `memfault/nrfconnect_port/fota.h` and
+    `memfault/nrfconnect_port/http.h` have been removed; use
+    `memfault/ports/zephyr/fota.h` and `memfault/ports/zephyr/http.h` directly.
+
+  - `CONFIG_MEMFAULT_NRF_SHELL` is removed in this release, the commands are now
+    available from the general Memfault Zephyr shell commands.
+
 ## [1.37.1] - 2026-03-24
 
 This is a patch release, fixing a single item.

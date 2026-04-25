@@ -16,6 +16,9 @@
 #include "memfault/ports/zephyr/periodic_upload.h"
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+  #include "memfault/nrfconnect_port/coap.h"
+#endif
 // clang-format on
 
 static int prv_clear_core_cmd(const struct shell *shell, size_t argc, char **argv) {
@@ -101,10 +104,24 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
 }
 #endif  // CONFIG_NETWORKING
 
+// Select CoAP or HTTP for FOTA URL retrieval based on Kconfig options,
+// preferring CoAP if enabled. These wrappers are just used to simplify the
+// logic below.
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+  #define PRIV_OTA_TRANSPORT_STR "CoAP"
+  #define PRIV_OTA_GET_URL(url) memfault_zephyr_port_coap_get_download_url(url)
+  #define PRIV_OTA_RELEASE_URL(url) memfault_zephyr_port_coap_release_download_url(url)
+#elif defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+  #define PRIV_OTA_TRANSPORT_STR "HTTPS"
+  #define PRIV_OTA_GET_URL(url) memfault_zephyr_port_get_download_url(url)
+  #define PRIV_OTA_RELEASE_URL(url) memfault_zephyr_port_release_download_url(url)
+#endif
+
 static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char **argv) {
-#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE) || defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   char *url = NULL;
-  int rv = memfault_zephyr_port_get_download_url(&url);
+  shell_print(shell, "Checking for update over " PRIV_OTA_TRANSPORT_STR);
+  int rv = PRIV_OTA_GET_URL(&url);
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Unable to fetch OTA url, rv=%d", rv);
     return rv;
@@ -114,13 +131,18 @@ static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char *
   }
 
   shell_print(shell, "Download URL: '%s'", url);
-  rv = memfault_zephyr_port_release_download_url(&url);
+  rv = PRIV_OTA_RELEASE_URL(&url);
   return rv;
 #else
-  shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
+  shell_print(shell,
+              "CONFIG_MEMFAULT_HTTP_ENABLE or CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP not enabled");
   return 0;
 #endif /* CONFIG_MEMFAULT_HTTP_ENABLE */
 }
+
+#undef PRIV_OTA_TRANSPORT_STR
+#undef PRIV_OTA_GET_URL
+#undef PRIV_OTA_RELEASE_URL
 
 static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t argc,
                                                char **argv) {

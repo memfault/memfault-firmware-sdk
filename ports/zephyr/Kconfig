@@ -21,6 +21,20 @@ config MEMFAULT
 config MBEDTLS_PEM_CERTIFICATE_FORMAT
         bool
 
+# This symbol was renamed from MBEDTLS_CFG_FILE to MBEDTLS_CONFIG_FILE in
+# newer Zephyr/NCS releases. Define the old symbol here as a hidden fallback
+# so compatibility checks can continue to reference it without triggering
+# missing-symbol Kconfig linting on versions where only the new name exists.
+config MBEDTLS_CFG_FILE
+        string
+
+# This symbol was introduced in newer Zephyr/NCS releases (replacing
+# MBEDTLS_CFG_FILE). Define it here as a hidden fallback so the dependency
+# in MEMFAULT_TLS_CERTS_USE_PEM remains valid on older versions where the
+# symbol does not exist.
+config MBEDTLS_CONFIG_FILE
+        string
+
 if MEMFAULT
 
 config MEMFAULT_CACHE_FAULT_REGS
@@ -102,20 +116,20 @@ config MEMFAULT_RAM_BACKED_COREDUMP
         help
           Save a minimal coredump in noinit RAM.
 
-config MEMFAULT_COREDUMP_STORAGE_RRAM
-        bool "RRAM backed coredump storage"
+config MEMFAULT_COREDUMP_STORAGE_NRF_RRAM
+        bool "Nordic RRAM backed coredump storage"
         depends on NRFX_RRAMC
         help
-          Use an internal RRAM-backed coredump storage implementation. Requires
-          a partition labeled `memfault_coredump_partition`.
+          Use an internal RRAM-backed coredump storage implementation for
+          Nordic devices. Requires a partition labeled `memfault_coredump_partition`.
 
-config MEMFAULT_COREDUMP_STORAGE_MRAM
-        bool "MRAM backed coredump storage"
+config MEMFAULT_COREDUMP_STORAGE_NRF_MRAM
+        bool "NRF MRAM backed coredump storage"
         depends on SOC_FLASH_NRF_MRAM
         depends on FLASH
         help
-          Use an internal MRAM-backed coredump storage implementation. Requires
-          a partition labeled `memfault_coredump_partition`.
+          Use an internal Nordic MRAM-backed coredump storage implementation.
+          Requires a partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
         bool "Ambiq MRAM backed coredump storage"
@@ -123,6 +137,15 @@ config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
         help
           Use an internal Ambiq MRAM-backed coredump storage implementation.
           Requires a DTS partition labeled `memfault_coredump_partition`.
+
+config MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH
+        bool "STM32U5 Flash backed coredump storage"
+        depends on SOC_SERIES_STM32U5X
+        help
+          Use an internal STM32U5 Flash-backed coredump storage implementation
+          using direct SOC flash API (bypasses Zephyr flash driver to avoid
+          semaphore usage in ISR context). Requires a partition labeled
+          `memfault_coredump_partition`.
 
 endchoice # MEMFAULT_COREDUMP_STORAGE
 
@@ -517,7 +540,8 @@ choice MEMFAULT_TLS_CERTS_FORMAT
 config MEMFAULT_TLS_CERTS_USE_PEM
         bool "Use PEM format for TLS certificates"
         depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || (MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C)) || \
-                   !(MBEDTLS && MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h")
+                   !(MBEDTLS && MBEDTLS_BUILTIN && \
+                   (MBEDTLS_CFG_FILE = "config-tls-generic.h" || MBEDTLS_CONFIG_FILE = "config-tls-generic.h"))
         help
           When enabled, Memfault will use PEM format for TLS certificates.
           When disabled, DER format will be used.
@@ -556,8 +580,8 @@ config MEMFAULT_HTTP_SOCKET_DISPATCH
 
 endif # MEMFAULT_HTTP_ENABLE
 
-config MEMFAULT_PERIODIC_UPLOAD
-        bool "Work job to periodically push new data to Memfault"
+menuconfig MEMFAULT_PERIODIC_UPLOAD
+        bool "Periodic Memfault check-in (telemetry upload + optionally FOTA)"
         default y if MEMFAULT_SOC_SERIES_NRF91
         depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
         help
@@ -565,15 +589,16 @@ config MEMFAULT_PERIODIC_UPLOAD
           data and pushes it to Memfault (via HTTP or CoAP depending on
           transport configuration).
 
+if MEMFAULT_PERIODIC_UPLOAD
+
 choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
-  prompt "Work queue implementation to use for periodic posting"
-  depends on MEMFAULT_PERIODIC_UPLOAD
+  prompt "Work queue implementation"
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
+  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK)
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Periodically push new data to Memfault from system workqueue"
+        bool "Use system workqueue"
         help
           When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
           is set appropriately for the upload stack to not cause a stack overflow.
@@ -582,7 +607,7 @@ config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
           a dedicated workqueue maybe be required.
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Periodically push new data to Memfault using a dedicated workqueue"
+        bool "Use dedicated workqueue"
         help
           When using this feature, make sure CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
           is set appropriately for the upload stack to not cause a stack overflow. A dedicated
@@ -598,11 +623,20 @@ config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
         default 2048
         depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
+config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY
+        int "Priority for dedicated upload workqueue"
+        default 14
+        depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+        help
+          The priority for the dedicated workqueue thread. The default is the default value
+          for K_LOWEST_APPLICATION_THREAD_PRIO = NUM_PREEMPT_PRIORITIES - 1 (lowest allowed
+          application priority). Users can change NUM_PREEMPT_PRIORITIES, so a build time
+          check will ensure the configured priority is valid.
+
 config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Interval with which the periodic upload task should run"
+        int "Periodic upload task interval in seconds"
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS if MEMFAULT_HTTP_PERIODIC_UPLOAD
         default 3600
-        depends on MEMFAULT_PERIODIC_UPLOAD
         help
           The first check will run between [60, 60+MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS]
           Subsequent checks will run at MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
@@ -610,7 +644,36 @@ config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
 config MEMFAULT_PERIODIC_UPLOAD_LOGS
         bool "Upload log buffer in addition to other data"
         default n
-        depends on MEMFAULT_PERIODIC_UPLOAD
+
+config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
+        bool "Periodic upload is enabled at boot"
+        default y
+        help
+          Sets the state of periodic Memfault data uploads at boot. When
+          enabled, periodic uploads will start automatically. This can be
+          controlled at runtime using
+          memfault_zephyr_port_periodic_upload_enable().
+
+config MEMFAULT_PERIODIC_FOTA_CHECK
+        bool "Periodically check for FOTA updates"
+        default n
+        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_NRF_CONNECT_SDK
+        help
+          When enabled, the device will periodically check for FOTA updates via
+          the Memfault HTTP API. The check will be performed at the same
+          interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS. If a new update
+          is available, the device will download it and the subsequent install
+          and reboot behavior will depend on the selected Zephyr FOTA backend.
+          For example, the MCUboot backend will install the update and reboot,
+          and the nRF Connect SDK backend will delegate to the Nordic FOTA
+          Download library.
+
+          Note: MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually
+          be enabled when this feature is enabled (and is the default in that
+          case), to avoid stalling the system workqueue while performing FOTA
+          checks and downloads.
+
+endif # MEMFAULT_PERIODIC_UPLOAD
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
@@ -623,6 +686,7 @@ config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
 
 choice MEMFAULT_ZEPHYR_FOTA_BACKEND
         prompt "Backend for FOTA updates"
+        default MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS if MEMFAULT_NRF_CONNECT_SDK
         default MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
         default MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
         help
@@ -671,7 +735,7 @@ config MEMFAULT_EVENT_STORAGE_SIZE
 
 choice MEMFAULT_REBOOT_REASON_GET
        prompt "Memfault Reboot Reason"
-       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK
+       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && (SOC_SERIES != "nrf54h")
        default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
        help
         Choose the implementation used to track the reboot reason
@@ -1036,6 +1100,7 @@ choice MEMFAULT_SYSTEM_TIME_SOURCE
         prompt "Memfault system time source"
         default MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME if DATE_TIME
         default MEMFAULT_SYSTEM_TIME_SOURCE_RTC if RTC
+        default MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK if SYS_CLOCK_EXISTS
         default MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
         help
          Choose the source of the system time used by the Memfault SDK
@@ -1061,6 +1126,18 @@ config MEMFAULT_SYSTEM_TIME_SOURCE_RTC
         help
          Provides a built-in implementation of
          memfault_platform_time_get_current() using the Zephyr RTC subsystem.
+
+config MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK
+        bool "Zephyr sys_clock_gettime()"
+        depends on SYS_CLOCK_EXISTS
+        help
+         Provides a built-in implementation of
+         memfault_platform_time_get_current() using the Zephyr
+         sys_clock_gettime() API with SYS_CLOCK_REALTIME.
+
+         Requires Zephyr 4.2.0 or later. On older Zephyr versions,
+         enable CONFIG_POSIX_TIMERS to use the POSIX clock_gettime()
+         fallback.
 
 endchoice # MEMFAULT_SYSTEM_TIME_SOURCE
 

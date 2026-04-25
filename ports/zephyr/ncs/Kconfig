@@ -4,25 +4,19 @@ config MEMFAULT_NRF_CONNECT_SDK
 
 if MEMFAULT_NRF_CONNECT_SDK
 
-config MEMFAULT_FOTA
-        bool "Memfault FOTA Library"
-        default n
-        depends on (MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP)
-        depends on FOTA_DOWNLOAD
-        help
-          Adds support for using Memfaults Release Management infrastructure
-          to retrieve binaries to install (https://mflt.io/release-mgmt). If an update
-          is available, the binary will be downloaded and installed using the FOTA Download
-          Client provided in the nRF Connect SDK.
+# Extend the Zephyr MEMFAULT_ZEPHYR_FOTA_BACKEND choice with an NCS-specific option.
+choice MEMFAULT_ZEPHYR_FOTA_BACKEND
 
-          See https://mflt.io/nrf-fota-setup for more details
-
-config MEMFAULT_NRF_SHELL
-        bool "Memfault NRF Shell"
-        default y if MEMFAULT_SHELL
-        depends on SHELL
+config MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
+        bool "Use nRF Connect SDK FOTA library as backend"
+        depends on (MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP) && FOTA_DOWNLOAD
         help
-          CLI Utilities for interfacing with the nRF Connect SDK
+          Uses the nRF Connect SDK FOTA Download library (fota_download) to perform OTA
+          updates via Memfault Release Management. If an update is available, the binary
+          will be downloaded and installed using the Nordic FOTA Download Client.
+          See https://mflt.io/nrf-fota-setup for more details.
+
+endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
 choice MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME
         bool "Select the platform implementation for capturing connected time metric"
@@ -41,12 +35,7 @@ config MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X
 
 endchoice
 
-if MEMFAULT_FOTA
-
-config MEMFAULT_FOTA_CLI_CMD
-        bool "CLI command for triggering OTA updates"
-        default y
-        depends on MEMFAULT_NRF_SHELL
+if MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
 config MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Add custom handler for receiving OTA events"
@@ -64,7 +53,7 @@ config MEMFAULT_FOTA_HTTP_FRAG_SIZE
           value should be set to the maximum size that can be received by
           the device. If 0, no fragmentation is used.
 
-endif # MEMFAULT_FOTA
+endif # MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
 config MEMFAULT_NRF_NRF5_CPU_TEMP
         bool
@@ -128,23 +117,14 @@ config MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE
         help
           The size of the CoAP packetizer buffer. This is the buffer used when
           reading incremental chunk data when posting via CoAP. It does NOT set
-          the size of the CoAP body (see MEMFAULT_COAP_MAX_POST_SIZE), but is
-          instead used when issuing reads to the underlying data source (e.g.
+          the size of the CoAP body (determined by CONFIG_COAP_CLIENT_BLOCK_SIZE
+          and CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE), but is instead used when
+          issuing reads to the underlying data source (e.g.
           coredump, logs, CDR, etc). Increasing the size of this buffer can
           improve upload performance when the data source is reading from a
           storage medium that benefits from larger sequential reads. Note that
           this buffer is dynamically allocated.
 
-config MEMFAULT_COAP_MAX_POST_SIZE
-        int "Set the maximum CoAP payload size per message"
-        default 256
-        help
-          The maximum payload length per CoAP message (excluding CoAP header).
-          This value limits the size of data sent in a single CoAP POST request.
-          Defaults to the COAP_CLIENT_MESSAGE_SIZE default value of 256 to ensure
-          compatibility with the default CoAP client message size limit. Cannot
-          exceed COAP_CLIENT_MESSAGE_SIZE + CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE
-          - options overhead (checked at build time).
 
 config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
         int "The CoAP client timeout in milliseconds"
@@ -157,22 +137,14 @@ config MEMFAULT_COAP_CLIENT_TIMEOUT_MS
 config MEMFAULT_COAP_MAX_MESSAGES_TO_SEND
         int "Set the maximum number of CoAP messages to send per upload"
         default 100
-        range 1 10000
+        range -1 10000
         help
           The maximum number of messages to send per execution when using
           the Memfault CoAP client to upload data (e.g. memfault_zephyr_port_post_data()).
           A message is a single logical data unit (e.g. coredump chunk, metrics report).
-
-config MEMFAULT_COAP_FOTA_URL_BUFFER_SIZE
-        int "Buffer size for CoAP FOTA download URL response"
-        default 512
-        range 256 2048
-        help
-          Size of the buffer used when querying for an OTA update via CoAP
-          (memfault_zephyr_port_coap_get_download_url). Must be large enough
-          for the download URL plus CoAP response overhead. If using Memfault
-          FOTA with the nRF download client, this should be at least as large
-          as CONFIG_DOWNLOADER_MAX_FILENAME_SIZE plus header overhead.
+          When using a dedicated workqueue, uploads are unbounded and this value is unused.
+          When running on the system workqueue, a positive value is required to avoid
+          blocking other work.
 
 endif # MEMFAULT_USE_NRF_CLOUD_COAP
 

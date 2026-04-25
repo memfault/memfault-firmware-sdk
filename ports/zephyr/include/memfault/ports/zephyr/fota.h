@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 //! @brief A callback invoked after a download has completed
 //!
 //! @note The default implementation will reboot the system after an OTA download has completed.

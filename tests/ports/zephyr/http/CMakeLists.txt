@@ -15,5 +15,5 @@ project(test-app)
 target_sources(app PRIVATE
     src/main.c
     src/test_platform_http.c
-    # Add other test files here as you create them
+    src/test_http_response_codes.c
 )

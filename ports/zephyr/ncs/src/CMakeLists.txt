@@ -5,12 +5,11 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM nrfx_pmu_r
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX memfault_platform_npm13xx_battery.c)
 
 if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_GREATER_EQUAL 2.9.99)
-  zephyr_library_sources_ifdef(CONFIG_MEMFAULT_FOTA memfault_fota.c)
+  zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS memfault_fota.c)
 else()
-  zephyr_library_sources_ifdef(CONFIG_MEMFAULT_FOTA memfault_fota_legacy.c)
+  zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS memfault_fota_legacy.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_SHELL memfault_nrf_cli.c)
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X memfault_platform_metrics_connectivity_lte.c)
 
 if (CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)

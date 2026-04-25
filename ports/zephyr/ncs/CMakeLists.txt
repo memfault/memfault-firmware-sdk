@@ -13,7 +13,7 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
   # Note: Starting in nRF Connect SDK >= 1.3, NCS_VERSION_* fields are exposed.
   # Prior to that, they're unset and cause the VERSION_GREATER_EQUAL check to be
   # falsy
-  if(CONFIG_MEMFAULT_FOTA
+  if(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
      AND (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH}
           VERSION_GREATER_EQUAL
           2.4.0)

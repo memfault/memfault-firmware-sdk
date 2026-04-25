@@ -6,7 +6,7 @@
 //! A port for recovering reset reason information by reading the
 //! Reset Controller's (RSTC) "Reset Cause" (RCAUSE) register.
 //!
-//! More details can be found in the "RSTC – Reset Controller" of the
+//! More details can be found in the "RSTC - Reset Controller" of the
 //! "SAM L10/L11 Family" Datasheet
 
 #include "memfault/ports/reboot_reason.h"

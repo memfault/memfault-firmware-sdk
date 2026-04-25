@@ -38,7 +38,7 @@ initially setting up the SDK on your platform.
 
 ### Main components
 
-- `panics` – fault handling, coredump and reboot tracking and reboot loop
+- `panics` - fault handling, coredump and reboot tracking and reboot loop
   detection API.
 - `metrics` - used to monitor device health over time (i.e. connectivity,
   battery life, MCU resource utilization, hardware degradation, etc.)
@@ -47,11 +47,11 @@ Please refer to the `README.md` in each of these for more details.
 
 ### Support components
 
-- `core` – common code that is used by all other components.
+- `core` - common code that is used by all other components.
 - `demo` - common code that is used by demo apps for the various platforms.
-- `http` – http client API, to post coredumps and events directly to the
+- `http` - http client API, to post coredumps and events directly to the
   Memfault service from devices.
-- `util` – various utilities.
+- `util` - various utilities.
 
 ## Integrating the Memfault SDK
 

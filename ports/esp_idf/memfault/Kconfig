@@ -546,6 +546,16 @@ endif
             Enable support for `.debug_macro` output in the ELF, for enhanced
             debugging.
 
+    config MEMFAULT_RECORD_REBOOT_ON_BOOT
+        bool "Record reboot reason event during memfault_boot()"
+        default y
+        help
+            Record the reboot reason event during memfault_boot(). Disable
+            this if device info is not valid until later in startup, then
+            include "memfault/esp_port/core.h" and call
+            memfault_esp_port_collect_reset_info() once device info is ready
+            to store the reboot reason event.
+
     config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
         bool "Print reboot reason information on boot"
         default y

@@ -112,7 +112,7 @@ TEST_AUTH_HEADERS = {"Authorization": "Basic bWFydGlqbkBtZW1mYXVsdC5jb206b3Blbl9
 TEST_ORG = "acme-inc"
 TEST_PROJECT = "smart-sink"
 TEST_HW_VERSION = "DEVBOARD"
-TEST_PROJECT_KEY = "7f083342d30444b2b3bed65357f24a19"
+TEST_PROJECT_KEY = "7f083342d30444b2b3bed65357f24a19"  # gitleaks:allow
 
 
 @pytest.fixture(autouse=True)

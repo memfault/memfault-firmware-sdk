@@ -4,6 +4,11 @@
 //! See LICENSE for details
 //!
 //! Memfault system time provider for Zephyr.
+//!
+//! Note: The implementations of memfault_platform_time_get_current() MUST NOT
+//! call any logging functions, as it is called from within the Memfault logging
+//! subsystem when log timestamps are enabled. Any logs emitted from such a
+//! call site may infinitely recurse.
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/system_time.h"
@@ -85,13 +90,8 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   const struct device *rtc = DEVICE_DT_GET(MFLT_RTC_NODE);
   rtc_get_time(rtc, &rtctime);
 
-  // Debug: print time fields
-  LOG_DBG("Time: %u-%u-%u %u:%u:%u", rtctime.tm_year + 1900, rtctime.tm_mon + 1, rtctime.tm_mday,
-          rtctime.tm_hour, rtctime.tm_min, rtctime.tm_sec);
-
   // If pre-2023, something is wrong
   if ((rtctime.tm_year < 123) || (rtctime.tm_year > 200)) {
-    LOG_WRN("Time doesn't make sense: year %u", rtctime.tm_year + 1900);
     return false;
   }
 
@@ -99,11 +99,9 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   time_t time_now = mktime(tm_time);
 
   if (time_now == (time_t)-1) {
-    LOG_ERR("Error converting time");
     return false;
   }
 
-  LOG_DBG("Setting event time %llu", (uint64_t)time_now);
   // load the timestamp and return true for a valid timestamp
   *time = (sMemfaultCurrentTime){
     .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
@@ -114,3 +112,47 @@ bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
   return true;
 }
 #endif  // defined(CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_RTC)
+
+#if defined(CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK)
+  #include <time.h>
+
+  #include "memfault/ports/zephyr/version.h"
+  #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 1)
+    #include MEMFAULT_ZEPHYR_INCLUDE(sys/clock.h)
+static int prv_get_realtime(struct timespec *ts) {
+  return sys_clock_gettime(SYS_CLOCK_REALTIME, ts);
+}
+  #elif defined(CONFIG_POSIX_TIMERS)
+// Fallback for Zephyr < 4.2.0: use POSIX clock_gettime() (requires CONFIG_POSIX_TIMERS)
+static int prv_get_realtime(struct timespec *ts) {
+  return clock_gettime(CLOCK_REALTIME, ts);
+}
+  #else
+static int prv_get_realtime(struct timespec *ts) {
+  (void)ts;
+  return -1;
+}
+  #endif
+
+bool memfault_platform_time_get_current(sMemfaultCurrentTime *time) {
+  struct timespec ts;
+  int err = prv_get_realtime(&ts);
+
+  if (err != 0) {
+    return false;
+  }
+
+  // If pre-2023, something is wrong
+  if (ts.tv_sec < 1672531200) {  // 2023-01-01 00:00:00 UTC
+    return false;
+  }
+
+  *time = (sMemfaultCurrentTime){
+    .type = kMemfaultCurrentTimeType_UnixEpochTimeSec,
+    .info = {
+      .unix_timestamp_secs = (uint64_t)ts.tv_sec,
+    },
+  };
+  return true;
+}
+#endif  // defined(CONFIG_MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK)

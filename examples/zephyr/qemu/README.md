@@ -6,8 +6,9 @@ provides a minimal reference for Memfault integration.
 > Note: this example can also target other boards and should work normally.
 > It's primarily tested on the `mps2/an385` (the default board), but also:
 >
-> - `nrf52840dk_nrf52840`
+> - `b_u585i_iot02a`
 > - `mimxrt1170_evk/mimxrt1176/cm7`
+> - `nrf52840dk_nrf52840`
 > - `nucleo_f756zg`
 > - `nucleo_l496zg`
 >

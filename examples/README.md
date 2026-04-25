@@ -36,14 +36,14 @@ Each platform folder contains at least:
 
 - `README.md` - instructions on how to build and run the demo app, as well as
   integration notes specific for the given platform.
-- `**/platform_reference_impl` – implementations of platform functionality that
+- `**/platform_reference_impl` - implementations of platform functionality that
   the Memfault SDK depends on for the given platform.
-- `**/memfault_demo_app` – demo application for the given platform (see Demo
+- `**/memfault_demo_app` - demo application for the given platform (see Demo
   applications below).
 - Build system files (specific to the platform) to compile the components as
   well as the demo applications for the platform.
 
-# Common Tasks
+## Common Tasks
 
 The SDK uses [pyinvoke] to offer a convenient way to run common tasks such as
 building, flashing and debugging demo applications.

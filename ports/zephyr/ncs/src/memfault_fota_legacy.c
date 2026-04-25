@@ -6,8 +6,8 @@
 //! Note: This implementation is for NCS versions <= 2.9
 
 // clang-format off
-#include "memfault/nrfconnect_port/http.h"
-#include "memfault/nrfconnect_port/fota.h"
+#include "memfault/ports/zephyr/fota.h"
+#include "memfault/ports/zephyr/http.h"
 
 #include "memfault/components.h"
 
@@ -50,6 +50,10 @@
 // The OTA download URL is allocated to this pointer, and must be freed when the
 // FOTA download ends.
 static char *s_download_url = NULL;
+
+// Forward declaration: default implementation is below; custom provided by user when
+// CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
+void memfault_fota_download_callback(const struct fota_download_evt *evt);
 
 static void prv_fota_url_cleanup(void) {
   MEMFAULT_LOG_DEBUG("Freeing download URL");
@@ -139,7 +143,7 @@ _Static_assert(
   "Error: Wrapped functions does not match original download_client_get function signature");
 #endif
 
-int memfault_fota_start(void) {
+int memfault_zephyr_fota_start(void) {
   // Note: The download URL is allocated on the heap and must be freed when done
   int rv = memfault_zephyr_port_get_download_url(&s_download_url);
   if (rv <= 0) {
