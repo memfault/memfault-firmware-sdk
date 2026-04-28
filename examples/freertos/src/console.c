@@ -245,6 +245,18 @@ static void prv_reboot_timer_callback(TimerHandle_t xTimer) {
   memfault_platform_reboot();
 }
 
+static int prv_periph_error_crash_cmd(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  // Simulate peripheral errors (UART RX overrun, SPI overrun), then crash.
+  // The resulting coredump will contain s_example_periph_regs with both
+  // uart and spi sub-members showing the error state at crash time.
+  extern void memfault_example_periph_simulate_error(void);
+  memfault_example_periph_simulate_error();
+  printf("Simulated peripheral errors. Triggering crash...\n");
+  MEMFAULT_ASSERT(0);
+  return 0;
+}
+
 static int prv_watchdog_cmd(int argc, char *argv[]) {
   (void)argc, (void)argv;
 
@@ -341,6 +353,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "watchdog",
     .handler = prv_watchdog_cmd,
     .help = "Trigger a simulated watchdog interrupt",
+  },
+  {
+    .command = "periph_error_crash",
+    .handler = prv_periph_error_crash_cmd,
+    .help = "Simulate UART+SPI errors then crash — coredump contains sample peripheral reg state",
   },
 };
 #endif

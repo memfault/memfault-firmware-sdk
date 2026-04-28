@@ -183,11 +183,86 @@ static uint32_t prv_read_psp_reg(void) {
   return reg_val;
 }
 
+// ============================================================
+// Example: custom coredump memory region for peripheral registers
+// ============================================================
+//
+// This pattern captures peripheral register state at crash time, which is
+// invaluable for diagnosing communication failures, DMA overruns, and unexpected
+// interrupt conditions.
+//
+// In production firmware, each struct below would describe a memory-mapped
+// peripheral and the region would point at the live hardware address:
+//
+//   #define UART0_BASE 0x40004000U
+//   // In memfault_platform_coredump_get_regions():
+//   s_coredump_regions[region_idx] =
+//     MEMFAULT_COREDUMP_MEMORY_REGION_INIT((void *)UART0_BASE, sizeof(sExampleUartRegs));
+
+typedef struct {
+  uint32_t CR;    // Control:  [0] enable, [15:4] baud-rate divisor, [16] loopback
+  uint32_t SR;    // Status:   [0] TX empty, [1] RX data ready, [4] framing err, [5] overrun
+  uint32_t BRR;   // Baud Rate Register: configured baud rate in bps
+  uint32_t RXCNT; // Cumulative bytes received since last reset
+  uint32_t TXCNT; // Cumulative bytes transmitted since last reset
+  uint32_t ISR;   // Interrupt Status: sticky error bits, cleared on read in real hardware
+} sExampleUartRegs;
+
+typedef struct {
+  uint32_t CR;    // Control: [0] enable, [1] CPOL, [2] CPHA, [5:3] clock divider
+  uint32_t SR;    // Status:  [0] TX empty, [1] RX full, [2] busy, [3] overrun
+  uint32_t DR;    // Data: last byte shifted in/out
+  uint32_t RXCNT; // Cumulative bytes received since last reset
+  uint32_t TXCNT; // Cumulative bytes transmitted since last reset
+} sExampleSpiRegs;
+
+// Sample peripheral register state. Updated during normal operation so that a
+// coredump taken after a crash carries meaningful peripheral context.
+// Run 'periph_error_crash' from the shell to see this in action.
+typedef struct {
+  sExampleUartRegs UART0;
+  sExampleSpiRegs SPI0;
+} sExamplePeriphRegs;
+
+static sExamplePeriphRegs s_example_periph_regs = {
+  .UART0 = {
+    .CR = (1u << 0),  // UART enabled
+    .SR = (1u << 0),  // TX empty (idle at startup)
+    .BRR = 115200,
+    .RXCNT = 0,
+    .TXCNT = 0,
+    .ISR = 0,
+  },
+  .SPI0 = {
+    .CR = (1u << 0),  // SPI enabled, mode 0 (CPOL=0, CPHA=0)
+    .SR = (1u << 0),  // TX empty (idle at startup)
+    .DR = 0,
+    .RXCNT = 0,
+    .TXCNT = 0,
+  },
+};
+
+// Simulates errors on both peripherals — call before crashing to produce a
+// coredump with non-trivial register state. The 'periph_error_crash' shell
+// command does this.
+void memfault_example_periph_simulate_error(void) {
+  s_example_periph_regs.UART0.TXCNT = 42;
+  s_example_periph_regs.UART0.RXCNT = 128;
+  s_example_periph_regs.UART0.ISR = (1u << 1);             // overrun sticky bit
+  s_example_periph_regs.UART0.SR = (1u << 1) | (1u << 5); // RX data ready + overrun
+
+  s_example_periph_regs.SPI0.TXCNT = 16;
+  s_example_periph_regs.SPI0.RXCNT = 15;
+  s_example_periph_regs.SPI0.DR = 0xFF;      // last byte during overrun
+  s_example_periph_regs.SPI0.SR = (1u << 3); // overrun
+}
+
 static sMfltCoredumpRegion s_coredump_regions[MEMFAULT_COREDUMP_MAX_TASK_REGIONS +
                                               2   /* active stack(s) */
                                               + 1 /* _kernel variable */
                                               + 1 /* __memfault_capture_start */
                                               + 2 /* s_task_tcbs + s_task_watermarks */
+                                              + 1 /* s_example_periph_regs */
 ];
 
 extern uint32_t __memfault_capture_bss_end;
@@ -234,6 +309,13 @@ const sMfltCoredumpRegion *memfault_platform_coredump_get_regions(
   region_idx += memfault_freertos_get_task_regions(
     &s_coredump_regions[region_idx], MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
 #endif
+
+  // Capture sample peripheral register state. After decoding the coredump,
+  // s_example_periph_regs appears under "Globals & Statics" in the Memfault UI
+  // with uart and spi sub-members showing exact register values at crash time.
+  s_coredump_regions[region_idx] =
+    MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&s_example_periph_regs, sizeof(s_example_periph_regs));
+  region_idx++;
 
   *num_regions = region_idx;
   return &s_coredump_regions[0];
