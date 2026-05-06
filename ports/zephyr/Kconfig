@@ -380,7 +380,7 @@ endif # MEMFAULT_LOGGING_ENABLE
 
 config MEMFAULT_ROOT_CERT_STORAGE
         bool "Memfault TLS root certificate storage enabled"
-        default y if MEMFAULT_HTTP_ENABLE
+        default y if MEMFAULT_HTTP_ENABLE && !MEMFAULT_HTTP_DISABLE_TLS
         help
           Enables TLS root certificate storage for Memfault data upload
 
@@ -523,7 +523,7 @@ config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
 
 config MEMFAULT_HTTP_USES_MBEDTLS
         bool "Use mbedTLS for HTTP transport"
-        default y if MBEDTLS && !NRF_MODEM_LIB
+        default y if MBEDTLS && !NRF_MODEM_LIB && !MEMFAULT_HTTP_DISABLE_TLS
         help
           Configure Memfault HTTP for using mbedTLS- perform some sanity checks
           at compile time that it is configured correctly. Note that if MbedTLS
@@ -577,6 +577,41 @@ config MEMFAULT_HTTP_SOCKET_DISPATCH
           used for Memfault data upload, via
           memfault_zephyr_port_http_set_interface_name(). This must be set
           before performing Memfault data uploads.
+
+config MEMFAULT_HTTP_DISABLE_TLS
+        bool "Disable TLS for Memfault HTTP transport [WARNING: debugging only!]"
+        help
+          When enabled, Memfault HTTP client will use plain-text HTTP instead of
+          HTTPS. All transport encryption is disabled.
+
+          WARNING: This should ONLY be used for local debugging (e.g. with a
+          local proxy server). Never enable this in production firmware.
+
+config MEMFAULT_HTTP_CHUNKS_API_HOST
+        string "Override the Memfault chunks API host"
+        depends on MEMFAULT_HTTP_DISABLE_TLS
+        default ""
+        help
+          Override the default Memfault chunks API host. When plain HTTP mode
+          is enabled, this should be set to a local proxy or debugging server
+          host.
+
+          Do not leave this empty when TLS is disabled: the default host
+          (chunks.memfault.com) does not support plain HTTP and connections
+          will fail.
+
+config MEMFAULT_HTTP_DEVICE_API_HOST
+        string "Override the Memfault device API host"
+        depends on MEMFAULT_HTTP_DISABLE_TLS
+        default ""
+        help
+          Override the default Memfault device API host. When plain HTTP mode
+          is enabled, this should be set to a local proxy or debugging server
+          host.
+
+          Do not leave this empty when TLS is disabled: the default host
+          (device.memfault.com) does not support plain HTTP and connections
+          will fail.
 
 endif # MEMFAULT_HTTP_ENABLE
 

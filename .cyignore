@@ -20,6 +20,7 @@ ports/s32sdk
 ports/silabs
 ports/stm32cube
 ports/templates
+ports/threadx
 ports/zephyr
 scripts
 tests

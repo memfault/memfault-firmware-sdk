@@ -4,8 +4,8 @@
 //! See LICENSE for details
 //!
 //! Tests for prv_wait_for_http_response returning the HTTP status code.
-//! Specifically verifies that non-200 HTTP responses are treated as failures
-//! by memfault_zephyr_port_http_post_chunk (see fix to return int instead of bool).
+//! Verifies that any 2xx HTTP response is treated as success, and non-2xx
+//! responses are treated as failures by memfault_zephyr_port_http_post_chunk.
 
 #include <string.h>
 #include <zephyr/net/socket.h>
@@ -60,7 +60,17 @@ ZTEST(memfault_http_response_codes, test_post_chunk_200_response) {
   zassert_equal(rv, 0, "Expected 0 for 200 response, got %d", rv);
 }
 
-ZTEST(memfault_http_response_codes, test_post_chunk_non_200_response) {
+ZTEST(memfault_http_response_codes, test_post_chunk_201_response) {
+  const int rv = prv_post_chunk_with_response("HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n");
+  zassert_equal(rv, 0, "Expected 0 for 201 response, got %d", rv);
+}
+
+ZTEST(memfault_http_response_codes, test_post_chunk_202_response) {
+  const int rv = prv_post_chunk_with_response("HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\n\r\n");
+  zassert_equal(rv, 0, "Expected 0 for 202 response, got %d", rv);
+}
+
+ZTEST(memfault_http_response_codes, test_post_chunk_non_2xx_response) {
   const int rv =
     prv_post_chunk_with_response("HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\n\r\n");
   zassert_equal(rv, -3, "Expected -3 for 429 response, got %d", rv);

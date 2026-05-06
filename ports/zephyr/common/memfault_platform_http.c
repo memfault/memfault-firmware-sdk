@@ -12,21 +12,29 @@
 #include <sys/types.h>
 #include MEMFAULT_ZEPHYR_INCLUDE(init.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/tls_credentials.h)
+#endif
 
 #include "memfault/core/compiler.h"
 #include "memfault/core/data_packetizer.h"
 #include "memfault/core/debug_log.h"
 #include "memfault/core/math.h"
 #include "memfault/http/http_client.h"
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include "memfault/http/root_certs.h"
+#endif
 #include "memfault/http/utils.h"
 #include "memfault/metrics/connectivity.h"
 #include "memfault/panics/assert.h"
 #include "memfault/ports/zephyr/http.h"
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include "memfault/ports/zephyr/root_cert_storage.h"
 #include "memfault/ports/zephyr/deprecated_root_cert.h"
+#endif
 #include "memfault/ports/zephyr/version.h"
+
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 
 #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3)
 #if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_PSA_WANT_ALG_SHA_1)
@@ -38,6 +46,8 @@
 #error "CONFIG_MBEDTLS_SHA1 must be enabled"
 #endif
 #endif
+
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
 
 #include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 // clang-format on
@@ -76,6 +86,19 @@ MEMFAULT_STATIC_ASSERT(
 
 sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = CONFIG_MEMFAULT_PROJECT_KEY,
+  #if defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+  .disable_tls = true,
+  .chunks_api = {
+    .host = sizeof(CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST) > 1 ?
+              CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST : NULL,
+    .port = 80,
+  },
+  .device_api = {
+    .host = sizeof(CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST) > 1 ?
+              CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST : NULL,
+    .port = 80,
+  },
+  #endif
 };
 #endif
 
@@ -106,8 +129,10 @@ static void prv_free(void *ptr) {
     "One of CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, or CONFIG_HEAP_MEM_POOL_SIZE must be non-zero"
 #endif
 
-// Select either PEM or DER format to install to certificate storage.
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+
 // clang-format off
+// Select either PEM or DER format to install to certificate storage.
 #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr g_memfault_cert_digicert_global_root_ca
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len g_memfault_cert_digicert_global_root_ca_len
@@ -169,6 +194,14 @@ int memfault_zephyr_port_install_root_certs(void) {
 
   return 0;
 }
+
+#else /* CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
+
+int memfault_zephyr_port_install_root_certs(void) {
+  return 0;
+}
+
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
 
 static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
   int fd = *(int *)ctx;
@@ -244,6 +277,8 @@ static int prv_create_socket(struct zsock_addrinfo **res, const char *host, int 
   return fd;
 }
 
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
   const sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2,
                                     kMemfaultRootCert_AmazonRootCa1,
@@ -271,27 +306,31 @@ static int prv_configure_tls_socket(int sock_fd, const char *host) {
   // certs. This feature was added in Zephyr v3.0.0. Not all socket operation implementations
   // support this socket option, so gate on CONFIG_MEMFAULT_TLS_CERTS_USE_DER to ensure dependencies
   // are met. Parsing PEM does not require this socket option.
-#if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER) && defined(TLS_CERT_NOCOPY_OPTIONAL)
+  #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER) && defined(TLS_CERT_NOCOPY_OPTIONAL)
   const int nocopy = TLS_CERT_NOCOPY_OPTIONAL;
   rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_CERT_NOCOPY, &nocopy, sizeof(nocopy));
   if (rv) {
     MEMFAULT_LOG_ERROR("Failed to set tls nocopy, err %d\n", errno);
     return rv;
   }
-#endif
+  #endif
 
   const size_t host_name_len = strlen(host);
   return zsock_setsockopt(sock_fd, SOL_TLS, TLS_HOSTNAME, host, host_name_len + 1);
 }
 
+#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
+
 static int prv_configure_socket(int fd, const char *host) {
   int rv = 0;
+#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
   if (!g_mflt_http_client_config.disable_tls) {
     rv = prv_configure_tls_socket(fd, host);
     if (rv < 0) {
       MEMFAULT_LOG_ERROR("Failed to configure tls w/ host, errno=%d", errno);
     }
   }
+#endif
 
   return rv;
 }
@@ -858,7 +897,8 @@ int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
       success = false;
       break;
     }
-    success = prv_wait_for_http_response(ctx->sock_fd) == 200;
+    const int http_status = prv_wait_for_http_response(ctx->sock_fd);
+    success = (http_status / 100 == 2);
     if (!success) {
       break;
     }
@@ -883,7 +923,7 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
     return -2;
   }
 
-  if (prv_wait_for_http_response(ctx->sock_fd) != 200) {
+  if (prv_wait_for_http_response(ctx->sock_fd) / 100 != 2) {
     return -3;
   }
 

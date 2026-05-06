@@ -28,8 +28,10 @@
     #include "task.h"
   #endif
 
-  #if !configRECORD_STACK_HIGH_ADDRESS
-    #error "configRECORD_STACK_HIGH_ADDRESS must be set to 1 in FreeRTOSConfig.h"
+  #if !configRECORD_STACK_HIGH_ADDRESS && \
+    !(configUSE_TRACE_FACILITY && INCLUDE_uxTaskGetStackHighWaterMark)
+    #error \
+      "FreeRTOSConfig.h must enable either configRECORD_STACK_HIGH_ADDRESS=1 or both configUSE_TRACE_FACILITY=1 and INCLUDE_uxTaskGetStackHighWaterMark=1"
   #endif
 
   #define DEBUG_ 0
@@ -63,7 +65,13 @@ MEMFAULT_WEAK const sMfltFreeRTOSTaskMetricsIndex g_memfault_thread_metrics_inde
     #endif  // (__STDC_VERSION__ < 201100L) || (__GNUC__ >= 5)
   #endif    // MEMFAULT_METRICS_THREADS_DEFAULTS_INDEX
 
-  #if MEMFAULT_FREERTOS_VERSION_GTE(10, 0, 0)
+  #if MEMFAULT_FREERTOS_VERSION_GTE(10, 0, 0) || defined(MEMFAULT_FREERTOS_PXENDOFSTACK_AVAILABLE)
+// `MEMFAULT_FREERTOS_PXENDOFSTACK_AVAILABLE` is an escape hatch for kernels
+// outside the version range above. Define it in your platform config (for
+// example, `memfault_platform_config.h`) only after verifying the internal
+// `TCB_t` layout matches `struct MfltFreeRTOSTCB` below: `pcTaskName` must
+// precede `pxEndOfStack`, and there must be no additional fields between them
+// other than the SMP / ESP-IDF-specific fields handled here.
 // Unfortunately we must break the opaque pointer to the TCB and access the
 // pxEndOfStack field directly. The simplest approach is to access the task
 // name address in the TCB, then offset to the location of the pxEndOfStack

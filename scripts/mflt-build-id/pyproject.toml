@@ -22,7 +22,7 @@ mflt-build-id = 'mflt_build_id:main'
 [dependency-groups]
 dev = [
   "pytest >=6",
-  "pytest-cov >=2,<3",
+  "pytest-cov >=7.0.0",
   "pytest-timeout >=2.0,<3.0",
 ]
 

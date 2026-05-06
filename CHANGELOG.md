@@ -6,6 +6,96 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.39.0] - 2026-05-06
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Enable Zephyr RTOS thread awareness for ESP32-S3. Non-active Xtensa threads
+    now decode correctly.
+
+  - Added a new Kconfig option, `CONFIG_MEMFAULT_HTTP_DISABLE_TLS`, which
+    disables TLS for the Memfault HTTP transport and uses plain-text HTTP
+    instead. **This option is intended for local debugging only (e.g. with a
+    local proxy server) and must never be enabled in production firmware.**
+
+    Two companion options are available when `CONFIG_MEMFAULT_HTTP_DISABLE_TLS`
+    is set:
+
+    - `CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST` - override the chunks API host
+      (default: `chunks.memfault.com`)
+    - `CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST` - override the device API host
+      (default: `device.memfault.com`)
+
+  - Add support for `CONFIG_USE_SWITCH` alternate context switching option for
+    ARM Cortex-M, added in Zephyr v4.4.0.
+
+- General:
+
+  - Added build support for legacy ARM cores (ARMv4T, ARMv5TE/TEJ, ARMv6). Only
+    compilation is supported; coredump and exception tracking are not supported
+    on these platforms.
+
+- ThreadX:
+
+  - Added `memfault_threadx_get_thread_regions()` and the accompanying
+    `memfault/ports/threadx_coredump.h` header, which capture per-thread stack
+    usage watermarks into the coredump at fault time.
+
+    The helper walks the ThreadX created-thread list, records each thread's TCB
+    and full stack, and scans the stack fill pattern to compute how many bytes
+    remain unused at the bottom of each thread's stack. Results are stored in a
+    compact `sMfltThreadXStackInfo[]` sidecar array that is captured as a
+    coredump region alongside the stacks.
+
+    Call it from `memfault_platform_coredump_get_regions()`:
+
+    ```c
+    #include "memfault/ports/threadx_coredump.h"
+
+    // Add MEMFAULT_THREADX_MAX_TASK_REGIONS to your region array size:
+    // #define COREDUMP_MAX_REGIONS (4 + MEMFAULT_THREADX_MAX_TASK_REGIONS)
+
+    region_idx += memfault_threadx_get_thread_regions(
+      &s_coredump_regions[region_idx],
+      MEMFAULT_ARRAY_SIZE(s_coredump_regions) - region_idx);
+    ```
+
+    The maximum number of tracked threads defaults to 16 and can be overridden
+    by defining `MEMFAULT_THREADX_MAX_THREADS` in `memfault_platform_config.h`.
+
+    The per-thread stack usage data is displayed in the Memfault web app
+    alongside each thread's backtrace.
+
+    A reference sample is provided at
+    <https://github.com/memfault/memfault-threadx-sample> .
+
+### 🔥 Removed
+
+- Mbed OS: removed the Mbed OS port, example app, and invoke tasks. The port was
+  deprecated in 1.38.0. Cloud-side support is not affected.
+
+### 🐛 Fixed
+
+- FreeRTOS:
+
+  - Add some compatibility workarounds to support building with FreeRTOS V9.0.0.
+    Relevant defines are `MEMFAULT_FREERTOS_DISABLE_STACK_OVERFLOW_HOOK` and
+    `MEMFAULT_FREERTOS_PXENDOFSTACK_AVAILABLE`.
+
+- Zephyr:
+
+  - Fix Xtensa thread stack capture in `memfault_zephyr_ram_regions.c`.
+
+  - Fix a bug in `memfault_zephyr_port_http_upload_sdk_data()` /
+    `memfault_zephyr_port_http_post_chunk()` where only HTTP 200 was treated as
+    a successful response from the Memfault server. Fixed so any 2xx response is
+    treated as a success.
+
 ## [1.38.0] - 2026-04-24
 
 This is a minor release, including new features, improvements, and bug fixes
@@ -156,6 +246,10 @@ across several platforms.
 
   - `CONFIG_MEMFAULT_NRF_SHELL` is removed in this release, the commands are now
     available from the general Memfault Zephyr shell commands.
+
+- Internal: bumped two python deps: `pytest` (7.0.1 → 9.0.3, includes
+  CVE-2025-71176 fix) and `invoke` (2.1.1 → 3.0.3) in
+  `sdk/embedded/requirements.txt`.
 
 ## [1.37.1] - 2026-03-24
 

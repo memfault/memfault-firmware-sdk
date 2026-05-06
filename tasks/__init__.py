@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from invoke import Collection, task
 
-from . import esp32, mbed, nrf, wiced, zephyr
+from . import esp32, nrf, wiced, zephyr
 from .macos_ftdi import is_macos
 
 SDK_FW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -138,7 +138,6 @@ def fw_sdk_unit_test(
 
 ns = Collection()
 ns.add_task(fw_sdk_unit_test, name="test")
-ns.add_collection(mbed)
 ns.add_collection(nrf)
 ns.add_collection(wiced)
 ns.add_collection(esp32)

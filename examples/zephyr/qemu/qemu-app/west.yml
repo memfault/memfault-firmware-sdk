@@ -20,16 +20,16 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v4.3.0
+      revision: v4.4.0
       import:
         # Limit the Zephyr modules to the required set
         name-allowlist:
-            - cmsis
-            - cmsis_6
-            - picolibc
-            - hal_ambiq
-            - hal_nxp
-            - hal_stm32
+          - cmsis
+          - cmsis_6
+          - picolibc
+          - hal_ambiq
+          - hal_nxp
+          - hal_stm32
 
     # Override the hal_ambiq module to use our patched version, which supports
     # MRAM flash driver on Apollo510

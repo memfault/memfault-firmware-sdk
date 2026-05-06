@@ -13,6 +13,9 @@
 #include <soc.h>
 #include <xtensa_asm2_context.h>
 
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+  #include "esp_private/system_internal.h"
+#endif
 #include "memfault/core/compiler.h"
 #include "memfault/core/math.h"
 #include "memfault/core/platform/core.h"
@@ -104,6 +107,13 @@ MEMFAULT_WEAK MEMFAULT_NORETURN void memfault_platform_reboot(void) {
   // TODO this is not working correctly on the esp32s3
   // memfault_platform_halt_if_debugging();
 
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+  // Use esp_restart_noos() instead of sys_arch_reboot()/esp_restart() to avoid
+  // calling k_sched_lock() and shutdown handlers from ISR/exception context,
+  // which would trigger a mutex assertion (mutex.c:111).
+  esp_restart_noos();
+#else
   sys_arch_reboot(0);
+#endif
   CODE_UNREACHABLE;
 }

@@ -220,14 +220,23 @@ size_t memfault_zephyr_get_task_regions(sMfltCoredumpRegion *regions, size_t num
 #endif
 
     void *sp =
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) && defined(CONFIG_USE_SWITCH)
+      // With USE_SWITCH (Zephyr 4.4.0+), callee_saved.psp is never written.
+      // switch_handle points to the saved context frame at the top of the thread's
+      // stack - use it as the stack capture start.
+      (void *)thread->switch_handle
+#elif defined(CONFIG_ARM)
       (void *)thread->callee_saved.psp
 #elif CONFIG_RISCV
       (void *)thread->callee_saved.sp
 #elif CONFIG_XTENSA
-      // TODO, needs to be implemented. see here for reference:
-      // https://github.com/zephyrproject-rtos/zephyr/blob/a6eef0ba3755f2530c5ce93524e5ac4f5be30194/arch/xtensa/core/xtensa-asm2.c#L109
-      0
+      // The switch_handle is the "restore handle" for the saved Xtensa register
+      // frame. It points to the ptr_to_bsa slot at the bottom of the saved
+      // frame (_xtensa_irq_stack_frame_raw_t), which is the lowest address of
+      // the captured context. Using this as the capture start ensures the entire
+      // saved register frame (BSA + high register blocks) is collected.
+      // Reference: arch/xtensa/include/xtensa_asm2_context.h
+      (void *)thread->switch_handle
 #elif CONFIG_ARCH_POSIX
       // Stubbed out, not supported
       0

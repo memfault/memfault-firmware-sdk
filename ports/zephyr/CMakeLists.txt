@@ -15,6 +15,10 @@ if(CONFIG_MEMFAULT)
     list(APPEND MEMFAULT_COMPONENTS http)
   endif()
 
+  if(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
+    message(WARNING "Memfault HTTP TLS is DISABLED - data will be sent unencrypted")
+  endif()
+
   if (CONFIG_MEMFAULT_METRICS)
     list(APPEND MEMFAULT_COMPONENTS metrics)
   endif()
