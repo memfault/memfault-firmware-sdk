@@ -53,6 +53,44 @@ config MEMFAULT_FOTA_HTTP_FRAG_SIZE
           value should be set to the maximum size that can be received by
           the device. If 0, no fragmentation is used.
 
+config MEMFAULT_FOTA_MODEM_UPDATE
+        bool "Include modem firmware in periodic FOTA check"
+        depends on MEMFAULT_HTTP_ENABLE
+        depends on MODEM_INFO
+        depends on MEMFAULT_SOC_SERIES_NRF91
+        default n
+        help
+          When enabled, memfault_zephyr_fota_start() also checks for modem
+          firmware updates using a dedicated Memfault project (see
+          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY).
+
+          If both an application update and a modem update are pending,
+          the application update is installed first (requiring one reboot),
+          and the modem update is installed on the next call to
+          memfault_zephyr_fota_start() (requiring a second reboot).
+
+          See https://mflt.io/nrf-modem-fota for setup instructions.
+
+if MEMFAULT_FOTA_MODEM_UPDATE
+
+config MEMFAULT_FOTA_MODEM_PROJECT_KEY
+        string "Project key for the Memfault modem firmware project"
+        help
+          The Memfault Project Key for the dedicated modem firmware project.
+          This is different from the application project key.
+          Obtain this from Settings → General in your modem Memfault project.
+
+config MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE
+        string "Software type identifier for modem firmware"
+        default "mfw"
+        help
+          The software_type string used when uploading modem firmware to
+          Memfault and when the device checks for modem updates.
+          Must match the --software-type argument passed to
+          `memfault upload-ota-payload`.
+
+endif # MEMFAULT_FOTA_MODEM_UPDATE
+
 endif # MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
 config MEMFAULT_NRF_NRF5_CPU_TEMP

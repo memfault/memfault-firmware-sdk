@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔥 Removed
+
+- General:
+
+  - Removed the `DigiCert Global Root CA` root certificate from the set of
+    certificates in the SDK. This certificate is no longer needed to connect to
+    the Memfault cloud.
+
+### 📈 Added
+
+- nRF Connect SDK:
+
+  - Move the `examples/nrf-connect-sdk/nrf9160/` sample app to
+    `examples/nrf-connect-sdk/cellular/`, and make it generic, for use on other
+    boards (eg `nrf9151dk`) with cellular connectivity as well. Similarly,
+    rename `examples/nrf-connect-sdk/nrf5` to
+    `examples/nrf-connect-sdk/bluetooth/`.
+
 ## [1.39.0] - 2026-05-06
 
 This is a minor release, including new features, improvements, and bug fixes
@@ -143,6 +163,19 @@ across several platforms.
   - Add a new Kconfig option, `CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK`, to enable a
     periodic FOTA check. This runs along the `CONFIG_MEMFAULT_PERIODIC_UPLOAD`
     thread.
+
+  - Add support for automatic modem firmware FOTA on nRF91x targets
+    (`CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y`). When enabled,
+    `memfault_zephyr_fota_start()` first checks for an application firmware
+    update as usual; if none is available, it then checks for a modem firmware
+    update using a dedicated Memfault project. New options:
+
+    - `CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY` - Memfault project key for the
+      modem firmware project (required when `MEMFAULT_FOTA_MODEM_UPDATE=y`)
+    - `CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE` - software type string used
+      when checking for modem updates (default: `nrf9160-modem`)
+
+    See <https://mflt.io/nrf-modem-fota> for setup instructions.
 
   - Add a new Kconfig option,
     `CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY`, which
@@ -677,7 +710,7 @@ This is a minor release. Key updates:
     fuel gauge library.
 
   - Added a CoAP client implementation capable of uploading Memfault data
-    through an [nRF Cloud](https://www.nrfcloud.com/) connection. This is
+    through an [nRF Cloud](https://nrfcloud.nordicsemi.com/) connection. This is
     primarily intended for use with the Nordic nRF91x series devices using LTE-M
     or NB-IoT connectivity. To enable, use
     `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`. This will change the protocol used

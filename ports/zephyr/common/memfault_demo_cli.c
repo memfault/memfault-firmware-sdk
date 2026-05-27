@@ -146,18 +146,20 @@ static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char *
 
 static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t argc,
                                                char **argv) {
-#if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
-  // The nRF Connect SDK comes with a download client module that can be used to
-  // perform an actual e2e OTA so use that instead and don't link this code in at all!
-  shell_print(shell,
-              "Use 'mflt_nrf fota' instead. See https://mflt.io/nrf-fota-setup for more details");
-#elif defined(CONFIG_MEMFAULT_HTTP_ENABLE)
+#if defined(CONFIG_MEMFAULT_HTTP_ENABLE)
   return memfault_zephyr_fota_start();
 #else
   shell_print(shell, "CONFIG_MEMFAULT_HTTP_ENABLE not enabled");
 #endif
   return 0;
 }
+
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+static int prv_fota_modem_cmd(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc, (void)argv;
+  return memfault_zephyr_fota_modem_start();
+}
+#endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
 
 static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv) {
   (void)argc, (void)argv;
@@ -462,6 +464,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(get_latest_url, NULL, "gets latest release URL", prv_get_latest_url_cmd),
   SHELL_CMD(get_latest_release, NULL, "performs an OTA update using Memfault client",
             prv_check_and_fetch_ota_payload_cmd),
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+  SHELL_CMD(fota_modem, NULL, "check for and apply a modem firmware update", prv_fota_modem_cmd),
+#endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
   SHELL_CMD_ARG(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump,

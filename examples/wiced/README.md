@@ -21,21 +21,26 @@ SDK and performed the installation steps that are mentioned there.
 1. Download and install the WICED SDK 6.2.0.
 2. Create a symlink from `WICED-SDK-6.2.0/43xxx_Wi-Fi/apps/memfault_demo_app` to
    `memfault_sdk/examples/wiced/apps/memfault_demo_app`. For example:
+
    ```bash
-    $ cd WICED-SDK-6.2.0/43xxx_Wi-Fi/apps
-    $ ln -s /path/to/memfault_sdk/examples/wiced/apps/memfault_demo_app memfault_demo_app
+   cd WICED-SDK-6.2.0/43xxx_Wi-Fi/apps
+   ln -s /path/to/memfault_sdk/examples/wiced/apps/memfault_demo_app memfault_demo_app
    ```
+
 3. Create a symlink from `WICED-SDK-6.2.0/43xxx_Wi-Fi/libraries/memfault` to
    `memfault_sdk/examples/wiced/libraries/memfault`. For example:
+
    ```bash
-   $ cd WICED-SDK-6.2.0/43xxx_Wi-Fi/libraries
-   $ ln -s /path/to/memfault_sdk/examples/wiced/libraries/memfault memfault
+   cd WICED-SDK-6.2.0/43xxx_Wi-Fi/libraries
+   ln -s /path/to/memfault_sdk/examples/wiced/libraries/memfault memfault
    ```
+
 4. Optionally, to make the make the invoke tasks work, add a symlink inside the
    folder `memfault_sdk/examples/wiced/wiced_sdk` called `43xxx_Wi-Fi`, pointing
    to where you have installed the SDK. The final folder hierarchy should look
    like:
-   ```
+
+   ```text
    - examples
      - wiced
        - wiced_sdk
@@ -65,15 +70,15 @@ build the demo app. Now you can build the demo app:
 using pyinvoke:
 
 ```bash
-$ cd memfault_sdk
-$ invoke wiced.build
+cd memfault_sdk
+invoke wiced.build
 ```
 
 or
 
 ```bash
-$ cd /path/to/WICED-SDK-6.2.0/43xxx_Wi-Fi/
-$ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug
+cd /path/to/WICED-SDK-6.2.0/43xxx_Wi-Fi/
+./make memfault_demo_app-BCM943364WCD1-SDIO-debug
 ```
 
 ### Flashing the demo app
@@ -81,15 +86,15 @@ $ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug
 using pyinvoke:
 
 ```bash
-$ cd memfault_sdk
-$ invoke wiced.flash
+cd memfault_sdk
+invoke wiced.flash
 ```
 
 or
 
 ```bash
-$ cd /path/to/WICED-SDK-6.2.0/43xxx_Wi-Fi/
-$ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug download download_apps run
+cd /path/to/WICED-SDK-6.2.0/43xxx_Wi-Fi/
+./make memfault_demo_app-BCM943364WCD1-SDIO-debug download download_apps run
 # You'll also want to clear the DEBUGEN bit ... otherwise a crash will trigger a breakpoint and the
 # system will hang. The easiest way to do this is by cycling power. The invoke command fixes this
 # automagically by executing the "stm32f4xx.cpu cortex_m disconnect" openocd command
@@ -100,21 +105,22 @@ $ ./make memfault_demo_app-BCM943364WCD1-SDIO-debug download download_apps run
 using pyinvoke:
 
 ```bash
-$ cd memfault_sdk
-$ invoke wiced.console
+cd memfault_sdk
+invoke wiced.console
 ```
 
 or
 
 ```bash
-$ miniterm.py --raw /dev/cu.usbserial-* 115200
+miniterm.py --raw /dev/cu.usbserial-* 115200
 ```
 
-You can now type commands from the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `help` to
-see short descriptions of each command.
+You can now type commands from the
+[Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `help` to see
+short descriptions of each command.
 
 ```bash
-$ invoke wiced.console
+invoke wiced.console
 --- Miniterm on /dev/cu.usbserial-14101  115200,8,N,1 ---
 --- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---
 help
@@ -151,8 +157,8 @@ Let's walk through this process step by step:
 
 ### Memfault Project Key
 
-An Project Key will need to be baked into the demo app to enable it to
-communicate with Memfault's web services. Go to https://app.memfault.com/,
+A Project Key will need to be baked into the demo app to enable it to
+communicate with Memfault's web services. Go to <https://app.memfault.com/>,
 navigate to the project you want to use and select 'Settings'. Copy the 'Project
 Key' and paste it into `apps/memfault_demo_app/memfault_demo_app.c`, replacing
 `<YOUR PROJECT KEY HERE>` with your Project Key. Save the file and rebuild,
@@ -163,7 +169,7 @@ reflash the project and attach the debug console (see instruction above).
 As a sanity check, let's request the device info from the debug console, enter
 `get_device_info` and press enter:
 
-```
+```text
 > get_device_info
 S/N: 00A0507510F0
 SW type: wiced-main
@@ -179,10 +185,10 @@ requirements (see
 
 ### Causing a crash
 
-Command `test_hardfault` will trigger a hard fault due to a bad instruction fetch at a
-non-existing address, `0xbadcafe`:
+Command `test_hardfault` will trigger a hard fault due to a bad instruction
+fetch at a non-existing address, `0xbadcafe`:
 
-```
+```text
 > test_hardfault
 
 Starting WICED vWiced_006.002.001.0002
@@ -199,7 +205,7 @@ again.
 To check whether the coredump has been captured, try running the `get_core`
 command:
 
-```
+```text
 > get_core
 Has coredump with size: 131312
 ```
@@ -245,10 +251,10 @@ The coredump is now being processed by Memfault's services and will show up
 shortly under Issues. If it does not, take a look at the FAQ in the `README.md`
 in the root of the SDK.
 
-For more details on how to use
-to CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).
+For more details on how to use the CLI to explore each of Memfault's subsystems,
+see the [Memfault docs](https://mflt.io/demo-cli).
 
-# Integrating into existing WICED projects
+## Integrating into existing WICED projects
 
 Adding Memfault to existing WICED projects is relatively simple. The Memfault
 SDK comes with .mk files that are compatible with WICED SDK's components. This
@@ -260,7 +266,8 @@ has been tested with WICED SDK v6.2.0.
   [Adding Memfault to the WICED SDK](#adding-memfault) above for details.
 
 - Add dependencies to Memfault's components in your app's .mk file:
-  ```
+
+  ```makefile
   $(NAME)_COMPONENTS := ... existing dependencies ... \
                       libraries/memfault/core \
                       libraries/memfault/demo \
@@ -268,14 +275,16 @@ has been tested with WICED SDK v6.2.0.
                       libraries/memfault/panics \
                       libraries/memfault/platform_reference_impl \
   ```
+
   The `demo` is not strictly necessary and should only be added if you are also
   using the `utilities/command_console` component from the WICED SDK. The `demo`
   component contains console command implementation to test out various Memfault
   SDK features. See [Using the demo app](#using-demo-app) for an impression of
   these commands.
+
 - Add configuration and initialization code:
 
-```
+```c
 // main.c
 
 // Find your key on https://app.memfault.com/ under 'Settings':
@@ -289,7 +298,6 @@ void application_start(void) {
 
   ... your code ...
 }
-
 ```
 
 - To hook up the console commands, please refer to the `memfault_demo_app.c`
@@ -305,7 +313,7 @@ void application_start(void) {
   the `memfault_sdk/components/*/README.md` files to learn more about the
   customization options for each component.
 
-# FAQ
+## FAQ
 
 If you run into any issues, please do not hesitate to reach out for help.
 

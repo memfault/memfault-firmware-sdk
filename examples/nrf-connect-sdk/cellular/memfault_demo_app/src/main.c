@@ -19,6 +19,10 @@
 #include "memfault/ports/ncs/date_time_callback.h"
 #include "memfault_demo_app.h"
 
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+#include <modem/at_shell.h>
+#endif
+
 #include <modem/modem_info.h>
 #include <modem/lte_lc.h>
 
@@ -121,10 +125,29 @@ static void prv_init_device_info(void) {
 }
 #endif
 
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+K_THREAD_STACK_DEFINE(my_work_q_stack, 2048);
+static struct k_work_q my_work_q;
+
+static void prv_at_shell_init(void) {
+  k_work_queue_start(&my_work_q, my_work_q_stack, K_THREAD_STACK_SIZEOF(my_work_q_stack),
+                     K_PRIO_PREEMPT(7), NULL);
+
+  struct at_shell_config at_cfg = {
+    .at_cmd_mode_work_q = &my_work_q,
+  };
+  at_shell_init(&at_cfg);
+}
+#endif  // CONFIG_AT_SHELL_CMD_MODE
+
 int main(void) {
   printk("Memfault Demo App Started!\n");
 
   memfault_demo_app_watchdog_boot();
+
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+  prv_at_shell_init();
+#endif
 
 #if CONFIG_DFU_TARGET_MCUBOOT
   if (!boot_is_img_confirmed()) {

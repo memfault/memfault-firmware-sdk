@@ -25,10 +25,13 @@ typedef enum {
   // Keep this index first, or update the code that references it
   kMemfaultRootCert_DigicertRootG2,
   kMemfaultRootCert_AmazonRootCa1,
-  kMemfaultRootCert_DigicertRootCa,
+
   // Must be last, used to track number of root certs in use
   kMemfaultRootCert_MaxIndex,
 } eMemfaultRootCert;
+
+#define MEMFAULT_ROOT_CERTS_ID_LIST \
+  kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_AmazonRootCa1,
 
 //! Adds specified certificate to backing store
 //!
