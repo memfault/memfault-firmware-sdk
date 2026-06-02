@@ -3,15 +3,16 @@
 This example application shows an integration with the ESP-IDF v5.0.2 SDK where
 a saved coredump is posted to the Memfault cloud for analysis.
 
-If you already have an ESP-IDF project based on the v5.x, v4.x, or v3.x SDK, a step by
-step getting started guide can be found [here](https://mflt.io/esp-tutorial).
+If you already have an ESP-IDF project based on the v5.x, v4.x, or v3.x SDK, a
+step by step getting started guide can be found
+[here](https://mflt.io/esp-tutorial).
 
 The Memfault SDK has been tested to be compatible with these versions of
 ESP-IDF:
 
 - v3.x release series
 - v4.x release series
-  v5.x release series through v5.0
+- v5.x release series through v5.0
 
 Other versions may be also be compatible but have not been verified by Memfault.
 
@@ -133,16 +134,15 @@ or
 miniterm.py ftdi://ftdi:2232/2 115200
 ```
 
-Press enter and you should see the `esp32>` prompt. Enter the `help` command
-to see a list of commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
+Press enter and you should see the `esp32>` prompt. Enter the `help` command to
+see a list of commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
 
 ## Using the demo app
 
 The demo app is a simple console based app that has commands to cause a crash in
-several ways. Once a coredump is captured, it can
-be sent via WiFi to Memfault's web services to get analyzed and desymbolicated.
-The `memfault/http` component of the Memfault SDK is used to talk to Memfault's
-web services.
+several ways. Once a coredump is captured, it can be sent via WiFi to Memfault's
+web services to get analyzed and desymbolicated. The `memfault/http` component
+of the Memfault SDK is used to talk to Memfault's web services.
 
 Let's walk through this process step by step:
 
@@ -285,7 +285,8 @@ The following steps can be used to exercise OTA functionality:
    I (33288) mflt: Result: 0
    ```
 
-   Optionally, persist these settings to non-volatile memory so your device auto-connects to your network on boot:
+   Optionally, persist these settings to non-volatile memory so your device
+   auto-connects to your network on boot:
 
    ```bash
    esp32> wifi_config <ssid> <pw>
@@ -347,4 +348,5 @@ The following steps can be used to exercise OTA functionality:
    I (8358) mflt: HW version: esp32-proto
    ```
 
-For more details on how to use the CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).
+For more details on how to use the CLI to explore each of Memfault's subsystems,
+see the [Memfault docs](https://mflt.io/demo-cli).

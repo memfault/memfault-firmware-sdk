@@ -10,6 +10,7 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/sensor/npm13xx_charger.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/mfd/npm13xx.h)
 #include "memfault/components.h"
+#include "memfault/ports/ncs/version.h"
 #include "memfault_nrf_platform_battery_model.h"
 #include "nrf_fuel_gauge.h"
 
@@ -84,7 +85,7 @@ static bool prv_npm13xx_is_discharging(int charging_status) {
 int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc) {
   // Float type required to retain precision when passing units of volts, amps, and degrees C to the
   // nRF fuel gauge API
-  float voltage, current, temp;
+  float voltage, current, temp, soc_f;
   int charging_status;
   int err = prv_npm13xx_read_sensors(&voltage, &current, &temp, &charging_status);
   if (err < 0) {
@@ -92,13 +93,36 @@ int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc) {
     return -1;
   }
 
+#if MEMFAULT_NCS_VERSION_GT(3, 3)
+  // fuel gauge lib v2 has discrete function for fetching SOC + SOH
+  err = nrf_fuel_gauge_soc_get(&soc_f);
+  if (err < 0) {
+    MEMFAULT_LOG_ERROR("Failure getting fuel gauge SOC, error: %d", err);
+    return -1;
+  }
+
+  // state-of-health is available on NCS 3.4+
+  float soh;
+  err = nrf_fuel_gauge_soh_get(&soh);
+  if (err < 0) {
+    MEMFAULT_LOG_ERROR("Failure getting fuel gauge SOH, error: %d", err);
+    return -1;
+  }
+  // recording state-of-health unscaled, 0-100
+  MEMFAULT_METRIC_SET_UNSIGNED(battery_soh, (uint32_t)(soh));
+#else
+  // fuel gauge lib v1 only supports reading SOC by processing the sensor data
+  struct nrf_fuel_gauge_state_info info;
   int64_t time_delta_ms = k_uptime_delta(&s_ref_time);
   float time_delta_s = (float)time_delta_ms / 1000.0f;
-  struct nrf_fuel_gauge_state_info info;
-  nrf_fuel_gauge_process(voltage, current, temp, time_delta_s, &info);
 
-  // soc_raw is already 0-100, so scale only by scale value
-  soc->soc = (uint32_t)(info.soc_raw * (float)CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE);
+  nrf_fuel_gauge_process(voltage, current, temp, time_delta_s, &info);
+  soc_f = info.soc_raw;
+#endif
+
+  // soc is already 0-100, so scale only by scale value
+  soc->soc = (uint32_t)(soc_f * (float)CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE);
+
   soc->discharging = prv_npm13xx_is_discharging(charging_status);
 
   // Scale by scale value (must match definition in memfault_metrics_heartbeat_ncs_port_config.def)

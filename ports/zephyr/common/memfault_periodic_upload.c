@@ -21,7 +21,7 @@
 #include "memfault/ports/zephyr/periodic_upload.h"
 #include "memfault/ports/zephyr/http.h"
 
-#if defined(CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK)
+#if defined(CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK) || defined(CONFIG_MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
   #include "memfault/ports/zephyr/fota.h"
 #endif
 // clang-format on
@@ -87,10 +87,16 @@ static void prv_periodic_upload_work_handler(struct k_work *work) {
   }
 
 #if defined(CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK)
-  // FOTA check always runs, even when there's no data to upload
+  // FOTA check always runs, even when there's no data to upload.
+  // When MEMFAULT_FOTA_MODEM_UPDATE=y, this also covers the modem check.
   int ret = memfault_zephyr_fota_start();
   if (ret < 0) {
     MEMFAULT_LOG_ERROR("Error checking for FOTA update, rv=%d", ret);
+  }
+#elif defined(CONFIG_MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
+  int ret = memfault_zephyr_fota_modem_start();
+  if (ret < 0) {
+    MEMFAULT_LOG_ERROR("Error checking for modem FOTA update, rv=%d", ret);
   }
 #endif
 }

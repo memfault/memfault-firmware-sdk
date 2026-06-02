@@ -1,7 +1,6 @@
 # West manifest for Memfault Example Application
 
 manifest:
-
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
@@ -13,10 +12,10 @@ manifest:
       import:
         # Limit the Zephyr modules to the required set
         name-allowlist:
-            - cmsis
-            - hal_stm32
-            - picolibc
-            - tinycrypt
+          - cmsis
+          - hal_stm32
+          - picolibc
+          - tinycrypt
 
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk
