@@ -6,6 +6,84 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔥 Removed
+
+- General:
+
+  - Removed the `DigiCert Global Root CA` root certificate from the set of
+    certificates in the SDK. This certificate is no longer needed to connect to
+    the Memfault cloud.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added a new Kconfig option, `CONFIG_MEMFAULT_ZEPHYR_FOTA` (default `y`), to
+    allow disabling FOTA support.
+
+- nRF Connect SDK:
+
+  - Move the `examples/nrf-connect-sdk/nrf9160/` sample app to
+    `examples/nrf-connect-sdk/cellular/`, and make it generic, for use on other
+    boards (eg `nrf9151dk`) with cellular connectivity as well. Similarly,
+    rename `examples/nrf-connect-sdk/nrf5` to
+    `examples/nrf-connect-sdk/bluetooth/`.
+
+  - Add support for recording battery state-of-health for nPM13xx chargers,
+    reported as `battery_soh_pct` metric. Requires latest nRF Connect SDK
+    (>3.3).
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Use the native `/ota/latest/url` endpoint instead of the HTTP proxy endpoint
+    for retrieving a Memfault release download URL via nRF Cloud CoAP. This also
+    enables retrieving a download URL without a Memfault Project Key built into
+    the application. The `/ota/latest/url` endpoint will automatically route the
+    request to the associated Memfault Project!
+
+  - Remove the `MEMFAULT_PROXY_URL_MAX_LEN` macro used to specify the maximum
+    length for proxy urls, specifically for OTA. Instead, increase
+    `CONFIG_COAP_CLIENT_MAX_PATH_LENGTH` when using particularly long device
+    properties (serial, hardware version, software version, or type).
+
+  - On latest nRF Connect SDK (>3.3), the nPM13xx fuel gauge library has been
+    updated to support reading state-of-charge (SOC) without performing a fuel
+    gauge computation update. The `battery_soc_pct` and `battery_soc_pct_drop`
+    metrics are now computed from data provided by `nrf_fuel_gauge_soc_get()`,
+    instead of calling `nrf_fuel_gauge_process()` (which has the side-effect of
+    triggering a fuel gauge computation update).
+
+    👉 In order to use the updated Memfault SDK with the nPM13xx fuel gauge
+    library, the user application must call `nrf_fuel_gauge_init()` during
+    initialization and periodically call `nrf_fuel_gauge_process()` to update
+    the fuel gauge computation. The Memfault SDK **no longer calls these
+    functions internally**. See an example implementation
+    [here](https://github.com/nrfconnect/Asset-Tracker-Template/blob/main/app/src/modules/power/power.c).
+
+    👉 To enable these metrics, you **must** call
+    `memfault_platform_npm13xx_battery_init()` and
+    `memfault_metrics_battery_boot()` after `nrf_fuel_gauge_init()`, to inform
+    the Memfault SDK that the fuel gauge APIs are ready for use.
+
+    ```c
+    #include <memfault/metrics/battery.h>
+    #include <memfault/ports/ncs/npm13xx_battery.h>
+
+    ...
+
+    void example_power_init(void) {
+        nrf_fuel_gauge_init();
+
+        // initialize Memfault battery metrics
+        memfault_platform_npm13xx_battery_init();
+        memfault_metrics_battery_boot();
+    }
+    ```
+
 ## [1.39.0] - 2026-05-06
 
 This is a minor release, including new features, improvements, and bug fixes
@@ -144,6 +222,19 @@ across several platforms.
     periodic FOTA check. This runs along the `CONFIG_MEMFAULT_PERIODIC_UPLOAD`
     thread.
 
+  - Add support for automatic modem firmware FOTA on nRF91x targets
+    (`CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y`). When enabled,
+    `memfault_zephyr_fota_start()` first checks for an application firmware
+    update as usual; if none is available, it then checks for a modem firmware
+    update using a dedicated Memfault project. New options:
+
+    - `CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY` - Memfault project key for the
+      modem firmware project (required when `MEMFAULT_FOTA_MODEM_UPDATE=y`)
+    - `CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE` - software type string used
+      when checking for modem updates (default: `nrf9160-modem`)
+
+    See <https://mflt.io/nrf-modem-fota> for setup instructions.
+
   - Add a new Kconfig option,
     `CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY`, which
     controls the workqueue priority for uploading data when
@@ -279,7 +370,7 @@ several platforms.
 
   - Use the native `/chunks` endpoint instead of the HTTP proxy endpoint for
     sending Memfault data via nRF Cloud CoAP. This also enables sending data
-    with a Memfault Project Key built into the application. The `/chunks`
+    without a Memfault Project Key built into the application. The `/chunks`
     endpoint will automatically route data to the associated Memfault Project
     🪄!
 
@@ -677,7 +768,7 @@ This is a minor release. Key updates:
     fuel gauge library.
 
   - Added a CoAP client implementation capable of uploading Memfault data
-    through an [nRF Cloud](https://www.nrfcloud.com/) connection. This is
+    through an [nRF Cloud](https://nrfcloud.nordicsemi.com/) connection. This is
     primarily intended for use with the Nordic nRF91x series devices using LTE-M
     or NB-IoT connectivity. To enable, use
     `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`. This will change the protocol used

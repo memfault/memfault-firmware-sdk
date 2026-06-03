@@ -84,7 +84,7 @@ int memfault_reboot_tracking_collect_reset_info(const sMemfaultEventStorageImpl 
     //  2. memfault_reboot_tracking_boot() was called but there's no info
     //     about the last reboot reason. To fix this, pass bootup_info when
     //     calling memfault_reboot_tracking_boot()
-    // For more details about reboot tracking in general see https://mflt.io//2QlOlgH
+    // For more details about reboot tracking in general see https://mflt.io/2QlOlgH
     MEMFAULT_LOG_WARN("%s: No reset info collected", __func__);
     return 0;
   }

@@ -34,21 +34,6 @@
 #endif
 #include "memfault/ports/zephyr/version.h"
 
-#if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
-
-#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3)
-#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_PSA_WANT_ALG_SHA_1)
-#error "CONFIG_PSA_WANT_ALG_SHA_1 must be enabled"
-#endif
-#elif MEMFAULT_ZEPHYR_VERSION_GT_STRICT(3, 6)
-//! Zephyr 3.7.0 removed default enabling of hash algorithms needed for CA certificate parsing. Confirm the one we need is set.
-#if defined(CONFIG_MBEDTLS_BUILTIN) && !defined(CONFIG_MBEDTLS_SHA1)
-#error "CONFIG_MBEDTLS_SHA1 must be enabled"
-#endif
-#endif
-
-#endif /* !CONFIG_MEMFAULT_HTTP_DISABLE_TLS */
-
 #include MEMFAULT_ZEPHYR_INCLUDE(net/socket.h)
 // clang-format on
 
@@ -134,15 +119,11 @@ static void prv_free(void *ptr) {
 // clang-format off
 // Select either PEM or DER format to install to certificate storage.
 #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
-  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr g_memfault_cert_digicert_global_root_ca
-  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len g_memfault_cert_digicert_global_root_ca_len
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr g_memfault_cert_digicert_global_root_g2
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len g_memfault_cert_digicert_global_root_g2_len
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr g_memfault_cert_amazon_root_ca1
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len g_memfault_cert_amazon_root_ca1_len
 #elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
-  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA
-  #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA)
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2)
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
@@ -157,10 +138,6 @@ static int prv_install_cert(eMemfaultRootCert cert_id) {
   size_t cert_len;
 
   switch (cert_id) {
-    case kMemfaultRootCert_DigicertRootCa:
-      cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_ptr;
-      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_CA_len;
-      break;
     case kMemfaultRootCert_DigicertRootG2:
       cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr;
       cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len;
@@ -179,7 +156,7 @@ static int prv_install_cert(eMemfaultRootCert cert_id) {
 }
 
 int memfault_zephyr_port_install_root_certs(void) {
-  for (eMemfaultDeprecatedRootCert cert_id = kMemfaultDeprecatedRootCert_DuplicateAmazonRootCa1;
+  for (eMemfaultDeprecatedRootCert cert_id = kMemfaultDeprecatedRootCert_DigicertRootCa;
        cert_id < kMemfaultDeprecatedRootCert_MaxIndex; cert_id++) {
     memfault_root_cert_storage_remove(cert_id);
   }
@@ -280,9 +257,7 @@ static int prv_create_socket(struct zsock_addrinfo **res, const char *host, int 
 #if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
-  const sec_tag_t sec_tag_opt[] = { kMemfaultRootCert_DigicertRootG2,
-                                    kMemfaultRootCert_AmazonRootCa1,
-                                    kMemfaultRootCert_DigicertRootCa };
+  const sec_tag_t sec_tag_opt[] = { MEMFAULT_ROOT_CERTS_ID_LIST };
   int rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;

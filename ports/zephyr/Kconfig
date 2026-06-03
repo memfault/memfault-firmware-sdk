@@ -629,7 +629,7 @@ if MEMFAULT_PERIODIC_UPLOAD
 choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
   prompt "Work queue implementation"
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK)
+  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK || MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
@@ -692,7 +692,7 @@ config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
 config MEMFAULT_PERIODIC_FOTA_CHECK
         bool "Periodically check for FOTA updates"
         default n
-        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_NRF_CONNECT_SDK
+        depends on MEMFAULT_ZEPHYR_FOTA
         help
           When enabled, the device will periodically check for FOTA updates via
           the Memfault HTTP API. The check will be performed at the same
@@ -708,7 +708,37 @@ config MEMFAULT_PERIODIC_FOTA_CHECK
           case), to avoid stalling the system workqueue while performing FOTA
           checks and downloads.
 
+config MEMFAULT_PERIODIC_MODEM_FOTA_CHECK
+        bool "Periodically check for modem firmware updates"
+        default n
+        depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
+        help
+          When enabled, the device will periodically check for modem firmware
+          updates using the dedicated modem Memfault project configured by
+          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY. The check runs at the same
+          interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS.
+
+          Note: if MEMFAULT_PERIODIC_FOTA_CHECK is also enabled, modem updates
+          are already checked implicitly by memfault_zephyr_fota_start() (when
+          no application update is pending). This option is for devices that
+          want periodic modem FOTA checks without enabling the full application
+          FOTA check.
+
+          As with MEMFAULT_PERIODIC_FOTA_CHECK,
+          MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually be
+          enabled (and is the default when this option is selected).
+
 endif # MEMFAULT_PERIODIC_UPLOAD
+
+config MEMFAULT_ZEPHYR_FOTA
+        bool "Memfault FOTA support for Zephyr"
+        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+        default y
+        help
+          Adds support for performing OTA updates. For information on release
+          management with Memfault, see https://mflt.io/release-mgmt.
+
+if MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
@@ -747,6 +777,8 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
           For information on release management with Memfault: https://mflt.io/release-mgmt.
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
+
+endif # MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_MCUMGR_GRP
         bool "Memfault MCUmgr group"

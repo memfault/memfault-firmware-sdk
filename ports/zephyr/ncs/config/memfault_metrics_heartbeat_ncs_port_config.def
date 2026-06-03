@@ -1,3 +1,8 @@
 #if defined(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_voltage, kMemfaultMetricType_Unsigned, 1000)
+  #include "memfault/ports/ncs/version.h"
+
+  #if MEMFAULT_NCS_VERSION_GT(3, 3)
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(battery_soh_pct, kMemfaultMetricType_Unsigned, 100)
+  #endif
 #endif

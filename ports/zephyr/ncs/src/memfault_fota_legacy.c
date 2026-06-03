@@ -98,9 +98,7 @@ static void prv_fota_download_callback_wrapper(const struct fota_download_evt *e
   }
 }
 
-static const int s_memfault_fota_certs[] = { kMemfaultRootCert_DigicertRootG2,
-                                             kMemfaultRootCert_AmazonRootCa1,
-                                             kMemfaultRootCert_DigicertRootCa };
+static const int s_memfault_fota_certs[] = { MEMFAULT_ROOT_CERTS_ID_LIST };
 
 #if MEMFAULT_NCS_VERSION_GT(2, 3) && !MEMFAULT_NCS_VERSION_GT(2, 5)
 

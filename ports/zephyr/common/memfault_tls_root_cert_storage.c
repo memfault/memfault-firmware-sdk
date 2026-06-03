@@ -14,7 +14,7 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 
-#define MEMFAULT_NUM_CERTS_REGISTERED 3
+#define MEMFAULT_NUM_CERTS_REGISTERED 2
 
 #if !defined(CONFIG_TLS_MAX_CREDENTIALS_NUMBER) || \
   (CONFIG_TLS_MAX_CREDENTIALS_NUMBER < MEMFAULT_NUM_CERTS_REGISTERED)
@@ -32,9 +32,9 @@
   #error "Update CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS in prj.conf"
 #endif
 
-MEMFAULT_STATIC_ASSERT((kMemfaultRootCert_MaxIndex - (kMemfaultRootCert_Base + 1)) ==
-                         MEMFAULT_NUM_CERTS_REGISTERED,
-                       "MEMFAULT_NUM_CERTS_REGISTERED define out of sync");
+#define MEMFAULT_NUM_CERT_IDS (kMemfaultRootCert_MaxIndex - (kMemfaultRootCert_Base + 1))
+MEMFAULT_STATIC_ASSERT(MEMFAULT_NUM_CERT_IDS == MEMFAULT_NUM_CERTS_REGISTERED,
+                       "Cert enum out of sync with MEMFAULT_NUM_CERTS_REGISTERED");
 
 int memfault_root_cert_storage_add(eMemfaultRootCert cert_id, const char *cert,
                                    size_t cert_length) {

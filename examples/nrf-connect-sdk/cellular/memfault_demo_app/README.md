@@ -6,23 +6,41 @@ SDK which includes a Memfault Integration!
 ## Setup
 
 An API key will need to be baked into the demo app to enable it to communicate
-with Memfault's web services. nRF91 users can provision a project and key from [here](https://goto.memfault.com/create-key/nrf91).
+with Memfault's web services. nRF91 users can provision a project and key from
+[here](https://goto.memfault.com/create-key/nrf91).
+
+## Supported Boards
+
+| Board       | Target                 |
+| ----------- | ---------------------- |
+| nRF9160 DK  | `nrf9160dk/nrf9160/ns` |
+| nRF9151 DK  | `nrf9151dk/nrf9151/ns` |
+| Thingy:91 X | `thingy91x/nrf9151/ns` |
 
 ## Compiling
 
-You can compile for any board supported by the nRF Connect SDK. For example,
-targeting the nRF91 PDK would look like:
+After running `west init -l memfault_demo_app && west update`, build for your
+target board. For example:
 
 ```bash
-$ west init -l memfault_demo_app
-$ west update
 # Replace ${YOUR_PROJECT_KEY} with the Project Key from https://mflt.io/project-key
-$ west build -b nrf9160dk/nrf9160/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
-...
-[181/181] Linking C executable zephyr/zephyr.elf
+
+# nRF9160 DK
+west build -b nrf9160dk/nrf9160/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
+
+# nRF9151 DK
+west build -b nrf9151dk/nrf9151/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
+
+# Thingy:91 X
+west build -b thingy91x/nrf9151/ns memfault_demo_app -- -DCONFIG_MEMFAULT_NCS_PROJECT_KEY=\"${YOUR_PROJECT_KEY}\"
 ```
 
-Note: you may want to target a version of the DK by passing `-b <board>@<revision>/<qualifiers>`, for example `nrf9160dk@1.0.0/nrf9160/ns`, in order to use [specific hardware](https://docs.nordicsemi.com/bundle/ncs-2.9.2/page/zephyr/boards/nordic/nrf9160dk/doc/index.html#additional_hardware_in_v0140). For NCS < 2.7.0, use `<board>@<revision>`, for example `nrf9160dk_nrf9160@1.0.0`.
+Note: you may want to target a version of the DK by passing
+`-b <board>@<revision>/<qualifiers>`, for example `nrf9160dk@1.0.0/nrf9160/ns`,
+in order to use
+[specific hardware](https://docs.nordicsemi.com/bundle/ncs-2.9.2/page/zephyr/boards/nordic/nrf9160dk/doc/index.html#additional_hardware_in_v0140).
+For NCS < 2.7.0, use `<board>@<revision>`, for example
+`nrf9160dk_nrf9160@1.0.0`.
 
 ## Overlays
 
@@ -33,8 +51,7 @@ requires your device to be provisioned in nRF Cloud. See
 [Nordic's getting started documentation](https://docs.nordicsemi.com/bundle/nrf-cloud/page/GettingStarted.html)
 for more details.
 
-> [!NOTE]
-> This overlay is currently only supported on NCS >= v2.8.0.
+> [!NOTE] This overlay is currently only supported on NCS >= v2.8.0.
 
 ## Testing the Integration
 
@@ -58,4 +75,5 @@ Subcommands:
 ## Adding the Memfault SDK to your Project
 
 For more details on how to add the memfault-firmware-sdk to your own nRF Connect
-SDK based project, follow our step-by-step guide available [here](https://mflt.io/nrf-connect-sdk-integration-guide).
+SDK based project, follow our step-by-step guide available
+[here](https://mflt.io/nrf-connect-sdk-integration-guide).

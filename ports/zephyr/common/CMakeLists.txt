@@ -9,7 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_HTTP_ENABLE memfault_platform_http.
 # Only build the generic FOTA backend (MCUboot/Dummy) when not using the NCS backend,
 # since the NCS backend (memfault_fota.c / memfault_fota_legacy.c) provides its own
 # memfault_zephyr_fota_start() implementation.
-if(CONFIG_MEMFAULT_HTTP_ENABLE AND NOT CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS)
+if(CONFIG_MEMFAULT_ZEPHYR_FOTA AND NOT CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS)
   zephyr_library_sources(memfault_platform_fota.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_MCUMGR_GRP memfault_mcumgr.c)

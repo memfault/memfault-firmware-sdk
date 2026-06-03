@@ -3,12 +3,12 @@
 This folder contains support files to make it easy to integrate Memfault into a
 nRF5 SDK based project.
 
-The demo app is tested on the [nRF52840 DK] -- PCA10056 evaluation board. The
-instructions below assume this development board is being used and that the [nRF
-Command Line Tools] have been installed.
+The demo app is tested on the [nRF52840 DK] -- PCA10056 evaluation board. The instructions
+below assume this development board is being used and that the [nRF Command
+Line Tools] have been installed.
 
-The demo app is tested with v15.2.0 of the [nRF52 SDK], but should integrate in
-a similar manner with other versions as well.
+The demo app is tested with v15.2.0 of the [nRF52 SDK], but should integrate in a
+similar manner with other versions as well.
 
 ## Getting started
 
@@ -24,8 +24,8 @@ SDK and performed the installation steps that are mentioned there.
    and the nRF5 SDK. For example
 
 ```bash
-$ rm -rf nrf5_sdk
-$ ln -s path/to/nrf5_sdk/ nrf5_sdk
+rm -rf nrf5_sdk
+ln -s path/to/nrf5_sdk/ nrf5_sdk
 ```
 
 <a name="modifications"></a>
@@ -39,23 +39,23 @@ the `app_error.h` is overridden at
 simply need to move the original file from the sdk to pick up this definition.
 Otherwise, you will see an error like:
 
-```
+```text
 ../../libraries/memfault/platform_reference_impl/sdk_overrides/app_error.h:50:2: error: #error "Please rename or remove components/libraries/util/app_error.h from the NRF SDK, as the Memfault SDK needs to override this header file."
 ```
 
 Example fix:
 
 ```bash
-  $ mv nrf5_sdk/components/libraries/util/app_error.h nrf5_sdk/components/libraries/util/app_error.h.overriden
+mv nrf5_sdk/components/libraries/util/app_error.h nrf5_sdk/components/libraries/util/app_error.h.overriden
 ```
 
 ### Update Demo App with your Memfault Project Key
 
-A Project Key will need to be baked into the demo app to enable it to communicate with Memfault's
-web services. Go to https://app.memfault.com/, navigate to the project you want
-to use and select 'Settings'. Copy the 'Project Key' and paste it into
-`apps/memfault_demo_app/src/cli.c`, replacing `<YOUR PROJECT KEY HERE>` with
-your Project Key.
+A Project Key will need to be baked into the demo app to enable it to
+communicate with Memfault's web services. Go to <https://app.memfault.com/>,
+navigate to the project you want to use and select 'Settings'. Copy the 'Project
+Key' and paste it into `apps/memfault_demo_app/src/cli.c`, replacing
+`<YOUR PROJECT KEY HERE>` with your Project Key.
 
 ### Building the demo app
 
@@ -65,14 +65,14 @@ included! To build:
 using pyinvoke:
 
 ```bash
-$ invoke nrf.build
+invoke nrf.build
 ```
 
 or
 
 ```bash
-$ cd /path/to/examples/nrf5/apps/memfault_demo_app/
-$ export GNU_INSTALL_ROOT=/path/to/arm_toolchain_dir && make
+cd /path/to/examples/nrf5/apps/memfault_demo_app/
+export GNU_INSTALL_ROOT=/path/to/arm_toolchain_dir && make
 ```
 
 ### Flashing the demo app
@@ -83,7 +83,7 @@ recommended to put it into a clean state by performing a full erase
 using pyinvoke:
 
 ```bash
-$ invoke nrf.eraseflash
+invoke nrf.eraseflash
 ```
 
 or
@@ -98,10 +98,10 @@ using pyinvoke:
 
 ```bash
 # In one terminal start a gdbserver
-$ invoke nrf.gdbserver
+invoke nrf.gdbserver
 
 # In another terminal flash the binary
-$ invoke nrf.flash
+invoke nrf.flash
 ```
 
 or
@@ -111,9 +111,9 @@ or
 JLinkGDBServer -if swd -device nRF52840_xxAA -speed auto -port 2331
 
 # In another terminal flash the binary
-$ cd /path/to/examples/nrf5/apps/memfault_demo_app/
-$ make flash_softdevice
-$ /path/to/arm-none-eabi-gdb[-py] --eval-command="target remote localhost:2331" --ex="mon reset" --ex="load" --ex="mon reset" --se=/path/to/examples/nrf5/apps/memfault_demo_app/build/memfault_demo_app_nrf52840_s140.out
+cd /path/to/examples/nrf5/apps/memfault_demo_app/
+make flash_softdevice
+/path/to/arm-none-eabi-gdb[-py] --eval-command="target remote localhost:2331" --ex="mon reset" --ex="load" --ex="mon reset" --se=/path/to/examples/nrf5/apps/memfault_demo_app/build/memfault_demo_app_nrf52840_s140.out
 ```
 
 once the flash has completed you can start the application by typing `continue`
@@ -127,7 +127,7 @@ steps. Then from another terminal:
 using pyinvoke:
 
 ```bash
-$ invoke nrf.console
+invoke nrf.console
 ```
 
 or
@@ -136,8 +136,9 @@ or
 JLinkRTTClient -LocalEcho Off
 ```
 
-You can now type commands from the [Memfault demo CLI](https://mflt.io/demo-cli).
-To get started, run `help` to see short descriptions of each command.
+You can now type commands from the
+[Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `help` to see
+short descriptions of each command.
 
 ## Using the demo app
 
@@ -157,7 +158,7 @@ Let's walk through the coredump process step by step:
 As a sanity check, let's request the device info from the debug console, enter
 `get_device_info` and press enter:
 
-```
+```text
 > get_device_info
 <info> app: MFLT: S/N: C9DB1227DEAE6A52
 <info> app: MFLT: SW type: nrf-main
@@ -173,10 +174,10 @@ requirements (see
 
 ### Causing a crash
 
-Command `test_hardfault` will trigger a hard fault due to a bad instruction fetch at a
-non-existing address, `0xbadcafe`.
+Command `test_hardfault` will trigger a hard fault due to a bad instruction
+fetch at a non-existing address, `0xbadcafe`.
 
-```
+```text
 > test_hardfault
 ... etc ...
 ```
@@ -185,7 +186,7 @@ Upon crashing, the coredump will be written to internal NOR flash. Note this can
 take a up to 15 seconds. Once done, you should see gdb hit a breakpoint and then
 you can `next` through it to reboot:
 
-```
+```text
 Program received signal SIGTRAP, Trace/breakpoint trap.
 memfault_platform_halt_if_debugging () at ../../libraries/memfault/platform_reference_impl/memfault_platform_core.c:13
 13    NRF_BREAKPOINT_COND;
@@ -199,7 +200,7 @@ Continuing.
 To check whether the coredump has been captured, try running the `get_core`
 command:
 
-```
+```text
 rtt_cli:~$ get_core
 <info> app: MFLT: Has coredump with size: 8448
 ```
@@ -231,7 +232,7 @@ implementations, please don't hesitate to reach out!
 For the purposes of this demo, we will just grab the core information from the
 cli using the `export` command. It should look something like:
 
-```
+```text
 rtt_cli:~$ export
 <info> app: MFLT: MC:CAKmAgIDAQpobnJmLW1haW4JbDEuMC4wKzU1ZmMxMwZocGNhMTAwNTYEowEIBAQFAH/0:
 ```
@@ -252,7 +253,7 @@ You can invoke this command from the cli by running `clear_core`.
 For more details on how to use the CLI to explore each of Memfault's subsystems,
 see the [Memfault docs](https://mflt.io/demo-cli).
 
-# Integrating into existing NRF52 projects
+## Integrating into existing NRF52 projects
 
 Adding Memfault to existing NRF52 projects is relatively simple. The Memfault
 SDK comes with an example of what adding Memfault to an nRF SDK Makefile would
@@ -275,7 +276,7 @@ look like and has been tested with nRF SDK v15.2.0.
     SDK
 - Add configuration and initialization code:
 
-```
+```c
 // main.c
 
 int main(void) {
@@ -312,7 +313,5 @@ int main(void) {
 [nrf52840 dk]:
   https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
 [nrf52 sdk]: https://developer.nordicsemi.com/nRF5_SDK/
-[http api to upload symbols files]:
-  https://docs.memfault.com/?version=latest#ca2a72d2-69ef-4703-98bf-60621738091a
 [nrf command line tools]:
   https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools

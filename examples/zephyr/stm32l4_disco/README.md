@@ -1,4 +1,4 @@
-## Memfault for Zephyr RTOS
+# Memfault for Zephyr RTOS
 
 This folder contains an example integration of the Memfault SDK using the port
 provided in `ports/zephyr`
@@ -27,7 +27,7 @@ Step-by-step instructions can be found in the
 1. Clone the repo
 
    ```bash
-   $ git clone https://github.com/zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
+   git clone https://github.com/zephyrproject-rtos/zephyr.git --branch v2.5-branch zephyr
    ```
 
 2. Create a virtual environment
@@ -41,8 +41,8 @@ Step-by-step instructions can be found in the
 3. Initialize a new build environment:
 
    ```bash
-   $ west init -l zephyr/
-   $ west update
+   west init -l zephyr/
+   west update
    ```
 
 4. When using the STM32L4 discovery board, the following patch is also needed
@@ -87,12 +87,11 @@ Step-by-step instructions can be found in the
 
 ### Memfault Project Key
 
-An API key will need to be baked into the demo app
-to enable it to communicate with Memfault's web services. Go to
-https://app.memfault.com/, navigate to the project you want to use and select
-'Settings'. Copy the 'Project Key' and paste it into
-`$MEMFAULT_SDK/examples/zephyr/apps/memfault_demo_app/src/main.c`, replacing
-`<YOUR PROJECT KEY HERE>` with your Project Key.
+An API key will need to be baked into the demo app to enable it to communicate
+with Memfault's web services. Go to <https://app.memfault.com/>, navigate to the
+project you want to use and select 'Settings'. Copy the 'Project Key' and paste
+it into `$MEMFAULT_SDK/examples/zephyr/apps/memfault_demo_app/src/main.c`,
+replacing `<YOUR PROJECT KEY HERE>` with your Project Key.
 
 ### Building
 
@@ -114,21 +113,21 @@ Or, alternatively, if you are using a SEGGER JLink:
 1. In one terminal, start a GDB Server
 
 ```bash
-$ JLinkGDBServer -if swd -device STM32L475VG
+JLinkGDBServer -if swd -device STM32L475VG
 ```
 
-2. In another terminal, load `zephyr.elf` with GDB:
+1. In another terminal, load `zephyr.elf` with GDB:
 
 ```bash
 arm-none-eabi-gdb-py --eval-command="target remote localhost:2331"  --ex="mon reset" --ex="load"
 --ex="mon reset"  --se=build/zephyr/zephyr.elf
 ```
 
-### Using the App:
+### Using the App
 
-At this point, the application should be running and you can open a console
-to run the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run `mflt help` to
-see short descriptions of each command.
+At this point, the application should be running and you can open a console to
+run the [Memfault demo CLI](https://mflt.io/demo-cli). To get started, run
+`mflt help` to see short descriptions of each command.
 
 ```bash
 $ miniterm.py /dev/cu.usbmodem* 115200 --raw
@@ -178,10 +177,10 @@ Subcommands:
 
 ### Causing a crash
 
-Command `mflt test hardfault` will trigger a hard fault due to a bad instruction fetch
-at a non-existing address, `0xbadcafe`:
+Command `mflt test hardfault` will trigger a hard fault due to a bad instruction
+fetch at a non-existing address, `0xbadcafe`:
 
-```
+```text
 uart:~$ mflt test hardfault
 ... etc ...
 ```
@@ -191,7 +190,7 @@ Upon crashing, a coredump will be written to noinit RAM.
 To check whether the coredump has been captured, try running the `get_core`
 command after the device reboots:
 
-```
+```text
 uart:~$ mflt get_core
 <inf> <mflt>: Has coredump with size: 580
 ```
@@ -214,7 +213,7 @@ Before we can send the coredump, we need to make sure WiFi is connected to the
 internet. Type `wifi connect <SSID> <SSID_STRLEN> 0 <PASSWORD>` in the console.
 You should see something like:
 
-```
+```text
 Connection requested
 Connected
 uart:~$
@@ -224,7 +223,7 @@ uart:~$
 
 Once connected, type `mflt post_chunks` and press enter. You should see:
 
-```
+```text
 uart:~$ mflt post_chunks
 <dbg> <mflt>: Memfault Message Post Complete: Parse Status 0 HTTP Status 202!
 <dbg> <mflt>: Body: Accepted
@@ -246,12 +245,13 @@ When using a board that does not have a network stack enabled or for debug
 purposes, the messages to push to the Memfault cloud can also be dumped from the
 CLI using the `mflt export` command:
 
-```
+```text
 uart:~$ mflt export
 <inf> <mflt>: MC:CAKmAgIDAQpqemVwaHlyLWFwcAlsMS4wLjArYzIwY2VmBm9kaXNjb19sNDc1X2lvdDEEogECBQD8Fw==:
 ```
 
 You can then copy and paste the output into the "Chunks Debug" view in the
-Memfault UI for your project https://app.memfault.com/.
+Memfault UI for your project at <https://app.memfault.com/>.
 
-For more details on how to use the CLI to explore each of Memfault's subsystems, see the [Memfault docs](https://mflt.io/demo-cli).
+For more details on how to use the CLI to explore each of Memfault's subsystems,
+see the [Memfault docs](https://mflt.io/demo-cli).
