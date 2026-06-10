@@ -1,6 +1,5 @@
 git+https://github.com/memfault/pyserial.git@master-memfault
 invoke==2.2.1
-mbed-cli==1.10.1
 west==1.2.0
 pyyaml==6.0.3
 colorama==0.4.6

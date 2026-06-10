@@ -35,6 +35,20 @@ config MBEDTLS_CFG_FILE
 config MBEDTLS_CONFIG_FILE
         string
 
+# Zephyr v4.4.0 (commit f0df3498081a) implemented arch_stack_walk() for
+# Cortex-M when EXTRA_EXCEPTION_INFO is enabled. Since MEMFAULT selects
+# EXTRA_EXCEPTION_INFO on Cortex-M, ARCH_STACKWALK (default y when supported)
+# now gets enabled in every Cortex-M Memfault build. Memfault performs its own
+# stack collection via the coredump, so the stack walker is unused and only
+# adds code size (via .ARM.exidx). Module Kconfig files are sourced before
+# Zephyr's arch/Kconfig, so the 'default n' here takes precedence over
+# Zephyr's 'default y'. Users who actually want the stack walker can still
+# enable it by explicitly setting CONFIG_ARCH_STACKWALK=y in their project
+# config, which overrides any default.
+config ARCH_STACKWALK
+        bool
+        default n if MEMFAULT && CPU_CORTEX_M
+
 if MEMFAULT
 
 config MEMFAULT_CACHE_FAULT_REGS
@@ -93,6 +107,12 @@ config MEMFAULT_SOC_SERIES_NRF91
         default y if (SOC_SERIES = "nrf91")
         help
           Non-user configurable option indicating a nRF91 series SOC is in use.
+
+config MEMFAULT_SOC_SERIES_NRF92
+        bool
+        default y if (SOC_SERIES = "nrf92")
+        help
+          Non-user configurable option indicating a nRF92 series SOC is in use.
 
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
@@ -533,6 +553,9 @@ config MEMFAULT_HTTP_USES_MBEDTLS
 
 choice MEMFAULT_TLS_CERTS_FORMAT
         prompt "TLS certificates format"
+        # Cellular modems and offloaded socket setups often require PEM, default
+        # to that format in those configurateions
+        default MEMFAULT_TLS_CERTS_USE_PEM if (MODEM_KEY_MGMT || NET_SOCKETS_OFFLOAD)
         default MEMFAULT_TLS_CERTS_USE_DER
         help
           Choose the format of the TLS certificates used by Memfault
@@ -548,7 +571,6 @@ config MEMFAULT_TLS_CERTS_USE_PEM
 
 config MEMFAULT_TLS_CERTS_USE_DER
         bool "Use DER format for TLS certificates"
-        depends on !NET_SOCKETS_OFFLOAD
         help
           When enabled, Memfault will use DER format for TLS certificates.
           When disabled, PEM format will be used. DER format may reduce runtime
@@ -617,7 +639,7 @@ endif # MEMFAULT_HTTP_ENABLE
 
 menuconfig MEMFAULT_PERIODIC_UPLOAD
         bool "Periodic Memfault check-in (telemetry upload + optionally FOTA)"
-        default y if MEMFAULT_SOC_SERIES_NRF91
+        default y if MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_SOC_SERIES_NRF92
         depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
         help
           Schedules a background job that periodically checks for new Memfault
@@ -629,7 +651,7 @@ if MEMFAULT_PERIODIC_UPLOAD
 choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
   prompt "Work queue implementation"
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK)
+  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_SOC_SERIES_NRF92 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK || MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
   default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
@@ -692,7 +714,7 @@ config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
 config MEMFAULT_PERIODIC_FOTA_CHECK
         bool "Periodically check for FOTA updates"
         default n
-        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_NRF_CONNECT_SDK
+        depends on MEMFAULT_ZEPHYR_FOTA
         help
           When enabled, the device will periodically check for FOTA updates via
           the Memfault HTTP API. The check will be performed at the same
@@ -708,7 +730,37 @@ config MEMFAULT_PERIODIC_FOTA_CHECK
           case), to avoid stalling the system workqueue while performing FOTA
           checks and downloads.
 
+config MEMFAULT_PERIODIC_MODEM_FOTA_CHECK
+        bool "Periodically check for modem firmware updates"
+        default n
+        depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
+        help
+          When enabled, the device will periodically check for modem firmware
+          updates using the dedicated modem Memfault project configured by
+          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY. The check runs at the same
+          interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS.
+
+          Note: if MEMFAULT_PERIODIC_FOTA_CHECK is also enabled, modem updates
+          are already checked implicitly by memfault_zephyr_fota_start() (when
+          no application update is pending). This option is for devices that
+          want periodic modem FOTA checks without enabling the full application
+          FOTA check.
+
+          As with MEMFAULT_PERIODIC_FOTA_CHECK,
+          MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually be
+          enabled (and is the default when this option is selected).
+
 endif # MEMFAULT_PERIODIC_UPLOAD
+
+config MEMFAULT_ZEPHYR_FOTA
+        bool "Memfault FOTA support for Zephyr"
+        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+        default y
+        help
+          Adds support for performing OTA updates. For information on release
+          management with Memfault, see https://mflt.io/release-mgmt.
+
+if MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
@@ -748,6 +800,8 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
+endif # MEMFAULT_ZEPHYR_FOTA
+
 config MEMFAULT_MCUMGR_GRP
         bool "Memfault MCUmgr group"
         depends on MCUMGR
@@ -770,29 +824,30 @@ config MEMFAULT_EVENT_STORAGE_SIZE
 
 choice MEMFAULT_REBOOT_REASON_GET
        prompt "Memfault Reboot Reason"
-       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && (SOC_SERIES != "nrf54h")
        default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
+       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && MEMFAULT_SOC_SERIES_NRF91
        help
-        Choose the implementation used to track the reboot reason
+        Choose the implementation used to extract SoC reboot reason.
 
 config MEMFAULT_REBOOT_REASON_GET_HWINFO
-       bool "Use the hardware information to track the reboot reason"
+       bool "Use hwinfo library to extract SoC reboot reason"
        depends on HWINFO
        help
-        The Memfault SDK will use the hardware information to track the reboot reason.
-        This is the default implementation.
+        This is the default and preferred implementation.
 
 config MEMFAULT_REBOOT_REASON_GET_BASIC
-        bool "Use the default implementation to track the reboot reason"
+        bool "Fall back implementation for decoding SoC reboot reason"
         help
-          The Memfault SDK will use a built-in implementation to track the reboot reason.
-          This is a basic implementation that does not rely on hardware information.
+          Stub implementation to enable building when other reboot reason
+          sources are not available. Does not decode any reboot reasons- always
+          sets UNKNOWN.
 
 config MEMFAULT_REBOOT_REASON_GET_CUSTOM
        bool "Provide a custom implementation for recovering reboot information"
        help
         User of SDK must provide their own implementation of memfault_reboot_reason_get()
-        when enabled
+        when enabled. Also used in the nRF Connect SDK port for certain chips, when
+        hwinfo library is not available.
 
 endchoice # MEMFAULT_REBOOT_REASON_GET
 

@@ -19,8 +19,16 @@
 #include "memfault/ports/ncs/date_time_callback.h"
 #include "memfault_demo_app.h"
 
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+#include <modem/at_shell.h>
+#endif
+
 #include <modem/modem_info.h>
-#include <modem/lte_lc.h>
+#ifdef CONFIG_LTE_LINK_CONTROL
+  #include <modem/lte_lc.h>
+#else
+  #include <nrf_modem_at.h>
+#endif
 
 #if defined(CONFIG_NRF_CLOUD_COAP)
 #include <date_time.h>
@@ -80,6 +88,9 @@ static int prv_init_modem_lib(void) {
 }
 #endif
 
+#include MEMFAULT_ZEPHYR_INCLUDE(logging/log.h)
+LOG_MODULE_REGISTER(mflt_demo_app, LOG_LEVEL_INF);
+
 #if CONFIG_DFU_TARGET_MCUBOOT
 #include MEMFAULT_ZEPHYR_INCLUDE(dfu/mcuboot.h)
 #endif
@@ -121,10 +132,29 @@ static void prv_init_device_info(void) {
 }
 #endif
 
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+K_THREAD_STACK_DEFINE(my_work_q_stack, 2048);
+static struct k_work_q my_work_q;
+
+static void prv_at_shell_init(void) {
+  k_work_queue_start(&my_work_q, my_work_q_stack, K_THREAD_STACK_SIZEOF(my_work_q_stack),
+                     K_PRIO_PREEMPT(7), NULL);
+
+  struct at_shell_config at_cfg = {
+    .at_cmd_mode_work_q = &my_work_q,
+  };
+  at_shell_init(&at_cfg);
+}
+#endif  // CONFIG_AT_SHELL_CMD_MODE
+
 int main(void) {
   printk("Memfault Demo App Started!\n");
 
   memfault_demo_app_watchdog_boot();
+
+#if defined(CONFIG_AT_SHELL_CMD_MODE)
+  prv_at_shell_init();
+#endif
 
 #if CONFIG_DFU_TARGET_MCUBOOT
   if (!boot_is_img_confirmed()) {
@@ -170,20 +200,29 @@ int main(void) {
   date_time_register_handler(prv_date_time_evt_handler);
 #endif
 
-  printk("Waiting for network...\n");
+  LOG_INF("Waiting for network...");
+#ifdef CONFIG_LTE_LINK_CONTROL
   // lte_lc_init_and_connect is deprecated in NCS 2.6
-  err =
-#if MEMFAULT_NCS_VERSION_GT(2, 5)
-    lte_lc_connect();
-#else
-    lte_lc_init_and_connect();
-#endif
-
+  #if MEMFAULT_NCS_VERSION_GT(2, 5)
+  err = lte_lc_connect();
+  #else
+  err = lte_lc_init_and_connect();
+  #endif
   if (err) {
-    printk("Failed to connect to the LTE network, err %d\n", err);
+    LOG_ERR("Failed to connect to the LTE network, err %d", err);
     goto cleanup;
   }
-  printk("OK\n");
+  LOG_INF("OK (connected)");
+#else
+  // Without LTE_LINK_CONTROL, put modem in normal mode via AT command.
+  // Connection progress is tracked asynchronously via +CEREG notifications.
+  err = nrf_modem_at_printf("AT+CFUN=1") ? -EIO : 0;
+  if (err) {
+    LOG_ERR("Failed to set modem to normal mode, err %d", err);
+    goto cleanup;
+  }
+  LOG_INF("Modem activated (connecting asynchronously)");
+#endif
 
 #if defined(CONFIG_NRF_CLOUD_COAP)
   // Wait for the date/time library to sync from the network (up to 10 minutes).

@@ -3,7 +3,7 @@ EMPTY_0:
   end_address: 0xe000
   placement:
     after:
-    - mcuboot
+      - mcuboot
   region: flash_primary
   size: 0x800
 memfault_coredump_partition:
@@ -11,7 +11,7 @@ memfault_coredump_partition:
   end_address: 0x1fb000
   placement:
     after:
-    - mcuboot_secondary
+      - mcuboot_secondary
   region: flash_primary
   size: 0x1000
 app:
@@ -31,7 +31,7 @@ mcuboot:
     align:
       end: 0x1000
     before:
-    - mcuboot_primary
+      - mcuboot_primary
   region: flash_primary
   size: 0xd800
 mcuboot_pad:
@@ -39,15 +39,15 @@ mcuboot_pad:
   end_address: 0xe800
   placement:
     before:
-    - mcuboot_primary_app
+      - mcuboot_primary_app
   region: flash_primary
   size: 0x800
 mcuboot_primary:
   address: 0xe000
   end_address: 0x104000
   orig_span: &id001
-  - app
-  - mcuboot_pad
+    - app
+    - mcuboot_pad
   region: flash_primary
   sharers: 0x1
   size: 0xf6000
@@ -56,7 +56,7 @@ mcuboot_primary_app:
   address: 0xe800
   end_address: 0x104000
   orig_span: &id002
-  - app
+    - app
   region: flash_primary
   size: 0xf5800
   span: *id002
@@ -65,12 +65,12 @@ mcuboot_secondary:
   end_address: 0x1fa000
   placement:
     after:
-    - mcuboot_primary
+      - mcuboot_primary
     align:
       start: 0x1000
   region: flash_primary
   share_size:
-  - mcuboot_primary
+    - mcuboot_primary
   size: 0xf6000
 otp:
   address: 0xffd500
@@ -82,11 +82,11 @@ settings_storage:
   end_address: 0x1fd000
   placement:
     after:
-    - app
+      - app
     align:
       start: 0x1000
     before:
-    - end
+      - end
   region: flash_primary
   size: 0x2000
 sram_primary:

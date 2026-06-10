@@ -4,34 +4,53 @@ config MEMFAULT_NRF_CONNECT_SDK
 
 if MEMFAULT_NRF_CONNECT_SDK
 
-# Extend the Zephyr MEMFAULT_ZEPHYR_FOTA_BACKEND choice with an NCS-specific option.
+# Extend the Zephyr MEMFAULT_ZEPHYR_FOTA_BACKEND choice with NCS-specific options.
 choice MEMFAULT_ZEPHYR_FOTA_BACKEND
 
 config MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
         bool "Use nRF Connect SDK FOTA library as backend"
-        depends on (MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP) && FOTA_DOWNLOAD
+        depends on MEMFAULT_HTTP_ENABLE || (MEMFAULT_USE_NRF_CLOUD_COAP && NRF_CLOUD_COAP_DOWNLOADS)
+        depends on FOTA_DOWNLOAD
         help
           Uses the nRF Connect SDK FOTA Download library (fota_download) to perform OTA
           updates via Memfault Release Management. If an update is available, the binary
           will be downloaded and installed using the Nordic FOTA Download Client.
           See https://mflt.io/nrf-fota-setup for more details.
 
+config MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE
+        bool "Intercept nRF Cloud CoAP FOTA job calls and redirect to Memfault OTA"
+        depends on MEMFAULT_USE_NRF_CLOUD_COAP
+        depends on NRF_CLOUD_COAP
+        depends on NRF_CLOUD_FOTA_POLL
+        help
+          When enabled, the Memfault SDK intercepts nrf_cloud_coap_fota_job_get()
+          via linker --wrap and redirects firmware delivery to Memfault's OTA
+          release management. Applications that already call
+          nrf_cloud_fota_poll_process() require no code changes to switch
+          firmware delivery to Memfault.
+          See https://mflt.io/release-mgmt.
+
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
 choice MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME
         bool "Select the platform implementation for capturing connected time metric"
-        default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if LTE_LINK_CONTROL
+        default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if LTE_LINK_CONTROL || AT_MONITOR
 
 config MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X
         bool "Capture connected time metric on nRF91x platforms"
         select MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
-        depends on LTE_LINK_CONTROL
+        depends on LTE_LINK_CONTROL || AT_MONITOR
         help
           Enables connection uptime device vital for the nRF91X platform.
           Connectivity connection uptime will track the percent of
           time the platform is actually connected to the cellular network
           when it should be connected. More information at
           https://mflt.io/core-metrics .
+
+          When CONFIG_LTE_LINK_CONTROL is enabled, LTE Link Control events are
+          used to track connectivity state. Otherwise, AT commands and the
+          AT_MONITOR library are used directly (requires nRF Connect SDK 2.8+
+          for modem functional mode change tracking).
 
 endchoice
 
@@ -55,6 +74,44 @@ config MEMFAULT_FOTA_HTTP_FRAG_SIZE
 
 endif # MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
+config MEMFAULT_FOTA_MODEM_UPDATE
+        bool "Include modem firmware in FOTA check"
+        depends on MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS || MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE
+        depends on MODEM_INFO
+        depends on MEMFAULT_SOC_SERIES_NRF91
+        default n
+        help
+          When enabled, memfault_zephyr_fota_start() also checks for modem
+          firmware updates using a dedicated Memfault project (see
+          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY).
+
+          If both an application update and a modem update are pending,
+          the application update is installed first (requiring one reboot),
+          and the modem update is installed on the next call to
+          memfault_zephyr_fota_start() (requiring a second reboot).
+
+          See https://mflt.io/nrf-modem-fota for setup instructions.
+
+if MEMFAULT_FOTA_MODEM_UPDATE
+
+config MEMFAULT_FOTA_MODEM_PROJECT_KEY
+        string "Project key for the Memfault modem firmware project"
+        help
+          The Memfault Project Key for the dedicated modem firmware project.
+          This is different from the application project key.
+          Obtain this from Settings → General in your modem Memfault project.
+
+config MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE
+        string "Software type identifier for modem firmware"
+        default "mfw"
+        help
+          The software_type string used when uploading modem firmware to
+          Memfault and when the device checks for modem updates.
+          Must match the --software-type argument passed to
+          `memfault upload-ota-payload`.
+
+endif # MEMFAULT_FOTA_MODEM_UPDATE
+
 config MEMFAULT_NRF_NRF5_CPU_TEMP
         bool
         default y
@@ -72,9 +129,17 @@ config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
         depends on NPM13XX_CHARGER
         help
           Enables battery metrics support for devices using the nPM13xx PMIC.
-          The user must provide memfault_nrf_platform_battery_model.h with the
-          model of the battery as defined by the nRF Fuel Gauge API.
-          Note, since this port calls nrf_fuel_gauge_process(), applications
+
+          On nRF Connect SDK 3.4.0+, the user application must call
+          nrf_fuel_gauge_init() during initialization and
+          nrf_fuel_gauge_process() periodically to update state-of-charge and
+          state-of-health readings.
+
+          On nRF Connect SDK < 3.4.0, the user must provide
+          memfault_nrf_platform_battery_model.h with the model of the battery
+          as defined by the nRF Fuel Gauge API. The Memfault SDK will call both
+          nrf_fuel_gauge_init() during initialization, and
+          nrf_fuel_gauge_process() when reading state of charge. Applications
           that want to read state of charge should call
           memfault_platform_get_stateofcharge() to avoid conflicting calls to
           the fuel gauge library.
@@ -93,7 +158,7 @@ config MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY
 menuconfig MEMFAULT_USE_NRF_CLOUD_COAP
         bool "Use nRF Cloud CoAP endpoint"
         depends on NETWORKING
-        depends on MODEM_JWT
+        depends on MODEM_JWT || NRF_CLOUD_JWT_SOURCE_CUSTOM
         depends on COAP
         depends on COAP_CLIENT
         depends on (COAP_EXTENDED_OPTIONS_LEN_VALUE >= 192)
@@ -102,14 +167,6 @@ menuconfig MEMFAULT_USE_NRF_CLOUD_COAP
           Note: Requires device to be provisioned with nRF Cloud.
 
 if MEMFAULT_USE_NRF_CLOUD_COAP
-
-config MEMFAULT_NRF_CLOUD_SEC_TAG
-        int "Security tag to use for nRF Cloud connection"
-        default 16842753
-
-config MEMFAULT_NRF_CLOUD_HOST_NAME
-        string "nRF Cloud server hostname"
-        default "coap.nrfcloud.com"
 
 config MEMFAULT_COAP_PACKETIZER_BUFFER_SIZE
         int "Set the size of the CoAP packetizer buffer"
@@ -145,6 +202,11 @@ config MEMFAULT_COAP_MAX_MESSAGES_TO_SEND
           When using a dedicated workqueue, uploads are unbounded and this value is unused.
           When running on the system workqueue, a positive value is required to avoid
           blocking other work.
+
+# Override range of max path length to allow for longer OTA URLs
+config COAP_CLIENT_MAX_PATH_LENGTH
+  int "Maximum length of the path string used for Memfault OTA queries"
+  range 1 1024
 
 endif # MEMFAULT_USE_NRF_CLOUD_COAP
 

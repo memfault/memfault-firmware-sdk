@@ -35,12 +35,6 @@
     "The Memfault CoAP port currently requires support added after nRF Connect SDK version 3.2.1. Please upgrade to nRF Connect SDK > 3.2.1"
 #endif
 
-//! Default buffer size for proxy URLS. This may need to be increased by the user if there are
-//! particularly long device properties (serial, hardware version, software version, or type)
-#ifndef MEMFAULT_PROXY_URL_MAX_LEN
-  #define MEMFAULT_PROXY_URL_MAX_LEN (200)
-#endif
-
 #if CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND == 0
   #error \
     "CONFIG_MEMFAULT_COAP_MAX_MESSAGES_TO_SEND must not be 0. Use -1 for unlimited or a positive value to cap uploads."
@@ -55,7 +49,10 @@
 // Used by memfault_zephyr_port_coap_post_data_return_size() and
 // memfault_zephyr_port_coap_get_download_url(), i.e. when the user does not provide their own
 // context. File scope here ensures context can be referenced by async callbacks
-static sMemfaultCoAPContext s_async_ctx;
+static sMemfaultCoAPContext s_memfault_coap_async_ctx;
+
+// Mutex to protect access to s_memfault_coap_async_ctx
+static K_MUTEX_DEFINE(s_memfault_coap_async_ctx_mutex);
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 static void *prv_calloc(size_t count, size_t size) {
@@ -96,13 +93,13 @@ static void prv_coap_response_cb(const struct coap_client_response_data *data, v
 // This is called by nRF Cloud CoAP transport when CONFIG_NRF_CLOUD_COAP_MAX_USER_OPTIONS > 0
 void nrf_cloud_coap_get_user_options(struct coap_client_option *options, size_t *num_options,
                                      const char *resource, const char *user_data) {
-  // For the native /chunks endpoint, optionally inject the Memfault project key (CoAP option 2429).
+  // For native endpoints, optionally inject the Memfault project key (CoAP option 2429).
   // If no project key is configured, the server uses its auto-configured mapping.
-  if (strcmp(resource, "chunks") == 0) {
+  if (strcmp(resource, "chunks") == 0 || strcmp(resource, "ota/latest/url") == 0) {
     size_t api_key_len =
       g_mflt_http_client_config.api_key ? strlen(g_mflt_http_client_config.api_key) : 0;
     if (api_key_len == 0) {
-      // No project key configured; rely on server-side auto-forwarding
+      MEMFAULT_LOG_DEBUG("No project key configured, relying on server-side auto-forwarding");
       *num_options = 0;
       return;
     }
@@ -171,7 +168,7 @@ static void prv_fota_url_response_cb(const struct coap_client_response_data *dat
 
   if (data->last_block || data->result_code < 0) {
     if (data->result_code == COAP_RESPONSE_CODE_CONTENT && data->payload && data->payload_len > 0) {
-      // The response is JSON: {"data": {"url": "https://..."}}
+      // The proxied response is JSON: {"data": {"url": "https://..."}}
       // Extract the URL from the JSON response using manual string parsing
       const char *payload_str = (const char *)data->payload;
       const char *url_start = NULL;
@@ -195,7 +192,7 @@ static void prv_fota_url_response_cb(const struct coap_client_response_data *dat
         if (ctx->download_url) {
           memcpy(ctx->download_url, url_start, url_len);
           ctx->download_url[url_len] = '\0';
-          MEMFAULT_LOG_DEBUG("Extracted URL from JSON: %s", ctx->download_url);
+          MEMFAULT_LOG_DEBUG("Got OTA URL: %s", ctx->download_url);
         } else {
           MEMFAULT_LOG_ERROR("Failed to allocate memory for download URL");
         }
@@ -251,12 +248,14 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   if (rv < 0 || !ctx->response_received) {
     MEMFAULT_LOG_ERROR("Timeout or error waiting for CoAP response: %d", rv);
     ctx->last_result_code = -ETIMEDOUT;  // Signal async callback to abort
+    memfault_packetizer_abort();
     prv_free(chunk_buf);
     return -1;
   }
 
   if (ctx->last_result_code != COAP_RESPONSE_CODE_CREATED) {
     MEMFAULT_LOG_ERROR("Unexpected CoAP response code: %d", ctx->last_result_code);
+    memfault_packetizer_abort();
     prv_free(chunk_buf);
     return -1;
   }
@@ -351,7 +350,12 @@ ssize_t memfault_zephyr_port_coap_post_data_return_size(void) {
     return 0;
   }
 
-  sMemfaultCoAPContext *ctx = &s_async_ctx;
+  if (k_mutex_lock(&s_memfault_coap_async_ctx_mutex, K_NO_WAIT) != 0) {
+    MEMFAULT_LOG_ERROR("CoAP operation in progress, cannot post data");
+    return -EBUSY;
+  }
+
+  sMemfaultCoAPContext *ctx = &s_memfault_coap_async_ctx;
 
   int rv = memfault_zephyr_port_coap_open_socket(ctx);
   MEMFAULT_LOG_DEBUG("Opened CoAP socket, rv=%d", rv);
@@ -373,31 +377,55 @@ ssize_t memfault_zephyr_port_coap_post_data_return_size(void) {
   }
 #endif
 
+  k_mutex_unlock(&s_memfault_coap_async_ctx_mutex);
   return (rv == 0) ? (ssize_t)bytes_sent : (ssize_t)rv;
+}
+
+static bool prv_build_ota_query(char *buf, size_t buf_len) {
+  sMemfaultDeviceInfo device_info;
+  memfault_http_get_device_info(&device_info);
+
+  // CoAP Uri-Query options are plain strings (no percent encoding) so we intentionally omit
+  // URL encoding here. See https://www.rfc-editor.org/rfc/rfc7252.html#section-5.10.1
+  int rv = snprintf(buf, buf_len,
+                    "device_serial=%s&hardware_version=%s&software_type=%s&current_version=%s",
+                    device_info.device_serial, device_info.hardware_version,
+                    device_info.software_type, device_info.software_version);
+  if (rv >= (int)buf_len) {
+    MEMFAULT_LOG_ERROR(
+      "Failed to build OTA query. Increase CONFIG_COAP_CLIENT_MAX_PATH_LENGTH to >= %d.",
+      (rv + sizeof("ota/latest/url?") + 1));
+  } else if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Failed to build OTA query: rv=%d", rv);
+  }
+  return (rv >= 0 && (size_t)rv < buf_len);
 }
 
 int memfault_zephyr_port_coap_get_download_url(char **download_url) {
   int rv = 0;
-  char *latest_url = prv_calloc(1, MEMFAULT_PROXY_URL_MAX_LEN);
-  if (!latest_url) {
+  char *query_buf = prv_calloc(1, CONFIG_COAP_CLIENT_MAX_PATH_LENGTH);
+  if (!query_buf) {
     return -ENOMEM;
   }
 
-  if (!memfault_http_build_latest_ota_url(latest_url, MEMFAULT_PROXY_URL_MAX_LEN)) {
-    prv_free(latest_url);
+  if (!prv_build_ota_query(query_buf, CONFIG_COAP_CLIENT_MAX_PATH_LENGTH)) {
+    prv_free(query_buf);
     return -1;
   }
+  MEMFAULT_LOG_DEBUG("Querying: ota/latest/url?%s", query_buf);
 
-  sMemfaultCoAPContext *ctx = &s_async_ctx;
+  if (k_mutex_lock(&s_memfault_coap_async_ctx_mutex, K_NO_WAIT) != 0) {
+    MEMFAULT_LOG_ERROR("CoAP operation in progress, cannot get download URL");
+    prv_free(query_buf);
+    return -EBUSY;
+  }
+
+  sMemfaultCoAPContext *ctx = &s_memfault_coap_async_ctx;
 
   rv = memfault_zephyr_port_coap_open_socket(ctx);
   if (rv != 0) {
-    prv_free(latest_url);
-    return rv;
+    goto cleanup;
   }
-
-  // Store proxy URL in context for nrf_cloud_coap_get_user_options
-  ctx->proxy_url = latest_url;
 
   // Reset response state
   ctx->response_received = false;
@@ -407,36 +435,42 @@ int memfault_zephyr_port_coap_get_download_url(char **download_url) {
   // Send request using nrf_cloud_coap_get (which will call nrf_cloud_coap_get_user_options)
   // For GET with no payload: fmt_out can be 0 (ignored since no payload)
   // fmt_in is JSON: {"data": {"url": "https://..."}}
-  rv = nrf_cloud_coap_get(NRF_CLOUD_COAP_PROXY_RSC, NULL, NULL, 0, 0, COAP_CONTENT_FORMAT_APP_JSON,
+  rv = nrf_cloud_coap_get("ota/latest/url", query_buf, NULL, 0, 0, COAP_CONTENT_FORMAT_APP_JSON,
                           true, prv_fota_url_response_cb, ctx);
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to send CoAP request: %d", rv);
-    prv_free(latest_url);
     memfault_zephyr_port_coap_close_socket(ctx);
-    return -1;
+    rv = -1;
+    goto cleanup;
   }
 
   rv = k_sem_take(&ctx->response_sem, K_MSEC(CONFIG_MEMFAULT_COAP_CLIENT_TIMEOUT_MS));
   if (rv < 0 || !ctx->response_received) {
     MEMFAULT_LOG_ERROR("Timeout or error waiting for CoAP response: %d", rv);
     ctx->last_result_code = -ETIMEDOUT;  // Signal async callback not to touch context
-    prv_free(latest_url);
-    return -1;
+    rv = -1;
+    goto cleanup;
   }
 
   if (ctx->last_result_code == COAP_RESPONSE_CODE_CONTENT && ctx->download_url) {
     *download_url = ctx->download_url;
     rv = 1;  // Update available
   } else if (ctx->last_result_code == COAP_RESPONSE_CODE_NOT_FOUND ||
-             ctx->last_result_code == COAP_RESPONSE_CODE_VALID) {
+             ctx->last_result_code == COAP_RESPONSE_CODE_VALID ||
+             (ctx->last_result_code == COAP_RESPONSE_CODE_CONTENT && !ctx->download_url)) {
+    // 2.05 Content with empty body: nRF Cloud CoAP proxy returns this when the Memfault
+    // backend responds with a non-200 HTTP status (e.g. no release exists for this device).
     rv = 0;  // No update available
   } else {
     MEMFAULT_LOG_ERROR("Unexpected CoAP response code: %d", ctx->last_result_code);
     rv = -1;
   }
 
-  prv_free(latest_url);
   memfault_zephyr_port_coap_close_socket(ctx);
+
+cleanup:
+  prv_free(query_buf);
+  k_mutex_unlock(&s_memfault_coap_async_ctx_mutex);
   return rv;
 }
 

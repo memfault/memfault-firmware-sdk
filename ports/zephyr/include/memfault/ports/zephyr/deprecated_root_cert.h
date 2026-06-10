@@ -14,6 +14,9 @@ extern "C" {
 #endif
 
 typedef enum {
+  // DigiCert Global Root CA (SHA-1) was removed from the SDK in favor of DigiCert Global Root G2.
+  // Devices with persistent cert storage (e.g. nRF91 modem) need this cleaned up on upgrade.
+  kMemfaultDeprecatedRootCert_DigicertRootCa = 1003,
   // The Baltimore Cyber Trust Root was the actual deprecated root
   // but its previous cert id, 1003, is now the cert id for the
   // kMemfaultRootCert_AmazonRootCa1. Therefore, modems will have a

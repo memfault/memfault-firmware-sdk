@@ -1,10 +1,12 @@
 # Memfault FreeRTOS Demo Application
 
-This example demonstrates integrating Memfault with FreeRTOS applications. The example uses the
-QEMU target, MPS2 Cortex M3 AN385, to run the application and is based on the
+This example demonstrates integrating Memfault with FreeRTOS applications. The
+example uses the QEMU target, MPS2 Cortex M3 AN385, to run the application and
+is based on the
 [MPS2 Cortex M3 AN385 FreeRTOS Demo](https://github.com/FreeRTOS/FreeRTOS/tree/main/FreeRTOS/Demo/CORTEX_M3_MPS2_QEMU_GCC).
-This file outlines various components of the example application. For more information on the
-MCU SDK, please see our documentation at [docs.memfault.com](docs.memfault.com).
+This file outlines various components of the example application. For more
+information on the MCU SDK, please see our documentation at
+[docs.memfault.com](https://docs.memfault.com/).
 
 ## Prerequisites
 
@@ -12,14 +14,17 @@ The project requires the following:
 
 - git
 - GNU Make
-- A version of the [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
-  - **Note**: The project assumes the toolchain can be found via your environment's PATH, otherwise
-  you may specify by setting `ARM_CC` with the full path to the toolchain `/bin` directory
+- A version of the
+  [Arm GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
+  - **Note**: The project assumes the toolchain can be found via your
+    environment's PATH, otherwise you may specify by setting `ARM_CC` with the
+    full path to the toolchain `/bin` directory
 
 ## FreeRTOS Installation
 
-By default the project will clone FreeRTOS V11.2.0 into the project directory. If you would like to use a
-different version, please set `FREERTOS_DIR` to an existing FreeRTOS directory.
+By default the project will clone FreeRTOS V11.2.0 into the project directory.
+If you would like to use a different version, please set `FREERTOS_DIR` to an
+existing FreeRTOS directory.
 
 ## Building
 
@@ -37,8 +42,8 @@ To run, from the project directory run:
 make run
 ```
 
-With the console open you may test out various features using the demo CLI commands. A simple example of
-testing assert handling and data export:
+With the console open you may test out various features using the demo CLI
+commands. A simple example of testing assert handling and data export:
 
 ```bash
 MFLT:[INFO] GNU Build ID: 8a45620abae6842848670c379411d8b31846eadc
@@ -65,7 +70,9 @@ MFLT:[INFO] MC:wLUCBA4AAQEIAAfkAOAgRgABAQYACUhlACAoBgAGARoAAakIACcCAADMWQAgzFkAI
 # Output clipped
 ```
 
-The exported output can be pasted into the Memfault web app for processing. See this [page](https://docs.memfault.com/docs/mcu/arm-cortex-m-guide/#post-data-to-cloud-via-local-debug-setup)
+The exported output can be pasted into the Memfault web app for processing. See
+this
+[page](https://docs.memfault.com/docs/mcu/arm-cortex-m-guide/#post-data-to-cloud-via-local-debug-setup)
 in our docs.
 
 ## Debugging
@@ -76,7 +83,8 @@ To debug, from the project directory run:
 make debug
 ```
 
-QEMU will start the application and wait for a debugger to attach. From a separate terminal run:
+QEMU will start the application and wait for a debugger to attach. From a
+separate terminal run:
 
 ```bash
 make gdb
@@ -86,29 +94,37 @@ make gdb
 
 ### Console and Memfault Demo CLI
 
-The application is built with the MCU SDK's demo CLI. This CLI includes commands to trigger faults;
-collect data from logs, trace events, and metrics; and export data to Memfault's web application
-for processing. For more info on the commands available use the "help" command in the console or
-view the source code at `memfault-firmware-sdk/components/demo`.
+The application is built with the MCU SDK's demo CLI. This CLI includes commands
+to trigger faults; collect data from logs, trace events, and metrics; and export
+data to Memfault's web application for processing. For more info on the commands
+available use the "help" command in the console or view the source code at
+`memfault-firmware-sdk/components/demo`.
 
 ### Application Metrics
 
-Two simple tasks are used to illustrate creating metrics to measure your application's performance.
-The first task, Heap Task, allocates and deallocates memory periodically. A second tasks, Metrics Task,
-sets metrics based on the state of the system heap. The two metrics produced are:
+Two simple tasks are used to illustrate creating metrics to measure your
+application's performance. The first task, Heap Task, allocates and deallocates
+memory periodically. A second tasks, Metrics Task, sets metrics based on the
+state of the system heap. The two metrics produced are:
 
-- `FreeRTOS_HeapFreeBytes`: Measures current total bytes free in the FreeRTOS heap
-- `FreeRTOS_HeapMinFreeBytes`: Measures the lowest total bytes free in the FreeRTOS heap since boot
-- `FreeRTOS_Heap_pct_max`: Measures the max percentage of the FreeRTOS heap used since boot
+- `FreeRTOS_HeapFreeBytes`: Measures current total bytes free in the FreeRTOS
+  heap
+- `FreeRTOS_HeapMinFreeBytes`: Measures the lowest total bytes free in the
+  FreeRTOS heap since boot
+- `FreeRTOS_Heap_pct_max`: Measures the max percentage of the FreeRTOS heap used
+  since boot
 
-These metrics are collected every 60 seconds in this example. This can be changed by modifying
-`MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS` in `memfault_platform_config.h`.
+These metrics are collected every 60 seconds in this example. This can be
+changed by modifying `MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS` in
+`memfault_platform_config.h`.
 
 ### Heap Tracing
 
-The heap tracing capabilities of the MCU SDK are enabled by default. The SDK will collect a set of
-the most recent allocations with their location in code and size when a coredump is saved.
+The heap tracing capabilities of the MCU SDK are enabled by default. The SDK
+will collect a set of the most recent allocations with their location in code
+and size when a coredump is saved.
 
 ### Logging Collection
 
-The application is configured to collect the most recent logs along whenever a coredump is collected.
+The application is configured to collect the most recent logs along whenever a
+coredump is collected.

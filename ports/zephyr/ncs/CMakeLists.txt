@@ -10,6 +10,13 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
   zephyr_include_directories(include)
   zephyr_include_directories(config)
 
+  if(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX
+     AND (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH}
+          VERSION_GREATER_EQUAL 3.4.0)
+  )
+    zephyr_ld_options(-Wl,--wrap=nrf_fuel_gauge_init)
+  endif()
+
   # Note: Starting in nRF Connect SDK >= 1.3, NCS_VERSION_* fields are exposed.
   # Prior to that, they're unset and cause the VERSION_GREATER_EQUAL check to be
   # falsy
@@ -28,6 +35,16 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
     # We wrap download_client_get() in order to register multiple root certificates
     #   See comment in src/memfault_fota.c for more details
     zephyr_ld_options(-Wl,--wrap=download_client_get)
+  endif()
+
+  if(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE)
+    # Intercept nRF Cloud CoAP FOTA job fetch/update calls to redirect firmware
+    # delivery through Memfault's OTA release management API.
+    # Wrap nrf_cloud_fota_poll_init to capture the ctx for CLI use.
+    # See src/memfault_nrf_cloud_fota_override.c for details.
+    zephyr_ld_options(-Wl,--wrap=nrf_cloud_coap_fota_job_get)
+    zephyr_ld_options(-Wl,--wrap=nrf_cloud_coap_fota_job_update)
+    zephyr_ld_options(-Wl,--wrap=nrf_cloud_fota_poll_init)
   endif()
 
 endif()

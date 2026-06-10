@@ -133,6 +133,14 @@ static eMemfaultRebootReason prv_zephyr_to_memfault_reboot_reason(uint32_t reset
     return kMfltRebootReason_PowerOnReset;
   }
 
+  // There's a bug in certain versions of Zephyr for the nrf54h20, where POR is
+  // not correctly reported and instead unconditionally reports '0'.
+  #if defined(CONFIG_SOC_NRF54H20)
+  if (reset_reason_reg == 0) {
+    return kMfltRebootReason_PowerOnReset;
+  }
+  #endif
+
   // Map the Zephyr HWINFO reset reason to a Memfault reset reason. The order is
   // important- the first bit match will be used.
   //

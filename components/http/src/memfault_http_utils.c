@@ -188,6 +188,11 @@ bool memfault_http_get_latest_ota_payload_url(MfltHttpClientSendCb write_callbac
     },
   };
 
+  MEMFAULT_LOG_DEBUG("OTA check w/ device info: serial=%s, hardware=%s, "
+                     "software_type=%s, software_version=%s",
+                     device_info.device_serial, device_info.hardware_version,
+                     device_info.software_type, device_info.software_version);
+
   // URL encode the qparam values before writing them
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(qparam_values); i++) {
     const struct qparam_values_s *qparam_value = &qparam_values[i];

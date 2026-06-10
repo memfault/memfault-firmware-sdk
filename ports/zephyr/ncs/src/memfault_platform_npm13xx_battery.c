@@ -10,7 +10,12 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/sensor/npm13xx_charger.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(drivers/mfd/npm13xx.h)
 #include "memfault/components.h"
-#include "memfault_nrf_platform_battery_model.h"
+#include "memfault/ports/ncs/version.h"
+
+#if !MEMFAULT_NCS_VERSION_GT(3, 3)
+  #include "memfault_nrf_platform_battery_model.h"
+#endif
+
 #include "nrf_fuel_gauge.h"
 
 // nPM13xx BCHGCHARGESTATUS register mask definitions, compatible with both nPM1300 and nPM1304
@@ -29,7 +34,13 @@ static const struct device *s_npm13xx_dev = DEVICE_DT_GET(DT_NODELABEL(npm1304_c
     "Unsupported nPM13xx charger device or device not enabled in devicetree. Contact mflt.io/contact-support for assistance."
 #endif
 
+#if !MEMFAULT_NCS_VERSION_GT(3, 3)
 static int64_t s_ref_time;
+#endif
+
+//! The fuel gauge library can fault if library functions are called before
+//! nrf_fuel_gauge_init(). Track initialization state.
+static bool s_memfault_npm13xx_initialized;
 
 static int prv_npm13xx_read_sensors(float *voltage, float *current, float *temp,
                                     int *charging_status) {
@@ -81,24 +92,65 @@ static bool prv_npm13xx_is_discharging(int charging_status) {
                              NPM13XX_CHG_STATUS_CV_MASK)) == 0;
 }
 
+#if MEMFAULT_NCS_VERSION_GT(3, 3)
+// Forward declaration of the real function, resolved at link time by --wrap
+int __real_nrf_fuel_gauge_init(const struct nrf_fuel_gauge_init_parameters *parameters, float *v0);
+int __wrap_nrf_fuel_gauge_init(const struct nrf_fuel_gauge_init_parameters *parameters, float *v0) {
+  int err = __real_nrf_fuel_gauge_init(parameters, v0);
+  if (err == 0) {
+    s_memfault_npm13xx_initialized = true;
+  }
+  return err;
+}
+#endif
+
 int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc) {
+  if (!device_is_ready(s_npm13xx_dev) || !s_memfault_npm13xx_initialized) {
+    return -1;
+  }
+
   // Float type required to retain precision when passing units of volts, amps, and degrees C to the
   // nRF fuel gauge API
-  float voltage, current, temp;
-  int charging_status;
+  float voltage = 0.0f;
+  float current, temp, soc_f;
+  int charging_status = 0;
   int err = prv_npm13xx_read_sensors(&voltage, &current, &temp, &charging_status);
   if (err < 0) {
     MEMFAULT_LOG_ERROR("Failure reading charger sensors, error: %d", err);
     return -1;
   }
 
+#if MEMFAULT_NCS_VERSION_GT(3, 3)
+  // fuel gauge lib v2 has discrete function for fetching SOC + SOH
+  err = nrf_fuel_gauge_soc_get(&soc_f);
+  if (err < 0) {
+    MEMFAULT_LOG_ERROR("Failure getting fuel gauge SOC, error: %d", err);
+    return -1;
+  }
+
+  // state-of-health is available on NCS 3.4+
+  float soh;
+  err = nrf_fuel_gauge_soh_get(&soh);
+  if (err == 0) {
+    // record state-of-health unscaled, 0-100
+    MEMFAULT_METRIC_SET_UNSIGNED(battery_soh_pct, (uint32_t)(soh));
+  } else {
+    MEMFAULT_LOG_ERROR("Failure getting fuel gauge SOH, error: %d", err);
+  }
+#else
+  // fuel gauge lib v1 only supports reading SOC by processing the sensor data
+  struct nrf_fuel_gauge_state_info info;
   int64_t time_delta_ms = k_uptime_delta(&s_ref_time);
   float time_delta_s = (float)time_delta_ms / 1000.0f;
-  struct nrf_fuel_gauge_state_info info;
-  nrf_fuel_gauge_process(voltage, current, temp, time_delta_s, &info);
+  s_ref_time = k_uptime_get();
 
-  // soc_raw is already 0-100, so scale only by scale value
-  soc->soc = (uint32_t)(info.soc_raw * (float)CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE);
+  nrf_fuel_gauge_process(voltage, current, temp, time_delta_s, &info);
+  soc_f = info.soc_raw;
+#endif
+
+  // soc is already 0-100, so scale only by scale value
+  soc->soc = (uint32_t)(soc_f * (float)CONFIG_MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE);
+
   soc->discharging = prv_npm13xx_is_discharging(charging_status);
 
   // Scale by scale value (must match definition in memfault_metrics_heartbeat_ncs_port_config.def)
@@ -108,10 +160,13 @@ int memfault_platform_get_stateofcharge(sMfltPlatformBatterySoc *soc) {
   MEMFAULT_LOG_DEBUG("Battery SOC %u.%03u%%, discharging=%d, voltage=%d mv", soc->soc / 1000,
                      soc->soc % 1000, soc->discharging, (int)voltage_scaled);
 
-  s_ref_time = k_uptime_get();
   return 0;
 }
 
+//! Fuel gauge lib prior to NCS 3.4.0 required Memfault SDK to manage
+//! initialization in addition to calling nrf_fuel_gauge_process() when reading
+//! SOC. Starting in NCS 3.4.0, this is all handled by the user application
+#if !MEMFAULT_NCS_VERSION_GT(3, 3)
 static int prv_platform_battery_init(void) {
   if (!device_is_ready(s_npm13xx_dev)) {
     printk("Charger device not ready\n");
@@ -130,23 +185,26 @@ static int prv_platform_battery_init(void) {
     printk("Failure initializing fuel gauge, error: %d\n", err);
     return err;
   }
+  s_memfault_npm13xx_initialized = true;
 
   s_ref_time = k_uptime_get();
   return 0;
 }
 
-#if defined(CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL)
-  #error \
-    "CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL=y not supported with CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX. Please contact mflt.io/contact-support for assistance."
-#elif (CONFIG_MEMFAULT_INIT_PRIORITY <= CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY)
-  #error \
-    "MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY must be set to a value less than MEMFAULT_INIT_PRIORITY (lower value = higher priority)"
-#endif
+  #if defined(CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL)
+    #error \
+      "CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL=y not supported with CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX. Please contact mflt.io/contact-support for assistance."
+  #elif (CONFIG_MEMFAULT_INIT_PRIORITY <= \
+         CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY)
+    #error \
+      "MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY must be set to a value less than MEMFAULT_INIT_PRIORITY (lower value = higher priority)"
+  #endif
 
 SYS_INIT(prv_platform_battery_init,
-#if defined(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_LEVEL_POST_KERNEL)
+  #if defined(CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_LEVEL_POST_KERNEL)
          POST_KERNEL,
-#else
+  #else
          APPLICATION,
-#endif
+  #endif
          CONFIG_MEMFAULT_NRF_PLATFORM_BATTERY_NPM13XX_INIT_PRIORITY);
+#endif  // !MEMFAULT_NCS_VERSION_GT(3, 3)

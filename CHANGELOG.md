@@ -6,6 +6,140 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.0] - 2026-06-09
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 🔥 Removed
+
+- General:
+
+  - Removed the `DigiCert Global Root CA` root certificate from the set of
+    certificates in the SDK. This certificate is no longer needed to connect to
+    the Memfault cloud.
+
+  - Removed the `mbed-cli` tool from the Python requirements. SDK support and
+    example code for Mbed OS was removed in v1.39.0.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added a new Kconfig option, `CONFIG_MEMFAULT_ZEPHYR_FOTA` (default `y`), to
+    allow disabling FOTA support.
+
+- nRF Connect SDK:
+
+  - Move the `examples/nrf-connect-sdk/nrf9160/` sample app to
+    `examples/nrf-connect-sdk/cellular/`, and make it generic, for use on other
+    boards (eg `nrf9151dk`) with cellular connectivity as well. Similarly,
+    rename `examples/nrf-connect-sdk/nrf5` to
+    `examples/nrf-connect-sdk/bluetooth/`.
+
+  - Added support for modem firmware FOTA over nRF Cloud CoAP. When
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`, `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE`
+    can now be enabled, and the modem update URL is queried over CoAP.
+
+  - Enable build support for the nRF9251 SoC.
+
+  - Add `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE`, a new FOTA
+    backend choice for applications that already call
+    `nrf_cloud_fota_poll_process()`. When selected, the Memfault SDK intercepts
+    `nrf_cloud_coap_fota_job_get()` via linker `--wrap` and redirects firmware
+    delivery to Memfault's OTA release management API with no application code
+    changes required.
+
+    `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE` is now shared between
+    `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS` and
+    `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE`. Enabling it adds a
+    modem firmware check (using `CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY`) as a
+    fallback when no application update is available. See
+    <https://mflt.io/nrf-modem-fota> for setup instructions.
+
+  - Add support for recording battery state-of-health for nPM13xx chargers,
+    reported as `battery_soh_pct` metric. Requires latest nRF Connect SDK
+    (>3.3).
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - On Zephyr v4.4.0+, `CONFIG_ARCH_STACKWALK` will no longer be enabled by
+    default on ARM Cortex-M targets when Memfault is enabled (matching the
+    behavior on pre-4.4.0 Zephyr). Set `CONFIG_ARCH_STACKWALK=y` to explicitly
+    enable it if needed (enabling `CONFIG_ARCH_STACKWALK` on Cortex-M can add
+    several kilobytes of flash usage, depending on the complexity of the
+    application).
+
+- nRF Connect SDK:
+
+  - Reboot reason will now default to
+    `CONFIG_MEMFAULT_REBOOT_REASON_GET_HWINFO=y` for nRF Connect SDK
+    configurations. Previously this would default to a custom built-in
+    [nrfx library based implementation](ports/zephyr/ncs/src/nrfx_pmu_reboot_tracking.c).
+    All modern Nordic SoCs have hwinfo support - this is the Memfault
+    recommended way to get hardware reboot information now. To select the
+    previous implementation, use `CONFIG_MEMFAULT_REBOOT_REASON_GET_CUSTOM=y`.
+
+  - Connected-time tracking on nRF91 chips
+    (`CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X`) can now use
+    `AT_MONITOR` directly, when the `LTE_LINK_CONTROL` subsystem is not enabled.
+
+  - Use the native `/ota/latest/url` endpoint instead of the HTTP proxy endpoint
+    for retrieving a Memfault release download URL via nRF Cloud CoAP. This also
+    enables retrieving a download URL without a Memfault Project Key built into
+    the application. The `/ota/latest/url` endpoint will automatically route the
+    request to the associated Memfault Project!
+
+  - Remove the `MEMFAULT_PROXY_URL_MAX_LEN` macro used to specify the maximum
+    length for proxy URLs, specifically for OTA. Instead, increase
+    `CONFIG_COAP_CLIENT_MAX_PATH_LENGTH` when using particularly long device
+    properties (serial, hardware version, software version, or type).
+
+  - Remove the Kconfig options `CONFIG_MEMFAULT_NRF_CLOUD_SEC_TAG` and
+    `CONFIG_MEMFAULT_NRF_CLOUD_HOST_NAME`, which are no longer used by the SDK.
+
+  - On latest nRF Connect SDK (>3.3), the nPM13xx fuel gauge library has been
+    updated to support reading state-of-charge (SOC) without performing a fuel
+    gauge computation update. The `battery_soc_pct` and `battery_soc_pct_drop`
+    metrics are now computed from data provided by `nrf_fuel_gauge_soc_get()`,
+    instead of calling `nrf_fuel_gauge_process()` (which has the side-effect of
+    triggering a fuel gauge computation update).
+
+    👉 The Memfault SDK **no longer calls** `nrf_fuel_gauge_init()` or
+    `nrf_fuel_gauge_process()` internally. The user application must call
+    `nrf_fuel_gauge_init()` during initialization and periodically call
+    `nrf_fuel_gauge_process()` to keep the fuel gauge updated. The Memfault SDK
+    uses a linker `--wrap` on `nrf_fuel_gauge_init` to automatically detect when
+    the fuel gauge is initialized - no additional Memfault API calls are
+    required. See an example implementation
+    [here](https://github.com/nrfconnect/Asset-Tracker-Template/blob/main/app/src/modules/power/power.c).
+
+- Zephyr:
+
+  - Remove the `depends on !NET_SOCKETS_OFFLOAD` Kconfig dependency for
+    `CONFIG_MEMFAULT_TLS_CERTS_USE_DER`.
+
+### 🐛 Fixed
+
+- nRF Connect SDK:
+
+  - Fixed FOTA image downloads to route through the nRF Cloud CoAP proxy when
+    `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`, instead of always performing a
+    direct HTTPS download via `fota_download_any()`. The download now uses
+    `nrf_cloud_download_start()`, which reuses the CoAP DTLS connection.
+
+  - Fixed data upload when there is a CoAP response timeout or unexpected
+    response code. The CoAP client will now abort any in-progress draining of
+    chunk data so that data can be recovered and uploaded when the response is
+    successful.
+
+  - Fixed race condition when using the CoAP client from multiple contexts.
+    Previously, if multiple threads tried uploading data or requesting a
+    download URL, a hardfault could occur due to concurrent access of the static
+    CoAP context variable.
+
 ## [1.39.0] - 2026-05-06
 
 This is a minor release, including new features, improvements, and bug fixes
@@ -144,6 +278,19 @@ across several platforms.
     periodic FOTA check. This runs along the `CONFIG_MEMFAULT_PERIODIC_UPLOAD`
     thread.
 
+  - Add support for automatic modem firmware FOTA on nRF91x targets
+    (`CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y`). When enabled,
+    `memfault_zephyr_fota_start()` first checks for an application firmware
+    update as usual; if none is available, it then checks for a modem firmware
+    update using a dedicated Memfault project. New options:
+
+    - `CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY` - Memfault project key for the
+      modem firmware project (required when `MEMFAULT_FOTA_MODEM_UPDATE=y`)
+    - `CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE` - software type string used
+      when checking for modem updates (default: `mfw`)
+
+    See <https://mflt.io/nrf-modem-fota> for setup instructions.
+
   - Add a new Kconfig option,
     `CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY`, which
     controls the workqueue priority for uploading data when
@@ -279,7 +426,7 @@ several platforms.
 
   - Use the native `/chunks` endpoint instead of the HTTP proxy endpoint for
     sending Memfault data via nRF Cloud CoAP. This also enables sending data
-    with a Memfault Project Key built into the application. The `/chunks`
+    without a Memfault Project Key built into the application. The `/chunks`
     endpoint will automatically route data to the associated Memfault Project
     🪄!
 
@@ -677,7 +824,7 @@ This is a minor release. Key updates:
     fuel gauge library.
 
   - Added a CoAP client implementation capable of uploading Memfault data
-    through an [nRF Cloud](https://www.nrfcloud.com/) connection. This is
+    through an [nRF Cloud](https://nrfcloud.nordicsemi.com/) connection. This is
     primarily intended for use with the Nordic nRF91x series devices using LTE-M
     or NB-IoT connectivity. To enable, use
     `CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP=y`. This will change the protocol used

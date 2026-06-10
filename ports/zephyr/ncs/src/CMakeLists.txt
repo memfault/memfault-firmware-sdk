@@ -10,6 +10,8 @@ else()
   zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS memfault_fota_legacy.c)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE memfault_nrf_cloud_fota_override.c)
+
 zephyr_library_sources_ifdef(CONFIG_MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X memfault_platform_metrics_connectivity_lte.c)
 
 if (CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)

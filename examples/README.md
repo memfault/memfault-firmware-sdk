@@ -6,7 +6,6 @@ We have example integrations available for a number of development boards which
 can be used as a reference while working on your integration or to explore the
 Memfault SDK:
 
-- Arm Mbed OS 5 / STMicroelectronics STM32F4 series (STM32F429I-DISC1)
 - nRF5 SDK / Nordic nRF52840 (PCA10056)
 - Quantum Leap Quantum Platform in C / STMicroelectronics STM32F4 series
   (STM32F407G-DISC1)

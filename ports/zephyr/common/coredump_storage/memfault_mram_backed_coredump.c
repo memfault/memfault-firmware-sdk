@@ -33,6 +33,7 @@
 //!  };
 
 #include <memfault/components.h>
+#include <memfault/ports/zephyr/version.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
 
@@ -40,15 +41,28 @@
 #define MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE (16)
 #include <memfault/ports/buffered_coredump_storage.h>
 
+// PARTITION_* macros were introduced in Zephyr 4.4.0, replacing
+// FIXED_PARTITION_* (and supporting mapped-partition). Provide a fallback for
+// previous Zephyr versions (fixed-partition)
+#if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 4)
+  #define MEMFAULT_PARTITION_EXISTS(label) PARTITION_EXISTS(label)
+  #define MEMFAULT_PARTITION_OFFSET(label) PARTITION_OFFSET(label)
+  #define MEMFAULT_PARTITION_SIZE(label) PARTITION_SIZE(label)
+#else
+  #define MEMFAULT_PARTITION_EXISTS(label) FIXED_PARTITION_EXISTS(label)
+  #define MEMFAULT_PARTITION_OFFSET(label) FIXED_PARTITION_OFFSET(label)
+  #define MEMFAULT_PARTITION_SIZE(label) FIXED_PARTITION_SIZE(label)
+#endif
+
 // Ensure the memfault_coredump_partition entry exists
-#if !FIXED_PARTITION_EXISTS(memfault_coredump_partition)
+#if !MEMFAULT_PARTITION_EXISTS(memfault_coredump_partition)
   #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
 #endif
 
-#if defined(CONFIG_SOC_NRF54H20)
+#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_SERIES_NRF92)
   #define MEMFAULT_COREDUMP_FLASH_DEVICE DEVICE_DT_GET(DT_CHOSEN(zephyr_flash))
-  #define MEMFAULT_COREDUMP_PARTITION_OFFSET FIXED_PARTITION_OFFSET(memfault_coredump_partition)
-  #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_OFFSET MEMFAULT_PARTITION_OFFSET(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE MEMFAULT_PARTITION_SIZE(memfault_coredump_partition)
 #else
   #error "Unknown SOC, please contact support: https://mflt.io/contact-support"
 #endif

@@ -35,6 +35,19 @@ bool memfault_zephyr_fota_download_callback(void);
 //!     0 Check completed successfully - No new update available
 int memfault_zephyr_fota_start(void);
 
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+//! @brief Check for and apply a modem firmware update only (skips application FOTA check)
+//!
+//! Useful for manually triggering a modem FOTA check, e.g. from a shell command.
+//! Requires CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y.
+//!
+//! @return
+//!   < 0 Error while trying to perform the modem FOTA update
+//!     0 Check completed - no modem update available
+//!     1 Modem update download started
+int memfault_zephyr_fota_modem_start(void);
+#endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
+
 #if defined(__cplusplus)
 }
 #endif

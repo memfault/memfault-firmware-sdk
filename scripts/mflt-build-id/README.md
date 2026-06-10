@@ -34,7 +34,7 @@ discussed above. The only expectation in this mode is that a global symbol has b
 const uint8_t g_your_symbol_build_id[20] = { 0x1, };
 
 For further reading about Build Ids in general see:
-  https://mflt.io//symbol-file-build-ids
+  https://mflt.io/symbol-file-build-ids
 
 positional arguments:
   elf

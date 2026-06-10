@@ -22,7 +22,7 @@
 //! If using device tree specified partitions, you might add something like this
 //! to your board's dts file/overlay:
 //!
-//!  &mram1x {
+//!  &cpuapp_rram {
 //!    partitions {
 //!      memfault_coredump_partition: partition@1d5000 {
 //!        label = "memfault_coredump_partition";

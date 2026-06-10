@@ -50,6 +50,25 @@ void memfault_arch_fault_handling_assert(void *pc, void *lr, eMemfaultRebootReas
     #if defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
       #include <hal/cpu_hal.h>
 
+      // Certain versions of Zephyr don't have this function included in the
+      // build system, specifically for esp32c3. Insert a weakly-defined copy
+      // just in case.
+      #if defined(CONFIG_SOC_ESP32C3)
+        #include <stdbool.h>
+
+        #include "soc/soc_caps.h"
+        #if SOC_ASSIST_DEBUG_SUPPORTED
+          #include "hal/assist_debug_ll.h"
+        #endif
+MEMFAULT_WEAK bool rv_utils_dbgr_is_attached(void) {
+        #if SOC_ASSIST_DEBUG_SUPPORTED
+  return assist_debug_ll_is_debugger_active();
+        #else
+  return false;
+        #endif
+}
+      #endif  // CONFIG_SOC_ESP32C3
+
 void memfault_platform_halt_if_debugging(void) {
       // Zephyr 3.7.0 deprecated cpu_ll_is_debugger_attached() in favor of
       // esp_cpu_dbgr_is_attached(). Support both Kconfigs.
