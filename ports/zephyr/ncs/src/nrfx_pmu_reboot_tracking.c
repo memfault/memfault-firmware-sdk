@@ -209,7 +209,7 @@ MEMFAULT_WEAK void memfault_reboot_reason_get(sResetBootupInfo *info) {
   reset_reason = prv_decode_reset_resetreas(reset_cause);
 #endif
 
-#if CONFIG_MEMFAULT_CLEAR_RESET_REG
+#if defined(CONFIG_MEMFAULT_CLEAR_RESET_REG)
   *resetreas_reg |= reset_cause;
 #endif
 

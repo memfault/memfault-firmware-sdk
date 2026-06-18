@@ -67,6 +67,14 @@ if(CONFIG_MEMFAULT)
   # Remove this line when removing support for < Zephyr v3.2
   zephyr_library_compile_options(-imacros ${CMAKE_CURRENT_LIST_DIR}/include/memfault/ports/zephyr/include_compatibility.h)
 
+  # Enable error-on-undefined preprocessor tokens.
+  # Used only in testing.
+  zephyr_library_compile_options_ifdef(
+    CONFIG_MEMFAULT_ERROR_WUNDEF
+    -Werror=undef
+    -isystem ${ZEPHYR_BASE}/include
+    -isystem ${ZEPHYR_BASE}/modules/cmsis_6
+  )
   # Add subdirectories
   add_subdirectory(common)
   add_subdirectory(panics)

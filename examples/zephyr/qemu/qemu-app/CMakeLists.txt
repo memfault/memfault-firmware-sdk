@@ -6,6 +6,19 @@ cmake_minimum_required(VERSION 3.20.0)
 # overridden by passing --board=<board> to west or -DBOARD=<board> to cmake
 set(BOARD mps2/an385)
 
+# Select version-specific config overlays before Zephyr is loaded
+file(READ "$ENV{ZEPHYR_BASE}/VERSION" _zephyr_version_file)
+string(REGEX MATCH "VERSION_MAJOR = ([0-9]+)" _ ${_zephyr_version_file})
+set(_zephyr_major ${CMAKE_MATCH_1})
+string(REGEX MATCH "VERSION_MINOR = ([0-9]+)" _ ${_zephyr_version_file})
+set(_zephyr_minor ${CMAKE_MATCH_1})
+string(REGEX MATCH "PATCHLEVEL = ([0-9]+)" _ ${_zephyr_version_file})
+set(_zephyr_patch ${CMAKE_MATCH_1})
+
+if("${_zephyr_major}.${_zephyr_minor}.${_zephyr_patch}" VERSION_GREATER_EQUAL "3.4.0")
+  set(OVERLAY_CONFIG "${OVERLAY_CONFIG};${CMAKE_CURRENT_SOURCE_DIR}/overlays/zephyr-v3.4.conf")
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 target_sources(app PRIVATE

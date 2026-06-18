@@ -32,7 +32,7 @@
 // which is not in the global Zephyr search path.
 #include MEMFAULT_ZEPHYR_INCLUDE(../../subsys/net/ip/net_stats.h)
 #endif
-#if CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC
+#if defined(CONFIG_MEMFAULT_FS_BYTES_FREE_METRIC)
 #include MEMFAULT_ZEPHYR_INCLUDE(fs/fs.h)
 #endif
 // clang-format on
@@ -40,6 +40,10 @@
 #if defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 //! _system_heap is the heap used by k_malloc/k_free
 extern struct sys_heap _system_heap;
+  //! malloc_runtime_stats_get() covers z_malloc_heap, the heap backing malloc/free
+  #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC)
+    #include <sys_malloc.h>
+  #endif
 #endif  // defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 
 #if defined(CONFIG_MEMFAULT_METRICS_DEFAULT_SET_ENABLE)
@@ -145,8 +149,25 @@ static void prv_collect_memory_usage_metrics(void) {
   // Range is 0-10000 for 0.00-100.00%
   // Multiply by 100 for 2 decimals of precision via the scale factor, then by 100 again
   // for percentage conversion
-  MEMFAULT_METRIC_SET_UNSIGNED(memory_pct_max, (uint32_t)(stats.max_allocated_bytes * 10000.f) /
-                                                 (stats.free_bytes + stats.allocated_bytes));
+  const size_t k_heap_total = stats.free_bytes + stats.allocated_bytes;
+  if (k_heap_total > 0) {
+    MEMFAULT_METRIC_SET_UNSIGNED(kernel_heap_pct_max,
+                                 (uint32_t)(stats.max_allocated_bytes * 10000.f) / k_heap_total);
+  }
+
+    #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC)
+  // malloc_runtime_stats_get() was added in Zephyr 4.4, and provides stats
+  // for the heap used by malloc/free when CONFIG_COMMON_LIBC_MALLOC is
+  // enabled. This is separate from the kernel heap used by k_malloc/k_free.
+  struct sys_memory_stats malloc_stats = { 0 };
+  if (malloc_runtime_stats_get(&malloc_stats) == 0) {
+    const size_t malloc_total = malloc_stats.free_bytes + malloc_stats.allocated_bytes;
+    if (malloc_total > 0) {
+      MEMFAULT_METRIC_SET_UNSIGNED(
+        memory_pct_max, (uint32_t)(malloc_stats.max_allocated_bytes * 10000.f) / malloc_total);
+    }
+  }
+    #endif
   #endif  // MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
 }
 #endif  // defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)

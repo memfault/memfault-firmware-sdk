@@ -87,7 +87,10 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(thermal_cpu_c, kMemfaultMetricType_
 
   #if MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
 // Two decimal places of precision
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(kernel_heap_pct_max, kMemfaultMetricType_Unsigned, 100)
+    #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC)
 MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_pct_max, kMemfaultMetricType_Unsigned, 100)
+    #endif  // MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC)
   #endif // MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
 
 MEMFAULT_METRICS_KEY_DEFINE(Heap_BytesFree, kMemfaultMetricType_Unsigned)

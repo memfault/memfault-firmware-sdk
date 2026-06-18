@@ -22,8 +22,8 @@
 
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 
-#if CONFIG_THREAD_STACK_INFO
-  #if CONFIG_STACK_GROWS_UP
+#if defined(CONFIG_THREAD_STACK_INFO)
+  #if defined(CONFIG_STACK_GROWS_UP)
     #error \
       "Only full-descending stacks are supported by this implementation. Please visit https://mflt.io/contact-support"
   #endif

@@ -86,7 +86,7 @@ static eMemfaultPlatformLogLevel prv_map_zephyr_level_to_memfault(uint32_t zephy
 typedef struct MfltLogProcessCtx {
   eMemfaultPlatformLogLevel memfault_level;
 
-#if CONFIG_LOG_MODE_IMMEDIATE
+#if defined(CONFIG_LOG_MODE_IMMEDIATE)
   int write_idx;
   bool flushed;
 #endif
@@ -132,7 +132,7 @@ static void prv_log_process(const struct log_backend *const backend, union log_m
   log_output_ctx_set(&s_log_output_mflt, &log_process_ctx);
   log_output_msg_process(&s_log_output_mflt, &msg->log, flags);
 
-#if CONFIG_LOG_MODE_IMMEDIATE
+#if defined(CONFIG_LOG_MODE_IMMEDIATE)
   if (!log_process_ctx.flushed) {
     // In Zephyr 3.7.0, prv_log_out() won't flush data. Call it one more time to
     // emulate the previous behavior.
@@ -175,7 +175,7 @@ static int prv_log_out(uint8_t *data, size_t length, void *ctx) {
   sMfltLogProcessCtx *mflt_ctx = (sMfltLogProcessCtx *)ctx;
   size_t save_length = length;
 
-#if CONFIG_LOG_MODE_IMMEDIATE
+#if defined(CONFIG_LOG_MODE_IMMEDIATE)
   // A check to help us catch if behavior changes in a future release of Zephyr
   MEMFAULT_SDK_ASSERT(length <= 1);
 

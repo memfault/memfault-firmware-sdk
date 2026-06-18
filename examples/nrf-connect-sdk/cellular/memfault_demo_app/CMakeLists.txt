@@ -6,13 +6,32 @@ if(DEFINED ENV{MEMFAULT_ZEPHYR_EXTRA_MODULE_INCLUDE})
   list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/memfault-firmware-sdk/ports)
 endif()
 
-# Starting in nRF Connect SDK >= 1.3, versions are exposed in
-# a CMake package:
-#   https://github.com/nrfconnect/sdk-nrf/blob/master/share/ncs-package/cmake/NcsConfig.cmake
+# We need the nRF Connect SDK version before loading Zephyr, to dynamically
+# select Kconfig overlays based on version- not something that can be achieved
+# with Zephyr today.
 #
-# We can pre-load the package before Zephyr to dynamically change Kconfig options based on version
-# which is not something that can be achieved with Zephyr today
-find_package(Ncs HINTS $ENV{ZEPHYR_BASE}/../nrf)
+# Note: previously this was done with 'find_package(Ncs)', but as of sdk-nrf
+# commit 40f7487d3a ("cmake: adopt VERSION to common VERSION file format"),
+# NcsConfig.cmake requires ZEPHYR_BASE to be set, which is not available before
+# 'find_package(Zephyr)'. Instead, read the version directly from the VERSION
+# file, supporting both formats:
+# - nRF Connect SDK <= v3.3.0: single line, "<major>.<minor>.<patch>[-extra]"
+# - newer: Zephyr-style "VERSION_MAJOR = <major>" etc. key-value lines
+set(NCS_VERSION_FILE "$ENV{ZEPHYR_BASE}/../nrf/VERSION")
+if(EXISTS "${NCS_VERSION_FILE}")
+  file(READ "${NCS_VERSION_FILE}" ncs_version_content)
+  if(ncs_version_content MATCHES "VERSION_MAJOR *= *([0-9]+)")
+    set(NCS_VERSION_MAJOR ${CMAKE_MATCH_1})
+    string(REGEX MATCH "VERSION_MINOR *= *([0-9]+)" _ "${ncs_version_content}")
+    set(NCS_VERSION_MINOR ${CMAKE_MATCH_1})
+    string(REGEX MATCH "PATCHLEVEL *= *([0-9]+)" _ "${ncs_version_content}")
+    set(NCS_VERSION_PATCH ${CMAKE_MATCH_1})
+  elseif(ncs_version_content MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+    set(NCS_VERSION_MAJOR ${CMAKE_MATCH_1})
+    set(NCS_VERSION_MINOR ${CMAKE_MATCH_2})
+    set(NCS_VERSION_PATCH ${CMAKE_MATCH_3})
+  endif()
+endif()
 
 # Confirm NCS_VERSION_MAJOR is defined
 if (NOT DEFINED NCS_VERSION_MAJOR)

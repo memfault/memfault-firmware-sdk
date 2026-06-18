@@ -37,7 +37,7 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
 
   size_t region_idx = 0;
 
-#if CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
+#if defined(CONFIG_MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS)
   size_t stack_size_to_collect = memfault_platform_sanitize_address_range(
     crash_info->stack_address, CONFIG_MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT);
 
@@ -63,12 +63,12 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
   #endif  // CONFIG_ARM
 #endif
 
-#if CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
+#if defined(CONFIG_MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION)
   regions[region_idx] = MEMFAULT_COREDUMP_MEMORY_REGION_INIT(&_kernel, sizeof(_kernel));
   region_idx++;
 #endif
 
-#if CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS
+#if defined(CONFIG_MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS)
   region_idx += memfault_zephyr_get_task_regions(&regions[region_idx], num_regions - region_idx);
 #endif
 
@@ -78,11 +78,11 @@ size_t memfault_zephyr_coredump_get_regions(const sCoredumpCrashInfo *crash_info
   // data and bss we can collect!
   //
 
-#if CONFIG_MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
+#if defined(CONFIG_MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS)
   region_idx += memfault_zephyr_get_data_regions(&regions[region_idx], num_regions - region_idx);
 #endif
 
-#if CONFIG_MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
+#if defined(CONFIG_MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS)
   region_idx += memfault_zephyr_get_bss_regions(&regions[region_idx], num_regions - region_idx);
 #endif
 

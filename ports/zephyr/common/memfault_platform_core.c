@@ -29,13 +29,13 @@
 #include "memfault/ports/zephyr/version.h"
 // clang-format on
 
-#if CONFIG_MEMFAULT_METRICS
+#if defined(CONFIG_MEMFAULT_METRICS)
   #include "memfault/metrics/metrics.h"
 #endif
 
 static const sMemfaultEventStorageImpl *s_memfault_event_storage;
 
-#if CONFIG_MEMFAULT_CACHE_FAULT_REGS
+#if defined(CONFIG_MEMFAULT_CACHE_FAULT_REGS)
 // Zephy's z_arm_fault() function consumes and clears
 // the SCB->CFSR register so we must wrap their function
 // so we can preserve the pristine fault register values.
@@ -74,7 +74,7 @@ uint64_t memfault_platform_get_time_since_boot_ms(void) {
 
 //! Provide a strong implementation of assert_post_action for Zephyr's built-in
 //! __ASSERT() macro.
-#if CONFIG_MEMFAULT_CATCH_ZEPHYR_ASSERT
+#if defined(CONFIG_MEMFAULT_CATCH_ZEPHYR_ASSERT)
   #ifdef CONFIG_ASSERT_NO_FILE_INFO
 void assert_post_action(void)
   #else
@@ -324,7 +324,7 @@ static int prv_boot_memfault() {
 #endif
   memfault_trace_event_boot(s_memfault_event_storage);
 
-#if CONFIG_MEMFAULT_METRICS
+#if defined(CONFIG_MEMFAULT_METRICS)
   sMemfaultMetricBootInfo boot_info = {
     .unexpected_reboot_count = memfault_reboot_tracking_get_crash_count(),
   };
@@ -370,7 +370,7 @@ void __wrap_k_free(void *ptr) {
 #endif
 
 SYS_INIT(prv_boot_memfault,
-#if CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL
+#if defined(CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL)
          POST_KERNEL,
 #else
          APPLICATION,

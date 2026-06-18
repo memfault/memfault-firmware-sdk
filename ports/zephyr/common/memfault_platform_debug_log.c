@@ -45,7 +45,7 @@ void memfault_platform_log(eMemfaultPlatformLogLevel level, const char *fmt, ...
 // If the user doesn't have logging enabled, optionally route Memfault logs to
 // printk, allowing the user to also disable that behavior if no Memfault logs
 // are desired.
-#if CONFIG_MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
+#if defined(CONFIG_MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK)
   #define MFT_LOG_DBG(fmt_, arg) printk("<dbg> mflt: " fmt_ "\n", arg)
   #define MFT_LOG_INF(fmt_, arg) printk("<inf> mflt: " fmt_ "\n", arg)
   #define MFT_LOG_WRN(fmt_, arg) printk("<wrn> mflt: " fmt_ "\n", arg)

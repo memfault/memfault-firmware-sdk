@@ -11,7 +11,7 @@
 #include "memfault/ports/zephyr/fota.h"
 #include "memfault/ports/zephyr/http.h"
 
-#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   #include "memfault/nrfconnect_port/coap.h"
 
   // Provides nrf_cloud_download_start(), which routes the FOTA download through the nRF Cloud
@@ -31,7 +31,7 @@
 #include "net/fota_download.h"
 // clang-format on
 
-#if CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   #include <modem/modem_info.h>
 #endif
 
@@ -73,7 +73,7 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt);
 static void prv_fota_url_cleanup(void) {
   MEMFAULT_LOG_DEBUG("Freeing download URL");
 
-#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   memfault_zephyr_port_coap_release_download_url(&s_download_url);
 #else
   memfault_zephyr_port_release_download_url(&s_download_url);
@@ -212,7 +212,7 @@ cleanup:
   return rv;
 }
 
-#if CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
 
 MEMFAULT_STATIC_ASSERT(sizeof(CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY) > 1,
                        "CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY must be set when "
@@ -276,7 +276,7 @@ int memfault_zephyr_fota_modem_start(void) {
 
 int memfault_zephyr_fota_start(void) {
   // Note: The download URL is allocated on the heap and must be freed when done
-#if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   int rv = memfault_zephyr_port_coap_get_download_url(&s_download_url);
 #else
   int rv = memfault_zephyr_port_get_download_url(&s_download_url);
@@ -290,7 +290,7 @@ int memfault_zephyr_fota_start(void) {
     return prv_fota_download_start();
   }
 
-#if CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   // No app update available - check for modem firmware update
   return prv_fota_modem_start();
 #else

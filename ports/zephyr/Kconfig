@@ -108,6 +108,13 @@ config MEMFAULT_SOC_SERIES_NRF91
         help
           Non-user configurable option indicating a nRF91 series SOC is in use.
 
+config MEMFAULT_ERROR_WUNDEF
+        bool "Compilation error on -Wundef for the Memfault library"
+        default n
+        help
+          This enables compiling the Memfault library with '-Werror=undef'.
+          Intended only to be used by maintainers of the Memfault SDK.
+
 config MEMFAULT_SOC_SERIES_NRF92
         bool
         default y if (SOC_SERIES = "nrf92")
@@ -369,8 +376,8 @@ config MEMFAULT_COMPACT_LOG
           information here: https://mflt.io/compact-logs
 
 config MEMFAULT_LOGGING_ENABLE
-        bool "Memfault Zephyr backend logging Enable [EXPERIMENTAL]"
-        default n
+        bool "Memfault Zephyr backend logging"
+        default y
         select LOG
         select LOG_OUTPUT
         help
@@ -611,7 +618,6 @@ config MEMFAULT_HTTP_DISABLE_TLS
 
 config MEMFAULT_HTTP_CHUNKS_API_HOST
         string "Override the Memfault chunks API host"
-        depends on MEMFAULT_HTTP_DISABLE_TLS
         default ""
         help
           Override the default Memfault chunks API host. When plain HTTP mode
@@ -624,7 +630,6 @@ config MEMFAULT_HTTP_CHUNKS_API_HOST
 
 config MEMFAULT_HTTP_DEVICE_API_HOST
         string "Override the Memfault device API host"
-        depends on MEMFAULT_HTTP_DISABLE_TLS
         default ""
         help
           Override the default Memfault device API host. When plain HTTP mode
@@ -634,6 +639,14 @@ config MEMFAULT_HTTP_DEVICE_API_HOST
           Do not leave this empty when TLS is disabled: the default host
           (device.memfault.com) does not support plain HTTP and connections
           will fail.
+
+config MEMFAULT_HTTP_CHUNKS_API_HOST_OVERRIDE
+        bool
+        default y if MEMFAULT_HTTP_CHUNKS_API_HOST != ""
+
+config MEMFAULT_HTTP_DEVICE_API_HOST_OVERRIDE
+        bool
+        default y if MEMFAULT_HTTP_DEVICE_API_HOST != ""
 
 endif # MEMFAULT_HTTP_ENABLE
 
@@ -799,6 +812,29 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
           For information on release management with Memfault: https://mflt.io/release-mgmt.
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
+
+config MEMFAULT_HTTP_OTA_PROXY_HOST
+        string "OTA download proxy host"
+        default ""
+        depends on MEMFAULT_HTTP_ENABLE
+        help
+          When set, OTA payload download URLs returned by the Memfault device
+          API will have their host replaced with this value before the download
+          is performed. Use this to route OTA CDN downloads through a proxy
+          that accepts different TLS certificates than the default OTA CDN
+          (e.g. one configured via MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST).
+
+          Only the host component is replaced; the path and query string are
+          preserved, so the proxy must forward requests to the Memfault OTA CDN.
+
+          Example: "device-ecdsa-proxy.memfault.workers.dev"
+
+          Leave empty (the default) to use the URL returned by the Memfault
+          device API unchanged.
+
+config MEMFAULT_HTTP_OTA_PROXY
+        bool
+        default y if MEMFAULT_HTTP_OTA_PROXY_HOST != ""
 
 endif # MEMFAULT_ZEPHYR_FOTA
 

@@ -309,7 +309,7 @@ void memfault_zephyr_port_coap_close_socket(sMemfaultCoAPContext *ctx) {
 }
 
 int memfault_zephyr_port_coap_upload_sdk_data(sMemfaultCoAPContext *ctx) {
-#if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
   // Dedicated workqueue: drain everything - no risk of blocking other work.
   int max_messages_to_send = INT_MAX;
 #else

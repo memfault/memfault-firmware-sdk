@@ -73,16 +73,6 @@ sMfltHttpClientConfig g_mflt_http_client_config = {
   .api_key = CONFIG_MEMFAULT_PROJECT_KEY,
   #if defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
   .disable_tls = true,
-  .chunks_api = {
-    .host = sizeof(CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST) > 1 ?
-              CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST : NULL,
-    .port = 80,
-  },
-  .device_api = {
-    .host = sizeof(CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST) > 1 ?
-              CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST : NULL,
-    .port = 80,
-  },
   #endif
 };
 #endif
@@ -257,7 +247,15 @@ static int prv_create_socket(struct zsock_addrinfo **res, const char *host, int 
 #if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 
 static int prv_configure_tls_socket(int sock_fd, const char *host) {
+  // MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST can be defined in memfault_platform_config.h
+  // to completely replace the default sec_tag list. Must be a comma-terminated list,
+  // e.g.: #define MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST 2000,
+  // When not defined, the default Memfault CA certs are used.
+  #ifdef MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST
+  const sec_tag_t sec_tag_opt[] = { MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST };
+  #else
   const sec_tag_t sec_tag_opt[] = { MEMFAULT_ROOT_CERTS_ID_LIST };
+  #endif
   int rv = zsock_setsockopt(sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt, sizeof(sec_tag_opt));
   if (rv != 0) {
     return rv;
@@ -387,7 +385,7 @@ static int prv_open_socket(struct zsock_addrinfo **res, const char *host, int po
 static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
   int sock = ctx->sock_fd;
 
-#if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
+#if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE > 0
   uint8_t buf[CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE];
   size_t buf_len = sizeof(buf);
 
@@ -572,6 +570,13 @@ static bool prv_install_ota_payload(int sock_fd, const sMemfaultOtaUpdateHandler
     return false;
   }
 
+  if (ctx.content_length == 0) {
+    MEMFAULT_LOG_ERROR("OTA payload response missing Content-Length");
+    return false;
+  }
+
+  MEMFAULT_LOG_DEBUG("Downloading OTA payload: size=%d bytes", (int)ctx.content_length);
+
   sMemfaultOtaInfo ota_info = {
     .size = ctx.content_length,
   };
@@ -596,6 +601,9 @@ static bool prv_install_ota_payload(int sock_fd, const sMemfaultOtaUpdateHandler
     }
 
     curr_offset += bytes_read;
+    MEMFAULT_LOG_DEBUG("OTA Download Progress: %d.%02d%%",
+                       (int)((curr_offset * 100) / ctx.content_length),
+                       (int)((curr_offset * 10000) / ctx.content_length % 100));
   }
 
   return handler->handle_download_complete(handler->user_ctx);
@@ -682,6 +690,36 @@ error:
   return false;
 }
 
+#if defined(CONFIG_MEMFAULT_HTTP_OTA_PROXY)
+// Rewrites the OTA CDN URL to route through MEMFAULT_HTTP_OTA_PROXY_HOST.
+// The path and query string are preserved; only the host is replaced.
+// On success, frees url and returns a newly allocated rewritten URL. On
+// parse or allocation failure, returns the original url unchanged (caller
+// retains ownership).
+static char *prv_rewrite_ota_url_for_proxy(char *url) {
+  sMemfaultUriInfo uri_info;
+  const size_t url_len = strlen(url);
+  if (!memfault_http_parse_uri(url, url_len, &uri_info) || uri_info.path == NULL) {
+    MEMFAULT_LOG_ERROR("Failed to parse OTA URL for proxy rewrite");
+    return url;
+  }
+
+  const char *proxy_host = MEMFAULT_HTTP_OTA_PROXY_HOST;
+  // "https://" + proxy_host + path (includes leading '/' and query string) + '\0'
+  const size_t new_url_len = sizeof("https://") - 1 + strlen(proxy_host) + uri_info.path_len + 1;
+  char *new_url = prv_calloc(1, new_url_len);
+  if (new_url == NULL) {
+    MEMFAULT_LOG_ERROR("Failed to allocate OTA proxy URL");
+    return url;
+  }
+
+  snprintf(new_url, new_url_len, "https://%s%.*s", proxy_host, (int)uri_info.path_len,
+           (const char *)uri_info.path);
+  prv_free(url);
+  return new_url;
+}
+#endif /* CONFIG_MEMFAULT_HTTP_OTA_PROXY */
+
 //! Checks to see if a new OTA Update is available
 //!
 //! @return true on success, false otherwise. On success, the download_url will be populated with
@@ -725,6 +763,10 @@ int memfault_zephyr_port_get_download_url(char **download_url) {
     return 0;  // up to date
   }
 
+#if defined(CONFIG_MEMFAULT_HTTP_OTA_PROXY)
+  *download_url = prv_rewrite_ota_url_for_proxy(*download_url);
+#endif
+
   return 1;
 }
 
@@ -748,6 +790,10 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
   if (download_url == NULL) {
     return 0;  // up to date
   }
+
+#if defined(CONFIG_MEMFAULT_HTTP_OTA_PROXY)
+  download_url = prv_rewrite_ota_url_for_proxy(download_url);
+#endif
 
   success = prv_fetch_ota_payload(download_url, handler);
   prv_free(download_url);
@@ -853,7 +899,7 @@ bool memfault_zephyr_port_http_is_connected(sMemfaultHttpContext *ctx) {
 int memfault_zephyr_port_http_upload_sdk_data(sMemfaultHttpContext *ctx) {
   int max_messages_to_send = CONFIG_MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND;
 
-#if CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE && CONFIG_MEMFAULT_RAM_BACKED_COREDUMP
+#if (CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE > 0) && defined(CONFIG_MEMFAULT_RAM_BACKED_COREDUMP)
   // The largest data type we will send is a coredump. If CONFIG_MEMFAULT_HTTP_MAX_POST_SIZE
   // is being used, make sure we issue enough HTTP POSTS such that an entire coredump will be sent.
   max_messages_to_send =

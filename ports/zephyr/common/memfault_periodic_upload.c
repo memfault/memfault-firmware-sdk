@@ -28,7 +28,7 @@
 
 static bool s_mflt_upload_enabled = IS_ENABLED(CONFIG_MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT);
 
-#if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
 static K_THREAD_STACK_DEFINE(memfault_periodic_upload_stack_area,
                              CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE);
 static struct k_work_q memfault_periodic_upload_work_q;
@@ -104,7 +104,7 @@ static void prv_periodic_upload_work_handler(struct k_work *work) {
 K_WORK_DEFINE(s_upload_timer_work, prv_periodic_upload_work_handler);
 
 static void prv_timer_expiry_handler(struct k_timer *dummy) {
-#if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
   k_work_submit_to_queue(&memfault_periodic_upload_work_q, &s_upload_timer_work);
 #else
   k_work_submit(&s_upload_timer_work);
@@ -127,7 +127,7 @@ static int prv_background_upload_init() {
   MEMFAULT_LOG_INFO("Periodic background upload scheduled - initial delay=%ds period=%ds",
                     (int)duration_secs, (int)interval_secs);
 
-#if CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+#if defined(CONFIG_MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE)
   struct k_work_queue_config config = {
     .name = "mflt_upload",
     .no_yield = false,

@@ -174,7 +174,7 @@ static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv
 }
 
 static int prv_trigger_heartbeat(const struct shell *shell, size_t argc, char **argv) {
-#if CONFIG_MEMFAULT_METRICS
+#if defined(CONFIG_MEMFAULT_METRICS)
   shell_print(shell, "Triggering Heartbeat");
   memfault_metrics_heartbeat_debug_trigger();
   return 0;

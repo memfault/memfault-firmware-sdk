@@ -34,6 +34,11 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 //! Array of heap pointers
 static void *heap_ptrs[4] = { NULL };
+  #if defined(CONFIG_COMMON_LIBC_MALLOC)
+    #define MALLOC_ALLOCATION_SIZE (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE >> 3)
+//! Array of malloc pointers
+static void *malloc_ptrs[4] = { NULL };
+  #endif
 
 //! Keep a reference to the main thread for stack info
 static struct k_thread *s_main_thread = NULL;
@@ -196,10 +201,15 @@ static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc
     return 0;
   }
 
-  // Next two loops demonstrate heap usage metric
+  // Next two loops demonstrate heap usage metrics
   for (size_t i = 0; i < ARRAY_SIZE(heap_ptrs); i++) {
     heap_ptrs[i] = k_malloc(HEAP_ALLOCATION_SIZE);
   }
+  #if defined(CONFIG_COMMON_LIBC_MALLOC)
+  for (size_t i = 0; i < ARRAY_SIZE(malloc_ptrs); i++) {
+    malloc_ptrs[i] = malloc(MALLOC_ALLOCATION_SIZE);
+  }
+  #endif
 
   // Collect data after allocation
   memfault_metrics_heartbeat_debug_trigger();
@@ -208,6 +218,12 @@ static int prv_run_example_memory_metrics(const struct shell *shell, size_t argc
     k_free(heap_ptrs[i]);
     heap_ptrs[i] = NULL;
   }
+  #if defined(CONFIG_COMMON_LIBC_MALLOC)
+  for (size_t i = 0; i < ARRAY_SIZE(malloc_ptrs); i++) {
+    free(malloc_ptrs[i]);
+    malloc_ptrs[i] = NULL;
+  }
+  #endif
 
   // Collect data after deallocation
   memfault_metrics_heartbeat_debug_trigger();

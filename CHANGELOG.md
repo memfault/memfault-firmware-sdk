@@ -6,6 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.0] - 2026-06-18
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added device-side support for using custom TLS certificates when using HTTP
+    to communicate with the Memfault cloud. This is intended for use with HTTP
+    proxies that require different root certificates than the Memfault cloud. To
+    enable, add the following configuration to `memfault_platform_config.h`:
+
+    ```c
+    // Comma-delimited list of root certificate IDs to use for Memfault HTTP
+    // transport. These IDs should match those registered to Zephyr's TLS
+    // credential store: the application will need to install them to the TLS
+    // store ('tls_credential_add()' or similar) before they can be used.
+    #define MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST 2000,
+
+    // Configure proxy hosts as destinations for the Memfault HTTP transport.
+    #define MEMFAULT_HTTP_CHUNKS_API_HOST "my-memfault-proxy.example.com"
+    #define MEMFAULT_HTTP_DEVICE_API_HOST "my-memfault-proxy.example.com"
+    ```
+
+    The default certificate list is compatible with the canonical Memfault
+    device endpoints, and can be found in
+    [`ports/zephyr/include/memfault/ports/zephyr/root_cert_storage.h`](ports/zephyr/include/memfault/ports/zephyr/root_cert_storage.h).
+
+    This configuration only affects HTTP transport.
+
+  - Added a new Kconfig option, `CONFIG_MEMFAULT_HTTP_OTA_PROXY_HOST`, to route
+    OTA payload downloads through an HTTP proxy. When set to a hostname, the
+    host component of OTA CDN URLs returned by the Memfault device API is
+    replaced with the configured proxy host before the download is performed.
+    The path and query string (including the signed token) are preserved and
+    forwarded unchanged.
+
+    This complements `MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST`: use both together
+    to fully proxy OTA downloads through a host that accepts your custom
+    certificates.
+
+    ```bash
+    CONFIG_MEMFAULT_HTTP_OTA_PROXY_HOST="device-ecdsa-proxy.memfault.workers.dev"
+    ```
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - For Zephyr 4.4 and later, the `memory_pct_max` built-in metric now tracks
+    the system (libc) heap (used for `malloc()`/`free()` and related functions),
+    instead of the kernel heap (used for `k_malloc()`/`k_free()`).
+
+    Prior versions of Zephyr do not support tracking system (libc) heap usage,
+    so the `memory_pct_max` is not reported in those versions.
+
+    Kernel heap utilization is now reported in the `kernel_heap_pct_max`
+    built-in metric for Zephyr 3.1 and later.
+
+  - Zephyr log statements for Memfault (controlled by `MEMFAULT_LOGGING_ENABLE`)
+    are now captured by default (set to `y`).
+
 ## [1.40.0] - 2026-06-09
 
 This is a minor release, including new features, improvements, and bug fixes
