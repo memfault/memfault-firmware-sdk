@@ -561,7 +561,7 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
 
     # Upload Symbols
     token = "token-foo"
-    upload_url = "https://memfault-test-east1.s3.amazonaws.com/symbols/foo"
+    upload_url = "https://url-foo/symbols/foo"
     http_expect_request(
         "https://api.memfault.com/api/v0/organizations/acme-inc/projects/smart-sink/upload",
         "POST",

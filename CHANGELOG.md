@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 🔥 Removed
+
+### 📈 Added
+
+- nRF Connect SDK:
+
+  - Add a new API, `memfault_zephyr_fota_modem_project_key_set()`, which can be
+  used to set the modem project key at runtime. Now, projects with
+  `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y` can build without a compile-time
+  project key requirement. Users can test this feature using the new demo CLI
+  command `mflt set_modem_project_key`, and then invoke a fota update with
+  `mflt fota_modem`.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Removed Bluetooth DIS from the
+    [Nordic Bluetooth sample app](examples/nrf-connect-sdk/bluetooth)
+    configuration. DIS is no longer required to perform OTA updates. Instead, a
+    custom MCUmgr command group is used for Memfault metadata. See
+    <https://docs.memfault.com/docs/mcu/mcumgr> for details.
+
 ## [1.41.0] - 2026-06-18
 
 ### 📈 Added

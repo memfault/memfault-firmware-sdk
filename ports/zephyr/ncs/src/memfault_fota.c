@@ -33,6 +33,8 @@
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   #include <modem/modem_info.h>
+
+  #include "memfault_fota_modem_project_key_private.h"
 #endif
 
 #if !defined(CONFIG_DOWNLOADER)
@@ -214,11 +216,6 @@ cleanup:
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
 
-MEMFAULT_STATIC_ASSERT(sizeof(CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY) > 1,
-                       "CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY must be set when "
-                       "CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y. "
-                       "Find your key at https://mflt.io/project-key");
-
 // Buffer for the running modem firmware version string (e.g. "mfw_nrf9160_1.3.7")
 static char s_modem_version[64];
 
@@ -240,10 +237,17 @@ static int prv_fota_modem_start(void) {
   // query. The key is used only while building/sending the download-URL request below and is
   // restored immediately after, so concurrent data uploads are not a concern in practice - FOTA
   // and upload both run on the periodic upload thread and are serialized there.
+  const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
+  if (!modem_project_key) {
+    MEMFAULT_LOG_ERROR("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
+                       "or call memfault_zephyr_fota_modem_project_key_set().");
+    return -EINVAL;
+  }
+
   const char *saved_api_key = g_mflt_http_client_config.api_key;
   void (*saved_get_device_info)(sMemfaultDeviceInfo *) = g_mflt_http_client_config.get_device_info;
 
-  g_mflt_http_client_config.api_key = CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY;
+  g_mflt_http_client_config.api_key = modem_project_key;
   g_mflt_http_client_config.get_device_info = prv_get_modem_device_info;
 
   #if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
