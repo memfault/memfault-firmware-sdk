@@ -6,3 +6,17 @@
 MEMFAULT_METRICS_KEY_DEFINE(button_press_count, kMemfaultMetricType_Unsigned)
 MEMFAULT_METRICS_KEY_DEFINE(button_elapsed_time_ms, kMemfaultMetricType_Timer)
 MEMFAULT_METRICS_KEY_DEFINE(battery_soc_pct, kMemfaultMetricType_Unsigned)
+
+//! Session report tracking a single Bluetooth SMP (MCUmgr) DFU image upload.
+//!
+//! The session is started when the phone begins uploading a firmware image, and
+//! ended when the upload completes, fails, or the connection drops. The session
+//! automatically records its own duration; see src/bt_smp_dfu_session.c for how
+//! the metrics below are populated.
+MEMFAULT_METRICS_SESSION_KEY_DEFINE(bt_smp)
+//! Total image payload bytes accepted from the phone over the course of the upload.
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(bt_smp_bytes_received, kMemfaultMetricType_Unsigned, bt_smp)
+//! Total image size declared by the phone in the first upload request, in bytes.
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(bt_smp_image_size, kMemfaultMetricType_Unsigned, bt_smp)
+//! Outcome of the DFU: 0 == success, negative == failure (see eBtSmpDfuStatus).
+MEMFAULT_METRICS_KEY_DEFINE_WITH_SESSION(bt_smp_status, kMemfaultMetricType_Signed, bt_smp)

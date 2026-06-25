@@ -13,6 +13,7 @@
 
 #include "memfault/components.h"
 #include "memfault/nrfconnect_port/coap.h"
+#include "memfault/ports/zephyr/fota.h"
 
 #include "net/nrf_cloud.h"
 #include "net/nrf_cloud_coap.h"
@@ -20,6 +21,8 @@
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   #include <modem/modem_info.h>
+
+  #include "memfault_fota_modem_project_key_private.h"
 #endif
 // clang-format on
 
@@ -86,11 +89,6 @@ static int prv_build_job_from_url(char *url, enum nrf_cloud_fota_type fota_type,
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
 
-MEMFAULT_STATIC_ASSERT(sizeof(CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY) > 1,
-                       "CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY must be set when "
-                       "CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y. "
-                       "Find your key at https://mflt.io/project-key");
-
 // When set, __wrap_nrf_cloud_coap_fota_job_get returns this job directly, allowing
 // memfault_zephyr_fota_modem_start() to skip the app update check entirely.
 static struct nrf_cloud_fota_job_info s_prefetched_modem_job = { .type =
@@ -120,10 +118,18 @@ static int prv_check_modem_update(struct nrf_cloud_fota_job_info *const job_out)
   // query. The key is used only while building/sending the request below and is restored
   // immediately after, so concurrent data uploads are not a concern in practice - FOTA and
   // upload both run on the periodic upload thread and are serialized there.
+  const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
+  if (!modem_project_key) {
+    MEMFAULT_LOG_ERROR("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
+                       "or call memfault_zephyr_fota_modem_project_key_set().");
+    *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
+    return -EINVAL;
+  }
+
   const char *saved_api_key = g_mflt_http_client_config.api_key;
   void (*saved_get_device_info)(sMemfaultDeviceInfo *) = g_mflt_http_client_config.get_device_info;
 
-  g_mflt_http_client_config.api_key = CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY;
+  g_mflt_http_client_config.api_key = modem_project_key;
   g_mflt_http_client_config.get_device_info = prv_get_modem_device_info;
 
   // Query the modem update URL over nRF Cloud CoAP. The modem project key (set above) is
