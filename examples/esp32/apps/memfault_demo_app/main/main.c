@@ -390,7 +390,7 @@ static int prv_vprintf_hook(const char *fmt, va_list args) {
 // allocated on the main thread stack.
 static const char s_mflt_banner[] = "\n\n" MEMFAULT_BANNER_COLORIZED;
 
-static char s_mflt_project_key[MEMFAULT_PROJECT_KEY_LEN + 1] = { 0 };
+static char s_mflt_project_key[APP_MEMFAULT_PROJECT_KEY_LEN + 1] = { 0 };
 static char s_mflt_chunks_url[128] = { 0 };
 static char s_mflt_device_url[128] = { 0 };
 

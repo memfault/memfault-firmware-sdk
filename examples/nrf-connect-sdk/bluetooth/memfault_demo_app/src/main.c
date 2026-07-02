@@ -6,12 +6,10 @@
 
 #include <bluetooth/services/mds.h>
 #include <dk_buttons_and_leds.h>
-#include <hw_id.h>
 #include <memfault/components.h>
 #include <memfault/core/trace_event.h>
 #include <memfault/metrics/metrics.h>
 #include <memfault/ports/watchdog.h>
-#include <memfault_ncs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
@@ -239,65 +237,24 @@ static void bas_work_handler(struct k_work *work) {
   k_work_reschedule((struct k_work_delayable *)work, K_SECONDS(1));
 }
 
-#define SERIAL_NUMBER_SETTING_KEY "bt/dis/serial"
+#if defined(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
+  #include <hw_id.h>
+  #include <memfault_ncs.h>
 
 static void serial_number_init(void) {
-  int err = settings_get_val_len(SERIAL_NUMBER_SETTING_KEY);
-
-  printk("Checked for existing serial number in settings, length %d\n", err);
-
-  /* Check if the serial number is already set */
   char serial_buf[64] = "unknown";
-  int serial_len = settings_load_one(SERIAL_NUMBER_SETTING_KEY, serial_buf, sizeof(serial_buf));
+  int ret = hw_id_get(serial_buf, sizeof(serial_buf));
 
-  if (serial_len == 0) {
-    printk("📥 Writing new device serial number to " SERIAL_NUMBER_SETTING_KEY " from HW info\n");
-    int ret = hw_id_get(serial_buf, sizeof(serial_buf));
-
-    if (ret) {
-      printk("Failed to get device ID from HW ID (err %d)\n", ret);
-      return;
-    }
-    serial_len = strlen(serial_buf);
-    settings_save_one(SERIAL_NUMBER_SETTING_KEY, serial_buf, serial_len);
-    ret = settings_runtime_set(SERIAL_NUMBER_SETTING_KEY, serial_buf, serial_len);
-    if (ret) {
-      printk("Failed to set device serial number in settings runtime (err %d)\n", ret);
-    }
-  } else {
-    printk("📤 Loaded serial number from settings\n");
+  if (ret) {
+    printk("Failed to get device ID from HW ID (err %d)\n", ret);
+    return;
   }
-
   printk("➡️ Device serial set to: %s\n", serial_buf);
 
   // Apply the serial number to Memfault
-  (void)memfault_ncs_device_id_set(serial_buf, serial_len);
+  (void)memfault_ncs_device_id_set(serial_buf, strlen(serial_buf));
 }
-
-// Shell command to set Bluetooth DIS + Memfault serial number
-static int cmd_set_bt_serial(const struct shell *shell_ptr, size_t argc, char *argv[]) {
-  if (argc != 2) {
-    shell_print(shell_ptr, "Usage: set-bt-serial <serial_number>");
-    return -EINVAL;
-  }
-
-  const char *serial_number = argv[1];
-
-  int ret = settings_save_one(SERIAL_NUMBER_SETTING_KEY, serial_number, strlen(serial_number));
-  if (ret) {
-    shell_print(shell_ptr, "Error: Failed to save serial number to settings (err %d)", ret);
-    return ret;
-  }
-  ret = settings_runtime_set(SERIAL_NUMBER_SETTING_KEY, serial_number, strlen(serial_number));
-  if (ret) {
-    shell_print(shell_ptr, "Error: Failed to set serial number in settings runtime (err %d)", ret);
-    return ret;
-  }
-  (void)memfault_ncs_device_id_set(serial_number, strlen(serial_number));
-
-  shell_print(shell_ptr, "Bluetooth serial number saved to settings successfully");
-  return 0;
-}
+#endif  // CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME
 
 #if defined(CONFIG_MEMFAULT_MCUMGR_GRP)
   #include "memfault/ports/zephyr/memfault_mcumgr.h"
@@ -332,8 +289,6 @@ static int cmd_memfault_mcumgr_access(const struct shell *shell_ptr, size_t argc
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
   sub_config,
-  SHELL_CMD_ARG(set_bt_serial, NULL, "Set Bluetooth serial number in settings", cmd_set_bt_serial,
-                2, 0),
 #if defined(CONFIG_MEMFAULT_MCUMGR_GRP)
   SHELL_CMD_ARG(memfault_mcumgr_access, NULL,
                 "Enable or disable Memfault MCUmgr group access. Usage: "
@@ -439,7 +394,9 @@ int main(void) {
       printk("Failed to load settings (err %d)\n", err);
       return 0;
     }
+#if defined(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
     serial_number_init();
+#endif
   }
 
   k_work_init(&adv_work, adv_work_handler);

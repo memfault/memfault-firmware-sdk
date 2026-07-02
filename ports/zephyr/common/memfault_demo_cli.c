@@ -157,7 +157,33 @@ static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
 static int prv_fota_modem_cmd(const struct shell *shell, size_t argc, char **argv) {
   (void)argc, (void)argv;
-  return memfault_zephyr_fota_modem_start();
+  int rv = memfault_zephyr_fota_modem_start();
+  if (rv < 0) {
+    shell_print(shell, "Failed to check/start modem FOTA, err=%d", rv);
+  } else if (rv == 0) {
+    shell_print(shell, "Modem firmware is up to date");
+  } else {
+    shell_print(shell, "Modem FOTA started successfully");
+  }
+  return rv;
+}
+
+// Static buffer so the key pointer passed to memfault_zephyr_fota_modem_project_key_set()
+// outlives the shell command's argv stack frame.
+static char s_memfault_demo_modem_project_key_buf[48];
+
+static int prv_set_modem_project_key_cmd(const struct shell *shell, size_t argc, char **argv) {
+  if (argv[1][0] == '\0') {
+    shell_print(shell, "Usage: mflt set_modem_project_key <key>");
+    return -EINVAL;
+  }
+
+  strncpy(s_memfault_demo_modem_project_key_buf, argv[1],
+          sizeof(s_memfault_demo_modem_project_key_buf) - 1);
+  s_memfault_demo_modem_project_key_buf[sizeof(s_memfault_demo_modem_project_key_buf) - 1] = '\0';
+  memfault_zephyr_fota_modem_project_key_set(s_memfault_demo_modem_project_key_buf);
+  shell_print(shell, "Modem project key set");
+  return 0;
 }
 #endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
 
@@ -386,6 +412,23 @@ static int prv_timer_isr_hang_example(const struct shell *shell, size_t argc, ch
   return 0;
 }
 
+#if defined(CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS)
+static int prv_set_project_key(const struct shell *shell, size_t argc, char **argv) {
+  if (argc == 1) {
+    const char *key = g_mflt_http_client_config.api_key;
+    shell_print(shell, "Project key: %s", (key && key[0]) ? key : "(not set)");
+    return 0;
+  }
+  int rv = memfault_zephyr_port_set_project_key(argv[1], strlen(argv[1]));
+  if (rv != 0) {
+    shell_print(shell, "Failed to set project key (err %d)", rv);
+  } else {
+    shell_print(shell, "Project key set and saved to settings");
+  }
+  return rv;
+}
+#endif
+
 #if defined(CONFIG_MEMFAULT_SHELL_SELF_TEST)
 static int prv_self_test(MEMFAULT_UNUSED const struct shell *shell, size_t argc, char **argv) {
   return memfault_demo_cli_cmd_self_test(argc, argv);
@@ -466,6 +509,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
             prv_check_and_fetch_ota_payload_cmd),
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   SHELL_CMD(fota_modem, NULL, "check for and apply a modem firmware update", prv_fota_modem_cmd),
+  SHELL_CMD_ARG(set_modem_project_key, NULL, "set the modem firmware update project key",
+                prv_set_modem_project_key_cmd, 2, 0),
 #endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
@@ -477,6 +522,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(test, &sub_memfault_crash_cmds,
             "commands to verify memfault data collection (https://mflt.io/mcu-test-commands)",
             NULL),
+#if defined(CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS)
+  SHELL_CMD_ARG(set_project_key, NULL, "get or set Memfault project key", prv_set_project_key, 1,
+                1),
+#endif
   SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

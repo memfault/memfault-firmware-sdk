@@ -1,5 +1,6 @@
 zephyr_library_sources(memfault_platform_debug_log.c)
 zephyr_library_sources(memfault_platform_core.c)
+zephyr_library_sources(memfault_platform_project_key.c)
 zephyr_library_sources(memfault_zephyr_ram_regions.c)
 zephyr_library_sources(memfault_platform_lock.c)
 zephyr_library_sources(memfault_platform_coredump_regions.c)

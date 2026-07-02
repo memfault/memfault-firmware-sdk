@@ -228,6 +228,16 @@ int memfault_zephyr_port_http_post_chunk(sMemfaultHttpContext *ctx, void *p_data
 #define memfault_zephyr_port_http_periodic_upload_enabled \
   memfault_zephyr_port_periodic_upload_enabled
 
+#if defined(CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS)
+//! Set the Memfault project key at runtime and persist it to the Zephyr
+//! settings subsystem under "memfault/project_key".
+//!
+//! @param key  Project key string (not required to be null-terminated)
+//! @param key_len  Length of the key; must be <= MEMFAULT_PROJECT_KEY_LEN
+//! @return 0 on success, negative errno on error
+int memfault_zephyr_port_set_project_key(const char *key, size_t key_len);
+#endif
+
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
 //! Sets the network interface name to use for Memfault HTTP uploads
 //! @param if_name Null-terminated string containing the interface name

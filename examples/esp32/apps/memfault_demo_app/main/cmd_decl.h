@@ -21,7 +21,7 @@ void register_wifi(void);
 bool wifi_join(const char *ssid, const char *pass);
 void wifi_load_creds(char **ssid, char **password);
 
-#define MEMFAULT_PROJECT_KEY_LEN 32
+#define APP_MEMFAULT_PROJECT_KEY_LEN 32
 // if gcc < 11, disable -Wattributes, "access" attribute is not supported
 #if __GNUC__ < 11
   #pragma GCC diagnostic push

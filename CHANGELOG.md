@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.42.0] - 2026-07-02
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added support for setting the Memfault project key at runtime via the Zephyr
+    settings subsystem. Enable `CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS=y` to load
+    the project key from the settings path `memfault/project_key` instead of
+    baking it in at compile time. A new API,
+    `memfault_zephyr_port_set_project_key()`, saves the key to settings and
+    updates the in-memory value. The demo CLI exposes this as
+    `mflt set_project_key [key]` when the config is enabled.
+
+- nRF Connect SDK:
+
+  - Added a new API, `memfault_zephyr_fota_modem_project_key_set()`, which can
+    be used to set the modem project key at runtime. Now, projects with
+    `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y` can build without a compile-time
+    project key requirement. Users can test this feature using the new demo CLI
+    command `mflt set_modem_project_key`, and then invoke a fota update with
+    `mflt fota_modem`.
+
+### 🐛 Fixed
+
+- General:
+
+  - Fixed a typo in the top-level `README.md`'s `make` instructions. Thanks to
+    [@mervivian](https://github.com/mervivian) for the fix in
+    [#119](https://github.com/memfault/memfault-firmware-sdk/pull/119)!
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Removed Bluetooth DIS from the
+    [Nordic Bluetooth sample app](examples/nrf-connect-sdk/bluetooth)
+    configuration. DIS is no longer required to perform OTA updates. Instead, a
+    custom MCUmgr command group is used for Memfault metadata. See
+    <https://docs.memfault.com/docs/mcu/mcumgr> for details.
+
 ## [1.41.0] - 2026-06-18
 
 ### 📈 Added

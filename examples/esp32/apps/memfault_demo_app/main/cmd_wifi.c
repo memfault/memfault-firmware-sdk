@@ -297,9 +297,9 @@ static struct {
 
 __attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char *project_key,
                                                                    size_t project_key_len) {
-  if (project_key_len != MEMFAULT_PROJECT_KEY_LEN + 1) {
+  if (project_key_len != APP_MEMFAULT_PROJECT_KEY_LEN + 1) {
     ESP_LOGE(__func__, "Destination buffer must be sized exactly to %zu bytes",
-             MEMFAULT_PROJECT_KEY_LEN + 1);
+             APP_MEMFAULT_PROJECT_KEY_LEN + 1);
     return 1;
   }
   size_t len = project_key_len;
@@ -309,22 +309,22 @@ __attribute__((access(write_only, 1, 2))) int wifi_get_project_key(char *project
 __attribute__((access(read_only, 1, 2))) static esp_err_t prv_set_project_key(
   const char *project_key, size_t project_key_len) {
   // should never happen
-  assert((project_key_len == MEMFAULT_PROJECT_KEY_LEN) &&
-         (strlen(project_key) == MEMFAULT_PROJECT_KEY_LEN));
+  assert((project_key_len == APP_MEMFAULT_PROJECT_KEY_LEN) &&
+         (strlen(project_key) == APP_MEMFAULT_PROJECT_KEY_LEN));
 
   return settings_set(kSettingsProjectKey, project_key, project_key_len);
 }
 
 static int project_key_set(int argc, char **argv) {
   if (argc == 1) {
-    char project_key[MEMFAULT_PROJECT_KEY_LEN + 1];
+    char project_key[APP_MEMFAULT_PROJECT_KEY_LEN + 1];
     esp_err_t err = wifi_get_project_key(project_key, sizeof(project_key));
     if (err != ESP_OK) {
       ESP_LOGE(__func__, "failed to load wifi creds");
       return 1;
     }
 
-    printf("%.*s\n", MEMFAULT_PROJECT_KEY_LEN, project_key);
+    printf("%.*s\n", APP_MEMFAULT_PROJECT_KEY_LEN, project_key);
     return 0;
   }
 
@@ -336,8 +336,8 @@ static int project_key_set(int argc, char **argv) {
 
   // set the project key to nvs
   const char *projectkey = memfault_args.projectkey->sval[0];
-  if (strlen(projectkey) != MEMFAULT_PROJECT_KEY_LEN) {
-    ESP_LOGE(__func__, "Project key must be %d characters", MEMFAULT_PROJECT_KEY_LEN);
+  if (strlen(projectkey) != APP_MEMFAULT_PROJECT_KEY_LEN) {
+    ESP_LOGE(__func__, "Project key must be %d characters", APP_MEMFAULT_PROJECT_KEY_LEN);
     return ESP_ERR_INVALID_ARG;
   }
   esp_err_t err = prv_set_project_key(projectkey, strlen(projectkey));
