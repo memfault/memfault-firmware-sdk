@@ -13,7 +13,11 @@
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
 
-#if defined(CONFIG_MEMFAULT_HTTP_CLIENT_CONFIG_BUILTIN)
+// http_client.h defines MEMFAULT_PROJECT_KEY_LEN, which the
+// CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS path below also needs. Include it when
+// either that path or the built-in HTTP client config is enabled.
+#if defined(CONFIG_MEMFAULT_HTTP_CLIENT_CONFIG_BUILTIN) || \
+  defined(CONFIG_MEMFAULT_PROJECT_KEY_SETTINGS)
   #include "memfault/http/http_client.h"
 #endif
 
