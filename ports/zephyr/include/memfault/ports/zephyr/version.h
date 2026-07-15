@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#include <version.h>
+#include <zephyr/version.h>
 
 //! Returns true if current Zephyr Kernel Version is greater than the one specified
 //!
