@@ -156,10 +156,10 @@ TEST_GROUP(MemfaultDataPacketizer) {
 };
 
 static bool prv_data_available(void) {
-  sPacketizerConfig cfg = {
+  sMemfaultPacketizerConfig cfg = {
     .enable_multi_packet_chunk = s_multi_call_chunking_enabled,
   };
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   return memfault_packetizer_begin(&cfg, &metadata);
 }
 
@@ -169,10 +169,10 @@ static void prv_setup_expect_coredump_call_expectations(bool has_core) {
 }
 
 static void prv_begin_transfer(bool data_expected, size_t expected_raw_msg_size) {
-  sPacketizerConfig cfg = {
+  sMemfaultPacketizerConfig cfg = {
     .enable_multi_packet_chunk = s_multi_call_chunking_enabled,
   };
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   bool md = memfault_packetizer_begin(&cfg, &metadata);
   LONGS_EQUAL(data_expected, md);
   const uint32_t expected_data_len =
@@ -482,10 +482,10 @@ TEST(MemfaultDataPacketizer, Test_MessageOnlyHdrFits) {
 
   // if we call memfault_packetizer_begin() while in the middle of sending a
   // message, we should see that a send is in progress
-  sPacketizerConfig cfg = {
+  sMemfaultPacketizerConfig cfg = {
     .enable_multi_packet_chunk = s_multi_call_chunking_enabled,
   };
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   bool md = memfault_packetizer_begin(&cfg, &metadata);
   LONGS_EQUAL(data_expected, md);
   const uint32_t expected_data_len = sizeof(s_fake_coredump) + PACKETIZER_HEADER_SIZE_BYTES;
@@ -529,8 +529,8 @@ TEST(MemfaultDataPacketizer, Test_BadArguments) {
   rv = memfault_packetizer_get_next(NULL, &buf_len);
   LONGS_EQUAL(kMemfaultPacketizerStatus_NoMoreData, rv);
 
-  sPacketizerConfig cfg = { 0 };
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerConfig cfg = { 0 };
+  sMemfaultPacketizerMetadata metadata;
   bool md = memfault_packetizer_begin(NULL, &metadata);
   CHECK(!md);
   md = memfault_packetizer_begin(&cfg, NULL);

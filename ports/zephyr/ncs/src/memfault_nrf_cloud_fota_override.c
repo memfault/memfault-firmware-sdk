@@ -120,10 +120,10 @@ static int prv_check_modem_update(struct nrf_cloud_fota_job_info *const job_out)
   // upload both run on the periodic upload thread and are serialized there.
   const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
   if (!modem_project_key) {
-    MEMFAULT_LOG_ERROR("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
-                       "or call memfault_zephyr_fota_modem_project_key_set().");
+    MEMFAULT_LOG_WARN("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
+                      "or call memfault_zephyr_fota_modem_project_key_set().");
     *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
-    return -EINVAL;
+    return 0;
   }
 
   const char *saved_api_key = g_mflt_http_client_config.api_key;

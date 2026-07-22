@@ -28,6 +28,7 @@
 #include "memfault/http/utils.h"
 #include "memfault/metrics/connectivity.h"
 #include "memfault/panics/assert.h"
+#include "memfault/ports/zephyr/alloc.h"
 #include "memfault/ports/zephyr/http.h"
 #if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
 #include "memfault/ports/zephyr/root_cert_storage.h"
@@ -66,28 +67,6 @@
 #if defined(CONFIG_MEMFAULT_HTTP_SOCKET_DISPATCH)
 // Runtime configurable
 static char s_mflt_http_net_interface_name[IFNAMSIZ];
-#endif
-
-// CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE was added in Zephyr v3.4.0
-#if (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0) || (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
-static void *prv_calloc(size_t count, size_t size) {
-  return calloc(count, size);
-}
-
-static void prv_free(void *ptr) {
-  free(ptr);
-}
-#elif CONFIG_HEAP_MEM_POOL_SIZE > 0
-static void *prv_calloc(size_t count, size_t size) {
-  return k_calloc(count, size);
-}
-
-static void prv_free(void *ptr) {
-  k_free(ptr);
-}
-#else
-  #error \
-    "One of CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, or CONFIG_HEAP_MEM_POOL_SIZE must be non-zero"
 #endif
 
 #if !defined(CONFIG_MEMFAULT_HTTP_DISABLE_TLS)
@@ -396,13 +375,13 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
   return 1;
 
 #else
-  const sPacketizerConfig cfg = {
+  const sMemfaultPacketizerConfig cfg = {
     // let a single msg span many "memfault_packetizer_get_next" calls
     .enable_multi_packet_chunk = true,
   };
 
   // will be populated with size of entire message queued for sending
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   const bool data_available = memfault_packetizer_begin(&cfg, &metadata);
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");
@@ -414,7 +393,7 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
   // If the configured buffer size is large, use malloc instead of stack to
   // avoid stack overflow.
   #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
-  uint8_t *buf = prv_calloc(1, CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE);
+  uint8_t *buf = memfault_zephyr_port_calloc(1, CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE);
   if (buf == NULL) {
     MEMFAULT_LOG_ERROR("Failed to allocate buffer for reading data");
     memfault_packetizer_abort();
@@ -433,7 +412,7 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
     if (!prv_try_send(sock, buf, buf_len)) {
       // unexpected failure, abort in-flight transaction
   #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
-      prv_free(buf);
+      memfault_zephyr_port_free(buf);
   #endif
 
       memfault_packetizer_abort();
@@ -449,7 +428,7 @@ static int prv_send_next_msg(sMemfaultHttpContext *ctx) {
   }
 
   #if CONFIG_MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE > 512
-  prv_free(buf);
+  memfault_zephyr_port_free(buf);
   #endif
 
   // message sent, await response
@@ -648,7 +627,7 @@ static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_
   }
 
   const size_t url_len = ctx.content_length + 1 /* for '\0' */;
-  char *download_url = prv_calloc(1, url_len);
+  char *download_url = memfault_zephyr_port_calloc(1, url_len);
   if (download_url == NULL) {
     MEMFAULT_LOG_ERROR("Unable to allocate %d bytes for url", (int)url_len);
     return false;
@@ -672,7 +651,7 @@ static bool prv_parse_new_ota_payload_url_response(int sock_fd, char **download_
   *download_url_out = download_url;
   return true;
 error:
-  prv_free(download_url);
+  memfault_zephyr_port_free(download_url);
   return false;
 }
 
@@ -693,7 +672,7 @@ static char *prv_rewrite_ota_url_for_proxy(char *url) {
   const char *proxy_host = MEMFAULT_HTTP_OTA_PROXY_HOST;
   // "https://" + proxy_host + path (includes leading '/' and query string) + '\0'
   const size_t new_url_len = sizeof("https://") - 1 + strlen(proxy_host) + uri_info.path_len + 1;
-  char *new_url = prv_calloc(1, new_url_len);
+  char *new_url = memfault_zephyr_port_calloc(1, new_url_len);
   if (new_url == NULL) {
     MEMFAULT_LOG_ERROR("Failed to allocate OTA proxy URL");
     return url;
@@ -701,7 +680,7 @@ static char *prv_rewrite_ota_url_for_proxy(char *url) {
 
   snprintf(new_url, new_url_len, "https://%s%.*s", proxy_host, (int)uri_info.path_len,
            (const char *)uri_info.path);
-  prv_free(url);
+  memfault_zephyr_port_free(url);
   return new_url;
 }
 #endif /* CONFIG_MEMFAULT_HTTP_OTA_PROXY */
@@ -757,7 +736,7 @@ int memfault_zephyr_port_get_download_url(char **download_url) {
 }
 
 int memfault_zephyr_port_release_download_url(char **download_url) {
-  prv_free(*download_url);
+  memfault_zephyr_port_free(*download_url);
   *download_url = NULL;
   return 0;
 }
@@ -782,7 +761,7 @@ int memfault_zephyr_port_ota_update(const sMemfaultOtaUpdateHandler *handler) {
 #endif
 
   success = prv_fetch_ota_payload(download_url, handler);
-  prv_free(download_url);
+  memfault_zephyr_port_free(download_url);
   return success ? 1 : -1;
 }
 

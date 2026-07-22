@@ -19,8 +19,10 @@
 //!  $ Chunk successfully sent!
 
 #include <curl/curl.h>
+#include <netdb.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/socket.h>
 
 #include "../../components/include/memfault/http/root_certs.h"
 
@@ -28,7 +30,6 @@
   #error "MEMFAULT_PROJECT_KEY definition required"
 #endif
 
-#include <curl/curl.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <stdio.h>
@@ -76,6 +77,19 @@ static CURLcode prv_install_root_certs(CURL *curl, void *sslctx, void *param) {
 
   rv = CURLE_OK;
   return rv;
+}
+
+//! Force glibc's NSS DNS modules (libnss_dns.so.2, libnss_files.so.2) to load
+//! on the main thread before curl's threaded resolver can dlopen() them from
+//! a background thread. Without this, a dlopen() racing with
+//! -fsanitize=leak's exit-time StopTheWorld thread-suspend can corrupt the
+//! dynamic linker's internal state and segfault (seen intermittently in CI).
+static void prv_warmup_dns_resolve(const char *host) {
+  struct addrinfo *result = NULL;
+  const struct addrinfo hints = { .ai_family = AF_UNSPEC, .ai_socktype = SOCK_STREAM };
+  if (getaddrinfo(host, "443", &hints, &result) == 0) {
+    freeaddrinfo(result);
+  }
 }
 
 static int prv_post_chunk(const char *device_serial, const void *chunk, size_t chunk_len,
@@ -137,6 +151,8 @@ static int prv_post_chunk(const char *device_serial, const void *chunk, size_t c
 }
 
 int main(int argc, char *argv[]) {
+  prv_warmup_dns_resolve("chunks.memfault.com");
+
   // This is the example chunk from:
   //   https://docs.memfault.com/docs/embedded/test-patterns-for-chunks-endpoint#event-message-encoded-in-a-single-chunk
   const uint8_t chunk[] = { 0x08, 0x02, 0xa7, 0x02, 0x01, 0x03, 0x01, 0x07, 0x6a, 0x54, 0x45,

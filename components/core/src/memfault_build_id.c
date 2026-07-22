@@ -27,7 +27,14 @@
     #else
       // This is Zephyr's version.h file, since Memfault's is namespaced as
       // "memfault/version.h".
-      #include <version.h>
+      // After Zephyr v4.4.0, the file is namespaced under zephyr/. Prefer that
+      // include path, falling back on the legacy one for older versions of
+      // Zephyr.
+      #if __has_include(<zephyr/version.h>)
+        #include <zephyr/version.h>
+      #else
+        #include <version.h>
+      #endif
       #define MEMFAULT_OS_VERSION_NAME "zephyr"
       #define MEMFAULT_OS_VERSION_STRING KERNEL_VERSION_STRING
     #endif  // __has_include("ncs_version.h")

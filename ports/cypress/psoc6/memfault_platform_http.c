@@ -173,13 +173,13 @@ int memfault_platform_http_client_post_data(sMfltHttpClient *client,
     return -1;
   }
 
-  const sPacketizerConfig cfg = {
+  const sMemfaultPacketizerConfig cfg = {
     // let a single msg span many "memfault_packetizer_get_next" calls
     .enable_multi_packet_chunk = true,
   };
 
   // will be populated with size of entire message queued for sending
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   const bool data_available = memfault_packetizer_begin(&cfg, &metadata);
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");

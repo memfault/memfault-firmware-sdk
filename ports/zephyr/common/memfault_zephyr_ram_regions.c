@@ -15,11 +15,6 @@
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/coredump.h"
 
-// Use this config flag to manually select the old data region names
-#if !defined(MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES)
-  #define MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES 0
-#endif
-
 static struct k_thread *s_task_tcbs[CONFIG_MEMFAULT_COREDUMP_MAX_TRACKED_TASKS];
 
 #if defined(CONFIG_THREAD_STACK_INFO)
@@ -294,15 +289,15 @@ size_t memfault_zephyr_get_data_regions(sMfltCoredumpRegion *regions, size_t num
   return 0;
 #else
 
-  // These linker variables are defined in linker.ld in Zephyr RTOS. Note that
-  // the data region name changed in v2.7 of the kernel.
+  // These linker variables are defined in linker.ld in Zephyr RTOS.
   //
   // Also check for a user override, in case of non-standard configurations.
   #if !defined(ZEPHYR_DATA_REGION_START) && !defined(ZEPHYR_DATA_REGION_END)
-    #if MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES
-      // The old names are used in previous Zephyr versions (<=2.6)
-      #define ZEPHYR_DATA_REGION_START __data_ram_start
-      #define ZEPHYR_DATA_REGION_END __data_ram_end
+    #if defined(CONFIG_MEMFAULT_SOC_FAMILY_ESP32)
+      // Espressif's SoC linker scripts don't define __data_region_start/end;
+      // they use _data_start/_data_end instead.
+      #define ZEPHYR_DATA_REGION_START _data_start
+      #define ZEPHYR_DATA_REGION_END _data_end
     #else
       #define ZEPHYR_DATA_REGION_START __data_region_start
       #define ZEPHYR_DATA_REGION_END __data_region_end

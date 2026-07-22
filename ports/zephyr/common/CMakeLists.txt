@@ -25,6 +25,7 @@ zephyr_library_sources_ifdef(CONFIG_MEMFAULT_SHELL_SELF_TEST memfault_self_test_
 
 if(CONFIG_MEMFAULT_HTTP_ENABLE OR CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   zephyr_library_sources(memfault_platform_post.c)
+  zephyr_library_sources(memfault_platform_alloc.c)
 endif()
 
 if (NOT CONFIG_MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM)

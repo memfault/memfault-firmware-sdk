@@ -10,7 +10,7 @@ CFLAGS += \
 
 # Enable sanitizers
 CFLAGS += \
-  -fsanitize=leak
+  -fsanitize=leak \
   -fsanitize=address \
   -fsanitize=undefined \
   -fno-sanitize-recover=all

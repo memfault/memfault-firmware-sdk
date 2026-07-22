@@ -70,6 +70,17 @@ if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 
 set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v2.0.0.conf")
 endif()
 
+# NCS >= 3.4.0 disables Partition Manager by default, which changes the
+# secure/non-secure flash split on nRF91-family DK boards (see the
+# NCS_PARTITION_MANAGER_REMOVED guarded blocks in boards/*.overlay for
+# details). BOARD isn't known yet at this point in a sysbuild configure, so
+# this can't be gated by board here - instead it's passed down as a
+# devicetree preprocessor define, and the affected board overlay files guard
+# their partition-resizing nodes on it.
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_GREATER_EQUAL 3.4.0)
+set(DTS_EXTRA_CPPFLAGS "${DTS_EXTRA_CPPFLAGS};-DNCS_PARTITION_MANAGER_REMOVED")
+endif()
+
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 

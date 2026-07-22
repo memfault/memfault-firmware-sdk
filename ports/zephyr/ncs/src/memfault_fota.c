@@ -231,7 +231,7 @@ static int prv_fota_modem_start(void) {
     MEMFAULT_LOG_ERROR("Failed to read modem FW version: %d", rv);
     return rv;
   }
-  MEMFAULT_LOG_INFO("Checking modem FOTA (current version: %s)", s_modem_version);
+  MEMFAULT_LOG_DEBUG("Checking for modem FOTA (current version: %s)", s_modem_version);
 
   // Temporarily switch the HTTP client config to use the modem project credentials for the URL
   // query. The key is used only while building/sending the download-URL request below and is
@@ -239,9 +239,9 @@ static int prv_fota_modem_start(void) {
   // and upload both run on the periodic upload thread and are serialized there.
   const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
   if (!modem_project_key) {
-    MEMFAULT_LOG_ERROR("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
-                       "or call memfault_zephyr_fota_modem_project_key_set().");
-    return -EINVAL;
+    MEMFAULT_LOG_WARN("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
+                      "or call memfault_zephyr_fota_modem_project_key_set().");
+    return 0;
   }
 
   const char *saved_api_key = g_mflt_http_client_config.api_key;

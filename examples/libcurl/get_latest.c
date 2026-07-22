@@ -24,11 +24,13 @@
 #define _GNU_SOURCE  // for asprintf
 #include <assert.h>
 #include <curl/curl.h>
+#include <netdb.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/socket.h>
 
 #include "../../components/include/memfault/http/root_certs.h"
 
@@ -79,6 +81,19 @@ static CURLcode prv_install_root_certs(CURL *curl, void *sslctx, void *param) {
 
   rv = CURLE_OK;
   return rv;
+}
+
+//! Force glibc's NSS DNS modules (libnss_dns.so.2, libnss_files.so.2) to load
+//! on the main thread before curl's threaded resolver can dlopen() them from
+//! a background thread. Without this, a dlopen() racing with
+//! -fsanitize=leak's exit-time StopTheWorld thread-suspend can corrupt the
+//! dynamic linker's internal state and segfault (seen intermittently in CI).
+static void prv_warmup_dns_resolve(const char *host) {
+  struct addrinfo *result = NULL;
+  const struct addrinfo hints = { .ai_family = AF_UNSPEC, .ai_socktype = SOCK_STREAM };
+  if (getaddrinfo(host, "443", &hints, &result) == 0) {
+    freeaddrinfo(result);
+  }
 }
 
 static int prv_get_latest_release(const char *device_serial, const char *hardware_version,
@@ -164,6 +179,8 @@ int main(int argc, char *argv[]) {
   const char *hardware_version = argv[2];
   const char *software_type = argv[3];
   const char *current_version = argv[4];
+
+  prv_warmup_dns_resolve("device.memfault.com");
 
   int rv = prv_get_latest_release(device_serial, hardware_version, software_type, current_version,
                                   true /* verbose */);

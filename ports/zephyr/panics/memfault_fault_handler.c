@@ -142,11 +142,10 @@ static void prv_flush_dcache(void) {
     #error \
       "CONFIG_DCACHE is enabled but CONFIG_CACHE_MANAGEMENT is not. Please enable CONFIG_CACHE_MANAGEMENT to avoid data loss."
   #endif
-#elif MEMFAULT_ZEPHYR_VERSION_GT(2, 5)
-  // Zephyr 2.6.0-3.2.0 uses a different Kconfig symbol for indicating dcache is
+#else
+  // Zephyr 2.7.0-3.2.0 uses a different Kconfig symbol for indicating dcache is
   // really enabled for the current SOC. The data cache flush API name is also
-  // different. Note: Memfault's minimum supported Zephyr version as of
-  // 2025-04-11 is 2.7.0.
+  // different.
   #if defined(CONFIG_CPU_CORTEX_M_HAS_CACHE)
   (void)sys_cache_data_all(K_CACHE_WB);
 

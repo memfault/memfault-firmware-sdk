@@ -12,6 +12,7 @@
 #include <string.h>
 #include "memfault/core/compiler.h"
 #include "memfault/core/debug_log.h"
+#include "memfault/core/project_key.h"
 
 #if defined(CONFIG_MEMFAULT_HTTP_CLIENT_CONFIG_BUILTIN)
   #include "memfault/http/http_client.h"

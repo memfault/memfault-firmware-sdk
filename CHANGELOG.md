@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.42.1] - 2026-07-22
+
+This is a patch release, including improvements and bug fixes across several
+platforms.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Update the [nRF91 sample app](examples/nrf-connect-sdk/cellular/) to be
+    compatible with the latest nRF Connect SDK development version, which
+    removed support for Partition Manager.
+
+  - Update the FOTA module to treat a missing modem project key as a warning
+    condition instead of an error condition. Previously, a missing project key
+    returned an error code, and an error log was emitted. Now, when a modem FOTA
+    update is requested, the NCS port will print a warning log and return 0,
+    indicating no update is available.
+
+- Zephyr:
+
+  - Update the include path for the generated `version.h` file to support latest
+    Zephyr `main`. After Zephyr v4.4.0, `CONFIG_LEGACY_GENERATED_INCLUDE_PATH`
+    defaults to `n`, which requires the namespaced include path,
+    `zephyr/version.h`.
+
+  - Automatically use the correct data region linker symbols
+    (`_data_start`/`_data_end`) for Espressif SoCs when collecting the data
+    section for coredumps, instead of requiring an app-level
+    `memfault_platform_config.h` override. Also removed the
+    `MEMFAULT_ZEPHYR_USE_OLD_DATA_REGION_NAMES` option and other logic for
+    Zephyr versions older than the minimum supported version, v2.7.0.
+
+- General:
+
+  - Refactor to provide `memfault/core/project_key.h` header with
+    `MEMFAULT_PROJECT_KEY_LEN` defined; this is used for Memfault Diagnostic
+    Service for Bluetooth and HTTP upload, not generally needed by the user
+    application.
+
+  - Renamed `sPacketizerConfig` and `sPacketizerMetadata` to
+    `sMemfaultPacketizerConfig` and `sMemfaultPacketizerMetadata`, respectively,
+    to align with the SDK's `Memfault`-prefixed naming convention and avoid
+    potential naming conflicts with customer codebases. Update any references to
+    these types in your application.
+
+### 🐛 Fixed
+
+- nRF Connect SDK:
+
+  - Support `CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE` heap check in the nRF Cloud
+    CoAP client, previously fixed for the HTTP transport in SDK v1.37.0.
+
+- General:
+
+  - Fixed an issue in [examples/libcurl](examples/libcurl) that resulted in a
+    segfault from a race between LeakSanitizer and glibc NSS `dlopen()`. Only
+    affects host (i.e. CI/test) builds.
+
+  - Fixed a race in `memfault_log_trigger_collection()` where a concurrent
+    `memfault_log_save()` could evict already-counted, unsent log entries before
+    the "triggered" flag was committed, causing the log data source to encode a
+    CBOR array header with more elements than were actually written. This
+    produced truncated/corrupt "logs" chunks that failed to decode on the
+    backend (e.g. cbor2 `premature end of stream`).
+
 ## [1.42.0] - 2026-07-02
 
 This is a minor release, including new features, improvements, and bug fixes

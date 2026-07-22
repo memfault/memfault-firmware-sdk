@@ -26,6 +26,7 @@
 #include "memfault/components.h"
 #include "memfault/nrfconnect_port/coap.h"
 #include "memfault/ports/ncs/version.h"
+#include "memfault/ports/zephyr/alloc.h"
 // clang-format on
 
 // Restrict to versions with the nrf_cloud_coap_get_user_options() API, used to optionally inject
@@ -53,26 +54,6 @@ static sMemfaultCoAPContext s_memfault_coap_async_ctx;
 
 // Mutex to protect access to s_memfault_coap_async_ctx
 static K_MUTEX_DEFINE(s_memfault_coap_async_ctx_mutex);
-
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
-static void *prv_calloc(size_t count, size_t size) {
-  return calloc(count, size);
-}
-
-static void prv_free(void *ptr) {
-  free(ptr);
-}
-#elif CONFIG_HEAP_MEM_POOL_SIZE > 0
-static void *prv_calloc(size_t count, size_t size) {
-  return k_calloc(count, size);
-}
-
-static void prv_free(void *ptr) {
-  k_free(ptr);
-}
-#else
-  #error "CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE or CONFIG_HEAP_MEM_POOL_SIZE must be > 0"
-#endif
 
 static void prv_coap_response_cb(const struct coap_client_response_data *data, void *user_data) {
   sMemfaultCoAPContext *ctx = (sMemfaultCoAPContext *)user_data;
@@ -188,7 +169,7 @@ static void prv_fota_url_response_cb(const struct coap_client_response_data *dat
 
       if (url_start && url_end && url_end > url_start) {
         size_t url_len = url_end - url_start;
-        ctx->download_url = prv_calloc(1, url_len + 1);
+        ctx->download_url = memfault_zephyr_port_calloc(1, url_len + 1);
         if (ctx->download_url) {
           memcpy(ctx->download_url, url_start, url_len);
           ctx->download_url[url_len] = '\0';
@@ -214,7 +195,7 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
     chunk_size = MEMFAULT_COAP_CHUNK_SIZE;
   }
 
-  uint8_t *chunk_buf = prv_calloc(1, chunk_size);
+  uint8_t *chunk_buf = memfault_zephyr_port_calloc(1, chunk_size);
   if (!chunk_buf) {
     return -ENOMEM;
   }
@@ -222,7 +203,7 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   bool data_available = memfault_packetizer_get_chunk(chunk_buf, &chunk_size);
   if (!data_available) {
     MEMFAULT_LOG_DEBUG("No more data to send");
-    prv_free(chunk_buf);
+    memfault_zephyr_port_free(chunk_buf);
     return 0;
   }
 
@@ -239,7 +220,7 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to send CoAP request: %d", rv);
     memfault_packetizer_abort();
-    prv_free(chunk_buf);
+    memfault_zephyr_port_free(chunk_buf);
     return -1;
   }
 
@@ -249,20 +230,20 @@ static int prv_send_next_msg(sMemfaultCoAPContext *ctx) {
     MEMFAULT_LOG_ERROR("Timeout or error waiting for CoAP response: %d", rv);
     ctx->last_result_code = -ETIMEDOUT;  // Signal async callback to abort
     memfault_packetizer_abort();
-    prv_free(chunk_buf);
+    memfault_zephyr_port_free(chunk_buf);
     return -1;
   }
 
   if (ctx->last_result_code != COAP_RESPONSE_CODE_CREATED) {
     MEMFAULT_LOG_ERROR("Unexpected CoAP response code: %d", ctx->last_result_code);
     memfault_packetizer_abort();
-    prv_free(chunk_buf);
+    memfault_zephyr_port_free(chunk_buf);
     return -1;
   }
 
   // Count bytes sent
   ctx->bytes_sent += chunk_size;
-  prv_free(chunk_buf);
+  memfault_zephyr_port_free(chunk_buf);
   return 1;
 }
 
@@ -403,20 +384,20 @@ static bool prv_build_ota_query(char *buf, size_t buf_len) {
 
 int memfault_zephyr_port_coap_get_download_url(char **download_url) {
   int rv = 0;
-  char *query_buf = prv_calloc(1, CONFIG_COAP_CLIENT_MAX_PATH_LENGTH);
+  char *query_buf = memfault_zephyr_port_calloc(1, CONFIG_COAP_CLIENT_MAX_PATH_LENGTH);
   if (!query_buf) {
     return -ENOMEM;
   }
 
   if (!prv_build_ota_query(query_buf, CONFIG_COAP_CLIENT_MAX_PATH_LENGTH)) {
-    prv_free(query_buf);
+    memfault_zephyr_port_free(query_buf);
     return -1;
   }
   MEMFAULT_LOG_DEBUG("Querying: ota/latest/url?%s", query_buf);
 
   if (k_mutex_lock(&s_memfault_coap_async_ctx_mutex, K_NO_WAIT) != 0) {
     MEMFAULT_LOG_ERROR("CoAP operation in progress, cannot get download URL");
-    prv_free(query_buf);
+    memfault_zephyr_port_free(query_buf);
     return -EBUSY;
   }
 
@@ -469,13 +450,13 @@ int memfault_zephyr_port_coap_get_download_url(char **download_url) {
   memfault_zephyr_port_coap_close_socket(ctx);
 
 cleanup:
-  prv_free(query_buf);
+  memfault_zephyr_port_free(query_buf);
   k_mutex_unlock(&s_memfault_coap_async_ctx_mutex);
   return rv;
 }
 
 int memfault_zephyr_port_coap_release_download_url(char **download_url) {
-  prv_free(*download_url);
+  memfault_zephyr_port_free(*download_url);
   *download_url = NULL;
   return 0;
 }

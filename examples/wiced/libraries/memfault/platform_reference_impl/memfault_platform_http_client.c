@@ -192,8 +192,8 @@ static wiced_result_t prv_send_chunk_in_http_request(sMfltHttpClient *client, co
     return WICED_ERROR;
   }
 
-  sPacketizerMetadata metadata;
-  const sPacketizerConfig cfg = {
+  sMemfaultPacketizerMetadata metadata;
+  const sMemfaultPacketizerConfig cfg = {
     // We will send an entire memfault data message in a single http request
     .enable_multi_packet_chunk = true,
   };

@@ -55,13 +55,11 @@ void memfault_log_trigger_collection(void) {
     return;
   }
 
-  sMfltLogCountingCtx ctx = { 0 };
-  sMfltLogIterator iter = { .user_ctx = &ctx };
-  memfault_log_iterate(prv_log_iterate_counting_callback, &iter);
-  if (ctx.num_logs == 0) {
-    return;
-  }
-
+  // Hold the lock across counting *and* committing "triggered", so no logs can be evicted
+  // (memfault_log.c's prv_try_free_space() only blocks eviction once "triggered" is set) between
+  // the count being taken and it being committed. Use memfault_log_iterate_locked() (instead of
+  // memfault_log_iterate()) to iterate while already holding the lock, so this doesn't require
+  // memfault_lock() to be implemented as a recursive/nestable lock.
   memfault_lock();
   {
     // Check again in the unlikely case this function was called concurrently:
@@ -69,6 +67,15 @@ void memfault_log_trigger_collection(void) {
       memfault_unlock();
       return;
     }
+
+    sMfltLogCountingCtx ctx = { 0 };
+    sMfltLogIterator iter = { .user_ctx = &ctx };
+    memfault_log_iterate_locked(prv_log_iterate_counting_callback, &iter);
+    if (ctx.num_logs == 0) {
+      memfault_unlock();
+      return;
+    }
+
     s_memfault_log_data_source_ctx.triggered = true;
     if (!memfault_platform_time_get_current(&s_memfault_log_data_source_ctx.trigger_time)) {
       s_memfault_log_data_source_ctx.trigger_time.type = kMemfaultCurrentTimeType_Unknown;

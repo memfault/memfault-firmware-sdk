@@ -344,7 +344,8 @@ eMemfaultPacketizerStatus memfault_packetizer_get_next(void *buf, size_t *buf_le
            kMemfaultPacketizerStatus_EndOfChunk;
 }
 
-bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata *metadata_out) {
+bool memfault_packetizer_begin(const sMemfaultPacketizerConfig *cfg,
+                               sMemfaultPacketizerMetadata *metadata_out) {
   if ((cfg == NULL) || (metadata_out == NULL)) {
     MEMFAULT_LOG_ERROR("%s: NULL input arguments", __func__);
     return false;
@@ -353,13 +354,13 @@ bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata
   if (!s_mflt_packetizer_state.active_message) {
     if (!prv_load_next_message_to_send(cfg->enable_multi_packet_chunk, &s_mflt_packetizer_state)) {
       // no new messages to send
-      *metadata_out = (sPacketizerMetadata){ 0 };
+      *metadata_out = (sMemfaultPacketizerMetadata){ 0 };
       return false;
     }
   }
 
   const bool send_in_progress = s_mflt_packetizer_state.curr_msg_ctx.read_offset != 0;
-  *metadata_out = (sPacketizerMetadata){
+  *metadata_out = (sMemfaultPacketizerMetadata){
     .single_chunk_message_length = s_mflt_packetizer_state.curr_msg_ctx.single_chunk_message_length,
     .send_in_progress = send_in_progress,
   };
@@ -375,13 +376,13 @@ bool memfault_packetizer_data_available(void) {
 }
 
 bool memfault_packetizer_get_chunk(void *buf, size_t *buf_len) {
-  const sPacketizerConfig cfg = {
+  const sMemfaultPacketizerConfig cfg = {
     // By setting this to false, every call to "memfault_packetizer_get_next()" will return one
     // "chunk" that you must send from the device
     .enable_multi_packet_chunk = false,
   };
 
-  sPacketizerMetadata metadata;
+  sMemfaultPacketizerMetadata metadata;
   bool data_available = memfault_packetizer_begin(&cfg, &metadata);
   if (!data_available) {
     // there are no more chunks to send

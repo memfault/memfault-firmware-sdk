@@ -36,6 +36,7 @@
 #include "memfault/core/platform/overrides.h"
 #include "memfault/core/platform/reboot_tracking.h"
 #include "memfault/core/platform/system_time.h"
+#include "memfault/core/project_key.h"
 #include "memfault/core/reboot_reason_types.h"
 #include "memfault/core/reboot_tracking.h"
 #include "memfault/core/sdk_assert.h"

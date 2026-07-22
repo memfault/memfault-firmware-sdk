@@ -102,13 +102,14 @@ void memfault_metrics_battery_collect_data(void) {
   const bool state_of_charge_valid = prv_soc_is_valid(current_stateofcharge) &&
                                      prv_soc_is_valid(s_memfault_battery_ctx.last_state_of_charge);
   if (!state_of_charge_valid) {
-    MEMFAULT_LOG_WARN("Current (%d) or prev (%d) SOC invalid, dropping data",
-                      (int)current_stateofcharge, (int)s_memfault_battery_ctx.last_state_of_charge);
+    MEMFAULT_LOG_DEBUG("Current (%d) or prev (%d) SOC invalid, dropping data",
+                       (int)current_stateofcharge,
+                       (int)s_memfault_battery_ctx.last_state_of_charge);
   }
 
   // this means we didn't receive the stopped-discharging event as expected
   if (!is_currently_discharging && !stopped_discharging_during_interval) {
-    MEMFAULT_LOG_WARN("Stopped-discharging event missed, dropping data");
+    MEMFAULT_LOG_DEBUG("Stopped-discharging event missed, dropping data");
   }
 
   // the session should be dropped if at any point during the session (including

@@ -41,9 +41,13 @@ int memfault_zephyr_fota_start(void);
 //! Useful for manually triggering a modem FOTA check, e.g. from a shell command.
 //! Requires CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y.
 //!
+//! @note If the modem project key is not set via Kconfig or
+//! memfault_zephyr_fota_modem_project_key_set(), this function will log a warning and return 0,
+//! indicating no update was available.
+//!
 //! @return
 //!   < 0 Error while trying to perform the modem FOTA update
-//!     0 Check completed - no modem update available
+//!     0 Check completed - no modem update available, or no modem project key set
 //!     1 Modem update download started
 int memfault_zephyr_fota_modem_start(void);
 

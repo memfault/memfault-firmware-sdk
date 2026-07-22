@@ -46,7 +46,7 @@ typedef enum {
 
   //! Indicates there is more data to be received for the chunk. This will _only_ be returned
   //! as a value if multi packet chunking has been enabled by setting the boolean option
-  //! enable_multi_packet_chunk to true in the packetizer config (sPacketizerConfig)
+  //! enable_multi_packet_chunk to true in the packetizer config (sMemfaultPacketizerConfig)
   kMemfaultPacketizerStatus_MoreDataForChunk,
 } eMemfaultPacketizerStatus;
 
@@ -77,7 +77,7 @@ typedef struct {
   //! @note In this mode, it's the API users responsibility to make sure they push the chunk data
   //! only when a kMemfaultPacketizerStatus_EndOfChunk is received
   bool enable_multi_packet_chunk;
-} sPacketizerConfig;
+} sMemfaultPacketizerConfig;
 
 typedef struct {
   //! true if the packetizer has partially sent an underlying message. Calls to
@@ -89,14 +89,15 @@ typedef struct {
   //! using transports which require the entire size of the binary blob be known up front
   //! (i.e the "Content-Length" in an http request)
   uint32_t single_chunk_message_length;
-} sPacketizerMetadata;
+} sMemfaultPacketizerMetadata;
 
 //! Initialize the packetizer and get metadata about the message to be sent
 //!
 //! @note This function must not be called from an ISR context.
 //!
 //! @return true if there is data available to send, false otherwise.
-bool memfault_packetizer_begin(const sPacketizerConfig *cfg, sPacketizerMetadata *metadata_out);
+bool memfault_packetizer_begin(const sMemfaultPacketizerConfig *cfg,
+                               sMemfaultPacketizerMetadata *metadata_out);
 
 //! Fills the provided buffer with data to be sent.
 //!

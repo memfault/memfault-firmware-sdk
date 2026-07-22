@@ -214,6 +214,10 @@ void memfault_log_iterate(MemfaultLogIteratorCallback callback, sMfltLogIterator
   memfault_unlock();
 }
 
+void memfault_log_iterate_locked(MemfaultLogIteratorCallback callback, sMfltLogIterator *iter) {
+  prv_iterate(callback, iter);
+}
+
 bool memfault_log_iter_update_entry(sMfltLogIterator *iter) {
   sMfltCircularBuffer *const circ_bufp = &s_memfault_ram_logger.circ_buffer;
   const size_t offset_from_end =

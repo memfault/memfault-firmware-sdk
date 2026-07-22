@@ -12,7 +12,14 @@
 extern "C" {
 #endif
 
-#include <version.h>
+//! Zephyr versions after v4.4.0 remove the CONFIG_LEGACY_GENERATED_INCLUDE_PATH
+//! default. Prefer the namespaced include path if it exists, otherwise fall
+//! back to the legacy one. It's a hard error if neither exists.
+#if __has_include(<zephyr/version.h>)
+  #include <zephyr/version.h>
+#else
+  #include <version.h>
+#endif
 
 //! Returns true if current Zephyr Kernel Version is greater than the one specified
 //!

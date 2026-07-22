@@ -1,5 +1,5 @@
 # This Docker image is used in CircleCI to build the SDK. It's published to
-# Docker Hub as "memfault/memfault-sdk-embedded-ci".
+# Docker Hub as "memfault/memfault-firmware-sdk-ci".
 #
 # It's built with the following command (assuming cwd is the directory
 # containing this Dockerfile):
@@ -9,10 +9,10 @@
 # And uploaded to Docker Hub:
 # ❯ docker push memfault/memfault-firmware-sdk-ci:<tag>
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Some details based on this Dockerfile:
-# https://github.com/CircleCI-Public/cimg-base/blob/2b2cc9584c5ce2256d0781106218ff4158c790a0/22.04/Dockerfile
+# https://github.com/CircleCI-Public/cimg-base/blob/28e038550d165a5e421a1ffada523ebe11ad525f/24.04/Dockerfile
 
 SHELL ["/bin/bash", "-exo", "pipefail", "-c"]
 
@@ -25,12 +25,11 @@ ARG MEMFAULT_SDK_APT_DEPS="\
     build-essential \
     cpputest \
     curl \
-    gcc-12 \
-    g++-12 \
+    gcc-14 \
+    g++-14 \
     git \
     gnupg \
-    python3.10 \
-    python3.10-venv\
+    software-properties-common\
 "
 
 # Run commands and tests as circleci user
@@ -51,11 +50,20 @@ RUN echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90circleci && \
     sudo -u circleci mkdir /home/circleci/project && \
     sudo -u circleci mkdir /home/circleci/bin
 
-# Select gcc-12 as the default gcc/g++ version
+# Install Python 3.10 from the deadsnakes PPA
+RUN sudo add-apt-repository -y ppa:deadsnakes/ppa && \
+    sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+        python3.10 \
+        python3.10-venv \
+        python3.10-dev \
+    && \
+    sudo rm -rf /var/lib/apt/lists/*
+
+# Select gcc-14 as the default gcc/g++ version
 RUN sudo update-alternatives --install \
-    /usr/bin/gcc gcc /usr/bin/gcc-12 60 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-12 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-12
+    /usr/bin/gcc gcc /usr/bin/gcc-14 60 \
+    --slave /usr/bin/g++ g++ /usr/bin/g++-14 \
+    --slave /usr/bin/gcov gcov /usr/bin/gcov-14
 
 ENV PATH=/home/circleci/bin:/home/circleci/.local/bin:$PATH \
     LANG=en_US.UTF-8 \
@@ -76,12 +84,16 @@ RUN \
     lcov --version && \
     genhtml --version
 
-# Install clang-17
+# Install clang/llvm
+ARG CLANG_VERSION=18
 RUN \
-    echo deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main >> /etc/apt/sources.list.d/llvm.list && \
-    echo deb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main >> /etc/apt/sources.list.d/llvm.list && \
-    wget -q -O - http://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add - && \
-    apt-get update && apt-get install -y clang-17 llvm-17
+    apt-get update && apt-get install -y --no-install-recommends \
+        clang-${CLANG_VERSION} llvm-${CLANG_VERSION} && \
+    rm -rf /var/lib/apt/lists/* && \
+    # provide unversioned clang/llvm-cov symlinks
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VERSION} 60 \
+        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VERSION} \
+        --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-${CLANG_VERSION}
 
 ENV PATH=/home/circleci/lcov-${LCOV_VERSION}/bin:$PATH
 
@@ -90,8 +102,8 @@ USER circleci
 # Match the default CircleCI working directory
 WORKDIR /home/circleci/project
 
-# Create the virtualenv
-RUN python3 -m venv ~/venv
+# Create the virtualenv (Python 3.10, see deadsnakes note above)
+RUN python3.10 -m venv ~/venv
 
 # Auto-activate the virtualenv in the container
 RUN sudo mkdir -p /circleci/ && \

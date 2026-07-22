@@ -17,3 +17,31 @@
 		};
 	};
 };
+
+#if defined(NCS_PARTITION_MANAGER_REMOVED)
+/*
+ * NCS >= 3.4.0 disables Partition Manager by default, falling back to this
+ * board's static devicetree partition layout, which splits the primary and
+ * secondary image areas into a 256 KB secure (TF-M) / 192 KB non-secure
+ * region. When Partition Manager was in control it sized that split
+ * dynamically based on what TF-M and this app actually needed.
+ * For the non-secure image, it chose 320 KB, which gives it plenty of headroom. Shrink the secure region
+ * and grow the non-secure one to match what Partition Manager used to
+ * allocate, so the app still fits.
+ */
+&slot0_s_partition {
+	reg = <0x0 0x20000>;
+};
+
+&slot0_ns_partition {
+	reg = <0x20000 0x50000>;
+};
+
+&slot1_s_partition {
+	reg = <0x0 0x20000>;
+};
+
+&slot1_ns_partition {
+	reg = <0x20000 0x50000>;
+};
+#endif

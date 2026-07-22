@@ -10,12 +10,16 @@
 # - brew install circleci
 # - circleci config validate
 #
+# This config runs in the public memfault-firmware-sdk repo (where sdk/embedded
+# is the repo root). The monorepo runs the equivalent test as a path-filtered job
+# in its own CI (see the fw_sdk_public_sanity job in tasks/lib/ci_config/), so a
+# toolchain regression is caught on monorepo PRs before it reaches a release.
 version: 2.1
 
 executors:
   memfault-ci:
     docker:
-      - image: memfault/memfault-firmware-sdk-ci:2024-01-19
+      - image: memfault/memfault-firmware-sdk-ci:2026-06-18
     working_directory: ~/repo
 
 commands:
@@ -48,7 +52,6 @@ commands:
       - pip_install
 
 jobs:
-  # TODO: also build demo apps in public CI (not just in our private CI)
   fw-sdk-test:
     executor: memfault-ci
     steps:

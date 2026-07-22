@@ -33,3 +33,11 @@ void fake_memfault_metrics_platform_locking_reboot(void) {
 bool fake_memfault_platform_metrics_lock_calls_balanced(void) {
   return s_metric_lock_stats.lock_count == s_metric_lock_stats.unlock_count;
 }
+
+uint32_t fake_memfault_platform_metrics_lock_get_lock_count(void) {
+  return s_metric_lock_stats.lock_count;
+}
+
+uint32_t fake_memfault_platform_metrics_lock_get_unlock_count(void) {
+  return s_metric_lock_stats.unlock_count;
+}

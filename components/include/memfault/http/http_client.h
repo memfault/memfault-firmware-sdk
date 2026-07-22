@@ -15,15 +15,13 @@
 #include "memfault/config.h"
 #include "memfault/core/compiler.h"
 #include "memfault/core/platform/device_info.h"
+#include "memfault/core/project_key.h"
 
 #define MEMFAULT_HTTP_URL_BUFFER_SIZE (128)
 
 #define MEMFAULT_HTTP_CHUNKS_API_PREFIX "/api/v0/"
 #define MEMFAULT_HTTP_CHUNKS_API_SUBPATH "chunks"
 #define MEMFAULT_HTTP_PROJECT_KEY_HEADER "Memfault-Project-Key"
-
-//! Length of a Memfault project key (not including null terminator).
-#define MEMFAULT_PROJECT_KEY_LEN 32
 
 #ifdef __cplusplus
 extern "C" {

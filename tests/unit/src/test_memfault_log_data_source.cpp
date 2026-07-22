@@ -116,6 +116,23 @@ TEST(MemfaultLogDataSource, Test_TriggerOnce) {
   memfault_log_trigger_collection();
 }
 
+TEST(MemfaultLogDataSource, Test_TriggerLocksOnce) {
+  prv_add_logs();
+
+  // Isolate the lock counts below to just the memfault_log_trigger_collection() call:
+  fake_memfault_metrics_platform_locking_reboot();
+
+  memfault_log_trigger_collection();
+
+  // Counting unsent logs and committing "triggered" must happen within a single critical section
+  // (exactly one memfault_lock()/memfault_unlock() pair), not two separate ones. Two separate
+  // critical sections would reopen the race where a concurrent memfault_log_save() call can evict
+  // already-counted unsent entries in between, before "triggered" is committed -- corrupting the
+  // log chunk encoded from the stale count afterwards.
+  LONGS_EQUAL(1, fake_memfault_platform_metrics_lock_get_lock_count());
+  LONGS_EQUAL(1, fake_memfault_platform_metrics_lock_get_unlock_count());
+}
+
 TEST(MemfaultLogDataSource, Test_TriggerNoopWhenNoLogs) {
   memfault_log_trigger_collection();
   CHECK_FALSE(memfault_log_data_source_has_been_triggered());

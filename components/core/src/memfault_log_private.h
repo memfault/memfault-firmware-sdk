@@ -109,6 +109,12 @@ typedef bool (*MemfaultLogIteratorCallback)(sMfltLogIterator *iter);
 //! Iterates over the logs in the buffer, calling the callback for each log.
 void memfault_log_iterate(MemfaultLogIteratorCallback callback, sMfltLogIterator *iter);
 
+//! Same as memfault_log_iterate(), but does not take memfault_lock() itself.
+//! @note This MUST ONLY be called by a caller that has already taken memfault_lock() (e.g. to
+//! iterate the logs as part of a larger operation that must happen atomically with the iteration,
+//! without requiring memfault_lock() to be implemented as a recursive/nestable lock).
+void memfault_log_iterate_locked(MemfaultLogIteratorCallback callback, sMfltLogIterator *iter);
+
 //! Update/rewrite the entry header at the position of the iterator.
 //! @note This MUST ONLY be called from a memfault_log_iterate() callback (it
 //! assumes memfault_lock has been taken by the caller).
