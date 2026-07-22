@@ -143,7 +143,7 @@ static bool prv_send_data(const void *data, size_t data_len, void *ctx) {
 
 static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int port_num) {
   struct zsock_addrinfo hints = {
-    .ai_family = AF_INET,
+    .ai_family = IS_ENABLED(CONFIG_NET_IPV4) ? AF_INET : AF_INET6,
     .ai_socktype = SOCK_STREAM,
   };
 
@@ -155,11 +155,13 @@ static int prv_getaddrinfo(struct zsock_addrinfo **res, const char *host, int po
     MEMFAULT_LOG_ERROR("DNS lookup for %s failed: %d", host, rv);
   } else {
 #if CONFIG_MEMFAULT_LOG_LEVEL >= 4  // DBG
-    struct sockaddr_in *addr = net_sin((*res)->ai_addr);
+    char addr_str[INET6_ADDRSTRLEN];
+    const int af = (*res)->ai_family;
+    const void *addr_ptr = (af == AF_INET) ? (const void *)&net_sin((*res)->ai_addr)->sin_addr :
+                                             (const void *)&net_sin6((*res)->ai_addr)->sin6_addr;
+    zsock_inet_ntop(af, addr_ptr, addr_str, sizeof(addr_str));
+    MEMFAULT_LOG_DEBUG("DNS lookup for %s = %s", host, addr_str);
 #endif
-    MEMFAULT_LOG_DEBUG("DNS lookup for %s = %d.%d.%d.%d", host, addr->sin_addr.s4_addr[0],
-                       addr->sin_addr.s4_addr[1], addr->sin_addr.s4_addr[2],
-                       addr->sin_addr.s4_addr[3]);
   }
 
   return rv;
