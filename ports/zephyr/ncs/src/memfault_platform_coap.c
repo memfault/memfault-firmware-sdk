@@ -18,10 +18,8 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(random/random.h)
 
 #include <date_time.h>
-#include <modem/modem_jwt.h>
 #include <net/nrf_cloud_coap.h>
 #include <nrf_cloud_coap_transport.h>
-#include <nrf_modem_at.h>
 
 #include "memfault/components.h"
 #include "memfault/nrfconnect_port/coap.h"
