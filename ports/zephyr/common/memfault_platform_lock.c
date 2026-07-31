@@ -6,9 +6,10 @@
 //! Wire up Zephyr locks to the Memfault mutex API
 
 #include "memfault/core/platform/core.h"
+#include "memfault/core/sdk_assert.h"
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX)
-#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 
 K_MUTEX_DEFINE(s_memfault_mutex);
 
@@ -20,10 +21,10 @@ void memfault_unlock(void) {
   k_mutex_unlock(&s_memfault_mutex);
 }
 
-#endif // defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX)
+#endif  // defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX)
 
 #if defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK)
-#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
+  #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 
 static atomic_t s_memfault_lock_nesting;
 static unsigned int s_memfault_lock_irq_key;
@@ -45,4 +46,4 @@ void memfault_unlock(void) {
     irq_unlock(s_memfault_lock_irq_key);
   }
 }
-#endif // defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK)
+#endif  // defined(CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK)
