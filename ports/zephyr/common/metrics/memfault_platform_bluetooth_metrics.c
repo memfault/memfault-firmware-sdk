@@ -34,6 +34,13 @@ static struct bt_conn *s_mflt_bt_current_conn = NULL;
 static uint32_t s_mflt_bt_connection_interval_us = 0;
 struct k_work_delayable s_mflt_bt_delayed_metrics_work;
 
+#if defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+// Count of currently active connections, used to track total time any
+// connection was up, regardless of which connection is being tracked for the
+// rest of the Bluetooth metrics.
+static uint8_t s_mflt_bt_active_connection_count = 0;
+#endif  // defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+
 static void prv_record_gatt_mtu(struct bt_conn *conn) {
   uint16_t mtu = bt_gatt_get_mtu(conn);
   MEMFAULT_METRIC_SET_UNSIGNED(bt_gatt_mtu_size, mtu);
@@ -174,6 +181,25 @@ static void prv_bt_connected_cb(struct bt_conn *conn, uint8_t err) {
     return;
   }
 
+#if defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+  // Track total time any connection was active, across all connections
+  if (s_mflt_bt_active_connection_count == 0) {
+    MEMFAULT_METRIC_TIMER_START(bt_total_connected_time_ms);
+  }
+  s_mflt_bt_active_connection_count++;
+#endif  // defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+
+  // Only a single connection is tracked at a time. If a connection is already
+  // being tracked, ignore additional connections until it disconnects, to
+  // avoid leaking a reference to the connection that gets overwritten (see
+  // https://github.com/memfault/memfault-firmware-sdk/issues/123). This means
+  // metrics will not be tracked for additional connections in a
+  // multi-connection application, which is an accepted trade-off for
+  // simplicity.
+  if (s_mflt_bt_current_conn != NULL) {
+    return;
+  }
+
   s_mflt_bt_current_conn = bt_conn_ref(conn);
 
   // Start connected time timer
@@ -192,20 +218,29 @@ static void prv_bt_connected_cb(struct bt_conn *conn, uint8_t err) {
 }
 
 static void prv_bt_disconnected_cb(struct bt_conn *conn, uint8_t reason) {
-  // tally connection events
-  prv_count_connection_events(s_mflt_bt_connection_interval_us, false);
-  s_mflt_bt_connection_interval_us = 0;
-
-  if (s_mflt_bt_current_conn == conn) {
-    bt_conn_unref(s_mflt_bt_current_conn);
-    s_mflt_bt_current_conn = NULL;
+#if defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+  // Track total time any connection was active, across all connections
+  s_mflt_bt_active_connection_count--;
+  if (s_mflt_bt_active_connection_count == 0) {
+    MEMFAULT_METRIC_TIMER_STOP(bt_total_connected_time_ms);
   }
+#endif  // defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
 
   // Increment disconnect counter
   MEMFAULT_METRIC_ADD(bt_disconnect_count, 1);
 
-  // Stop connected time timer
-  MEMFAULT_METRIC_TIMER_STOP(bt_connected_time_ms);
+  if (s_mflt_bt_current_conn == conn) {
+    // tally connection events
+    prv_count_connection_events(s_mflt_bt_connection_interval_us, false);
+    s_mflt_bt_connection_interval_us = 0;
+
+    bt_conn_unref(s_mflt_bt_current_conn);
+    s_mflt_bt_current_conn = NULL;
+    // Stop connected time timer. Only track time connected to the first
+    // connected peer, i.e. if a second peer connects then disconnects, don't
+    // stop the timer for the tracked connection.
+    MEMFAULT_METRIC_TIMER_STOP(bt_connected_time_ms);
+  }
 }
 
 #if defined(CONFIG_BT_REMOTE_INFO)
@@ -213,6 +248,11 @@ static void prv_bt_disconnected_cb(struct bt_conn *conn, uint8_t reason) {
 // only when this device does.
 static void prv_record_remote_info_cb(struct bt_conn *conn,
                                       struct bt_conn_remote_info *remote_info) {
+  // Only record remote info for the tracked connection
+  if (conn != s_mflt_bt_current_conn) {
+    return;
+  }
+
   // Record remote device information
   char remote_info_str[32] = { 0 };
 
@@ -224,6 +264,11 @@ static void prv_record_remote_info_cb(struct bt_conn *conn,
 
 static void prv_bt_le_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency,
                                        uint16_t timeout) {
+  // Only record connection parameters for the tracked connection
+  if (conn != s_mflt_bt_current_conn) {
+    return;
+  }
+
   uint32_t interval_us = interval * CONN_INT_UNIT_US;
 
   // Record LE connection parameters
@@ -248,6 +293,12 @@ BT_CONN_CB_DEFINE(bt_metrics_conn_callbacks) = {
 };
 
 static void prv_bt_att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx) {
+  // Only record MTU for the tracked connection; bt_gatt_cb_register() is
+  // connection-agnostic and fires for any connection's MTU update.
+  if (conn != s_mflt_bt_current_conn) {
+    return;
+  }
+
   // note: the BT spec requires a symmetric tx/rx MTU size
   // see reference:
   // https://github.com/zephyrproject-rtos/zephyr/blob/v4.3.0/subsys/bluetooth/host/att.c#L136-L144

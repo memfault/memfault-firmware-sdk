@@ -1300,6 +1300,34 @@ config MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK
 
 endchoice # MEMFAULT_SYSTEM_TIME_SOURCE
 
+choice MEMFAULT_PLATFORM_LOCK_SOURCE
+        prompt "Memfault platform lock source"
+        default MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX if MULTITHREADING
+        default MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK
+        help
+         Choose the source of the memfault lock used by the Memfault SDK.
+
+config MEMFAULT_PLATFORM_LOCK_SOURCE_CUSTOM
+        bool "Custom"
+        help
+          When enabled, the user must provide an implementation of
+          memfault_lock() and memfault_unlock() in their port.
+
+config MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX
+        bool "Mutex"
+        depends on MULTITHREADING
+        help
+         Provides a built-in implementation of
+         memfault_lock() and memfault_unlock() using Zephyr primitives.
+
+config MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK
+        bool "IRQ lock"
+        help
+         Provides a built-in implementation of
+         memfault_lock() and memfault_unlock() using irq_lock() and irq_unlock().
+
+endchoice # MEMFAULT_PLATFORM_LOCK_SOURCE
+
 config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
         bool "Install a callback on boot for date_time events"
         default y

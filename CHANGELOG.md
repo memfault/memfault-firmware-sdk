@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.43.0] - 2026-08-05
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added IRQ based path for locks when mutexes are not available. Kconfig
+    choice `MEMFAULT_PLATFORM_LOCK_SOURCE` selects the lock implementation:
+
+    - `CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX` default when
+      `CONFIG_MULTITHREADING=y` (mutexes are available)
+    - `CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK` default when
+      `CONFIG_MULTITHREADING=n` (mutexes are not available)
+    - `CONFIG_MEMFAULT_PLATFORM_LOCK_SOURCE_CUSTOM` allows the user to provide
+      their own lock implementation by defining `memfault_lock()` and
+      `memfault_unlock()` in their application code.
+
+    Thanks to [@eivindj-nordic](https://github.com/eivindj-nordic) for providing
+    this feature.
+
+- Zephyr:
+
+  - Added a new Bluetooth metric, `bt_total_connected_time_ms`, which tracks the
+    total time any connection was active, across all connections, regardless of
+    connections going up and down. Only enabled when `CONFIG_BT_MAX_CONN` is
+    greater than 1, since it is redundant with `bt_connected_time_ms` for
+    single-connection applications.
+
+### 🐛 Fixed
+
+- nRF Connect SDK:
+
+  - Removed unused includes in the nRF Cloud CoAP port that prevented building
+    on platforms without a modem. Thanks to
+    [@simonduq](https://github.com/simonduq) for providing this fix in
+    [#122](https://github.com/memfault/memfault-firmware-sdk/pull/122) 🎉!
+
+- Zephyr:
+
+  - Fixed a Bluetooth connection reference leak in the Bluetooth metrics module
+    (`CONFIG_MEMFAULT_METRICS_BLUETOOTH`) that occurred in multi-connection
+    peripheral applications: connecting a second peer before the first
+    disconnected caused a reference leak to the first connection.
+
+    Only a single connection is tracked at a time; additional connections, and
+    their events (connection parameter updates, remote info, GATT MTU updates),
+    are ignored until the tracked connection disconnects. Thanks to
+    [@jelledevleeschouwer](https://github.com/jelledevleeschouwer) for reporting
+    this issue in
+    [#123](https://github.com/memfault/memfault-firmware-sdk/issues/123) 🎉!
+
 ## [1.42.1] - 2026-07-22
 
 This is a patch release, including improvements and bug fixes across several
@@ -30,7 +84,9 @@ platforms.
   - Update the include path for the generated `version.h` file to support latest
     Zephyr `main`. After Zephyr v4.4.0, `CONFIG_LEGACY_GENERATED_INCLUDE_PATH`
     defaults to `n`, which requires the namespaced include path,
-    `zephyr/version.h`.
+    `zephyr/version.h`. Thanks to [@rlubos](https://github.com/rlubos) for the
+    fix in [#121](https://github.com/memfault/memfault-firmware-sdk/pull/121)
+    🎉!
 
   - Automatically use the correct data region linker symbols
     (`_data_start`/`_data_end`) for Espressif SoCs when collecting the data

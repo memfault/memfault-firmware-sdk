@@ -76,6 +76,11 @@ MEMFAULT_METRICS_KEY_DEFINE(bt_connection_rssi, kMemfaultMetricType_Signed)
 #endif  // defined(CONFIG_BT_CTLR_CONN_RSSI)
 MEMFAULT_METRICS_KEY_DEFINE(bt_connected_time_ms, kMemfaultMetricType_Timer)
 MEMFAULT_METRICS_KEY_DEFINE(bt_disconnect_count, kMemfaultMetricType_Unsigned)
+#if defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
+// Total time any connection was active, across all connections, only
+// meaningful when more than one simultaneous connection is supported
+MEMFAULT_METRICS_KEY_DEFINE(bt_total_connected_time_ms, kMemfaultMetricType_Timer)
+#endif  // defined(CONFIG_BT_MAX_CONN) && (CONFIG_BT_MAX_CONN > 1)
 #endif  // defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
 
 #if defined(CONFIG_MEMFAULT_METRICS_CPU_TEMP)
