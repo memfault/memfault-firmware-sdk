@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.1] - 2026-09-02
+
+This is a patch release with one change to the Zephyr port.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - Rename the Memfault SDK's Zephyr library name to a stable name:
+    `memfault-firmware-sdk`. Previously, the name was generated based on the
+    filepath, therefore references could change depending on where the SDK
+    source was in the workspace relative to the project root. Thanks to
+    [@nordicjm](https://github.com/nordicjm) for providing this fix in
+    [#125](https://github.com/memfault/memfault-firmware-sdk/pull/125) 🎉!
+
 ## [1.40.0] - 2026-06-09
 
 This is a minor release, including new features, improvements, and bug fixes

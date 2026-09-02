@@ -38,8 +38,7 @@ if(CONFIG_MEMFAULT)
     MEMFAULT_COMPONENTS_SRCS MEMFAULT_COMPONENTS_INC_FOLDERS ${MEMFAULT_ARCH})
 
   # Add Memfault SDK sources to memfault library
-  zephyr_interface_library_named(memfault)
-  zephyr_library()
+  zephyr_library_named(memfault-firmware-sdk)
 
   zephyr_library_sources(${MEMFAULT_COMPONENTS_SRCS})
   zephyr_include_directories(
@@ -71,10 +70,6 @@ if(CONFIG_MEMFAULT)
   add_subdirectory(common)
   add_subdirectory(panics)
   add_subdirectory_ifdef(CONFIG_MEMFAULT_NRF_CONNECT_SDK ncs)
-
-  # Link Memfault Library
-  zephyr_library_link_libraries(memfault)
-  target_link_libraries(memfault INTERFACE zephyr_interface)
 
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
