@@ -114,6 +114,11 @@ static void prv_fota_download_callback_wrapper(const struct fota_download_evt *e
     case FOTA_DOWNLOAD_EVT_ERROR:
     case FOTA_DOWNLOAD_EVT_CANCELLED:
     case FOTA_DOWNLOAD_EVT_FINISHED:
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+      // Mark download as inactive (counterpart to nrf_cloud_download_start()).
+      // Needed so future attempts do not permanently fail with -EBUSY.
+      nrf_cloud_download_end();
+#endif
       prv_fota_url_cleanup();
       break;
     default:
