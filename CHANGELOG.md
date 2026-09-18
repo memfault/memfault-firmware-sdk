@@ -6,6 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add tracking for Power Management (PM) state residency times, enabled with a
+    new Kconfig flag `CONFIG_MEMFAULT_METRICS_POWER`. Metrics are collected for
+    each notable power management state, on platforms that support
+    `CONFIG_PM=y`.
+
+- nRF Connect SDK:
+
+  - Add support for full modem update (vs. delta modem update) on Nordic
+    cellular modems, enabled via `CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE=y`
+    (disabled by default).
+
+  - Add `memfault_zephyr_fota_app_start()`, to manually trigger an
+    application-only FOTA check (e.g. from a shell command) without falling
+    through to a modem FOTA check when no application update is available (vs.
+    `memfault_zephyr_fota_start()`, which falls through to modem update when
+    `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE` is enabled). Also adds
+    `memfault_zephyr_fota_modem_get_download_url()`, to fetch the pending modem
+    FOTA URL without starting the download, and updates the
+    `mflt get_latest_url` shell command to take an optional `app` (default) or
+    `modem` argument.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a type-mismatch build time warning when building with LTO enabled, when
+    `CONFIG_MEMFAULT_METRICS_MEMORY_USAGE=y` memory metrics are enabled.
+
+- nRF Connect SDK:
+
+  - Fix a bug in the CoAP FOTA client implementation, where completed FOTA
+    downloads will prevent any other FOTA attempts from starting until chip
+    reboot. Thanks to [@simonduq](https://github.com/simonduq) for providing
+    this fix in
+    [#127](https://github.com/memfault/memfault-firmware-sdk/pull/127) 🎉!
+
+  - Improve out of box defaults for FOTA/HTTP upload stack sizes for the nRF7120
+    Wi-Fi SoC, matching the nRF7002. Thanks to
+    [@simonduq](https://github.com/simonduq) for providing this fix in
+    [#127](https://github.com/memfault/memfault-firmware-sdk/pull/127) 🎉!
+
+- ESP-IDF:
+
+  - Fix an error in the component distribution
+    (<https://components.espressif.com/components/memfault/memfault-firmware-sdk/>)
+    which would fail to build on ESP-IDF v6+. Installing the Memfault SDK as a
+    submodule was working normally, but when installing to a project as an
+    ESP-IDF component, the build would fail.
+
+### 🛠️ Changed
+
+- General:
+
+  - Replace unmaintained `snapshottest` with `syrupy` for tests.
+
 ## [1.44.0] - 2026-08-28
 
 This is a minor release, including new features, improvements, and bug fixes

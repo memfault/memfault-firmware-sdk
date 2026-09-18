@@ -72,6 +72,19 @@ config MEMFAULT_FOTA_HTTP_FRAG_SIZE
           value should be set to the maximum size that can be received by
           the device. If 0, no fragmentation is used.
 
+config MEMFAULT_FOTA_FULL_MODEM_UPDATE
+        bool "Support full modem updates through Memfault OTA"
+        default n
+        depends on MEMFAULT_SOC_SERIES_NRF91
+        depends on MEMFAULT_FOTA_MODEM_UPDATE
+        depends on LTE_LINK_CONTROL
+        depends on NRF_CLOUD_FOTA_FULL_MODEM_UPDATE
+        help
+          Enables Memfault OTA support for full modem images. The image is
+          detected from its header and downloaded to the FMFU storage
+          partition selected by the board devicetree. The modem project key
+          configured for MEMFAULT_FOTA_MODEM_UPDATE is used.
+
 endif # MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
 config MEMFAULT_FOTA_MODEM_UPDATE

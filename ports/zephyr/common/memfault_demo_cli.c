@@ -117,11 +117,28 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
   #define PRIV_OTA_RELEASE_URL(url) memfault_zephyr_port_release_download_url(url)
 #endif
 
+//! @brief Check for (but do not start) a pending FOTA update, and print its download URL
+//!
+//! Takes an optional "app" (default) or "modem" argument to select which target to check.
 static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE) || defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+  const char *target = (argc > 1) ? argv[1] : "app";
+
   char *url = NULL;
-  shell_print(shell, "Checking for update over " PRIV_OTA_TRANSPORT_STR);
-  int rv = PRIV_OTA_GET_URL(&url);
+  int rv;
+  if (strcmp(target, "app") == 0) {
+    shell_print(shell, "Checking for app update over " PRIV_OTA_TRANSPORT_STR);
+    rv = PRIV_OTA_GET_URL(&url);
+  #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+  } else if (strcmp(target, "modem") == 0) {
+    shell_print(shell, "Checking for modem update");
+    rv = memfault_zephyr_fota_modem_get_download_url(&url);
+  #endif
+  } else {
+    shell_print(shell, "Usage: mflt get_latest_url [app|modem]");
+    return -EINVAL;
+  }
+
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Unable to fetch OTA url, rv=%d", rv);
     return rv;
@@ -155,6 +172,19 @@ static int prv_check_and_fetch_ota_payload_cmd(const struct shell *shell, size_t
 }
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+static int prv_fota_app_cmd(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc, (void)argv;
+  int rv = memfault_zephyr_fota_app_start();
+  if (rv < 0) {
+    shell_print(shell, "Failed to check/start app FOTA, err=%d", rv);
+  } else if (rv == 0) {
+    shell_print(shell, "Application firmware is up to date");
+  } else {
+    shell_print(shell, "Application FOTA started successfully");
+  }
+  return rv;
+}
+
 static int prv_fota_modem_cmd(const struct shell *shell, size_t argc, char **argv) {
   (void)argc, (void)argv;
   int rv = memfault_zephyr_fota_modem_start();
@@ -504,10 +534,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(get_core, NULL, "check if coredump is stored and present", prv_get_core_cmd),
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
   SHELL_CMD(get_reboot_reason, NULL, "display last reboot reason", prv_get_reboot_reason),
-  SHELL_CMD(get_latest_url, NULL, "gets latest release URL", prv_get_latest_url_cmd),
+  SHELL_CMD_ARG(get_latest_url, NULL, "gets latest release URL, optionally 'app' or 'modem'",
+                prv_get_latest_url_cmd, 1, 1),
   SHELL_CMD(get_latest_release, NULL, "performs an OTA update using Memfault client",
             prv_check_and_fetch_ota_payload_cmd),
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+  SHELL_CMD(fota_app, NULL, "check for and apply an application firmware update", prv_fota_app_cmd),
   SHELL_CMD(fota_modem, NULL, "check for and apply a modem firmware update", prv_fota_modem_cmd),
   SHELL_CMD_ARG(set_modem_project_key, NULL, "set the modem firmware update project key",
                 prv_set_modem_project_key_cmd, 2, 0),

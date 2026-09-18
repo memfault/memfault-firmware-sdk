@@ -360,7 +360,7 @@ def test_coredump_writer(snapshot):
     f_out = BytesIO()
     cd_writer.write(f_out)
     f_out.seek(0)
-    snapshot.assert_match(f_out.read().hex())
+    assert f_out.read().hex() == snapshot
 
 
 def test_http_basic_auth():
@@ -614,7 +614,7 @@ def test_coredump_command_with_login_no_existing_release_or_symbols(
     # Upload coredump:
     def _check_request_body(body_bytes):
         # truncated in the interest of avoiding bloat in snapshot:
-        snapshot.assert_match(body_bytes[:500].hex())
+        assert body_bytes[:500].hex() == snapshot
 
     http_expect_request(
         "https://ingress.memfault.com/api/v0/upload/coredump",

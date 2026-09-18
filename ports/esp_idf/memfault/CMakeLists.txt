@@ -200,7 +200,22 @@ endif()
 if(${MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
   list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota)
 endif()
-register_component()
+# Register with idf_component_register() rather than the legacy
+# register_component(). Passing KCONFIG explicitly also removes the reliance on
+# ESP-IDF globbing for the component's Kconfig file. idf_component_register()
+# was added in ESP-IDF v4.0.
+set(_memfault_component_args
+  SRCS ${COMPONENT_SRCS}
+  INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
+  REQUIRES ${COMPONENT_REQUIRES}
+  KCONFIG ${MEMFAULT_SDK_ROOT}/Kconfig
+)
+
+if(DEFINED COMPONENT_ADD_LDFRAGMENTS)
+  list(APPEND _memfault_component_args LDFRAGMENTS ${COMPONENT_ADD_LDFRAGMENTS})
+endif()
+
+idf_component_register(${_memfault_component_args})
 
 # sdk_overrides/esp_http_client.c needs the (private) esp_http header files:
 get_filename_component(this_directory_name . ABSOLUTE DIRECTORY)
@@ -221,7 +236,7 @@ if(CONFIG_MEMFAULT_CLI_SELF_TEST)
   target_link_libraries(${this_component} INTERFACE "-u memfault_esp_idf_include_self_test_impl")
 endif()
 
-# The below compilation options need to be set after register_component().
+# The below compilation options need to be set after idf_component_register().
 if (CONFIG_MEMFAULT_FREERTOS_TASK_RUNTIME_STATS)
   # MEMFAULT_USE_NEW_FREERTOS_IDLETASK_RUNTIME_API should be explicitly set to 1
   # for ESP-IDF. The API in question, 'ulTaskGetIdleRunTimeCounter', was added

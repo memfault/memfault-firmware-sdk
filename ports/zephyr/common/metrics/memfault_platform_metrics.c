@@ -26,6 +26,10 @@
 #include "memfault/ports/zephyr/bluetooth_metrics.h"
 #endif
 
+#if defined(CONFIG_MEMFAULT_METRICS_POWER)
+#include "memfault/ports/zephyr/power_metrics.h"
+#endif
+
 #if defined(CONFIG_MEMFAULT_METRICS_TCP_IP)
 #include MEMFAULT_ZEPHYR_INCLUDE(net/net_stats.h)
 // Directory traversal is needed to access the header for net_stats_reset(),
@@ -39,7 +43,9 @@
 
 #if defined(CONFIG_MEMFAULT_METRICS_MEMORY_USAGE)
 //! _system_heap is the heap used by k_malloc/k_free
-extern struct sys_heap _system_heap;
+//! Note: this is declared as struct k_heap (not struct sys_heap) to match Zephyr's
+//! K_HEAP_DEFINE(_system_heap, ...) in kernel/mempool.c.
+extern struct k_heap _system_heap;
   //! malloc_runtime_stats_get() covers z_malloc_heap, the heap backing malloc/free
   #if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC)
     #include <sys_malloc.h>
@@ -140,7 +146,7 @@ static void prv_collect_memory_usage_metrics(void) {
   struct sys_heap_runtime_stats stats = { 0 };
   #endif
 
-  sys_heap_runtime_stats_get(&_system_heap, &stats);
+  sys_heap_runtime_stats_get(&_system_heap.heap, &stats);
   MEMFAULT_METRIC_SET_UNSIGNED(Heap_BytesFree, stats.free_bytes);
 
   #if MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
@@ -294,6 +300,10 @@ void memfault_metrics_heartbeat_collect_sdk_data(void) {
 
 #if defined(CONFIG_MEMFAULT_METRICS_BLUETOOTH)
   memfault_bluetooth_metrics_heartbeat_update();
+#endif
+
+#if defined(CONFIG_MEMFAULT_METRICS_POWER)
+  memfault_zephyr_power_metrics_collect();
 #endif
 }
 

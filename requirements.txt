@@ -7,4 +7,4 @@ fastcov==1.16
 pytest==9.0.3
 pytest-xdist==3.0.2
 pytest-mock==3.10.0
-snapshottest==0.6.0
+syrupy==6.1.1
