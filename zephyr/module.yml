@@ -2,3 +2,5 @@ name: memfault-firmware-sdk
 build:
   cmake: ports/zephyr
   kconfig: ports/zephyr/Kconfig
+  settings:
+    dts_root: ports/zephyr

@@ -1026,6 +1026,19 @@ config MEMFAULT_FS_BYTES_FREE_VFS_PATH
          exists in the device tree, the first available mount point from the
          fstab nodes will be used.
 
+config MEMFAULT_METRICS_FLASH_WRITE_BYTES
+        bool "Metric for total bytes written to flash"
+        default y if DT_HAS_MEMFAULT_FLASH_WRITE_METRICS_SHIM_ENABLED
+        depends on FLASH
+        help
+         Counts bytes written through the "memfault,flash-write-metrics-shim"
+         devicetree node into the flash_write_bytes heartbeat metric. Insert
+         this shim as the parent of the "partitions" (fixed-partitions) node
+         whose write traffic should be tracked, e.g. a littlefs storage
+         partition on external SPI NOR - see
+         dts/bindings/mtd/memfault,flash-write-metrics-shim.yaml for an
+         overlay example.
+
 config MEMFAULT_METRICS_CPU_TEMP
         bool "CPU temperature metrics"
         default y if "$(dt_alias_enabled,memfault_cpu_temp)"

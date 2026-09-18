@@ -1,0 +1,40 @@
+description: |
+  Pass-through flash device that forwards read/write/erase calls to an
+  underlying flash device while counting bytes written, for the Memfault
+  "flash_write_bytes" heartbeat metric.
+
+  Insert this node in place of the real flash node as the parent of the
+  "partitions" (fixed-partitions) node whose writes should be counted, e.g.
+  the littlefs storage partition backed by external SPI NOR:
+
+    flash_write_metrics_shim: flash-write-metrics-shim {
+            compatible = "memfault,flash-write-metrics-shim";
+            flash = <&mx25r64>;
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    lfs_storage: partition@0 {
+                            label = "lfs_storage";
+                            reg = <0x0 0x40000>;
+                    };
+            };
+    };
+
+  Requires CONFIG_MEMFAULT_METRICS_FLASH_WRITE_BYTES.
+
+compatible: "memfault,flash-write-metrics-shim"
+
+include: base.yaml
+
+properties:
+  flash:
+    type: phandle
+    required: true
+    description: |
+      The underlying flash device that reads/writes/erases are forwarded to.

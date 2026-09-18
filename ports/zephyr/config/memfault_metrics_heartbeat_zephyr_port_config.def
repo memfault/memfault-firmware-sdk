@@ -117,6 +117,10 @@ MEMFAULT_METRICS_KEY_DEFINE_WITH_SCALE_VALUE(memory_mflt_upload_pct_max, kMemfau
 MEMFAULT_METRICS_KEY_DEFINE(boot_time_ms, kMemfaultMetricType_Unsigned)
 #endif  // defined(CONFIG_MEMFAULT_METRICS_BOOT_TIME)
 
+#if defined(CONFIG_MEMFAULT_METRICS_FLASH_WRITE_BYTES)
+MEMFAULT_METRICS_KEY_DEFINE(flash_write_bytes, kMemfaultMetricType_Unsigned)
+#endif  // defined(CONFIG_MEMFAULT_METRICS_FLASH_WRITE_BYTES)
+
 #if defined(CONFIG_MEMFAULT_METRICS_EXTRA_DEFS_FILE)
   #include "memfault_metrics_heartbeat_extra.def"
 #endif
