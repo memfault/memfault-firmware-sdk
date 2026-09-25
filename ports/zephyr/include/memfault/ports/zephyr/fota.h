@@ -52,6 +52,15 @@ int memfault_zephyr_fota_start(void);
 //!     download started
 int memfault_zephyr_fota_app_start(void);
 
+//! @brief Override the PDN used for the FOTA download socket at runtime.
+//!
+//! Applies to both memfault_zephyr_fota_app_start() and memfault_zephyr_fota_modem_start(); it
+//! does not affect the FOTA check itself, which reuses the already-connected nRF Cloud CoAP/DTLS
+//! connection (set its PDN separately, before connecting).
+//!
+//! @param pdn_id PDN ID, or 0 for the primary/default PDN (the previous, fixed behavior).
+void memfault_zephyr_fota_pdn_id_set(int pdn_id);
+
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
 //! @brief Check for and apply a modem firmware update only (skips application FOTA check)
 //!

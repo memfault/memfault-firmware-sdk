@@ -78,6 +78,14 @@
 static char *s_download_url = NULL;
 static bool s_modem_download_active;
 
+// PDN ID override for the FOTA download socket; 0 is the primary/default PDN (the previous,
+// fixed behavior). Set via memfault_zephyr_fota_pdn_id_set().
+static int s_fota_pdn_id;
+
+void memfault_zephyr_fota_pdn_id_set(int pdn_id) {
+  s_fota_pdn_id = pdn_id;
+}
+
 // Forward declaration: default implementation is below; custom provided by user when
 // CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
 void memfault_fota_download_callback(const struct fota_download_evt *evt);
@@ -216,6 +224,7 @@ static int prv_fota_download_start(void) {
     .dl_host_conf = {
       .sec_tag_list = &sec_tag,
       .sec_tag_count = 1,
+      .pdn_id = s_fota_pdn_id,
     },
     .fota = {
       .expected_type = DFU_TARGET_IMAGE_TYPE_ANY,
@@ -239,7 +248,7 @@ static int prv_fota_download_start(void) {
   // to find a matching one
   rv =
     fota_download_any(host, file, s_memfault_fota_certs, MEMFAULT_ARRAY_SIZE(s_memfault_fota_certs),
-                      0 /* pdn_id */, CONFIG_MEMFAULT_FOTA_HTTP_FRAG_SIZE);
+                      s_fota_pdn_id, CONFIG_MEMFAULT_FOTA_HTTP_FRAG_SIZE);
 #endif
 
   if (rv != 0) {
