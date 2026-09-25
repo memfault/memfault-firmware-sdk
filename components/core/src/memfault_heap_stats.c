@@ -128,9 +128,8 @@ void memfault_heap_stats_decrement_in_use_block_count(void) {
 }
 
 void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
-  prv_heap_stats_lock();
-
   if (ptr) {
+    prv_heap_stats_lock();
 #if MEMFAULT_IN_USE_BLOCK_COUNT_AUTOMATIC
     memfault_heap_stats_increment_in_use_block_count();
 #endif
@@ -163,9 +162,8 @@ void memfault_heap_stats_malloc(const void *lr, const void *ptr, size_t size) {
       g_memfault_heap_stats_pool[next_oldest_entry_index].info.next_entry_index =
         MEMFAULT_HEAP_STATS_LIST_END;
     }
+    prv_heap_stats_unlock();
   }
-
-  prv_heap_stats_unlock();
 }
 
 void memfault_heap_stats_free(const void *ptr) {

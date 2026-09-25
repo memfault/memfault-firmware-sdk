@@ -203,6 +203,29 @@ static int prv_stack_overflow(int argc, char *argv[]) {
   return 0;
 }
 
+// Forge pxTopOfStack == pxStack for the current task's TCB, then assert. This
+// reproduces the "spread == 0" edge case in the FreeRTOSStackStatsAnalyzer gdb
+// coredump analyzer (spread = pxTopOfStack - pxStack), which previously
+// crashed on a zero-length gdb.read_memory() call.
+static int prv_stack_spread_zero(int argc, char *argv[]) {
+  (void)argc, (void)argv;
+  TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
+
+  TaskStatus_t status;
+  vTaskGetInfo(task_handle, &status, pdFALSE, eInvalid);
+
+  MEMFAULT_LOG_INFO("Forging pxTopOfStack == pxStack (%p) on task %p / %s", status.pxStackBase,
+                    (void *)task_handle, pcTaskGetName(task_handle));
+
+  // pxTopOfStack is documented as always being the first member of the TCB.
+  volatile StackType_t **pxTopOfStack = (volatile StackType_t **)task_handle;
+  *pxTopOfStack = status.pxStackBase;
+
+  MEMFAULT_ASSERT_WITH_REASON(0, kMfltRebootReason_StackOverflow);
+
+  return 0;
+}
+
 // issue a compact log that exceeds the max MEMFAULT_LOG_MAX_LINE_SAVE_LEN
 static int prv_long_compact_log(int argc, char *argv[]) {
   (void)argc, (void)argv;
@@ -331,6 +354,11 @@ static const sMemfaultShellCommand s_freertos_example_shell_extension_list[] = {
     .command = "stack_overflow",
     .handler = prv_stack_overflow,
     .help = "Trigger a stack overflow",
+  },
+  {
+    .command = "stack_spread_zero",
+    .handler = prv_stack_spread_zero,
+    .help = "Forge pxTopOfStack == pxStack and assert",
   },
   {
     .command = "long_compact_log",

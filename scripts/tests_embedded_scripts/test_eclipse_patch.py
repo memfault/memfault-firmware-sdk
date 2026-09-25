@@ -36,7 +36,7 @@ def test_eclipse_project_patcher(snapshot):
                 with open(os.path.join(root, file), "r") as f:
                     patched_project[file] = f.read()
 
-        snapshot.assert_match(patched_project)
+        assert patched_project == snapshot
 
 
 def test_eclipse_project_patcher_single_dir_port(snapshot):
@@ -65,7 +65,7 @@ def test_eclipse_project_patcher_single_dir_port(snapshot):
                 with open(os.path.join(root, file), "r") as f:
                     patched_project[file] = f.read()
 
-        snapshot.assert_match(patched_project)
+        assert patched_project == snapshot
 
 
 def test_eclipse_project_patcher_nested_port(snapshot):
@@ -94,4 +94,4 @@ def test_eclipse_project_patcher_nested_port(snapshot):
                 with open(os.path.join(root, file), "r") as f:
                     patched_project[file] = f.read()
 
-        snapshot.assert_match(patched_project)
+        assert patched_project == snapshot

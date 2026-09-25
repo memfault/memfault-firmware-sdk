@@ -346,6 +346,7 @@ static int prv_boot_memfault() {
 
 #if CONFIG_MEMFAULT_HEAP_STATS && CONFIG_HEAP_MEM_POOL_SIZE > 0
 extern void *__real_k_malloc(size_t size);
+extern void *__real_k_calloc(size_t nmemb, size_t size);
 extern void __real_k_free(void *ptr);
 
 void *__wrap_k_malloc(size_t size) {
@@ -359,6 +360,19 @@ void *__wrap_k_malloc(size_t size) {
 
   return ptr;
 }
+
+void *__wrap_k_calloc(size_t nmemb, size_t size) {
+  void *ptr = __real_k_calloc(nmemb, size);
+
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, nmemb * size);
+  }
+
+  return ptr;
+}
+
 void __wrap_k_free(void *ptr) {
   // Only call into heap stats from non-ISR context
   // Heap stats requires holding a lock

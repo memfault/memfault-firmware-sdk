@@ -6,6 +6,97 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.45.0] - 2026-09-25
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Add tracking for Power Management (PM) state residency times, enabled with a
+    new Kconfig flag `CONFIG_MEMFAULT_METRICS_POWER`. Metrics are collected for
+    each notable power management state, on platforms that support
+    `CONFIG_PM=y`.
+
+  - `k_calloc()` calls are now tracked by heap stats
+    (`CONFIG_MEMFAULT_HEAP_STATS`), alongside the existing
+    `k_malloc()`/`k_free()` tracking.
+
+- nRF Connect SDK:
+
+  - Add support for full modem update (vs. delta modem update) on Nordic
+    cellular modems, enabled via `CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE=y`
+    (disabled by default).
+
+  - Add `memfault_zephyr_fota_app_start()`, to manually trigger an
+    application-only FOTA check (e.g. from a shell command) without falling
+    through to a modem FOTA check when no application update is available (vs.
+    `memfault_zephyr_fota_start()`, which falls through to modem update when
+    `CONFIG_MEMFAULT_FOTA_MODEM_UPDATE` is enabled). Also adds
+    `memfault_zephyr_fota_modem_get_download_url()`, to fetch the pending modem
+    FOTA URL without starting the download, and updates the
+    `mflt get_latest_url` shell command to take an optional `app` (default) or
+    `modem` argument.
+
+### 🛠️ Changed
+
+- General:
+
+  - Removed Python 2.7 support from
+    [`scripts/memfault_gdb.py`](scripts/memfault_gdb.py). Please
+    [contact us](https://mflt.io/contact-support) if this change causes any
+    issues!
+
+  - Replace unmaintained `snapshottest` with `syrupy` for tests.
+
+- nRF Connect SDK:
+
+  - Update the
+    [`examples/nrf-connect-sdk/bluetooth`](examples/nrf-connect-sdk/bluetooth):
+
+    - Disable bonding by default (`CONFIG_BT_SMP=n`), to simplify testing with
+      the app. Note: bonding should be enabled for production use cases!
+
+    - Enable `CONFIG_BT_DEVICE_NAME_DYNAMIC=y` to permit setting the
+      advertisement name at runtime with `bt name <name>` (stored persistently
+      in settings)
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a type-mismatch build time warning when building with LTO enabled, when
+    `CONFIG_MEMFAULT_METRICS_MEMORY_USAGE=y` memory metrics are enabled.
+
+- nRF Connect SDK:
+
+  - Fix a bug in the CoAP FOTA client implementation, where completed FOTA
+    downloads will prevent any other FOTA attempts from starting until chip
+    reboot. Thanks to [@simonduq](https://github.com/simonduq) for providing
+    this fix in
+    [#127](https://github.com/memfault/memfault-firmware-sdk/pull/127) 🎉!
+
+  - Improve out of box defaults for FOTA/HTTP upload stack sizes for the nRF7120
+    Wi-Fi SoC, matching the nRF7002. Thanks to
+    [@simonduq](https://github.com/simonduq) for providing this fix in
+    [#127](https://github.com/memfault/memfault-firmware-sdk/pull/127) 🎉!
+
+  - Update the
+    [`examples/nrf-connect-sdk/bluetooth`](examples/nrf-connect-sdk/bluetooth)
+    sample app to build correctly for the nRF54LM20 chip on nRF Connect SDK
+    v3.4.0. Some changes around partition manager in the latest release were
+    causing some build errors on this chip.
+
+- ESP-IDF:
+
+  - Fix an error in the component distribution
+    (<https://components.espressif.com/components/memfault/memfault-firmware-sdk/>)
+    which would fail to build on ESP-IDF v6+. Installing the Memfault SDK as a
+    submodule was working normally, but when installing to a project as an
+    ESP-IDF component, the build would fail.
+
 ## [1.44.0] - 2026-08-28
 
 This is a minor release, including new features, improvements, and bug fixes

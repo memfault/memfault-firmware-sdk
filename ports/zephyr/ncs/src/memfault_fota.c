@@ -21,6 +21,11 @@
 
   // Provides nrf_cloud_sec_tag_get(), the DTLS security tag used for the nRF Cloud CoAP connection.
   #include <net/nrf_cloud.h>
+  #include <net/nrf_cloud_coap.h>
+#endif
+
+#if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE) && !defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+  #include <net/nrf_cloud.h>
 #endif
 
 #include "memfault/components.h"
@@ -35,6 +40,10 @@
   #include <modem/modem_info.h>
 
   #include "memfault_fota_modem_project_key_private.h"
+#endif
+
+#if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+  #include <modem/lte_lc.h>
 #endif
 
 #if !defined(CONFIG_DOWNLOADER)
@@ -67,6 +76,7 @@
 // The OTA download URL is allocated to this pointer, and must be freed when the
 // FOTA download ends.
 static char *s_download_url = NULL;
+static bool s_modem_download_active;
 
 // Forward declaration: default implementation is below; custom provided by user when
 // CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
@@ -81,6 +91,25 @@ static void prv_fota_url_cleanup(void) {
   memfault_zephyr_port_release_download_url(&s_download_url);
 #endif
 }
+
+#if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+static int prv_apply_full_modem_update(void) {
+  if (!s_modem_download_active) {
+    return 0;
+  }
+
+  #if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+  (void)nrf_cloud_coap_disconnect();
+  #endif
+  (void)lte_lc_power_off();
+
+  int rv = nrf_cloud_fota_fmfu_apply();
+  if (rv != 0) {
+    MEMFAULT_LOG_ERROR("Full modem update apply failed, rv=%d", rv);
+  }
+  return rv;
+}
+#endif
 
 #if !CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
 void memfault_fota_download_callback(const struct fota_download_evt *evt) {
@@ -106,6 +135,14 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt) {
 // CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y), but to ensure any cleanup
 // is done.
 static void prv_fota_download_callback_wrapper(const struct fota_download_evt *evt) {
+#if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+  if (evt->id == FOTA_DOWNLOAD_EVT_FINISHED && prv_apply_full_modem_update() != 0) {
+    MEMFAULT_LOG_ERROR("Full modem OTA failed; rebooting");
+    memfault_platform_reboot();
+    return;
+  }
+#endif
+
   // May not return if OTA was successful
   memfault_fota_download_callback(evt);
 
@@ -114,7 +151,13 @@ static void prv_fota_download_callback_wrapper(const struct fota_download_evt *e
     case FOTA_DOWNLOAD_EVT_ERROR:
     case FOTA_DOWNLOAD_EVT_CANCELLED:
     case FOTA_DOWNLOAD_EVT_FINISHED:
+#if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
+      // Mark download as inactive (counterpart to nrf_cloud_download_start()).
+      // Needed so future attempts do not permanently fail with -EBUSY.
+      nrf_cloud_download_end();
+#endif
       prv_fota_url_cleanup();
+      s_modem_download_active = false;
       break;
     default:
       break;
@@ -210,6 +253,7 @@ static int prv_fota_download_start(void) {
 cleanup:
   if ((rv != 1) && (rv != 0)) {
     prv_fota_url_cleanup();
+    s_modem_download_active = false;
   }
   return rv;
 }
@@ -225,7 +269,10 @@ static void prv_get_modem_device_info(sMemfaultDeviceInfo *info) {
   info->software_version = s_modem_version;
 }
 
-static int prv_fota_modem_start(void) {
+//! Fetches (but does not start) the pending modem FOTA download URL into s_download_url.
+//! On success (rv==1), ownership of s_download_url is retained by this module, same as
+//! prv_fota_download_start() expects.
+static int prv_fota_modem_get_url(void) {
   int rv = modem_info_string_get(MODEM_INFO_FW_VERSION, s_modem_version, sizeof(s_modem_version));
   if (rv < 0) {
     MEMFAULT_LOG_ERROR("Failed to read modem FW version: %d", rv);
@@ -262,12 +309,27 @@ static int prv_fota_modem_start(void) {
   g_mflt_http_client_config.api_key = saved_api_key;
   g_mflt_http_client_config.get_device_info = saved_get_device_info;
 
+  return rv;
+}
+
+static int prv_fota_modem_start(void) {
+  int rv = prv_fota_modem_get_url();
   if (rv <= 0) {
     if (rv == 0) {
       MEMFAULT_LOG_INFO("Modem firmware is up to date");
     }
     return rv;
   }
+
+  #if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+  rv = nrf_cloud_fota_fmfu_dev_set(NULL);
+  if (rv < 0) {
+    MEMFAULT_LOG_ERROR("Full modem FOTA init failed, rv=%d", rv);
+    prv_fota_url_cleanup();
+    return rv;
+  }
+  s_modem_download_active = true;
+  #endif
 
   return prv_fota_download_start();
 }
@@ -276,9 +338,21 @@ int memfault_zephyr_fota_modem_start(void) {
   return prv_fota_modem_start();
 }
 
+int memfault_zephyr_fota_modem_get_download_url(char **url) {
+  int rv = prv_fota_modem_get_url();
+  if (rv > 0) {
+    // Transfer ownership of s_download_url to the caller - they are now responsible for
+    // releasing it via memfault_zephyr_port_release_download_url() /
+    // memfault_zephyr_port_coap_release_download_url().
+    *url = s_download_url;
+    s_download_url = NULL;
+  }
+  return rv;
+}
+
 #endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
 
-int memfault_zephyr_fota_start(void) {
+static int prv_fota_app_start(void) {
   // Note: The download URL is allocated on the heap and must be freed when done
 #if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   int rv = memfault_zephyr_port_coap_get_download_url(&s_download_url);
@@ -292,6 +366,19 @@ int memfault_zephyr_fota_start(void) {
   if (rv > 0) {
     // Application firmware update available - start download
     return prv_fota_download_start();
+  }
+
+  return 0;
+}
+
+int memfault_zephyr_fota_app_start(void) {
+  return prv_fota_app_start();
+}
+
+int memfault_zephyr_fota_start(void) {
+  int rv = prv_fota_app_start();
+  if (rv != 0) {
+    return rv;
   }
 
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)

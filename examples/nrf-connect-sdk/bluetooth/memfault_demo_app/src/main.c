@@ -10,6 +10,7 @@
 #include <memfault/core/trace_event.h>
 #include <memfault/metrics/metrics.h>
 #include <memfault/ports/watchdog.h>
+#include <string.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
@@ -17,9 +18,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/shell/shell.h>
-
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
 #define RUN_STATUS_LED DK_LED1
 #define CON_STATUS_LED DK_LED2
@@ -31,10 +29,6 @@ static const struct bt_data ad[] = {
   BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_MDS_VAL),
 };
 
-static const struct bt_data sd[] = {
-  BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static struct bt_conn *mds_conn;
 static struct k_work adv_work;
 
@@ -42,6 +36,7 @@ static void bas_work_handler(struct k_work *work);
 
 static K_WORK_DELAYABLE_DEFINE(bas_work, bas_work_handler);
 
+#if defined(CONFIG_BT_SMP)
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err) {
   char addr[BT_ADDR_LE_STR_LEN];
 
@@ -60,8 +55,18 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
     }
   }
 }
+#endif  // defined(CONFIG_BT_SMP)
 
 static void adv_work_handler(struct k_work *work) {
+  /* Read the name fresh on every (re)start so a name provisioned over the
+   * `bt name` shell command (settings key bt/name, applied on the next
+   * boot - see CONFIG_BT_DEVICE_NAME_DYNAMIC) is reflected in the
+   * advertising data.
+   */
+  const char *name = bt_get_name();
+  const struct bt_data sd[] = {
+    BT_DATA(BT_DATA_NAME_COMPLETE, name, strlen(name)),
+  };
   int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 
   if (err) {
@@ -108,10 +113,13 @@ static void recycled_cb(void) {
 BT_CONN_CB_DEFINE(conn_callbacks) = {
   .connected = connected,
   .disconnected = disconnected,
+#if defined(CONFIG_BT_SMP)
   .security_changed = security_changed,
+#endif
   .recycled = recycled_cb,
 };
 
+#if defined(CONFIG_BT_SMP)
 static void pairing_complete(struct bt_conn *conn, bool bonded) {
   char addr[BT_ADDR_LE_STR_LEN];
 
@@ -143,8 +151,9 @@ static void auth_cancel(struct bt_conn *conn) {
 static struct bt_conn_auth_cb conn_auth_callbacks = {
   .cancel = auth_cancel,
 };
+#endif  // defined(CONFIG_BT_SMP)
 
-#if defined(CONFIG_BT_MDS)
+#if defined(CONFIG_BT_MDS) && defined(CONFIG_BT_SMP)
 static bool mds_access_enable(struct bt_conn *conn) {
   if (mds_conn && (conn == mds_conn)) {
     return true;
@@ -156,7 +165,7 @@ static bool mds_access_enable(struct bt_conn *conn) {
 static const struct bt_mds_cb mds_cb = {
   .access_enable = mds_access_enable,
 };
-#endif
+#endif  // defined(CONFIG_BT_MDS) && defined(CONFIG_BT_SMP)
 
 static void button_handler(uint32_t button_state, uint32_t has_changed) {
   static bool time_measure_start;
@@ -360,13 +369,13 @@ int main(void) {
     return 0;
   }
 
-#if defined(CONFIG_BT_MDS)
+#if defined(CONFIG_BT_MDS) && defined(CONFIG_BT_SMP)
   err = bt_mds_cb_register(&mds_cb);
   if (err) {
     printk("Memfault Diagnostic service callback registration failed (err %d)\n", err);
     return 0;
   }
-#endif  // defined(CONFIG_BT_MDS)
+#endif  // defined(CONFIG_BT_MDS) && defined(CONFIG_BT_SMP)
 
   err = bt_enable(NULL);
   if (err) {
@@ -374,6 +383,7 @@ int main(void) {
     return 0;
   }
 
+#if defined(CONFIG_BT_SMP)
   err = bt_conn_auth_cb_register(&conn_auth_callbacks);
   if (err) {
     printk("Failed to register authorization callbacks (err %d)\n", err);
@@ -385,6 +395,7 @@ int main(void) {
     printk("Failed to register authorization info callbacks (err %d)\n", err);
     return 0;
   }
+#endif  // defined(CONFIG_BT_SMP)
 
   printk("Bluetooth initialized\n");
 

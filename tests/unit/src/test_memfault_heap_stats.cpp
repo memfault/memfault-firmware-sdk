@@ -363,6 +363,17 @@ TEST(MemfaultHeapStats, Test_Reuse) {
   LONGS_EQUAL(MEMFAULT_HEAP_STATS_MAX_COUNT - 2, list_count);
 }
 
+//! Verifies that a malloc with a NULL ptr (failed allocation) does not touch the lock
+TEST(MemfaultHeapStats, Test_MallocNullPtrDoesNotLock) {
+  uint32_t lock_count = fake_memfault_platform_metrics_lock_get_lock_count();
+  uint32_t unlock_count = fake_memfault_platform_metrics_lock_get_unlock_count();
+
+  MEMFAULT_HEAP_STATS_MALLOC(NULL, 123456);
+
+  LONGS_EQUAL(lock_count, fake_memfault_platform_metrics_lock_get_lock_count());
+  LONGS_EQUAL(unlock_count, fake_memfault_platform_metrics_lock_get_unlock_count());
+}
+
 //! Tests handling freeing the most recent allocation (list head)
 TEST(MemfaultHeapStats, Test_FreeMostRecent) {
   void *lr;

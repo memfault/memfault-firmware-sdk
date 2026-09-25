@@ -46,6 +46,10 @@ if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_LESS 
 set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-pre-v3.2.0.conf")
 endif()
 
+if (${NCS_VERSION_MAJOR}.${NCS_VERSION_MINOR}.${NCS_VERSION_PATCH} VERSION_GREATER_EQUAL 3.3.0)
+set(OVERLAY_CONFIG "${OVERLAY_CONFIG};overlays/ncs-v3.3.0.conf")
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(fs_shell)
 

@@ -89,6 +89,7 @@ endif()
 
 if(CONFIG_MEMFAULT_HEAP_STATS AND CONFIG_HEAP_MEM_POOL_SIZE GREATER 0)
   zephyr_ld_options(-Wl,--wrap=k_malloc)
+  zephyr_ld_options(-Wl,--wrap=k_calloc)
   zephyr_ld_options(-Wl,--wrap=k_free)
 endif()
 

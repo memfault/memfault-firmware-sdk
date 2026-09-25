@@ -365,6 +365,21 @@ static int prv_log_overflow(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_REGISTER(log_overflow, NULL, "generate a number of log lines", prv_log_overflow);
 
+#include "memfault/core/heap_stats_impl.h"
+static int prv_calloc_test(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc;
+  (void)argv;
+  shell_print(shell, "before: in_use=%u max_in_use=%u", g_memfault_heap_stats.in_use_block_count,
+              g_memfault_heap_stats.max_in_use_block_count);
+  void *ptr = k_calloc(4, 16);
+  shell_print(shell, "k_calloc(4, 16) -> %p", ptr);
+  shell_print(shell, "after: in_use=%u max_in_use=%u", g_memfault_heap_stats.in_use_block_count,
+              g_memfault_heap_stats.max_in_use_block_count);
+  k_free(ptr);
+  return 0;
+}
+SHELL_CMD_REGISTER(calloc_test, NULL, "temp test of k_calloc heap stats tracking", prv_calloc_test);
+
 #if !defined(CONFIG_MEMFAULT_CRC16_BUILTIN)
   #include MEMFAULT_ZEPHYR_INCLUDE(sys/crc.h)
 

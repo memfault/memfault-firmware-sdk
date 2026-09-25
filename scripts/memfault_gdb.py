@@ -36,7 +36,6 @@ import argparse
 import os
 import platform
 import re
-import sys
 import traceback
 import uuid
 from binascii import b2a_base64
@@ -54,32 +53,17 @@ except ImportError:
     error_str = """
     This script can only be run within gdb!
     """
-    raise ImportError(error_str)  # (no raise-from in Python 2.7)
-
+    raise ImportError(error_str)
 
 # Note: not using `requests` but using the built-in http.client instead, so
 # there will be no additional dependencies other than Python itself.
-try:
-    from httplib import HTTPConnection, HTTPSConnection
-    from Queue import Queue
-    from urlparse import urlparse, urlunparse
-except ImportError:
-    from http.client import HTTPConnection, HTTPSConnection
-    from queue import Queue
-    from urllib.parse import urlparse, urlunparse
-
+from http.client import HTTPConnection, HTTPSConnection
+from queue import Queue
+from urllib.parse import urlparse, urlunparse
 
 MEMFAULT_DEFAULT_INGRESS_BASE_URI = "https://ingress.memfault.com"
 MEMFAULT_DEFAULT_CHUNKS_BASE_URI = "https://chunks.memfault.com"
 MEMFAULT_DEFAULT_API_BASE_URI = "https://api.memfault.com"
-
-
-try:  # noqa: SIM105
-    # In Python 3.x, raw_input was renamed to input
-    # NOTE: Python 2.x also had an input() function which eval'd the input...!
-    input = raw_input
-except NameError:
-    pass
 
 
 class MemfaultConfig(object):
@@ -655,7 +639,7 @@ MEMFAULT_COREDUMP_FILE_HEADER_FMT = "<III"  # magic, version, file length (incl.
 MEMFAULT_COREDUMP_BLOCK_HEADER_FMT = "<bxxxII"  # type, address, block payload length
 
 
-class MemfaultCoredumpBlockType(object):  # (IntEnum):  # trying to be python2.7 compatible
+class MemfaultCoredumpBlockType(object):
     CURRENT_REGISTERS = 0
     MEMORY_REGION = 1
     DEVICE_SERIAL = 2
@@ -735,8 +719,6 @@ class MemfaultCoredumpWriter(object):
         total_size = {"size": 0}
 
         def _counting_write(data):
-            # nonlocal total_size  # Not python 2.x compatible :(
-            # total_size += len(data)
             total_size["size"] += len(data)
 
         self._write(_counting_write)
@@ -776,8 +758,7 @@ def parse_maintenance_info_sections(output):
     fn_match = re.search(r"`([^']+)', file type", output)
     if fn_match is None:
         return None, None
-    # Using groups() here instead of fn_match[1] for python2.x compatibility
-    fn = fn_match.groups()[0]
+    fn = fn_match.group(1)
     # Grab start addr, end addr, name and flags for each section line:
     # [2]     0x6b784->0x6b7a8 at 0x0004b784: .gnu_build_id ALLOC LOAD READONLY DATA HAS_CONTENTS
     section_matches = re.findall(
@@ -828,8 +809,7 @@ def _http(method, base_uri, path, headers=None, body=None):
         headers = {}
     conn = _create_http_connection(base_uri)
     # Convert to a string/bytes object so 'Content-Length' is set appropriately
-    # Python 2.7 uses this by default but 3.6 & up were using 'chunked'
-    if sys.version_info.major >= 3 and hasattr(body, "read"):
+    if hasattr(body, "read"):
         body = body.read()
 
     conn.request(method, path, body=body, headers=headers)
@@ -1132,11 +1112,7 @@ def settings_load():
 
 
 def settings_save(settings):
-    try:  # noqa: SIM105
-        # exist_ok does not exist yet in Python 2.7!
-        os.makedirs(os.path.dirname(MEMFAULT_CONFIG.json_path))
-    except OSError:
-        pass
+    os.makedirs(os.path.dirname(MEMFAULT_CONFIG.json_path), exist_ok=True)
     with open(MEMFAULT_CONFIG.json_path, "w") as f:
         dump(settings, f, sort_keys=True)
 
@@ -1600,8 +1576,7 @@ Proceed? [y/n]
         show_arch_output = gdb.execute("show arch", to_string=True).lower()
         current_arch_matches = re.search(r"currently ([^)]+)", show_arch_output)
         if current_arch_matches:
-            # Using groups() here instead of fn_match[1] for python2.x compatibility
-            current_arch = current_arch_matches.groups()[0]
+            current_arch = current_arch_matches.group(1)
             # Should tell us about different arm flavors:
             analytics_props["arch"] = current_arch
             arch = self._get_arch(current_arch, analytics_props)

@@ -33,6 +33,7 @@
 
 #include <hal/nrf_rramc.h>
 #include <memfault/components.h>
+#include <memfault/ports/zephyr/version.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/barrier.h>
 
@@ -42,8 +43,19 @@
 #define MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE (128 / 8)
 #include <memfault/ports/buffered_coredump_storage.h>
 
+// Partition size and address macros were changed in Zephyr v4.4.
+#if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 4)
+  #define MEMFAULT_PARTITION_EXISTS(label) PARTITION_EXISTS(label)
+  #define MEMFAULT_PARTITION_ADDRESS(label) PARTITION_ADDRESS(label)
+  #define MEMFAULT_PARTITION_SIZE(label) PARTITION_SIZE(label)
+#else
+  #define MEMFAULT_PARTITION_EXISTS(label) FIXED_PARTITION_EXISTS(label)
+  #define MEMFAULT_PARTITION_ADDRESS(label) FIXED_PARTITION_ADDRESS(label)
+  #define MEMFAULT_PARTITION_SIZE(label) FIXED_PARTITION_SIZE(label)
+#endif
+
 // Ensure the memfault_coredump_partition entry exists
-#if !FIXED_PARTITION_EXISTS(memfault_coredump_partition)
+#if !MEMFAULT_PARTITION_EXISTS(memfault_coredump_partition)
   #error "Be sure to add a fixed partition named 'memfault_coredump_partition'!"
 #endif
 
@@ -53,14 +65,20 @@
 
 // Fixed partitions in use
 #if DT_HAS_FIXED_PARTITION_LABEL(memfault_coredump_partition)
-  #define MEMFAULT_COREDUMP_PARTITION_ADDRESS FIXED_PARTITION_ADDRESS(memfault_coredump_partition)
-  #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_ADDRESS \
+    MEMFAULT_PARTITION_ADDRESS(memfault_coredump_partition)
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE MEMFAULT_PARTITION_SIZE(memfault_coredump_partition)
 
 // Partition-manager defined partitions
 #elif defined(CONFIG_PARTITION_MANAGER_ENABLED)
-  #define MEMFAULT_COREDUMP_PARTITION_ADDRESS \
-    FIXED_PARTITION_DATA_FIELD(memfault_coredump_partition, _ADDRESS)
-  #define MEMFAULT_COREDUMP_PARTITION_SIZE FIXED_PARTITION_SIZE(memfault_coredump_partition)
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 4)
+    #define MEMFAULT_COREDUMP_PARTITION_ADDRESS \
+      MEMFAULT_PARTITION_ADDRESS(memfault_coredump_partition)
+  #else
+    #define MEMFAULT_COREDUMP_PARTITION_ADDRESS \
+      FIXED_PARTITION_DATA_FIELD(memfault_coredump_partition, _ADDRESS)
+  #endif
+  #define MEMFAULT_COREDUMP_PARTITION_SIZE MEMFAULT_PARTITION_SIZE(memfault_coredump_partition)
 #endif
 
 MEMFAULT_STATIC_ASSERT(MEMFAULT_COREDUMP_PARTITION_SIZE % MEMFAULT_COREDUMP_STORAGE_WRITE_SIZE == 0,
