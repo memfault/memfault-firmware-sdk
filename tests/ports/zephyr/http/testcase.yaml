@@ -2,3 +2,8 @@ tests:
   memfault.platform.http:
     platform_allow:
       - native_sim
+  memfault.platform.http.ecdsa:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS=y

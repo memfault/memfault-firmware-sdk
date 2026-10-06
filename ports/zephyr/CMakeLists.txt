@@ -71,8 +71,8 @@ if(CONFIG_MEMFAULT)
   zephyr_library_compile_options_ifdef(
     CONFIG_MEMFAULT_ERROR_WUNDEF
     -Werror=undef
-    -isystem ${ZEPHYR_BASE}/include
-    -isystem ${ZEPHYR_BASE}/modules/cmsis_6
+    "SHELL:-isystem ${ZEPHYR_BASE}/include"
+    "SHELL:-isystem ${ZEPHYR_BASE}/modules/cmsis_6"
   )
   # Add subdirectories
   add_subdirectory(common)

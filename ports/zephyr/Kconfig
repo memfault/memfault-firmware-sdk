@@ -180,7 +180,59 @@ config MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH
           semaphore usage in ISR context). Requires a partition labeled
           `memfault_coredump_partition`.
 
+config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
+        bool "ESP32 SPI flash backed coredump storage"
+        depends on SOC_FAMILY_ESPRESSIF_ESP32
+        depends on !SMP
+        help
+          Use an ESP32 SPI flash backed coredump storage implementation that
+          calls the hal_espressif flash API directly (bypasses the Zephyr flash
+          driver, which can't be used from fault context). Requires a partition
+          labeled `memfault_coredump_partition`, unless
+          MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT is
+          enabled.
+
 endchoice # MEMFAULT_COREDUMP_STORAGE
+
+if MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
+
+config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
+        bool "Store coredumps in the MCUboot secondary slot"
+        depends on BOOTLOADER_MCUBOOT
+        help
+          Store coredumps at the end of the MCUboot secondary slot
+          (slot1_partition), just below the MCUboot trailer, instead of a
+          dedicated partition. This enables adding flash coredump storage to
+          devices in the field via an OTA update, without changing the
+          partition table.
+
+          Images must stay smaller than the slot size minus the coredump
+          region and trailer reserve. A coredump is not saved if an image in
+          the secondary slot (eg a downloaded update, or a revert image in swap
+          modes) overlaps the coredump region. Writing a new image to the
+          secondary slot may erase a stored coredump that has not been uploaded
+          yet.
+
+config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT_SIZE
+        hex "Coredump region size in the MCUboot secondary slot"
+        default 0x20000
+        depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
+        help
+          Size of the coredump region. Must be a multiple of the flash sector
+          size (4 KiB).
+
+config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_TRAILER_RESERVE
+        hex "Space reserved for the MCUboot trailer at the end of the secondary slot"
+        default 0x1000 if MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+        default 0x10000
+        depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
+        help
+          Space left untouched at the end of the secondary slot for the MCUboot
+          image trailer (and swap status, in swap modes). Must be a multiple
+          of the flash sector size (4 KiB) and at least as large as the
+          MCUboot trailer.
+
+endif # MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
 
 if MEMFAULT_RAM_BACKED_COREDUMP
 
@@ -314,14 +366,29 @@ endmenu  # Memfault Coredump Settings
 
 config MEMFAULT_HEAP_STATS
         bool "Collect system heap stats with coredumps"
-        # our wrapper conflicts with the esp32 heap_caps implementation
-        default y if (!MEMFAULT_SOC_FAMILY_ESP32)
+        default y
         select SYS_HEAP_RUNTIME_STATS
         depends on HEAP_MEM_POOL_SIZE > 0
         help
           When enabled, system heap stats are captured as part of the coredump.
           The heap stats subsystem collects info on system heap
           allocation/deallocation (k_malloc/k_calloc/k_free).
+
+config MEMFAULT_HEAP_STATS_SHARED_MULTI_HEAP
+        bool "Also track shared multi-heap allocations in heap stats"
+        default y if SHARED_MULTI_HEAP
+        depends on MEMFAULT_HEAP_STATS
+        depends on SHARED_MULTI_HEAP
+        help
+          When enabled, allocations made via the Zephyr shared multi-heap API
+          (shared_multi_heap_alloc/shared_multi_heap_aligned_alloc/
+          shared_multi_heap_free) are also tracked by the heap stats
+          subsystem. This is required to see allocations that are routed to
+          a non-default memory region, for example SPIRAM-backed WiFi/BT
+          buffers on ESP32 (CONFIG_ESP_WIFI_HEAP_SPIRAM,
+          CONFIG_ESP_BT_HEAP_SPIRAM), since those bypass k_malloc/k_free
+          entirely. shared_multi_heap_realloc is also tracked on Zephyr 4.4+.
+          Has no effect on Zephyr versions before 3.5.
 
 config MEMFAULT_SHELL
         bool "Memfault Shell"
@@ -654,6 +721,27 @@ config MEMFAULT_HTTP_DISABLE_TLS
 
           WARNING: This should ONLY be used for local debugging (e.g. with a
           local proxy server). Never enable this in production firmware.
+
+choice MEMFAULT_HTTP_ENDPOINT_TYPE
+        prompt "Memfault HTTP API endpoint / root CA set to use"
+        default MEMFAULT_HTTP_USE_RSA_ENDPOINTS
+        help
+          Selects which set of Memfault HTTP API endpoints, and correspondingly
+          which root CA certificate(s), are used to reach Memfault's cloud.
+
+config MEMFAULT_HTTP_USE_RSA_ENDPOINTS
+        bool "Use Memfault's default, RSA-trusted API endpoints"
+        help
+          Uses the default chunks.memfault.com / device.memfault.com
+          endpoints, which use RSA-based TLS certificates for trust.
+
+config MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+        bool "Use Memfault's alternate, ECDSA-only API endpoints"
+        help
+          Uses Memfault's alternate ECDSA-only API endpoints instead of the
+          default RSA-trusted endpoints.
+
+endchoice # MEMFAULT_HTTP_ENDPOINT_TYPE
 
 config MEMFAULT_HTTP_CHUNKS_API_HOST
         string "Override the Memfault chunks API host"

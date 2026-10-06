@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - xxxx-xx-xx
+
+### 📈 Added
+
+- General:
+
+  - Added support for Memfault's alternate, ECDSA-only API endpoints. Set
+    `MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS` to `1` in `memfault_platform_config.h`
+    to opt in (for Zephyr, use `CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS=y`).
+    Selecting the ECDSA endpoints over the RSA endpoints can improve memory
+    consumption and reduce round-trips when communicating with Memfault's cloud,
+    and depending on hardware support, can improve handshake performance.
+
+- Zephyr:
+
+  - Added a new Kconfig choice, `MEMFAULT_HTTP_ENDPOINT_TYPE`, to select between
+    the default RSA-trusted endpoints (`MEMFAULT_HTTP_USE_RSA_ENDPOINTS`) and
+    the alternate ECDSA-only endpoints (`MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS`).
+    This applies to Zephyr generally as well as the nRF Connect SDK cellular
+    port. Switching between endpoint types (e.g. on the nRF9160, whose modem
+    persists certs across reboots) now also removes the now-unused root
+    certificate from storage.
+
+  - Heap stats (`CONFIG_MEMFAULT_HEAP_STATS`) can now track allocations made via
+    the Zephyr shared multi-heap API (`shared_multi_heap_alloc()`,
+    `shared_multi_heap_aligned_alloc()`, `shared_multi_heap_free()`), enabled
+    with `CONFIG_MEMFAULT_HEAP_STATS_SHARED_MULTI_HEAP` (default on when
+    `CONFIG_SHARED_MULTI_HEAP=y`). This captures allocations routed to
+    non-default memory regions, such as SPIRAM-backed WiFi/BT buffers on ESP32.
+    Requires Zephyr 3.5+; `shared_multi_heap_realloc()` is also tracked on
+    Zephyr 4.4+.
+
+  - Add an ESP32 SPI flash backed coredump storage implementation, enabled with
+    `CONFIG_MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH=y`. Coredumps are stored in a
+    `memfault_coredump_partition` devicetree partition, or optionally at the end
+    of the MCUboot secondary slot
+    (`CONFIG_MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT=y`),
+    which permits adding flash coredump storage to deployed devices via OTA
+    without a partition table change.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - `CONFIG_MEMFAULT_HEAP_STATS` is now enabled by default on ESP32 targets,
+    matching other platforms.
+
 ## [1.45.0] - 2026-09-25
 
 This is a minor release, including new features, improvements, and bug fixes

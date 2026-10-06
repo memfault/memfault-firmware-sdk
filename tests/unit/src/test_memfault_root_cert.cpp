@@ -93,6 +93,8 @@ TEST(MemfaultRootCert, Test_certs) {
     FILL_CERT_ENTRY(g_memfault_cert_digicert_global_root_g2,
                     MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2),
     FILL_CERT_ENTRY(g_memfault_cert_amazon_root_ca1, MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1),
+    FILL_CERT_ENTRY(g_memfault_cert_digicert_tls_ecc_p384_root_g5,
+                    MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5),
   };
 
   for (size_t i = 0; i < MEMFAULT_ARRAY_SIZE(cert_refs); i++) {

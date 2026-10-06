@@ -78,11 +78,15 @@ static char s_mflt_http_net_interface_name[IFNAMSIZ];
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len g_memfault_cert_digicert_global_root_g2_len
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr g_memfault_cert_amazon_root_ca1
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len g_memfault_cert_amazon_root_ca1_len
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_ptr g_memfault_cert_digicert_tls_ecc_p384_root_g5
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_len g_memfault_cert_digicert_tls_ecc_p384_root_g5_len
 #elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2
   #define MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2)
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
   #define MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1)
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_ptr MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5
+  #define MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_len sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5)
 #else
 #error "Must choose a cert format. Check CONFIG_MEMFAULT_TLS_CERTS_FORMAT for options and their dependencies."
 #endif
@@ -93,6 +97,12 @@ static int prv_install_cert(eMemfaultRootCert cert_id) {
   size_t cert_len;
 
   switch (cert_id) {
+  #if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+    case kMemfaultRootCert_DigicertTlsEccP384RootG5:
+      cert = MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_ptr;
+      cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5_len;
+      break;
+  #else
     case kMemfaultRootCert_DigicertRootG2:
       cert = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_ptr;
       cert_len = MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2_len;
@@ -101,6 +111,7 @@ static int prv_install_cert(eMemfaultRootCert cert_id) {
       cert = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_ptr;
       cert_len = MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1_len;
       break;
+  #endif
 
     default:
       MEMFAULT_LOG_ERROR("Unknown cert id: %d", (int)cert_id);
@@ -116,8 +127,10 @@ int memfault_zephyr_port_install_root_certs(void) {
     memfault_root_cert_storage_remove(cert_id);
   }
 
-  for (eMemfaultRootCert cert_id = kMemfaultRootCert_DigicertRootG2;
-       cert_id < kMemfaultRootCert_MaxIndex; cert_id++) {
+  MEMFAULT_REMOVE_UNUSED_ROOT_CERTS();
+
+  for (eMemfaultRootCert cert_id = MEMFAULT_ROOT_CERT_ACTIVE_BASE + 1;
+       cert_id < MEMFAULT_ROOT_CERT_ACTIVE_MAX_INDEX; cert_id++) {
     const int rv = prv_install_cert(cert_id);
     if (rv != 0) {
       return rv;
@@ -802,6 +815,7 @@ int memfault_zephyr_port_http_open_socket(sMemfaultHttpContext *ctx) {
   ctx->sock_fd = prv_open_socket(&(ctx->res), host, port);
 
   if (ctx->sock_fd < 0) {
+    MEMFAULT_LOG_ERROR("Failed to open socket, err=%d", errno);
     memfault_zephyr_port_http_close_socket(ctx);
     return -1;
   }

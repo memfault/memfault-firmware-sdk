@@ -53,22 +53,62 @@ ZTEST(memfault_platform_http, test_install_root_certs) {
   const int rv = memfault_zephyr_port_install_root_certs();
   zassert_equal(rv, 0, "Expected root cert installation to succeed");
 
-  const size_t expected_remove_count =
+  // Deprecated certs are removed first, followed by the certs for the inactive endpoint type
+#if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+  static const eMemfaultRootCert expected_unused_remove_ids[] = {
+    kMemfaultRootCert_DigicertRootG2,
+    kMemfaultRootCert_AmazonRootCa1,
+  };
+#else
+  static const eMemfaultRootCert expected_unused_remove_ids[] = {
+    kMemfaultRootCert_DigicertTlsEccP384RootG5,
+  };
+#endif
+  const size_t expected_deprecated_remove_count =
     (size_t)(kMemfaultDeprecatedRootCert_MaxIndex - kMemfaultDeprecatedRootCert_DigicertRootCa);
+  const size_t expected_remove_count =
+    expected_deprecated_remove_count + ARRAY_SIZE(expected_unused_remove_ids);
   zassert_equal(s_remove_call_count, expected_remove_count, "Unexpected number of remove calls");
 
-  for (size_t i = 0; i < expected_remove_count; i++) {
+  for (size_t i = 0; i < expected_deprecated_remove_count; i++) {
     const eMemfaultRootCert expected_id =
       (eMemfaultRootCert)(kMemfaultDeprecatedRootCert_DigicertRootCa + i);
     zassert_equal(s_remove_calls[i], expected_id, "Unexpected cert id removed at index %d", (int)i);
   }
+  for (size_t i = 0; i < ARRAY_SIZE(expected_unused_remove_ids); i++) {
+    const size_t idx = expected_deprecated_remove_count + i;
+    zassert_equal(s_remove_calls[idx], expected_unused_remove_ids[i],
+                  "Unexpected cert id removed at index %d", (int)idx);
+  }
 
+#if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+  static const eMemfaultRootCert expected_add_ids[] = {
+    kMemfaultRootCert_DigicertTlsEccP384RootG5,
+  };
+
+  #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
+  static const uint8_t *const expected_add_certs[] = {
+    g_memfault_cert_digicert_tls_ecc_p384_root_g5,
+  };
+  size_t expected_add_cert_lens[1];
+  expected_add_cert_lens[0] = g_memfault_cert_digicert_tls_ecc_p384_root_g5_len;
+  #elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
+  static const uint8_t *const expected_add_certs[] = {
+    (const uint8_t *)MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5,
+  };
+  static const size_t expected_add_cert_lens[] = {
+    sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5),
+  };
+  #else
+    #error "Unsupported cert format"
+  #endif
+#else
   static const eMemfaultRootCert expected_add_ids[] = {
     kMemfaultRootCert_DigicertRootG2,
     kMemfaultRootCert_AmazonRootCa1,
   };
 
-#if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
+  #if defined(CONFIG_MEMFAULT_TLS_CERTS_USE_DER)
   static const uint8_t *const expected_add_certs[] = {
     g_memfault_cert_digicert_global_root_g2,
     g_memfault_cert_amazon_root_ca1,
@@ -76,7 +116,7 @@ ZTEST(memfault_platform_http, test_install_root_certs) {
   size_t expected_add_cert_lens[2];
   expected_add_cert_lens[0] = g_memfault_cert_digicert_global_root_g2_len;
   expected_add_cert_lens[1] = g_memfault_cert_amazon_root_ca1_len;
-#elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
+  #elif defined(CONFIG_MEMFAULT_TLS_CERTS_USE_PEM)
   static const uint8_t *const expected_add_certs[] = {
     (const uint8_t *)MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2,
     (const uint8_t *)MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1,
@@ -85,8 +125,9 @@ ZTEST(memfault_platform_http, test_install_root_certs) {
     sizeof(MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2),
     sizeof(MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1),
   };
-#else
-  #error "Unsupported cert format"
+  #else
+    #error "Unsupported cert format"
+  #endif
 #endif
 
   zassert_equal(s_add_call_count, ARRAY_SIZE(expected_add_ids), "Unexpected number of add calls");
