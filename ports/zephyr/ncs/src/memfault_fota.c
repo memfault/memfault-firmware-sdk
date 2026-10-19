@@ -313,6 +313,12 @@ static int prv_fota_modem_get_url(void) {
 }
 
 static int prv_fota_modem_start(void) {
+  // s_download_url is held for the whole download, so use it to detect ongoing FOTA
+  if (s_download_url != NULL) {
+    MEMFAULT_LOG_INFO("Skipping FOTA update check, a download is already in progress");
+    return 1;
+  }
+
   int rv = prv_fota_modem_get_url();
   if (rv <= 0) {
     if (rv == 0) {
@@ -353,6 +359,12 @@ int memfault_zephyr_fota_modem_get_download_url(char **url) {
 #endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
 
 static int prv_fota_app_start(void) {
+  // s_download_url is held for the whole download, so use it to detect ongoing FOTA
+  if (s_download_url != NULL) {
+    MEMFAULT_LOG_INFO("Skipping FOTA update check, a download is already in progress");
+    return 1;
+  }
+
   // Note: The download URL is allocated on the heap and must be freed when done
 #if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   int rv = memfault_zephyr_port_coap_get_download_url(&s_download_url);
