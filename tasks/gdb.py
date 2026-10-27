@@ -8,7 +8,9 @@ from __future__ import annotations
 try:
     from shutil import which  # Python 3
 except ImportError:  # Python 2
-    from distutils.spawn import find_executable as which
+    from distutils.spawn import (  # pyright: ignore [reportMissingModuleSource]
+        find_executable as which,
+    )
 
 
 def gdb_find(prefix: str | None = None) -> str:

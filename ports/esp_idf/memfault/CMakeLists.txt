@@ -198,7 +198,9 @@ if(CONFIG_MEMFAULT_MBEDTLS_METRICS)
 endif()
 
 if(${MEMFAULT_ESP_HTTP_CLIENT_ENABLE})
-  list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota)
+  # esp_https_ota.h includes bootloader_common.h but esp_https_ota doesn't
+  # declare bootloader_support as a public requirement
+  list(APPEND COMPONENT_REQUIRES esp_http_client esp_https_ota bootloader_support)
 endif()
 # Register with idf_component_register() rather than the legacy
 # register_component(). Passing KCONFIG explicitly also removes the reliance on
@@ -440,8 +442,26 @@ if (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "4.4.3")
   # Get the name of the ESP FreeRTOS target/library
   idf_component_get_property(freertos_lib freertos COMPONENT_LIB)
 
-  # Link this component to FreeRTOS, use INTERFACE because we're only sharing headers
-  target_link_libraries(${freertos_lib} INTERFACE ${this_component})
+  # Share only headers with FreeRTOS. Linking this component into freertos (a
+  # requirement of every component) creates a static library cycle spanning
+  # the whole build, which breaks link ordering. The platform port components
+  # are included so the user's CONFIG_MEMFAULT_PLATFORM_CONFIG_FILE is visible.
+  target_include_directories(${freertos_lib} INTERFACE
+    $<TARGET_PROPERTY:${this_component},INTERFACE_INCLUDE_DIRECTORIES>
+  )
+  foreach(port_component ${MEMFAULT_PLATFORM_PORT_COMPONENTS})
+    idf_component_get_property(port_lib ${port_component} COMPONENT_LIB)
+    target_include_directories(${freertos_lib} INTERFACE
+      $<TARGET_PROPERTY:${port_lib},INTERFACE_INCLUDE_DIRECTORIES>
+    )
+  endforeach()
+
+  # The trace hooks are called from freertos, which now links after this
+  # component, so force them in
+  target_link_libraries(${this_component} INTERFACE
+    "-u memfault_freertos_trace_task_create"
+    "-u memfault_freertos_trace_task_delete"
+  )
 
   target_compile_options(${freertos_lib} INTERFACE
     "-DMEMFAULT_METRICS_USER_HEARTBEAT_DEFS_FILE=\"memfault_esp_metrics_heartbeat_config.def\""
@@ -467,12 +487,7 @@ if (MEMFAULT_IDF_VERSION VERSION_GREATER_EQUAL "4.4.3")
 
   # Add definition for LWIP_STATS_LARGE to lwip component if using CONFIG_MEMFAULT_LWIP_METRICS
   if(CONFIG_MEMFAULT_LWIP_METRICS)
-    # Get the name of the LwIP target/library
     idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
-
-    # Link this component to LwIP, use INTERFACE because we're only sharing headers
-    target_link_libraries(${lwip_lib} INTERFACE ${this_component})
-
     target_compile_options(${lwip_lib} INTERFACE "-DLWIP_STATS_LARGE=1")
   endif()
 endif()

@@ -33,6 +33,11 @@ bool memfault_zephyr_fota_download_callback(void);
 //! @note This function will block until the FOTA update is complete. If the
 //! update is successful, the device will be rebooted to apply the update.
 //!
+//! @note With the nRF Connect SDK backend, this function (and the other FOTA
+//! check functions below) returns -EBUSY if another FOTA check or download is
+//! already in progress, so it is safe to call from multiple threads (e.g.
+//! alongside CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK).
+//!
 //! @return
 //!   < 0 Error while trying to perform the FOTA update 0 Check completed
 //!     successfully - No new update available

@@ -30,6 +30,11 @@ CFLAGS += \
 CFLAGS += \
   -lcurl -lcrypto -lssl
 
+# Need memfault configuration header
+CFLAGS += \
+  -I../../components/include \
+  -I.
+
 .PHONY: all
 all: build/post-chunks build/get-latest
 

@@ -537,12 +537,27 @@ extern "C" {
 // Http Configuration Options
 //
 
+// Set this to 1 to use Memfault's alternate, ECDSA-only API endpoints and
+// trust anchor (see MEMFAULT_ROOT_CERTS_PEM in memfault/http/root_certs.h)
+// instead of the default RSA-trusted endpoints.
+#ifndef MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+  #define MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS 0
+#endif
+
 #ifndef MEMFAULT_HTTP_CHUNKS_API_HOST
-  #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks.memfault.com"
+  #if MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+    #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-ecdsa.memfault.com"
+  #else
+    #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks.memfault.com"
+  #endif
 #endif
 
 #ifndef MEMFAULT_HTTP_DEVICE_API_HOST
-  #define MEMFAULT_HTTP_DEVICE_API_HOST "device.memfault.com"
+  #if MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+    #define MEMFAULT_HTTP_DEVICE_API_HOST "device-ecdsa.memfault.com"
+  #else
+    #define MEMFAULT_HTTP_DEVICE_API_HOST "device.memfault.com"
+  #endif
 #endif
 
 #ifndef MEMFAULT_HTTP_APIS_DEFAULT_PORT

@@ -383,6 +383,74 @@ void __wrap_k_free(void *ptr) {
 }
 #endif
 
+// Older Zephyr releases use a different shared multi-heap API, so only wrap on 3.5+
+#if defined(CONFIG_MEMFAULT_HEAP_STATS_SHARED_MULTI_HEAP) && MEMFAULT_ZEPHYR_VERSION_GT(3, 4)
+  #include MEMFAULT_ZEPHYR_INCLUDE(multi_heap/shared_multi_heap.h)
+
+extern void *__real_shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes);
+extern void *__real_shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr, size_t align,
+                                                    size_t bytes);
+extern void __real_shared_multi_heap_free(void *block);
+
+void *__wrap_shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes) {
+  void *ptr = __real_shared_multi_heap_alloc(attr, bytes);
+
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, bytes);
+  }
+
+  return ptr;
+}
+
+void *__wrap_shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr, size_t align,
+                                             size_t bytes) {
+  void *ptr = __real_shared_multi_heap_aligned_alloc(attr, align, bytes);
+
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_MALLOC(ptr, bytes);
+  }
+
+  return ptr;
+}
+
+void __wrap_shared_multi_heap_free(void *block) {
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    MEMFAULT_HEAP_STATS_FREE(block);
+  }
+  __real_shared_multi_heap_free(block);
+}
+
+  #if MEMFAULT_ZEPHYR_VERSION_GTE_STRICT(4, 4)
+extern void *__real_shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr,
+                                              size_t bytes);
+
+void *__wrap_shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr, size_t bytes) {
+  void *new_ptr = __real_shared_multi_heap_realloc(attr, ptr, bytes);
+
+  // Only call into heap stats from non-ISR context
+  // Heap stats requires holding a lock
+  if (!k_is_in_isr()) {
+    // The old block is released on success (moved or resized in place) or when
+    // bytes == 0. On failure it's left untouched.
+    if ((ptr != NULL) && ((bytes == 0) || (new_ptr != NULL))) {
+      MEMFAULT_HEAP_STATS_FREE(ptr);
+    }
+    if (new_ptr != NULL) {
+      MEMFAULT_HEAP_STATS_MALLOC(new_ptr, bytes);
+    }
+  }
+
+  return new_ptr;
+}
+  #endif
+#endif
+
 SYS_INIT(prv_boot_memfault,
 #if defined(CONFIG_MEMFAULT_INIT_LEVEL_POST_KERNEL)
          POST_KERNEL,

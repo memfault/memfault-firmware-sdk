@@ -22,16 +22,44 @@ extern "C" {
 typedef enum {
   // arbitrarily high base so as not to conflict with id used for other certs in use by the system
   kMemfaultRootCert_Base = 1000,
-  // Keep this index first, or update the code that references it
-  kMemfaultRootCert_DigicertRootG2,
-  kMemfaultRootCert_AmazonRootCa1,
 
-  // Must be last, used to track number of root certs in use
-  kMemfaultRootCert_MaxIndex,
+  // RSA cert id range: [kMemfaultRootCert_Base + 1, kMemfaultRootCert_RsaMaxIndex). Only
+  // installed when RSA endpoints are active.
+  kMemfaultRootCert_DigicertRootG2 = kMemfaultRootCert_Base + 1,
+  kMemfaultRootCert_AmazonRootCa1,
+  kMemfaultRootCert_RsaMaxIndex,
+
+  // ECDSA cert id range: [kMemfaultRootCert_EcdsaBase + 1, kMemfaultRootCert_EcdsaMaxIndex).
+  // Offset well clear of the RSA range above (and the reserved deprecated-cert range in
+  // deprecated_root_cert.h).
+  kMemfaultRootCert_EcdsaBase = kMemfaultRootCert_Base + 10,
+  kMemfaultRootCert_DigicertTlsEccP384RootG5 = kMemfaultRootCert_EcdsaBase + 1,
+  kMemfaultRootCert_EcdsaMaxIndex,
 } eMemfaultRootCert;
 
-#define MEMFAULT_ROOT_CERTS_ID_LIST \
-  kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_AmazonRootCa1,
+#if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+  #define MEMFAULT_ROOT_CERT_ACTIVE_BASE kMemfaultRootCert_EcdsaBase
+  #define MEMFAULT_ROOT_CERT_ACTIVE_MAX_INDEX kMemfaultRootCert_EcdsaMaxIndex
+
+  #define MEMFAULT_ROOT_CERTS_ID_LIST kMemfaultRootCert_DigicertTlsEccP384RootG5,
+  // DigicertRootG2 and AmazonRootCa1 are only used when RSA endpoints are active. Clean them up
+  // if a device previously used RSA endpoints and has since switched to ECDSA endpoints.
+  #define MEMFAULT_REMOVE_UNUSED_ROOT_CERTS()                              \
+    do {                                                                   \
+      memfault_root_cert_storage_remove(kMemfaultRootCert_DigicertRootG2); \
+      memfault_root_cert_storage_remove(kMemfaultRootCert_AmazonRootCa1);  \
+    } while (0)
+#else
+  #define MEMFAULT_ROOT_CERT_ACTIVE_BASE kMemfaultRootCert_Base
+  #define MEMFAULT_ROOT_CERT_ACTIVE_MAX_INDEX kMemfaultRootCert_RsaMaxIndex
+
+  #define MEMFAULT_ROOT_CERTS_ID_LIST \
+    kMemfaultRootCert_DigicertRootG2, kMemfaultRootCert_AmazonRootCa1,
+  // DigicertTlsEccP384RootG5 is only used when ECDSA endpoints are active. Clean it up if a
+  // device previously used ECDSA endpoints and has since switched to RSA endpoints.
+  #define MEMFAULT_REMOVE_UNUSED_ROOT_CERTS() \
+    memfault_root_cert_storage_remove(kMemfaultRootCert_DigicertTlsEccP384RootG5)
+#endif
 
 //! Adds specified certificate to backing store
 //!

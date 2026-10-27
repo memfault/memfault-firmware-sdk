@@ -158,6 +158,14 @@ extern "C" {
 // User and platform config are included above. Settings after this point can
 // be used as fallbacks or to enforce deprecations.
 
+// Map the Kconfig endpoint choice to the SDK's MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+// setting, which selects both the default hosts (below and in
+// default_config.h) and the root cert set installed (see root_certs.h and
+// root_cert_storage.h).
+#if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+  #define MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS 1
+#endif
+
 // Alternate default HTTP URLs for nRF Connect SDK devices
 #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
 
@@ -165,26 +173,34 @@ extern "C" {
   #if !defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
 
     #ifndef MEMFAULT_HTTP_CHUNKS_API_HOST
-      #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
+      #if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+        #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-ecdsa.memfault.com"
+      #else
+        #define MEMFAULT_HTTP_CHUNKS_API_HOST "chunks-nrf.memfault.com"
+      #endif
     #endif
 
     #ifndef MEMFAULT_HTTP_DEVICE_API_HOST
-      #define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
+      #if defined(CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS)
+        #define MEMFAULT_HTTP_DEVICE_API_HOST "device-ecdsa.memfault.com"
+      #else
+        #define MEMFAULT_HTTP_DEVICE_API_HOST "device-nrf.memfault.com"
+      #endif
     #endif
 
   #endif
 
 #endif
 
-// HTTP hosts can be set in Kconfig, but should not override those set in
-// platform config.
-#if !defined(MEMFAULT_HTTP_CHUNKS_API_HOST) && \
-  defined(CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST_OVERRIDE)
+// HTTP hosts can be set in Kconfig, and should override those set in platform
+// config.
+#if defined(CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST_OVERRIDE)
+  #undef MEMFAULT_HTTP_CHUNKS_API_HOST
   #define MEMFAULT_HTTP_CHUNKS_API_HOST CONFIG_MEMFAULT_HTTP_CHUNKS_API_HOST
 #endif
 
-#if !defined(MEMFAULT_HTTP_DEVICE_API_HOST) && \
-  defined(CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST_OVERRIDE)
+#if defined(CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST_OVERRIDE)
+  #undef MEMFAULT_HTTP_DEVICE_API_HOST
   #define MEMFAULT_HTTP_DEVICE_API_HOST CONFIG_MEMFAULT_HTTP_DEVICE_API_HOST
 #endif
 

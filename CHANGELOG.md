@@ -6,6 +6,80 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.46.0] - 2026-10-23
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- General:
+
+  - Added support for Memfault's alternate, ECDSA-only API endpoints. Set
+    `MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS` to `1` in `memfault_platform_config.h`
+    to opt in (for Zephyr, use `CONFIG_MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS=y`).
+    Selecting the ECDSA endpoints over the RSA endpoints can improve memory
+    consumption and reduce round-trips when communicating with Memfault's cloud,
+    and depending on hardware support, can improve handshake performance.
+
+- Zephyr:
+
+  - Added a new Kconfig choice, `MEMFAULT_HTTP_ENDPOINT_TYPE`, to select between
+    the default RSA-trusted endpoints (`MEMFAULT_HTTP_USE_RSA_ENDPOINTS`) and
+    the alternate ECDSA-only endpoints (`MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS`).
+    This applies to Zephyr generally as well as the nRF Connect SDK cellular
+    port. Switching between endpoint types (e.g. on the nRF9160, whose modem
+    persists certs across reboots) now also removes the now-unused root
+    certificate from storage.
+
+  - Added an ESP32 SPI flash backed coredump storage implementation, enabled
+    with `CONFIG_MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH=y`. Coredumps are stored
+    in a `memfault_coredump_partition` devicetree partition, or optionally at
+    the end of the MCUboot secondary slot
+    (`CONFIG_MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT=y`),
+    which permits adding flash coredump storage to deployed devices via OTA
+    without a partition table change.
+
+  - Heap stats (`CONFIG_MEMFAULT_HEAP_STATS`) can now track allocations made via
+    the Zephyr shared multi-heap API (`shared_multi_heap_alloc()`,
+    `shared_multi_heap_aligned_alloc()`, `shared_multi_heap_free()`), enabled
+    with `CONFIG_MEMFAULT_HEAP_STATS_SHARED_MULTI_HEAP` (default on when
+    `CONFIG_SHARED_MULTI_HEAP=y`). This captures allocations routed to
+    non-default memory regions, such as SPIRAM-backed WiFi/BT buffers on ESP32.
+    Requires Zephyr 3.5+; `shared_multi_heap_realloc()` is also tracked on
+    Zephyr 4.4+.
+
+### 🛠️ Changed
+
+- Zephyr:
+
+  - `CONFIG_MEMFAULT_HEAP_STATS` is now enabled by default on ESP32 targets,
+    matching other platforms.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Update the default `memfault_platform_sanitize_address_range()`
+    implementation to use `_image_ram_start` instead of `__kernel_ram_start`
+    (which begins at `.bss`) as the lower bound of valid RAM. This improves
+    coredump captures when thread TCBs are located in `.data`, for example.
+
+- nRF Connect SDK:
+
+  - Fixed a race in `memfault_zephyr_fota_start()`,
+    `memfault_zephyr_fota_app_start()`, and `memfault_zephyr_fota_modem_start()`
+    when called from multiple threads, or while a FOTA download is already in
+    progress (for example a manual check alongside
+    `CONFIG_MEMFAULT_PERIODIC_FOTA_CHECK=y`). The download URL in use by an
+    active download could be leaked or freed. These functions now return
+    `-EBUSY` if another check or download is in progress.
+
+- ESP-IDF:
+
+  - Fixed a minor compatibility issue with the component form of the Memfault
+    SDK on ESP-IDF v6.0+.
+
 ## [1.45.0] - 2026-09-25
 
 This is a minor release, including new features, improvements, and bug fixes

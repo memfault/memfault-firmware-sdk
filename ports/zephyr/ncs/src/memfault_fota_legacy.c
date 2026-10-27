@@ -17,6 +17,7 @@
 #include "net/download_client.h"
 #include "net/fota_download.h"
 
+#include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 // clang-format on
 
@@ -57,6 +58,32 @@
 // FOTA download ends.
 static char *s_download_url = NULL;
 
+// Set while a FOTA check or download owns s_download_url. Taken by the public entry points; if a
+// download starts, ownership passes to the download callback, which clears it when the download
+// ends.
+static atomic_t s_fota_busy;
+
+static int prv_fota_lock(void) {
+  if (!atomic_cas(&s_fota_busy, 0, 1)) {
+    MEMFAULT_LOG_WARN("FOTA check or download already in progress");
+    return -EBUSY;
+  }
+  return 0;
+}
+
+static int prv_fota_run_locked(int (*fn)(void)) {
+  int rv = prv_fota_lock();
+  if (rv != 0) {
+    return rv;
+  }
+  rv = fn();
+  // rv == 1: a download started and now owns s_fota_busy
+  if (rv != 1) {
+    atomic_clear(&s_fota_busy);
+  }
+  return rv;
+}
+
 // Forward declaration: default implementation is below; custom provided by user when
 // CONFIG_MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
 void memfault_fota_download_callback(const struct fota_download_evt *evt);
@@ -77,8 +104,9 @@ void memfault_fota_download_callback(const struct fota_download_evt *evt) {
       break;
     case FOTA_DOWNLOAD_EVT_ERROR:
     case FOTA_DOWNLOAD_EVT_CANCELLED:
+      // URL is freed by prv_fota_download_callback_wrapper()
       MEMFAULT_LOG_ERROR("FOTA download error: rv=%d", evt->id);
-      prv_fota_url_cleanup();
+      break;
     default:
       break;
   }
@@ -98,6 +126,8 @@ static void prv_fota_download_callback_wrapper(const struct fota_download_evt *e
     case FOTA_DOWNLOAD_EVT_CANCELLED:
     case FOTA_DOWNLOAD_EVT_FINISHED:
       prv_fota_url_cleanup();
+      // Must be last: permits a new FOTA check to allocate s_download_url
+      atomic_clear(&s_fota_busy);
       break;
     default:
       break;
@@ -292,27 +322,32 @@ static int prv_fota_modem_start(void) {
 }
 
 int memfault_zephyr_fota_modem_start(void) {
-  return prv_fota_modem_start();
+  return prv_fota_run_locked(prv_fota_modem_start);
 }
 
 int memfault_zephyr_fota_modem_get_download_url(char **url) {
-  int rv = prv_fota_modem_get_url();
+  int rv = prv_fota_lock();
+  if (rv != 0) {
+    return rv;
+  }
+  rv = prv_fota_modem_get_url();
   if (rv > 0) {
     // Transfer ownership of s_download_url to the caller - they are now responsible for
     // releasing it via memfault_zephyr_port_release_download_url().
     *url = s_download_url;
     s_download_url = NULL;
   }
+  atomic_clear(&s_fota_busy);
   return rv;
 }
 
 #endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
 
 int memfault_zephyr_fota_app_start(void) {
-  return prv_fota_app_start();
+  return prv_fota_run_locked(prv_fota_app_start);
 }
 
-int memfault_zephyr_fota_start(void) {
+static int prv_fota_start(void) {
   int rv = prv_fota_app_start();
   if (rv != 0) {
     return rv;
@@ -324,4 +359,8 @@ int memfault_zephyr_fota_start(void) {
 #else
   return 0;
 #endif
+}
+
+int memfault_zephyr_fota_start(void) {
+  return prv_fota_run_locked(prv_fota_start);
 }

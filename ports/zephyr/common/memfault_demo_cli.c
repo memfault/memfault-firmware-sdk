@@ -135,7 +135,13 @@ static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char *
     rv = memfault_zephyr_fota_modem_get_download_url(&url);
   #endif
   } else {
-    shell_print(shell, "Usage: mflt get_latest_url [app|modem]");
+    shell_print(shell, "Usage: mflt get_latest_url "
+  #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+                       "[app|modem]"
+  #else
+                       "[app]"
+  #endif
+    );
     return -EINVAL;
   }
 

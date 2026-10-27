@@ -25,9 +25,16 @@ typedef enum {
   kMemfaultDeprecatedRootCert_MaxIndex,
 } eMemfaultDeprecatedRootCert;
 
-MEMFAULT_STATIC_ASSERT((kMemfaultRootCert_MaxIndex - 1) <
+// The RSA cert id range sits below the deprecated range, and the ECDSA cert id range sits
+// above it, so each can be checked against the deprecated range independently.
+MEMFAULT_STATIC_ASSERT((kMemfaultRootCert_RsaMaxIndex - 1) <
+                         kMemfaultDeprecatedRootCert_DigicertRootCa,
+                       "Overlap detected between in-use RSA root certs and deprecated root "
+                       "certs.");
+MEMFAULT_STATIC_ASSERT((kMemfaultRootCert_EcdsaBase + 1) >
                          kMemfaultDeprecatedRootCert_DuplicateAmazonRootCa1,
-                       "Overlap detected between in-use root certs and deprecated root certs.");
+                       "Overlap detected between in-use ECDSA root certs and deprecated root "
+                       "certs.");
 
 #ifdef __cplusplus
 }

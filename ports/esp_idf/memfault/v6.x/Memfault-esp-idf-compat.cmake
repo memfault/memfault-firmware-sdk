@@ -4,6 +4,7 @@ endfunction()
 
 set(MEMFAULT_ESP_IDF_VERSION_SPECIFIC_REQUIRES
     espcoredump
+    esp_driver_gptimer
     esp_partition
     esp_timer
     esp_wifi

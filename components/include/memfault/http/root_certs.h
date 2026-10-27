@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "memfault/config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,16 +68,41 @@ extern "C" {
   "rqXRfboQnoZsG4q5WTP468SQvvG5\n"                                     \
   "-----END CERTIFICATE-----\n"
 
-// In decreasing order of likelihood of success
-#define MEMFAULT_ROOT_CERTS_PEM               \
-  MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2 \
-  MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+//! DigiCert TLS ECC P384 Root G5. ECDSA P-384. Valid until 2046-01-14.
+#define MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5              \
+  "-----BEGIN CERTIFICATE-----\n"                                      \
+  "MIICGTCCAZ+gAwIBAgIQCeCTZaz32ci5PhwLBCou8zAKBggqhkjOPQQDAzBOMQsw\n" \
+  "CQYDVQQGEwJVUzEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xJjAkBgNVBAMTHURp\n" \
+  "Z2lDZXJ0IFRMUyBFQ0MgUDM4NCBSb290IEc1MB4XDTIxMDExNTAwMDAwMFoXDTQ2\n" \
+  "MDExNDIzNTk1OVowTjELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJ\n" \
+  "bmMuMSYwJAYDVQQDEx1EaWdpQ2VydCBUTFMgRUNDIFAzODQgUm9vdCBHNTB2MBAG\n" \
+  "ByqGSM49AgEGBSuBBAAiA2IABMFEoc8Rl1Ca3iOCNQfN0MsYndLxf3c1TzvdlHJS\n" \
+  "7cI7+Oz6e2tYIOyZrsn8aLN1udsJ7MgT9U7GCh1mMEy7H0cKPGEQQil8pQgO4CLp\n" \
+  "0zVozptjn4S1mU1YoI71VOeVyaNCMEAwHQYDVR0OBBYEFMFRRVBZqz7nLFr6ICIS\n" \
+  "B4CIfBFqMA4GA1UdDwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49\n" \
+  "BAMDA2gAMGUCMQCJao1H5+z8blUD2WdsJk6Dxv3J+ysTvLd6jLRl0mlpYxNjOyZQ\n" \
+  "LgGheQaRnUi/wr4CMEfDFXuxoJGZSZOoPHzoRgaLLPIxAJSdYsiJvRmEFOml+wG4\n" \
+  "DXZDjC5Ty3zfDBeWUA==\n"                                             \
+  "-----END CERTIFICATE-----\n"
+
+// In decreasing order of likelihood of success. When
+// MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS is enabled, Memfault's HTTP APIs are only
+// reachable via ECDSA-signed certs, so the RSA-signed roots are omitted.
+#if MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
+  #define MEMFAULT_ROOT_CERTS_PEM MEMFAULT_ROOT_CERTS_DIGICERT_TLS_ECC_P384_ROOT_G5
+#else
+  #define MEMFAULT_ROOT_CERTS_PEM               \
+    MEMFAULT_ROOT_CERTS_DIGICERT_GLOBAL_ROOT_G2 \
+    MEMFAULT_ROOT_CERTS_AMAZON_ROOT_CA1
+#endif
 
 // The certs are also available in their binary DER format via
 extern const uint8_t g_memfault_cert_digicert_global_root_g2[];
 extern const size_t g_memfault_cert_digicert_global_root_g2_len;
 extern const uint8_t g_memfault_cert_amazon_root_ca1[];
 extern const size_t g_memfault_cert_amazon_root_ca1_len;
+extern const uint8_t g_memfault_cert_digicert_tls_ecc_p384_root_g5[];
+extern const size_t g_memfault_cert_digicert_tls_ecc_p384_root_g5_len;
 
 #ifdef __cplusplus
 }

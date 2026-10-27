@@ -92,11 +92,12 @@ MEMFAULT_WEAK size_t memfault_platform_sanitize_address_range(void *start_addr,
 #else
   // NB: This only works for MCUs which have a contiguous RAM address range. The
   // allowed addresses for capturing coredump data is anything the kernel has
-  // access to.
-  extern uint32_t __kernel_ram_start[];
+  // access to. Use _image_ram_start rather than __kernel_ram_start, which
+  // begins at .bss and would exclude objects (e.g. TCBs) placed in .data.
+  extern uint32_t _image_ram_start[];
   extern uint32_t __kernel_ram_end[];
 
-  const uint32_t ram_start = (uint32_t)__kernel_ram_start;
+  const uint32_t ram_start = (uint32_t)_image_ram_start;
   const uint32_t ram_end = (uint32_t)__kernel_ram_end;
 #endif
 
