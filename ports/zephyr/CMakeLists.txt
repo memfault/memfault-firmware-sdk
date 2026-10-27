@@ -81,6 +81,23 @@ if(CONFIG_MEMFAULT)
 
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
+  if(CONFIG_MEMFAULT_USE_GNU_BUILD_ID)
+    # No code in the application reads the g_memfault_build_id symbol at
+    # run time. Zephyr links with --gc-sections, so the linker may remove
+    # or rename a symbol like this if it looks unused. This is more
+    # likely to happen when CONFIG_LTO is enabled, because LTO can see
+    # the whole program at once and prove that the symbol is unused.
+    #
+    # Build tools such as memfault-cli and mflt-build-id use this symbol
+    # to find the GNU Build ID after the build. If the symbol is removed
+    # or renamed, these tools report "Build Id: None", even though the
+    # .note.gnu.build-id section in the ELF file is valid and correct.
+    #
+    # This flag tells the linker to keep the symbol under its original
+    # name. See: https://mflt.io/symbol-file-build-ids
+    zephyr_link_libraries(-Wl,--require-defined=g_memfault_build_id)
+  endif()
+
   # The Zephyr includes moved from /include to /include/zephyr in Zephyr 3.2:
   # https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350
   # Add the old path for backwards compatibility. Note that Zephyr itself
