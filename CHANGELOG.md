@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.47.0] - 2026-11-09
+
+This is a minor release, including new features, improvements, and bug fixes
+across several platforms.
+
+### 📈 Added
+
+- Zephyr:
+
+  - Added a `mflt heap_stats` shell command, which prints usage stats for the
+    kernel heap (`k_malloc`) and the system heap (`malloc`), when available.
+
+- nRF Connect SDK:
+
+  - Added support for FOTA updates of additional software types (for example, an
+    upgradable bootloader) in the device's main project, using Multi-Component
+    OTA. Register a component with `MEMFAULT_FOTA_COMPONENT_DEFINE()` and a
+    `kMemfaultFotaComponentInstall_*` value from
+    `memfault/nrfconnect_port/fota_component.h`, and trigger a check with
+    `memfault_zephyr_fota_component_start()` or
+    `memfault_zephyr_fota_component_get_download_url()`. These APIs are now also
+    called under the hood when
+    `CONFIG_MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE=y`.
+
+### 🛠️ Changed
+
+- nRF Connect SDK:
+
+  - Modem firmware FOTA (`CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y`) no longer
+    requires a separate Memfault project. When no modem project key is set,
+    modem updates are now checked against the device's main project, using
+    `CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE` (default `mfw`) as the software
+    type. Previously, the modem check was skipped with a warning. Projects that
+    already set a dedicated modem project key, via
+    `CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY` or
+    `memfault_zephyr_fota_modem_project_key_set()`, are unaffected.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Prevent the `g_memfault_build_id` symbol from being removed or renamed when
+    building with `CONFIG_LTO=y`. Thanks to
+    [@PavelVPV](https://github.com/PavelVPV) for reporting this and providing a
+    fix in [#126](https://github.com/memfault/memfault-firmware-sdk/pull/126)
+    🎉!
+
+- nRF Connect SDK
+
+  - Remove a dependency on the Zephyr Link Layer header, which caused a build
+    failure on certain project configurations when
+    `CONFIG_MEMFAULT_METRICS_BLUETOOTH=y`.
+
 ## [1.46.0] - 2026-10-23
 
 This is a minor release, including new features, improvements, and bug fixes

@@ -17,7 +17,7 @@ extern "C" {
 //!
 //! Returns the runtime override set via memfault_zephyr_fota_modem_project_key_set() when one is
 //! configured, otherwise falls back to CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY. Returns NULL when
-//! neither is set.
+//! neither is set, in which case the main project key should be used.
 const char *memfault_zephyr_fota_modem_project_key_get(void);
 
 #ifdef __cplusplus

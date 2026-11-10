@@ -81,6 +81,15 @@ if(CONFIG_MEMFAULT)
 
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
+  # LTO can name-mangle or inline this under certain cases. Force it to stay
+  # externally linked with known name. The Memfault Zephyr port only supports
+  # GNU or Memfault-generated build ID, both of which require the symbol to be
+  # present in the executable (the third option is no build ID: software_version
+  # only for reconciling symbol file, which is much less desirable, and not
+  # supported in this port).
+  # See: https://mflt.io/symbol-file-build-ids
+  zephyr_link_libraries(-Wl,--require-defined=g_memfault_build_id)
+
   # The Zephyr includes moved from /include to /include/zephyr in Zephyr 3.2:
   # https://github.com/zephyrproject-rtos/zephyr/commit/53ef68d4598b2f9005c5da3fc0b860ca1999d350
   # Add the old path for backwards compatibility. Note that Zephyr itself

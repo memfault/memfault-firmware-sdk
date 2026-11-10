@@ -63,13 +63,14 @@ int memfault_zephyr_fota_app_start(void);
 //! Useful for manually triggering a modem FOTA check, e.g. from a shell command.
 //! Requires CONFIG_MEMFAULT_FOTA_MODEM_UPDATE=y.
 //!
-//! @note If the modem project key is not set via Kconfig or
-//! memfault_zephyr_fota_modem_project_key_set(), this function will log a warning and return 0,
-//! indicating no update was available.
+//! @note By default, the modem update is checked against the device's main Memfault project,
+//! using CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE as the software type. If a dedicated modem
+//! project key is set via CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY or
+//! memfault_zephyr_fota_modem_project_key_set(), that project is used instead.
 //!
 //! @return
 //!   < 0 Error while trying to perform the modem FOTA update
-//!     0 Check completed - no modem update available, or no modem project key set
+//!     0 Check completed - no modem update available
 //!     1 Modem update download started
 int memfault_zephyr_fota_modem_start(void);
 
@@ -85,21 +86,23 @@ int memfault_zephyr_fota_modem_start(void);
 //!
 //! @return
 //!   < 0 Error while trying to fetch the modem FOTA URL
-//!     0 Check completed - no modem update available, or no modem project key set
+//!     0 Check completed - no modem update available
 //!     1 URL fetched successfully
 int memfault_zephyr_fota_modem_get_download_url(char **url);
 
 //! @brief Override the Memfault project key used for modem firmware FOTA checks at runtime.
 //!
+//! Only needed when modem firmware is hosted in a separate, dedicated Memfault project. By
+//! default, modem updates are checked against the device's main project.
+//!
 //! When set, @p key takes precedence over CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY. This allows
 //! the key to be provisioned at runtime (e.g. from NVS or a provisioning flow) without
 //! hard-coding it in Kconfig. When neither this override nor CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY
-//! is set, memfault_zephyr_fota_start() and memfault_zephyr_fota_modem_start() will return
-//! -EINVAL. memfault_zephyr_fota_app_start() is unaffected, since it never performs a modem
-//! update check.
+//! is set, the main project key is used.
 //!
 //! @note The caller must ensure @p key remains valid for the lifetime of any subsequent FOTA call.
-//!       Pass NULL to clear a previously set override and fall back to Kconfig.
+//!       Pass NULL to clear a previously set override and fall back to Kconfig (or the main
+//!       project key, if the Kconfig option is empty).
 //!
 //! @param key Null-terminated Memfault project key string, or NULL to clear.
 void memfault_zephyr_fota_modem_project_key_set(const char *key);

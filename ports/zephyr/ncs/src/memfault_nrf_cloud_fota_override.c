@@ -13,31 +13,29 @@
 
 #include "memfault/components.h"
 #include "memfault/nrfconnect_port/coap.h"
+#include "memfault/nrfconnect_port/fota_component.h"
 #include "memfault/ports/zephyr/fota.h"
 
 #include "net/nrf_cloud.h"
 #include "net/nrf_cloud_coap.h"
 #include "net/nrf_cloud_fota_poll.h"
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-  #include <modem/modem_info.h>
-
-  #include "memfault_fota_modem_project_key_private.h"
-#endif
+#include "memfault_fota_component_private.h"
 // clang-format on
 
 // nrf_cloud_fota_poll_ctx is captured at init time so that it can be used by
-// memfault_zephyr_fota_start() and memfault_zephyr_fota_modem_start() to trigger FOTA polls via
-// Memfault SDK APIs (e.g. from the CLI)
+// memfault_zephyr_fota_start() and memfault_zephyr_fota_component_start() to trigger
+// FOTA polls via Memfault SDK APIs (e.g. from the CLI)
 static struct nrf_cloud_fota_poll_ctx *s_fota_ctx = NULL;
 
 // Set by memfault_zephyr_fota_app_start() to make the next __wrap_nrf_cloud_coap_fota_job_get()
-// call skip the modem update check when no app update is available.
+// call skip the component checks when no app update is available.
 static bool s_app_only_requested = false;
 
 //! Takes ownership of @p url and releases it via memfault_zephyr_port_coap_release_download_url()
 //! before returning. The caller must not access @p url after this call.
 static int prv_build_job_from_url(char *url, enum nrf_cloud_fota_type fota_type,
+                                  const char *job_name,
                                   struct nrf_cloud_fota_job_info *const job_out) {
   // Split the URL into host and file components, same pattern as memfault_fota.c.
   // Skip past the scheme (e.g. "https://") before searching for the path separator ('/').
@@ -78,7 +76,7 @@ static int prv_build_job_from_url(char *url, enum nrf_cloud_fota_type fota_type,
   // bare hostname here, not the full URL which still carries the scheme.
   strcpy(host, host_start);
   strcpy(path, file);
-  strcpy(job_id, (fota_type == NRF_CLOUD_FOTA_APPLICATION) ? "APP" : "MODEM");
+  strncpy(job_id, job_name, NRF_CLOUD_FOTA_JOB_ID_SIZE - 1);
   memfault_zephyr_port_coap_release_download_url(&url);
 
   *job_out = (struct nrf_cloud_fota_job_info){
@@ -91,83 +89,71 @@ static int prv_build_job_from_url(char *url, enum nrf_cloud_fota_type fota_type,
   return 0;
 }
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-
 // When set, __wrap_nrf_cloud_coap_fota_job_get returns this job directly, allowing
-// memfault_zephyr_fota_modem_start() to skip the app update check entirely.
-static struct nrf_cloud_fota_job_info s_prefetched_modem_job = { .type =
-                                                                   NRF_CLOUD_FOTA_TYPE__INVALID };
+// memfault_zephyr_fota_component_start() to skip the app update check entirely.
+static struct nrf_cloud_fota_job_info s_prefetched_job = { .type = NRF_CLOUD_FOTA_TYPE__INVALID };
 
-// Buffer for the running modem firmware version string (e.g. "mfw_nrf9160_1.3.7")
-static char s_modem_version[64];
-
-static void prv_get_modem_device_info(sMemfaultDeviceInfo *info) {
-  memfault_platform_get_device_info(info);
-  info->software_type = CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE;
-  info->software_version = s_modem_version;
+static enum nrf_cloud_fota_type prv_nrf_cloud_fota_type(eMemfaultFotaComponentInstall install) {
+  switch (install) {
+    case kMemfaultFotaComponentInstall_ModemDelta:
+      return NRF_CLOUD_FOTA_MODEM_DELTA;
+    case kMemfaultFotaComponentInstall_ModemFull:
+      return NRF_CLOUD_FOTA_MODEM_FULL;
+    case kMemfaultFotaComponentInstall_Bootloader:
+      return NRF_CLOUD_FOTA_BOOTLOADER;
+    default:
+      return NRF_CLOUD_FOTA_TYPE__INVALID;
+  }
 }
 
-//! Fetches (but does not start) the pending modem FOTA download URL.
-//! On success (rv==1), *url is set to an allocated URL owned by the caller, released the same
-//! way as the app FOTA URL (memfault_zephyr_port_coap_release_download_url()).
-static int prv_fota_modem_get_url(char **url) {
-  // Populate modem version once per boot - the version never changes between reboots.
-  if (s_modem_version[0] == '\0') {
-    int rv = modem_info_string_get(MODEM_INFO_FW_VERSION, s_modem_version, sizeof(s_modem_version));
-    if (rv < 0) {
-      MEMFAULT_LOG_ERROR("Failed to read modem FW version: %d", rv);
-      return rv;
-    }
+//! @return 1 if *job_out was filled with an update job, 0 if no update is pending, <0 on error
+static int prv_check_component_update(const sMemfaultFotaComponent *component,
+                                      struct nrf_cloud_fota_job_info *const job_out) {
+  *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
+
+  if (component->install == kMemfaultFotaComponentInstall_None) {
+    // Installed by the application, see
+    // memfault_zephyr_fota_component_get_download_url()
+    return -ENOTSUP;
   }
 
-  // Temporarily switch the HTTP client config to use the modem project credentials for the URL
-  // query. The key is used only while building/sending the request below and is restored
-  // immediately after, so concurrent data uploads are not a concern in practice - FOTA and
-  // upload both run on the periodic upload thread and are serialized there.
-  const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
-  if (!modem_project_key) {
-    MEMFAULT_LOG_WARN("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
-                      "or call memfault_zephyr_fota_modem_project_key_set().");
-    return 0;
+  const enum nrf_cloud_fota_type fota_type = prv_nrf_cloud_fota_type(component->install);
+  if (fota_type == NRF_CLOUD_FOTA_TYPE__INVALID) {
+    MEMFAULT_LOG_ERROR("'%s' has an invalid install value: %d", component->software_type,
+                       (int)component->install);
+    return -EINVAL;
   }
 
-  const char *saved_api_key = g_mflt_http_client_config.api_key;
-  void (*saved_get_device_info)(sMemfaultDeviceInfo *) = g_mflt_http_client_config.get_device_info;
-
-  g_mflt_http_client_config.api_key = modem_project_key;
-  g_mflt_http_client_config.get_device_info = prv_get_modem_device_info;
-
-  // Query the modem update URL over nRF Cloud CoAP. The modem project key (set above) is
-  // injected as CoAP option 2429 by nrf_cloud_coap_get_user_options(), and the overridden
-  // get_device_info supplies the modem software type/version used to build the OTA URL.
-  int rv = memfault_zephyr_port_coap_get_download_url(url);
-
-  g_mflt_http_client_config.api_key = saved_api_key;
-  g_mflt_http_client_config.get_device_info = saved_get_device_info;
-
-  return rv;
-}
-
-static int prv_check_modem_update(struct nrf_cloud_fota_job_info *const job_out) {
   char *url = NULL;
-  int rv = prv_fota_modem_get_url(&url);
+  int rv = memfault_fota_component_url_get(component, &url);
 
   if (rv <= 0) {
     if (rv == 0) {
-      MEMFAULT_LOG_DEBUG("No pending modem FOTA update");
+      MEMFAULT_LOG_DEBUG("No pending '%s' FOTA update", component->software_type);
     }
-    *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
     return rv;
   }
 
-  MEMFAULT_LOG_DEBUG("Modem FOTA update available. URL: %s", url);
-  return prv_build_job_from_url(url, NRF_CLOUD_FOTA_MODEM_DELTA, job_out);
+  MEMFAULT_LOG_DEBUG("'%s' FOTA update available. URL: %s", component->software_type, url);
+  rv = prv_build_job_from_url(url, fota_type, component->software_type, job_out);
+  return (rv < 0) ? rv : 1;
 }
 
-#endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
+static int prv_check_component_update_cb(const sMemfaultFotaComponent *component, void *ctx) {
+  return prv_check_component_update(component, (struct nrf_cloud_fota_job_info *)ctx);
+}
 
-//! @param app_only Skip the modem update check when no app update is available, instead of
-//! falling through to it. Used by memfault_zephyr_fota_app_start() to guarantee an app-only check.
+// Checks every registered component, filling *job_out with the first one with an update.
+static int prv_check_components(struct nrf_cloud_fota_job_info *const job_out) {
+  *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
+  int rv = memfault_fota_component_updates_check(prv_check_component_update_cb, job_out);
+  // nrf_cloud_coap_fota_job_get() contract: 0 with job_out->type set when a job is available
+  return (rv > 0) ? 0 : rv;
+}
+
+//! @param app_only Skip the component checks when no app update is available, instead of
+//! falling through to them. Used by memfault_zephyr_fota_app_start() to guarantee an app-only
+//! check.
 static int prv_perform_fota_check(struct nrf_cloud_fota_job_info *const job_out, bool app_only) {
   MEMFAULT_LOG_DEBUG("Checking Memfault for FOTA update");
 
@@ -180,17 +166,13 @@ static int prv_perform_fota_check(struct nrf_cloud_fota_job_info *const job_out,
 
   if (rv > 0) {
     MEMFAULT_LOG_DEBUG("App FOTA update available. URL: %s", url);
-    return prv_build_job_from_url(url, NRF_CLOUD_FOTA_APPLICATION, job_out);
+    return prv_build_job_from_url(url, NRF_CLOUD_FOTA_APPLICATION, "APP", job_out);
   }
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-  // Check for modem update if no app update is available
+  // No app update available: check the components
   if (!app_only) {
-    return prv_check_modem_update(job_out);
+    return prv_check_components(job_out);
   }
-#else
-  (void)app_only;
-#endif
   MEMFAULT_LOG_DEBUG("No pending FOTA update");
   *job_out = (struct nrf_cloud_fota_job_info){ .type = NRF_CLOUD_FOTA_TYPE__INVALID };
   return 0;
@@ -201,19 +183,16 @@ int __wrap_nrf_cloud_coap_fota_job_get(struct nrf_cloud_fota_job_info *const job
   bool app_only = s_app_only_requested;
   s_app_only_requested = false;
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-  // An app-only request takes precedence over a stale pre-fetched modem job (e.g. left over from
-  // a memfault_zephyr_fota_modem_start() poll that failed before consuming it).
+  // An app-only request takes precedence over a stale pre-fetched job (e.g. left over from a
+  // memfault_zephyr_fota_component_start() poll that failed before consuming it).
   if (app_only) {
-    s_prefetched_modem_job.type = NRF_CLOUD_FOTA_TYPE__INVALID;
-  } else if (s_prefetched_modem_job.type != NRF_CLOUD_FOTA_TYPE__INVALID) {
-    // Skip application FOTA check and return the pre-fetched modem job if available.
-    // This path supports triggering modem FOTA only via memfault_zephyr_fota_modem_start()
-    *job = s_prefetched_modem_job;
-    s_prefetched_modem_job.type = NRF_CLOUD_FOTA_TYPE__INVALID;  // clear the job
+    s_prefetched_job.type = NRF_CLOUD_FOTA_TYPE__INVALID;
+  } else if (s_prefetched_job.type != NRF_CLOUD_FOTA_TYPE__INVALID) {
+    // Skip the application check and return the pre-fetched component job.
+    *job = s_prefetched_job;
+    s_prefetched_job.type = NRF_CLOUD_FOTA_TYPE__INVALID;  // clear the job
     return 0;
   }
-#endif
   return prv_perform_fota_check(job, app_only);
 }
 
@@ -268,7 +247,7 @@ int memfault_zephyr_fota_app_start(void) {
                        "no ctx available to trigger a poll");
     return -EINVAL;
   }
-  // Skip the modem update check in __wrap_nrf_cloud_coap_fota_job_get() if no app update is
+  // Skip the component checks in __wrap_nrf_cloud_coap_fota_job_get() if no app update is
   // available.
   s_app_only_requested = true;
   int rv = nrf_cloud_fota_poll_process(s_fota_ctx);
@@ -278,24 +257,38 @@ int memfault_zephyr_fota_app_start(void) {
   return (rv == -EAGAIN) ? 0 : rv;
 }
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-int memfault_zephyr_fota_modem_start(void) {
+int memfault_zephyr_fota_component_start(const char *software_type) {
   if (!s_fota_ctx) {
     MEMFAULT_LOG_ERROR("nrf_cloud_fota_poll_init() has not been called yet; "
                        "no ctx available to trigger a poll");
     return -EINVAL;
   }
-  // Pre-fetch the modem job so __wrap_nrf_cloud_coap_fota_job_get returns it directly,
+  const sMemfaultFotaComponent *component = memfault_fota_component_find(software_type);
+  if (!component) {
+    return -ENOENT;
+  }
+  // Pre-fetch the job so __wrap_nrf_cloud_coap_fota_job_get returns it directly,
   // and skips the app update check when nrf_cloud_fota_poll_process() is called below.
-  int rv = prv_check_modem_update(&s_prefetched_modem_job);
-  if (rv < 0 || s_prefetched_modem_job.type == NRF_CLOUD_FOTA_TYPE__INVALID) {
+  int rv = prv_check_component_update(component, &s_prefetched_job);
+  if (rv <= 0) {
     return rv;
   }
   rv = nrf_cloud_fota_poll_process(s_fota_ctx);
   return (rv == -EAGAIN) ? 0 : rv;
 }
 
+int memfault_zephyr_fota_component_get_download_url(const char *software_type, char **url) {
+  const sMemfaultFotaComponent *component = memfault_fota_component_find(software_type);
+  return component ? memfault_fota_component_url_get(component, url) : -ENOENT;
+}
+
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+int memfault_zephyr_fota_modem_start(void) {
+  return memfault_zephyr_fota_component_start(CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE);
+}
+
 int memfault_zephyr_fota_modem_get_download_url(char **url) {
-  return prv_fota_modem_get_url(url);
+  return memfault_zephyr_fota_component_get_download_url(CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE,
+                                                         url);
 }
 #endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
