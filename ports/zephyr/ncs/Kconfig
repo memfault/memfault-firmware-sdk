@@ -32,6 +32,18 @@ config MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
+config MEMFAULT_FOTA_COMPONENTS
+        bool
+        default y if MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE
+        # nRF Connect SDK v3.0+ backend only (DOWNLOADER replaced
+        # DOWNLOAD_CLIENT), not the legacy one
+        default y if MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS && DOWNLOADER
+        help
+          Enabled when the selected FOTA backend supports FOTA components
+          (software types other than the main application) registered with
+          MEMFAULT_FOTA_COMPONENT_DEFINE(), see
+          memfault/nrfconnect_port/fota_component.h.
+
 choice MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME
         bool "Select the platform implementation for capturing connected time metric"
         default MEMFAULT_NRF_CONNECTIVITY_CONNECTED_TIME_NRF91X if LTE_LINK_CONTROL || AT_MONITOR
@@ -82,8 +94,8 @@ config MEMFAULT_FOTA_FULL_MODEM_UPDATE
         help
           Enables Memfault OTA support for full modem images. The image is
           detected from its header and downloaded to the FMFU storage
-          partition selected by the board devicetree. The modem project key
-          configured for MEMFAULT_FOTA_MODEM_UPDATE is used.
+          partition selected by the board devicetree. The same project as
+          MEMFAULT_FOTA_MODEM_UPDATE is used.
 
 endif # MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
@@ -95,8 +107,10 @@ config MEMFAULT_FOTA_MODEM_UPDATE
         default n
         help
           When enabled, memfault_zephyr_fota_start() also checks for modem
-          firmware updates using a dedicated Memfault project (see
-          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY).
+          firmware updates. By default, the check uses the device's main
+          Memfault project, with CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE as
+          the software type. To use a separate, dedicated modem firmware
+          project instead, set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY.
 
           If both an application update and a modem update are pending,
           the application update is installed first (requiring one reboot),
@@ -108,11 +122,15 @@ config MEMFAULT_FOTA_MODEM_UPDATE
 if MEMFAULT_FOTA_MODEM_UPDATE
 
 config MEMFAULT_FOTA_MODEM_PROJECT_KEY
-        string "Project key for the Memfault modem firmware project"
+        string "Project key for a dedicated Memfault modem firmware project"
         help
-          The Memfault Project Key for the dedicated modem firmware project.
-          This is different from the application project key.
-          Obtain this from Settings → General in your modem Memfault project.
+          Optional. Leave empty (the default) to check for modem updates in
+          the device's main Memfault project.
+
+          Set this only if modem firmware is hosted in a separate, dedicated
+          Memfault project. Obtain the key from Settings → General in that
+          project. Can also be set at runtime via
+          memfault_zephyr_fota_modem_project_key_set().
 
 config MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE
         string "Software type identifier for modem firmware"

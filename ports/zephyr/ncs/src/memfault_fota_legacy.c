@@ -285,21 +285,18 @@ static int prv_fota_modem_get_url(void) {
   }
   MEMFAULT_LOG_DEBUG("Checking for modem FOTA (current version: %s)", s_modem_version);
 
-  // Temporarily switch the HTTP client config to use the modem project credentials for the URL
-  // query. The key is used only while building/sending the download-URL request below and is
-  // restored immediately after, so concurrent data uploads are not a concern in practice - FOTA
-  // and upload both run on the periodic upload thread and are serialized there.
+  // Temporarily switch the HTTP client config to the modem software type/version (and the
+  // legacy dedicated modem project key, if configured) for the URL query. Restored immediately
+  // after; FOTA and upload both run on the periodic upload thread and are serialized there.
+  // Without a modem project key, the default project is queried (multi-component projects).
   const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
-  if (!modem_project_key) {
-    MEMFAULT_LOG_WARN("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
-                      "or call memfault_zephyr_fota_modem_project_key_set().");
-    return 0;
-  }
 
   const char *saved_api_key = g_mflt_http_client_config.api_key;
   void (*saved_get_device_info)(sMemfaultDeviceInfo *) = g_mflt_http_client_config.get_device_info;
 
-  g_mflt_http_client_config.api_key = modem_project_key;
+  if (modem_project_key) {
+    g_mflt_http_client_config.api_key = modem_project_key;
+  }
   g_mflt_http_client_config.get_device_info = prv_get_modem_device_info;
 
   rv = memfault_zephyr_port_get_download_url(&s_download_url);

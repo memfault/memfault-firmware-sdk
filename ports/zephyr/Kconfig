@@ -876,8 +876,7 @@ config MEMFAULT_PERIODIC_MODEM_FOTA_CHECK
         depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
         help
           When enabled, the device will periodically check for modem firmware
-          updates using the dedicated modem Memfault project configured by
-          CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY. The check runs at the same
+          updates (see MEMFAULT_FOTA_MODEM_UPDATE). The check runs at the same
           interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS.
 
           Note: if MEMFAULT_PERIODIC_FOTA_CHECK is also enabled, modem updates

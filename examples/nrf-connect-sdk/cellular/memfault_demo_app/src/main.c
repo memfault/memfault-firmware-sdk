@@ -11,6 +11,7 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 #include <string.h>
+#include <stdio.h>
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/thread_metrics.h"
@@ -94,7 +95,23 @@ LOG_MODULE_REGISTER(mflt_demo_app, LOG_LEVEL_INF);
 #if CONFIG_DFU_TARGET_MCUBOOT
 #include MEMFAULT_ZEPHYR_INCLUDE(dfu/mcuboot.h)
 #endif
+
+#if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+#include "memfault/nrfconnect_port/fota_component.h"
+#endif
 // clang-format on
+
+#if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+// Phony component for testing, e.g. with "mflt get_latest_url example-component"
+static int prv_example_component_version_get(char *buf, size_t buf_len) {
+  snprintf(buf, buf_len, "1.0.0");
+  return 0;
+}
+
+MEMFAULT_FOTA_COMPONENT_DEFINE(example_component, "example-component",
+                               prv_example_component_version_get,
+                               kMemfaultFotaComponentInstall_None);
+#endif
 
 #if defined(CONFIG_MEMFAULT_NCS_DEVICE_ID_RUNTIME)
   // Since the example app manages when the modem starts/stops, we manually configure the device

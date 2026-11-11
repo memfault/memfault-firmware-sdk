@@ -9,15 +9,29 @@
 // clang-format off
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 #include <stdlib.h>
+#if defined(CONFIG_NEWLIB_LIBC)
+  #include <malloc.h>
+#endif
 
 #include "memfault/components.h"
 #include "memfault/ports/zephyr/http.h"
 #include "memfault/ports/zephyr/fota.h"
 #include "memfault/ports/zephyr/periodic_upload.h"
+#include "memfault/ports/zephyr/version.h"
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/__assert.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/printk.h)
 #if defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   #include "memfault/nrfconnect_port/coap.h"
+#endif
+#if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+  #include "memfault/nrfconnect_port/fota_component.h"
+#endif
+
+// malloc_runtime_stats_get() was added in Zephyr 4.4
+#if MEMFAULT_ZEPHYR_VERSION_GT_STRICT(4, 3) && defined(CONFIG_COMMON_LIBC_MALLOC) && \
+  defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
+  #include <sys_malloc.h>
+  #define MEMFAULT_DEMO_CLI_MALLOC_RUNTIME_STATS 1
 #endif
 // clang-format on
 
@@ -119,7 +133,8 @@ static int prv_post_data(const struct shell *shell, size_t argc, char **argv) {
 
 //! @brief Check for (but do not start) a pending FOTA update, and print its download URL
 //!
-//! Takes an optional "app" (default) or "modem" argument to select which target to check.
+//! Takes an optional "app" (default) or "modem" argument to select which target to check. With
+//! CONFIG_MEMFAULT_FOTA_COMPONENTS=y, any other argument is a component's software type.
 static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char **argv) {
 #if defined(CONFIG_MEMFAULT_HTTP_ENABLE) || defined(CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP)
   const char *target = (argc > 1) ? argv[1] : "app";
@@ -134,15 +149,25 @@ static int prv_get_latest_url_cmd(const struct shell *shell, size_t argc, char *
     shell_print(shell, "Checking for modem update");
     rv = memfault_zephyr_fota_modem_get_download_url(&url);
   #endif
+  #if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+  } else {
+    shell_print(shell, "Checking for '%s' update", target);
+    rv = memfault_zephyr_fota_component_get_download_url(target, &url);
+    if (rv == -ENOENT) {
+      shell_print(shell, "No FOTA component with software type '%s'", target);
+      return rv;
+    }
+  #else
   } else {
     shell_print(shell, "Usage: mflt get_latest_url "
-  #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+    #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
                        "[app|modem]"
-  #else
+    #else
                        "[app]"
-  #endif
+    #endif
     );
     return -EINVAL;
+  #endif
   }
 
   if (rv < 0) {
@@ -223,6 +248,33 @@ static int prv_set_modem_project_key_cmd(const struct shell *shell, size_t argc,
 }
 #endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
 
+#if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+//! Check for and apply an update of the FOTA component with the given software type. Without an
+//! argument, list the registered components.
+static int prv_fota_component_cmd(const struct shell *shell, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_print(shell, "Registered FOTA components (software type):");
+    STRUCT_SECTION_FOREACH(MemfaultFotaComponent, component) {
+      shell_print(shell, "  %s", component->software_type);
+    }
+    return 0;
+  }
+
+  const char *software_type = argv[1];
+  int rv = memfault_zephyr_fota_component_start(software_type);
+  if (rv == -ENOENT) {
+    shell_print(shell, "No FOTA component with software type '%s'", software_type);
+  } else if (rv < 0) {
+    shell_print(shell, "Failed to check/start '%s' FOTA, err=%d", software_type, rv);
+  } else if (rv == 0) {
+    shell_print(shell, "'%s' is up to date", software_type);
+  } else {
+    shell_print(shell, "'%s' FOTA started successfully", software_type);
+  }
+  return rv;
+}
+#endif /* CONFIG_MEMFAULT_FOTA_COMPONENTS */
+
 static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv) {
   (void)argc, (void)argv;
 
@@ -231,6 +283,60 @@ static int prv_coredump_size(const struct shell *shell, size_t argc, char **argv
 
   shell_print(shell, "coredump storage capacity: %zuB", capacity);
   shell_print(shell, "coredump size required: %zuB", total_size);
+
+  return 0;
+}
+
+#if MEMFAULT_ZEPHYR_VERSION_GT(3, 1)
+typedef struct sys_memory_stats sMemfaultDemoHeapStats;
+#else
+// struct sys_memory_stats introduced in v3.2
+typedef struct sys_heap_runtime_stats sMemfaultDemoHeapStats;
+#endif
+
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) || defined(MEMFAULT_DEMO_CLI_MALLOC_RUNTIME_STATS)
+static void prv_print_heap_stats(const struct shell *shell, const char *name,
+                                 const sMemfaultDemoHeapStats *stats) {
+  shell_print(shell, "%s: total=%zu used=%zu free=%zu", name,
+              stats->allocated_bytes + stats->free_bytes, stats->allocated_bytes,
+              stats->free_bytes);
+  #if MEMFAULT_ZEPHYR_VERSION_GT(3, 0)
+  // max_allocated_bytes was added in Zephyr 3.1
+  shell_print(shell, "  max_used=%zu", stats->max_allocated_bytes);
+  #endif
+}
+#endif
+
+static int prv_heap_stats(const struct shell *shell, size_t argc, char **argv) {
+  (void)argc, (void)argv;
+
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+  extern struct k_heap _system_heap;
+  sMemfaultDemoHeapStats k_stats = { 0 };
+  sys_heap_runtime_stats_get(&_system_heap.heap, &k_stats);
+  prv_print_heap_stats(shell, "kernel heap (k_malloc)", &k_stats);
+#else
+  shell_print(shell, "kernel heap (k_malloc): stats unavailable");
+#endif
+
+#if defined(MEMFAULT_DEMO_CLI_MALLOC_RUNTIME_STATS)
+  struct sys_memory_stats m_stats = { 0 };
+  if (malloc_runtime_stats_get(&m_stats) == 0) {
+    prv_print_heap_stats(shell, "system heap (malloc)", &m_stats);
+  } else {
+    shell_print(shell, "system heap (malloc): stats unavailable");
+  }
+#elif defined(CONFIG_NEWLIB_LIBC)
+  struct mallinfo mi = mallinfo();
+  shell_print(shell, "system heap (malloc): arena=%zu used=%zu free=%zu", (size_t)mi.arena,
+              (size_t)mi.uordblks, (size_t)mi.fordblks);
+#elif defined(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE)
+  // No runtime stats API for the common libc malloc heap before Zephyr 4.4
+  shell_print(shell, "system heap (malloc): arena=%d, runtime stats unavailable",
+              CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE);
+#else
+  shell_print(shell, "system heap (malloc): stats unavailable");
+#endif
 
   return 0;
 }
@@ -540,16 +646,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
   SHELL_CMD(get_core, NULL, "check if coredump is stored and present", prv_get_core_cmd),
   SHELL_CMD(get_device_info, NULL, "display device information", prv_get_device_info),
   SHELL_CMD(get_reboot_reason, NULL, "display last reboot reason", prv_get_reboot_reason),
-  SHELL_CMD_ARG(get_latest_url, NULL, "gets latest release URL, optionally 'app' or 'modem'",
+  SHELL_CMD_ARG(get_latest_url, NULL,
+                "gets latest release URL, optionally 'app', 'modem', or another software type",
                 prv_get_latest_url_cmd, 1, 1),
   SHELL_CMD(get_latest_release, NULL, "performs an OTA update using Memfault client",
             prv_check_and_fetch_ota_payload_cmd),
 #if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
   SHELL_CMD(fota_app, NULL, "check for and apply an application firmware update", prv_fota_app_cmd),
   SHELL_CMD(fota_modem, NULL, "check for and apply a modem firmware update", prv_fota_modem_cmd),
-  SHELL_CMD_ARG(set_modem_project_key, NULL, "set the modem firmware update project key",
+  SHELL_CMD_ARG(set_modem_project_key, NULL, "set a dedicated modem FOTA project key (optional)",
                 prv_set_modem_project_key_cmd, 2, 0),
 #endif /* CONFIG_MEMFAULT_FOTA_MODEM_UPDATE */
+#if defined(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+  SHELL_CMD_ARG(fota_component, NULL,
+                "check for and apply a component update: [software_type] (lists registered "
+                "components if omitted)",
+                prv_fota_component_cmd, 1, 1),
+#endif /* CONFIG_MEMFAULT_FOTA_COMPONENTS */
+  SHELL_CMD(heap_stats, NULL, "print kernel and malloc heap stats", prv_heap_stats),
   SHELL_CMD(coredump_size, NULL, "print coredump computed size and storage capacity",
             prv_coredump_size),
   SHELL_CMD_ARG(metrics_dump, NULL, "dump current heartbeat or session metrics", prv_metrics_dump,

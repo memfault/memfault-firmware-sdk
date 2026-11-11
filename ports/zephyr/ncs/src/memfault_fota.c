@@ -9,6 +9,7 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(kernel.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(shell/shell.h)
 
+#include "memfault/nrfconnect_port/fota_component.h"
 #include "memfault/ports/zephyr/fota.h"
 #include "memfault/ports/zephyr/http.h"
 
@@ -37,11 +38,7 @@
 #include "net/fota_download.h"
 // clang-format on
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-  #include <modem/modem_info.h>
-
-  #include "memfault_fota_modem_project_key_private.h"
-#endif
+#include "memfault_fota_component_private.h"
 
 #if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
   #include <modem/lte_lc.h>
@@ -91,17 +88,21 @@ static int prv_fota_lock(void) {
   return 0;
 }
 
+//! Releases the lock taken by prv_fota_lock(), unless @p rv == 1: a download started and now owns
+//! s_fota_busy (released in the download callback).
+static int prv_fota_unlock_unless_started(int rv) {
+  if (rv != 1) {
+    atomic_clear(&s_fota_busy);
+  }
+  return rv;
+}
+
 static int prv_fota_run_locked(int (*fn)(void)) {
   int rv = prv_fota_lock();
   if (rv != 0) {
     return rv;
   }
-  rv = fn();
-  // rv == 1: a download started and now owns s_fota_busy
-  if (rv != 1) {
-    atomic_clear(&s_fota_busy);
-  }
-  return rv;
+  return prv_fota_unlock_unless_started(fn());
 }
 
 // Forward declaration: default implementation is below; custom provided by user when
@@ -286,103 +287,99 @@ cleanup:
   return rv;
 }
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-
-// Buffer for the running modem firmware version string (e.g. "mfw_nrf9160_1.3.7")
-static char s_modem_version[64];
-
-static void prv_get_modem_device_info(sMemfaultDeviceInfo *info) {
-  memfault_platform_get_device_info(info);
-  info->software_type = CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE;
-  info->software_version = s_modem_version;
-}
-
-//! Fetches (but does not start) the pending modem FOTA download URL into s_download_url.
-//! On success (rv==1), ownership of s_download_url is retained by this module, same as
-//! prv_fota_download_start() expects.
-static int prv_fota_modem_get_url(void) {
-  int rv = modem_info_string_get(MODEM_INFO_FW_VERSION, s_modem_version, sizeof(s_modem_version));
-  if (rv < 0) {
-    MEMFAULT_LOG_ERROR("Failed to read modem FW version: %d", rv);
-    return rv;
-  }
-  MEMFAULT_LOG_DEBUG("Checking for modem FOTA (current version: %s)", s_modem_version);
-
-  // Temporarily switch the HTTP client config to use the modem project credentials for the URL
-  // query. The key is used only while building/sending the download-URL request below and is
-  // restored immediately after, so concurrent data uploads are not a concern in practice - FOTA
-  // and upload both run on the periodic upload thread and are serialized there.
-  const char *modem_project_key = memfault_zephyr_fota_modem_project_key_get();
-  if (!modem_project_key) {
-    MEMFAULT_LOG_WARN("Modem project key not set. Set CONFIG_MEMFAULT_FOTA_MODEM_PROJECT_KEY "
-                      "or call memfault_zephyr_fota_modem_project_key_set().");
-    return 0;
+//! Checks @p component for an update and, if one is available, starts its download.
+//! @return 1 if a download started, 0 if no update is available, <0 on error
+static int prv_fota_component_start(const sMemfaultFotaComponent *component) {
+  switch (component->install) {
+    case kMemfaultFotaComponentInstall_None:
+      // Installed by the application, see
+      // memfault_zephyr_fota_component_get_download_url()
+      return -ENOTSUP;
+    case kMemfaultFotaComponentInstall_ModemFull:
+#if !defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+      MEMFAULT_LOG_ERROR("'%s' requires CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE=y",
+                         component->software_type);
+      return -ENOTSUP;
+#endif
+    case kMemfaultFotaComponentInstall_ModemDelta:
+    case kMemfaultFotaComponentInstall_Bootloader:
+      break;
+    default:
+      MEMFAULT_LOG_ERROR("'%s' has an invalid install value: %d", component->software_type,
+                         (int)component->install);
+      return -EINVAL;
   }
 
-  const char *saved_api_key = g_mflt_http_client_config.api_key;
-  void (*saved_get_device_info)(sMemfaultDeviceInfo *) = g_mflt_http_client_config.get_device_info;
-
-  g_mflt_http_client_config.api_key = modem_project_key;
-  g_mflt_http_client_config.get_device_info = prv_get_modem_device_info;
-
-  #if CONFIG_MEMFAULT_USE_NRF_CLOUD_COAP
-  // Query the modem update URL over nRF Cloud CoAP. The modem project key (set above) is injected
-  // as CoAP option 2429 by nrf_cloud_coap_get_user_options(), and the overridden get_device_info
-  // supplies the modem software type/version used to build the OTA URL.
-  rv = memfault_zephyr_port_coap_get_download_url(&s_download_url);
-  #else
-  rv = memfault_zephyr_port_get_download_url(&s_download_url);
-  #endif
-
-  g_mflt_http_client_config.api_key = saved_api_key;
-  g_mflt_http_client_config.get_device_info = saved_get_device_info;
-
-  return rv;
-}
-
-static int prv_fota_modem_start(void) {
-  int rv = prv_fota_modem_get_url();
+  // On success (rv == 1), this module owns s_download_url, as prv_fota_download_start() expects
+  int rv = memfault_fota_component_url_get(component, &s_download_url);
   if (rv <= 0) {
     if (rv == 0) {
-      MEMFAULT_LOG_INFO("Modem firmware is up to date");
+      MEMFAULT_LOG_INFO("'%s' is up to date", component->software_type);
     }
     return rv;
   }
 
-  #if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
-  rv = nrf_cloud_fota_fmfu_dev_set(NULL);
-  if (rv < 0) {
-    MEMFAULT_LOG_ERROR("Full modem FOTA init failed, rv=%d", rv);
-    prv_fota_url_cleanup();
-    return rv;
+#if defined(CONFIG_MEMFAULT_FOTA_FULL_MODEM_UPDATE)
+  if (component->install == kMemfaultFotaComponentInstall_ModemFull) {
+    rv = nrf_cloud_fota_fmfu_dev_set(NULL);
+    if (rv < 0) {
+      MEMFAULT_LOG_ERROR("Full modem FOTA init failed, rv=%d", rv);
+      prv_fota_url_cleanup();
+      return rv;
+    }
+    s_modem_download_active = true;
   }
-  s_modem_download_active = true;
-  #endif
+#endif
 
+  // Other install types need no setup: the DFU target is detected from the image header
   return prv_fota_download_start();
 }
 
-int memfault_zephyr_fota_modem_start(void) {
-  return prv_fota_run_locked(prv_fota_modem_start);
+static int prv_fota_component_start_cb(const sMemfaultFotaComponent *component,
+                                       MEMFAULT_UNUSED void *ctx) {
+  return prv_fota_component_start(component);
 }
 
-int memfault_zephyr_fota_modem_get_download_url(char **url) {
+//! Starts the download of the first registered component with an update.
+static int prv_fota_components_start(void) {
+  return memfault_fota_component_updates_check(prv_fota_component_start_cb, NULL);
+}
+
+int memfault_zephyr_fota_component_start(const char *software_type) {
+  const sMemfaultFotaComponent *component = memfault_fota_component_find(software_type);
+  if (!component) {
+    return -ENOENT;
+  }
   int rv = prv_fota_lock();
   if (rv != 0) {
     return rv;
   }
-  rv = prv_fota_modem_get_url();
-  if (rv > 0) {
-    // Transfer ownership of s_download_url to the caller - they are now responsible for
-    // releasing it via memfault_zephyr_port_release_download_url() /
-    // memfault_zephyr_port_coap_release_download_url().
-    *url = s_download_url;
-    s_download_url = NULL;
+  return prv_fota_unlock_unless_started(prv_fota_component_start(component));
+}
+
+int memfault_zephyr_fota_component_get_download_url(const char *software_type, char **url) {
+  const sMemfaultFotaComponent *component = memfault_fota_component_find(software_type);
+  if (!component) {
+    return -ENOENT;
   }
+  int rv = prv_fota_lock();
+  if (rv != 0) {
+    return rv;
+  }
+  rv = memfault_fota_component_url_get(component, url);
   atomic_clear(&s_fota_busy);
   return rv;
 }
 
+#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
+int memfault_zephyr_fota_modem_start(void) {
+  return memfault_zephyr_fota_component_start(CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE);
+}
+
+int memfault_zephyr_fota_modem_get_download_url(char **url) {
+  return memfault_zephyr_fota_component_get_download_url(CONFIG_MEMFAULT_FOTA_MODEM_SOFTWARE_TYPE,
+                                                         url);
+}
 #endif  // CONFIG_MEMFAULT_FOTA_MODEM_UPDATE
 
 static int prv_fota_app_start(void) {
@@ -414,12 +411,8 @@ static int prv_fota_start(void) {
     return rv;
   }
 
-#if defined(CONFIG_MEMFAULT_FOTA_MODEM_UPDATE)
-  // No app update available - check for modem firmware update
-  return prv_fota_modem_start();
-#else
-  return 0;
-#endif
+  // No app update available: check the components
+  return prv_fota_components_start();
 }
 
 int memfault_zephyr_fota_start(void) {

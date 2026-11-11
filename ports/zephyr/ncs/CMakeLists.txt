@@ -47,4 +47,12 @@ if(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
     zephyr_ld_options(-Wl,--wrap=nrf_cloud_fota_poll_init)
   endif()
 
+  if(CONFIG_MEMFAULT_FOTA_COMPONENTS)
+    # FOTA component registry, see memfault/nrfconnect_port/fota_component.h. The .ld file is for
+    # the default linker script template, zephyr_iterable_section() for the CMake linker generator.
+    zephyr_linker_sources(SECTIONS memfault-fota-component.ld)
+    zephyr_iterable_section(NAME MemfaultFotaComponent KVMA RAM_REGION GROUP RODATA_REGION
+                            SUBALIGN 4)
+  endif()
+
 endif()

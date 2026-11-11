@@ -12,9 +12,6 @@
 #include MEMFAULT_ZEPHYR_INCLUDE(bluetooth/gatt.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(bluetooth/hci.h)
 #include MEMFAULT_ZEPHYR_INCLUDE(sys/byteorder.h)
-#include "controller/util/memq.h"
-// keep below memq.h to avoid missing definition error
-#include "controller/ll_sw/lll.h"
 
 // clang-format on
 
@@ -30,6 +27,9 @@
 #if defined(CONFIG_MEMFAULT_NRF_CONNECT_SDK)
   #include "memfault/ports/ncs/version.h"
 #endif
+
+// BLE connection interval unit (1.25 ms), per the Bluetooth Core spec
+#define MEMFAULT_BT_CONN_INTERVAL_UNIT_US 1250U
 
 static struct bt_conn *s_mflt_bt_current_conn = NULL;
 static uint32_t s_mflt_bt_connection_interval_us = 0;
@@ -156,10 +156,10 @@ static void prv_set_connection_interval_us(const struct bt_conn_info *info) {
   #if MEMFAULT_ZEPHYR_VERSION_GT(4, 2) && MEMFAULT_NCS_VERSION_GT(3, 1)
   s_mflt_bt_connection_interval_us = info->le.interval_us;
   #else
-  s_mflt_bt_connection_interval_us = info->le.interval * CONN_INT_UNIT_US;
+  s_mflt_bt_connection_interval_us = info->le.interval * MEMFAULT_BT_CONN_INTERVAL_UNIT_US;
   #endif
 #else
-  s_mflt_bt_connection_interval_us = info->le.interval * CONN_INT_UNIT_US;
+  s_mflt_bt_connection_interval_us = info->le.interval * MEMFAULT_BT_CONN_INTERVAL_UNIT_US;
 #endif
 }
 
@@ -276,7 +276,7 @@ static void prv_bt_le_param_updated_cb(struct bt_conn *conn, uint16_t interval, 
     return;
   }
 
-  uint32_t interval_us = interval * CONN_INT_UNIT_US;
+  uint32_t interval_us = interval * MEMFAULT_BT_CONN_INTERVAL_UNIT_US;
 
   // Record LE connection parameters
   MEMFAULT_METRIC_SET_UNSIGNED(bt_connection_interval_us, interval_us);
