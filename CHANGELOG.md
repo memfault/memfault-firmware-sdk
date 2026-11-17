@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.47.1] - 2026-11-16
+
+This is a patch release, fixing a Zephyr 4.5+ build error.
+
+### 🐛 Fixed
+
+- Zephyr:
+
+  - Fix a Kconfig build failure on Zephyr 4.5+ when
+    `CONFIG_MEMFAULT_COMPACT_LOG=y`. Zephyr removed `CONFIG_REQUIRES_STD_C11`;
+    compact logs now select `CONFIG_REQUIRES_STD_C17` instead.
+
 ## [1.47.0] - 2026-11-10
 
 This is a minor release, including new features, improvements, and bug fixes

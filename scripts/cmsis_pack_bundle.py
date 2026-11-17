@@ -152,7 +152,7 @@ def get_latest_pdsc():
 
     # There should always be a pidx/pdsc file available. Only skip if the env
     # var is set and it's a 404, which is only useful before the first release.
-    if resp.status_code == 404 or os.getenv("SKIP_MISSING_PRIOR_RELEASE"):
+    if resp.status_code == 404 and os.getenv("SKIP_MISSING_PRIOR_RELEASE"):
         logging.debug("Skipping missing file")
         return None
 

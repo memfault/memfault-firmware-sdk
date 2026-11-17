@@ -80,10 +80,10 @@ if (CONFIG_MEMFAULT_COMPACT_LOG)
   # Enable support for compact logs by adding the required linker section
   zephyr_linker_sources(SECTIONS memfault-compact-log.ld)
   # Compact logs requires a minimum C standard of gnu11, due to use of GNU
-  # extensions and C11 features. Zephyr 3.7.0+ adds a Kconfig-native setting to
-  # enable this. If unset, fallback to deprecated global CSTD property (for
-  # pre-3.7.0).
-  if (NOT (CONFIG_REQUIRES_STD_C11 AND CONFIG_GNU_C_EXTENSIONS))
+  # extensions and C11 features. Zephyr 3.7.0+ sets this via Kconfig
+  # (REQUIRES_STD_C17; REQUIRES_STD_C11 was removed in Zephyr 4.5). If unset,
+  # fallback to deprecated global CSTD property (for pre-3.7.0).
+  if (NOT (CONFIG_REQUIRES_STD_C17 AND CONFIG_GNU_C_EXTENSIONS))
     set_property(GLOBAL PROPERTY CSTD gnu11)
   endif()
 endif()
