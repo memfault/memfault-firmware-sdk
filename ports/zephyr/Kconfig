@@ -92,16 +92,6 @@ config MEMFAULT_SOC_FAMILY_ESP32
         help
           Enable ESP32 support in the Memfault SDK
 
-# The "SOC_SERIES_NRF" symbols were renamed in Zephyr 4.4. Generate some
-# backwards-compatible symbols compatible with earlier Zephyr versions.
-config MEMFAULT_SOC_NRF
-        bool
-        default y if \
-          (SOC_SERIES = "nrf52" || SOC_SERIES = "nrf53" || SOC_SERIES = "nrf54h" || SOC_SERIES = "nrf54l" || SOC_SERIES = "nrf71" || SOC_SERIES = "nrf91" || SOC_SERIES = "nrf92")
-        help
-          Non-user configurable option indicating a compatible Nordic SOC is in
-          use.
-
 config MEMFAULT_SOC_SERIES_NRF91
         bool
         default y if (SOC_SERIES = "nrf91")

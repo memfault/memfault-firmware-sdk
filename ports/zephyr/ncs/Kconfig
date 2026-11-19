@@ -1,6 +1,6 @@
 config MEMFAULT_NRF_CONNECT_SDK
         bool "nRF Connect SDK extensions"
-        default y if ZEPHYR_NRF_MODULE && MEMFAULT_SOC_NRF
+        default y if ZEPHYR_NRF_MODULE && SOC_FAMILY_NORDIC_NRF
 
 if MEMFAULT_NRF_CONNECT_SDK
 
