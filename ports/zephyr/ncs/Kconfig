@@ -70,7 +70,6 @@ if MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS
 
 config MEMFAULT_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Add custom handler for receiving OTA events"
-        default n
         help
           By default, the Memfault SDK implements a stub for FOTA callback
           events. An end user can provide their own implementation by enabling
@@ -86,7 +85,6 @@ config MEMFAULT_FOTA_HTTP_FRAG_SIZE
 
 config MEMFAULT_FOTA_FULL_MODEM_UPDATE
         bool "Support full modem updates through Memfault OTA"
-        default n
         depends on MEMFAULT_SOC_SERIES_NRF91
         depends on MEMFAULT_FOTA_MODEM_UPDATE
         depends on LTE_LINK_CONTROL
@@ -104,7 +102,6 @@ config MEMFAULT_FOTA_MODEM_UPDATE
         depends on MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS || MEMFAULT_ZEPHYR_FOTA_BACKEND_NRF_CLOUD_OVERRIDE
         depends on MODEM_INFO
         depends on MEMFAULT_SOC_SERIES_NRF91
-        default n
         help
           When enabled, memfault_zephyr_fota_start() also checks for modem
           firmware updates. By default, the check uses the device's main

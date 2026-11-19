@@ -1,6 +1,5 @@
 config MEMFAULT
         bool "Memfault Support"
-        default n
         depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3 || ARCH_POSIX
         select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
         select DEBUG_THREAD_INFO
@@ -100,7 +99,6 @@ config MEMFAULT_SOC_SERIES_NRF91
 
 config MEMFAULT_ERROR_WUNDEF
         bool "Compilation error on -Wundef for the Memfault library"
-        default n
         help
           This enables compiling the Memfault library with '-Werror=undef'.
           Intended only to be used by maintainers of the Memfault SDK.
@@ -253,7 +251,6 @@ config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
 
 config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
         bool "Include bss region in coredump"
-        default n
         help
           When enabled, the bss region will be captured as part
           of the coredump. If not enough space is available for all of
@@ -306,7 +303,6 @@ config MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT
 
 config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
        bool "Collect full thread stacks in coredumps"
-       default n
        depends on THREAD_STACK_INFO
        help
         When enabled, Memfault will collect the full thread stack in
@@ -389,7 +385,6 @@ config MEMFAULT_SHELL
 
 config MEMFAULT_SHELL_SELF_TEST
         bool "Execute self test via a shell command `mflt test self`"
-        default n
         depends on MEMFAULT_SHELL
         help
             Adds a command, `mflt test self`, to run a suite of tests used to verify the device's
@@ -422,7 +417,6 @@ config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
 
 config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
         bool "Allows users to create custom reboot reasons outside of the predefined set"
-        default n
         help
           Enable the ability to define custom reboot reasons. This is useful
           for tracking down the root cause of a reboot when it is not supported
@@ -430,7 +424,6 @@ config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
 
 config MEMFAULT_COMPACT_LOG
         bool "Compact logging"
-        default n
         select REQUIRES_STD_C17
         select GNU_C_EXTENSIONS
         help
@@ -842,7 +835,6 @@ config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
 
 config MEMFAULT_PERIODIC_UPLOAD_LOGS
         bool "Upload log buffer in addition to other data"
-        default n
 
 config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
         bool "Periodic upload is enabled at boot"
@@ -855,7 +847,6 @@ config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
 
 config MEMFAULT_PERIODIC_FOTA_CHECK
         bool "Periodically check for FOTA updates"
-        default n
         depends on MEMFAULT_ZEPHYR_FOTA
         help
           When enabled, the device will periodically check for FOTA updates via
@@ -874,7 +865,6 @@ config MEMFAULT_PERIODIC_FOTA_CHECK
 
 config MEMFAULT_PERIODIC_MODEM_FOTA_CHECK
         bool "Periodically check for modem firmware updates"
-        default n
         depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
         help
           When enabled, the device will periodically check for modem firmware
@@ -905,7 +895,6 @@ if MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
         bool "Provide a custom implementation for FOTA download"
-        default n
         help
           By default, the Memfault SDK implements a stub for the FOTA download
           callback invoked when a download completes. An end user can provide
@@ -1048,7 +1037,6 @@ if MEMFAULT_METRICS
 
 config MEMFAULT_METRICS_EXTRA_DEFS_FILE
        bool "Include additional metrics definition file"
-       default n
        help
         Enables inclusion of an additional metric definition file,
         'memfault_metrics_heartbeat_extra.def'. This can be useful for third party
@@ -1062,7 +1050,6 @@ config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
 
 config MEMFAULT_METRICS_TIMER_CUSTOM
        bool "Provide a custom implementation of Memfault Metric Deps"
-       default n
        help
         By default the Memfault SDK makes use of Zephyrs k_timer_* to
         schedule the heartbeat timer and k_work_* to run the heartbeat callback
@@ -1166,7 +1153,6 @@ config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
 
 config MEMFAULT_METRICS_BATTERY_ENABLE
        bool "Battery metrics"
-       default n
        help
          Memfault battery metric component. More information at
          https://mflt.io/core-metrics .
@@ -1278,7 +1264,6 @@ endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
        bool "Provide a custom implementation of Software Watchdog"
-       default n
        help
         By default Memfault implements a software watchdog implementation. Users can call
         memfault_software_watchdog_enable() on boot and memfault_software_watchdog_feed()
@@ -1308,7 +1293,6 @@ config MEMFAULT_INIT_PRIORITY
 
 config MEMFAULT_INIT_LEVEL_POST_KERNEL
         bool "Use POST_KERNEL init level for Memfault initialization"
-        default n
         help
          Set the Memfault initialization SYS_INIT priority level to
          "POST_KERNEL". Default is "APPLICATION".
@@ -1325,7 +1309,6 @@ config MEMFAULT_CATCH_ZEPHYR_ASSERT
 
 config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
        bool "Additional platform config file"
-       default n
        help
         Enables inclusion of an additional platform config file,
         'memfault_platform_config_extra.h'. This can be useful for third party
@@ -1333,7 +1316,6 @@ config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
 
 config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
         bool "Initialize platform-specific connectivity metrics on system init"
-        default n
         help
           When enabled, memfault_metrics_boot() will call a platform-implemented
           memfault_platform_metrics_connectivity_boot() function. If not already
@@ -1344,7 +1326,6 @@ config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
 
 config MEMFAULT_FAULT_HANDLER_RETURN
        bool "Return from fault handler"
-       default n
        help
         When enabled, the Memfault fault handler will call `z_fatal_error`
         instead of rebooting the system. Useful if the system needs to hook into
@@ -1352,7 +1333,6 @@ config MEMFAULT_FAULT_HANDLER_RETURN
 
 config MEMFAULT_FAULT_HANDLER_LOG_PANIC
         bool "Trigger LOG_PANIC() on fault handling"
-        default n
         help
          When enabled, the Memfault fault handler will call `LOG_PANIC()` to
          flush logs during fault handling. Note that this can cause unexpected
