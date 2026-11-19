@@ -1,38 +1,38 @@
 config MEMFAULT
-        bool "Memfault Support"
-        depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3 || ARCH_POSIX
-        select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
-        select DEBUG_THREAD_INFO
-        select REBOOT if ARCH_POSIX
-        imply HWINFO
-        # Use CPU_HAS_DCACHE to selectively enable CACHE_MANAGEMENT, which
-        # Memfault uses to flush the data cache on fault handling prior to
-        # system reboot. DCACHE is default=y unconditionally in Zephyr < 3.2.0,
-        # so we cannot use the more accurate DCACHE dep here.
-        imply CACHE_MANAGEMENT if CPU_HAS_DCACHE
-        help
-          Enable Zephyr Integration with the Memfault SDK
-          At the moment a port is only provided for Cortex-M based targets
+	bool "Memfault Support"
+	depends on CPU_CORTEX_M || RISCV || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3 || ARCH_POSIX
+	select EXTRA_EXCEPTION_INFO if CPU_CORTEX_M
+	select DEBUG_THREAD_INFO
+	select REBOOT if ARCH_POSIX
+	imply HWINFO
+	# Use CPU_HAS_DCACHE to selectively enable CACHE_MANAGEMENT, which
+	# Memfault uses to flush the data cache on fault handling prior to
+	# system reboot. DCACHE is default=y unconditionally in Zephyr < 3.2.0,
+	# so we cannot use the more accurate DCACHE dep here.
+	imply CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	help
+	  Enable Zephyr Integration with the Memfault SDK
+	  At the moment a port is only provided for Cortex-M based targets
 
 # This symbol was renamed in Zephyr v4.4. To avoid triggering Kconfig lints that
 # check for missing symbols, provide a fallback definition here, so we can
 # maintain the dependency checks for PEM support on older Zephyr versions.
 config MBEDTLS_PEM_CERTIFICATE_FORMAT
-        bool
+	bool
 
 # This symbol was renamed from MBEDTLS_CFG_FILE to MBEDTLS_CONFIG_FILE in
 # newer Zephyr/NCS releases. Define the old symbol here as a hidden fallback
 # so compatibility checks can continue to reference it without triggering
 # missing-symbol Kconfig linting on versions where only the new name exists.
 config MBEDTLS_CFG_FILE
-        string
+	string
 
 # This symbol was introduced in newer Zephyr/NCS releases (replacing
 # MBEDTLS_CFG_FILE). Define it here as a hidden fallback so the dependency
 # in MEMFAULT_TLS_CERTS_USE_PEM remains valid on older versions where the
 # symbol does not exist.
 config MBEDTLS_CONFIG_FILE
-        string
+	string
 
 # Zephyr v4.4.0 (commit f0df3498081a) implemented arch_stack_walk() for
 # Cortex-M when EXTRA_EXCEPTION_INFO is enabled. Since MEMFAULT selects
@@ -45,1440 +45,1392 @@ config MBEDTLS_CONFIG_FILE
 # enable it by explicitly setting CONFIG_ARCH_STACKWALK=y in their project
 # config, which overrides any default.
 config ARCH_STACKWALK
-        bool
-        default n if MEMFAULT && CPU_CORTEX_M
+	bool
+	default n if MEMFAULT && CPU_CORTEX_M
 
 if MEMFAULT
 
 config MEMFAULT_CACHE_FAULT_REGS
-        bool "Memfault Cache ARM fault registers"
-        default y
-        depends on CPU_CORTEX_M
-        help
-          Save a copy of the ARMv7's fault registers before Zephyr
-          modifies them to provide a more accurate crash analysis
-          in the Memfault Issues view.
+	bool "Memfault Cache ARM fault registers"
+	default y
+	depends on CPU_CORTEX_M
+	help
+	  Save a copy of the ARMv7's fault registers before Zephyr
+	  modifies them to provide a more accurate crash analysis
+	  in the Memfault Issues view.
 
 config MEMFAULT_USER_CONFIG_ENABLE
-        bool "User configuration of the Memfault SDK"
-        default y
-        help
-          When enabled, a user must add the three Memfault
-          configuration files to their port:
-          memfault_platform_config.h
-          memfault_metrics_heartbeat_config.def
-          memfault_trace_reason_user_config.def
+	bool "User configuration of the Memfault SDK"
+	default y
+	help
+	  When enabled, a user must add the three Memfault
+	  configuration files to their port:
+	  memfault_platform_config.h
+	  memfault_metrics_heartbeat_config.def
+	  memfault_trace_reason_user_config.def
 
 config MEMFAULT_USER_CONFIG_SILENT_FAIL
-        bool "Continue with build even if user configuration of Memfault SDK is missing"
-        default y
-        help
-          When enabled, __has_include is used to conditionally include the three Memfault
-          configuration files to a port if they exist instead of failing to compile if
-          they do not:
-          memfault_platform_config.h
-          memfault_metrics_heartbeat_config.def
-          memfault_trace_reason_user_config.def
+	bool "Continue with build even if user configuration of Memfault SDK is missing"
+	default y
+	help
+	  When enabled, __has_include is used to conditionally include the three Memfault
+	  configuration files to a port if they exist instead of failing to compile if
+	  they do not:
+	  memfault_platform_config.h
+	  memfault_metrics_heartbeat_config.def
+	  memfault_trace_reason_user_config.def
 
 config MEMFAULT_SOC_FAMILY_ESP32
-        bool "ESP32 support"
-        # Note: the generic ESP32 family config changed from SOC_FAMILY_ESP32 to
-        # SOC_FAMILY_ESPRESSIF_ESP32 in Zephyr 3.7.0. To provide backwards
-        # compatible support without referencing unavailable Kconfig values,
-        # generate a Memfault-specific option that works on Zephyr 3.7.0 and
-        # also earlier releases.
-        default y if SOC_FAMILY_ESPRESSIF_ESP32 || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
-        help
-          Enable ESP32 support in the Memfault SDK
+	bool "ESP32 support"
+	# Note: the generic ESP32 family config changed from SOC_FAMILY_ESP32 to
+	# SOC_FAMILY_ESPRESSIF_ESP32 in Zephyr 3.7.0. To provide backwards
+	# compatible support without referencing unavailable Kconfig values,
+	# generate a Memfault-specific option that works on Zephyr 3.7.0 and
+	# also earlier releases.
+	default y if SOC_FAMILY_ESPRESSIF_ESP32 || SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	help
+	  Enable ESP32 support in the Memfault SDK
 
 config MEMFAULT_SOC_SERIES_NRF91
-        bool
-        default y if (SOC_SERIES = "nrf91")
-        help
-          Non-user configurable option indicating a nRF91 series SOC is in use.
+	bool
+	default y if (SOC_SERIES = "nrf91")
+	help
+	  Non-user configurable option indicating a nRF91 series SOC is in use.
 
 config MEMFAULT_ERROR_WUNDEF
-        bool "Compilation error on -Wundef for the Memfault library"
-        help
-          This enables compiling the Memfault library with '-Werror=undef'.
-          Intended only to be used by maintainers of the Memfault SDK.
+	bool "Compilation error on -Wundef for the Memfault library"
+	help
+	  This enables compiling the Memfault library with '-Werror=undef'.
+	  Intended only to be used by maintainers of the Memfault SDK.
 
 config MEMFAULT_SOC_SERIES_NRF92
-        bool
-        default y if (SOC_SERIES = "nrf92")
-        help
-          Non-user configurable option indicating a nRF92 series SOC is in use.
+	bool
+	default y if (SOC_SERIES = "nrf92")
+	help
+	  Non-user configurable option indicating a nRF92 series SOC is in use.
 
 config MEMFAULT_SOC_SERIES_NRF54H
-        bool
-        default y if (SOC_SERIES = "nrf54h")
-        help
-          Non-user configurable option indicating a nRF54H series SOC is in use.
+	bool
+	default y if (SOC_SERIES = "nrf54h")
+	help
+	  Non-user configurable option indicating a nRF54H series SOC is in use.
 
 # sub menu for coredump settings
 menu "Memfault Coredump Settings"
 
 # For backwards compatibility, this must be outside of the choice block below
 config MEMFAULT_COREDUMP_STORAGE_CUSTOM
-        bool "Custom coredump storage implementation"
-        help
-          Disable any built-in coredump storage implementations. The user must
-          provide their own implementation for coredump storage.
+	bool "Custom coredump storage implementation"
+	help
+	  Disable any built-in coredump storage implementations. The user must
+	  provide their own implementation for coredump storage.
 
 choice MEMFAULT_COREDUMP_STORAGE
-        prompt "Coredump storage backend"
-        default MEMFAULT_RAM_BACKED_COREDUMP
-        depends on !MEMFAULT_COREDUMP_STORAGE_CUSTOM
-        help
-          Choose the implementation used to store coredumps
+	prompt "Coredump storage backend"
+	default MEMFAULT_RAM_BACKED_COREDUMP
+	depends on !MEMFAULT_COREDUMP_STORAGE_CUSTOM
+	help
+	  Choose the implementation used to store coredumps
 
 config MEMFAULT_RAM_BACKED_COREDUMP
-        bool "RAM backed coredump storage"
-        help
-          Save a minimal coredump in noinit RAM.
+	bool "RAM backed coredump storage"
+	help
+	  Save a minimal coredump in noinit RAM.
 
 config MEMFAULT_COREDUMP_STORAGE_NRF_RRAM
-        bool "Nordic RRAM backed coredump storage"
-        depends on NRFX_RRAMC
-        help
-          Use an internal RRAM-backed coredump storage implementation for
-          Nordic devices. Requires a partition labeled `memfault_coredump_partition`.
+	bool "Nordic RRAM backed coredump storage"
+	depends on NRFX_RRAMC
+	help
+	  Use an internal RRAM-backed coredump storage implementation for
+	  Nordic devices. Requires a partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_NRF_MRAM
-        bool "NRF MRAM backed coredump storage"
-        depends on SOC_FLASH_NRF_MRAM
-        depends on FLASH
-        help
-          Use an internal Nordic MRAM-backed coredump storage implementation.
-          Requires a partition labeled `memfault_coredump_partition`.
+	bool "NRF MRAM backed coredump storage"
+	depends on SOC_FLASH_NRF_MRAM
+	depends on FLASH
+	help
+	  Use an internal Nordic MRAM-backed coredump storage implementation.
+	  Requires a partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_AMBIQ_MRAM
-        bool "Ambiq MRAM backed coredump storage"
-        depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
-        help
-          Use an internal Ambiq MRAM-backed coredump storage implementation.
-          Requires a DTS partition labeled `memfault_coredump_partition`.
+	bool "Ambiq MRAM backed coredump storage"
+	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
+	help
+	  Use an internal Ambiq MRAM-backed coredump storage implementation.
+	  Requires a DTS partition labeled `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_STM32U5_FLASH
-        bool "STM32U5 Flash backed coredump storage"
-        depends on SOC_SERIES_STM32U5X
-        help
-          Use an internal STM32U5 Flash-backed coredump storage implementation
-          using direct SOC flash API (bypasses Zephyr flash driver to avoid
-          semaphore usage in ISR context). Requires a partition labeled
-          `memfault_coredump_partition`.
+	bool "STM32U5 Flash backed coredump storage"
+	depends on SOC_SERIES_STM32U5X
+	help
+	  Use an internal STM32U5 Flash-backed coredump storage implementation
+	  using direct SOC flash API (bypasses Zephyr flash driver to avoid
+	  semaphore usage in ISR context). Requires a partition labeled
+	  `memfault_coredump_partition`.
 
 config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
-        bool "ESP32 SPI flash backed coredump storage"
-        depends on MEMFAULT_SOC_FAMILY_ESP32
-        depends on !SMP
-        help
-          Use an ESP32 SPI flash backed coredump storage implementation that
-          calls the hal_espressif flash API directly (bypasses the Zephyr flash
-          driver, which can't be used from fault context). Requires a partition
-          labeled `memfault_coredump_partition`, unless
-          MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT is
-          enabled.
+	bool "ESP32 SPI flash backed coredump storage"
+	depends on MEMFAULT_SOC_FAMILY_ESP32
+	depends on !SMP
+	help
+	  Use an ESP32 SPI flash backed coredump storage implementation that
+	  calls the hal_espressif flash API directly (bypasses the Zephyr flash
+	  driver, which can't be used from fault context). Requires a partition
+	  labeled `memfault_coredump_partition`, unless
+	  MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT is
+	  enabled.
 
 endchoice # MEMFAULT_COREDUMP_STORAGE
 
 if MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
 
 config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
-        bool "Store coredumps in the MCUboot secondary slot"
-        depends on BOOTLOADER_MCUBOOT
-        help
-          Store coredumps at the end of the MCUboot secondary slot
-          (slot1_partition), just below the MCUboot trailer, instead of a
-          dedicated partition. This enables adding flash coredump storage to
-          devices in the field via an OTA update, without changing the
-          partition table.
+	bool "Store coredumps in the MCUboot secondary slot"
+	depends on BOOTLOADER_MCUBOOT
+	help
+	  Store coredumps at the end of the MCUboot secondary slot
+	  (slot1_partition), just below the MCUboot trailer, instead of a
+	  dedicated partition. This enables adding flash coredump storage to
+	  devices in the field via an OTA update, without changing the
+	  partition table.
 
-          Images must stay smaller than the slot size minus the coredump
-          region and trailer reserve. A coredump is not saved if an image in
-          the secondary slot (eg a downloaded update, or a revert image in swap
-          modes) overlaps the coredump region. Writing a new image to the
-          secondary slot may erase a stored coredump that has not been uploaded
-          yet.
+	  Images must stay smaller than the slot size minus the coredump
+	  region and trailer reserve. A coredump is not saved if an image in
+	  the secondary slot (eg a downloaded update, or a revert image in swap
+	  modes) overlaps the coredump region. Writing a new image to the
+	  secondary slot may erase a stored coredump that has not been uploaded
+	  yet.
 
 config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT_SIZE
-        hex "Coredump region size in the MCUboot secondary slot"
-        default 0x20000
-        depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
-        help
-          Size of the coredump region. Must be a multiple of the flash sector
-          size (4 KiB).
+	hex "Coredump region size in the MCUboot secondary slot"
+	default 0x20000
+	depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
+	help
+	  Size of the coredump region. Must be a multiple of the flash sector
+	  size (4 KiB).
 
 config MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_TRAILER_RESERVE
-        hex "Space reserved for the MCUboot trailer at the end of the secondary slot"
-        default 0x1000 if MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
-        default 0x10000
-        depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
-        help
-          Space left untouched at the end of the secondary slot for the MCUboot
-          image trailer (and swap status, in swap modes). Must be a multiple
-          of the flash sector size (4 KiB) and at least as large as the
-          MCUboot trailer.
+	hex "Space reserved for the MCUboot trailer at the end of the secondary slot"
+	default 0x1000 if MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+	default 0x10000
+	depends on MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH_MCUBOOT_SECONDARY_SLOT
+	help
+	  Space left untouched at the end of the secondary slot for the MCUboot
+	  image trailer (and swap status, in swap modes). Must be a multiple
+	  of the flash sector size (4 KiB) and at least as large as the
+	  MCUboot trailer.
 
 endif # MEMFAULT_COREDUMP_STORAGE_ESP32_FLASH
 
 if MEMFAULT_RAM_BACKED_COREDUMP
 
 config MEMFAULT_RAM_BACKED_COREDUMP_SIZE
-        int "Memfault Ram Backed Coredump"
-        default 8192
-        depends on MEMFAULT_RAM_BACKED_COREDUMP
-        help
-          The amount of RAM to allocate for saving coredumps
+	int "Memfault Ram Backed Coredump"
+	default 8192
+	depends on MEMFAULT_RAM_BACKED_COREDUMP
+	help
+	  The amount of RAM to allocate for saving coredumps
 
 config MEMFAULT_RAM_BACKED_COREDUMP_REGION
-        string "Memfault Ram Backed Coredump Region"
-        default ".noinit.mflt_coredump"
-        depends on MEMFAULT_RAM_BACKED_COREDUMP
-        help
-          The region in memory where the coredump will be stored.
-          This region should be marked as NOINIT in the linker script.
+	string "Memfault Ram Backed Coredump Region"
+	default ".noinit.mflt_coredump"
+	depends on MEMFAULT_RAM_BACKED_COREDUMP
+	help
+	  The region in memory where the coredump will be stored.
+	  This region should be marked as NOINIT in the linker script.
 
 endif  # MEMFAULT_RAM_BACKED_COREDUMP
 
 config MEMFAULT_COREDUMP_COLLECT_DATA_REGIONS
-        bool "Include data region in coredump"
-        default y
-        help
-          When enabled, the data region will be captured as part
-          of the coredump. If not enough space is available for all of
-          the data, the coredump will be truncated.
+	bool "Include data region in coredump"
+	default y
+	help
+	  When enabled, the data region will be captured as part
+	  of the coredump. If not enough space is available for all of
+	  the data, the coredump will be truncated.
 
 config MEMFAULT_COREDUMP_COLLECT_BSS_REGIONS
-        bool "Include bss region in coredump"
-        help
-          When enabled, the bss region will be captured as part
-          of the coredump. If not enough space is available for all of
-          the data, the coredump will be truncated.
+	bool "Include bss region in coredump"
+	help
+	  When enabled, the bss region will be captured as part
+	  of the coredump. If not enough space is available for all of
+	  the data, the coredump will be truncated.
 
 config MEMFAULT_COREDUMP_COLLECT_STACK_REGIONS
-        bool "Include active stack region in coredump"
-        default y
-        help
-          When enabled, the stack region will be captured as part
-          of the coredump. If disabled, no backtrace will be possible.
+	bool "Include active stack region in coredump"
+	default y
+	help
+	  When enabled, the stack region will be captured as part
+	  of the coredump. If disabled, no backtrace will be possible.
 
 config MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
-        bool "Include kernel region in coredump"
-        default y
-        help
-          When enabled, the kernel region will be captured as part
-          of the coredump. The kernel region holds data structures required to
-          parse Zephyr thread state from the coredump data, so thread awareness
-          will not be possible if this region is omitted.
+	bool "Include kernel region in coredump"
+	default y
+	help
+	  When enabled, the kernel region will be captured as part
+	  of the coredump. The kernel region holds data structures required to
+	  parse Zephyr thread state from the coredump data, so thread awareness
+	  will not be possible if this region is omitted.
 
 config MEMFAULT_COREDUMP_COLLECT_TASKS_REGIONS
-        bool "Include tasks region in coredump"
-        default y
-        depends on MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
-        help
-          When enabled, Zephyr thread stacks will be captured as part of the
-          coredump. Disabling this will disable non-active-thread backtrace.
+	bool "Include tasks region in coredump"
+	default y
+	depends on MEMFAULT_COREDUMP_COLLECT_KERNEL_REGION
+	help
+	  When enabled, Zephyr thread stacks will be captured as part of the
+	  coredump. Disabling this will disable non-active-thread backtrace.
 
 config MEMFAULT_COREDUMP_COMPUTE_THREAD_STACK_USAGE
-        bool "Compute thread stack usage on device"
-        default y
-        depends on THREAD_STACK_INFO && !STACK_GROWS_UP && INIT_STACKS
-        help
-          Adds thread stack usage computed during fault handling into a coredump.
+	bool "Compute thread stack usage on device"
+	default y
+	depends on THREAD_STACK_INFO && !STACK_GROWS_UP && INIT_STACKS
+	help
+	  Adds thread stack usage computed during fault handling into a coredump.
 
 config MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
-       int "Maximum amount of bytes to collect for task"
-       default 256
-       help
-        The larger the size, the more stack frames Memfault can recover for tasks. The
-        default setting typically allows for 4 or more frames to be recovered.
+	int "Maximum amount of bytes to collect for task"
+	default 256
+	help
+	  The larger the size, the more stack frames Memfault can recover for tasks. The
+	  default setting typically allows for 4 or more frames to be recovered.
 
 config MEMFAULT_COREDUMP_ACTIVE_TASK_STACK_SIZE_TO_COLLECT
-       int "Maximum amount of bytes to collect for active task"
-       default MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
-       help
-        The larger the size, the more stack frames Memfault can recover for the active task.
-        The default setting typically allows for 4 or more frames to be recovered.
+	int "Maximum amount of bytes to collect for active task"
+	default MEMFAULT_COREDUMP_STACK_SIZE_TO_COLLECT
+	help
+	  The larger the size, the more stack frames Memfault can recover for the active task.
+	  The default setting typically allows for 4 or more frames to be recovered.
 
 config MEMFAULT_COREDUMP_FULL_THREAD_STACKS
-       bool "Collect full thread stacks in coredumps"
-       depends on THREAD_STACK_INFO
-       help
-        When enabled, Memfault will collect the full thread stack in
-        coredumps. This will likely increase the size of coredumps, and there
-        will no longer be a strict ceiling on the coredump task region sizes.
-        This is provided as an alternative when capturing all of RAM is not
-        viable but full thread stack analysis (watermarking, stack overflow
-        tagging) is desired.
+	bool "Collect full thread stacks in coredumps"
+	depends on THREAD_STACK_INFO
+	help
+	  When enabled, Memfault will collect the full thread stack in coredumps. This will
+	  likely increase the size of coredumps, and there will no longer be a strict ceiling
+	  on the coredump task region sizes. This is provided as an alternative when capturing
+	  all of RAM is not viable but full thread stack analysis (watermarking, stack overflow
+	  tagging) is desired.
 
 config MEMFAULT_COREDUMP_MAX_TRACKED_TASKS
-       int "Maximum amount of tasks to collect in a coredump"
-       default 32
-       help
-        The maximum amount of tasks Memfault will store state for in a coredump.
+	int "Maximum amount of tasks to collect in a coredump"
+	default 32
+	help
+	  The maximum amount of tasks Memfault will store state for in a coredump.
 
 config MEMFAULT_COREDUMP_COLLECT_MPU_STATE
-        bool "Include MPU state in coredump"
-        default y
-        depends on CPU_CORTEX_M
-        depends on ARM_MPU
-        help
-          When enabled, the MPU state will be captured as part
-          of the coredump. This adds
-          8 + 8 * MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT bytes to the coredump.
+	bool "Include MPU state in coredump"
+	default y
+	depends on CPU_CORTEX_M
+	depends on ARM_MPU
+	help
+	  When enabled, the MPU state will be captured as part of the coredump. This adds
+	  8 + 8 * MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT bytes to the coredump.
 
 config MEMFAULT_COREDUMP_MPU_REGIONS_TO_COLLECT
-        int "Maximum amount of MPU regions to collect in a coredump"
-        default 8
-        range 1 16
-        depends on MEMFAULT_COREDUMP_COLLECT_MPU_STATE
-        help
-          The maximum amount of MPU regions Memfault will store state for in a
-          coredump.
+	int "Maximum amount of MPU regions to collect in a coredump"
+	default 8
+	range 1 16
+	depends on MEMFAULT_COREDUMP_COLLECT_MPU_STATE
+	help
+	  The maximum amount of MPU regions Memfault will store state for in a coredump.
 
 config MEMFAULT_COREDUMP_NVIC_INTERRUPTS_TO_COLLECT
-        int "Maximum amount of NVIC interrupts to collect in a coredump"
-        default NUM_IRQS
-        range 32 512
-        depends on CPU_CORTEX_M
-        help
-          The maximum amount of NVIC interrupts Memfault will store state for in
-          a coredump. This is useful for debugging interrupt state at the time
-          of the fault. Each additional 32 interrupts collected uses 44 bytes of
-          coredump storage.
+	int "Maximum amount of NVIC interrupts to collect in a coredump"
+	default NUM_IRQS
+	range 32 512
+	depends on CPU_CORTEX_M
+	help
+	  The maximum amount of NVIC interrupts Memfault will store state for in a coredump. This
+	  is useful for debugging interrupt state at the time of the fault. Each additional 32
+	  interrupts collected uses 44 bytes of coredump storage.
 
 endmenu  # Memfault Coredump Settings
 
 config MEMFAULT_HEAP_STATS
-        bool "Collect system heap stats with coredumps"
-        default y
-        select SYS_HEAP_RUNTIME_STATS
-        depends on HEAP_MEM_POOL_SIZE > 0
-        help
-          When enabled, system heap stats are captured as part of the coredump.
-          The heap stats subsystem collects info on system heap
-          allocation/deallocation (k_malloc/k_calloc/k_free).
+	bool "Collect system heap stats with coredumps"
+	default y
+	select SYS_HEAP_RUNTIME_STATS
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  When enabled, system heap stats are captured as part of the coredump. The heap stats
+	  subsystem collects info on system heap allocation/deallocation
+	  (k_malloc/k_calloc/k_free).
 
 config MEMFAULT_HEAP_STATS_SHARED_MULTI_HEAP
-        bool "Also track shared multi-heap allocations in heap stats"
-        default y if SHARED_MULTI_HEAP
-        depends on MEMFAULT_HEAP_STATS
-        depends on SHARED_MULTI_HEAP
-        help
-          When enabled, allocations made via the Zephyr shared multi-heap API
-          (shared_multi_heap_alloc/shared_multi_heap_aligned_alloc/
-          shared_multi_heap_free) are also tracked by the heap stats
-          subsystem. This is required to see allocations that are routed to
-          a non-default memory region, for example SPIRAM-backed WiFi/BT
-          buffers on ESP32 (CONFIG_ESP_WIFI_HEAP_SPIRAM,
-          CONFIG_ESP_BT_HEAP_SPIRAM), since those bypass k_malloc/k_free
-          entirely. shared_multi_heap_realloc is also tracked on Zephyr 4.4+.
-          Has no effect on Zephyr versions before 3.5.
+	bool "Also track shared multi-heap allocations in heap stats"
+	default y if SHARED_MULTI_HEAP
+	depends on MEMFAULT_HEAP_STATS
+	depends on SHARED_MULTI_HEAP
+	help
+	  When enabled, allocations made via the Zephyr shared multi-heap API
+	  (shared_multi_heap_alloc/shared_multi_heap_aligned_alloc/shared_multi_heap_free) are
+	  also tracked by the heap stats subsystem. This is required to see allocations that are
+	  routed to a non-default memory region, for example SPIRAM-backed WiFi/BT buffers on
+	  ESP32 (CONFIG_ESP_WIFI_HEAP_SPIRAM, CONFIG_ESP_BT_HEAP_SPIRAM), since those bypass
+	  k_malloc/k_free entirely. shared_multi_heap_realloc is also tracked on Zephyr 4.4+.
+	  Has no effect on Zephyr versions before 3.5.
 
 config MEMFAULT_SHELL
-        bool "Memfault Shell"
-        default y if SHELL
-        depends on SHELL
-        help
-          CLI Utilities for interfacing with the Memfault SDK
+	bool "Memfault Shell"
+	default y if SHELL
+	depends on SHELL
+	help
+	  CLI Utilities for interfacing with the Memfault SDK
 
 config MEMFAULT_SHELL_SELF_TEST
-        bool "Execute self test via a shell command `mflt test self`"
-        depends on MEMFAULT_SHELL
-        help
-            Adds a command, `mflt test self`, to run a suite of tests used to verify the device's
-            integration with the Memfault SDK. By default, this will run tests to validate device
-            info, component boot, coredump regions, coredump storage capacity, data export, and
-            platform time. A reboot test is available by running `memfault_self_test reboot`
+	bool "Execute self test via a shell command `mflt test self`"
+	depends on MEMFAULT_SHELL
+	help
+	  Adds a command, `mflt test self`, to run a suite of tests used to verify the device's
+	  integration with the Memfault SDK. By default, this will run tests to validate device
+	  info, component boot, coredump regions, coredump storage capacity, data export, and
+	  platform time. A reboot test is available by running `memfault_self_test reboot`
 
 if MEMFAULT_SHELL_SELF_TEST
 
-    config MEMFAULT_SHELL_SELF_TEST_COREDUMP_STORAGE
-        bool "Adds option to run coredump storage test [EXPERIMENTAL]"
-        select EXPERIMENTAL
-        help
-            Enabling this option adds an experimental coredump storage test.
-            The test exercises the coredump storage implementation by erasing, reading,
-            and writing the entire coredump partition. This test may fail due to Flash
-            cache issues on some platforms. The test requires disabling any watchdogs
-            (hardware, software, etc) to allow the test to complete. This test may be run with
-            `mflt test self coredump_storage`.
+config MEMFAULT_SHELL_SELF_TEST_COREDUMP_STORAGE
+	bool "Adds option to run coredump storage test [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enabling this option adds an experimental coredump storage test. The test exercises the
+	  coredump storage implementation by erasing, reading, and writing the entire coredump
+	  partition. This test may fail due to Flash cache issues on some platforms. The test
+	  requires disabling any watchdogs (hardware, software, etc) to allow the test to
+	  complete. This test may be run with `mflt test self coredump_storage`.
 
 endif # MEMFAULT_SHELL_SELF_TEST
 
 config MEMFAULT_PLATFORM_LOG_FALLBACK_TO_PRINTK
-        bool "Fallback to printk for platform logging"
-        default y if ! LOG
-        help
-          When enabled, the platform logging implementation will fallback
-          to printk if Zephyr LOG is disabled. This is useful for testing when
-          Zephyr LOG is not enabled (eg due to code space limitations).
+	bool "Fallback to printk for platform logging"
+	default y if ! LOG
+	help
+	  When enabled, the platform logging implementation will fallback to printk if Zephyr LOG
+	  is disabled. This is useful for testing when Zephyr LOG is not enabled (eg due to code
+	  space limitations).
 
 config MEMFAULT_REBOOT_REASON_CUSTOM_ENABLE
-        bool "Allows users to create custom reboot reasons outside of the predefined set"
-        help
-          Enable the ability to define custom reboot reasons. This is useful
-          for tracking down the root cause of a reboot when it is not supported
-          by the default set of reboot reasons.
+	bool "Allows users to create custom reboot reasons outside of the predefined set"
+	help
+	  Enable the ability to define custom reboot reasons. This is useful for tracking down the
+	  root cause of a reboot when it is not supported by the default set of reboot reasons.
 
 config MEMFAULT_COMPACT_LOG
-        bool "Compact logging"
-        select REQUIRES_STD_C17
-        select GNU_C_EXTENSIONS
-        help
-          When enabled, the Memfault SDK will use a compact representation
-          for log messages written using the 'MEMFAULT_LOG_x' macros. Find more
-          information here: https://mflt.io/compact-logs
+	bool "Compact logging"
+	select REQUIRES_STD_C17
+	select GNU_C_EXTENSIONS
+	help
+	  When enabled, the Memfault SDK will use a compact representation for log messages written
+	  using the 'MEMFAULT_LOG_x' macros. Find more information here:
+	  https://mflt.io/compact-logs
 
 config MEMFAULT_LOGGING_ENABLE
-        bool "Memfault Zephyr backend logging"
-        default y
-        select LOG
-        select LOG_OUTPUT
-        help
-          Adds support for routing Zephyr logging calls to the Memfault
-          logging backend.
+	bool "Memfault Zephyr backend logging"
+	default y
+	select LOG
+	select LOG_OUTPUT
+	help
+	  Adds support for routing Zephyr logging calls to the Memfault logging backend.
 
 if MEMFAULT_LOGGING_ENABLE
 
 config MEMFAULT_LOGGING_RAM_SIZE
-        int "Set the size of the Memfault logging storage buffer"
-        default 512
-        depends on MEMFAULT_LOGGING_ENABLE
-        help
-          The Memfault logs will be stored in a static logging storage buffer
-          defined in memfault_logging.c. Adjust this value to ensure enough
-          room for a reasonalbe number of log entries.
+	int "Set the size of the Memfault logging storage buffer"
+	default 512
+	depends on MEMFAULT_LOGGING_ENABLE
+	help
+	  The Memfault logs will be stored in a static logging storage buffer defined in
+	  memfault_logging.c. Adjust this value to ensure enough room for a reasonalbe number of
+	  log entries.
 
 config MEMFAULT_METRICS_LOGS_ENABLE
-        bool "Metrics for log message counts"
-        default y
-        help
-          When enabled, Memfault will collect metrics for log messages.
-          This can be useful for tracking the number of logs generated
-          by the system.
+	bool "Metrics for log message counts"
+	default y
+	help
+	  When enabled, Memfault will collect metrics for log messages. This can be useful for
+	  tracking the number of logs generated by the system.
 
 endif # MEMFAULT_LOGGING_ENABLE
 
 config MEMFAULT_PROJECT_KEY
-        string "Memfault Project Key"
-        depends on MEMFAULT_PROJECT_KEY_STATIC
-        help
-          Token used to communicate with Memfault. Find it at
-          https://mflt.io/project-key
+	string "Memfault Project Key"
+	depends on MEMFAULT_PROJECT_KEY_STATIC
+	help
+	  Token used to communicate with Memfault. Find it at https://mflt.io/project-key
 
 choice MEMFAULT_PROJECT_KEY_SOURCE
-        prompt "Memfault Project Key source"
-        default MEMFAULT_PROJECT_KEY_STATIC
+	prompt "Memfault Project Key source"
+	default MEMFAULT_PROJECT_KEY_STATIC
 
 config MEMFAULT_PROJECT_KEY_STATIC
-        bool "Static (compile-time) Memfault Project Key"
-        help
-          Use the compile-time CONFIG_MEMFAULT_PROJECT_KEY string as the
-          Memfault project key.
+	bool "Static (compile-time) Memfault Project Key"
+	help
+	  Use the compile-time CONFIG_MEMFAULT_PROJECT_KEY string as the Memfault project key.
 
 config MEMFAULT_PROJECT_KEY_SETTINGS
-        bool "Memfault Project Key from Zephyr settings subsystem"
-        depends on SETTINGS
-        help
-          Load the Memfault project key from the Zephyr settings subsystem at
-          runtime. The key is stored and loaded under the settings path
-          "memfault/project_key". Note this requires the application to call
-          settings_load() on startup.
+	bool "Memfault Project Key from Zephyr settings subsystem"
+	depends on SETTINGS
+	help
+	  Load the Memfault project key from the Zephyr settings subsystem at runtime. The key is
+	  stored and loaded under the settings path "memfault/project_key". Note this requires the
+	  application to call settings_load() on startup.
 
 endchoice # MEMFAULT_PROJECT_KEY_SOURCE
 
 config MEMFAULT_HTTP_CLIENT_CONFIG_BUILTIN
-        bool "Memfault SDK defines g_mflt_http_client_config"
-        default y if !MEMFAULT_NRF_CONNECT_SDK
-        help
-          When enabled, the Memfault SDK provides the definition of
-          g_mflt_http_client_config, the global HTTP client config that holds the
-          project key.
+	bool "Memfault SDK defines g_mflt_http_client_config"
+	default y if !MEMFAULT_NRF_CONNECT_SDK
+	help
+	  When enabled, the Memfault SDK provides the definition of g_mflt_http_client_config, the
+	  global HTTP client config that holds the project key.
 
-          The nRF Connect SDK historically defines this struct itself,
-          so this option is off by default for those builds.
+	  The nRF Connect SDK historically defines this struct itself, so this option is off by
+	  default for those builds.
 
 config MEMFAULT_ROOT_CERT_STORAGE
-        bool "Memfault TLS root certificate storage enabled"
-        default y if MEMFAULT_HTTP_ENABLE && !MEMFAULT_HTTP_DISABLE_TLS
-        help
-          Enables TLS root certificate storage for Memfault data upload
+	bool "Memfault TLS root certificate storage enabled"
+	default y if MEMFAULT_HTTP_ENABLE && !MEMFAULT_HTTP_DISABLE_TLS
+	help
+	  Enables TLS root certificate storage for Memfault data upload
 
 choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
-    bool "Implementation used to store Memfault Root certificates"
-    default MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM if (MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE) || MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
-    default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE if TLS_CREDENTIALS
-    default MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
-    depends on MEMFAULT_ROOT_CERT_STORAGE
+	bool "Implementation used to store Memfault Root certificates"
+	default MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM if (MEMFAULT_SOC_SERIES_NRF91 && \
+		TRUSTED_EXECUTION_NONSECURE) || MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
+	default MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE if TLS_CREDENTIALS
+	default MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
+	depends on MEMFAULT_ROOT_CERT_STORAGE
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
-    bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
-    depends on MODEM_KEY_MGMT
-    select DEPRECATED
-    help
-      Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
+	bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
+	depends on MODEM_KEY_MGMT
+	select DEPRECATED
+	help
+	  Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
 
 config MEMFAULT_ROOT_CERT_STORAGE_TLS_CREDENTIAL_STORAGE
-    bool "Uses Zephyr's tls_credential_add() API for storing root certificates"
-    depends on TLS_CREDENTIALS
-    depends on NET_SOCKETS_SOCKOPT_TLS
+	bool "Uses Zephyr's tls_credential_add() API for storing root certificates"
+	depends on TLS_CREDENTIALS
+	depends on NET_SOCKETS_SOCKOPT_TLS
 
 config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
-    bool "Provide a custom implementation of memfault_root_cert_storage_add()"
+	bool "Provide a custom implementation of memfault_root_cert_storage_add()"
 
 endchoice
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
-    bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
-    depends on MEMFAULT_ROOT_CERT_STORAGE
-    select DEPRECATED
-    help
-      Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
+	bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
+	depends on MEMFAULT_ROOT_CERT_STORAGE
+	select DEPRECATED
+	help
+	  Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
 
 config MEMFAULT_ROOT_CERT_INSTALL_ON_MODEM_LIB_INIT
-    bool "Install root certificates on modem library initialization"
-    default y
-    depends on MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
-    help
-      When enabled, Memfault root certificates (from memfault/http/root_certs.h)
-      will be installed automatically from an NRF_MODEM_LIB_ON_INIT callback,
-      after modem library initialization. Disable this to manage root certificate
-      installation manually. Note, installation must occur after modem library
-      initialization and before the LTE connection is active.
+	bool "Install root certificates on modem library initialization"
+	default y
+	depends on MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
+	help
+	  When enabled, Memfault root certificates (from memfault/http/root_certs.h) will be
+	  installed automatically from an NRF_MODEM_LIB_ON_INIT callback, after modem library
+	  initialization. Disable this to manage root certificate installation manually. Note,
+	  installation must occur after modem library initialization and before the LTE
+	  connection is active.
 
 config MEMFAULT_HTTP_ENABLE
-        bool "Support for using Memfault's HTTP APIs"
-        default y if MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
-        depends on NETWORKING
-        depends on NET_SOCKETS
-        help
-          Enables support for querying the Memfault API for OTA updates
-          and posting Memfault chunks
+	bool "Support for using Memfault's HTTP APIs"
+	default y if MEMFAULT_SOC_SERIES_NRF91 && TRUSTED_EXECUTION_NONSECURE
+	depends on NETWORKING
+	depends on NET_SOCKETS
+	help
+	  Enables support for querying the Memfault API for OTA updates and posting Memfault chunks
 
 if MEMFAULT_HTTP_ENABLE
 
 config MEMFAULT_HTTP_MAX_POST_SIZE
-        int "Set the Maximum HTTP Body Size Memfault will use in a POST request"
-        default 0
-        help
-          Some network drivers have bugs which limit the maximum amount of
-          data that can be sent in a single HTTP request. When the value is 0 (default),
-          no size restriction on HTTP post size will be enforced. For a non-zero value,
-          this will be the maximum body length of a posted check. This size is allocated
-          on the stack posting the data.
+	int "Set the Maximum HTTP Body Size Memfault will use in a POST request"
+	default 0
+	help
+	  Some network drivers have bugs which limit the maximum amount of data that can be sent
+	  in a single HTTP request. When the value is 0 (default), no size restriction on HTTP
+	  post size will be enforced. For a non-zero value, this will be the maximum body length
+	  of a posted check. This size is allocated on the stack posting the data.
 
 config MEMFAULT_HTTP_MAX_MESSAGES_TO_SEND
-        int "Set the maximum number of messages to send when uploading data to Memfault"
-        default 100
-        range 1 10000
-        depends on MEMFAULT_HTTP_ENABLE
-        help
-          The maximum number of messages to send per execution when using
-          the Memfault HTTP client to upload Memfault data, i.e.
-          memfault_zephyr_port_post_data() and similar APIs. A Memfault message
-          is a single logical data unit, eg coredump, metrics report, etc.
+	int "Set the maximum number of messages to send when uploading data to Memfault"
+	default 100
+	range 1 10000
+	depends on MEMFAULT_HTTP_ENABLE
+	help
+	  The maximum number of messages to send per execution when using the Memfault HTTP client
+	  to upload Memfault data, i.e. memfault_zephyr_port_post_data() and similar APIs. A
+	  Memfault message is a single logical data unit, eg coredump, metrics report, etc.
 
 config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
-        int "Set the size of the HTTP packetizer buffer"
-        # Use a larger default on nRF91x series, specifically to support modem
-        # trace CDR export more efficiently.
-        default 1024 if MEMFAULT_SOC_SERIES_NRF91
-        default 128
-        help
-          This buffer is used when reading incremental chunk data when posting
-          via HTTP. It does NOT set the size of the HTTP body (see
-          MEMFAULT_HTTP_MAX_POST_SIZE), but is instead used when issuing reads
-          to the underlying data source (e.g. coredump, logs, CDR, etc).
-          Increasing the size of this buffer can improve upload performance when
-          the data source is reading from a storage medium that benefits from
-          larger sequential reads.
-          Note that larger values will be dynamically allocated instead of stack
-          allocated.
+	int "Set the size of the HTTP packetizer buffer"
+	# Use a larger default on nRF91x series, specifically to support modem
+	# trace CDR export more efficiently.
+	default 1024 if MEMFAULT_SOC_SERIES_NRF91
+	default 128
+	help
+	  This buffer is used when reading incremental chunk data when posting via HTTP. It does
+	  NOT set the size of the HTTP body (see MEMFAULT_HTTP_MAX_POST_SIZE), but is instead used
+	  when issuing reads to the underlying data source (e.g. coredump, logs, CDR, etc).
+	  Increasing the size of this buffer can improve upload performance when the data source
+	  is reading from a storage medium that benefits from larger sequential reads.
+	  Note that larger values will be dynamically allocated instead of stack allocated.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
-        bool "Work job to periodically push new data to Memfault [DEPRECATED]"
-        select MEMFAULT_PERIODIC_UPLOAD
-        select DEPRECATED
-        help
-          Use MEMFAULT_PERIODIC_UPLOAD instead.
+	bool "Work job to periodically push new data to Memfault [DEPRECATED]"
+	select MEMFAULT_PERIODIC_UPLOAD
+	select DEPRECATED
+	help
+	  Use MEMFAULT_PERIODIC_UPLOAD instead.
 
 # Keep choice, due to choice override in NCS Memfault port
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
-        prompt "Work queue implementation to use for periodic posting [DEPRECATED]"
-        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
-        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if MEMFAULT_SOC_SERIES_NRF91
-        default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+	prompt "Work queue implementation to use for periodic posting [DEPRECATED]"
+	depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+	default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if MEMFAULT_SOC_SERIES_NRF91
+	default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Periodically push new data to Memfault from system workqueue [DEPRECATED]"
-        select DEPRECATED
-        help
-          Use MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE instead.
+	bool "Periodically push new data to Memfault from system workqueue [DEPRECATED]"
+	select DEPRECATED
+	help
+	  Use MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Periodically push new data to Memfault using a dedicated workqueue [DEPRECATED]"
-        select DEPRECATED
-        help
-          Use MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE instead.
+	bool "Periodically push new data to Memfault using a dedicated workqueue [DEPRECATED]"
+	select DEPRECATED
+	help
+	  Use MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE instead.
 
 endchoice # MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE_DEPRECATED
-        bool
-        default y if (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 4096 && (WIFI_NRF70 || WIFI_NRF71)) || (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 2048 && !WIFI_NRF70 || !WIFI_NRF71)
+	bool
+	default y if (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 4096 && (WIFI_NRF70 || \
+		WIFI_NRF71)) || (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 2048 && \
+		!WIFI_NRF70 || !WIFI_NRF71)
 	select DEPRECATED
-        help
-          Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
+	help
+	  Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
 
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
-        int "Stack size for dedicated upload workqueue, in bytes"
-        default 4096 if WIFI_NRF70 || WIFI_NRF71
-        default 2048
-        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        help
-          Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
+	int "Stack size for dedicated upload workqueue, in bytes"
+	default 4096 if WIFI_NRF70 || WIFI_NRF71
+	default 2048
+	depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+	help
+	  Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Interval with which the periodic upload task should run [DEPRECATED]"
-        default 3600
-        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
-        help
-          Use MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS instead.
+	int "Interval with which the periodic upload task should run [DEPRECATED]"
+	default 3600
+	depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+	help
+	  Use MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
-        bool "Upload log buffer in addition to other data [DEPRECATED]"
-        select MEMFAULT_PERIODIC_UPLOAD_LOGS
-        select DEPRECATED
-        depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
-        help
-          Use MEMFAULT_PERIODIC_UPLOAD_LOGS instead.
+	bool "Upload log buffer in addition to other data [DEPRECATED]"
+	select MEMFAULT_PERIODIC_UPLOAD_LOGS
+	select DEPRECATED
+	depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
+	help
+	  Use MEMFAULT_PERIODIC_UPLOAD_LOGS instead.
 
 config MEMFAULT_HTTP_USES_MBEDTLS
-        bool "Use mbedTLS for HTTP transport"
-        default y if MBEDTLS && !NRF_MODEM_LIB && !MEMFAULT_HTTP_DISABLE_TLS
-        help
-          Configure Memfault HTTP for using mbedTLS- perform some sanity checks
-          at compile time that it is configured correctly. Note that if MbedTLS
-          is used for purposes other than securing the TCP/IP sockets, i.e. if
-          TLS is offloaded to the underlying socket, this check is invalid, and
-          should be explicitly set to 'n'.
+	bool "Use mbedTLS for HTTP transport"
+	default y if MBEDTLS && !NRF_MODEM_LIB && !MEMFAULT_HTTP_DISABLE_TLS
+	help
+	  Configure Memfault HTTP for using mbedTLS- perform some sanity checks at compile time
+	  that it is configured correctly. Note that if MbedTLS is used for purposes other than
+	  securing the TCP/IP sockets, i.e. if TLS is offloaded to the underlying socket, this
+	  check is invalid, and should be explicitly set to 'n'.
 
 choice MEMFAULT_TLS_CERTS_FORMAT
-        prompt "TLS certificates format"
-        # Cellular modems and offloaded socket setups often require PEM, default
-        # to that format in those configurateions
-        default MEMFAULT_TLS_CERTS_USE_PEM if (MODEM_KEY_MGMT || NET_SOCKETS_OFFLOAD)
-        default MEMFAULT_TLS_CERTS_USE_DER
-        help
-          Choose the format of the TLS certificates used by Memfault
+	prompt "TLS certificates format"
+	# Cellular modems and offloaded socket setups often require PEM, default
+	# to that format in those configurateions
+	default MEMFAULT_TLS_CERTS_USE_PEM if (MODEM_KEY_MGMT || NET_SOCKETS_OFFLOAD)
+	default MEMFAULT_TLS_CERTS_USE_DER
+	help
+	  Choose the format of the TLS certificates used by Memfault
 
 config MEMFAULT_TLS_CERTS_USE_PEM
-        bool "Use PEM format for TLS certificates"
-        depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || (MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C)) || \
-                   !(MBEDTLS && MBEDTLS_BUILTIN && \
-                   (MBEDTLS_CFG_FILE = "config-tls-generic.h" || MBEDTLS_CONFIG_FILE = "config-tls-generic.h"))
-        help
-          When enabled, Memfault will use PEM format for TLS certificates.
-          When disabled, DER format will be used.
+	bool "Use PEM format for TLS certificates"
+	depends on (MBEDTLS_PEM_CERTIFICATE_FORMAT || (MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C)) || \
+		!(MBEDTLS && MBEDTLS_BUILTIN && \
+		(MBEDTLS_CFG_FILE = "config-tls-generic.h" || MBEDTLS_CONFIG_FILE = "config-tls-generic.h"))
+	help
+	  When enabled, Memfault will use PEM format for TLS certificates.
+	  When disabled, DER format will be used.
 
 config MEMFAULT_TLS_CERTS_USE_DER
-        bool "Use DER format for TLS certificates"
-        help
-          When enabled, Memfault will use DER format for TLS certificates.
-          When disabled, PEM format will be used. DER format may reduce runtime
-          memory requirements (for example if using mbedTLS).
+	bool "Use DER format for TLS certificates"
+	help
+	  When enabled, Memfault will use DER format for TLS certificates.
+	  When disabled, PEM format will be used. DER format may reduce runtime memory requirements
+	  (for example if using mbedTLS).
 
 endchoice # MEMFAULT_TLS_CERTS_FORMAT
 
 config MEMFAULT_HTTP_CLIENT_TIMEOUT_MS
-        int "The HTTP client timeout in milliseconds"
-        default 5000
-        help
-          The Memfault HTTP client timeout in milliseconds. This is the
-          maximum amount of time the HTTP client will wait for a response from
-          the server.
+	int "The HTTP client timeout in milliseconds"
+	default 5000
+	help
+	  The Memfault HTTP client timeout in milliseconds. This is the maximum amount of time the
+	  HTTP client will wait for a response from the server.
 
 config MEMFAULT_HTTP_SOCKET_DISPATCH
-        bool "Permit specifying a network interface for Memfault HTTP uploads"
-        help
-          Adds support for specifying a network interface to dispatch the socket
-          used for Memfault data upload, via
-          memfault_zephyr_port_http_set_interface_name(). This must be set
-          before performing Memfault data uploads.
+	bool "Permit specifying a network interface for Memfault HTTP uploads"
+	help
+	  Adds support for specifying a network interface to dispatch the socket used for Memfault
+	  data upload, via memfault_zephyr_port_http_set_interface_name(). This must be set before
+	  performing Memfault data uploads.
 
 config MEMFAULT_HTTP_DISABLE_TLS
-        bool "Disable TLS for Memfault HTTP transport [WARNING: debugging only!]"
-        help
-          When enabled, Memfault HTTP client will use plain-text HTTP instead of
-          HTTPS. All transport encryption is disabled.
+	bool "Disable TLS for Memfault HTTP transport [WARNING: debugging only!]"
+	help
+	  When enabled, Memfault HTTP client will use plain-text HTTP instead of HTTPS. All
+	  transport encryption is disabled.
 
-          WARNING: This should ONLY be used for local debugging (e.g. with a
-          local proxy server). Never enable this in production firmware.
+	  WARNING: This should ONLY be used for local debugging (e.g. with a local proxy server).
+	  Never enable this in production firmware.
 
 choice MEMFAULT_HTTP_ENDPOINT_TYPE
-        prompt "Memfault HTTP API endpoint / root CA set to use"
-        default MEMFAULT_HTTP_USE_RSA_ENDPOINTS
-        help
-          Selects which set of Memfault HTTP API endpoints, and correspondingly
-          which root CA certificate(s), are used to reach Memfault's cloud.
+	prompt "Memfault HTTP API endpoint / root CA set to use"
+	default MEMFAULT_HTTP_USE_RSA_ENDPOINTS
+	help
+	  Selects which set of Memfault HTTP API endpoints, and correspondingly which root CA
+	  certificate(s), are used to reach Memfault's cloud.
 
 config MEMFAULT_HTTP_USE_RSA_ENDPOINTS
-        bool "Use Memfault's default, RSA-trusted API endpoints"
-        help
-          Uses the default chunks.memfault.com / device.memfault.com
-          endpoints, which use RSA-based TLS certificates for trust.
+	bool "Use Memfault's default, RSA-trusted API endpoints"
+	help
+	  Uses the default chunks.memfault.com / device.memfault.com endpoints, which use
+	  RSA-based TLS certificates for trust.
 
 config MEMFAULT_HTTP_USE_ECDSA_ENDPOINTS
-        bool "Use Memfault's alternate, ECDSA-only API endpoints"
-        help
-          Uses Memfault's alternate ECDSA-only API endpoints instead of the
-          default RSA-trusted endpoints.
+	bool "Use Memfault's alternate, ECDSA-only API endpoints"
+	help
+	  Uses Memfault's alternate ECDSA-only API endpoints instead of the default RSA-trusted
+	  endpoints.
 
 endchoice # MEMFAULT_HTTP_ENDPOINT_TYPE
 
 config MEMFAULT_HTTP_CHUNKS_API_HOST
-        string "Override the Memfault chunks API host"
-        default ""
-        help
-          Override the default Memfault chunks API host. When plain HTTP mode
-          is enabled, this should be set to a local proxy or debugging server
-          host.
+	string "Override the Memfault chunks API host"
+	default ""
+	help
+	  Override the default Memfault chunks API host. When plain HTTP mode is enabled, this
+	  should be set to a local proxy or debugging server host.
 
-          Do not leave this empty when TLS is disabled: the default host
-          (chunks.memfault.com) does not support plain HTTP and connections
-          will fail.
+	  Do not leave this empty when TLS is disabled: the default host (chunks.memfault.com)
+	  does not support plain HTTP and connections will fail.
 
 config MEMFAULT_HTTP_DEVICE_API_HOST
-        string "Override the Memfault device API host"
-        default ""
-        help
-          Override the default Memfault device API host. When plain HTTP mode
-          is enabled, this should be set to a local proxy or debugging server
-          host.
+	string "Override the Memfault device API host"
+	default ""
+	help
+	  Override the default Memfault device API host. When plain HTTP mode is enabled, this
+	  should be set to a local proxy or debugging server host.
 
-          Do not leave this empty when TLS is disabled: the default host
-          (device.memfault.com) does not support plain HTTP and connections
-          will fail.
+	  Do not leave this empty when TLS is disabled: the default host (device.memfault.com)
+	  does not support plain HTTP and connections will fail.
 
 config MEMFAULT_HTTP_CHUNKS_API_HOST_OVERRIDE
-        bool
-        default y if MEMFAULT_HTTP_CHUNKS_API_HOST != ""
+	bool
+	default y if MEMFAULT_HTTP_CHUNKS_API_HOST != ""
 
 config MEMFAULT_HTTP_DEVICE_API_HOST_OVERRIDE
-        bool
-        default y if MEMFAULT_HTTP_DEVICE_API_HOST != ""
+	bool
+	default y if MEMFAULT_HTTP_DEVICE_API_HOST != ""
 
 endif # MEMFAULT_HTTP_ENABLE
 
 menuconfig MEMFAULT_PERIODIC_UPLOAD
-        bool "Periodic Memfault check-in (telemetry upload + optionally FOTA)"
-        default y if MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_SOC_SERIES_NRF92
-        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
-        help
-          Schedules a background job that periodically checks for new Memfault
-          data and pushes it to Memfault (via HTTP or CoAP depending on
-          transport configuration).
+	bool "Periodic Memfault check-in (telemetry upload + optionally FOTA)"
+	default y if MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_SOC_SERIES_NRF92
+	depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+	help
+	  Schedules a background job that periodically checks for new Memfault data and pushes it
+	  to Memfault (via HTTP or CoAP depending on transport configuration).
 
 if MEMFAULT_PERIODIC_UPLOAD
 
 choice MEMFAULT_PERIODIC_UPLOAD_CONTEXT
-  prompt "Work queue implementation"
-  default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-  default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || MEMFAULT_SOC_SERIES_NRF92 || MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || MEMFAULT_PERIODIC_FOTA_CHECK || MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
-  default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+	prompt "Work queue implementation"
+	default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE if \
+		MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
+	default MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if (MEMFAULT_SOC_SERIES_NRF91 || \
+		MEMFAULT_SOC_SERIES_NRF92 || \
+		MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE || \
+		MEMFAULT_PERIODIC_FOTA_CHECK || MEMFAULT_PERIODIC_MODEM_FOTA_CHECK)
+	default MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Use system workqueue"
-        help
-          When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
-          is set appropriately for the upload stack to not cause a stack overflow.
-          Using the system workqueue reduces RAM usage compared to a dedicated workqueue.
-          Sending data from the system workqueue with LTE networks is known to cause issues and
-          a dedicated workqueue maybe be required.
+	bool "Use system workqueue"
+	help
+	  When using this feature, make sure CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
+	  is set appropriately for the upload stack to not cause a stack overflow. Using the system
+	  workqueue reduces RAM usage compared to a dedicated workqueue. Sending data from the
+	  system workqueue with LTE networks is known to cause issues and a dedicated workqueue
+	  may be required.
 
 config MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Use dedicated workqueue"
-        help
-          When using this feature, make sure CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
-          is set appropriately for the upload stack to not cause a stack overflow. A dedicated
-          workqueue over the system workqueue is beneficial if uploads for the network stack
-          in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
+	bool "Use dedicated workqueue"
+	help
+	  When using this feature, make sure CONFIG_MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
+	  is set appropriately for the upload stack to not cause a stack overflow. A dedicated
+	  workqueue over the system workqueue is beneficial if uploads for the network stack
+	  in use can block for a long time (e.g. LTE) but comes at the cost of using extra RAM.
 
 endchoice # MEMFAULT_PERIODIC_UPLOAD_CONTEXT
 
 config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE
-        int "Stack size for dedicated upload workqueue, in bytes"
-        default MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE if MEMFAULT_HTTP_PERIODIC_UPLOAD
-        default 4096 if WIFI_NRF70 || WIFI_NRF71
-        default 2048
-        depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+	int "Stack size for dedicated upload workqueue, in bytes"
+	default MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE if MEMFAULT_HTTP_PERIODIC_UPLOAD
+	default 4096 if WIFI_NRF70 || WIFI_NRF71
+	default 2048
+	depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
 
 config MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_PRIORITY
-        int "Priority for dedicated upload workqueue"
-        default 14
-        depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        help
-          The priority for the dedicated workqueue thread. The default is the default value
-          for K_LOWEST_APPLICATION_THREAD_PRIO = NUM_PREEMPT_PRIORITIES - 1 (lowest allowed
-          application priority). Users can change NUM_PREEMPT_PRIORITIES, so a build time
-          check will ensure the configured priority is valid.
+	int "Priority for dedicated upload workqueue"
+	default 14
+	depends on MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+	help
+	  The priority for the dedicated workqueue thread. The default is the default value for
+	  K_LOWEST_APPLICATION_THREAD_PRIO = NUM_PREEMPT_PRIORITIES - 1 (lowest allowed application
+	  priority). Users can change NUM_PREEMPT_PRIORITIES, so a build time check will ensure the
+	  configured priority is valid.
 
 config MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Periodic upload task interval in seconds"
-        default MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS if MEMFAULT_HTTP_PERIODIC_UPLOAD
-        default 3600
-        help
-          The first check will run between [60, 60+MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS]
-          Subsequent checks will run at MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
+	int "Periodic upload task interval in seconds"
+	default MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS if MEMFAULT_HTTP_PERIODIC_UPLOAD
+	default 3600
+	help
+	  The first check will run between [60, 60+MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS]
+	  Subsequent checks will run at MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS intervals.
 
 config MEMFAULT_PERIODIC_UPLOAD_LOGS
-        bool "Upload log buffer in addition to other data"
+	bool "Upload log buffer in addition to other data"
 
 config MEMFAULT_PERIODIC_UPLOAD_ENABLED_DEFAULT
-        bool "Periodic upload is enabled at boot"
-        default y
-        help
-          Sets the state of periodic Memfault data uploads at boot. When
-          enabled, periodic uploads will start automatically. This can be
-          controlled at runtime using
-          memfault_zephyr_port_periodic_upload_enable().
+	bool "Periodic upload is enabled at boot"
+	default y
+	help
+	  Sets the state of periodic Memfault data uploads at boot. When enabled, periodic uploads
+	  will start automatically. This can be controlled at runtime using
+	  memfault_zephyr_port_periodic_upload_enable().
 
 config MEMFAULT_PERIODIC_FOTA_CHECK
-        bool "Periodically check for FOTA updates"
-        depends on MEMFAULT_ZEPHYR_FOTA
-        help
-          When enabled, the device will periodically check for FOTA updates via
-          the Memfault HTTP API. The check will be performed at the same
-          interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS. If a new update
-          is available, the device will download it and the subsequent install
-          and reboot behavior will depend on the selected Zephyr FOTA backend.
-          For example, the MCUboot backend will install the update and reboot,
-          and the nRF Connect SDK backend will delegate to the Nordic FOTA
-          Download library.
+	bool "Periodically check for FOTA updates"
+	depends on MEMFAULT_ZEPHYR_FOTA
+	help
+	  When enabled, the device will periodically check for FOTA updates via the Memfault HTTP
+	  API. The check will be performed at the same interval as
+	  MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS. If a new update is available, the device will
+	  download it and the subsequent install and reboot behavior will depend on the selected
+	  Zephyr FOTA backend. For example, the MCUboot backend will install the update and reboot,
+	  and the nRF Connect SDK backend will delegate to the Nordic FOTA Download library.
 
-          Note: MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually
-          be enabled when this feature is enabled (and is the default in that
-          case), to avoid stalling the system workqueue while performing FOTA
-          checks and downloads.
+	  Note: MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually be enabled when
+	  this feature is enabled (and is the default in that case), to avoid stalling the system
+	  workqueue while performing FOTA checks and downloads.
 
 config MEMFAULT_PERIODIC_MODEM_FOTA_CHECK
-        bool "Periodically check for modem firmware updates"
-        depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
-        help
-          When enabled, the device will periodically check for modem firmware
-          updates (see MEMFAULT_FOTA_MODEM_UPDATE). The check runs at the same
-          interval as MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS.
+	bool "Periodically check for modem firmware updates"
+	depends on MEMFAULT_FOTA_MODEM_UPDATE && MEMFAULT_ZEPHYR_FOTA
+	help
+	  When enabled, the device will periodically check for modem firmware updates (see
+	  MEMFAULT_FOTA_MODEM_UPDATE). The check runs at the same interval as
+	  MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS.
 
-          Note: if MEMFAULT_PERIODIC_FOTA_CHECK is also enabled, modem updates
-          are already checked implicitly by memfault_zephyr_fota_start() (when
-          no application update is pending). This option is for devices that
-          want periodic modem FOTA checks without enabling the full application
-          FOTA check.
+	  Note: if MEMFAULT_PERIODIC_FOTA_CHECK is also enabled, modem updates are already checked
+	  implicitly by memfault_zephyr_fota_start() (when no application update is pending).
+	  This option is for devices that want periodic modem FOTA checks without enabling the
+	  full application FOTA check.
 
-          As with MEMFAULT_PERIODIC_FOTA_CHECK,
-          MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE should usually be
-          enabled (and is the default when this option is selected).
+	  As with MEMFAULT_PERIODIC_FOTA_CHECK, MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
+	  should usually be enabled (and is the default when this option is selected).
 
 endif # MEMFAULT_PERIODIC_UPLOAD
 
 config MEMFAULT_ZEPHYR_FOTA
-        bool "Memfault FOTA support for Zephyr"
-        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
-        default y
-        help
-          Adds support for performing OTA updates. For information on release
-          management with Memfault, see https://mflt.io/release-mgmt.
+	bool "Memfault FOTA support for Zephyr"
+	depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+	default y
+	help
+	  Adds support for performing OTA updates. For information on release management with
+	  Memfault, see https://mflt.io/release-mgmt.
 
 if MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM
-        bool "Provide a custom implementation for FOTA download"
-        help
-          By default, the Memfault SDK implements a stub for the FOTA download
-          callback invoked when a download completes. An end user can provide
-          their own implementation by enabling this option and implementing
-          memfault_zephyr_fota_download_callback().
+	bool "Provide a custom implementation for FOTA download"
+	help
+	  By default, the Memfault SDK implements a stub for the FOTA download callback invoked
+	  when a download completes. An end user can provide their own implementation by enabling
+	  this option and implementing memfault_zephyr_fota_download_callback().
 
 choice MEMFAULT_ZEPHYR_FOTA_BACKEND
-        prompt "Backend for FOTA updates"
-        default MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS if MEMFAULT_NRF_CONNECT_SDK
-        default MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
-        default MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
-        help
-         Choose the backend for FOTA updates
+	prompt "Backend for FOTA updates"
+	default MEMFAULT_ZEPHYR_FOTA_BACKEND_NCS if MEMFAULT_NRF_CONNECT_SDK
+	default MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
+	default MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
+	help
+	  Choose the backend for FOTA updates
 
 config MEMFAULT_ZEPHYR_FOTA_BACKEND_MCUBOOT
-        bool "Use MCUboot backend implementation for FOTA updates"
-        depends on MEMFAULT_HTTP_ENABLE && BOOTLOADER_MCUBOOT && !MEMFAULT_NRF_CONNECT_SDK
-        help
-          Adds support for performing OTA updates via MCUboot. If an update is available,
-          the binary will be downloaded and installed in the secondary slot(slot1_partition).
-          By default, the device will be rebooted into the new firmware. Users can customize
-          the behavior after the update is downloaded by providing a custom implementation
-          of memfault_zephyr_fota_download_callback() and setting MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y.
-          For information on release management with Memfault: https://mflt.io/release-mgmt.
+	bool "Use MCUboot backend implementation for FOTA updates"
+	depends on MEMFAULT_HTTP_ENABLE && BOOTLOADER_MCUBOOT && !MEMFAULT_NRF_CONNECT_SDK
+	help
+	  Adds support for performing OTA updates via MCUboot. If an update is available, the
+	  binary will be downloaded and installed in the secondary slot(slot1_partition). By
+	  default, the device will be rebooted into the new firmware. Users can customize the
+	  behavior after the update is downloaded by providing a custom implementation of
+	  memfault_zephyr_fota_download_callback() and setting
+	  MEMFAULT_ZEPHYR_FOTA_DOWNLOAD_CALLBACK_CUSTOM=y. For information on release management
+	  with Memfault: https://mflt.io/release-mgmt.
 
 config MEMFAULT_ZEPHYR_FOTA_BACKEND_DUMMY
-        bool "Use a dummy backend implementation for FOTA updates"
-        depends on MEMFAULT_HTTP_ENABLE
-        help
-          The dummy implementation is a no-op OTA update and is useful for testing the download
-          of an OTA playload. It will pull the OTA payload but not install it on the device.
-          For information on release management with Memfault: https://mflt.io/release-mgmt.
+	bool "Use a dummy backend implementation for FOTA updates"
+	depends on MEMFAULT_HTTP_ENABLE
+	help
+	  The dummy implementation is a no-op OTA update and is useful for testing the download of
+	  an OTA playload. It will pull the OTA payload but not install it on the device. For
+	  information on release management with Memfault: https://mflt.io/release-mgmt.
 
 endchoice # MEMFAULT_ZEPHYR_FOTA_BACKEND
 
 config MEMFAULT_HTTP_OTA_PROXY_HOST
-        string "OTA download proxy host"
-        default ""
-        depends on MEMFAULT_HTTP_ENABLE
-        help
-          When set, OTA payload download URLs returned by the Memfault device
-          API will have their host replaced with this value before the download
-          is performed. Use this to route OTA CDN downloads through a proxy
-          that accepts different TLS certificates than the default OTA CDN
-          (e.g. one configured via MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST).
+	string "OTA download proxy host"
+	default ""
+	depends on MEMFAULT_HTTP_ENABLE
+	help
+	  When set, OTA payload download URLs returned by the Memfault device API will have their
+	  host replaced with this value before the download is performed. Use this to route OTA
+	  CDN downloads through a proxy that accepts different TLS certificates than the default
+	  OTA CDN (e.g. one configured via MEMFAULT_PLATFORM_ROOT_CERTS_ID_LIST).
 
-          Only the host component is replaced; the path and query string are
-          preserved, so the proxy must forward requests to the Memfault OTA CDN.
+	  Only the host component is replaced; the path and query string are preserved, so the
+	  proxy must forward requests to the Memfault OTA CDN.
 
-          Example: "device-ecdsa-proxy.memfault.workers.dev"
+	  Example: "device-ecdsa-proxy.memfault.workers.dev"
 
-          Leave empty (the default) to use the URL returned by the Memfault
-          device API unchanged.
+	  Leave empty (the default) to use the URL returned by the Memfault device API unchanged.
 
 config MEMFAULT_HTTP_OTA_PROXY
-        bool
-        default y if MEMFAULT_HTTP_OTA_PROXY_HOST != ""
+	bool
+	default y if MEMFAULT_HTTP_OTA_PROXY_HOST != ""
 
 endif # MEMFAULT_ZEPHYR_FOTA
 
 config MEMFAULT_MCUMGR_GRP
-        bool "Memfault MCUmgr group"
-        depends on MCUMGR
-        default y
-        select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
-        help
-          Enables a custom MCUmgr group for accessing Memfault device information
-          and project key over Bluetooth. This is useful for FOTA over Bluetooth
-          scenarios where MDS (Memfault Diagnostic GATT Service) is not used.
-          The group provides commands to read device serial, hardware version,
-          software type, current version, and project key - all information needed
-          for Memfault FOTA functionality.
+	bool "Memfault MCUmgr group"
+	depends on MCUMGR
+	default y
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	help
+	  Enables a custom MCUmgr group for accessing Memfault device information and project key
+	  over Bluetooth. This is useful for FOTA over Bluetooth scenarios where MDS (Memfault
+	  Diagnostic GATT Service) is not used. The group provides commands to read device serial,
+	  hardware version, software type, current version, and project key - all information
+	  needed for Memfault FOTA functionality.
 
 config MEMFAULT_EVENT_STORAGE_SIZE
-       int "Memfault Event Storage RAM Buffer Size"
-       default 1024
-       help
-        The storage area used to batch memfault events before they are flushed
-        to persistent storage or the Memfault Cloud.
+	int "Memfault Event Storage RAM Buffer Size"
+	default 1024
+	help
+	  The storage area used to batch memfault events before they are flushed to persistent
+	  storage or the Memfault Cloud.
 
 choice MEMFAULT_REBOOT_REASON_GET
-       prompt "Memfault Reboot Reason"
-       default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
-       default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && MEMFAULT_SOC_SERIES_NRF91
-       help
-        Choose the implementation used to extract SoC reboot reason.
+	prompt "Memfault Reboot Reason"
+	default MEMFAULT_REBOOT_REASON_GET_HWINFO if HWINFO
+	default MEMFAULT_REBOOT_REASON_GET_CUSTOM if MEMFAULT_NRF_CONNECT_SDK && MEMFAULT_SOC_SERIES_NRF91
+	help
+	  Choose the implementation used to extract SoC reboot reason.
 
 config MEMFAULT_REBOOT_REASON_GET_HWINFO
-       bool "Use hwinfo library to extract SoC reboot reason"
-       depends on HWINFO
-       help
-        This is the default and preferred implementation.
+	bool "Use hwinfo library to extract SoC reboot reason"
+	depends on HWINFO
+	help
+	  This is the default and preferred implementation.
 
 config MEMFAULT_REBOOT_REASON_GET_BASIC
-        bool "Fall back implementation for decoding SoC reboot reason"
-        help
-          Stub implementation to enable building when other reboot reason
-          sources are not available. Does not decode any reboot reasons- always
-          sets UNKNOWN.
+	bool "Fall back implementation for decoding SoC reboot reason"
+	help
+	  Stub implementation to enable building when other reboot reason sources are not
+	  available. Does not decode any reboot reasons- always sets UNKNOWN.
 
 config MEMFAULT_REBOOT_REASON_GET_CUSTOM
-       bool "Provide a custom implementation for recovering reboot information"
-       help
-        User of SDK must provide their own implementation of memfault_reboot_reason_get()
-        when enabled. Also used in the nRF Connect SDK port for certain chips, when
-        hwinfo library is not available.
+	bool "Provide a custom implementation for recovering reboot information"
+	help
+	  User of SDK must provide their own implementation of memfault_reboot_reason_get() when
+	  enabled. Also used in the nRF Connect SDK port for certain chips, when hwinfo library is
+	  not available.
 
 endchoice # MEMFAULT_REBOOT_REASON_GET
 
 config MEMFAULT_ENABLE_REBOOT_DIAG_DUMP
-    bool "Print reboot reason information on boot"
-    default y
-    help
-        Print out the MCU-derived and Memfault-stored reboot reason
-        information on boot. Adds a few hundred bytes of code space
-        to pretty print MCU-derived reason (e.g. "Watchdog").
+	bool "Print reboot reason information on boot"
+	default y
+	help
+	  Print out the MCU-derived and Memfault-stored reboot reason information on boot. Adds a
+	  few hundred bytes of code space to pretty print MCU-derived reason (e.g. "Watchdog").
 
 config MEMFAULT_REBOOT_TRACKING_REGION
-       string "Memfault Reboot Tracking Region"
-       default ".rtc_noinit" if (MEMFAULT_SOC_FAMILY_ESP32)
-       default ".noinit.mflt_reboot_info"
-        help
-         The region in memory where the reboot tracking information will be stored.
-         This region should be marked as NOINIT in the linker script.
+	string "Memfault Reboot Tracking Region"
+	default ".rtc_noinit" if (MEMFAULT_SOC_FAMILY_ESP32)
+	default ".noinit.mflt_reboot_info"
+	help
+	  The region in memory where the reboot tracking information will be stored. This region
+	  should be marked as NOINIT in the linker script.
 
 config MEMFAULT_CLEAR_RESET_REG
-       bool "Whether or not to clear bits in MCU reset reason register"
-       default y
-       help
-        When disabled, the end user is responsible for clearing the reset register. (Bits
-        generally persist across resets)
+	bool "Whether or not to clear bits in MCU reset reason register"
+	default y
+	help
+	  When disabled, the end user is responsible for clearing the reset register. (Bits
+	  generally persist across resets)
 
 menuconfig MEMFAULT_METRICS
-       bool "Metrics collection"
-       default y
-       help
-        Enable the memfault Metrics subsystem
+	bool "Metrics collection"
+	default y
+	help
+	  Enable the memfault Metrics subsystem
 
 if MEMFAULT_METRICS
 
 config MEMFAULT_METRICS_EXTRA_DEFS_FILE
-       bool "Include additional metrics definition file"
-       help
-        Enables inclusion of an additional metric definition file,
-        'memfault_metrics_heartbeat_extra.def'. This can be useful for third party
-        libraries that want to include additional default metrics.
+	bool "Include additional metrics definition file"
+	help
+	  Enables inclusion of an additional metric definition file,
+	  'memfault_metrics_heartbeat_extra.def'. This can be useful for third party libraries
+	  that want to include additional default metrics.
 
 config MEMFAULT_METRICS_HEARTBEAT_INTERVAL_SECS
-       int "The interval in seconds between heartbeats"
-       default 3600
-       help
-        The interval in seconds between heartbeat metrics tallying.
+	int "The interval in seconds between heartbeats"
+	default 3600
+	help
+	  The interval in seconds between heartbeat metrics tallying.
 
 config MEMFAULT_METRICS_TIMER_CUSTOM
-       bool "Provide a custom implementation of Memfault Metric Deps"
-       help
-        By default the Memfault SDK makes use of Zephyrs k_timer_* to
-        schedule the heartbeat timer and k_work_* to run the heartbeat callback
-        work. This option can be used to disable that implementation in
-        ports/zephyr/common/memfault_platform_metrics.c and allow for
-        a custom implementation of memfault_platform_metrics_timer_boot() to be provided
+	bool "Provide a custom implementation of Memfault Metric Deps"
+	help
+	  By default the Memfault SDK makes use of Zephyrs k_timer_* to schedule the heartbeat
+	  timer and k_work_* to run the heartbeat callback work. This option can be used to
+	  disable that implementation in ports/zephyr/common/memfault_platform_metrics.c and allow
+	  for a custom implementation of memfault_platform_metrics_timer_boot() to be provided
 
 choice MEMFAULT_PLATFORM_TIME_SINCE_BOOT
-        prompt "Select the time since boot implementation"
-        default MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
-        help
-         Select the implementation of memfault_platform_get_time_since_boot_ms()
+	prompt "Select the time since boot implementation"
+	default MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
+	help
+	  Select the implementation of memfault_platform_get_time_since_boot_ms()
 
-        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
-               bool "Deep-sleep compensating implementation"
-               help
-                Implementation using k_uptime_get(), suitable for most
-                applications.
+config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_K_UPTIME_GET
+	bool "Deep-sleep compensating implementation"
+	help
+	  Implementation using k_uptime_get(), suitable for most applications.
 
-        config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM
-               bool "User provided implementation"
-               help
-                User must implement memfault_platform_get_time_since_boot_ms().
+config MEMFAULT_PLATFORM_TIME_SINCE_BOOT_CUSTOM
+	bool "User provided implementation"
+	help
+	  User must implement memfault_platform_get_time_since_boot_ms().
+
 endchoice
 
 config MEMFAULT_METRICS_DEFAULT_SET_ENABLE
-       bool "Default set of metrics by the Zephyr port"
-       default y
-       depends on INIT_STACKS
-       depends on THREAD_RUNTIME_STATS
-       depends on THREAD_STACK_INFO
-       help
-        By default the Memfault SDK will automatically capture heartbeat metrics
-        to help track how the Zephyr RTOS is operating. For more details about the
-        metrics collected, see ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def
-        When disabled, no default metrics will be collected.
+	bool "Default set of metrics by the Zephyr port"
+	default y
+	depends on INIT_STACKS
+	depends on THREAD_RUNTIME_STATS
+	depends on THREAD_STACK_INFO
+	help
+	  By default the Memfault SDK will automatically capture heartbeat metrics to help track
+	  how the Zephyr RTOS is operating. For more details about the metrics collected, see
+	  ports/zephyr/config/memfault_metrics_heartbeat_zephyr_port_config.def
+	  When disabled, no default metrics will be collected.
 
 config MEMFAULT_FS_BYTES_FREE_METRIC
-        bool "Metric for the amount of free space on the filesystem"
-        default y if "$(dt_path_enabled,/fstab)"
-        depends on FILE_SYSTEM
-        help
-         Collects a metric for the amount of free space on the virtual filesystem.
-         If using fstab, the first mount point found will be used. Otherwise, the
-         user must update MEMFAULT_FS_BYTES_FREE_VFS_PATH to the mount point of
-         the filesystem to collect metrics for. Note: may be performance intensive
-         depending on flash technology and filesystem type.
+	bool "Metric for the amount of free space on the filesystem"
+	default y if "$(dt_path_enabled,/fstab)"
+	depends on FILE_SYSTEM
+	help
+	  Collects a metric for the amount of free space on the virtual filesystem. If using fstab,
+	  the first mount point found will be used. Otherwise, the user must update
+	  MEMFAULT_FS_BYTES_FREE_VFS_PATH to the mount point of the filesystem to collect metrics
+	  for.
+
+	  Note: may be performance intensive depending on flash technology and filesystem type.
 
 config MEMFAULT_FS_BYTES_FREE_VFS_PATH
-        string "Path to the mount point to collect free space metrics for"
-        default ""
-        depends on FILE_SYSTEM && MEMFAULT_FS_BYTES_FREE_METRIC
-        help
-         The path to the virtual filesystem mount point to collect free space
-         metrics for, omitting the leading '/'. If left empty and an fstab node
-         exists in the device tree, the first available mount point from the
-         fstab nodes will be used.
+	string "Path to the mount point to collect free space metrics for"
+	default ""
+	depends on FILE_SYSTEM && MEMFAULT_FS_BYTES_FREE_METRIC
+	help
+	  The path to the virtual filesystem mount point to collect free space metrics for,
+	  omitting the leading '/'. If left empty and an fstab node exists in the device tree,
+	  the first available mount point from the fstab nodes will be used.
 
 config MEMFAULT_METRICS_CPU_TEMP
-        bool "CPU temperature metrics"
-        default y if "$(dt_alias_enabled,memfault_cpu_temp)"
-        default y if "$(dt_alias_enabled,die-temp)"
-        default y if "$(dt_alias_enabled,die-temp0)"
-        default y if "$(dt_nodelabel_enabled,temp)"
-        default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED
-        depends on SENSOR
-        help
-         Memfault CPU temperature metric component. Requires a compatible
-         temperature sensor to be enabled in the device tree.
+	bool "CPU temperature metrics"
+	default y if "$(dt_alias_enabled,memfault_cpu_temp)"
+	default y if "$(dt_alias_enabled,die-temp)"
+	default y if "$(dt_alias_enabled,die-temp0)"
+	default y if "$(dt_nodelabel_enabled,temp)"
+	default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED
+	depends on SENSOR
+	help
+	  Memfault CPU temperature metric component. Requires a compatible temperature sensor to
+	  be enabled in the device tree.
 
 config MEMFAULT_NRF54_CPU_TEMP_SENSOR_HELPER
-        bool
-        default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED && BOARD_NRF54L15DK
-        imply SENSOR
-        help
-         Helper symbol to enable SENSOR by default when using the nRF54L15-DK,
-         for demonstration purposes.
+	bool
+	default y if DT_HAS_NORDIC_NRF_TEMP_ENABLED && BOARD_NRF54L15DK
+	imply SENSOR
+	help
+	  Helper symbol to enable SENSOR by default when using the nRF54L15-DK, for demonstration
+	  purposes.
 
 config MEMFAULT_METRICS_SYNC_SUCCESS
-        bool "Sync success metrics"
-        default y
-        help
-         Memfault user-defined sync success metric component. More information
-         at https://mflt.io/core-metrics .
+	bool "Sync success metrics"
+	default y
+	help
+	  Memfault user-defined sync success metric component. More information at
+	  https://mflt.io/core-metrics
 
 config MEMFAULT_METRICS_MEMFAULT_SYNC_SUCCESS
-        bool "Memfault sync success metrics"
-        default y
-        depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
-        help
-         Collects Memfault metrics for the number of successful and failed
-         syncs to the Memfault cloud. More information at
-         https://mflt.io/core-metrics .
+	bool "Memfault sync success metrics"
+	default y
+	depends on MEMFAULT_HTTP_ENABLE || MEMFAULT_USE_NRF_CLOUD_COAP
+	help
+	  Collects Memfault metrics for the number of successful and failed syncs to the Memfault
+	  cloud. More information at https://mflt.io/core-metrics
 
 config MEMFAULT_METRICS_CONNECTIVITY_CONNECTED_TIME
-        bool "Memfault connectivity time metrics"
-        default y
-        help
-         Memfault connectivity time metric component. More information at
-         https://mflt.io/core-metrics .
+	bool "Memfault connectivity time metrics"
+	default y
+	help
+	  Memfault connectivity time metric component. More information at
+	  https://mflt.io/core-metrics
 
 config MEMFAULT_METRICS_BATTERY_ENABLE
-       bool "Battery metrics"
-       help
-         Memfault battery metric component. More information at
-         https://mflt.io/core-metrics .
+	bool "Battery metrics"
+	help
+	  Memfault battery metric component. More information at https://mflt.io/core-metrics
 
 config MEMFAULT_BATTERY_METRICS_BOOT_ON_SYSTEM_INIT
-       bool "Auto initialize battery metrics on system init"
-       default y
-       depends on MEMFAULT_METRICS_BATTERY_ENABLE
-       help
-        Automatically initialize the battery metric subsystem on bootup
+	bool "Auto initialize battery metrics on system init"
+	default y
+	depends on MEMFAULT_METRICS_BATTERY_ENABLE
+	help
+	  Automatically initialize the battery metric subsystem on bootup
 
 config MEMFAULT_METRICS_BATTERY_SOC_PCT_SCALE_VALUE
-        int "Scale factor for battery state of charge percentage metric"
-        range 1 1000
-        default 1000
-        depends on MEMFAULT_METRICS_BATTERY_ENABLE
-        help
-          The scale factor to use for the battery state of charge percentage metric.
-          The value recorded is multiplied by this factor before being stored in the metric.
-          For example, if the battery state of charge is 75.00%, and the scale factor is 100,
-          the value stored in the metric will be 7500, and is scaled back to 75.00% when
-          Memfault's cloud processes the data.
+	int "Scale factor for battery state of charge percentage metric"
+	range 1 1000
+	default 1000
+	depends on MEMFAULT_METRICS_BATTERY_ENABLE
+	help
+	  The scale factor to use for the battery state of charge percentage metric. The value
+	  recorded is multiplied by this factor before being stored in the metric. For example, if
+	  the battery state of charge is 75.00%, and the scale factor is 100, the value stored in
+	  the metric will be 7500, and is scaled back to 75.00% when Memfault's cloud processes
+	  the data.
 
 config MEMFAULT_METRICS_TCP_IP
-        bool "TCP/IP metrics"
-        default y
-        depends on NET_STATISTICS && NET_STATISTICS_USER_API
-        help
-         Collects Memfault metrics for TCP/IP statistics.
+	bool "TCP/IP metrics"
+	default y
+	depends on NET_STATISTICS && NET_STATISTICS_USER_API
+	help
+	  Collects Memfault metrics for TCP/IP statistics.
 
 config MEMFAULT_METRICS_WIFI
-        bool "Wi-Fi metrics"
-        default y
-        depends on NET_MGMT_EVENT && WIFI
+	bool "Wi-Fi metrics"
+	default y
+	depends on NET_MGMT_EVENT && WIFI
 
 config MEMFAULT_METRICS_BLUETOOTH
-        bool "Bluetooth metrics"
-        default y
-        depends on BT && BT_CONN
-        # BT_REMOTE_INFO enables the connection callback when remote info is
-        # available
-        imply BT_REMOTE_INFO
-        # BT_REMOTE_VERSION enables the bt_conn_get_remote_info() API
-        imply BT_REMOTE_VERSION
-        # BT_CTLR_CONN_RSSI enables reading the connection RSSI
-        imply BT_CTLR_CONN_RSSI
+	bool "Bluetooth metrics"
+	default y
+	depends on BT && BT_CONN
+	# BT_REMOTE_INFO enables the connection callback when remote info is
+	# available
+	imply BT_REMOTE_INFO
+	# BT_REMOTE_VERSION enables the bt_conn_get_remote_info() API
+	imply BT_REMOTE_VERSION
+	# BT_CTLR_CONN_RSSI enables reading the connection RSSI
+	imply BT_CTLR_CONN_RSSI
 
 config MEMFAULT_METRICS_BLUETOOTH_DELAYED_MS
-        int "Delay before reading additional Bluetooth connection metrics"
-        default 1000
-        depends on MEMFAULT_METRICS_BLUETOOTH
-        help
-         The delay, in milliseconds, before reading additional Bluetooth
-         connection metrics after a connection is established. Some values like
-         RSSI + remote info are invalid on initial connection callback.
+	int "Delay before reading additional Bluetooth connection metrics"
+	default 1000
+	depends on MEMFAULT_METRICS_BLUETOOTH
+	help
+	  The delay, in milliseconds, before reading additional Bluetooth connection metrics after
+	  a connection is established. Some values like RSSI + remote info are invalid on initial
+	  connection callback.
 
 config MEMFAULT_METRICS_POWER
-        bool "Power management state residency metrics"
-        default y if (MEMFAULT_SOC_SERIES_NRF92 || MEMFAULT_SOC_SERIES_NRF54H)
-        depends on PM
-        help
-         Collects Memfault metrics for the number of milliseconds spent in
-         each Zephyr Power Management (PM) state (e.g. runtime idle, suspend
-         to idle, suspend to RAM, soft off).
+	bool "Power management state residency metrics"
+	default y if (MEMFAULT_SOC_SERIES_NRF92 || MEMFAULT_SOC_SERIES_NRF54H)
+	depends on PM
+	help
+	  Collects Memfault metrics for the number of milliseconds spent in each Zephyr Power
+	  Management (PM) state (e.g. runtime idle, suspend to idle, suspend to RAM, soft off).
 
 config MEMFAULT_METRICS_MEMORY_USAGE
-        bool "Memory usage metrics"
-        default y
-        depends on SYS_HEAP_RUNTIME_STATS
-        help
-         Collects Memfault metrics for memory usage stats.
+	bool "Memory usage metrics"
+	default y
+	depends on SYS_HEAP_RUNTIME_STATS
+	help
+	  Collects Memfault metrics for memory usage stats.
 
 config MEMFAULT_METRICS_THREADS
-        bool "Per-thread metrics"
-        default y
-        depends on THREAD_STACK_INFO
-        depends on INIT_STACKS
-        help
-         Collects Memfault metrics for thread stats. See
-         memfault/ports/zephyr/thread_metrics.h on how to register threads for
-         metrics.
+	bool "Per-thread metrics"
+	default y
+	depends on THREAD_STACK_INFO
+	depends on INIT_STACKS
+	help
+	  Collects Memfault metrics for thread stats. See memfault/ports/zephyr/thread_metrics.h
+	  on how to register threads for metrics.
 
 config MEMFAULT_METRICS_THREADS_MEMORY_SCALE_FACTOR
-        int "Scale factor for memory metrics"
-        default 100
-        depends on MEMFAULT_METRICS_THREADS
-        help
-         The scale factor to use for memory metrics. The value recorded is
-         multiplied by this factor before being stored in the metric. For
-         example, if stack usage is 50.00%, and the scale factor is 100, the
-         value stored in the metric will be 5000, and is scaled back to 50.00%
-         when Memfault's cloud processes the data.
+	int "Scale factor for memory metrics"
+	default 100
+	depends on MEMFAULT_METRICS_THREADS
+	help
+	  The scale factor to use for memory metrics. The value recorded is multiplied by this
+	  factor before being stored in the metric. For example, if stack usage is 50.00%, and the
+	  scale factor is 100, the value stored in the metric will be 5000, and is scaled back to
+	  50.00% when Memfault's cloud processes the data.
 
 config MEMFAULT_METRICS_THREADS_DEFAULTS
-        bool "Default thread metrics"
-        default y
-        depends on MEMFAULT_METRICS_THREADS
-        help
-         Enables default set of threads to track metrics on (idle, sysworkq). If
-         providing a custom set of threads to track, disable this option.
+	bool "Default thread metrics"
+	default y
+	depends on MEMFAULT_METRICS_THREADS
+	help
+	  Enables default set of threads to track metrics on (idle, sysworkq). If providing a
+	  custom set of threads to track, disable this option.
 
 config MEMFAULT_METRICS_BOOT_TIME
-        bool "Boot time metrics"
-        default y
-        help
-         Collects boot time metrics for the device
+	bool "Boot time metrics"
+	default y
+	help
+	  Collects boot time metrics for the device
 
 endif # MEMFAULT_METRICS
 
 config MEMFAULT_SOFTWARE_WATCHDOG_CUSTOM
-       bool "Provide a custom implementation of Software Watchdog"
-       help
-        By default Memfault implements a software watchdog implementation. Users can call
-        memfault_software_watchdog_enable() on boot and memfault_software_watchdog_feed()
-        when they feed the hardware watchdog. When the software watchdog expires, Memfault
-        will capture a coredump and then the system will be rebooted. This option can be used
-        to disable the implementation in ports/zephyr/common/memfault_software_watchdog.c
+	bool "Provide a custom implementation of Software Watchdog"
+	help
+	  By default Memfault implements a software watchdog implementation. Users can call
+	  memfault_software_watchdog_enable() on boot and memfault_software_watchdog_feed() when
+	  they feed the hardware watchdog. When the software watchdog expires, Memfault will
+	  capture a coredump and then the system will be rebooted. This option can be used to
+	  disable the implementation in ports/zephyr/common/memfault_software_watchdog.c
 
 config MEMFAULT_SOFTWARE_WATCHDOG_TIMEOUT_SECS
-       int "The time, in seconds, to configure the software watchdog expiration for"
-       default 15
+	int "The time, in seconds, to configure the software watchdog expiration for"
+	default 15
 
 config MEMFAULT_RECORD_REBOOT_ON_SYSTEM_INIT
-       bool "Record reboot reason during system initialization"
-       default y
-       help
-        Record the reboot reason event during system initialization. Disable
-        this if device info is not valid until later in startup, then call
-        `memfault_zephyr_collect_reset_info()` from
-        `#include "memfault/ports/zephyr/core.h"` to store the reboot reason
-        event.
+	bool "Record reboot reason during system initialization"
+	default y
+	help
+	  Record the reboot reason event during system initialization. Disable this if device info
+	  is not valid until later in startup, then call `memfault_zephyr_collect_reset_info()`
+	  from `#include "memfault/ports/zephyr/core.h"` to store the reboot reason event.
 
 config MEMFAULT_INIT_PRIORITY
-        int "The priority of Memfault initialization on system start"
-        default KERNEL_INIT_PRIORITY_DEFAULT
-        help
-         The SYS_INIT relative priority for Memfault initialization.
+	int "The priority of Memfault initialization on system start"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  The SYS_INIT relative priority for Memfault initialization.
 
 config MEMFAULT_INIT_LEVEL_POST_KERNEL
-        bool "Use POST_KERNEL init level for Memfault initialization"
-        help
-         Set the Memfault initialization SYS_INIT priority level to
-         "POST_KERNEL". Default is "APPLICATION".
+	bool "Use POST_KERNEL init level for Memfault initialization"
+	help
+	  Set the Memfault initialization SYS_INIT priority level to
+	  "POST_KERNEL". Default is "APPLICATION".
 
 config MEMFAULT_CATCH_ZEPHYR_ASSERT
-        bool "Support backtrace through Zephyr __ASSERT() calls"
-        default y
-        help
-         When enabled, Memfault will support proper backtraces when a Zephyr
-         __ASSERT() trips. If disabled (i.e. user needs a custom implementation
-         of assert_post_action()), backtraces will not be correctly captured
-         from __ASSERT() macro call sites, unless assert_post_action() contains
-         a MEMFAULT_ASSERT() invocation.
+	bool "Support backtrace through Zephyr __ASSERT() calls"
+	default y
+	help
+	  When enabled, Memfault will support proper backtraces when a Zephyr __ASSERT() trips. If
+	  disabled (i.e. user needs a custom implementation of assert_post_action()), backtraces
+	  will not be correctly captured from __ASSERT() macro call sites, unless
+	  assert_post_action() contains a MEMFAULT_ASSERT() invocation.
 
 config MEMFAULT_PLATFORM_EXTRA_CONFIG_FILE
-       bool "Additional platform config file"
-       help
-        Enables inclusion of an additional platform config file,
-        'memfault_platform_config_extra.h'. This can be useful for third party
-        libraries that want to include additional default platform configs.
+	bool "Additional platform config file"
+	help
+	  Enables inclusion of an additional platform config file,
+	  'memfault_platform_config_extra.h'. This can be useful for third party libraries that
+	  want to include additional default platform configs.
 
 config MEMFAULT_PLATFORM_METRICS_CONNECTIVITY_BOOT
-        bool "Initialize platform-specific connectivity metrics on system init"
-        help
-          When enabled, memfault_metrics_boot() will call a platform-implemented
-          memfault_platform_metrics_connectivity_boot() function. If not already
-          implemented for the user's platform, the user must supply their own implementation.
-          This function is typically used to register event handlers to that will mark
-          the connectivity state changes when the device connects and disconnects.
-          Marking these state changes is required to calculate the connectivity time metrics.
+	bool "Initialize platform-specific connectivity metrics on system init"
+	help
+	  When enabled, memfault_metrics_boot() will call a platform-implemented
+	  memfault_platform_metrics_connectivity_boot() function. If not already implemented for
+	  the user's platform, the user must supply their own implementation. This function is
+	  typically used to register event handlers to that will mark the connectivity state
+	  changes when the device connects and disconnects. Marking these state changes is
+	  required to calculate the connectivity time metrics.
 
 config MEMFAULT_FAULT_HANDLER_RETURN
-       bool "Return from fault handler"
-       help
-        When enabled, the Memfault fault handler will call `z_fatal_error`
-        instead of rebooting the system. Useful if the system needs to hook into
-        `k_sys_fatal_error_handler` at the end of system fault handling.
+	bool "Return from fault handler"
+	help
+	  When enabled, the Memfault fault handler will call `z_fatal_error` instead of rebooting
+	  the system. Useful if the system needs to hook into `k_sys_fatal_error_handler` at the
+	  end of system fault handling.
 
 config MEMFAULT_FAULT_HANDLER_LOG_PANIC
-        bool "Trigger LOG_PANIC() on fault handling"
-        help
-         When enabled, the Memfault fault handler will call `LOG_PANIC()` to
-         flush logs during fault handling. Note that this can cause unexpected
-         behavior in some log backends that are not safe to call from fault
-         context.
+	bool "Trigger LOG_PANIC() on fault handling"
+	help
+	  When enabled, the Memfault fault handler will call `LOG_PANIC()` to flush logs during
+	  fault handling. Note that this can cause unexpected behavior in some log backends that
+	  are not safe to call from fault context.
 
 choice MEMFAULT_SYSTEM_TIME_SOURCE
-        prompt "Memfault system time source"
-        default MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME if DATE_TIME
-        default MEMFAULT_SYSTEM_TIME_SOURCE_RTC if RTC
-        default MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK if SYS_CLOCK_EXISTS
-        default MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
-        help
-         Choose the source of the system time used by the Memfault SDK
+	prompt "Memfault system time source"
+	default MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME if DATE_TIME
+	default MEMFAULT_SYSTEM_TIME_SOURCE_RTC if RTC
+	default MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK if SYS_CLOCK_EXISTS
+	default MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
+	help
+	  Choose the source of the system time used by the Memfault SDK
 
 config MEMFAULT_SYSTEM_TIME_SOURCE_CUSTOM
-        bool "Custom/disabled"
-        help
-         When enabled, the user can provide an implementation of
-         memfault_platform_time_get_current() in their port. This also can be
-         selected to disable the built-in implementations.
+	bool "Custom/disabled"
+	help
+	  When enabled, the user can provide an implementation of
+	  memfault_platform_time_get_current() in their port. This also can be selected to disable
+	  the built-in implementations.
 
 config MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME
-        bool "Datetime"
-        depends on DATE_TIME
-        help
-         Provides a built-in implementation of
-         memfault_platform_time_get_current() using the Zephyr datetime
-         subsystem.
+	bool "Datetime"
+	depends on DATE_TIME
+	help
+	  Provides a built-in implementation of memfault_platform_time_get_current() using the
+	  Zephyr datetime subsystem.
 
 config MEMFAULT_SYSTEM_TIME_SOURCE_RTC
-        bool "RTC"
-        depends on RTC
-        help
-         Provides a built-in implementation of
-         memfault_platform_time_get_current() using the Zephyr RTC subsystem.
+	bool "RTC"
+	depends on RTC
+	help
+	  Provides a built-in implementation of memfault_platform_time_get_current() using the
+	  Zephyr RTC subsystem.
 
 config MEMFAULT_SYSTEM_TIME_SOURCE_SYS_CLOCK
-        bool "Zephyr sys_clock_gettime()"
-        depends on SYS_CLOCK_EXISTS
-        help
-         Provides a built-in implementation of
-         memfault_platform_time_get_current() using the Zephyr
-         sys_clock_gettime() API with SYS_CLOCK_REALTIME.
+	bool "Zephyr sys_clock_gettime()"
+	depends on SYS_CLOCK_EXISTS
+	help
+	  Provides a built-in implementation of memfault_platform_time_get_current() using the
+	  Zephyr sys_clock_gettime() API with SYS_CLOCK_REALTIME.
 
-         Requires Zephyr 4.2.0 or later. On older Zephyr versions,
-         enable CONFIG_POSIX_TIMERS to use the POSIX clock_gettime()
-         fallback.
+	  Requires Zephyr 4.2.0 or later. On older Zephyr versions, enable CONFIG_POSIX_TIMERS to
+	  use the POSIX clock_gettime() fallback.
 
 endchoice # MEMFAULT_SYSTEM_TIME_SOURCE
 
 choice MEMFAULT_PLATFORM_LOCK_SOURCE
-        prompt "Memfault platform lock source"
-        default MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX if MULTITHREADING
-        default MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK
-        help
-         Choose the source of the memfault lock used by the Memfault SDK.
+	prompt "Memfault platform lock source"
+	default MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX if MULTITHREADING
+	default MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK
+	help
+	  Choose the source of the memfault lock used by the Memfault SDK.
 
 config MEMFAULT_PLATFORM_LOCK_SOURCE_CUSTOM
-        bool "Custom"
-        help
-          When enabled, the user must provide an implementation of
-          memfault_lock() and memfault_unlock() in their port.
+	bool "Custom"
+	help
+	  When enabled, the user must provide an implementation of memfault_lock() and
+	  memfault_unlock() in their port.
 
 config MEMFAULT_PLATFORM_LOCK_SOURCE_MUTEX
-        bool "Mutex"
-        depends on MULTITHREADING
-        help
-         Provides a built-in implementation of
-         memfault_lock() and memfault_unlock() using Zephyr primitives.
+	bool "Mutex"
+	depends on MULTITHREADING
+	help
+	  Provides a built-in implementation of memfault_lock() and memfault_unlock() using Zephyr
+	  primitives.
 
 config MEMFAULT_PLATFORM_LOCK_SOURCE_IRQ_LOCK
-        bool "IRQ lock"
-        help
-         Provides a built-in implementation of
-         memfault_lock() and memfault_unlock() using irq_lock() and irq_unlock().
+	bool "IRQ lock"
+	help
+	  Provides a built-in implementation of memfault_lock() and memfault_unlock() using
+	  irq_lock() and irq_unlock().
 
 endchoice # MEMFAULT_PLATFORM_LOCK_SOURCE
 
 config MEMFAULT_DATETIME_TIMESTAMP_EVENT_CALLBACK
-        bool "Install a callback on boot for date_time events"
-        default y
-        depends on MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME
-        help
-         When enabled, a callback will be installed on boot to update the
-         Memfault SDK's timestamp when the Zephyr datetime subsystem is
-         updated. Note that the date_time library only has 1 event callback, so
-         if it's needed elsewhere, this option should be disabled and the
-         memfault_zephyr_date_time_evt_handler() function should be called from
-         the application's date_time event handler.
+	bool "Install a callback on boot for date_time events"
+	default y
+	depends on MEMFAULT_SYSTEM_TIME_SOURCE_DATETIME
+	help
+	  When enabled, a callback will be installed on boot to update the Memfault SDK's timestamp
+	  when the Zephyr datetime subsystem is updated. Note that the date_time library only has
+	  1 event callback, so if it's needed elsewhere, this option should be disabled and the	1
+	  memfault_zephyr_date_time_evt_handler() function should be called from the application's
+	  date_time event handler.
 
 config MEMFAULT_CDR_ENABLE
-        bool "Memfault CDR component"
-        default y
-        help
-         Permits usage of the Memfault CDR feature. See
-         https://mflt.io/custom-data-recordings for more information.
+	bool "Memfault CDR component"
+	default y
+	help
+	  Permits usage of the Memfault CDR feature. See https://mflt.io/custom-data-recordings
+	  for more information.
 
 config MEMFAULT_CRC16_BUILTIN
-        bool "Use built-in CRC16 implementation"
-        default y
-        help
-         When enabled, the Memfault SDK will use a built-in CRC16
-         implementation. When disabled, the platform must provide its own
-         compatible implementation of memfault_crc16_compute().
+	bool "Use built-in CRC16 implementation"
+	default y
+	help
+	  When enabled, the Memfault SDK will use a built-in CRC16 implementation. When disabled,
+	  the platform must provide its own compatible implementation of memfault_crc16_compute().
 
 choice MEMFAULT_BUILD_ID_TYPE
-        prompt "Build ID type"
-        default MEMFAULT_USE_MEMFAULT_BUILD_ID if (MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
-        default MEMFAULT_USE_GNU_BUILD_ID
-        help
-          Choose the type of build ID to include in the image
+	prompt "Build ID type"
+	default MEMFAULT_USE_MEMFAULT_BUILD_ID if (MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
+	default MEMFAULT_USE_GNU_BUILD_ID
+	help
+	  Choose the type of build ID to include in the image
 
 config MEMFAULT_USE_MEMFAULT_BUILD_ID
-        bool "Use a Memfault build ID in an image"
-        # Memfault build ID should be used if the ESP32 bootloader is used.
-        # esptool.py generates the flashable image, which ignores the
-        # .note.gnu.build-id section despite being marked as ALLOC.
-        help
-          Use a Memfault build ID in an image
+	bool "Use a Memfault build ID in an image"
+	# Memfault build ID should be used if the ESP32 bootloader is used.
+	# esptool.py generates the flashable image, which ignores the
+	# .note.gnu.build-id section despite being marked as ALLOC.
+	help
+	  Use a Memfault build ID in an image
 
 menuconfig MEMFAULT_USE_GNU_BUILD_ID
-        bool "Use a GNU build ID in an image"
-        depends on !(MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
+	bool "Use a GNU build ID in an image"
+	depends on !(MEMFAULT_SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT)
 
 if MEMFAULT_USE_GNU_BUILD_ID
 
 choice MEMFAULT_GNU_BUILD_ID_SOURCE
-        prompt "GNU Build ID source"
-        default MEMFAULT_GNU_BUILD_ID_SOURCE_CUSTOM if ARCH_POSIX
-        default MEMFAULT_GNU_BUILD_ID_SOURCE_BUILTIN
-        help
-          Choose if a GNU build ID is generated by built-in SDK features
-          or by other means
+	prompt "GNU Build ID source"
+	default MEMFAULT_GNU_BUILD_ID_SOURCE_CUSTOM if ARCH_POSIX
+	default MEMFAULT_GNU_BUILD_ID_SOURCE_BUILTIN
+	help
+	  Choose if a GNU build ID is generated by built-in SDK features or by other means
 
 config MEMFAULT_GNU_BUILD_ID_SOURCE_BUILTIN
-        bool "Built-in via Memfault SDK"
-        help
-          Use the Memfault SDK to generate and include a GNU build ID
+	bool "Built-in via Memfault SDK"
+	help
+	  Use the Memfault SDK to generate and include a GNU build ID
 
 config MEMFAULT_GNU_BUILD_ID_SOURCE_CUSTOM
-        bool "Custom source"
-        help
-          Use a custom source to generate and include a GNU build ID
-          Set the name of the GNU build ID symbol with MEMFAULT_GNU_BUILD_ID_SYMBOL
-          in your application's memfault_platform_config.h
+	bool "Custom source"
+	help
+	  Use a custom source to generate and include a GNU build ID Set the name of the GNU build
+	  ID symbol with MEMFAULT_GNU_BUILD_ID_SYMBOL in your application's
+	  memfault_platform_config.h
 
 endchoice # MEMFAULT_GNU_BUILD_ID_SOURCE
 
@@ -1489,54 +1441,51 @@ endchoice # MEMFAULT_BUILD_ID_TYPE
 menu "Memfault Built-In Device Info Options"
 
 config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_VERSION
-        string "Builtin device info .software_version"
-        default "$(APP_VERSION_TWEAK_STRING)" if (("$(VERSION_TWEAK)") && ("$(VERSION_TWEAK)" != "0"))
-        default "$(APPVERSION)" if "$(APPVERSION)" != ""
-        default "0.0.0"
+	string "Builtin device info .software_version"
+	default "$(APP_VERSION_TWEAK_STRING)" if (("$(VERSION_TWEAK)") && ("$(VERSION_TWEAK)" != "0"))
+	default "$(APPVERSION)" if "$(APPVERSION)" != ""
+	default "0.0.0"
 
 config MEMFAULT_BUILTIN_DEVICE_INFO_SOFTWARE_TYPE
-        string "Builtin device info .software_type"
-        default "app"
+	string "Builtin device info .software_type"
+	default "app"
 
 config MEMFAULT_BUILTIN_DEVICE_INFO_HARDWARE_VERSION
-        string "Builtin device info .hardware_version"
-        default BOARD
+	string "Builtin device info .hardware_version"
+	default BOARD
 
 endmenu # MEMFAULT_BUILTIN_DEVICE_INFO
 
 config MEMFAULT_COMPRESS_DEBUG_INFO
-        bool "Compress debug info"
-        default y
-        help
-          Compress debug info to reduce the size of the output elf file.
+	bool "Compress debug info"
+	default y
+	help
+	  Compress debug info to reduce the size of the output elf file.
 
 config MEMFAULT_BUILD_META_IN_ELF
-        bool "Include build meta in ELF"
-        default y
-        imply BUILD_OUTPUT_META
-        help
-          Include build meta in the ELF file.
+	bool "Include build meta in ELF"
+	default y
+	imply BUILD_OUTPUT_META
+	help
+	  Include build meta in the ELF file.
 
 config MEMFAULT_DTS_IN_ELF
-        bool "Include DTS in the ELF file"
-        default y
-        help
-          When enabled, the DTS will be included as a non-loadable section in
-          the ELF file.
+	bool "Include DTS in the ELF file"
+	default y
+	help
+	  When enabled, the DTS will be included as a non-loadable section in the ELF file.
 
 module = MEMFAULT
 module-str = Memfault
 source "subsys/logging/Kconfig.template.log_config"
 
 config MEMFAULT_PLATFORM_HAS_LOG_CONFIG
-        bool
-        default y
-        help
-          Indicates that the Memfault port provides a
-          memfault_platform_log_config.h header to control which log levels are
-          compiled in. Disable this to compile in all MEMFAULT_LOG_x levels
-          (enabling runtime filtering), or to provide your own custom log
-          config header.
+	bool
+	default y
+	help
+	  Indicates that the Memfault port provides a memfault_platform_log_config.h header to
+	  control which log levels are compiled in. Disable this to compile in all MEMFAULT_LOG_x
+	  levels (enabling runtime filtering), or to provide your own custom log config header.
 
 rsource "ncs/Kconfig"
 
