@@ -531,8 +531,9 @@ choice MEMFAULT_ROOT_CERT_STORAGE_CONTEXT
     depends on MEMFAULT_ROOT_CERT_STORAGE
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM
-    bool "Uses the storage on nRF modems for storing root certificates (deprecated)"
+    bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
     depends on MODEM_KEY_MGMT
+    select DEPRECATED
     help
       Use MEMFAULT_ROOT_CERT_STORAGE_NRF_MODEM instead.
 
@@ -547,7 +548,7 @@ config MEMFAULT_ROOT_CERT_STORAGE_CUSTOM
 endchoice
 
 config MEMFAULT_ROOT_CERT_STORAGE_NRF9160_MODEM
-    bool "Uses the storage on nRF modems for storing root certificates (deprecated)"
+    bool "Uses the storage on nRF modems for storing root certificates [DEPRECATED]"
     depends on MEMFAULT_ROOT_CERT_STORAGE
     select DEPRECATED
     help
@@ -614,48 +615,59 @@ config MEMFAULT_HTTP_PACKETIZER_BUFFER_SIZE
           allocated.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD
-        bool "Work job to periodically push new data to Memfault (deprecated)"
+        bool "Work job to periodically push new data to Memfault [DEPRECATED]"
         select MEMFAULT_PERIODIC_UPLOAD
+        select DEPRECATED
         help
           Use MEMFAULT_PERIODIC_UPLOAD instead.
 
 # Keep choice, due to choice override in NCS Memfault port
 choice MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
-        prompt "Work queue implementation to use for periodic posting (deprecated)"
+        prompt "Work queue implementation to use for periodic posting [DEPRECATED]"
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE if MEMFAULT_SOC_SERIES_NRF91
         default MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE
-        bool "Periodically push new data to Memfault from system workqueue (deprecated)"
+        bool "Periodically push new data to Memfault from system workqueue [DEPRECATED]"
+        select DEPRECATED
         help
           Use MEMFAULT_PERIODIC_UPLOAD_USE_SYSTEM_WORKQUEUE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
-        bool "Periodically push new data to Memfault using a dedicated workqueue (deprecated)"
+        bool "Periodically push new data to Memfault using a dedicated workqueue [DEPRECATED]"
+        select DEPRECATED
         help
           Use MEMFAULT_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE instead.
 
 endchoice # MEMFAULT_HTTP_PERIODIC_UPLOAD_CONTEXT
 
+config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE_DEPRECATED
+        bool
+        default y if (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 4096 && (WIFI_NRF70 || WIFI_NRF71)) || (MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE != 2048 && !WIFI_NRF70 || !WIFI_NRF71)
+	select DEPRECATED
+        help
+          Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
+
 config MEMFAULT_HTTP_DEDICATED_WORKQUEUE_STACK_SIZE
-        int "Stack size for dedicated upload workqueue, in bytes (deprecated)"
+        int "Stack size for dedicated upload workqueue, in bytes"
         default 4096 if WIFI_NRF70 || WIFI_NRF71
         default 2048
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD_USE_DEDICATED_WORKQUEUE
         help
-          Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
+          Deprecated. Use MEMFAULT_PERIODIC_UPLOAD_DEDICATED_WORKQUEUE_STACK_SIZE instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_INTERVAL_SECS
-        int "Interval with which the periodic upload task should run (deprecated)"
+        int "Interval with which the periodic upload task should run [DEPRECATED]"
         default 3600
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         help
           Use MEMFAULT_PERIODIC_UPLOAD_INTERVAL_SECS instead.
 
 config MEMFAULT_HTTP_PERIODIC_UPLOAD_LOGS
-        bool "Upload log buffer in addition to other data (deprecated)"
+        bool "Upload log buffer in addition to other data [DEPRECATED]"
         select MEMFAULT_PERIODIC_UPLOAD_LOGS
+        select DEPRECATED
         depends on MEMFAULT_HTTP_PERIODIC_UPLOAD
         help
           Use MEMFAULT_PERIODIC_UPLOAD_LOGS instead.
